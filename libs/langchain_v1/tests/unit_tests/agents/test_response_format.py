@@ -7,6 +7,7 @@ from typing import Union
 
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
+from langchain_core.tools import tool
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -74,12 +75,14 @@ location_json_schema = {
 }
 
 
+@tool
 def get_weather() -> str:
     """Get the weather."""
 
     return "The weather is sunny and 75°F."
 
 
+@tool
 def get_location() -> str:
     """Get the current location."""
 

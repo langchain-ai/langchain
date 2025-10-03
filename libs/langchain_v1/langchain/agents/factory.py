@@ -349,11 +349,7 @@ def create_agent(  # noqa: PLR0915
 
         # Only create ToolNode if we have tools
         tool_node = ToolNode(tools=all_tools) if all_tools else None
-        # Get the actual tool objects from the tool node (this converts Callables to tools)
-        if tool_node:
-            default_tools = list(tool_node.tools_by_name.values()) + builtin_tools
-        else:
-            default_tools = builtin_tools
+        default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
     elif isinstance(tools, ToolNode):
         # tools is ToolNode or None
         tool_node = tools
@@ -498,26 +494,8 @@ def create_agent(  # noqa: PLR0915
 
     def _get_bound_model(request: ModelRequest) -> Runnable:
         """Get the model with appropriate tool bindings."""
-        # Get actual tool objects from tool names
-        tools_by_name = {t.name: t for t in default_tools}
-
-        unknown_tools = [name for name in request.tools if name not in tools_by_name]
-        if unknown_tools:
-            available_tools = sorted(tools_by_name.keys())
-            msg = (
-                f"Middleware returned unknown tool names: {unknown_tools}\n\n"
-                f"Available tools: {available_tools}\n\n"
-                "To fix this issue:\n"
-                "1. Ensure the tools are passed to create_agent() via "
-                "the 'tools' parameter\n"
-                "2. If using custom middleware with tools, ensure "
-                "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values"
-            )
-            raise ValueError(msg)
-
-        requested_tools = [tools_by_name[name] for name in request.tools]
+        # request.tools contains BaseTool | dict objects
+        requested_tools = request.tools
 
         if isinstance(response_format, ProviderStrategy):
             # Use native structured output
@@ -541,7 +519,7 @@ def create_agent(  # noqa: PLR0915
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
@@ -580,7 +558,7 @@ def create_agent(  # noqa: PLR0915
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
