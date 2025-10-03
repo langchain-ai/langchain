@@ -328,7 +328,8 @@ def create_agent(  # noqa: PLR0915
 
         Args:
             output: The AI message output from the model.
-            effective_response_format: The resolved strategy (may differ from response_format if auto-detected).
+            effective_response_format: The resolved strategy (may differ
+                from response_format if auto-detected).
         """
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
@@ -432,7 +433,8 @@ def create_agent(  # noqa: PLR0915
 
         Returns:
             Tuple of (bound_model, effective_response_format).
-            ``effective_response_format`` is the resolved strategy (may differ from original if auto-detected).
+            ``effective_response_format`` is the resolved strategy
+                (may differ from original if auto-detected).
         """
         # Validate requested tools are available
         tools_by_name = {t.name: t for t in default_tools}
