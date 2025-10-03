@@ -11,8 +11,8 @@ from freezegun import freeze_time
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
-from langchain.chains.transform import TransformChain
-from langchain.smith.evaluation.runner_utils import (
+from langchain_classic.chains.transform import TransformChain
+from langchain_classic.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompt,

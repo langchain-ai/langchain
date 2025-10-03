@@ -10,7 +10,7 @@ from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
 from typing_extensions import override
 
-from langchain.agents import AgentExecutor, AgentType, initialize_agent
+from langchain_classic.agents import AgentExecutor, AgentType, initialize_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 

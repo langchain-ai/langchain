@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.72,<1.0.0",
+    "langchain-core>=0.3.72,<2.0.0",
     "langchain-text-splitters>=0.3.9,<1.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
@@ -16,7 +16,7 @@ dependencies = [
     "PyYAML>=5.3.0,<7.0.0",
     "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
 ]
-name = "langchain"
+name = "langchain-classic"
 version = "0.3.27"
 description = "Building applications with LLMs through composability"
 readme = "README.md"

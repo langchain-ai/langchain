@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from langchain.agents.openai_assistant import OpenAIAssistantRunnable
+from langchain_classic.agents.openai_assistant import OpenAIAssistantRunnable
 
 
 def _create_mock_client(*_: Any, use_async: bool = False, **__: Any) -> Any:

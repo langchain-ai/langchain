@@ -2,8 +2,8 @@
 
 import pytest
 
-from langchain.chains.llm_checker.base import LLMCheckerChain
-from langchain.chains.llm_checker.prompt import (
+from langchain_classic.chains.llm_checker.base import LLMCheckerChain
+from langchain_classic.chains.llm_checker.prompt import (
     _CHECK_ASSERTIONS_TEMPLATE,
     _CREATE_DRAFT_ANSWER_TEMPLATE,
     _LIST_ASSERTIONS_TEMPLATE,

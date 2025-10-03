@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField
 
-from langchain.runnables.hub import HubRunnable
+from langchain_classic.runnables.hub import HubRunnable
 
 
 @patch("langchain.hub.pull")

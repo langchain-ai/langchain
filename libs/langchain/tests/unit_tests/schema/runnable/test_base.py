@@ -1,4 +1,4 @@
-from langchain.schema.runnable.base import __all__
+from langchain_classic.schema.runnable.base import __all__
 
 EXPECTED_ALL = [
     "Runnable",

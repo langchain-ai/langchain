@@ -27,7 +27,7 @@ from langchain_core.tools import Tool, tool
 from langchain_core.tracers import RunLog, RunLogPatch
 from typing_extensions import override
 
-from langchain.agents import (
+from langchain_classic.agents import (
     AgentExecutor,
     AgentType,
     create_openai_functions_agent,
@@ -35,7 +35,7 @@ from langchain.agents import (
     create_tool_calling_agent,
     initialize_agent,
 )
-from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
+from langchain_classic.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import (

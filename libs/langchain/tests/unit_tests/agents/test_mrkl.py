@@ -6,9 +6,9 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import Tool
 
-from langchain.agents.mrkl.base import ZeroShotAgent
-from langchain.agents.mrkl.output_parser import MRKLOutputParser
-from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain_classic.agents.mrkl.base import ZeroShotAgent
+from langchain_classic.agents.mrkl.output_parser import MRKLOutputParser
+from langchain_classic.agents.mrkl.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

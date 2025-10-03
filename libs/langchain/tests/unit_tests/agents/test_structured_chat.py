@@ -11,8 +11,8 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.tools import Tool
 
-from langchain.agents.structured_chat.base import StructuredChatAgent
-from langchain.agents.structured_chat.output_parser import StructuredChatOutputParser
+from langchain_classic.agents.structured_chat.base import StructuredChatAgent
+from langchain_classic.agents.structured_chat.output_parser import StructuredChatOutputParser
 
 output_parser = StructuredChatOutputParser()
 

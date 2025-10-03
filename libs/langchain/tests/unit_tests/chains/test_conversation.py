@@ -10,10 +10,10 @@ from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
 from typing_extensions import override
 
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory.buffer import ConversationBufferMemory
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.summary import ConversationSummaryMemory
+from langchain_classic.chains.conversation.base import ConversationChain
+from langchain_classic.memory.buffer import ConversationBufferMemory
+from langchain_classic.memory.buffer_window import ConversationBufferWindowMemory
+from langchain_classic.memory.summary import ConversationSummaryMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
