@@ -373,7 +373,7 @@ def create_agent(  # noqa: PLR0915
 
         unknown_tools = [name for name in request.tools if name not in tools_by_name]
         if unknown_tools:
-            available_tools = sorted(tools_by_name.keys())
+            available_tools = sorted(tools_by_name)
             msg = (
                 f"Middleware returned unknown tool names: {unknown_tools}\n\n"
                 f"Available tools: {available_tools}\n\n"

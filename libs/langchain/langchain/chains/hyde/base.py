@@ -112,7 +112,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         else:
             msg = (
                 f"Must specify prompt_key if custom_prompt not provided. Should be one "
-                f"of {list(PROMPT_MAP.keys())}."
+                f"of {list(PROMPT_MAP)}."
             )
             raise ValueError(msg)
 
