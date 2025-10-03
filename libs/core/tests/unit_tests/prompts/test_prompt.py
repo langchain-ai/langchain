@@ -264,7 +264,7 @@ def test_prompt_from_template_with_partial_variables() -> None:
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
-    input_variables: list = []
+    input_variables: list[str] = []
     with pytest.raises(
         ValueError,
         match=re.escape("check for mismatched or missing input parameters from []"),
@@ -505,7 +505,7 @@ Your variable again: {{ foo }}
 def test_prompt_jinja2_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {{ foo }} test."
-    input_variables: list = []
+    input_variables: list[str] = []
     with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         PromptTemplate(
             input_variables=input_variables,
