@@ -882,9 +882,20 @@ def test_convert_to_openai_messages_string() -> None:
 
 
 def test_convert_to_openai_messages_single_message() -> None:
-    message = HumanMessage(content="Hello")
+    message: BaseMessage = HumanMessage(content="Hello")
     result = convert_to_openai_messages(message)
     assert result == {"role": "user", "content": "Hello"}
+
+    # Test IDs
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "user", "content": "Hello"}  # no ID
+
+    message = AIMessage(content="Hello", id="resp_123")
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "assistant", "content": "Hello"}
+
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "assistant", "content": "Hello", "id": "resp_123"}
 
 
 def test_convert_to_openai_messages_multiple_messages() -> None:
