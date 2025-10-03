@@ -790,9 +790,9 @@ def _make_model_to_tools_edge(
 
         # 3. if there are pending (non-structured) tool calls, jump to the tool node
         if pending_tool_calls:
-            store = runtime.store if runtime else None
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, store) for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, runtime.store)
+                for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
