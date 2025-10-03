@@ -452,7 +452,7 @@ class ChatFireworks(BaseChatModel):
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
+            if not chunk["choices"]:
                 continue
             choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
@@ -547,7 +547,7 @@ class ChatFireworks(BaseChatModel):
         async for chunk in self.async_client.acreate(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
+            if not chunk["choices"]:
                 continue
             choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
