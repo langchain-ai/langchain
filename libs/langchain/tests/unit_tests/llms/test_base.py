@@ -25,10 +25,12 @@ def test_caching() -> None:
     params = llm.dict()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
-    get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
+    cache = get_llm_cache()
+    assert cache is not None
+    cache.update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo", "bar", "foo"])
     expected_cache_output = [Generation(text="foo")]
-    cache_output = get_llm_cache().lookup("bar", llm_string)
+    cache_output = cache.lookup("bar", llm_string)
     assert cache_output == expected_cache_output
     set_llm_cache(None)
     expected_generations = [

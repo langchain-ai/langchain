@@ -366,39 +366,6 @@ def __getattr__(name: str) -> Any:
         )
 
         return SerpAPIWrapper
-    if name == "verbose":
-        from langchain.globals import _verbose
-
-        _warn_on_import(
-            name,
-            replacement=(
-                "langchain.globals.set_verbose() / langchain.globals.get_verbose()"
-            ),
-        )
-
-        return _verbose
-    if name == "debug":
-        from langchain.globals import _debug
-
-        _warn_on_import(
-            name,
-            replacement=(
-                "langchain.globals.set_debug() / langchain.globals.get_debug()"
-            ),
-        )
-
-        return _debug
-    if name == "llm_cache":
-        from langchain.globals import _llm_cache
-
-        _warn_on_import(
-            name,
-            replacement=(
-                "langchain.globals.set_llm_cache() / langchain.globals.get_llm_cache()"
-            ),
-        )
-
-        return _llm_cache
     msg = f"Could not find: {name}"
     raise AttributeError(msg)
 
