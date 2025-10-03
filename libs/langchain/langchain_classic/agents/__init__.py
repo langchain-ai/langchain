@@ -127,7 +127,7 @@ def __getattr__(name: str) -> Any:
             suffix=name,
             relative_to=here,
         )
-        old_path = "langchain." + relative_path
+        old_path = "langchain_classic." + relative_path
         new_path = "langchain_experimental." + relative_path
         msg = (
             f"{name} has been moved to langchain experimental. "

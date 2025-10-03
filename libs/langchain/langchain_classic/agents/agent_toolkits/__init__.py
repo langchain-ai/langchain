@@ -119,7 +119,7 @@ def __getattr__(name: str) -> Any:
     """Get attr name."""
     if name in DEPRECATED_AGENTS:
         relative_path = as_import_path(Path(__file__).parent, suffix=name)
-        old_path = "langchain." + relative_path
+        old_path = "langchain_classic." + relative_path
         new_path = "langchain_experimental." + relative_path
         msg = (
             f"{name} has been moved to langchain experimental. "
