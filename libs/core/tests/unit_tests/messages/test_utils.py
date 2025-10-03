@@ -882,9 +882,20 @@ def test_convert_to_openai_messages_string() -> None:
 
 
 def test_convert_to_openai_messages_single_message() -> None:
-    message = HumanMessage(content="Hello")
+    message: BaseMessage = HumanMessage(content="Hello")
     result = convert_to_openai_messages(message)
     assert result == {"role": "user", "content": "Hello"}
+
+    # Test IDs
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "user", "content": "Hello"}  # no ID
+
+    message = AIMessage(content="Hello", id="resp_123")
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "assistant", "content": "Hello"}
+
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "assistant", "content": "Hello", "id": "resp_123"}
 
 
 def test_convert_to_openai_messages_multiple_messages() -> None:
@@ -1215,13 +1226,14 @@ def test_convert_to_openai_messages_developer() -> None:
 
 
 def test_convert_to_openai_messages_multimodal() -> None:
+    """v0 and v1 content to OpenAI messages conversion."""
     messages = [
         HumanMessage(
             content=[
+                # Prior v0 blocks
                 {"type": "text", "text": "Text message"},
                 {
                     "type": "image",
-                    "source_type": "url",
                     "url": "https://example.com/test.png",
                 },
                 {
@@ -1238,6 +1250,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
                     "filename": "test.pdf",
                 },
                 {
+                    # OpenAI Chat Completions file format
                     "type": "file",
                     "file": {
                         "filename": "draconomicon.pdf",
@@ -1262,22 +1275,47 @@ def test_convert_to_openai_messages_multimodal() -> None:
                         "format": "wav",
                     },
                 },
+                # v1 Additions
+                {
+                    "type": "image",
+                    "source_type": "url",  # backward compatibility v0 block field
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "base64": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "base64": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",  # backward compatibility v0 block field
+                },
+                {
+                    "type": "file",
+                    "file_id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "base64": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
             ]
         )
     ]
     result = convert_to_openai_messages(messages, text_format="block")
     assert len(result) == 1
     message = result[0]
-    assert len(message["content"]) == 8
+    assert len(message["content"]) == 13
 
-    # Test adding filename
+    # Test auto-adding filename
     messages = [
         HumanMessage(
             content=[
                 {
                     "type": "file",
-                    "source_type": "base64",
-                    "data": "<base64 string>",
+                    "base64": "<base64 string>",
                     "mime_type": "application/pdf",
                 },
             ]
@@ -1290,6 +1328,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
     assert len(message["content"]) == 1
     block = message["content"][0]
     assert block == {
+        # OpenAI Chat Completions file format
         "type": "file",
         "file": {
             "file_data": "data:application/pdf;base64,<base64 string>",

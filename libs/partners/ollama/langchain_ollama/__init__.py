@@ -3,7 +3,7 @@
 Provides infrastructure for interacting with the `Ollama <https://ollama.com/>`__
 service.
 
-.. note::
+!!! note
     **Newly added in 0.3.4:** ``validate_model_on_init`` param on all models.
     This parameter allows you to validate the model exists in Ollama locally on
     initialization. If set to ``True``, it will raise an error if the model does not
@@ -14,14 +14,20 @@ service.
 """
 
 from importlib import metadata
+from importlib.metadata import PackageNotFoundError
 
 from langchain_ollama.chat_models import ChatOllama
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 
+
+def _raise_package_not_found_error() -> None:
+    raise PackageNotFoundError
+
+
 try:
     if __package__ is None:
-        raise metadata.PackageNotFoundError
+        _raise_package_not_found_error()
     __version__ = metadata.version(__package__)
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.

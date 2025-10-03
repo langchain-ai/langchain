@@ -52,7 +52,7 @@ called ``<my_dataset_name>``:
     )
 
 You can also create custom evaluators by subclassing the
-:class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
 or LangSmith's `RunEvaluator` classes.
 
 .. code-block:: python
@@ -93,15 +93,15 @@ or LangSmith's `RunEvaluator` classes.
 
 **Primary Functions**
 
-- :func:`arun_on_dataset <langchain.smith.evaluation.runner_utils.arun_on_dataset>`:
+- `arun_on_dataset <langchain.smith.evaluation.runner_utils.arun_on_dataset>`:
   Asynchronous function to evaluate a chain, agent, or other LangChain component over a
   dataset.
-- :func:`run_on_dataset <langchain.smith.evaluation.runner_utils.run_on_dataset>`:
+- `run_on_dataset <langchain.smith.evaluation.runner_utils.run_on_dataset>`:
   Function to evaluate a chain, agent, or other LangChain component over a dataset.
-- :class:`RunEvalConfig <langchain.smith.evaluation.config.RunEvalConfig>`:
+- `RunEvalConfig <langchain.smith.evaluation.config.RunEvalConfig>`:
   Class representing the configuration for running evaluation.
   You can select evaluators by
-  :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config,
+  `EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config,
   or you can pass in `custom_evaluators`.
 
 """

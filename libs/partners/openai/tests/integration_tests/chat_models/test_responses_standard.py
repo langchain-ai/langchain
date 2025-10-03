@@ -22,7 +22,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o-mini", "use_responses_api": True}
+        return {"model": "gpt-4o-mini", "output_version": "responses/v1"}
 
     @property
     def supports_image_tool_message(self) -> bool:
@@ -54,6 +54,29 @@ class TestOpenAIResponses(TestOpenAIStandard):
         input_ = "What was the 3rd highest building in 2000?"
         return _invoke(llm, input_, stream)
 
+    def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process PDF inputs."""
+        super().test_openai_pdf_inputs(model)
+        # Responses API additionally supports files via URL
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "What is the document title, verbatim?"},
+                {"type": "file", "url": url},
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Responses format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "What is the document title, verbatim?"},
+                {"type": "input_file", "file_url": url},
+            ]
+        )
+        _ = model.invoke([message])
+
     @property
     def supports_pdf_tool_message(self) -> bool:
         # OpenAI requires a filename for PDF inputs
@@ -66,13 +89,12 @@ class TestOpenAIResponses(TestOpenAIStandard):
         pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 
         tool_message = ToolMessage(
-            content=[
+            content_blocks=[
                 {
                     "type": "file",
-                    "source_type": "base64",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                     "mime_type": "application/pdf",
-                    "filename": "my-pdf",  # specify filename
+                    "extras": {"filename": "my-pdf"},  # specify filename
                 },
             ],
             tool_call_id="1",

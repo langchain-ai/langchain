@@ -63,7 +63,7 @@ def resolve_prompt(
         messages = resolve_prompt(None, state, runtime, "content", "Default")
         ```
 
-    .. note::
+    !!! note
         Callable prompts have full control over message structure and content parameter
         is ignored. String/None prompts create standard system + user structure.
 
@@ -133,7 +133,7 @@ async def aresolve_prompt(
         messages = await aresolve_prompt("Custom", state, runtime, "content", "default")
         ```
 
-    .. note::
+    !!! note
         Callable prompts have full control over message structure and content parameter
         is ignored. Automatically detects and handles async callables.
 

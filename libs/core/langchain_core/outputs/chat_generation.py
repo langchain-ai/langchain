@@ -29,7 +29,7 @@ class ChatGeneration(Generation):
     text: str = ""
     """The text contents of the output message.
 
-    .. warning::
+    !!! warning
         SHOULD NOT BE SET DIRECTLY!
 
     """

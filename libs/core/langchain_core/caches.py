@@ -1,6 +1,6 @@
 """Cache classes.
 
-.. warning::
+!!! warning
   Beta Feature!
 
 **Cache** provides an optional caching layer for LLMs.

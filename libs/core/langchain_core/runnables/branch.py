@@ -12,10 +12,6 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
 
-from langchain_core.beta.runnables.context import (
-    CONTEXT_CONFIG_PREFIX,
-    CONTEXT_CONFIG_SUFFIX_SET,
-)
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -49,21 +45,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     If no condition evaluates to True, the default branch is run on the input.
 
     Examples:
+        ```python
+        from langchain_core.runnables import RunnableBranch
 
-        .. code-block:: python
+        branch = RunnableBranch(
+            (lambda x: isinstance(x, str), lambda x: x.upper()),
+            (lambda x: isinstance(x, int), lambda x: x + 1),
+            (lambda x: isinstance(x, float), lambda x: x * 2),
+            lambda x: "goodbye",
+        )
 
-            from langchain_core.runnables import RunnableBranch
-
-            branch = RunnableBranch(
-                (lambda x: isinstance(x, str), lambda x: x.upper()),
-                (lambda x: isinstance(x, int), lambda x: x + 1),
-                (lambda x: isinstance(x, float), lambda x: x * 2),
-                lambda x: "goodbye",
-            )
-
-            branch.invoke("hello")  # "HELLO"
-            branch.invoke(None)  # "goodbye"
-
+        branch.invoke("hello")  # "HELLO"
+        branch.invoke(None)  # "goodbye"
+        ```
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
@@ -181,7 +175,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     @property
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        specs = get_unique_config_specs(
+        return get_unique_config_specs(
             spec
             for step in (
                 [self.default]
@@ -190,14 +184,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             )
             for spec in step.config_specs
         )
-        if any(
-            s.id.startswith(CONTEXT_CONFIG_PREFIX)
-            and s.id.endswith(CONTEXT_CONFIG_SUFFIX_SET)
-            for s in specs
-        ):
-            msg = "RunnableBranch cannot contain context setters."
-            raise ValueError(msg)
-        return specs
 
     @override
     def invoke(

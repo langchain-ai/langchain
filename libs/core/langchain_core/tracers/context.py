@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
-    from langchain_core.tracers.schemas import TracerSessionV1
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None
@@ -37,21 +36,6 @@ tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
 run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
     "run_collector", default=None
 )
-
-
-@contextmanager
-def tracing_enabled(
-    session_name: str = "default",  # noqa: ARG001
-) -> Generator[TracerSessionV1, None, None]:
-    """Throw an error because this has been replaced by ``tracing_v2_enabled``.
-
-    Raises:
-        RuntimeError: Always, because this function is deprecated.
-    """
-    msg = (
-        "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
-    )
-    raise RuntimeError(msg)
 
 
 @contextmanager
