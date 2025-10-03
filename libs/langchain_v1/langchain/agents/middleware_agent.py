@@ -164,16 +164,15 @@ def _resolve_response_format_strategy(
     if response_format is None:
         return None, {}
 
-    # Already a concrete strategy - return as-is
-    if isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        # Extract tools if it's a ToolStrategy
-        if isinstance(response_format, ToolStrategy):
-            tools = {
-                info.tool.name: info
-                for response_schema in response_format.schema_specs
-                for info in [OutputToolBinding.from_schema_spec(response_schema)]
-            }
-            return response_format, tools
+    # Extract tools if it's a ToolStrategy
+    if isinstance(response_format, ToolStrategy):
+        tools = {
+            info.tool.name: info
+            for response_schema in response_format.schema_specs
+            for info in [OutputToolBinding.from_schema_spec(response_schema)]
+        }
+        return response_format, tools
+    if isinstance(response_format, ProviderStrategy):
         return response_format, {}
 
     # Auto-detect strategy based on model capabilities
