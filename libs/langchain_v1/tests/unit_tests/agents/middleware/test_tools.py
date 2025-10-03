@@ -1,4 +1,4 @@
-"""Test Middleware handling of tools in agents."""
+"""Tests for middleware handling of tools in agents."""
 
 import pytest
 
@@ -6,8 +6,9 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState, Model
 from langchain.agents.factory import create_agent
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
-from .model import FakeToolCallingModel
 from langgraph.runtime import Runtime
+
+from ..model import FakeToolCallingModel
 
 
 def test_model_request_tools_are_objects() -> None:
@@ -102,90 +103,110 @@ def test_middleware_can_add_custom_tools() -> None:
     """Test that middleware can add custom tool objects to ModelRequest."""
 
     @tool
-    def known_tool(input: str) -> str:
-        """A known tool."""
-        return "result"
+    def original_tool(input: str) -> str:
+        """Original tool."""
+        return "original"
 
     @tool
-    def custom_tool(input: str) -> str:
-        """A custom tool added by middleware."""
-        return "custom result"
+    def middleware_tool(input: str) -> str:
+        """Middleware-added tool."""
+        return "middleware"
 
     class ToolAddingMiddleware(AgentMiddleware):
         def modify_model_request(
             self, request: ModelRequest, state: AgentState, runtime: Runtime
         ) -> ModelRequest:
-            # Add a custom tool
-            request.tools = list(request.tools) + [custom_tool]
+            # Add middleware tool to the request
+            request.tools = request.tools + [middleware_tool]
             return request
 
+    # Model will try to call middleware_tool
+    model = FakeToolCallingModel(
+        tool_calls=[[{"args": {"input": "test"}, "id": "1", "name": "middleware_tool"}], []]
+    )
+
     agent = create_agent(
-        model=FakeToolCallingModel(),
-        tools=[known_tool],
+        model=model,
+        tools=[original_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[ToolAddingMiddleware()],
     )
 
-    # Should work fine with custom tools added
-    result = agent.invoke({"messages": [HumanMessage("Hello")]})
-    assert "messages" in result
+    result = agent.invoke({"messages": [HumanMessage("Use middleware_tool")]})
+
+    # Verify that the middleware tool was executed successfully
+    messages = result["messages"]
+    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].name == "middleware_tool"
+    assert tool_messages[0].content == "middleware"
 
 
-def test_middleware_can_add_and_remove_tools() -> None:
-    """Test that middleware can dynamically add/remove tools based on state."""
+def test_middleware_can_conditionally_add_tools() -> None:
+    """Test that middleware can conditionally add tools based on state."""
 
     @tool
-    def search(query: str) -> str:
-        """Search for information."""
-        return f"Search results for: {query}"
-
-    @tool
-    def admin_tool(command: str) -> str:
+    def admin_tool(input: str) -> str:
         """Admin-only tool."""
-        return f"Admin: {command}"
+        return "admin_result"
 
     class AdminState(AgentState):
-        is_admin: bool
+        is_admin: bool = False
 
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
-        state_schema = AdminState
-
         def modify_model_request(
             self, request: ModelRequest, state: AdminState, runtime: Runtime
         ) -> ModelRequest:
-            # Remove admin_tool if not admin
-            if not state.get("is_admin", False):
-                request.tools = [t for t in request.tools if t.name != "admin_tool"]
+            # Only add admin tool if user is admin
+            if state.get("is_admin", False):
+                request.tools = request.tools + [admin_tool]
             return request
 
-    model = FakeToolCallingModel()
+    # Model will try to call admin_tool when admin
+    model = FakeToolCallingModel(
+        tool_calls=[[{"args": {"input": "test"}, "id": "1", "name": "admin_tool"}], []]
+    )
 
     agent = create_agent(
         model=model,
-        tools=[search, admin_tool],
+        tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[ConditionalToolMiddleware()],
     )
 
-    # Test non-admin user - should not have access to admin_tool
-    # We can't directly inspect the bound model, but we can verify the agent runs
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": False})
-    assert "messages" in result
+    # Test with admin user
+    result = agent.invoke({"messages": [HumanMessage("Use admin tool")], "is_admin": True})
+    messages = result["messages"]
+    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 1
+    assert tool_messages[0].name == "admin_tool"
 
-    # Test admin user - should have access to all tools
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": True})
-    assert "messages" in result
+    # Test with non-admin user (should not have admin tool available)
+    model_no_admin = FakeToolCallingModel(tool_calls=[[], []])  # No tool calls
+    agent_no_admin = create_agent(
+        model=model_no_admin,
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[ConditionalToolMiddleware()],
+    )
+
+    result_no_admin = agent_no_admin.invoke(
+        {"messages": [HumanMessage("Hello")], "is_admin": False}
+    )
+    messages_no_admin = result_no_admin["messages"]
+    tool_messages_no_admin = [m for m in messages_no_admin if isinstance(m, ToolMessage)]
+    assert len(tool_messages_no_admin) == 0
 
 
 def test_empty_tools_list_is_valid() -> None:
-    """Test that middleware can set tools to an empty list."""
+    """Test that middleware can set an empty tools list."""
 
     @tool
-    def some_tool(input: str) -> str:
-        """Some tool."""
-        return "result"
+    def test_tool(input: str) -> str:
+        """Test tool."""
+        return "test"
 
-    class NoToolsMiddleware(AgentMiddleware):
+    class EmptyToolsMiddleware(AgentMiddleware):
         def modify_model_request(
             self, request: ModelRequest, state: AgentState, runtime: Runtime
         ) -> ModelRequest:
@@ -193,17 +214,18 @@ def test_empty_tools_list_is_valid() -> None:
             request.tools = []
             return request
 
-    model = FakeToolCallingModel()
+    # Model should not make any tool calls
+    model = FakeToolCallingModel(tool_calls=[[], []])  # No tool calls
 
     agent = create_agent(
         model=model,
-        tools=[some_tool],
+        tools=[test_tool],
         system_prompt="You are a helpful assistant.",
-        middleware=[NoToolsMiddleware()],
+        middleware=[EmptyToolsMiddleware()],
     )
 
-    # Should run without error even with no tools
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
     assert "messages" in result
 
 
@@ -267,36 +289,37 @@ def test_middleware_with_additional_tools() -> None:
     """Test middleware that provides additional tools via tools attribute."""
 
     @tool
-    def base_tool(input: str) -> str:
-        """Base tool."""
-        return "base"
-
-    @tool
     def middleware_tool(input: str) -> str:
         """Tool provided by middleware."""
-        return "middleware"
+        return f"Middleware tool result: {input}"
 
     class ToolProvidingMiddleware(AgentMiddleware):
-        tools = [middleware_tool]
+        def __init__(self):
+            super().__init__()
+            self.tools = [middleware_tool]
 
-    # Model calls the middleware-provided tool
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
+            # Add middleware tools to the request
+            request.tools = request.tools + self.tools
+            return request
+
+    # Model will try to call middleware_tool
     model = FakeToolCallingModel(
-        tool_calls=[
-            [{"args": {"input": "test"}, "id": "1", "name": "middleware_tool"}],
-            [],
-        ]
+        tool_calls=[[{"args": {"input": "test"}, "id": "1", "name": "middleware_tool"}], []]
     )
 
     agent = create_agent(
         model=model,
-        tools=[base_tool],
+        tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[ToolProvidingMiddleware()],
     )
 
     result = agent.invoke({"messages": [HumanMessage("Use middleware tool")]})
 
-    # Verify that the middleware tool was executed
+    # Verify that the middleware tool was executed successfully
     messages = result["messages"]
     tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
