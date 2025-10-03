@@ -1,7 +1,16 @@
 """Convert functions and runnables to tools."""
 
 import inspect
-from typing import Any, Callable, Literal, Optional, TypeVar, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
@@ -26,9 +35,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]:
-    """Overload for decorator usage with keyword arguments only."""
-    ...
+) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]: ...
 
 
 @overload
@@ -43,9 +50,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> BaseTool:
-    """Overload for direct tool creation with name and runnable."""
-    ...
+) -> BaseTool: ...
 
 
 @overload
@@ -59,9 +64,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> BaseTool:
-    """Overload for direct tool creation with callable."""
-    ...
+) -> BaseTool: ...
 
 
 @overload
@@ -75,9 +78,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]:
-    """Overload for decorator usage with custom name."""
-    ...
+) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]: ...
 
 
 def tool(
