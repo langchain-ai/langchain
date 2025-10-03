@@ -91,7 +91,7 @@ def test_chat_openai_streaming() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Hello")
@@ -113,7 +113,7 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = _get_llm(max_tokens=2, temperature=0, callback_manager=callback_manager)
+    chat = _get_llm(max_tokens=2, temperature=0, callbacks=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -145,7 +145,7 @@ async def test_async_chat_openai_streaming() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Hello")
