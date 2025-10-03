@@ -1045,6 +1045,7 @@ def convert_to_openai_messages(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
     *,
     text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
@@ -1062,6 +1063,8 @@ def convert_to_openai_messages(
                     If a message has a string content, this is turned into a list
                     with a single content block of type ``'text'``. If a message has
                     content blocks these are left as is.
+        include_id: Whether to include message ids in the openai messages, if they
+                    are present in the source messages.
 
     Raises:
         ValueError: if an unrecognized ``text_format`` is specified, or if a message
@@ -1150,6 +1153,8 @@ def convert_to_openai_messages(
             oai_msg["refusal"] = message.additional_kwargs["refusal"]
         if isinstance(message, ToolMessage):
             oai_msg["tool_call_id"] = message.tool_call_id
+        if include_id and message.id:
+            oai_msg["id"] = message.id
 
         if not message.content:
             content = "" if text_format == "string" else []
