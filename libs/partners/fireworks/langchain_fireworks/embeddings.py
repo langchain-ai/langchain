@@ -35,7 +35,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
             from langchain_fireworks import FireworksEmbeddings
 
             model = FireworksEmbeddings(
-                model='nomic-ai/nomic-embed-text-v1.5'
+                model="nomic-ai/nomic-embed-text-v1.5"
                 # Use FIREWORKS_API_KEY env var or pass it in directly
                 # fireworks_api_key="..."
             )
@@ -44,7 +44,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
 
         .. code-block:: python
 
-            vectors = embeddings.embed_documents(['hello', 'goodbye'])
+            vectors = embeddings.embed_documents(["hello", "goodbye"])
             # Showing only the first 3 coordinates
             print(len(vectors))
             print(vectors[0][:3])
@@ -59,7 +59,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             input_text = "The meaning of life is 42"
-            vector = embeddings.embed_query('hello')
+            vector = embeddings.embed_query("hello")
             print(vector[:3])
 
         .. code-block:: python

@@ -10,18 +10,15 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 from typing_extensions import Self, override
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Callable, Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
 
 
@@ -52,7 +49,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
+        keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
@@ -92,7 +89,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Split text into multiple components."""
 
     def create_documents(
-        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+        self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
         """Create documents from a list of texts."""
         metadatas_ = metadatas or [{}] * len(texts)
@@ -119,7 +116,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
 
-    def _join_docs(self, docs: list[str], separator: str) -> Optional[str]:
+    def _join_docs(self, docs: list[str], separator: str) -> str | None:
         text = separator.join(docs)
         if self._strip_whitespace:
             text = text.strip()
@@ -141,8 +138,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             ):
                 if total > self._chunk_size:
                     logger.warning(
-                        "Created a chunk of size %s, "
-                        "which is longer than the specified %s",
+                        "Created a chunk of size %d, which is longer than the "
+                        "specified %d",
                         total,
                         self._chunk_size,
                     )
@@ -194,9 +191,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def from_tiktoken_encoder(
         cls,
         encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
         """Text splitter that uses tiktoken encoder to count length."""
@@ -247,9 +244,9 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -354,13 +351,19 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
     splits: list[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
-    cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
-    chunk_ids = input_ids[start_idx:cur_idx]
+    if tokenizer.tokens_per_chunk <= tokenizer.chunk_overlap:
+        msg = "tokens_per_chunk must be greater than chunk_overlap"
+        raise ValueError(msg)
+
     while start_idx < len(input_ids):
-        splits.append(tokenizer.decode(chunk_ids))
+        cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
+        chunk_ids = input_ids[start_idx:cur_idx]
+        if not chunk_ids:
+            break
+        decoded = tokenizer.decode(chunk_ids)
+        if decoded:
+            splits.append(decoded)
         if cur_idx == len(input_ids):
             break
         start_idx += tokenizer.tokens_per_chunk - tokenizer.chunk_overlap
-        cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
-        chunk_ids = input_ids[start_idx:cur_idx]
     return splits

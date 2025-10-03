@@ -4,7 +4,7 @@ import asyncio
 import re
 import time
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from typing_extensions import override
 
@@ -19,7 +19,7 @@ from langchain_core.runnables import RunnableConfig
 
 
 class FakeMessagesListChatModel(BaseChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake ``ChatModel`` for testing purposes."""
 
     responses: list[BaseMessage]
     """List of responses to **cycle** through in order."""
@@ -113,7 +113,12 @@ class FakeListChatModel(SimpleChatModel):
             ):
                 raise FakeListChatModelError
 
-            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
+            chunk_position: Optional[Literal["last"]] = (
+                "last" if i_c == len(response) - 1 else None
+            )
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=c, chunk_position=chunk_position)
+            )
 
     @override
     async def _astream(
@@ -136,7 +141,12 @@ class FakeListChatModel(SimpleChatModel):
                 and i_c == self.error_on_chunk_number
             ):
                 raise FakeListChatModelError
-            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
+            chunk_position: Optional[Literal["last"]] = (
+                "last" if i_c == len(response) - 1 else None
+            )
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=c, chunk_position=chunk_position)
+            )
 
     @property
     @override
@@ -152,7 +162,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessage]:
         if isinstance(config, list):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
@@ -165,7 +175,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessage]:
         if isinstance(config, list):
             # do Not use an async iterator here because need explicit ordering
             return [await self.ainvoke(m, c, **kwargs) for m, c in zip(inputs, config)]
@@ -212,10 +222,11 @@ class GenericFakeChatModel(BaseChatModel):
     """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
-    * Invokes on_llm_new_token to allow for testing of callback related code for new
+    * Invokes ``on_llm_new_token`` to allow for testing of callback related code for new
       tokens.
     * Includes logic to break messages into message chunk to facilitate testing of
       streaming.
+
     """
 
     messages: Iterator[Union[AIMessage, str]]
@@ -224,12 +235,13 @@ class GenericFakeChatModel(BaseChatModel):
     This can be expanded to accept other types like Callables / dicts / strings
     to make the interface more generic if needed.
 
-    .. note::
+    !!! note
         if you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    .. warning::
+    !!! warning
         Streaming is not implemented yet. We should try to implement it in the future by
         delegating to invoke and then breaking the resulting output into message chunks.
+
     """
 
     @override
@@ -282,10 +294,16 @@ class GenericFakeChatModel(BaseChatModel):
 
             content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
-            for token in content_chunks:
+            for idx, token in enumerate(content_chunks):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(content=token, id=message.id)
                 )
+                if (
+                    idx == len(content_chunks) - 1
+                    and isinstance(chunk.message, AIMessageChunk)
+                    and not message.additional_kwargs
+                ):
+                    chunk.message.chunk_position = "last"
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
@@ -351,6 +369,7 @@ class ParrotFakeChatModel(BaseChatModel):
     """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
+
     """
 
     @override

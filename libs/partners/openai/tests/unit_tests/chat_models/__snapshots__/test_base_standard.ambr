@@ -18,7 +18,6 @@
         'lc': 1,
         'type': 'secret',
       }),
-      'output_version': 'v0',
       'request_timeout': 60.0,
       'stop': list([
       ]),

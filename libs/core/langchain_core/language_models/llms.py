@@ -357,7 +357,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
+        if "model" in kwargs and isinstance(kwargs["model"], str):
+            ls_params["ls_model_name"] = kwargs["model"]
+        elif hasattr(self, "model") and isinstance(self.model, str):
             ls_params["ls_model_name"] = self.model
         elif hasattr(self, "model_name") and isinstance(self.model_name, str):
             ls_params["ls_model_name"] = self.model_name
@@ -1464,10 +1466,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

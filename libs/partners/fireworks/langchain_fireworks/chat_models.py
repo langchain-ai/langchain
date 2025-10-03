@@ -5,20 +5,17 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Literal,
     Optional,
-    TypedDict,
     Union,
     cast,
 )
 
 from fireworks.client import AsyncFireworks, Fireworks  # type: ignore[import-untyped]
-from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -70,7 +67,6 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
-    convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -256,10 +252,6 @@ def _convert_chunk_to_message_chunk(
     return default_class(content=content)  # type: ignore[call-arg]
 
 
-class _FunctionCall(TypedDict):
-    name: str
-
-
 # This is basically a copy and replace for ChatFireworks, except
 # - I needed to gut out tiktoken and some of the token estimation logic
 # (not sure how important it is)
@@ -278,8 +270,10 @@ class ChatFireworks(BaseChatModel):
         .. code-block:: python
 
             from langchain_fireworks.chat_models import ChatFireworks
+
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct")
+                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
+            )
 
     """
 
@@ -413,7 +407,7 @@ class ChatFireworks(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="fireworks",
-            ls_model_name=self.model_name,
+            ls_model_name=params.get("model", self.model_name),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -621,69 +615,6 @@ class ChatFireworks(BaseChatModel):
         """Return type of chat model."""
         return "fireworks-chat"
 
-    @deprecated(
-        since="0.2.1",
-        alternative="langchain_fireworks.chat_models.ChatFireworks.bind_tools",
-        removal="1.0.0",
-    )
-    def bind_functions(
-        self,
-        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model.
-
-        Assumes model is compatible with Fireworks function-calling API.
-
-        NOTE: Using bind_tools is recommended instead, as the ``functions`` and
-            ``function_call`` request parameters are officially marked as deprecated by
-            Fireworks.
-
-        Args:
-            functions: A list of function definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, or callable. Pydantic
-                models and callables will be automatically converted to
-                their schema dictionary representation.
-            function_call: Which function to require the model to call.
-                Must be the name of the single provided function or
-                ``'auto'`` to automatically determine which function to call
-                (if any).
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
-
-        """
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                msg = (
-                    "When specifying `function_call`, you must provide exactly one "
-                    "function."
-                )
-                raise ValueError(msg)
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                msg = (
-                    f"Function call {function_call} was specified, but the only "
-                    f"provided function was {formatted_functions[0]['name']}."
-                )
-                raise ValueError(msg)
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
-
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
@@ -692,7 +623,7 @@ class ChatFireworks(BaseChatModel):
             Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with Fireworks tool-calling API.
@@ -700,7 +631,7 @@ class ChatFireworks(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 ``'auto'`` to automatically determine which function to call
@@ -708,7 +639,7 @@ class ChatFireworks(BaseChatModel):
                 function is called, or a dict of the form:
                 ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to
-                :meth:`~langchain_fireworks.chat_models.ChatFireworks.bind`
+                `langchain_fireworks.chat_models.ChatFireworks.bind`
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -756,13 +687,12 @@ class ChatFireworks(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.7
-
-                        Added support for TypedDict class.
+                !!! warning "Behavior changed in 0.1.7"
+                    Added support for TypedDict class.
 
             method: The method for steering model generation, one of:
 
@@ -773,8 +703,7 @@ class ChatFireworks(BaseChatModel):
                 - ``'json_mode'``:
                     Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
 
-                .. versionchanged:: 0.2.8
-
+                !!! warning "Behavior changed in 0.2.8"
                     Added support for ``'json_schema'``.
 
             include_raw:
@@ -787,10 +716,10 @@ class ChatFireworks(BaseChatModel):
 
             kwargs:
                 Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -825,7 +754,10 @@ class ChatFireworks(BaseChatModel):
                     )
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -852,7 +784,10 @@ class ChatFireworks(BaseChatModel):
                     justification: str
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -886,7 +821,10 @@ class ChatFireworks(BaseChatModel):
                     ]
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -904,19 +842,25 @@ class ChatFireworks(BaseChatModel):
                 from langchain_fireworks import ChatFireworks
 
                 oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                    "name": "AnswerWithJustification",
+                    "description": "An answer to the user question along with justification for the answer.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "answer": {"type": "string"},
+                            "justification": {
+                                "description": "A justification for the answer.",
+                                "type": "string",
+                            },
                         },
-                        'required': ['answer']
-                    }
+                        "required": ["answer"],
+                    },
                 }
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(

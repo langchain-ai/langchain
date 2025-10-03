@@ -6,6 +6,7 @@ import asyncio
 import base64
 import random
 import re
+import string
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -76,16 +77,15 @@ def draw_mermaid(
 
             Example config:
 
-            .. code-block:: python
-
+            ```python
             {
                 "config": {
                     "theme": "neutral",
                     "look": "handDrawn",
-                    "themeVariables": { "primaryColor": "#e2e2e2"},
+                    "themeVariables": {"primaryColor": "#e2e2e2"},
                 }
             }
-
+            ```
     Returns:
         str: Mermaid graph syntax.
 
@@ -148,7 +148,7 @@ def draw_mermaid(
                 + "</em></small>"
             )
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
-            _escape_node_label(key), label
+            _to_safe_id(key), label
         )
         return f"{indent}{node_label}\n"
 
@@ -211,8 +211,7 @@ def draw_mermaid(
                 edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
-                f"\t{_escape_node_label(source)}{edge_label}"
-                f"{_escape_node_label(target)};\n"
+                f"\t{_to_safe_id(source)}{edge_label}{_to_safe_id(target)};\n"
             )
 
         # Recursively add nested subgraphs
@@ -256,9 +255,18 @@ def draw_mermaid(
     return mermaid_graph
 
 
-def _escape_node_label(node_label: str) -> str:
-    """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
+def _to_safe_id(label: str) -> str:
+    """Convert a string into a Mermaid-compatible node id.
+
+    Keep [a-zA-Z0-9_-] characters unchanged.
+    Map every other character -> backslash + lowercase hex codepoint.
+
+    Result is guaranteed to be unique and Mermaid-compatible,
+    so nodes with special characters always render correctly.
+    """
+    allowed = string.ascii_letters + string.digits + "_-"
+    out = [ch if ch in allowed else "\\" + format(ord(ch), "x") for ch in label]
+    return "".join(out)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:

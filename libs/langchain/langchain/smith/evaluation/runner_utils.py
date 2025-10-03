@@ -299,7 +299,7 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
 class ChatModelInput(TypedDict):
     """Input for a chat model.
 
-    Parameters:
+    Args:
         messages: List of chat messages.
     """
 
@@ -1364,7 +1364,7 @@ async def arun_on_dataset(
     to the specified project name.
 
     For the (usually faster) async version of this function,
-    see :func:`arun_on_dataset`.
+    see `arun_on_dataset`.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
@@ -1431,7 +1431,7 @@ async def arun_on_dataset(
         )
 
     You can also create custom evaluators by subclassing the
-    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
     or LangSmith's `RunEvaluator` classes.
 
     .. code-block:: python
@@ -1542,7 +1542,7 @@ def run_on_dataset(
     to the specified project name.
 
     For the (usually faster) async version of this function,
-    see :func:`arun_on_dataset`.
+    see `arun_on_dataset`.
 
     Args:
         dataset_name: Name of the dataset to run the chain on.
@@ -1609,7 +1609,7 @@ def run_on_dataset(
         )
 
     You can also create custom evaluators by subclassing the
-    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
     or LangSmith's `RunEvaluator` classes.
 
     .. code-block:: python

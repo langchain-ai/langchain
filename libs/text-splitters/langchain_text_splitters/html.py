@@ -5,16 +5,14 @@ from __future__ import annotations
 import copy
 import pathlib
 import re
+from collections.abc import Iterator
 from io import StringIO
 from typing import (
     IO,
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Optional,
     TypedDict,
-    Union,
     cast,
 )
 
@@ -26,7 +24,7 @@ from typing_extensions import override
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from bs4.element import ResultSet
 
@@ -71,18 +69,16 @@ def _find_all_strings(
     *,
     recursive: bool = True,
 ) -> ResultSet[NavigableString]:
-    return cast(
-        "ResultSet[NavigableString]", tag.find_all(string=True, recursive=recursive)
-    )
+    return tag.find_all(string=True, recursive=recursive)
 
 
 def _find_all_tags(
     tag: Tag,
     *,
-    name: Union[bool, str, list[str], None] = None,
+    name: bool | str | list[str] | None = None,
     recursive: bool = True,
 ) -> ResultSet[Tag]:
-    return cast("ResultSet[Tag]", tag.find_all(name, recursive=recursive))
+    return tag.find_all(name, recursive=recursive)
 
 
 class HTMLHeaderTextSplitter:
@@ -210,7 +206,7 @@ class HTMLHeaderTextSplitter:
         response.raise_for_status()
         return self.split_text(response.text)
 
-    def split_text_from_file(self, file: Union[str, IO[str]]) -> list[Document]:
+    def split_text_from_file(self, file: str | IO[str]) -> list[Document]:
         """Split HTML content from a file into a list of Document objects.
 
         Args:
@@ -255,7 +251,7 @@ class HTMLHeaderTextSplitter:
         active_headers: dict[str, tuple[str, int, int]] = {}
         current_chunk: list[str] = []
 
-        def finalize_chunk() -> Optional[Document]:
+        def finalize_chunk() -> Document | None:
             """Finalize the accumulated chunk into a single Document."""
             if not current_chunk:
                 return None
@@ -389,7 +385,7 @@ class HTMLSectionSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def create_documents(
-        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+        self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
         """Create documents from a list of texts."""
         metadatas_ = metadatas or [{}] * len(texts)
@@ -406,7 +402,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(self, html_doc: str) -> list[dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> list[dict[str, str | None]]:
         """Split an HTML document into sections based on specified header tags.
 
         This method uses BeautifulSoup to parse the HTML content and divides it into
@@ -537,7 +533,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     elements by converting them into Markdown format. Note that some chunks may
     exceed the maximum size to maintain semantic integrity.
 
-    .. versionadded: 0.3.5
+    !!! version-added "Added in version 0.3.5"
 
     Example:
         .. code-block:: python
@@ -574,21 +570,21 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         *,
         max_chunk_size: int = 1000,
         chunk_overlap: int = 0,
-        separators: Optional[list[str]] = None,
-        elements_to_preserve: Optional[list[str]] = None,
+        separators: list[str] | None = None,
+        elements_to_preserve: list[str] | None = None,
         preserve_links: bool = False,
         preserve_images: bool = False,
         preserve_videos: bool = False,
         preserve_audio: bool = False,
-        custom_handlers: Optional[dict[str, Callable[[Tag], str]]] = None,
+        custom_handlers: dict[str, Callable[[Tag], str]] | None = None,
         stopword_removal: bool = False,
         stopword_lang: str = "english",
         normalize_text: bool = False,
-        external_metadata: Optional[dict[str, str]] = None,
-        allowlist_tags: Optional[list[str]] = None,
-        denylist_tags: Optional[list[str]] = None,
+        external_metadata: dict[str, str] | None = None,
+        allowlist_tags: list[str] | None = None,
+        denylist_tags: list[str] | None = None,
         preserve_parent_metadata: bool = False,
-        keep_separator: Union[bool, Literal["start", "end"]] = True,
+        keep_separator: bool | Literal["start", "end"] = True,
     ) -> None:
         """Initialize splitter.
 
@@ -831,7 +827,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             Returns:
                 The processed text of the element.
             """
-            element = cast("Union[Tag, NavigableString]", element)
+            element = cast("Tag | NavigableString", element)
             if element.name in self._custom_handlers:
                 return self._custom_handlers[element.name](element)
 

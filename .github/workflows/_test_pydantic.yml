@@ -1,3 +1,5 @@
+# Facilitate unit testing against different Pydantic versions for a provided package.
+
 name: '🐍 Pydantic Version Testing'
 
 on:
@@ -40,6 +42,8 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: test-pydantic-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Test Dependencies'
         shell: bash

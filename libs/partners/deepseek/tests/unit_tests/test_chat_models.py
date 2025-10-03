@@ -18,7 +18,7 @@ class MockOpenAIResponse(BaseModel):
     choices: list
     error: None = None
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
         mode: Union[Literal["json", "python"], str] = "python",  # noqa: PYI051

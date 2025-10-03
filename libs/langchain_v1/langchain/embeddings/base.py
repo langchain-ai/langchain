@@ -152,7 +152,7 @@ def init_embeddings(
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    .. dropdown:: Example Usage
+    ??? note "Example Usage"
         :open:
 
         .. code-block:: python
@@ -168,7 +168,7 @@ def init_embeddings(
             # With additional parameters
             model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
 
     """
     if not model:

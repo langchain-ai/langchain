@@ -531,9 +531,6 @@ def test_passthrough_assign_schema() -> None:
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
     assert RunnableLambda(first_lambda).get_input_jsonschema() == {
@@ -1856,7 +1853,7 @@ def test_prompt_with_chat_model(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1965,7 +1962,7 @@ async def test_prompt_with_chat_model_async(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -3919,6 +3916,58 @@ def test_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def test_retry_batch_preserves_order() -> None:
+    """Regression test: batch with retry should preserve input order.
+
+    The previous implementation stored successful results in a map keyed by the
+    index within the *pending* (filtered) list rather than the original input
+    index, causing collisions after retries. This produced duplicated outputs
+    and dropped earlier successes (e.g. [0,1,2] -> [1,1,2]).
+    """
+    # Fail only the middle element on the first attempt to trigger the bug.
+    first_fail: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:  # pragma: no cover - trivial
+        if x in first_fail:
+            first_fail.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail)
+
+    results = runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).batch([0, 1, 2])
+
+    # Expect exact ordering preserved.
+    assert results == [0, 1, 2]
+
+
+async def test_async_retry_batch_preserves_order() -> None:
+    """Async variant of order preservation regression test."""
+    first_fail: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:  # pragma: no cover - trivial
+        if x in first_fail:
+            first_fail.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail)
+
+    results = await runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).abatch([0, 1, 2])
+
+    assert results == [0, 1, 2]
+
+
 async def test_async_retrying(mocker: MockerFixture) -> None:
     def _lambda(x: int) -> Union[int, Runnable]:
         if x == 1:
@@ -4738,9 +4787,6 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
     assert tracer.runs[2].outputs == {"output": "bye"}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
     runnable = RunnableLambda(lambda x: x * 2)

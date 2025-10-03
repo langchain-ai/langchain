@@ -1,3 +1,5 @@
+"""Azure OpenAI large language models. Not to be confused with chat models."""
+
 from __future__ import annotations
 
 import logging
@@ -47,7 +49,7 @@ class AzureOpenAI(BaseOpenAI):
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
 
-        .. note::
+        !!! note
             This means you won't be able to use non-deployment endpoints.
 
     """
@@ -101,6 +103,7 @@ class AzureOpenAI(BaseOpenAI):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Mapping of secret keys to environment variables."""
         return {
             "openai_api_key": "AZURE_OPENAI_API_KEY",
             "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
@@ -115,11 +118,14 @@ class AzureOpenAI(BaseOpenAI):
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n < 1:
-            raise ValueError("n must be at least 1.")
+            msg = "n must be at least 1."
+            raise ValueError(msg)
         if self.streaming and self.n > 1:
-            raise ValueError("Cannot stream results when n > 1.")
+            msg = "Cannot stream results when n > 1."
+            raise ValueError(msg)
         if self.streaming and self.best_of > 1:
-            raise ValueError("Cannot stream results when best_of > 1.")
+            msg = "Cannot stream results when best_of > 1."
+            raise ValueError(msg)
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = self.openai_api_base
@@ -128,19 +134,21 @@ class AzureOpenAI(BaseOpenAI):
                 self.openai_api_base = (
                     cast(str, self.openai_api_base).rstrip("/") + "/openai"
                 )
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
                 )
+                raise ValueError(msg)
             if self.deployment_name:
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, if `deployment_name` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment_name` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
+                raise ValueError(msg)
                 self.deployment_name = None
         client_params: dict = {
             "api_version": self.openai_api_version,
@@ -187,7 +195,7 @@ class AzureOpenAI(BaseOpenAI):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         return {
-            **{"deployment_name": self.deployment_name},
+            "deployment_name": self.deployment_name,
             **super()._identifying_params,
         }
 
@@ -214,6 +222,7 @@ class AzureOpenAI(BaseOpenAI):
 
     @property
     def lc_attributes(self) -> dict[str, Any]:
+        """Attributes relevant to tracing."""
         return {
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,

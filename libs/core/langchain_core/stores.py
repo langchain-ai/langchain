@@ -56,22 +56,22 @@ class BaseStore(ABC, Generic[K, V]):
 
 
             class MyInMemoryStore(BaseStore[str, int]):
-                def __init__(self):
-                    self.store = {}
+                def __init__(self) -> None:
+                    self.store: dict[str, int] = {}
 
-                def mget(self, keys):
+                def mget(self, keys: Sequence[str]) -> list[int | None]:
                     return [self.store.get(key) for key in keys]
 
-                def mset(self, key_value_pairs):
+                def mset(self, key_value_pairs: Sequence[tuple[str, int]]) -> None:
                     for key, value in key_value_pairs:
                         self.store[key] = value
 
-                def mdelete(self, keys):
+                def mdelete(self, keys: Sequence[str]) -> None:
                     for key in keys:
                         if key in self.store:
                             del self.store[key]
 
-                def yield_keys(self, prefix=None):
+                def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
                     if prefix is None:
                         yield from self.store.keys()
                     else:

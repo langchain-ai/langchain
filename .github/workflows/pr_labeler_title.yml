@@ -1,0 +1,28 @@
+# Label PRs based on their titles.
+#
+# See `.github/pr-title-labeler.yml` to see rules for each label/title pattern.
+
+name: "🏷️ PR Title Labeler"
+
+on:
+  # Safe since we're not checking out or running the PR's code
+  # Never check out the PR's head in a pull_request_target job
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  pr-title-labeler:
+    name: 'label'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Label PR based on title
+      # Archived repo; latest commit (v0.1.0)
+      uses: grafana/pr-labeler-action@f19222d3ef883d2ca5f04420fdfe8148003763f0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/pr-title-labeler.yml

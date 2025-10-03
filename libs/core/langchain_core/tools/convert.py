@@ -157,7 +157,7 @@ def tool(
             def search_api(query: str) -> tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
-    .. versionadded:: 0.2.14
+    !!! version-added "Added in version 0.2.14"
 
         Parse Google-style docstrings:
 
@@ -227,7 +227,7 @@ def tool(
                 \"\"\"
                 return bar
 
-    """  # noqa: D214, D410, D411
+    """  # noqa: D214, D410, D411  # We're intentionally showing bad formatting in examples
 
     def _create_tool_factory(
         tool_name: str,
