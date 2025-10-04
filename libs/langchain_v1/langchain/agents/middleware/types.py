@@ -661,10 +661,6 @@ def dynamic_prompt(
 @overload
 def dynamic_prompt(
     func: None = None,
-    *,
-    state_schema: type[StateT] | None = None,
-    tools: list[BaseTool] | None = None,
-    name: str | None = None,
 ) -> Callable[
     [_CallableReturningPromptString[StateT, ContextT]],
     AgentMiddleware[StateT, ContextT],
@@ -673,10 +669,6 @@ def dynamic_prompt(
 
 def dynamic_prompt(
     func: _CallableReturningPromptString[StateT, ContextT] | None = None,
-    *,
-    state_schema: type[StateT] | None = None,
-    tools: list[BaseTool] | None = None,
-    name: str | None = None,
 ) -> (
     Callable[
         [_CallableReturningPromptString[StateT, ContextT]],
@@ -694,11 +686,6 @@ def dynamic_prompt(
         func: The function to be decorated. Must accept:
             `request: ModelRequest, state: StateT, runtime: Runtime[ContextT]` -
             Model request, state, and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
-        tools: Optional list of additional tools to register with this middleware.
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
 
     Returns:
         Either an AgentMiddleware instance (if func is provided) or a decorator function
@@ -749,16 +736,14 @@ def dynamic_prompt(
                 request.system_prompt = prompt
                 return request
 
-            middleware_name = name or cast(
-                "str", getattr(func, "__name__", "DynamicPromptMiddleware")
-            )
+            middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
             return type(
                 middleware_name,
                 (AgentMiddleware,),
                 {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
+                    "state_schema": AgentState,
+                    "tools": [],
                     "amodify_model_request": async_wrapped,
                 },
             )()
@@ -773,14 +758,14 @@ def dynamic_prompt(
             request.system_prompt = prompt
             return request
 
-        middleware_name = name or cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
+        middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
         return type(
             middleware_name,
             (AgentMiddleware,),
             {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
+                "state_schema": AgentState,
+                "tools": [],
                 "modify_model_request": wrapped,
             },
         )()

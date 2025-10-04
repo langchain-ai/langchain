@@ -602,18 +602,18 @@ def test_dynamic_prompt_decorator() -> None:
     assert result.system_prompt == "Dynamic test prompt"
 
 
-def test_dynamic_prompt_decorator_with_options() -> None:
-    """Test dynamic_prompt decorator with all configuration options."""
+def test_dynamic_prompt_uses_state() -> None:
+    """Test that dynamic_prompt can use state information."""
 
-    @dynamic_prompt(state_schema=CustomState, tools=[test_tool], name="CustomDynamicPrompt")
-    def custom_prompt(request: ModelRequest, state: CustomState, runtime: Runtime) -> str:
-        user_field = state.get("custom_field", "default")
-        return f"Prompt with {user_field}"
+    @dynamic_prompt
+    def custom_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        msg_count = len(state["messages"])
+        return f"Prompt with {msg_count} messages"
 
     assert isinstance(custom_prompt, AgentMiddleware)
-    assert custom_prompt.state_schema == CustomState
-    assert custom_prompt.tools == [test_tool]
-    assert custom_prompt.__class__.__name__ == "CustomDynamicPrompt"
+    assert custom_prompt.state_schema == AgentState
+    assert custom_prompt.tools == []
+    assert custom_prompt.__class__.__name__ == "custom_prompt"
 
     # Verify it uses state correctly
     original_request = ModelRequest(
@@ -625,9 +625,9 @@ def test_dynamic_prompt_decorator_with_options() -> None:
         response_format=None,
     )
     result = custom_prompt.modify_model_request(
-        original_request, {"messages": [HumanMessage("Hello")], "custom_field": "test_value"}, None
+        original_request, {"messages": [HumanMessage("Hello"), HumanMessage("World")]}, None
     )
-    assert result.system_prompt == "Prompt with test_value"
+    assert result.system_prompt == "Prompt with 2 messages"
 
 
 def test_dynamic_prompt_integration() -> None:
