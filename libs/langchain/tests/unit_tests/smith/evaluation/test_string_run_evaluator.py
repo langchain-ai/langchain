@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from langchain.evaluation import criteria
-from langchain.smith.evaluation.string_run_evaluator import (
+from langchain_classic.evaluation import criteria
+from langchain_classic.smith.evaluation.string_run_evaluator import (
     ChainStringRunMapper,
     StringRunEvaluatorChain,
 )
