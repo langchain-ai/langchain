@@ -45,6 +45,7 @@ __all__ = [
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
+    "dynamic_prompt",
     "hook_config",
 ]
 
@@ -177,6 +178,16 @@ class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, Contex
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> ModelRequest | Awaitable[ModelRequest]:
         """Perform some logic with the model request, state, and runtime."""
+        ...
+
+
+class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):
+    """Callable that returns a prompt string given ModelRequest, AgentState, and Runtime."""
+
+    def __call__(
+        self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
+    ) -> str | Awaitable[str]:
+        """Generate a system prompt string based on the request, state, and runtime."""
         ...
 
 
@@ -633,6 +644,129 @@ def after_model(
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "after_model": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def dynamic_prompt(
+    func: _CallableReturningPromptString[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def dynamic_prompt(
+    func: None = None,
+) -> Callable[
+    [_CallableReturningPromptString[StateT, ContextT]],
+    AgentMiddleware[StateT, ContextT],
+]: ...
+
+
+def dynamic_prompt(
+    func: _CallableReturningPromptString[StateT, ContextT] | None = None,
+) -> (
+    Callable[
+        [_CallableReturningPromptString[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Decorator used to dynamically generate system prompts for the model.
+
+    This is a convenience decorator that creates middleware using `modify_model_request`
+    specifically for dynamic prompt generation. The decorated function should return
+    a string that will be set as the system prompt for the model request.
+
+    Args:
+        func: The function to be decorated. Must accept:
+            `request: ModelRequest, state: StateT, runtime: Runtime[ContextT]` -
+            Model request, state, and runtime context
+
+    Returns:
+        Either an AgentMiddleware instance (if func is provided) or a decorator function
+        that can be applied to a function.
+
+    The decorated function should return:
+        - `str` - The system prompt to use for the model request
+
+    Examples:
+        Basic usage with dynamic content:
+        ```python
+        @dynamic_prompt
+        def my_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+            user_name = runtime.context.get("user_name", "User")
+            return f"You are a helpful assistant helping {user_name}."
+        ```
+
+        Using state to customize the prompt:
+        ```python
+        @dynamic_prompt
+        def context_aware_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+            msg_count = len(state["messages"])
+            if msg_count > 10:
+                return "You are in a long conversation. Be concise."
+            return "You are a helpful assistant."
+        ```
+
+        Using with agent:
+        ```python
+        agent = create_agent(model, middleware=[my_prompt])
+        ```
+    """
+
+    def decorator(
+        func: _CallableReturningPromptString[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        is_async = iscoroutinefunction(func)
+
+        if is_async:
+
+            async def async_wrapped(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                request: ModelRequest,
+                state: StateT,
+                runtime: Runtime[ContextT],
+            ) -> ModelRequest:
+                prompt = await func(request, state, runtime)  # type: ignore[misc]
+                request.system_prompt = prompt
+                return request
+
+            middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": [],
+                    "amodify_model_request": async_wrapped,
+                },
+            )()
+
+        def wrapped(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            request: ModelRequest,
+            state: StateT,
+            runtime: Runtime[ContextT],
+        ) -> ModelRequest:
+            prompt = cast("str", func(request, state, runtime))
+            request.system_prompt = prompt
+            return request
+
+        middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": AgentState,
+                "tools": [],
+                "modify_model_request": wrapped,
             },
         )()
 
