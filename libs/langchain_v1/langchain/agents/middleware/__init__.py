@@ -4,6 +4,7 @@ from .human_in_the_loop import HumanInTheLoopMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
+from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
     AgentMiddleware,
     AgentState,
@@ -21,6 +22,7 @@ __all__ = [
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
+    "LLMToolSelectorMiddleware",
     "ModelRequest",
     "PlanningMiddleware",
     "SummarizationMiddleware",
