@@ -393,6 +393,84 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def test_trim_messages_last_removes_orphaned_tool_message() -> None:
+    messages = [
+        HumanMessage("What's the weather in Florida?"),
+        AIMessage(
+            [
+                {"type": "text", "text": "Let's check the weather in Florida"},
+                {
+                    "type": "tool_use",
+                    "id": "abc123",
+                    "name": "get_weather",
+                    "input": {"location": "Florida"},
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "get_weather",
+                    "args": {"location": "Florida"},
+                    "id": "abc123",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("It's sunny.", name="get_weather", tool_call_id="abc123"),
+        HumanMessage("I see"),
+        AIMessage("Do you want to know anything else?"),
+        HumanMessage("No, thanks"),
+        AIMessage("You're welcome! Have a great day!"),
+    ]
+
+    trimmed = trim_messages(
+        messages,
+        strategy="last",
+        token_counter=len,
+        max_tokens=5,
+    )
+
+    expected = [
+        HumanMessage("I see"),
+        AIMessage("Do you want to know anything else?"),
+        HumanMessage("No, thanks"),
+        AIMessage("You're welcome! Have a great day!"),
+    ]
+
+    assert trimmed == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_last_preserves_tool_message_when_call_present() -> None:
+    messages = [
+        HumanMessage("Start"),
+        AIMessage(
+            "Sure, let me check",
+            tool_calls=[
+                {
+                    "name": "search",
+                    "args": {"query": "status"},
+                    "id": "tool-1",
+                    "type": "tool_call",
+                }
+            ],
+        ),
+        ToolMessage("All systems operational", tool_call_id="tool-1"),
+        HumanMessage("Thanks"),
+    ]
+
+    trimmed = trim_messages(
+        messages,
+        strategy="last",
+        token_counter=len,
+        max_tokens=3,
+    )
+
+    expected = messages[1:]
+
+    assert trimmed == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
 def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> None:
     expected = [
         SystemMessage("This is a 4 token text."),

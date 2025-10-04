@@ -1440,11 +1440,10 @@ def _first_max_tokens(
         # When all messages fit, only apply end_on filtering if needed
         if end_on:
             for _ in range(len(messages)):
-                if not _is_message_type(messages[-1], end_on):
-                    messages.pop()
-                else:
+                if not messages or _is_message_type(messages[-1], end_on):
                     break
-        return messages
+                messages.pop()
+        return _remove_orphaned_tool_messages(messages)
 
     # Use binary search to find the maximum number of messages within token limit
     left, right = 0, len(messages)
@@ -1535,7 +1534,7 @@ def _first_max_tokens(
             else:
                 break
 
-    return messages[:idx]
+    return _remove_orphaned_tool_messages(messages[:idx])
 
 
 def _last_max_tokens(
@@ -1594,7 +1593,41 @@ def _last_max_tokens(
     if system_message:
         result = [system_message, *result]
 
-    return result
+    return _remove_orphaned_tool_messages(result)
+
+
+def _remove_orphaned_tool_messages(
+    messages: Sequence[BaseMessage],
+) -> list[BaseMessage]:
+    """Drop tool messages whose corresponding tool calls are absent."""
+    if not messages:
+        return []
+
+    valid_tool_call_ids: set[str] = set()
+    for message in messages:
+        if isinstance(message, AIMessage):
+            if message.tool_calls:
+                for tool_call in message.tool_calls:
+                    tool_call_id = tool_call.get("id")
+                    if tool_call_id:
+                        valid_tool_call_ids.add(tool_call_id)
+            if isinstance(message.content, list):
+                for block in message.content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "tool_use"
+                        and block.get("id")
+                    ):
+                        valid_tool_call_ids.add(block["id"])
+
+    cleaned_messages: list[BaseMessage] = []
+    for message in messages:
+        if isinstance(message, ToolMessage) and (
+            not valid_tool_call_ids or message.tool_call_id not in valid_tool_call_ids
+        ):
+            continue
+        cleaned_messages.append(message)
+    return cleaned_messages
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
