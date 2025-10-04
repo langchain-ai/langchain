@@ -23,7 +23,6 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
             "deployment_name": os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
-            "stream_usage": True,
         }
 
     @property
@@ -83,7 +82,6 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "deployment_name": os.environ["AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME"],
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
-            "stream_usage": True,
         }
 
     @property
