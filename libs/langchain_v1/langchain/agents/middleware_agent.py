@@ -120,8 +120,15 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     return []
 
 
-def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
-    """Check if a model supports native structured output."""
+def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
+    """Check if a model supports provider-specific structured output.
+
+    Args:
+        model: Model name string or BaseChatModel instance.
+
+    Returns:
+        ``True`` if the model supports provider-specific structured output, ``False`` otherwise.
+    """
     model_name: str | None = None
     if isinstance(model, str):
         model_name = model
@@ -186,28 +193,25 @@ def create_agent(  # noqa: PLR0915
     if tools is None:
         tools = []
 
-    # Setup structured output
+    # Convert response format and setup structured output tools
+    # Raw schemas are converted to ToolStrategy upfront to calculate tools during agent creation.
+    # If auto-detection is needed, the strategy may be replaced with ProviderStrategy later.
+    initial_response_format: ToolStrategy | ProviderStrategy | None
+    is_auto_detect: bool
+    if response_format is None:
+        initial_response_format, is_auto_detect = None, False
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
+        # Preserve explicitly requested strategies
+        initial_response_format, is_auto_detect = response_format, False
+    else:
+        # Raw schema - convert to ToolStrategy for now (may be replaced with ProviderStrategy)
+        initial_response_format, is_auto_detect = ToolStrategy(schema=response_format), True
+
     structured_output_tools: dict[str, OutputToolBinding] = {}
-    native_output_binding: ProviderStrategyBinding | None = None
-
-    if response_format is not None:
-        if not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-            # Auto-detect strategy based on model capabilities
-            if _supports_native_structured_output(model):
-                response_format = ProviderStrategy(schema=response_format)
-            else:
-                response_format = ToolStrategy(schema=response_format)
-
-        if isinstance(response_format, ToolStrategy):
-            # Setup tools strategy for structured output
-            for response_schema in response_format.schema_specs:
-                structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
-                structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
-        elif isinstance(response_format, ProviderStrategy):
-            # Setup native strategy
-            native_output_binding = ProviderStrategyBinding.from_schema_spec(
-                response_format.schema_spec
-            )
+    if isinstance(initial_response_format, ToolStrategy):
+        for response_schema in initial_response_format.schema_specs:
+            structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
+            structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
     # Setup tools
@@ -280,18 +284,29 @@ def create_agent(  # noqa: PLR0915
         context_schema=context_schema,
     )
 
-    def _handle_model_output(output: AIMessage) -> dict[str, Any]:
-        """Handle model output including structured responses."""
-        # Handle structured output with native strategy
-        if isinstance(response_format, ProviderStrategy):
-            if not output.tool_calls and native_output_binding:
-                structured_response = native_output_binding.parse(output)
+    def _handle_model_output(
+        output: AIMessage, effective_response_format: ResponseFormat | None
+    ) -> dict[str, Any]:
+        """Handle model output including structured responses.
+
+        Args:
+            output: The AI message output from the model.
+            effective_response_format: The actual strategy used
+                (may differ from initial if auto-detected).
+        """
+        # Handle structured output with provider strategy
+        if isinstance(effective_response_format, ProviderStrategy):
+            if not output.tool_calls:
+                provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
+                    effective_response_format.schema_spec
+                )
+                structured_response = provider_strategy_binding.parse(output)
                 return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
 
-        # Handle structured output with tools strategy
+        # Handle structured output with tool strategy
         if (
-            isinstance(response_format, ToolStrategy)
+            isinstance(effective_response_format, ToolStrategy)
             and isinstance(output, AIMessage)
             and output.tool_calls
         ):
@@ -306,7 +321,7 @@ def create_agent(  # noqa: PLR0915
                     tool_names = [tc["name"] for tc in structured_tool_calls]
                     exception = MultipleStructuredOutputsError(tool_names)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, response_format
+                        exception, effective_response_format
                     )
                     if not should_retry:
                         raise exception
@@ -329,8 +344,8 @@ def create_agent(  # noqa: PLR0915
                     structured_response = structured_tool_binding.parse(tool_call["args"])
 
                     tool_message_content = (
-                        response_format.tool_message_content
-                        if response_format.tool_message_content
+                        effective_response_format.tool_message_content
+                        if effective_response_format.tool_message_content
                         else f"Returning structured response: {structured_response}"
                     )
 
@@ -348,7 +363,7 @@ def create_agent(  # noqa: PLR0915
                 except Exception as exc:  # noqa: BLE001
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, response_format
+                        exception, effective_response_format
                     )
                     if not should_retry:
                         raise exception
@@ -366,11 +381,20 @@ def create_agent(  # noqa: PLR0915
 
         return {"messages": [output]}
 
-    def _get_bound_model(request: ModelRequest) -> Runnable:
-        """Get the model with appropriate tool bindings."""
-        # Get actual tool objects from tool names
-        tools_by_name = {t.name: t for t in default_tools}
+    def _get_bound_model(request: ModelRequest) -> tuple[Runnable, ResponseFormat | None]:
+        """Get the model with appropriate tool bindings.
 
+        Performs auto-detection of strategy if needed based on model capabilities.
+
+        Args:
+            request: The model request containing model, tools, and response format.
+
+        Returns:
+            Tuple of (bound_model, effective_response_format) where ``effective_response_format``
+            is the actual strategy used (may differ from initial if auto-detected).
+        """
+        # Validate requested tools are available
+        tools_by_name = {t.name: t for t in default_tools}
         unknown_tools = [name for name in request.tools if name not in tools_by_name]
         if unknown_tools:
             available_tools = sorted(tools_by_name.keys())
@@ -389,23 +413,49 @@ def create_agent(  # noqa: PLR0915
 
         requested_tools = [tools_by_name[name] for name in request.tools]
 
-        if isinstance(response_format, ProviderStrategy):
-            # Use native structured output
-            kwargs = response_format.to_model_kwargs()
-            return request.model.bind_tools(
-                requested_tools, strict=True, **kwargs, **request.model_settings
+        # Determine effective response format (auto-detect if needed)
+        effective_response_format: ResponseFormat | None = request.response_format
+        if (
+            # User provided raw schema - auto-detect best strategy based on model
+            is_auto_detect
+            and isinstance(request.response_format, ToolStrategy)
+            and
+            # Model supports provider strategy - use it instead
+            _supports_provider_strategy(request.model)
+        ):
+            effective_response_format = ProviderStrategy(schema=response_format)  # type: ignore[arg-type]
+            # else: keep ToolStrategy from initial conversion
+
+        # Bind model based on effective response format
+        if isinstance(effective_response_format, ProviderStrategy):
+            # Use provider-specific structured output
+            kwargs = effective_response_format.to_model_kwargs()
+            return (
+                request.model.bind_tools(
+                    requested_tools, strict=True, **kwargs, **request.model_settings
+                ),
+                effective_response_format,
             )
-        if isinstance(response_format, ToolStrategy):
+
+        if isinstance(effective_response_format, ToolStrategy):
+            # Force tool use if we have structured output tools
             tool_choice = "any" if structured_output_tools else request.tool_choice
-            return request.model.bind_tools(
-                requested_tools, tool_choice=tool_choice, **request.model_settings
+            return (
+                request.model.bind_tools(
+                    requested_tools, tool_choice=tool_choice, **request.model_settings
+                ),
+                effective_response_format,
             )
-        # Standard model binding
+
+        # No structured output - standard model binding
         if requested_tools:
-            return request.model.bind_tools(
-                requested_tools, tool_choice=request.tool_choice, **request.model_settings
+            return (
+                request.model.bind_tools(
+                    requested_tools, tool_choice=request.tool_choice, **request.model_settings
+                ),
+                None,
             )
-        return request.model.bind(**request.model_settings)
+        return request.model.bind(**request.model_settings), None
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
@@ -413,7 +463,7 @@ def create_agent(  # noqa: PLR0915
             model=model,
             tools=[t.name for t in default_tools],
             system_prompt=system_prompt,
-            response_format=response_format,
+            response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
         )
@@ -431,8 +481,8 @@ def create_agent(  # noqa: PLR0915
                 )
                 raise TypeError(msg)
 
-        # Get the final model and messages
-        model_ = _get_bound_model(request)
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
             messages = [SystemMessage(request.system_prompt), *messages]
@@ -441,7 +491,7 @@ def create_agent(  # noqa: PLR0915
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output),
+            **_handle_model_output(output, effective_response_format),
         }
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -450,7 +500,7 @@ def create_agent(  # noqa: PLR0915
             model=model,
             tools=[t.name for t in default_tools],
             system_prompt=system_prompt,
-            response_format=response_format,
+            response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
         )
@@ -459,8 +509,8 @@ def create_agent(  # noqa: PLR0915
         for m in middleware_w_modify_model_request:
             await m.amodify_model_request(request, state, runtime)
 
-        # Get the final model and messages
-        model_ = _get_bound_model(request)
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
             messages = [SystemMessage(request.system_prompt), *messages]
@@ -469,7 +519,7 @@ def create_agent(  # noqa: PLR0915
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output),
+            **_handle_model_output(output, effective_response_format),
         }
 
     # Use sync or async based on model capabilities
