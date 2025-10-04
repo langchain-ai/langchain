@@ -162,7 +162,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         remainder of the conversation.
         """
         buffer = self.chat_memory.messages
-        while len(buffer) > 0:
+        while buffer:
             self._pop_and_store_interaction(buffer)
 
     def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:

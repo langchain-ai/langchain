@@ -61,7 +61,7 @@ def compare_versions(
     """
     if operation not in STR_OPERATION_TO_FUNC:
         msg = (
-            f"`operation` must be one of {list(STR_OPERATION_TO_FUNC.keys())}"
+            f"`operation` must be one of {list(STR_OPERATION_TO_FUNC)}"
             f", received {operation}"
         )
         raise ValueError(msg)

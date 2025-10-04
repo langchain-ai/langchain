@@ -392,7 +392,7 @@ class BasePromptTemplate(
 def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> dict:
     base_info = {"page_content": doc.page_content, **doc.metadata}
     missing_metadata = set(prompt.input_variables).difference(base_info)
-    if len(missing_metadata) > 0:
+    if missing_metadata:
         required_metadata = [
             iv for iv in prompt.input_variables if iv != "page_content"
         ]

@@ -510,4 +510,4 @@ def ensure_id(id_val: Optional[str]) -> str:
     Returns:
         A string ID, either the validated provided value or a newly generated UUID4.
     """
-    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")
+    return id_val or f"{LC_AUTO_PREFIX}{uuid4()}"

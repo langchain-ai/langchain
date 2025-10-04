@@ -43,7 +43,7 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
     buffer = ""
     for dialogue_turn in chat_history:
         if isinstance(dialogue_turn, BaseMessage):
-            if len(dialogue_turn.content) > 0:
+            if dialogue_turn.content:
                 role_prefix = _ROLE_MAP.get(
                     dialogue_turn.type,
                     f"{dialogue_turn.type}: ",

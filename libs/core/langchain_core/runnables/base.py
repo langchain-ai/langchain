@@ -1792,17 +1792,17 @@ class Runnable(ABC, Generic[Input, Output]):
             def format_t(timestamp: float) -> str:
                 return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
 
-            async def test_runnable(time_to_sleep : int):
+            async def test_runnable(time_to_sleep: int):
                 print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
                 await asyncio.sleep(time_to_sleep)
                 print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
 
-            async def fn_start(run_obj : Runnable):
+            async def fn_start(run_obj: Runnable):
                 print(f"on start callback starts at {format_t(time.time())}")
                 await asyncio.sleep(3)
                 print(f"on start callback ends at {format_t(time.time())}")
 
-            async def fn_end(run_obj : Runnable):
+            async def fn_end(run_obj: Runnable):
                 print(f"on end callback starts at {format_t(time.time())}")
                 await asyncio.sleep(2)
                 print(f"on end callback ends at {format_t(time.time())}")

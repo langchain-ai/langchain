@@ -6,7 +6,7 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 
 !!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
+    This module is for internal use only. Do not use it in your own code.
     We may change the API at any time with no warning.
 """
 
@@ -540,7 +540,7 @@ def rename_parameter(
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Decorator indicating that parameter *old* of *func* is renamed to *new*.
 
-    The actual implementation of *func* should use *new*, not *old*.  If *old*
+    The actual implementation of *func* should use *new*, not *old*. If *old*
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
 

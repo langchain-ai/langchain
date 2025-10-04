@@ -1567,7 +1567,7 @@ def _last_max_tokens(
 
     # Handle system message preservation
     system_message = None
-    if include_system and len(messages) > 0 and isinstance(messages[0], SystemMessage):
+    if include_system and messages and isinstance(messages[0], SystemMessage):
         system_message = messages[0]
         messages = messages[1:]
 

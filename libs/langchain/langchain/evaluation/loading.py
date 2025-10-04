@@ -131,7 +131,7 @@ def load_evaluator(
     if evaluator not in _EVALUATOR_MAP:
         msg = (
             f"Unknown evaluator type: {evaluator}"
-            f"\nValid types are: {list(_EVALUATOR_MAP.keys())}"
+            f"\nValid types are: {list(_EVALUATOR_MAP)}"
         )
         raise ValueError(msg)
     evaluator_cls = _EVALUATOR_MAP[evaluator]

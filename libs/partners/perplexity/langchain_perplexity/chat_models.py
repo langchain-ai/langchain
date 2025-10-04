@@ -316,7 +316,7 @@ class ChatPerplexity(BaseChatModel):
                 prev_total_usage = lc_total_usage
             else:
                 usage_metadata = None
-            if len(chunk["choices"]) == 0:
+            if not chunk["choices"]:
                 continue
             choice = chunk["choices"][0]
 

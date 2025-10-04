@@ -1440,7 +1440,7 @@ class AgentExecutor(Chain):
             observation = InvalidTool().run(
                 {
                     "requested_tool_name": agent_action.tool,
-                    "available_tool_names": list(name_to_tool_map.keys()),
+                    "available_tool_names": list(name_to_tool_map),
                 },
                 verbose=self.verbose,
                 color=None,
@@ -1591,7 +1591,7 @@ class AgentExecutor(Chain):
             observation = await InvalidTool().arun(
                 {
                     "requested_tool_name": agent_action.tool,
-                    "available_tool_names": list(name_to_tool_map.keys()),
+                    "available_tool_names": list(name_to_tool_map),
                 },
                 verbose=self.verbose,
                 color=None,
@@ -1735,7 +1735,7 @@ class AgentExecutor(Chain):
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         return_value_key = "output"
-        if len(self._action_agent.return_values) > 0:
+        if self._action_agent.return_values:
             return_value_key = self._action_agent.return_values[0]
         # Invalid tools won't be in the map, so we return False.
         if (
