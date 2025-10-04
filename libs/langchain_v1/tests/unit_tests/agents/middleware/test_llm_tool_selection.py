@@ -206,3 +206,393 @@ class TestLLMToolSelectorBasic:
         response = await agent.ainvoke({"messages": [HumanMessage("Search for Python tutorials")]})
 
         assert isinstance(response["messages"][-1], AIMessage)
+
+
+class TestMaxToolsLimiting:
+    """Test max_tools limiting behavior."""
+
+    def test_max_tools_limits_selection(self) -> None:
+        """Test that max_tools limits selection when model selects too many tools."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector model tries to select 4 tools
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {
+                                    "tools": [
+                                        "get_weather",
+                                        "search_web",
+                                        "calculate",
+                                        "send_email",
+                                    ]
+                                },
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        # But max_tools=2, so only first 2 should be used
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate, send_email],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Verify only 2 tools were passed to the main model
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert len(request.tools) == 2
+            tool_names = [tool.name for tool in request.tools]
+            # Should be first 2 from the selection
+            assert tool_names == ["get_weather", "search_web"]
+
+    def test_no_max_tools_uses_all_selected(self) -> None:
+        """Test that when max_tools is None, all selected tools are used."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {
+                                    "tools": [
+                                        "get_weather",
+                                        "search_web",
+                                        "calculate",
+                                        "get_stock_price",
+                                    ]
+                                },
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        # No max_tools specified
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate, send_email, get_stock_price],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # All 4 selected tools should be present
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert len(request.tools) == 4
+            tool_names = [tool.name for tool in request.tools]
+            assert set(tool_names) == {
+                "get_weather",
+                "search_web",
+                "calculate",
+                "get_stock_price",
+            }
+
+
+class TestAlwaysInclude:
+    """Test always_include functionality."""
+
+    def test_always_include_tools_present(self) -> None:
+        """Test that always_include tools are always present in the request."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector picks only search_web
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["search_web"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        # But send_email is always included
+        tool_selector = LLMToolSelectorMiddleware(
+            max_tools=1, always_include=["send_email"], model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, send_email],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Both selected and always_include tools should be present
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [tool.name for tool in request.tools]
+            assert "search_web" in tool_names
+            assert "send_email" in tool_names
+            assert len(tool_names) == 2
+
+    def test_always_include_not_counted_against_max(self) -> None:
+        """Test that always_include tools don't count against max_tools limit."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector picks 2 tools
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather", "search_web"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        # max_tools=2, but we also have 2 always_include tools
+        tool_selector = LLMToolSelectorMiddleware(
+            max_tools=2,
+            always_include=["send_email", "calculate"],
+            model=tool_selection_model,
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate, send_email],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Should have 2 selected + 2 always_include = 4 total
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert len(request.tools) == 4
+            tool_names = [tool.name for tool in request.tools]
+            assert "get_weather" in tool_names
+            assert "search_web" in tool_names
+            assert "send_email" in tool_names
+            assert "calculate" in tool_names
+
+    def test_multiple_always_include_tools(self) -> None:
+        """Test that multiple always_include tools are all present."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector picks 1 tool
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(
+            max_tools=1,
+            always_include=["send_email", "calculate", "get_stock_price"],
+            model=tool_selection_model,
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, send_email, calculate, get_stock_price],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Should have 1 selected + 3 always_include = 4 total
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert len(request.tools) == 4
+            tool_names = [tool.name for tool in request.tools]
+            assert "get_weather" in tool_names
+            assert "send_email" in tool_names
+            assert "calculate" in tool_names
+            assert "get_stock_price" in tool_names
+
+
+class TestDuplicateAndInvalidTools:
+    """Test handling of duplicate and invalid tool selections."""
+
+    def test_duplicate_tool_selection_deduplicated(self) -> None:
+        """Test that duplicate tool selections are deduplicated."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector returns duplicates
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {
+                                    "tools": [
+                                        "get_weather",
+                                        "get_weather",
+                                        "search_web",
+                                        "search_web",
+                                    ]
+                                },
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=5, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Duplicates should be removed
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [tool.name for tool in request.tools]
+            assert tool_names == ["get_weather", "search_web"]
+            assert len(tool_names) == 2
+
+    def test_max_tools_with_duplicates(self) -> None:
+        """Test that max_tools works correctly with duplicate selections."""
+        model_requests = []
+
+        @modify_model_request
+        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+            model_requests.append(request)
+            return request
+
+        # Selector returns duplicates but max_tools=2
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {
+                                    "tools": [
+                                        "get_weather",
+                                        "get_weather",
+                                        "search_web",
+                                        "search_web",
+                                        "calculate",
+                                    ]
+                                },
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+
+        tool_selector = LLMToolSelectorMiddleware(max_tools=2, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        # Should deduplicate and respect max_tools
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = [tool.name for tool in request.tools]
+            assert len(tool_names) == 2
+            assert "get_weather" in tool_names
+            assert "search_web" in tool_names
