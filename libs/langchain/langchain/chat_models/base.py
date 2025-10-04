@@ -411,10 +411,32 @@ def _init_chat_model_helper(
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
     if model_provider == "huggingface":
-        _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
+        try:
+            from langchain_huggingface.chat_models import ChatHuggingFace
+            from langchain_huggingface.llms import HuggingFacePipeline
+        except ImportError as e:
+            raise ImportError(
+                "Please install langchain-huggingface to use HuggingFace models."
+            ) from e
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        # The 'task' kwarg is required by from_model_id but not the base constructor.
+        # We pop it from kwargs to avoid the Pydantic 'extra_forbidden' error.
+        task = kwargs.pop("task", None)
+        if not task:
+            raise ValueError(
+                "The 'task' keyword argument is required for HuggingFace models. "
+                "For example: task='text-generation'."
+            )
+
+        # Initialize the base LLM pipeline with the model and arguments
+        llm = HuggingFacePipeline.from_model_id(
+            model_id=model,
+            task=task,
+            **kwargs,  # Pass remaining kwargs like `device`
+        )
+
+        # Pass the initialized LLM to the chat wrapper
+        return ChatHuggingFace(llm=llm)
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
