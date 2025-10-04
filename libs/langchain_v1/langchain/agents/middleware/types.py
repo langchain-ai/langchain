@@ -126,6 +126,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
+    @property
+    def name(self) -> str:
+        """The name of the middleware instance.
+
+        Defaults to the class name, but can be overridden for custom naming.
+        """
+        return self.__class__.__name__
+
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 

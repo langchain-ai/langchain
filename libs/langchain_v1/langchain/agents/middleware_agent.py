@@ -241,7 +241,7 @@ def create_agent(  # noqa: PLR0915
         ) + middleware_tools
 
     # validate middleware
-    assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (  # noqa: S101
+    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
         "Please remove duplicate middleware instances."
     )
     middleware_w_before = [
@@ -500,9 +500,7 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             before_node = RunnableCallable(sync_before, async_before)
-            graph.add_node(
-                f"{m.__class__.__name__}.before_model", before_node, input_schema=state_schema
-            )
+            graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
 
         if (
             m.__class__.after_model is not AgentMiddleware.after_model
@@ -521,20 +519,14 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after)
-            graph.add_node(
-                f"{m.__class__.__name__}.after_model", after_node, input_schema=state_schema
-            )
+            graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
 
     # add start edge
     first_node = (
-        f"{middleware_w_before[0].__class__.__name__}.before_model"
-        if middleware_w_before
-        else "model_request"
+        f"{middleware_w_before[0].name}.before_model" if middleware_w_before else "model_request"
     )
     last_node = (
-        f"{middleware_w_after[0].__class__.__name__}.after_model"
-        if middleware_w_after
-        else "model_request"
+        f"{middleware_w_after[0].name}.after_model" if middleware_w_after else "model_request"
     )
     graph.add_edge(START, first_node)
 
@@ -557,7 +549,7 @@ def create_agent(  # noqa: PLR0915
         # If after_model, then need to check for can_jump_to
         _add_middleware_edge(
             graph,
-            f"{middleware_w_after[0].__class__.__name__}.after_model",
+            f"{middleware_w_after[0].name}.after_model",
             END,
             first_node,
             can_jump_to=_get_can_jump_to(middleware_w_after[0], "after_model"),
@@ -568,29 +560,29 @@ def create_agent(  # noqa: PLR0915
         for m1, m2 in itertools.pairwise(middleware_w_before):
             _add_middleware_edge(
                 graph,
-                f"{m1.__class__.__name__}.before_model",
-                f"{m2.__class__.__name__}.before_model",
+                f"{m1.name}.before_model",
+                f"{m2.name}.before_model",
                 first_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
             graph,
-            f"{middleware_w_before[-1].__class__.__name__}.before_model",
+            f"{middleware_w_before[-1].name}.before_model",
             "model_request",
             first_node,
             can_jump_to=_get_can_jump_to(middleware_w_before[-1], "before_model"),
         )
 
     if middleware_w_after:
-        graph.add_edge("model_request", f"{middleware_w_after[-1].__class__.__name__}.after_model")
+        graph.add_edge("model_request", f"{middleware_w_after[-1].name}.after_model")
         for idx in range(len(middleware_w_after) - 1, 0, -1):
             m1 = middleware_w_after[idx]
             m2 = middleware_w_after[idx - 1]
             _add_middleware_edge(
                 graph,
-                f"{m1.__class__.__name__}.after_model",
-                f"{m2.__class__.__name__}.after_model",
+                f"{m1.name}.after_model",
+                f"{m2.name}.after_model",
                 first_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
