@@ -24,6 +24,7 @@ from langchain.agents.middleware.types import (
     PublicAgentState,
 )
 from langchain.agents.structured_output import (
+    AutoStrategy,
     MultipleStructuredOutputsError,
     OutputToolBinding,
     ProviderStrategy,
@@ -194,22 +195,33 @@ def create_agent(  # noqa: PLR0915
         tools = []
 
     # Convert response format and setup structured output tools
-    # Raw schemas are converted to ToolStrategy upfront to calculate tools during agent creation.
-    # If auto-detection is needed, the strategy may be replaced with ProviderStrategy later.
-    initial_response_format: ToolStrategy | ProviderStrategy | None
-    is_auto_detect: bool
+    # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
+    # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
+    # but may be replaced with ProviderStrategy later based on model capabilities.
+    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
     if response_format is None:
-        initial_response_format, is_auto_detect = None, False
+        initial_response_format = None
     elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
         # Preserve explicitly requested strategies
-        initial_response_format, is_auto_detect = response_format, False
+        initial_response_format = response_format
+    elif isinstance(response_format, AutoStrategy):
+        # AutoStrategy provided - preserve it for later auto-detection
+        initial_response_format = response_format
     else:
-        # Raw schema - convert to ToolStrategy for now (may be replaced with ProviderStrategy)
-        initial_response_format, is_auto_detect = ToolStrategy(schema=response_format), True
+        # Raw schema - wrap in AutoStrategy to enable auto-detection
+        initial_response_format = AutoStrategy(schema=response_format)
+
+    # For AutoStrategy, convert to ToolStrategy to setup tools upfront
+    # (may be replaced with ProviderStrategy later based on model)
+    tool_strategy_for_setup: ToolStrategy | None = None
+    if isinstance(initial_response_format, AutoStrategy):
+        tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
+    elif isinstance(initial_response_format, ToolStrategy):
+        tool_strategy_for_setup = initial_response_format
 
     structured_output_tools: dict[str, OutputToolBinding] = {}
-    if isinstance(initial_response_format, ToolStrategy):
-        for response_schema in initial_response_format.schema_specs:
+    if tool_strategy_for_setup:
+        for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
@@ -412,17 +424,18 @@ def create_agent(  # noqa: PLR0915
             raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
-        effective_response_format: ResponseFormat | None = request.response_format
-        if (
-            # User provided raw schema - auto-detect best strategy based on model
-            is_auto_detect
-            and isinstance(request.response_format, ToolStrategy)
-            and
-            # Model supports provider strategy - use it instead
-            _supports_provider_strategy(request.model)
-        ):
-            effective_response_format = ProviderStrategy(schema=response_format)  # type: ignore[arg-type]
-            # else: keep ToolStrategy from initial conversion
+        effective_response_format: ResponseFormat | None
+        if isinstance(request.response_format, AutoStrategy):
+            # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
+            if _supports_provider_strategy(request.model):
+                # Model supports provider strategy - use it
+                effective_response_format = ProviderStrategy(schema=request.response_format.schema)
+            else:
+                # Model doesn't support provider strategy - use ToolStrategy
+                effective_response_format = ToolStrategy(schema=request.response_format.schema)
+        else:
+            # User explicitly specified a strategy - preserve it
+            effective_response_format = request.response_format
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
