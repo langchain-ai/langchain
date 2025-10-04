@@ -143,29 +143,6 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     )
 
 
-def _convert_to_tool_strategy(
-    response_format: ResponseFormat | type | None,
-) -> tuple[ToolStrategy | ProviderStrategy | None, bool]:
-    """Convert raw schema to ToolStrategy, preserving explicit strategies.
-
-    Args:
-        response_format: Raw schema type or concrete strategy (ToolStrategy/ProviderStrategy).
-
-    Returns:
-        Tuple of (strategy, is_auto_detected) where ``is_auto_detected`` is ``True``
-        if the format was a raw schema that needs model-based strategy selection.
-    """
-    if response_format is None:
-        return None, False
-
-    # Preserve explicitly requested strategies
-    if isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        return response_format, False
-
-    # Raw schema - convert to ToolStrategy for now (may be replaced with ProviderStrategy)
-    return ToolStrategy(schema=response_format), True
-
-
 def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat,
@@ -219,7 +196,17 @@ def create_agent(  # noqa: PLR0915
     # Convert response format and setup structured output tools
     # Raw schemas are converted to ToolStrategy upfront to calculate tools during agent creation.
     # If auto-detection is needed, the strategy may be replaced with ProviderStrategy later.
-    initial_response_format, is_auto_detect = _convert_to_tool_strategy(response_format)
+    initial_response_format: ToolStrategy | ProviderStrategy | None
+    is_auto_detect: bool
+    if response_format is None:
+        initial_response_format, is_auto_detect = None, False
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
+        # Preserve explicitly requested strategies
+        initial_response_format, is_auto_detect = response_format, False
+    else:
+        # Raw schema - convert to ToolStrategy for now (may be replaced with ProviderStrategy)
+        initial_response_format, is_auto_detect = ToolStrategy(schema=response_format), True
+
     structured_output_tools: dict[str, OutputToolBinding] = {}
     if isinstance(initial_response_format, ToolStrategy):
         for response_schema in initial_response_format.schema_specs:
