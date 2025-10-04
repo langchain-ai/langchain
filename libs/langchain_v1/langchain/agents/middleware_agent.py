@@ -456,7 +456,7 @@ def create_agent(  # noqa: PLR0915
         # Build final tools list including built-in tools and structured output tools
         final_tools = list(request.tools) + list(request.built_in_tools)
         if isinstance(effective_response_format, ToolStrategy):
-            # Dynamically add structured output tools
+            # Add structured output tools to final tools list
             structured_tools = [info.tool for info in structured_output_tools.values()]
             final_tools.extend(structured_tools)
 
