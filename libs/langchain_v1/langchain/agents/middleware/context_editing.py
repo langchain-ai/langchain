@@ -41,12 +41,11 @@ class ContextEdit(Protocol):
 
     def apply(
         self,
-        *,
-        tokens: int,
         messages: list[AnyMessage],
+        *,
         count_tokens: TokenCounter,
-    ) -> int:
-        """Apply an edit to the message list, returning the new token count."""
+    ) -> None:
+        """Apply an edit to the message list in place."""
         ...
 
 
@@ -54,7 +53,7 @@ class ContextEdit(Protocol):
 class ClearToolUsesEdit(ContextEdit):
     """Configuration for clearing tool outputs when token limits are exceeded."""
 
-    trigger_tokens: int = 100000
+    trigger: int = 100_000
     """Token count that triggers the edit."""
 
     clear_at_least: int = 0
@@ -74,14 +73,15 @@ class ClearToolUsesEdit(ContextEdit):
 
     def apply(
         self,
-        *,
-        tokens: int,
         messages: list[AnyMessage],
+        *,
         count_tokens: TokenCounter,
-    ) -> int:
+    ) -> None:
         """Apply the clear-tool-uses strategy."""
-        if tokens <= self.trigger_tokens:
-            return tokens
+        tokens = count_tokens(messages)
+
+        if tokens <= self.trigger:
+            return
 
         candidates = [
             (idx, msg) for idx, msg in enumerate(messages) if isinstance(msg, ToolMessage)
@@ -96,9 +96,6 @@ class ClearToolUsesEdit(ContextEdit):
         excluded_tools = set(self.exclude_tools)
 
         for idx, tool_message in candidates:
-            if self.clear_at_least > 0 and cleared_tokens >= self.clear_at_least:
-                break
-
             if tool_message.response_metadata.get("context_editing", {}).get("cleared"):
                 continue
 
@@ -144,10 +141,13 @@ class ClearToolUsesEdit(ContextEdit):
                     tool_message.tool_call_id,
                 )
 
-            new_token_count = count_tokens(messages)
-            cleared_tokens = max(0, tokens - new_token_count)
+            if self.clear_at_least > 0:
+                new_token_count = count_tokens(messages)
+                cleared_tokens = max(0, tokens - new_token_count)
+                if cleared_tokens >= self.clear_at_least:
+                    break
 
-        return tokens - cleared_tokens
+        return
 
     def _build_cleared_tool_input_message(
         self,
@@ -188,13 +188,13 @@ class ContextEditingMiddleware(AgentMiddleware):
     """
 
     edits: list[ContextEdit]
-    token_count_method: Literal["approx", "model"]
+    token_count_method: Literal["approximate", "model"]
 
     def __init__(
         self,
         *,
         edits: Iterable[ContextEdit] | None = None,
-        token_count_method: Literal["approx", "model"] = "approx",  # noqa: S107
+        token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
     ) -> None:
         """Initialise a context editing middleware instance.
 
@@ -219,7 +219,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         if not request.messages:
             return request
 
-        if self.token_count_method == "approx":  # noqa: S105
+        if self.token_count_method == "approximate":  # noqa: S105
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
@@ -231,14 +231,8 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(system_msg + list(messages))
 
-        tokens = count_tokens(request.messages)
-
         for edit in self.edits:
-            tokens = edit.apply(
-                tokens=tokens,
-                messages=request.messages,
-                count_tokens=count_tokens,
-            )
+            edit.apply(request.messages, count_tokens=count_tokens)
 
         return request
 

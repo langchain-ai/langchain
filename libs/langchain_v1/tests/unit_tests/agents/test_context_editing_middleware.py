@@ -77,7 +77,7 @@ def test_no_edit_when_below_trigger() -> None:
 
     state, request = _make_state_and_request([ai_message, tool_message])
     middleware = ContextEditingMiddleware(
-        edits=[ClearToolUsesEdit(trigger_tokens=50)],
+        edits=[ClearToolUsesEdit(trigger=50)],
     )
 
     result = middleware.modify_model_request(request, state, _fake_runtime())
@@ -100,7 +100,7 @@ def test_clear_tool_outputs_and_inputs() -> None:
     state, request = _make_state_and_request([ai_message, tool_message])
 
     edit = ClearToolUsesEdit(
-        trigger_tokens=50,
+        trigger=50,
         clear_at_least=10,
         clear_tool_inputs=True,
         keep=0,
@@ -148,7 +148,7 @@ def test_respects_keep_last_tool_results() -> None:
     middleware = ContextEditingMiddleware(
         edits=[
             ClearToolUsesEdit(
-                trigger_tokens=50,
+                trigger=50,
                 keep=1,
                 placeholder="[cleared]",
             )
@@ -191,7 +191,7 @@ def test_exclude_tools_prevents_clearing() -> None:
     middleware = ContextEditingMiddleware(
         edits=[
             ClearToolUsesEdit(
-                trigger_tokens=50,
+                trigger=50,
                 clear_at_least=10,
                 keep=0,
                 exclude_tools=("search",),
