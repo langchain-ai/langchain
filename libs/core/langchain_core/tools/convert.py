@@ -1,7 +1,16 @@
 """Convert functions and runnables to tools."""
 
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_type_hints,
+    overload,
+)
 
 from pydantic import BaseModel, Field, create_model
 
@@ -10,6 +19,10 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools.base import ArgsSchema, BaseTool
 from langchain_core.tools.simple import Tool
 from langchain_core.tools.structured import StructuredTool
+
+# Type variables for better type inference
+CallableT = TypeVar("CallableT", bound=Callable[..., Any])
+RunnableT = TypeVar("RunnableT", bound=Runnable)
 
 
 @overload
@@ -22,7 +35,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]: ...
 
 
 @overload
@@ -42,7 +55,7 @@ def tool(
 
 @overload
 def tool(
-    name_or_callable: Callable,
+    name_or_callable: CallableT,
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
@@ -65,7 +78,7 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Union[Callable[..., Any], Runnable]], BaseTool]: ...
 
 
 def tool(
