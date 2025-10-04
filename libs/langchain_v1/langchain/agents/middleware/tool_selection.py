@@ -53,10 +53,9 @@ def _create_tool_selection_response(tools: list[BaseTool]) -> TypeAdapter:
     # Create a Union of Annotated Literal types for each tool name with description
     # Example: Union[Annotated[Literal["tool1"], Field(description="...")], ...] noqa: ERA001
     literals = [
-        Annotated[Literal[tool.name], Field(description=tool.description)]  # type: ignore[misc]
-        for tool in tools
+        Annotated[Literal[tool.name], Field(description=tool.description)] for tool in tools
     ]
-    selected_tool_type = Union[tuple(literals)]  # type: ignore[arg-type]  # noqa: UP007
+    selected_tool_type = Union[tuple(literals)]  # type: ignore[valid-type]  # noqa: UP007
 
     description = "Tools to use. Place the most relevant tools first."
 
@@ -205,7 +204,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request: ModelRequest,
     ) -> ModelRequest:
         """Process the selection response and return filtered ModelRequest."""
-        selected_tool_names = []
+        selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
         for tool_name in response["tools"]:
@@ -253,6 +252,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             ]
         )
 
+        # Response should be a dict since we're passing a schema (not a Pydantic model class)
+        if not isinstance(response, dict):
+            msg = f"Expected dict response, got {type(response)}"
+            raise AssertionError(msg)
         return self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
@@ -280,6 +283,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             ]
         )
 
+        # Response should be a dict since we're passing a schema (not a Pydantic model class)
+        if not isinstance(response, dict):
+            msg = f"Expected dict response, got {type(response)}"
+            raise AssertionError(msg)
         return self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
