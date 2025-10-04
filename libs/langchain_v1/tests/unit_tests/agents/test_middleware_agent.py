@@ -892,6 +892,51 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
             middleware.after_model(state, None)
 
 
+def test_human_in_the_loop_middleware_description_as_callable() -> None:
+    """Test that description field accepts both string and callable."""
+
+    def custom_description(tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
+        """Generate a custom description."""
+        return f"Custom: {tool_call['name']} with args {tool_call['args']}"
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_with_callable": {"allow_accept": True, "description": custom_description},
+            "tool_with_string": {"allow_accept": True, "description": "Static description"},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[
+            {"name": "tool_with_callable", "args": {"x": 1}, "id": "1"},
+            {"name": "tool_with_string", "args": {"y": 2}, "id": "2"},
+        ],
+    )
+    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    captured_requests = []
+
+    def mock_capture_requests(requests):
+        captured_requests.extend(requests)
+        return [{"type": "accept"}, {"type": "accept"}]
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
+    ):
+        middleware.after_model(state, None)
+
+        assert len(captured_requests) == 2
+
+        # Check callable description
+        assert (
+            captured_requests[0]["description"] == "Custom: tool_with_callable with args {'x': 1}"
+        )
+
+        # Check string description
+        assert captured_requests[1]["description"] == "Static description"
+
+
 # Tests for AnthropicPromptCachingMiddleware
 def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
