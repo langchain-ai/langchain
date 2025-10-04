@@ -427,7 +427,7 @@ def create_agent(  # noqa: PLR0915
         requested_tools = [tools_by_name[name] for name in request.tools]
 
         # Determine effective response format (auto-detect if needed)
-        effective_response_format = request.response_format
+        effective_response_format: ResponseFormat | None = request.response_format
         if (
             # User provided raw schema - auto-detect best strategy based on model
             is_auto_detect
@@ -436,7 +436,7 @@ def create_agent(  # noqa: PLR0915
             # Model supports provider strategy - use it instead
             _supports_provider_strategy(request.model)
         ):
-            effective_response_format = ProviderStrategy(schema=response_format)
+            effective_response_format = ProviderStrategy(schema=response_format)  # type: ignore[arg-type]
             # else: keep ToolStrategy from initial conversion
 
         # Bind model based on effective response format
