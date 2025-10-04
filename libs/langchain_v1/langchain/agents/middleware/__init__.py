@@ -1,5 +1,9 @@
 """Middleware plugins for agents."""
 
+from .context_editing import (
+    ClearToolUsesEdit,
+    ContextEditingMiddleware,
+)
 from .human_in_the_loop import HumanInTheLoopMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
@@ -20,6 +24,8 @@ __all__ = [
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
+    "ClearToolUsesEdit",
+    "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",
     "PlanningMiddleware",
