@@ -229,7 +229,9 @@ class ContextEditingMiddleware(AgentMiddleware):
             )
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(system_msg + list(messages))
+                return request.model.get_num_tokens_from_messages(
+                    system_msg + list(messages), request.tools
+                )
 
         for edit in self.edits:
             edit.apply(request.messages, count_tokens=count_tokens)

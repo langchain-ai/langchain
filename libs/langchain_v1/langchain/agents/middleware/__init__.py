@@ -1,5 +1,6 @@
 """Middleware plugins for agents."""
 
+from .call_tracking import ModelCallLimitMiddleware
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
@@ -27,6 +28,7 @@ __all__ = [
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
+    "ModelCallLimitMiddleware",
     "ModelRequest",
     "PlanningMiddleware",
     "SummarizationMiddleware",
