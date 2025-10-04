@@ -98,7 +98,7 @@ HumanInTheLoopResponse = AcceptPayload | ResponsePayload | EditPayload
 class _DescriptionFactory(Protocol):
     """Callable that generates a description for a tool call."""
 
-    def __call__(self, state: AgentState, runtime: Runtime, tool_call: ToolCall) -> str:
+    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
         """Generate a description for a tool call."""
         ...
 
@@ -131,9 +131,9 @@ class ToolConfig(TypedDict):
 
             # Dynamic callable description
             def format_tool_description(
+                tool_call: ToolCall,
                 state: AgentState,
-                runtime: Runtime,
-                tool_call: ToolCall
+                runtime: Runtime
             ) -> str:
                 import json
                 return (
@@ -226,7 +226,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             # Generate description using the description field (str or callable)
             description_value = config.get("description")
             if callable(description_value):
-                description = description_value(state, runtime, tool_call)
+                description = description_value(tool_call, state, runtime)
             elif description_value is not None:
                 description = description_value
             else:

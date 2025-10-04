@@ -891,7 +891,7 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
 def test_human_in_the_loop_middleware_description_as_callable() -> None:
     """Test that description field accepts both string and callable."""
 
-    def custom_description(state: AgentState, runtime: Runtime, tool_call: ToolCall) -> str:
+    def custom_description(tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
         """Generate a custom description."""
         return f"Custom: {tool_call['name']} with args {tool_call['args']}"
 
