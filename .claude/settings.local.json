@@ -3,6 +3,11 @@
     "allow": [
       "Bash(uv run:*)",
       "Bash(make:*)"
+      "WebSearch",
+      "WebFetch(domain:ai.pydantic.dev)",
+      "WebFetch(domain:openai.github.io)",
+      "Bash(uv run:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
