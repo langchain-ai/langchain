@@ -610,11 +610,6 @@ def test_dynamic_prompt_uses_state() -> None:
         msg_count = len(state["messages"])
         return f"Prompt with {msg_count} messages"
 
-    assert isinstance(custom_prompt, AgentMiddleware)
-    assert custom_prompt.state_schema == AgentState
-    assert custom_prompt.tools == []
-    assert custom_prompt.__class__.__name__ == "custom_prompt"
-
     # Verify it uses state correctly
     original_request = ModelRequest(
         model="test-model",
@@ -633,36 +628,23 @@ def test_dynamic_prompt_uses_state() -> None:
 def test_dynamic_prompt_integration() -> None:
     """Test dynamic_prompt decorator in a full agent."""
 
+    prompt_calls = 0
+
     @dynamic_prompt
     def context_aware_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        msg_count = len(state["messages"])
-        return f"You are a helpful assistant. Message count: {msg_count}"
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"you are a helpful assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
     agent = agent.compile()
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
 
-    # The agent should have executed with the dynamic prompt
-    assert len(result["messages"]) > 1
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "you are a helpful assistant.-Hello"
 
 
-def test_dynamic_prompt_with_runtime_context() -> None:
-    """Test dynamic_prompt decorator using runtime context."""
-
-    @dynamic_prompt
-    def user_context_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        # Note: runtime context would be available if passed through Runtime
-        return "You are a personalized assistant."
-
-    agent = create_agent(model=FakeToolCallingModel(), middleware=[user_context_prompt])
-    agent = agent.compile()
-
-    result = agent.invoke({"messages": [HumanMessage("Hello")]})
-    assert len(result["messages"]) > 1
-
-
-@pytest.mark.asyncio
 async def test_async_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with async function."""
 
@@ -676,22 +658,25 @@ async def test_async_dynamic_prompt_decorator() -> None:
     assert async_prompt.__class__.__name__ == "async_prompt"
 
 
-@pytest.mark.asyncio
 async def test_async_dynamic_prompt_integration() -> None:
     """Test async dynamic_prompt decorator in a full agent."""
+
+    prompt_calls = 0
 
     @dynamic_prompt
     async def async_context_prompt(
         request: ModelRequest, state: AgentState, runtime: Runtime
     ) -> str:
-        msg_count = len(state["messages"])
-        return f"Async assistant. Message count: {msg_count}"
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"Async assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
     agent = agent.compile()
 
     result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
-    assert len(result["messages"]) > 1
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "Async assistant.-Hello"
 
 
 def test_dynamic_prompt_overwrites_system_prompt() -> None:
@@ -699,7 +684,7 @@ def test_dynamic_prompt_overwrites_system_prompt() -> None:
 
     @dynamic_prompt
     def override_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        return "Overridden prompt"
+        return "Overridden prompt."
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -709,8 +694,7 @@ def test_dynamic_prompt_overwrites_system_prompt() -> None:
     agent = agent.compile()
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
-    # The dynamic prompt should have overridden the static one
-    assert len(result["messages"]) > 1
+    assert result["messages"][-1].content == "Overridden prompt.-Hello"
 
 
 def test_dynamic_prompt_multiple_in_sequence() -> None:
@@ -718,11 +702,11 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
 
     @dynamic_prompt
     def first_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        return "First prompt"
+        return "First prompt."
 
     @dynamic_prompt
     def second_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        return "Second prompt"
+        return "Second prompt."
 
     # When used together, the last middleware in the list should win
     # since they're both modify_model_request hooks executed in sequence
@@ -730,4 +714,4 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
     agent = agent.compile()
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
-    assert len(result["messages"]) > 1
+    assert result["messages"][-1].content == "Second prompt.-Hello"
