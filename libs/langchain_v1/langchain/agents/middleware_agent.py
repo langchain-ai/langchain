@@ -395,11 +395,11 @@ def create_agent(  # noqa: PLR0915
         """
         # Validate requested tools are available
         tools_by_name = {t.name: t for t in default_tools}
-        unknown_tools = [name for name in request.tools if name not in tools_by_name]
-        if unknown_tools:
+        unknown_tool_names = [t.name for t in request.tools if t.name not in tools_by_name]
+        if unknown_tool_names:
             available_tools = sorted(tools_by_name.keys())
             msg = (
-                f"Middleware returned unknown tool names: {unknown_tools}\n\n"
+                f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
                 f"Available tools: {available_tools}\n\n"
                 "To fix this issue:\n"
                 "1. Ensure the tools are passed to create_agent() via "
@@ -410,8 +410,6 @@ def create_agent(  # noqa: PLR0915
                 "the actual tool.name values"
             )
             raise ValueError(msg)
-
-        requested_tools = [tools_by_name[name] for name in request.tools]
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat | None = request.response_format
@@ -432,7 +430,7 @@ def create_agent(  # noqa: PLR0915
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
-                    requested_tools, strict=True, **kwargs, **request.model_settings
+                    request.tools, strict=True, **kwargs, **request.model_settings
                 ),
                 effective_response_format,
             )
@@ -442,16 +440,16 @@ def create_agent(  # noqa: PLR0915
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return (
                 request.model.bind_tools(
-                    requested_tools, tool_choice=tool_choice, **request.model_settings
+                    request.tools, tool_choice=tool_choice, **request.model_settings
                 ),
                 effective_response_format,
             )
 
         # No structured output - standard model binding
-        if requested_tools:
+        if request.tools:
             return (
                 request.model.bind_tools(
-                    requested_tools, tool_choice=request.tool_choice, **request.model_settings
+                    request.tools, tool_choice=request.tool_choice, **request.model_settings
                 ),
                 None,
             )
@@ -461,7 +459,7 @@ def create_agent(  # noqa: PLR0915
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
@@ -498,7 +496,7 @@ def create_agent(  # noqa: PLR0915
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
