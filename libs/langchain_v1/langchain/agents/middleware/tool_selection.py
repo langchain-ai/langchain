@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Literal, TypedDict, Union
+from typing import TYPE_CHECKING, Annotated, Literal, Union
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import Field, TypeAdapter
+from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest, StateT
 from langchain.chat_models.base import init_chat_model
