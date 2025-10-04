@@ -10,6 +10,7 @@ from .types import (
     ModelRequest,
     after_model,
     before_model,
+    dynamic_prompt,
     hook_config,
     modify_model_request,
 )
@@ -25,6 +26,7 @@ __all__ = [
     "SummarizationMiddleware",
     "after_model",
     "before_model",
+    "dynamic_prompt",
     "hook_config",
     "modify_model_request",
 ]

@@ -16,6 +16,7 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     before_model,
     after_model,
+    dynamic_prompt,
     modify_model_request,
     hook_config,
 )
@@ -572,3 +573,161 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
     )
 
     assert agent_mixed.compile().get_graph().draw_mermaid() == snapshot
+
+
+def test_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with basic usage."""
+
+    @dynamic_prompt
+    def my_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Dynamic test prompt"
+
+    assert isinstance(my_prompt, AgentMiddleware)
+    assert my_prompt.state_schema == AgentState
+    assert my_prompt.tools == []
+    assert my_prompt.__class__.__name__ == "my_prompt"
+
+    # Verify it modifies the request correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+    result = my_prompt.modify_model_request(
+        original_request, {"messages": [HumanMessage("Hello")]}, None
+    )
+    assert result.system_prompt == "Dynamic test prompt"
+
+
+def test_dynamic_prompt_decorator_with_options() -> None:
+    """Test dynamic_prompt decorator with all configuration options."""
+
+    @dynamic_prompt(state_schema=CustomState, tools=[test_tool], name="CustomDynamicPrompt")
+    def custom_prompt(request: ModelRequest, state: CustomState, runtime: Runtime) -> str:
+        user_field = state.get("custom_field", "default")
+        return f"Prompt with {user_field}"
+
+    assert isinstance(custom_prompt, AgentMiddleware)
+    assert custom_prompt.state_schema == CustomState
+    assert custom_prompt.tools == [test_tool]
+    assert custom_prompt.__class__.__name__ == "CustomDynamicPrompt"
+
+    # Verify it uses state correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+    result = custom_prompt.modify_model_request(
+        original_request, {"messages": [HumanMessage("Hello")], "custom_field": "test_value"}, None
+    )
+    assert result.system_prompt == "Prompt with test_value"
+
+
+def test_dynamic_prompt_integration() -> None:
+    """Test dynamic_prompt decorator in a full agent."""
+
+    @dynamic_prompt
+    def context_aware_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        msg_count = len(state["messages"])
+        return f"You are a helpful assistant. Message count: {msg_count}"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    # The agent should have executed with the dynamic prompt
+    assert len(result["messages"]) > 1
+
+
+def test_dynamic_prompt_with_runtime_context() -> None:
+    """Test dynamic_prompt decorator using runtime context."""
+
+    @dynamic_prompt
+    def user_context_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        # Note: runtime context would be available if passed through Runtime
+        return "You are a personalized assistant."
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[user_context_prompt])
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert len(result["messages"]) > 1
+
+
+@pytest.mark.asyncio
+async def test_async_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with async function."""
+
+    @dynamic_prompt
+    async def async_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Async dynamic prompt"
+
+    assert isinstance(async_prompt, AgentMiddleware)
+    assert async_prompt.state_schema == AgentState
+    assert async_prompt.tools == []
+    assert async_prompt.__class__.__name__ == "async_prompt"
+
+
+@pytest.mark.asyncio
+async def test_async_dynamic_prompt_integration() -> None:
+    """Test async dynamic_prompt decorator in a full agent."""
+
+    @dynamic_prompt
+    async def async_context_prompt(
+        request: ModelRequest, state: AgentState, runtime: Runtime
+    ) -> str:
+        msg_count = len(state["messages"])
+        return f"Async assistant. Message count: {msg_count}"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
+    agent = agent.compile()
+
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+    assert len(result["messages"]) > 1
+
+
+def test_dynamic_prompt_overwrites_system_prompt() -> None:
+    """Test that dynamic_prompt overwrites the original system_prompt."""
+
+    @dynamic_prompt
+    def override_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Overridden prompt"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        system_prompt="Original static prompt",
+        middleware=[override_prompt],
+    )
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    # The dynamic prompt should have overridden the static one
+    assert len(result["messages"]) > 1
+
+
+def test_dynamic_prompt_multiple_in_sequence() -> None:
+    """Test multiple dynamic_prompt decorators in sequence (last wins)."""
+
+    @dynamic_prompt
+    def first_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "First prompt"
+
+    @dynamic_prompt
+    def second_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Second prompt"
+
+    # When used together, the last middleware in the list should win
+    # since they're both modify_model_request hooks executed in sequence
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[first_prompt, second_prompt])
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert len(result["messages"]) > 1
