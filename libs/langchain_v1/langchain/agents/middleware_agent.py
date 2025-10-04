@@ -228,9 +228,10 @@ def create_agent(  # noqa: PLR0915
 
     # Setup tools
     tool_node: ToolNode | None = None
+    built_in_tools: list[dict] = []
     if isinstance(tools, list):
-        # Extract builtin provider tools (dict format)
-        builtin_tools = [t for t in tools if isinstance(t, dict)]
+        # Extract built-in provider tools (dict format)
+        built_in_tools = [t for t in tools if isinstance(t, dict)]
         regular_tools = [t for t in tools if not isinstance(t, dict)]
 
         # Tools that require client-side execution (must be in ToolNode)
@@ -240,9 +241,9 @@ def create_agent(  # noqa: PLR0915
         tool_node = ToolNode(tools=available_tools) if available_tools else None
 
         # Default tools for ModelRequest initialization
-        # Include builtins as starting point (can be changed dynamically later)
+        # Include built-ins as starting point (can be changed dynamically later)
         # Structured tools are NOT included - they're added dynamically based on response_format
-        default_tools = regular_tools + middleware_tools + builtin_tools
+        default_tools = regular_tools + middleware_tools + built_in_tools
     elif isinstance(tools, ToolNode):
         tool_node = tools
         if tool_node:
@@ -250,7 +251,7 @@ def create_agent(  # noqa: PLR0915
             available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
             tool_node = ToolNode(available_tools)
 
-            # default_tools includes all client-side tools (no builtins or structured tools)
+            # default_tools includes all client-side tools (no built-ins or structured tools)
             default_tools = available_tools
     else:
         # No tools provided, only middleware_tools available
@@ -409,14 +410,14 @@ def create_agent(  # noqa: PLR0915
         # Build map of available client-side tools (regular_tools + middleware_tools)
         available_tools_by_name = {}
         for t in default_tools:
-            # Skip builtin tools (dict format) - they can be added dynamically
+            # Skip built-in tools (dict format) - they can be added dynamically
             if not isinstance(t, dict):
                 available_tools_by_name[t.name] = t
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
         unknown_tool_names = []
         for t in request.tools:
-            # Only validate BaseTool instances (skip builtin dict tools)
+            # Only validate BaseTool instances (skip built-in dict tools)
             if isinstance(t, dict):
                 continue
             if t.name not in available_tools_by_name:
@@ -452,8 +453,8 @@ def create_agent(  # noqa: PLR0915
             # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
 
-        # Build final tools list including structured output tools if using ToolStrategy
-        final_tools = list(request.tools)
+        # Build final tools list including built-in tools and structured output tools
+        final_tools = list(request.tools) + list(request.built_in_tools)
         if isinstance(effective_response_format, ToolStrategy):
             # Dynamically add structured output tools
             structured_tools = [info.tool for info in structured_output_tools.values()]
@@ -499,6 +500,7 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            built_in_tools=built_in_tools,
         )
 
         # Apply modify_model_request middleware in sequence
@@ -536,6 +538,7 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            built_in_tools=built_in_tools,
         )
 
         # Apply modify_model_request middleware in sequence
