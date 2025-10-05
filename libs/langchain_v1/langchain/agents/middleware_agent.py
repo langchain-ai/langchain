@@ -229,32 +229,32 @@ def create_agent(  # noqa: PLR0915
     # Setup tools
     tool_node: ToolNode | None = None
     if isinstance(tools, list):
-        # Extract builtin provider tools (dict format)
-        builtin_tools = [t for t in tools if isinstance(t, dict)]
+        # Extract built-in provider tools (dict format) and regular tools (BaseTool)
+        built_in_tools = [t for t in tools if isinstance(t, dict)]
         regular_tools = [t for t in tools if not isinstance(t, dict)]
 
-        # Add structured output tools to regular tools
-        structured_tools = [info.tool for info in structured_output_tools.values()]
-        all_tools = middleware_tools + regular_tools + structured_tools
+        # Tools that require client-side execution (must be in ToolNode)
+        available_tools = middleware_tools + regular_tools
 
-        # Only create ToolNode if we have tools
-        tool_node = ToolNode(tools=all_tools) if all_tools else None
-        default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
+        # Only create ToolNode if we have client-side tools
+        tool_node = ToolNode(tools=available_tools) if available_tools else None
+
+        # Default tools for ModelRequest initialization
+        # Include built-ins and regular tools (can be changed dynamically by middleware)
+        # Structured tools are NOT included - they're added dynamically based on response_format
+        default_tools = regular_tools + middleware_tools + built_in_tools
     elif isinstance(tools, ToolNode):
-        # tools is ToolNode or None
         tool_node = tools
         if tool_node:
-            default_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            # Update tool node to know about tools provided by middleware
-            all_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(all_tools)
-            # Add structured output tools
-            for info in structured_output_tools.values():
-                default_tools.append(info.tool)
+            # Add middleware tools to existing ToolNode
+            available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
+            tool_node = ToolNode(available_tools)
+
+            # default_tools includes all client-side tools (no built-ins or structured tools)
+            default_tools = available_tools
     else:
-        default_tools = (
-            list(structured_output_tools.values()) if structured_output_tools else []
-        ) + middleware_tools
+        # No tools provided, only middleware_tools available
+        default_tools = middleware_tools
 
     # validate middleware
     assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
@@ -405,21 +405,32 @@ def create_agent(  # noqa: PLR0915
             Tuple of (bound_model, effective_response_format) where ``effective_response_format``
             is the actual strategy used (may differ from initial if auto-detected).
         """
-        # Validate requested tools are available
-        tools_by_name = {t.name: t for t in default_tools}
-        unknown_tool_names = [t.name for t in request.tools if t.name not in tools_by_name]
+        # Validate ONLY client-side tools that need to exist in tool_node
+        # Build map of available client-side tools (regular_tools + middleware_tools)
+        available_tools_by_name = {t.name: t for t in default_tools if isinstance(t, BaseTool)}
+
+        # Check if any requested tools are unknown CLIENT-SIDE tools
+        unknown_tool_names = []
+        for t in request.tools:
+            # Only validate BaseTool instances (skip built-in dict tools)
+            if isinstance(t, dict):
+                continue
+            if t.name not in available_tools_by_name:
+                unknown_tool_names.append(t.name)
+
         if unknown_tool_names:
-            available_tools = sorted(tools_by_name.keys())
+            available_tool_names = sorted(available_tools_by_name.keys())
             msg = (
                 f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                f"Available tools: {available_tools}\n\n"
+                f"Available client-side tools: {available_tool_names}\n\n"
                 "To fix this issue:\n"
                 "1. Ensure the tools are passed to create_agent() via "
                 "the 'tools' parameter\n"
                 "2. If using custom middleware with tools, ensure "
                 "they're registered via middleware.tools attribute\n"
                 "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values"
+                "the actual tool.name values\n"
+                "Note: Built-in provider tools (dict format) can be added dynamically."
             )
             raise ValueError(msg)
 
@@ -437,32 +448,55 @@ def create_agent(  # noqa: PLR0915
             # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
 
+        # Build final tools list including structured output tools
+        # request.tools already contains both BaseTool and dict (built-in) tools
+        final_tools = list(request.tools)
+        if isinstance(effective_response_format, ToolStrategy):
+            # Add structured output tools to final tools list
+            structured_tools = [info.tool for info in structured_output_tools.values()]
+            final_tools.extend(structured_tools)
+
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
             # Use provider-specific structured output
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
-                    request.tools, strict=True, **kwargs, **request.model_settings
+                    final_tools, strict=True, **kwargs, **request.model_settings
                 ),
                 effective_response_format,
             )
 
         if isinstance(effective_response_format, ToolStrategy):
+            # Current implementation requires that tools used for structured output
+            # have to be declared upfront when creating the agent as part of the
+            # response format. Middleware is allowed to change the response format
+            # to a subset of the original structured tools when using ToolStrategy,
+            # but not to add new structured tools that weren't declared upfront.
+            # Compute output binding
+            for tc in effective_response_format.schema_specs:
+                if tc.name not in structured_output_tools:
+                    msg = (
+                        f"ToolStrategy specifies tool '{tc.name}' "
+                        "which wasn't declared in the original "
+                        "response format when creating the agent."
+                    )
+                    raise ValueError(msg)
+
             # Force tool use if we have structured output tools
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return (
                 request.model.bind_tools(
-                    request.tools, tool_choice=tool_choice, **request.model_settings
+                    final_tools, tool_choice=tool_choice, **request.model_settings
                 ),
                 effective_response_format,
             )
 
         # No structured output - standard model binding
-        if request.tools:
+        if final_tools:
             return (
                 request.model.bind_tools(
-                    request.tools, tool_choice=request.tool_choice, **request.model_settings
+                    final_tools, tool_choice=request.tool_choice, **request.model_settings
                 ),
                 None,
             )
