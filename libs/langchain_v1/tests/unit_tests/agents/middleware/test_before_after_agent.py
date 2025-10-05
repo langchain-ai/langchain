@@ -14,6 +14,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
 
+from ..model import FakeToolCallingModel
+
 
 @tool
 def sample_tool(query: str) -> str:
@@ -309,6 +311,41 @@ class TestBeforeAndAfterAgentCombined:
         assert "before_2" in execution_log
         assert "after_1" in execution_log
         assert "after_2" in execution_log
+
+    def test_agent_hooks_run_once_with_multiple_model_calls(self) -> None:
+        """Test that before_agent and after_agent run only once even with tool calls."""
+        execution_log = []
+
+        @before_agent
+        def log_before_agent(state: AgentState, runtime: Runtime) -> None:
+            execution_log.append("before_agent")
+
+        @after_agent
+        def log_after_agent(state: AgentState, runtime: Runtime) -> None:
+            execution_log.append("after_agent")
+
+        # Model will call a tool once, then respond with final answer
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [{"name": "sample_tool", "args": {"query": "test"}, "id": "1"}],
+                [],  # Second call returns no tool calls (final answer)
+            ]
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[sample_tool],
+            middleware=[log_before_agent, log_after_agent],
+        )
+
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+        # before_agent and after_agent should run exactly once
+        assert execution_log.count("before_agent") == 1
+        assert execution_log.count("after_agent") == 1
+        # before_agent should run first, after_agent should run last
+        assert execution_log[0] == "before_agent"
+        assert execution_log[-1] == "after_agent"
 
 
 class TestDecoratorParameters:
