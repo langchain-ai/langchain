@@ -227,10 +227,10 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Filter tools based on selection and append always-included tools
-        selected_tools: list[BaseTool | dict] = [
+        selected_tools: list[BaseTool] = [
             tool for tool in available_tools if tool.name in selected_tool_names
         ]
-        always_included_tools: list[BaseTool | dict] = [
+        always_included_tools: list[BaseTool] = [
             tool
             for tool in request.tools
             if not isinstance(tool, dict) and tool.name in self.always_include
@@ -239,9 +239,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
         # Also preserve any provider-specific tool dicts from the original request
         provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
-        selected_tools.extend(provider_tools)
 
-        request.tools = selected_tools
+        request.tools = [*selected_tools, *provider_tools]
         return request
 
     def modify_model_request(
