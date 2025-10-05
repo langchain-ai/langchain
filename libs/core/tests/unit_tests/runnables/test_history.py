@@ -32,10 +32,9 @@ from tests.unit_tests.pydantic_utils import _schema
 def test_interfaces() -> None:
     history = InMemoryChatMessageHistory()
     history.add_message(SystemMessage(content="system"))
-    history.add_user_message("human 1")
-    history.add_ai_message("ai")
-    history.add_message(HumanMessage(content="human 2"))
-    assert str(history) == "System: system\nHuman: human 1\nAI: ai\nHuman: human 2"
+    history.add_message(HumanMessage(content="human 1"))
+    history.add_message(AIMessage(content="ai"))
+    assert str(history) == "System: system\nHuman: human 1\nAI: ai"
 
 
 def _get_get_session_history(

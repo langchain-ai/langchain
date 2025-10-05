@@ -10,10 +10,10 @@ from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
 from typing_extensions import override
 
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory.buffer import ConversationBufferMemory
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.summary import ConversationSummaryMemory
+from langchain_classic.chains.conversation.base import ConversationChain
+from langchain_classic.memory.buffer import ConversationBufferMemory
+from langchain_classic.memory.buffer_window import ConversationBufferWindowMemory
+from langchain_classic.memory.summary import ConversationSummaryMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -80,7 +80,7 @@ def test_conversation_chain_errors_bad_prompt() -> None:
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=[], template="nothing here")
     with pytest.raises(
-        ValueError, match="Value error, Got unexpected prompt input variables."
+        ValueError, match="Value error, Got unexpected prompt input variables"
     ):
         ConversationChain(llm=llm, prompt=prompt)
 

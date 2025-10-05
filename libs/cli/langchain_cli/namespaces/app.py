@@ -5,7 +5,7 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 import uvicorn
@@ -35,22 +35,21 @@ app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 @app_cli.command()
 def new(
     name: Annotated[
-        Optional[str],
+        str | None,
         typer.Argument(
             help="The name of the folder to create",
         ),
     ] = None,
     *,
     package: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(help="Packages to seed the project with"),
     ] = None,
     pip: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
         ),
     ] = None,
     noninteractive: Annotated[
@@ -58,7 +57,6 @@ def new(
         typer.Option(
             "--non-interactive/--interactive",
             help="Don't prompt for any input",
-            is_flag=True,
         ),
     ] = False,
 ) -> None:
@@ -129,24 +127,24 @@ def new(
 @app_cli.command()
 def add(
     dependencies: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Argument(help="The dependency to add"),
     ] = None,
     *,
     api_path: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(help="API paths to add"),
     ] = None,
     project_dir: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(help="The project directory"),
     ] = None,
     repo: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(help="Install templates from a specific github repo instead"),
     ] = None,
     branch: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(help="Install templates from a specific branch"),
     ] = None,
     pip: Annotated[
@@ -154,7 +152,6 @@ def add(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
@@ -162,8 +159,8 @@ def add(
     """Add the specified template to the current LangServe app.
 
     e.g.:
-    langchain app add extraction-openai-functions
-    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
+    `langchain app add extraction-openai-functions`
+    `langchain app add git+ssh://git@github.com/efriis/simple-pirate.git`
     """
     if branch is None:
         branch = []
@@ -189,7 +186,7 @@ def add(
     )
 
     # group by repo/ref
-    grouped: dict[tuple[str, Optional[str]], list[DependencySource]] = {}
+    grouped: dict[tuple[str, str | None], list[DependencySource]] = {}
     for dep in parsed_deps:
         key_tup = (dep["git"], dep["ref"])
         lst = grouped.get(key_tup, [])
@@ -241,7 +238,7 @@ def add(
     try:
         add_dependencies_to_pyproject_toml(
             project_root / "pyproject.toml",
-            zip(installed_destination_names, installed_destination_paths),
+            zip(installed_destination_names, installed_destination_paths, strict=False),
         )
     except Exception:
         # Can fail if user modified/removed pyproject.toml
@@ -279,11 +276,11 @@ def add(
 
     imports = [
         f"from {e['module']} import {e['attr']} as {name}"
-        for e, name in zip(installed_exports, chain_names)
+        for e, name in zip(installed_exports, chain_names, strict=False)
     ]
     routes = [
         f'add_routes(app, {name}, path="{path}")'
-        for name, path in zip(chain_names, api_paths)
+        for name, path in zip(chain_names, api_paths, strict=False)
     ]
 
     t = (
@@ -308,7 +305,7 @@ def remove(
     api_paths: Annotated[list[str], typer.Argument(help="The API paths to remove")],
     *,
     project_dir: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(help="The project directory"),
     ] = None,
 ) -> None:
@@ -347,15 +344,15 @@ def remove(
 def serve(
     *,
     port: Annotated[
-        Optional[int],
+        int | None,
         typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The host to run the server on"),
     ] = None,
     app: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The app to run, e.g. `app.server:app`"),
     ] = None,
 ) -> None:

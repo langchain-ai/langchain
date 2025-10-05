@@ -9,6 +9,7 @@ import warnings
 from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
+from uuid import uuid4
 
 from packaging.version import parse
 from pydantic import SecretStr
@@ -220,7 +221,7 @@ def _build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
-    """Build "model_kwargs" param from Pydanitc constructor values.
+    """Build "model_kwargs" param from Pydantic constructor values.
 
     Args:
         values: All init args passed in by user.
@@ -482,3 +483,31 @@ def secret_from_env(
         raise ValueError(msg)
 
     return get_secret_from_env
+
+
+LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
+
+LC_ID_PREFIX = "lc_run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
+
+
+def ensure_id(id_val: Optional[str]) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A string ID, either the validated provided value or a newly generated UUID4.
+    """
+    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")

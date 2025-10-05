@@ -5,13 +5,13 @@ from langchain_core.language_models import FakeListLLM
 from langchain_core.tools import Tool
 from langchain_core.tracers.context import collect_runs
 
-from langchain.agents import (
+from langchain_classic.agents import (
     AgentExecutor,
     AgentExecutorIterator,
     AgentType,
     initialize_agent,
 )
-from langchain.schema import RUN_KEY
+from langchain_classic.schema import RUN_KEY
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

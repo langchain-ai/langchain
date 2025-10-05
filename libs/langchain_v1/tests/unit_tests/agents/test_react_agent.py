@@ -32,13 +32,15 @@ from typing_extensions import TypedDict
 
 from langchain.agents import (
     AgentState,
-    ToolNode,
     create_agent,
 )
 from langchain.agents.react_agent import _validate_chat_history
-from langchain.agents.tool_node import (
+from langchain.tools import (
+    ToolNode,
     InjectedState,
     InjectedStore,
+)
+from langchain.tools.tool_node import (
     _get_state_args,
     _infer_handled_types,
 )

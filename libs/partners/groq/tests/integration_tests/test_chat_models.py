@@ -27,7 +27,7 @@ from tests.unit_tests.fake.callbacks import (
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
 
 # gpt-oss doesn't support `reasoning_effort`
-REASONING_MODEL_NAME = "deepseek-r1-distill-llama-70b"
+REASONING_MODEL_NAME = "qwen/qwen3-32b"
 
 
 #
@@ -262,7 +262,7 @@ def test_reasoning_output_stream() -> None:
             full_response = token
         else:
             # Casting since adding results in a type error
-            full_response = cast(AIMessageChunk, full_response + token)
+            full_response = cast("AIMessageChunk", full_response + token)
 
     assert full_response is not None
     assert isinstance(full_response, AIMessageChunk)
@@ -281,7 +281,8 @@ def test_reasoning_effort_none() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert "reasoning_content" not in response.additional_kwargs
-    assert "<think>" not in response.content and "<think/>" not in response.content
+    assert "<think>" not in response.content
+    assert "<think/>" not in response.content
 
 
 @pytest.mark.parametrize("effort", ["low", "medium", "high"])
@@ -645,7 +646,15 @@ def test_setting_service_tier_streaming() -> None:
     chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="flex")
     chunks = list(chat.stream("Why is the sky blue?", service_tier="auto"))
 
-    assert chunks[-1].response_metadata.get("service_tier") == "auto"
+    # Find the final chunk with finish_reason
+    final_chunk = None
+    for chunk in chunks:
+        if chunk.response_metadata.get("finish_reason"):
+            final_chunk = chunk
+            break
+
+    assert final_chunk is not None
+    assert final_chunk.response_metadata.get("service_tier") == "auto"
 
 
 async def test_setting_service_tier_request_async() -> None:

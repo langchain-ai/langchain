@@ -31,7 +31,6 @@ from pydantic import (
     PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
-    model_validator,
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -39,10 +38,8 @@ from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
 
-from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
-    BaseCallbackManager,
     CallbackManager,
     Callbacks,
 )
@@ -82,6 +79,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "search_result",
     "custom_tool_call_output",
     "document",
+    "file",
 )
 
 
@@ -463,15 +461,6 @@ class ChildTool(BaseTool):
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
 
-    callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    )(
-        Field(
-            default=None,
-            exclude=True,
-            description="Callback manager to add to the run trace.",
-        )
-    )
     tags: Optional[list[str]] = None
     """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
@@ -698,26 +687,6 @@ class ChildTool(BaseTool):
                 k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
             }
         return tool_input
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if callback_manager is used.
-
-        Args:
-            values: The values to validate.
-
-        Returns:
-            The validated values.
-        """
-        if values.get("callback_manager") is not None:
-            warnings.warn(
-                "callback_manager is deprecated. Please use callbacks instead.",
-                DeprecationWarning,
-                stacklevel=6,
-            )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
 
     @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:
@@ -1010,19 +979,6 @@ class ChildTool(BaseTool):
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
-    @deprecated("0.1.47", alternative="invoke", removal="1.0")
-    def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
-        """Make tool callable (deprecated).
-
-        Args:
-            tool_input: The input to the tool.
-            callbacks: Callbacks to use during execution.
-
-        Returns:
-            The tool's output.
-        """
-        return self.run(tool_input, callbacks=callbacks)
-
 
 def _is_tool_call(x: Any) -> bool:
     """Check if the input is a tool call dictionary.
@@ -1271,7 +1227,7 @@ class InjectedToolCallId(InjectedToolArg):
 
     .. code-block:: python
 
-        from typing_extensions import Annotated
+        from typing import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
 
@@ -1324,8 +1280,7 @@ def get_all_basemodel_annotations(
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
-        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
-        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        fields = get_fields(cls)
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
         annotations: dict[str, Union[type, TypeVar]] = {}
@@ -1402,7 +1357,7 @@ def _replace_type_vars(
         if type_ in generic_map:
             return generic_map[type_]
         if default_to_bound:
-            return type_.__bound__ or Any
+            return type_.__bound__ if type_.__bound__ is not None else Any
         return type_
     if (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(

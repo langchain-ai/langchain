@@ -1,6 +1,6 @@
 from langchain_core.agents import AgentAction
 
-from langchain.agents.conversational.output_parser import ConvoOutputParser
+from langchain_classic.agents.conversational.output_parser import ConvoOutputParser
 
 
 def test_normal_output_parsing() -> None:

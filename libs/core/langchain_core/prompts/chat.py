@@ -24,7 +24,6 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
-from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -262,20 +261,18 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: list[str],
         **kwargs: Any,
     ) -> Self:
         """Create a class from a template file.
 
         Args:
             template_file: path to a template file. String or Path.
-            input_variables: list of input variables.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_file(template_file, input_variables)
+        prompt = PromptTemplate.from_file(template_file)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -543,8 +540,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        template = Path(template_file).read_text()
-        # TODO: .read_text(encoding="utf-8") for v0.4
+        template = Path(template_file).read_text(encoding="utf-8")
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -792,9 +788,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Use to create flexible templated prompts for chat models.
 
     Examples:
-
-        .. versionchanged:: 0.2.24
-
+        !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
             init.
@@ -813,7 +807,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
 
             prompt_value = template.invoke(
-                {"name": "Bob", "user_input": "What is your name?"}
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?",
+                }
             )
             # Output:
             # ChatPromptValue(
@@ -1104,41 +1101,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         prompt_template = PromptTemplate.from_template(template, **kwargs)
         message = HumanMessagePromptTemplate(prompt=prompt_template)
         return cls.from_messages([message])
-
-    @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_role_strings(
-        cls, string_messages: list[tuple[str, str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role, template) tuples.
-
-        Args:
-            string_messages: list of (role, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls(
-            messages=[
-                ChatMessagePromptTemplate.from_template(template, role=role)
-                for role, template in string_messages
-            ]
-        )
-
-    @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_strings(
-        cls, string_messages: list[tuple[type[BaseMessagePromptTemplate], str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role class, template) tuples.
-
-        Args:
-            string_messages: list of (role class, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls.from_messages(string_messages)
 
     @classmethod
     def from_messages(

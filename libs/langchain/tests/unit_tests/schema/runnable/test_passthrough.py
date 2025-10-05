@@ -1,4 +1,4 @@
-from langchain.schema.runnable.passthrough import __all__
+from langchain_classic.schema.runnable.passthrough import __all__
 
 EXPECTED_ALL = ["RunnableAssign", "RunnablePassthrough", "aidentity", "identity"]
 

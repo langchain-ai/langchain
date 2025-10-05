@@ -15,8 +15,8 @@ from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
 from typing_extensions import override
 
-from langchain.indexes import aindex, index
-from langchain.indexes._sql_record_manager import SQLRecordManager
+from langchain_classic.indexes import aindex, index
+from langchain_classic.indexes._sql_record_manager import SQLRecordManager
 
 
 class ToyLoader(BaseLoader):
@@ -440,15 +440,14 @@ def test_incremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode is incremental "
-        "or scoped_full.",
+        "or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental "
-        "or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -486,7 +485,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode is incremental "
-        "or scoped_full.",
+        "or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -498,8 +497,7 @@ async def test_aincremental_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental "
-        "or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(

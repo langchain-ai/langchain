@@ -17,12 +17,15 @@ from typing import (
     Optional,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import Field, create_model
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from pydantic.v1 import Field as Field_v1
+from pydantic.v1 import create_model as create_model_v1
+from typing_extensions import TypedDict, is_typeddict
 
 import langchain_core
 from langchain_core._api import beta, deprecated
@@ -294,7 +297,7 @@ def _convert_any_typed_dicts_to_pydantic(
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
@@ -302,8 +305,8 @@ def _convert_any_typed_dicts_to_pydantic(
                 field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
-        model = create_model(typed_dict.__name__, **fields)
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
+        model = create_model_v1(typed_dict.__name__, **fields)
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -415,20 +418,16 @@ def convert_to_openai_function(
     Raises:
         ValueError: If function is not in a supported format.
 
-    .. versionchanged:: 0.2.29
-
+    !!! warning "Behavior changed in 0.2.29"
         ``strict`` arg added.
 
-    .. versionchanged:: 0.3.13
-
+    !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
 
-    .. versionchanged:: 0.3.14
-
+    !!! warning "Behavior changed in 0.3.14"
         Support for Amazon Bedrock Converse format tools added.
 
-    .. versionchanged:: 0.3.16
-
+    !!! warning "Behavior changed in 0.3.16"
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
     """
@@ -546,35 +545,28 @@ def convert_to_openai_tool(
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
 
-    .. versionchanged:: 0.2.29
-
+    !!! warning "Behavior changed in 0.2.29"
         ``strict`` arg added.
 
-    .. versionchanged:: 0.3.13
-
+    !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
 
-    .. versionchanged:: 0.3.14
-
+    !!! warning "Behavior changed in 0.3.14"
         Support for Amazon Bedrock Converse format tools added.
 
-    .. versionchanged:: 0.3.16
-
+    !!! warning "Behavior changed in 0.3.16"
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
 
-    .. versionchanged:: 0.3.44
-
+    !!! warning "Behavior changed in 0.3.44"
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with "type" in "file_search", "function", "computer_use_preview",
         "web_search_preview".
 
-    .. versionchanged:: 0.3.61
-
+    !!! warning "Behavior changed in 0.3.61"
         Added support for OpenAI's built-in code interpreter and remote MCP tools.
 
-    .. versionchanged:: 0.3.63
-
+    !!! warning "Behavior changed in 0.3.63"
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
@@ -667,14 +659,13 @@ def tool_example_to_messages(
     The ``ToolMessage`` is required because some chat models are hyper-optimized for
     agents rather than for an extraction use case.
 
-    Arguments:
-        input: string, the user input
-        tool_calls: list[BaseModel], a list of tool calls represented as Pydantic
-            BaseModels
-        tool_outputs: Optional[list[str]], a list of tool call outputs.
+    Args:
+        input: The user input
+        tool_calls: Tool calls represented as Pydantic BaseModels
+        tool_outputs: Tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
-        ai_response: Optional[str], if provided, content for a final ``AIMessage``.
+        ai_response: If provided, content for a final ``AIMessage``.
 
     Returns:
         A list of messages

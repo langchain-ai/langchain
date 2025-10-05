@@ -20,7 +20,7 @@ class LangSmithLoader(BaseLoader):
     into the Document metadata. This allows you to easily create few-shot example
     retrievers from the loaded documents.
 
-    .. dropdown:: Lazy load
+    ??? note "Lazy load"
 
         .. code-block:: python
 
@@ -31,11 +31,11 @@ class LangSmithLoader(BaseLoader):
             for doc in loader.lazy_load():
                 docs.append(doc)
 
-        .. code-block:: pycon
+        .. code-block:: python
 
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 
-    .. versionadded:: 0.2.34
+    !!! version-added "Added in version 0.2.34"
 
     """  # noqa: E501
 

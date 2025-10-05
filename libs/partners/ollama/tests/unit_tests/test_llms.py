@@ -14,7 +14,7 @@ def test_initialization() -> None:
 
 
 def test_model_params() -> None:
-    # Test standard tracing params
+    """Test standard tracing params"""
     llm = OllamaLLM(model=MODEL_NAME)
     ls_params = llm._get_ls_params()
     assert ls_params == {
@@ -36,16 +36,12 @@ def test_model_params() -> None:
 @patch("langchain_ollama.llms.validate_model")
 def test_validate_model_on_init(mock_validate_model: Any) -> None:
     """Test that the model is validated on initialization when requested."""
-    # Test that validate_model is called when validate_model_on_init=True
     OllamaLLM(model=MODEL_NAME, validate_model_on_init=True)
     mock_validate_model.assert_called_once()
     mock_validate_model.reset_mock()
 
-    # Test that validate_model is NOT called when validate_model_on_init=False
     OllamaLLM(model=MODEL_NAME, validate_model_on_init=False)
     mock_validate_model.assert_not_called()
-
-    # Test that validate_model is NOT called by default
     OllamaLLM(model=MODEL_NAME)
     mock_validate_model.assert_not_called()
 

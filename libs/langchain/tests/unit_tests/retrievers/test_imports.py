@@ -1,4 +1,4 @@
-from langchain import retrievers
+from langchain_classic import retrievers
 
 EXPECTED_ALL = [
     "AmazonKendraRetriever",

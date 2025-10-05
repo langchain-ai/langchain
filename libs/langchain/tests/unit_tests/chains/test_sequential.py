@@ -10,10 +10,10 @@ from langchain_core.callbacks.manager import (
 )
 from typing_extensions import override
 
-from langchain.chains.base import Chain
-from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.simple import SimpleMemory
+from langchain_classic.chains.base import Chain
+from langchain_classic.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.memory.simple import SimpleMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -146,7 +146,8 @@ def test_sequential_missing_inputs() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "test"], output_variables=["baz"])
     with pytest.raises(
-        ValueError, match="Value error, Missing required input keys: {'test'}"
+        ValueError,
+        match=re.escape("Value error, Missing required input keys: {'test'}"),
     ):
         # Also needs "test" as an input
         SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
@@ -158,7 +159,9 @@ def test_sequential_bad_outputs() -> None:
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(
         ValueError,
-        match="Value error, Expected output variables that were not found: {'test'}.",
+        match=re.escape(
+            "Value error, Expected output variables that were not found: {'test'}."
+        ),
     ):
         # "test" is not present as an output variable.
         SequentialChain(

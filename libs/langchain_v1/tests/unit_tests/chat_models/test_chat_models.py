@@ -79,7 +79,7 @@ def test_configurable() -> None:
 
     Example:
 
-    .. python::
+    .. code-block:: python
 
         # This creates a configurable model without specifying which model
         model = init_chat_model()
@@ -88,10 +88,7 @@ def test_configurable() -> None:
         model.get_num_tokens("hello")  # AttributeError!
 
         # This works - provides model at runtime
-        response = model.invoke(
-            "Hello",
-            config={"configurable": {"model": "gpt-4o"}}
-        )
+        response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
 
     """
     model = init_chat_model()
@@ -145,7 +142,7 @@ def test_configurable() -> None:
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
-            "output_version": "v0",
+            "output_version": None,
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
@@ -208,7 +205,7 @@ def test_configurable_with_default() -> None:
 
     Example:
 
-    .. python::
+    .. code-block:: python
 
         # This creates a configurable model with default parameters (model)
         model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
@@ -218,8 +215,7 @@ def test_configurable_with_default() -> None:
 
         # This also works - switches to Claude at runtime
         response = model.invoke(
-            "Hello",
-            config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
+            "Hello", config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
         )
 
     """
@@ -261,7 +257,7 @@ def test_configurable_with_default() -> None:
             "disable_streaming": False,
             "model": "claude-3-7-sonnet-20250219",
             "mcp_servers": None,
-            "max_tokens": 1024,
+            "max_tokens": 64000,
             "temperature": None,
             "thinking": None,
             "top_k": None,
@@ -271,12 +267,14 @@ def test_configurable_with_default() -> None:
             "stop_sequences": None,
             "anthropic_api_url": "https://api.anthropic.com",
             "anthropic_proxy": None,
+            "context_management": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
             "default_headers": None,
             "model_kwargs": {},
             "streaming": False,
             "stream_usage": True,
+            "output_version": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

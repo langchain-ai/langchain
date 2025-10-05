@@ -92,7 +92,7 @@ def trace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    .. note:
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -179,7 +179,7 @@ async def atrace_as_chain_group(
     Yields:
         The async callback manager for the chain group.
 
-    .. note:
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -257,7 +257,7 @@ def handle_event(
 ) -> None:
     """Generic event handler for CallbackManager.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -424,7 +424,7 @@ async def ahandle_event(
 ) -> None:
     """Async generic event handler for ``AsyncCallbackManager``.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -1594,7 +1594,7 @@ class CallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
 
         """
         if not self.handlers:
@@ -2088,7 +2088,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
@@ -2614,14 +2614,14 @@ async def adispatch_custom_event(
             ):
                 print(event)
 
-    .. warning::
+    !!! warning
         If using python <= 3.10 and async, you MUST
         specify the `config` parameter or the function will raise an error.
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.
@@ -2697,7 +2697,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.
