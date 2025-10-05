@@ -1,6 +1,7 @@
 """Middleware plugins for agents."""
 
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
@@ -23,6 +24,7 @@ __all__ = [
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
+    "ModelFallbackMiddleware",
     "ModelRequest",
     "PIIDetectionError",
     "PIIMiddleware",
