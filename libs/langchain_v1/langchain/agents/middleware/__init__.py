@@ -1,6 +1,7 @@
 """Middleware plugins for agents."""
 
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
@@ -23,6 +24,8 @@ __all__ = [
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",
+    "PIIDetectionError",
+    "PIIMiddleware",
     "PlanningMiddleware",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
