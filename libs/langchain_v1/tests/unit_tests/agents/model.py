@@ -24,9 +24,9 @@ from pydantic import BaseModel
 StructuredResponseT = TypeVar("StructuredResponseT")
 
 
-class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
+class FakeToolCallingModel(BaseChatModel):
     tool_calls: Union[list[list[ToolCall]], list[list[dict]]] | None = None
-    structured_response: StructuredResponseT | None = None
+    structured_response: Any = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
 

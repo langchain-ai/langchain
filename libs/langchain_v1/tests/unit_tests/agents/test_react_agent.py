@@ -1,9 +1,10 @@
 import dataclasses
 import inspect
-from types import UnionType
+from collections.abc import Sequence
 from typing import (
     Annotated,
     Union,
+    Literal,
 )
 
 import pytest
@@ -16,19 +17,22 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    BaseMessage,
 )
 from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_core.tools import BaseTool, InjectedToolCallId, ToolException
 from langchain_core.tools import tool as dec_tool
+from langgraph._internal._runnable import RunnableCallable
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.graph import START, MessagesState, StateGraph
+from langgraph.graph import START, StateGraph
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command, Interrupt, interrupt
+from langgraph.typing import StateT, OutputT
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, NotRequired, overload
 
 from langchain.agents import (
     AgentState,
@@ -52,6 +56,26 @@ from .model import FakeToolCallingModel
 pytestmark = pytest.mark.anyio
 
 
+@overload
+def _create_state_graph(
+    state_schema: type[StateT],
+    output_schema: None = None,
+) -> StateGraph[StateT, None, StateT, StateT]: ...
+
+
+@overload
+def _create_state_graph(
+    state_schema: type[StateT], output_schema: type[OutputT]
+) -> StateGraph[StateT, None, StateT, StateT]: ...
+
+
+def _create_state_graph(
+    state_schema: type[StateT],
+    output_schema: type[StateT] | None = None,
+) -> StateGraph[StateT, None, StateT, StateT]:
+    return StateGraph(state_schema, output_schema=output_schema)
+
+
 def test_no_prompt(sync_checkpointer: BaseCheckpointSaver) -> None:
     model = FakeToolCallingModel()
 
@@ -61,7 +85,7 @@ def test_no_prompt(sync_checkpointer: BaseCheckpointSaver) -> None:
         checkpointer=sync_checkpointer,
     )
     inputs = [HumanMessage("hi?")]
-    thread = {"configurable": {"thread_id": "123"}}
+    thread: RunnableConfig = {"configurable": {"thread_id": "123"}}
     response = agent.invoke({"messages": inputs}, thread, debug=True)
     expected_response = {"messages": [*inputs, AIMessage(content="hi?", id="0")]}
     assert response == expected_response
@@ -87,7 +111,7 @@ async def test_no_prompt_async(async_checkpointer: BaseCheckpointSaver) -> None:
 
     agent = create_agent(model, [], checkpointer=async_checkpointer)
     inputs = [HumanMessage("hi?")]
-    thread = {"configurable": {"thread_id": "123"}}
+    thread: RunnableConfig = {"configurable": {"thread_id": "123"}}
     response = await agent.ainvoke({"messages": inputs}, thread, debug=True)
     expected_response = {"messages": [*inputs, AIMessage(content="hi?", id="0")]}
     assert response == expected_response
@@ -127,8 +151,12 @@ def test_string_prompt() -> None:
 
 
 def test_callable_prompt() -> None:
-    def prompt(state):
-        modified_message = f"Bar {state['messages'][-1].content}"
+    def prompt(state: AgentState) -> Sequence[BaseMessage]:
+        modified_message = (
+            f"Bar {state['messages'][-1].content}"
+            if isinstance(state["messages"][-1], BaseMessage)
+            else ""
+        )
         return [HumanMessage(content=modified_message)]
 
     agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
@@ -139,8 +167,12 @@ def test_callable_prompt() -> None:
 
 
 async def test_callable_prompt_async() -> None:
-    async def prompt(state):
-        modified_message = f"Bar {state['messages'][-1].content}"
+    async def prompt(state: AgentState) -> Sequence[BaseMessage]:
+        modified_message = (
+            f"Bar {state['messages'][-1].content}"
+            if isinstance(state["messages"][-1], BaseMessage)
+            else ""
+        )
         return [HumanMessage(content=modified_message)]
 
     agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
@@ -163,7 +195,7 @@ def test_runnable_prompt() -> None:
 
 
 def test_prompt_with_store() -> None:
-    def add(a: int, b: int):
+    def add(a: int, b: int) -> int:
         """Adds a and b"""
         return a + b
 
@@ -171,13 +203,19 @@ def test_prompt_with_store() -> None:
     in_memory_store.put(("memories", "1"), "user_name", {"data": "User name is Alice"})
     in_memory_store.put(("memories", "2"), "user_name", {"data": "User name is Bob"})
 
-    def prompt(state, config, *, store):
+    def prompt(
+        state: AgentState, config: RunnableConfig, *, store: BaseStore
+    ) -> Sequence[MessageLikeRepresentation]:
         user_id = config["configurable"]["user_id"]
-        system_str = store.get(("memories", user_id), "user_name").value["data"]
-        return [SystemMessage(system_str)] + state["messages"]
+        if key_val := store.get(("memories", user_id), "user_name"):
+            system_str = key_val.value["data"]
+            return [SystemMessage(system_str)] + list(state["messages"])
+        raise ValueError("Key not found in store")
 
-    def prompt_no_store(state, config):
-        return SystemMessage("foo") + state["messages"]
+    def prompt_no_store(
+        state: AgentState, config: RunnableConfig
+    ) -> Sequence[MessageLikeRepresentation]:
+        return [SystemMessage("foo")] + list(state["messages"])
 
     model = FakeToolCallingModel()
 
@@ -203,7 +241,7 @@ def test_prompt_with_store() -> None:
 
 
 async def test_prompt_with_store_async() -> None:
-    async def add(a: int, b: int):
+    async def add(a: int, b: int) -> int:
         """Adds a and b"""
         return a + b
 
@@ -211,13 +249,19 @@ async def test_prompt_with_store_async() -> None:
     await in_memory_store.aput(("memories", "1"), "user_name", {"data": "User name is Alice"})
     await in_memory_store.aput(("memories", "2"), "user_name", {"data": "User name is Bob"})
 
-    async def prompt(state, config, *, store):
+    async def prompt(
+        state: AgentState, config: RunnableConfig, *, store: BaseStore
+    ) -> Sequence[MessageLikeRepresentation]:
         user_id = config["configurable"]["user_id"]
-        system_str = (await store.aget(("memories", user_id), "user_name")).value["data"]
-        return [SystemMessage(system_str)] + state["messages"]
+        if key_val := await store.aget(("memories", user_id), "user_name"):
+            system_str = key_val.value["data"]
+            return [SystemMessage(system_str)] + list(state["messages"])
+        raise ValueError("Key not found in store")
 
-    async def prompt_no_store(state, config):
-        return SystemMessage("foo") + state["messages"]
+    async def prompt_no_store(
+        state: AgentState, config: RunnableConfig
+    ) -> Sequence[MessageLikeRepresentation]:
+        return [SystemMessage("foo")] + list(state["messages"])
 
     model = FakeToolCallingModel()
 
@@ -238,7 +282,9 @@ async def test_prompt_with_store_async() -> None:
 
 @pytest.mark.parametrize("tool_style", ["openai", "anthropic"])
 @pytest.mark.parametrize("include_builtin", [True, False])
-def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
+def test_model_with_tools(
+    tool_style: Literal["openai", "anthropic"], include_builtin: bool
+) -> None:
     model = FakeToolCallingModel(tool_style=tool_style)
 
     @dec_tool
@@ -270,7 +316,7 @@ def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
         )
     # check valid agent constructor
     with pytest.raises(ValueError):
-        create_agent(
+        create_agent(  # type: ignore[call-overload]
             model.bind_tools(tools),
             tools,
         )
@@ -394,17 +440,17 @@ def test__infer_handled_types() -> None:
 
     with pytest.raises(ValueError):
 
-        def handler(e: list[Exception]) -> str:
+        def handler2(e: list[Exception]) -> str:
             return ""
 
-        _infer_handled_types(handler)
+        _infer_handled_types(handler2)
 
     with pytest.raises(ValueError):
 
-        def handler(e: Union[str, int]) -> str:
+        def handler3(e: Union[str, int]) -> str:
             return ""
 
-        _infer_handled_types(handler)
+        _infer_handled_types(handler3)
 
 
 def test_react_agent_with_structured_response() -> None:
@@ -421,7 +467,7 @@ def test_react_agent_with_structured_response() -> None:
         return "The weather is sunny and 75°F."
 
     expected_structured_response = WeatherResponse(temperature=75)
-    model = FakeToolCallingModel[WeatherResponse](
+    model = FakeToolCallingModel(
         tool_calls=tool_calls, structured_response=expected_structured_response
     )
     agent = create_agent(
@@ -453,14 +499,14 @@ def test_react_agent_with_structured_response() -> None:
 
 
 class CustomState(AgentState):
-    user_name: str
+    user_name: NotRequired[str]
 
 
 def test_react_agent_update_state(
     sync_checkpointer: BaseCheckpointSaver,
 ) -> None:
     @dec_tool
-    def get_user_name(tool_call_id: Annotated[str, InjectedToolCallId]):
+    def get_user_name(tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
         """Retrieve user name"""
         user_name = interrupt("Please provider user name:")
         return Command(
@@ -472,13 +518,13 @@ def test_react_agent_update_state(
             }
         )
 
-    def prompt(state: CustomState):
+    def prompt(state: CustomState) -> Sequence[MessageLikeRepresentation]:
         user_name = state.get("user_name")
         if user_name is None:
             return state["messages"]
 
         system_msg = f"User name is {user_name}"
-        return [{"role": "system", "content": system_msg}] + state["messages"]
+        return [{"role": "system", "content": system_msg}] + list(state["messages"])
 
     tool_calls = [[{"args": {}, "id": "1", "name": "get_user_name"}]]
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -489,7 +535,7 @@ def test_react_agent_update_state(
         prompt=prompt,
         checkpointer=sync_checkpointer,
     )
-    config = {"configurable": {"thread_id": "1"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
     # Run until interrupted
     agent.invoke({"messages": [("user", "what's my name")]}, config)
     # supply the value for the interrupt
@@ -538,7 +584,7 @@ def test_react_agent_parallel_tool_calls(
         [human_assistance, get_weather],
         checkpointer=sync_checkpointer,
     )
-    config = {"configurable": {"thread_id": "1"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
     query = "Get user assistance and also check the weather"
     message_types = []
     for event in agent.stream({"messages": [("user", query)]}, config, stream_mode="values"):
@@ -583,8 +629,10 @@ def test_create_agent_inject_vars() -> None:
         store: Annotated[BaseStore, InjectedStore()],
     ) -> str:
         """Tool 1 docstring."""
-        store_val = store.get(namespace, "test_key").value["bar"]
-        return some_val + state["foo"] + store_val
+        if key_val := store.get(namespace, "test_key"):
+            store_val = key_val.value["bar"]
+            return some_val + state["foo"] + store_val
+        raise ValueError("Key not found in store")
 
     tool_call = {
         "name": "tool1",
@@ -723,7 +771,10 @@ def test__get_state_args() -> None:
 def test_inspect_react() -> None:
     model = FakeToolCallingModel(tool_calls=[])
     agent = create_agent(model, [])
-    inspect.getclosurevars(agent.nodes["agent"].bound.func)
+    bound = agent.nodes["agent"].bound
+    assert isinstance(bound, RunnableCallable)
+    assert bound.func is not None
+    inspect.getclosurevars(bound.func)
 
 
 def test_react_with_subgraph_tools(
@@ -737,18 +788,21 @@ def test_react_with_subgraph_tools(
         result: int
 
     # Define the subgraphs
-    def add(state):
+    def add(state: State) -> Output:
         return {"result": state["a"] + state["b"]}
 
     add_subgraph = (
-        StateGraph(State, output_schema=Output).add_node(add).add_edge(START, "add").compile()
+        _create_state_graph(State, output_schema=Output)
+        .add_node(add)
+        .add_edge(START, "add")
+        .compile()
     )
 
-    def multiply(state):
+    def multiply(state: State) -> Output:
         return {"result": state["a"] * state["b"]}
 
     multiply_subgraph = (
-        StateGraph(State, output_schema=Output)
+        _create_state_graph(State, output_schema=Output)
         .add_node(multiply)
         .add_edge(START, "multiply")
         .compile()
@@ -758,11 +812,11 @@ def test_react_with_subgraph_tools(
 
     # Add subgraphs as tools
 
-    def addition(a: int, b: int):
+    def addition(a: int, b: int) -> int:
         """Add two numbers"""
         return add_subgraph.invoke({"a": a, "b": b})["result"]
 
-    def multiplication(a: int, b: int):
+    def multiplication(a: int, b: int) -> int:
         """Multiply two numbers"""
         return multiply_subgraph.invoke({"a": a, "b": b})["result"]
 
@@ -829,13 +883,15 @@ def test_react_agent_subgraph_streaming_sync() -> None:
     )
 
     # Create a subgraph that uses the React agent as a node
-    def react_agent_node(state: MessagesState, config: RunnableConfig) -> MessagesState:
+    def react_agent_node(state: AgentState, config: RunnableConfig) -> AgentState:
         """Node that runs the React agent and collects streaming output."""
         collected_content = ""
+        message = state["messages"][-1]
+        content = message.content if isinstance(message, BaseMessage) else message
 
         # Stream the agent output and collect content
         for msg_chunk, _msg_metadata in agent.stream(
-            {"messages": [("user", state["messages"][-1].content)]},
+            {"messages": [("user", str(content))]},
             config,
             stream_mode="messages",
         ):
@@ -845,7 +901,7 @@ def test_react_agent_subgraph_streaming_sync() -> None:
         return {"messages": [("assistant", collected_content)]}
 
     # Create the main workflow with the React agent as a subgraph node
-    workflow = StateGraph(MessagesState)
+    workflow = _create_state_graph(AgentState)
     workflow.add_node("react_agent", react_agent_node)
     workflow.add_edge(START, "react_agent")
     workflow.add_edge("react_agent", "__end__")
@@ -916,13 +972,16 @@ async def test_react_agent_subgraph_streaming() -> None:
     )
 
     # Create a subgraph that uses the React agent as a node
-    async def react_agent_node(state: MessagesState, config: RunnableConfig) -> MessagesState:
+    async def react_agent_node(state: AgentState, config: RunnableConfig) -> AgentState:
         """Node that runs the React agent and collects streaming output."""
         collected_content = ""
 
+        message = state["messages"][-1]
+        content = message.content if isinstance(message, BaseMessage) else message
+
         # Stream the agent output and collect content
         async for msg_chunk, _msg_metadata in agent.astream(
-            {"messages": [("user", state["messages"][-1].content)]},
+            {"messages": [("user", str(content))]},
             config,
             stream_mode="messages",
         ):
@@ -932,7 +991,7 @@ async def test_react_agent_subgraph_streaming() -> None:
         return {"messages": [("assistant", collected_content)]}
 
     # Create the main workflow with the React agent as a subgraph node
-    workflow = StateGraph(MessagesState)
+    workflow = _create_state_graph(AgentState)
     workflow.add_node("react_agent", react_agent_node)
     workflow.add_edge(START, "react_agent")
     workflow.add_edge("react_agent", "__end__")
@@ -1003,7 +1062,7 @@ def test_tool_node_node_interrupt(
             [],
         ]
     )
-    config = {"configurable": {"thread_id": "1"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
     agent = create_agent(
         model,
         [tool_interrupt, tool_normal],
@@ -1049,9 +1108,12 @@ def test_tool_node_node_interrupt(
 def test_dynamic_model_basic() -> None:
     """Test basic dynamic model functionality."""
 
-    def dynamic_model(state, runtime: Runtime):
+    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
         # Return different models based on state
-        if "urgent" in state["messages"][-1].content:
+        if (
+            isinstance(state["messages"][-1], BaseMessage)
+            and "urgent" in state["messages"][-1].content
+        ):
             return FakeToolCallingModel(tool_calls=[])
         return FakeToolCallingModel(tool_calls=[])
 
@@ -1079,9 +1141,12 @@ def test_dynamic_model_with_tools() -> None:
         """Advanced tool."""
         return f"advanced: {x}"
 
-    def dynamic_model(state: dict, runtime: Runtime) -> BaseChatModel:
+    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
         # Return model with different behaviors based on message content
-        if "advanced" in state["messages"][-1].content:
+        if (
+            isinstance(state["messages"][-1], BaseMessage)
+            and "advanced" in state["messages"][-1].content
+        ):
             return FakeToolCallingModel(
                 tool_calls=[
                     [{"args": {"x": 1}, "id": "1", "name": "advanced_tool"}],
@@ -1117,7 +1182,7 @@ class Context:
 def test_dynamic_model_with_context() -> None:
     """Test dynamic model using config parameters."""
 
-    def dynamic_model(state, runtime: Runtime[Context]):
+    def dynamic_model(state: AgentState, runtime: Runtime[Context]) -> BaseChatModel:
         # Use context to determine model behavior
         user_id = runtime.context.user_id
         if user_id == "user_premium":
@@ -1145,7 +1210,7 @@ def test_dynamic_model_with_state_schema() -> None:
     """Test dynamic model with custom state schema."""
 
     class CustomDynamicState(AgentState):
-        model_preference: str = "default"
+        model_preference: str
 
     def dynamic_model(state: CustomDynamicState, runtime: Runtime) -> BaseChatModel:
         # Use custom state field to determine model
@@ -1201,7 +1266,7 @@ def test_dynamic_model_with_structured_response() -> None:
         message: str
         confidence: float
 
-    def dynamic_model(state, runtime: Runtime):
+    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
         return FakeToolCallingModel(
             tool_calls=[
                 [
@@ -1223,7 +1288,7 @@ def test_dynamic_model_with_structured_response() -> None:
     assert result["structured_response"].confidence == 0.9
 
 
-def test_dynamic_model_with_checkpointer(sync_checkpointer) -> None:
+def test_dynamic_model_with_checkpointer(sync_checkpointer: BaseCheckpointSaver) -> None:
     """Test dynamic model with checkpointer."""
     call_count = 0
 
@@ -1240,7 +1305,7 @@ def test_dynamic_model_with_checkpointer(sync_checkpointer) -> None:
         )
 
     agent = create_agent(dynamic_model, [], checkpointer=sync_checkpointer)
-    config = {"configurable": {"thread_id": "test_dynamic"}}
+    config: RunnableConfig = {"configurable": {"thread_id": "test_dynamic"}}
 
     # First call
     result1 = agent.invoke({"messages": [HumanMessage("hello")]}, config)
@@ -1267,9 +1332,11 @@ def test_dynamic_model_state_dependent_tools() -> None:
         """Tool B."""
         return f"B: {x}"
 
-    def dynamic_model(state, runtime: Runtime):
+    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
         # Switch tools based on message history
-        if any("use_b" in msg.content for msg in state["messages"]):
+        if any(
+            isinstance(msg, BaseMessage) and "use_b" in msg.content for msg in state["messages"]
+        ):
             return FakeToolCallingModel(
                 tool_calls=[[{"args": {"x": 2}, "id": "1", "name": "tool_b"}], []]
             )
@@ -1295,8 +1362,11 @@ def test_dynamic_model_state_dependent_tools() -> None:
 def test_dynamic_model_error_handling() -> None:
     """Test error handling in dynamic model."""
 
-    def failing_dynamic_model(state, runtime: Runtime):
-        if "fail" in state["messages"][-1].content:
+    def failing_dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
+        if (
+            isinstance(state["messages"][-1], BaseMessage)
+            and "fail" in state["messages"][-1].content
+        ):
             msg = "Dynamic model failed"
             raise ValueError(msg)
         return FakeToolCallingModel(tool_calls=[])
@@ -1319,12 +1389,12 @@ def test_dynamic_model_vs_static_model_behavior() -> None:
     static_agent = create_agent(static_model, [])
 
     # Dynamic model returning the same model
-    def dynamic_model(state, runtime: Runtime):
+    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
         return FakeToolCallingModel(tool_calls=[])
 
     dynamic_agent = create_agent(dynamic_model, [])
 
-    input_msg = {"messages": [HumanMessage("test message")]}
+    input_msg: AgentState = {"messages": [HumanMessage("test message")]}
 
     static_result = static_agent.invoke(input_msg)
     dynamic_result = dynamic_agent.invoke(input_msg)
@@ -1342,7 +1412,7 @@ def test_dynamic_model_receives_correct_state() -> None:
     class CustomAgentState(AgentState):
         custom_field: str
 
-    def dynamic_model(state, runtime: Runtime) -> BaseChatModel:
+    def dynamic_model(state: CustomAgentState, runtime: Runtime) -> BaseChatModel:
         # Capture the state that's passed to the dynamic model function
         received_states.append(state)
         return FakeToolCallingModel(tool_calls=[])
@@ -1350,7 +1420,10 @@ def test_dynamic_model_receives_correct_state() -> None:
     agent = create_agent(dynamic_model, [], state_schema=CustomAgentState)
 
     # Test with initial state
-    input_state = {"messages": [HumanMessage("hello")], "custom_field": "test_value"}
+    input_state: CustomAgentState = {
+        "messages": [HumanMessage("hello")],
+        "custom_field": "test_value",
+    }
     agent.invoke(input_state)
 
     # The dynamic model function should receive the original state, not the processed model input
@@ -1363,7 +1436,8 @@ def test_dynamic_model_receives_correct_state() -> None:
 
     # Should have the original messages
     assert len(received_state["messages"]) == 1
-    assert received_state["messages"][0].content == "hello"
+    assert isinstance(message := received_state["messages"][0], BaseMessage)
+    assert message.content == "hello"
 
 
 async def test_dynamic_model_receives_correct_state_async() -> None:
@@ -1373,7 +1447,7 @@ async def test_dynamic_model_receives_correct_state_async() -> None:
     class CustomAgentStateAsync(AgentState):
         custom_field: str
 
-    def dynamic_model(state, runtime: Runtime):
+    def dynamic_model(state: CustomAgentStateAsync, runtime: Runtime) -> BaseChatModel:
         # Capture the state that's passed to the dynamic model function
         received_states.append(state)
         return FakeToolCallingModel(tool_calls=[])
@@ -1381,7 +1455,7 @@ async def test_dynamic_model_receives_correct_state_async() -> None:
     agent = create_agent(dynamic_model, [], state_schema=CustomAgentStateAsync)
 
     # Test with initial state
-    input_state = {
+    input_state: CustomAgentStateAsync = {
         "messages": [HumanMessage("hello async")],
         "custom_field": "test_value_async",
     }
@@ -1397,14 +1471,15 @@ async def test_dynamic_model_receives_correct_state_async() -> None:
 
     # Should have the original messages
     assert len(received_state["messages"]) == 1
-    assert received_state["messages"][0].content == "hello async"
+    assert isinstance(message := received_state["messages"][0], BaseMessage)
+    assert message.content == "hello async"
 
 
 def test_pre_model_hook() -> None:
     model = FakeToolCallingModel(tool_calls=[])
 
     # Test `llm_input_messages`
-    def pre_model_hook(state: AgentState):
+    def pre_model_hook(state: AgentState) -> dict[str, list[BaseMessage]]:
         return {"llm_input_messages": [HumanMessage("Hello!")]}
 
     agent = create_agent(model, [], pre_model_hook=pre_model_hook)
@@ -1418,10 +1493,10 @@ def test_pre_model_hook() -> None:
     }
 
     # Test `messages`
-    def pre_model_hook(state: AgentState):
+    def pre_model_hook2(state: AgentState) -> dict[str, list[BaseMessage]]:
         return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), HumanMessage("Hello!")]}
 
-    agent = create_agent(model, [], pre_model_hook=pre_model_hook)
+    agent = create_agent(model, [], pre_model_hook=pre_model_hook2)
     result = agent.invoke({"messages": [HumanMessage("hi?")]})
     assert result == {
         "messages": [
@@ -1482,7 +1557,7 @@ def test_post_model_hook_with_structured_output() -> None:
 
     class State(AgentState):
         flag: bool
-        structured_response: WeatherResponse
+        structured_response: NotRequired[WeatherResponse]
 
     def post_model_hook(state: State) -> Union[dict[str, bool], Command]:
         return {"flag": True}
@@ -1587,8 +1662,10 @@ def test_create_agent_inject_vars_with_post_model_hook() -> None:
         store: Annotated[BaseStore, InjectedStore()],
     ) -> str:
         """Tool 1 docstring."""
-        store_val = store.get(namespace, "test_key").value["bar"]
-        return some_val + state["foo"] + store_val
+        if key_val := store.get(namespace, "test_key"):
+            store_val = key_val.value["bar"]
+            return some_val + state["foo"] + store_val
+        raise ValueError("Key not found in store")
 
     tool_call = {
         "name": "tool1",

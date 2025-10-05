@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Sequence  # noqa: TC003
 from dataclasses import asdict, is_dataclass
 from typing import (
     TYPE_CHECKING,
@@ -13,6 +13,7 @@ from typing import (
     Literal,
     cast,
     get_type_hints,
+    overload,
 )
 from warnings import warn
 
@@ -25,6 +26,7 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
+    MessageLikeRepresentation,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -42,8 +44,16 @@ from langgraph.managed import RemainingSteps  # noqa: TC002
 from langgraph.types import Checkpointer, Command, Send
 from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
-from typing_extensions import NotRequired, TypedDict, TypeVar
+from typing_extensions import (  # noqa: UP035
+    Concatenate,
+    NotRequired,
+    TypedDict,
+    TypeVar,
+)
 
+from langchain.agents._internal._typing import (
+    SyncOrAsync,
+)
 from langchain.agents.middleware_agent import create_agent as create_middleware_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -58,14 +68,13 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from langchain_core.tools import BaseTool
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
 
-    from langchain.agents._internal._typing import (
-        SyncOrAsync,
-    )
     from langchain.agents.types import AgentMiddleware
 
 StructuredResponseT = TypeVar("StructuredResponseT", default=None)
@@ -76,7 +85,7 @@ STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 class AgentState(TypedDict):
     """The state of the agent."""
 
-    messages: Annotated[Sequence[BaseMessage], add_messages]
+    messages: Annotated[Sequence[MessageLikeRepresentation], add_messages]
 
     remaining_steps: NotRequired[RemainingSteps]
 
@@ -84,7 +93,7 @@ class AgentState(TypedDict):
 class AgentStatePydantic(BaseModel):
     """The state of the agent."""
 
-    messages: Annotated[Sequence[BaseMessage], add_messages]
+    messages: Annotated[Sequence[MessageLikeRepresentation], add_messages]
 
     remaining_steps: RemainingSteps = 25
 
@@ -92,7 +101,7 @@ class AgentStatePydantic(BaseModel):
 class AgentStateWithStructuredResponse(AgentState, Generic[StructuredResponseT]):
     """The state of the agent with a structured response."""
 
-    structured_response: StructuredResponseT
+    structured_response: NotRequired[StructuredResponseT]
 
 
 class AgentStateWithStructuredResponsePydantic(AgentStatePydantic, Generic[StructuredResponseT]):
@@ -106,7 +115,7 @@ PROMPT_RUNNABLE_NAME = "Prompt"
 Prompt = (
     SystemMessage
     | str
-    | Callable[[StateT], LanguageModelInput]
+    | SyncOrAsync[Concatenate[StateT, ...], LanguageModelInput]
     | Runnable[StateT, LanguageModelInput]
 )
 
@@ -902,6 +911,106 @@ def _supports_native_structured_output(
         if model_name
         else False
     )
+
+
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+    *,
+    middleware: Sequence[AgentMiddleware] = (),
+    prompt: Prompt | None = None,
+    response_format: None = None,
+    pre_model_hook: RunnableLike | None = None,
+    post_model_hook: RunnableLike | None = None,
+    state_schema: None = None,
+    context_schema: None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    version: Literal["v1", "v2"] = "v2",
+    name: str | None = None,
+    **deprecated_kwargs: Any,
+) -> CompiledStateGraph[AgentState, ContextT]: ...
+
+
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+    *,
+    middleware: Sequence[AgentMiddleware] = (),
+    prompt: Prompt | None = None,
+    response_format: ToolStrategy[StructuredResponseT]
+    | ProviderStrategy[StructuredResponseT]
+    | type[StructuredResponseT],
+    pre_model_hook: RunnableLike | None = None,
+    post_model_hook: RunnableLike | None = None,
+    state_schema: None = None,
+    context_schema: None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    version: Literal["v1", "v2"] = "v2",
+    name: str | None = None,
+    **deprecated_kwargs: Any,
+) -> CompiledStateGraph[AgentStateWithStructuredResponse[StructuredResponseT], ContextT]: ...
+
+
+@overload
+def create_agent(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+    *,
+    middleware: Sequence[AgentMiddleware] = (),
+    prompt: Prompt | None = None,
+    response_format: ToolStrategy[StructuredResponseT]
+    | ProviderStrategy[StructuredResponseT]
+    | type[StructuredResponseT]
+    | None = None,
+    pre_model_hook: RunnableLike | None = None,
+    post_model_hook: RunnableLike | None = None,
+    state_schema: type[StateT],
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    version: Literal["v1", "v2"] = "v2",
+    name: str | None = None,
+    **deprecated_kwargs: Any,
+) -> CompiledStateGraph[StateT, ContextT]: ...
+
+
+@overload
+def create_agent(
+    model: SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+    *,
+    middleware: Sequence[AgentMiddleware] = (),
+    prompt: Prompt | None = None,
+    response_format: ToolStrategy[StructuredResponseT]
+    | ProviderStrategy[StructuredResponseT]
+    | type[StructuredResponseT]
+    | None = None,
+    pre_model_hook: RunnableLike | None = None,
+    post_model_hook: RunnableLike | None = None,
+    state_schema: type[StateT] | None = None,
+    context_schema: type[ContextT] | None = None,
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    version: Literal["v1", "v2"] = "v2",
+    name: str | None = None,
+    **deprecated_kwargs: Any,
+) -> CompiledStateGraph[StateT, ContextT]: ...
 
 
 def create_agent(  # noqa: D417
