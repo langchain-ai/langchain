@@ -407,11 +407,7 @@ def create_agent(  # noqa: PLR0915
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools (regular_tools + middleware_tools)
-        available_tools_by_name = {}
-        for t in default_tools:
-            # Skip built-in tools (dict format) - they can be added dynamically
-            if not isinstance(t, dict):
-                available_tools_by_name[t.name] = t
+        available_tools_by_name = {t.name: t for t in default_tools if isinstance(t, BaseTool)}
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
         unknown_tool_names = []
@@ -472,6 +468,21 @@ def create_agent(  # noqa: PLR0915
             )
 
         if isinstance(effective_response_format, ToolStrategy):
+            # Current implementation requires that tools used for structured output
+            # have to be declared upfront when creating the agent as part of the
+            # response format. Middleware is allowed to change the response format
+            # to a subset of the original structured tools when using ToolStrategy,
+            # but not to add new structured tools that weren't declared upfront.
+            # Compute output binding
+            for tc in effective_response_format.schema_specs:
+                if tc.name not in structured_output_tools:
+                    msg = (
+                        f"ToolStrategy specifies tool '{tc.name}' "
+                        "which wasn't declared in the original "
+                        "response format when creating the agent."
+                    )
+                    raise ValueError(msg)
+
             # Force tool use if we have structured output tools
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return (
