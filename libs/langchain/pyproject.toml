@@ -39,6 +39,8 @@ together = ["langchain-together"]
 # deepseek = ["langchain-deepseek"]
 # xai = ["langchain-xai"]
 # perplexity = ["langchain-perplexity"]
+# hallucination = ["transformers", "torch"]
+
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
@@ -83,6 +85,8 @@ test_integration = [
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
+    "transformers>=4.35.0,<5.0.0",
+    "torch>=2.1.0,<3.0.0",
 ]
 lint = [
     "ruff>=0.13.1,<0.14.0",
