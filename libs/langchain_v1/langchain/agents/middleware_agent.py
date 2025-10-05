@@ -228,9 +228,8 @@ def create_agent(  # noqa: PLR0915
 
     # Setup tools
     tool_node: ToolNode | None = None
-    built_in_tools: list[dict] = []
     if isinstance(tools, list):
-        # Extract built-in provider tools (dict format)
+        # Extract built-in provider tools (dict format) and regular tools (BaseTool)
         built_in_tools = [t for t in tools if isinstance(t, dict)]
         regular_tools = [t for t in tools if not isinstance(t, dict)]
 
@@ -241,7 +240,7 @@ def create_agent(  # noqa: PLR0915
         tool_node = ToolNode(tools=available_tools) if available_tools else None
 
         # Default tools for ModelRequest initialization
-        # Include built-ins as starting point (can be changed dynamically later)
+        # Include built-ins and regular tools (can be changed dynamically by middleware)
         # Structured tools are NOT included - they're added dynamically based on response_format
         default_tools = regular_tools + middleware_tools + built_in_tools
     elif isinstance(tools, ToolNode):
@@ -453,8 +452,9 @@ def create_agent(  # noqa: PLR0915
             # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
 
-        # Build final tools list including built-in tools and structured output tools
-        final_tools = list(request.tools) + list(request.built_in_tools)
+        # Build final tools list including structured output tools
+        # request.tools already contains both BaseTool and dict (built-in) tools
+        final_tools = list(request.tools)
         if isinstance(effective_response_format, ToolStrategy):
             # Add structured output tools to final tools list
             structured_tools = [info.tool for info in structured_output_tools.values()]
@@ -500,7 +500,6 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
-            built_in_tools=built_in_tools,
         )
 
         # Apply modify_model_request middleware in sequence
@@ -538,7 +537,6 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
-            built_in_tools=built_in_tools,
         )
 
         # Apply modify_model_request middleware in sequence

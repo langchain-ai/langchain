@@ -62,8 +62,7 @@ class ModelRequest:
     system_prompt: str | None
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
-    tools: list[BaseTool]
-    built_in_tools: list[dict]
+    tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any] = field(default_factory=dict)
 

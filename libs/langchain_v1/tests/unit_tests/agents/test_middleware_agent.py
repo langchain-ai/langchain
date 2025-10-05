@@ -960,7 +960,6 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         system_prompt=None,
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
         model_settings={},
     )
@@ -978,7 +977,6 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         system_prompt=None,
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
         model_settings={},
     )
@@ -1498,7 +1496,6 @@ def test_planning_middleware_modify_model_request(original_prompt, expected_prom
         messages=[HumanMessage(content="Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
         model_settings={},
     )
@@ -1626,7 +1623,6 @@ def test_planning_middleware_custom_system_prompt() -> None:
         messages=[HumanMessage(content="Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
         model_settings={},
     )
@@ -1663,7 +1659,6 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
         messages=[HumanMessage(content="Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
         model_settings={},
     )

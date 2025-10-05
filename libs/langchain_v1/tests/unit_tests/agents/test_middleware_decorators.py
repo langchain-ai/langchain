@@ -107,7 +107,6 @@ def test_modify_model_request_decorator() -> None:
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
     )
     result = custom_modify_request.modify_model_request(
@@ -595,7 +594,6 @@ def test_dynamic_prompt_decorator() -> None:
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
     )
     result = my_prompt.modify_model_request(
@@ -619,7 +617,6 @@ def test_dynamic_prompt_uses_state() -> None:
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
-        built_in_tools=[],
         response_format=None,
     )
     result = custom_prompt.modify_model_request(
