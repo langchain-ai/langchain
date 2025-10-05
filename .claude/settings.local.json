@@ -2,7 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(uv run:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
       "WebSearch",
       "WebFetch(domain:ai.pydantic.dev)",
       "WebFetch(domain:openai.github.io)",

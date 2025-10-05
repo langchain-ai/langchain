@@ -1,6 +1,7 @@
 """Middleware plugins for agents."""
 
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
@@ -25,6 +26,7 @@ __all__ = [
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
     "LLMToolSelectorMiddleware",
+    "ModelFallbackMiddleware",
     "ModelRequest",
     "PIIDetectionError",
     "PIIMiddleware",

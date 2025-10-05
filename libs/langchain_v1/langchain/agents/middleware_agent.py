@@ -278,6 +278,12 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.after_model is not AgentMiddleware.after_model
         or m.__class__.aafter_model is not AgentMiddleware.aafter_model
     ]
+    middleware_w_retry = [
+        m
+        for m in middleware
+        if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request
+        or m.__class__.aretry_model_request is not AgentMiddleware.aretry_model_request
+    ]
 
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
@@ -526,18 +532,47 @@ def create_agent(  # noqa: PLR0915
                 )
                 raise TypeError(msg)
 
-        # Get the bound model (with auto-detection if needed)
-        model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        # Retry loop for model invocation with error handling
+        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
+        max_attempts = 100
+        for attempt in range(1, max_attempts + 1):
+            try:
+                # Get the bound model (with auto-detection if needed)
+                model_, effective_response_format = _get_bound_model(request)
+                messages = request.messages
+                if request.system_prompt:
+                    messages = [SystemMessage(request.system_prompt), *messages]
 
-        output = model_.invoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
-        }
+                output = model_.invoke(messages)
+                return {
+                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+                    **_handle_model_output(output, effective_response_format),
+                }
+            except Exception as error:
+                # Try retry_model_request on each middleware
+                for m in middleware_w_retry:
+                    if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request:
+                        if retry_request := m.retry_model_request(
+                            error, request, state, runtime, attempt
+                        ):
+                            # Break on first middleware that wants to retry
+                            request = retry_request
+                            break
+                    else:
+                        msg = (
+                            f"No synchronous function provided for "
+                            f'{m.__class__.__name__}.aretry_model_request".'
+                            "\nEither initialize with a synchronous function or invoke"
+                            " via the async API (ainvoke, astream, etc.)"
+                        )
+                        raise TypeError(msg)
+                else:
+                    raise
+
+        # If we exit the loop, max attempts exceeded
+        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
+        raise RuntimeError(msg)
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -554,18 +589,39 @@ def create_agent(  # noqa: PLR0915
         for m in middleware_w_modify_model_request:
             await m.amodify_model_request(request, state, runtime)
 
-        # Get the bound model (with auto-detection if needed)
-        model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        # Retry loop for model invocation with error handling
+        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
+        max_attempts = 100
+        for attempt in range(1, max_attempts + 1):
+            try:
+                # Get the bound model (with auto-detection if needed)
+                model_, effective_response_format = _get_bound_model(request)
+                messages = request.messages
+                if request.system_prompt:
+                    messages = [SystemMessage(request.system_prompt), *messages]
 
-        output = await model_.ainvoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
-        }
+                output = await model_.ainvoke(messages)
+                return {
+                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+                    **_handle_model_output(output, effective_response_format),
+                }
+            except Exception as error:
+                # Try retry_model_request on each middleware
+                for m in middleware_w_retry:
+                    if retry_request := await m.aretry_model_request(
+                        error, request, state, runtime, attempt
+                    ):
+                        # Break on first middleware that wants to retry
+                        request = retry_request
+                        break
+                else:
+                    # If no middleware wants to retry, re-raise the error
+                    raise
+
+        # If we exit the loop, max attempts exceeded
+        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
+        raise RuntimeError(msg)
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable

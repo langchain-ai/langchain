@@ -167,6 +167,54 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
+    def retry_model_request(
+        self,
+        error: Exception,  # noqa: ARG002
+        request: ModelRequest,  # noqa: ARG002
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+        attempt: int,  # noqa: ARG002
+    ) -> ModelRequest | None:
+        """Logic to handle model invocation errors and optionally retry.
+
+        Args:
+            error: The exception that occurred during model invocation.
+            request: The original model request that failed.
+            state: The current agent state.
+            runtime: The langgraph runtime.
+            attempt: The current attempt number (1-indexed).
+
+        Returns:
+            ModelRequest: Modified request to retry with.
+            None: Propagate the error (re-raise).
+        """
+        return None
+
+    async def aretry_model_request(
+        self,
+        error: Exception,
+        request: ModelRequest,
+        state: StateT,
+        runtime: Runtime[ContextT],
+        attempt: int,
+    ) -> ModelRequest | None:
+        """Async logic to handle model invocation errors and optionally retry.
+
+        Args:
+            error: The exception that occurred during model invocation.
+            request: The original model request that failed.
+            state: The current agent state.
+            runtime: The langgraph runtime.
+            attempt: The current attempt number (1-indexed).
+
+        Returns:
+            ModelRequest: Modified request to retry with.
+            None: Propagate the error (re-raise).
+        """
+        return await run_in_executor(
+            None, self.retry_model_request, error, request, state, runtime, attempt
+        )
+
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""
