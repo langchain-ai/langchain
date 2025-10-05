@@ -70,10 +70,10 @@ class GenericFakeChatModel(BaseChatModel):
     This can be expanded to accept other types like ``Callables`` / dicts / strings
     to make the interface more generic if needed.
 
-    .. note::
+    !!! note
         If you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    .. warning::
+    !!! warning
         Streaming is not implemented yet. We should try to implement it in the future by
         delegating to invoke and then breaking the resulting output into message chunks.
 

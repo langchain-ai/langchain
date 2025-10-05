@@ -97,9 +97,3 @@ repos:
         entry: make -C libs/partners/qdrant format lint
         files: ^libs/partners/qdrant/
         pass_filenames: false
-      - id: root
-        name: format and lint docs, cookbook
-        language: system
-        entry: make format lint
-        files: ^(docs|cookbook)/
-        pass_filenames: false

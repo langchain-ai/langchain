@@ -5,7 +5,6 @@ from importlib import util
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.runnables import Runnable
 
 _SUPPORTED_PROVIDERS = {
     "azure_openai": "langchain_openai",
@@ -126,7 +125,7 @@ def init_embeddings(
     *,
     provider: str | None = None,
     **kwargs: Any,
-) -> Embeddings | Runnable[Any, list[float]]:
+) -> Embeddings:
     """Initialize an embeddings model from a model name and optional provider.
 
     **Note:** Must have the integration package corresponding to the model provider
@@ -152,7 +151,7 @@ def init_embeddings(
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    .. dropdown:: Example Usage
+    ??? note "Example Usage"
         :open:
 
         .. code-block:: python
@@ -168,7 +167,7 @@ def init_embeddings(
             # With additional parameters
             model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
 
     """
     if not model:

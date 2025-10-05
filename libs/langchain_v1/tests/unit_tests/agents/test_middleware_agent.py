@@ -36,6 +36,11 @@ from langchain.agents.middleware.planning import (
     write_todos,
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
+from langchain.agents.middleware.call_tracking import (
+    ModelCallLimitMiddleware,
+    ModelCallLimitExceededError,
+)
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
@@ -888,6 +893,51 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
             middleware.after_model(state, None)
 
 
+def test_human_in_the_loop_middleware_description_as_callable() -> None:
+    """Test that description field accepts both string and callable."""
+
+    def custom_description(tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
+        """Generate a custom description."""
+        return f"Custom: {tool_call['name']} with args {tool_call['args']}"
+
+    middleware = HumanInTheLoopMiddleware(
+        interrupt_on={
+            "tool_with_callable": {"allow_accept": True, "description": custom_description},
+            "tool_with_string": {"allow_accept": True, "description": "Static description"},
+        }
+    )
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[
+            {"name": "tool_with_callable", "args": {"x": 1}, "id": "1"},
+            {"name": "tool_with_string", "args": {"y": 2}, "id": "2"},
+        ],
+    )
+    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    captured_requests = []
+
+    def mock_capture_requests(requests):
+        captured_requests.extend(requests)
+        return [{"type": "accept"}, {"type": "accept"}]
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
+    ):
+        middleware.after_model(state, None)
+
+        assert len(captured_requests) == 2
+
+        # Check callable description
+        assert (
+            captured_requests[0]["description"] == "Custom: tool_with_callable with args {'x': 1}"
+        )
+
+        # Check string description
+        assert captured_requests[1]["description"] == "Static description"
+
+
 # Tests for AnthropicPromptCachingMiddleware
 def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
@@ -1665,6 +1715,217 @@ def test_planning_middleware_custom_system_prompt() -> None:
     assert "call the write_todos tool" in result["messages"][1].content
 
 
+@tool
+def simple_tool(input: str) -> str:
+    """A simple tool"""
+    return input
+
+
+def test_middleware_unit_functionality():
+    """Test that the middleware works as expected in isolation."""
+    # Test with end behavior
+    middleware = ModelCallLimitMiddleware(thread_limit=2, run_limit=1)
+
+    # Mock runtime (not used in current implementation)
+    runtime = None
+
+    # Test when limits are not exceeded
+    state = {"thread_model_call_count": 0, "run_model_call_count": 0}
+    result = middleware.before_model(state, runtime)
+    assert result is None
+
+    # Test when thread limit is exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    result = middleware.before_model(state, runtime)
+    assert result is not None
+    assert result["jump_to"] == "end"
+    assert "messages" in result
+    assert len(result["messages"]) == 1
+    assert "thread limit (2/2)" in result["messages"][0].content
+
+    # Test when run limit is exceeded
+    state = {"thread_model_call_count": 1, "run_model_call_count": 1}
+    result = middleware.before_model(state, runtime)
+    assert result is not None
+    assert result["jump_to"] == "end"
+    assert "messages" in result
+    assert len(result["messages"]) == 1
+    assert "run limit (1/1)" in result["messages"][0].content
+
+    # Test with error behavior
+    middleware_exception = ModelCallLimitMiddleware(
+        thread_limit=2, run_limit=1, exit_behavior="error"
+    )
+
+    # Test exception when thread limit exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware_exception.before_model(state, runtime)
+
+    assert "thread limit (2/2)" in str(exc_info.value)
+
+    # Test exception when run limit exceeded
+    state = {"thread_model_call_count": 1, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware_exception.before_model(state, runtime)
+
+    assert "run limit (1/1)" in str(exc_info.value)
+
+
+def test_thread_limit_with_create_agent():
+    """Test that thread limits work correctly with create_agent."""
+    model = FakeToolCallingModel()
+
+    # Set thread limit to 1 (should be exceeded after 1 call)
+    agent = create_agent(
+        model=model,
+        tools=[simple_tool],
+        middleware=[ModelCallLimitMiddleware(thread_limit=1)],
+    ).compile(checkpointer=InMemorySaver())
+
+    # First invocation should work - 1 model call, within thread limit
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    # Should complete successfully with 1 model call
+    assert "messages" in result
+    assert len(result["messages"]) == 2  # Human + AI messages
+
+    # Second invocation in same thread should hit thread limit
+    # The agent should jump to end after detecting the limit
+    result2 = agent.invoke(
+        {"messages": [HumanMessage("Hello again")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    assert "messages" in result2
+    # The agent should have detected the limit and jumped to end with a limit exceeded message
+    # So we should have: previous messages + new human message + limit exceeded AI message
+    assert len(result2["messages"]) == 4  # Previous Human + AI + New Human + Limit AI
+    assert isinstance(result2["messages"][0], HumanMessage)  # First human
+    assert isinstance(result2["messages"][1], AIMessage)  # First AI response
+    assert isinstance(result2["messages"][2], HumanMessage)  # Second human
+    assert isinstance(result2["messages"][3], AIMessage)  # Limit exceeded message
+    assert "thread limit" in result2["messages"][3].content
+
+
+def test_run_limit_with_create_agent():
+    """Test that run limits work correctly with create_agent."""
+    # Create a model that will make 2 calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"name": "simple_tool", "args": {"input": "test"}, "id": "1"}],
+            [],  # No tool calls on second call
+        ]
+    )
+
+    # Set run limit to 1 (should be exceeded after 1 call)
+    agent = create_agent(
+        model=model,
+        tools=[simple_tool],
+        middleware=[ModelCallLimitMiddleware(run_limit=1)],
+    ).compile(checkpointer=InMemorySaver())
+
+    # This should hit the run limit after the first model call
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    assert "messages" in result
+    # The agent should have made 1 model call then jumped to end with limit exceeded message
+    # So we should have: Human + AI + Tool + Limit exceeded AI message
+    assert len(result["messages"]) == 4  # Human + AI + Tool + Limit AI
+    assert isinstance(result["messages"][0], HumanMessage)
+    assert isinstance(result["messages"][1], AIMessage)
+    assert isinstance(result["messages"][2], ToolMessage)
+    assert isinstance(result["messages"][3], AIMessage)  # Limit exceeded message
+    assert "run limit" in result["messages"][3].content
+
+
+def test_middleware_initialization_validation():
+    """Test that middleware initialization validates parameters correctly."""
+    # Test that at least one limit must be specified
+    with pytest.raises(ValueError, match="At least one limit must be specified"):
+        ModelCallLimitMiddleware()
+
+    # Test invalid exit behavior
+    with pytest.raises(ValueError, match="Invalid exit_behavior"):
+        ModelCallLimitMiddleware(thread_limit=5, exit_behavior="invalid")
+
+    # Test valid initialization
+    middleware = ModelCallLimitMiddleware(thread_limit=5, run_limit=3)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit == 3
+    assert middleware.exit_behavior == "end"
+
+    # Test with only thread limit
+    middleware = ModelCallLimitMiddleware(thread_limit=5)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit is None
+
+    # Test with only run limit
+    middleware = ModelCallLimitMiddleware(run_limit=3)
+    assert middleware.thread_limit is None
+    assert middleware.run_limit == 3
+
+
+def test_exception_error_message():
+    """Test that the exception provides clear error messages."""
+    middleware = ModelCallLimitMiddleware(thread_limit=2, run_limit=1, exit_behavior="error")
+
+    # Test thread limit exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "thread limit (2/2)" in error_msg
+
+    # Test run limit exceeded
+    state = {"thread_model_call_count": 0, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "run limit (1/1)" in error_msg
+
+    # Test both limits exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "thread limit (2/2)" in error_msg
+    assert "run limit (1/1)" in error_msg
+
+
+def test_run_limit_resets_between_invocations() -> None:
+    """Test that run_model_call_count resets between invocations, but thread_model_call_count accumulates."""
+
+    # First: No tool calls per invocation, so model does not increment call counts internally
+    middleware = ModelCallLimitMiddleware(thread_limit=3, run_limit=1, exit_behavior="error")
+    model = FakeToolCallingModel(
+        tool_calls=[[], [], [], []]
+    )  # No tool calls, so only model call per run
+
+    agent = create_agent(model=model, middleware=[middleware])
+    agent = agent.compile(checkpointer=InMemorySaver())
+
+    thread_config = {"configurable": {"thread_id": "test_thread"}}
+    agent.invoke({"messages": [HumanMessage("Hello")]}, thread_config)
+    agent.invoke({"messages": [HumanMessage("Hello again")]}, thread_config)
+    agent.invoke({"messages": [HumanMessage("Hello third")]}, thread_config)
+
+    # Fourth run: should raise, thread_model_call_count == 3 (limit)
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        agent.invoke({"messages": [HumanMessage("Hello fourth")]}, thread_config)
+    error_msg = str(exc_info.value)
+    assert "thread limit (3/3)" in error_msg
+
+
 # Async Middleware Tests
 async def test_create_agent_async_invoke() -> None:
     """Test async invoke with async middleware hooks."""
@@ -1847,6 +2108,278 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         "AsyncMiddleware.aafter_model",
         "SyncMiddleware.after_model",
     ]
+
+
+# Tests for retry_model_request hook
+def test_retry_model_request_hook() -> None:
+    """Test that retry_model_request hook is called on model errors."""
+    call_count = {"value": 0}
+
+    class FailingModel(BaseChatModel):
+        """Model that fails on first call, succeeds on second."""
+
+        def _generate(self, messages, **kwargs):
+            call_count["value"] += 1
+            if call_count["value"] == 1:
+                raise ValueError("First call fails")
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Success on retry"))]
+            )
+
+        @property
+        def _llm_type(self):
+            return "failing"
+
+    class RetryMiddleware(AgentMiddleware):
+        def __init__(self):
+            super().__init__()
+            self.retry_count = 0
+
+        def retry_model_request(self, error, request, state, runtime, attempt):
+            self.retry_count += 1
+            # Return the same request to retry
+            return request
+
+    failing_model = FailingModel()
+    retry_middleware = RetryMiddleware()
+
+    agent = create_agent(model=failing_model, middleware=[retry_middleware]).compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Should have retried once
+    assert retry_middleware.retry_count == 1
+    # Should have succeeded on second attempt
+    assert len(result["messages"]) == 2
+    assert result["messages"][1].content == "Success on retry"
+
+
+def test_retry_model_request_attempt_number() -> None:
+    """Test that attempt number is correctly passed to retry_model_request."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Always fails")
+
+        @property
+        def _llm_type(self):
+            return "always_failing"
+
+    class AttemptTrackingMiddleware(AgentMiddleware):
+        def __init__(self):
+            super().__init__()
+            self.attempts = []
+
+        def retry_model_request(self, error, request, state, runtime, attempt):
+            self.attempts.append(attempt)
+            if attempt < 3:  # noqa: PLR2004
+                return request  # Retry
+            return None  # Stop after 3 attempts
+
+    model = AlwaysFailingModel()
+    tracker = AttemptTrackingMiddleware()
+
+    agent = create_agent(model=model, middleware=[tracker]).compile()
+
+    with pytest.raises(ValueError, match="Always fails"):
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Should have been called with attempts 1, 2, 3
+    assert tracker.attempts == [1, 2, 3]
+
+
+def test_retry_model_request_no_retry() -> None:
+    """Test that error is propagated when no middleware wants to retry."""
+
+    class FailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Model error")
+
+        @property
+        def _llm_type(self):
+            return "failing"
+
+    class NoRetryMiddleware(AgentMiddleware):
+        def retry_model_request(self, error, request, state, runtime, attempt):
+            # Always return None to not retry
+            return None
+
+    agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()]).compile()
+
+    with pytest.raises(ValueError, match="Model error"):
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+
+def test_model_fallback_middleware() -> None:
+    """Test ModelFallbackMiddleware with fallback models only."""
+
+    class FailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Primary model failed")
+
+        @property
+        def _llm_type(self):
+            return "failing"
+
+    class SuccessModel(BaseChatModel):
+        """Model that succeeds."""
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Fallback success"))]
+            )
+
+        @property
+        def _llm_type(self):
+            return "success"
+
+    primary = FailingModel()
+    fallback = SuccessModel()
+
+    # Only pass fallback models to middleware (not the primary)
+    fallback_middleware = ModelFallbackMiddleware(fallback)
+
+    agent = create_agent(model=primary, middleware=[fallback_middleware]).compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Should have succeeded with fallback model
+    assert len(result["messages"]) == 2
+    assert result["messages"][1].content == "Fallback success"
+
+
+def test_model_fallback_middleware_exhausted() -> None:
+    """Test ModelFallbackMiddleware when all models fail."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def __init__(self, name: str):
+            super().__init__()
+            self.name = name
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError(f"{self.name} failed")
+
+        @property
+        def _llm_type(self):
+            return self.name
+
+    primary = AlwaysFailingModel("primary")
+    fallback1 = AlwaysFailingModel("fallback1")
+    fallback2 = AlwaysFailingModel("fallback2")
+
+    # Primary fails (attempt 1), then fallback1 (attempt 2), then fallback2 (attempt 3)
+    fallback_middleware = ModelFallbackMiddleware(fallback1, fallback2)
+
+    agent = create_agent(model=primary, middleware=[fallback_middleware]).compile()
+
+    # Should fail with the last fallback's error
+    with pytest.raises(ValueError, match="fallback2 failed"):
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+
+def test_model_fallback_middleware_initialization() -> None:
+    """Test ModelFallbackMiddleware initialization."""
+
+    # Test with no models - now a TypeError (missing required argument)
+    with pytest.raises(TypeError):
+        ModelFallbackMiddleware()  # type: ignore[call-arg]
+
+    # Test with one fallback model (valid)
+    middleware = ModelFallbackMiddleware(FakeToolCallingModel())
+    assert len(middleware.models) == 1
+
+    # Test with multiple fallback models
+    middleware = ModelFallbackMiddleware(FakeToolCallingModel(), FakeToolCallingModel())
+    assert len(middleware.models) == 2
+
+
+def test_retry_model_request_max_attempts() -> None:
+    """Test that retry stops after maximum attempts."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Always fails")
+
+        @property
+        def _llm_type(self):
+            return "always_failing"
+
+    class InfiniteRetryMiddleware(AgentMiddleware):
+        """Middleware that always wants to retry (buggy behavior)."""
+
+        def __init__(self):
+            super().__init__()
+            self.attempt_count = 0
+
+        def retry_model_request(self, error, request, state, runtime, attempt):
+            self.attempt_count = attempt
+            return request  # Always retry (infinite loop without limit)
+
+    model = AlwaysFailingModel()
+    middleware = InfiniteRetryMiddleware()
+
+    agent = create_agent(model=model, middleware=[middleware]).compile()
+
+    # Should fail with max attempts error, not infinite loop
+    with pytest.raises(RuntimeError, match="Maximum retry attempts \\(100\\) exceeded"):
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Should have attempted 100 times
+    assert middleware.attempt_count == 100
+
+
+async def test_retry_model_request_async() -> None:
+    """Test async retry_model_request hook."""
+    call_count = {"value": 0}
+
+    class AsyncFailingModel(BaseChatModel):
+        """Model that fails on first async call, succeeds on second."""
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="sync"))])
+
+        async def _agenerate(self, messages, **kwargs):
+            call_count["value"] += 1
+            if call_count["value"] == 1:
+                raise ValueError("First async call fails")
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Async retry success"))]
+            )
+
+        @property
+        def _llm_type(self):
+            return "async_failing"
+
+    class AsyncRetryMiddleware(AgentMiddleware):
+        def __init__(self):
+            super().__init__()
+            self.retry_count = 0
+
+        async def aretry_model_request(self, error, request, state, runtime, attempt):
+            self.retry_count += 1
+            return request  # Retry with same request
+
+    failing_model = AsyncFailingModel()
+    retry_middleware = AsyncRetryMiddleware()
+
+    agent = create_agent(model=failing_model, middleware=[retry_middleware]).compile()
+
+    result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
+
+    # Should have retried once
+    assert retry_middleware.retry_count == 1
+    # Should have succeeded on second attempt
+    assert result["messages"][1].content == "Async retry success"
 
 
 def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:

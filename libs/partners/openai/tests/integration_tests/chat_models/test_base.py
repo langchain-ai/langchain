@@ -115,7 +115,7 @@ def test_chat_openai_streaming(use_responses_api: bool) -> None:
         max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
         use_responses_api=use_responses_api,
     )
@@ -138,7 +138,7 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)  # type: ignore[call-arg]
+    chat = ChatOpenAI(max_tokens=2, temperature=0, callbacks=callback_manager)  # type: ignore[call-arg]
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned

@@ -1,4 +1,4 @@
-from langchain.document_loaders.parsers import __all__
+from langchain_classic.document_loaders.parsers import __all__
 
 
 def test_parsers_public_api_correct() -> None:

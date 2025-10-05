@@ -12,8 +12,8 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from typing_extensions import override
 
-from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain.chains.hyde.prompts import PROMPT_MAP
+from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder
+from langchain_classic.chains.hyde.prompts import PROMPT_MAP
 
 
 class FakeEmbeddings(Embeddings):

@@ -14,7 +14,6 @@ from typing import (
 
 from typing_extensions import override
 
-from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
@@ -25,7 +24,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
     from langchain_core.embeddings import Embeddings
-    from langchain_core.indexing import UpsertResponse
 
 try:
     import numpy as np
@@ -280,76 +278,6 @@ class InMemoryVectorStore(VectorStore):
                     )
                 )
         return documents
-
-    @deprecated(
-        alternative="VectorStore.add_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="1.0",
-    )
-    def upsert(self, items: Sequence[Document], /, **_kwargs: Any) -> UpsertResponse:
-        """[DEPRECATED] Upsert documents into the store.
-
-        Args:
-            items: The documents to upsert.
-
-        Returns:
-            The upsert response.
-        """
-        vectors = self.embedding.embed_documents([item.page_content for item in items])
-        ids = []
-        for item, vector in zip(items, vectors):
-            doc_id = item.id or str(uuid.uuid4())
-            ids.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
-                "vector": vector,
-                "text": item.page_content,
-                "metadata": item.metadata,
-            }
-        return {
-            "succeeded": ids,
-            "failed": [],
-        }
-
-    @deprecated(
-        alternative="VectorStore.aadd_documents",
-        message=(
-            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
-        ),
-        since="0.2.29",
-        removal="1.0",
-    )
-    async def aupsert(
-        self, items: Sequence[Document], /, **_kwargs: Any
-    ) -> UpsertResponse:
-        """[DEPRECATED] Upsert documents into the store.
-
-        Args:
-            items: The documents to upsert.
-
-        Returns:
-            The upsert response.
-        """
-        vectors = await self.embedding.aembed_documents(
-            [item.page_content for item in items]
-        )
-        ids = []
-        for item, vector in zip(items, vectors):
-            doc_id = item.id or str(uuid.uuid4())
-            ids.append(doc_id)
-            self.store[doc_id] = {
-                "id": doc_id,
-                "vector": vector,
-                "text": item.page_content,
-                "metadata": item.metadata,
-            }
-        return {
-            "succeeded": ids,
-            "failed": [],
-        }
 
     @override
     async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:

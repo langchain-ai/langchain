@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain.runnables.openai_functions import OpenAIFunctionsRouter
+from langchain_classic.runnables.openai_functions import OpenAIFunctionsRouter
 
 
 class FakeChatOpenAI(BaseChatModel):

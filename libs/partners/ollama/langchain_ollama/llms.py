@@ -129,7 +129,7 @@ class OllamaLLM(BaseLLM):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
 
-    .. versionadded:: 0.3.4
+    !!! version-added "Added in version 0.3.4"
     """
 
     mirostat: Optional[int] = None

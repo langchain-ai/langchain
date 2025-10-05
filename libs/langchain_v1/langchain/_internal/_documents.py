@@ -22,7 +22,7 @@ def format_document_xml(doc: Document) -> str:
                 <metadata>...</metadata>
             </document>
 
-    .. note::
+    !!! note
         Does not generate valid XML or escape special characters. Intended for
         semi-structured LLM input only.
 

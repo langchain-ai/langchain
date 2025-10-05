@@ -13,7 +13,7 @@ To help you ship LangChain apps to production faster, check out [LangSmith](http
 
 ## Quick Install
 
-`pip install langchain`
+`pip install langchain-classic`
 
 ## 🤔 What is this?
 

@@ -27,7 +27,7 @@ class BaseDocumentCompressor(BaseModel, ABC):
 
     For example, one could re-rank the retrieved documents using an LLM.
 
-    .. note::
+    !!! note
         Users should favor using a RunnableLambda instead of sub-classing from this
         interface.
 

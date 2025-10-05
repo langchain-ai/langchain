@@ -9,8 +9,8 @@ import pytest
 from langchain_core.embeddings import Embeddings
 from typing_extensions import override
 
-from langchain.embeddings import CacheBackedEmbeddings
-from langchain.storage.in_memory import InMemoryStore
+from langchain_classic.embeddings import CacheBackedEmbeddings
+from langchain_classic.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):

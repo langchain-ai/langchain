@@ -7,7 +7,7 @@ import pytest
 from langchain_core.exceptions import OutputParserException
 from pydantic import BaseModel, Field
 
-from langchain.output_parsers.yaml import YamlOutputParser
+from langchain_classic.output_parsers.yaml import YamlOutputParser
 
 
 class Actions(Enum):

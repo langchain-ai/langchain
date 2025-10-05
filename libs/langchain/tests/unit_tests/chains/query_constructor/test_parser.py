@@ -11,7 +11,7 @@ from langchain_core.structured_query import (
     Operator,
 )
 
-from langchain.chains.query_constructor.parser import get_parser
+from langchain_classic.chains.query_constructor.parser import get_parser
 
 DEFAULT_PARSER = get_parser()
 

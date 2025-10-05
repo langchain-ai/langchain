@@ -15,7 +15,7 @@ body:
 
         * [LangChain Forum](https://forum.langchain.com/),
         * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
-        * [API Reference](https://python.langchain.com/api_reference/),
+        * [API Reference](https://reference.langchain.com/python/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
   - type: checkboxes

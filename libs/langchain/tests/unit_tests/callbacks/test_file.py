@@ -5,8 +5,8 @@ from typing import Optional
 from langchain_core.callbacks import CallbackManagerForChainRun
 from typing_extensions import override
 
-from langchain.callbacks import FileCallbackHandler
-from langchain.chains.base import Chain
+from langchain_classic.callbacks import FileCallbackHandler
+from langchain_classic.chains.base import Chain
 
 
 class FakeChain(Chain):
