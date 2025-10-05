@@ -1,4 +1,4 @@
-from langchain.schema.runnable.retry import __all__
+from langchain_classic.schema.runnable.retry import __all__
 
 EXPECTED_ALL = ["RunnableRetry", "U"]
 

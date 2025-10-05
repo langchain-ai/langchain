@@ -1,7 +1,4 @@
-"""Utilities for working with pydantic models.
-
-:private:
-"""
+"""Utilities for working with pydantic models."""
 
 
 def get_pydantic_major_version() -> int:

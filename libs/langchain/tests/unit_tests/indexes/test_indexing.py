@@ -15,8 +15,8 @@ from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
 from typing_extensions import override
 
-from langchain.indexes import aindex, index
-from langchain.indexes._sql_record_manager import SQLRecordManager
+from langchain_classic.indexes import aindex, index
+from langchain_classic.indexes._sql_record_manager import SQLRecordManager
 
 
 class ToyLoader(BaseLoader):

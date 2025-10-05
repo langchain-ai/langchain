@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from typing_extensions import override
 
-from langchain.retrievers.ensemble import EnsembleRetriever
+from langchain_classic.retrievers.ensemble import EnsembleRetriever
 
 
 class MockRetriever(BaseRetriever):

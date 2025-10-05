@@ -48,7 +48,7 @@ class LLMResult(BaseModel):
     run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input.
 
-    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    See `langchain_core.outputs.run_info.RunInfo` for details.
     """
 
     type: Literal["LLMResult"] = "LLMResult"

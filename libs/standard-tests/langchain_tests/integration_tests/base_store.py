@@ -1,8 +1,6 @@
 """Standard tests for the BaseStore abstraction.
 
 We don't recommend implementing externally managed BaseStore abstractions at this time.
-
-:private:
 """
 
 from abc import abstractmethod
@@ -52,7 +50,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(keys) == [None, None, None]
 
     def test_set_and_get_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test setting and getting values in the key-value store."""
         foo = three_values[0]
@@ -73,7 +73,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(keys) == [None]
 
     def test_delete_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test deleting values from the key-value store."""
         foo = three_values[0]
@@ -84,7 +86,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(["foo", "bar"]) == [None, bar]
 
     def test_delete_bulk_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can delete several values at once."""
         foo, bar, buz = three_values
@@ -99,7 +103,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         kv_store.mdelete(["foo", "bar", "baz"])
 
     def test_set_values_is_idempotent(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Setting values by key should be idempotent."""
         foo, bar, _ = three_values
@@ -110,7 +116,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert sorted(kv_store.yield_keys()) == ["bar", "foo"]
 
     def test_get_can_get_same_value(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that the same value can be retrieved multiple times."""
         foo, bar, _ = three_values
@@ -120,7 +128,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(["foo", "bar", "foo", "bar"]) == [foo, bar, foo, bar]
 
     def test_overwrite_values_by_key(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can overwrite values by key using mset."""
         foo, bar, buzz = three_values
@@ -135,7 +145,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(["foo", "bar"]) == [buzz, bar]
 
     def test_yield_keys(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can yield keys from the store."""
         foo, bar, _buzz = three_values
@@ -184,7 +196,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert await kv_store.amget(keys) == [None, None, None]
 
     async def test_set_and_get_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test setting and getting values in the key-value store."""
         foo = three_values[0]
@@ -205,7 +219,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert await kv_store.amget(keys) == [None]
 
     async def test_delete_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test deleting values from the key-value store."""
         foo = three_values[0]
@@ -216,7 +232,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert await kv_store.amget(["foo", "bar"]) == [None, bar]
 
     async def test_delete_bulk_values(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can delete several values at once."""
         foo, bar, buz = three_values
@@ -231,7 +249,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         await kv_store.amdelete(["foo", "bar", "baz"])
 
     async def test_set_values_is_idempotent(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Setting values by key should be idempotent."""
         foo, bar, _ = three_values
@@ -242,7 +262,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert sorted([key async for key in kv_store.ayield_keys()]) == ["bar", "foo"]
 
     async def test_get_can_get_same_value(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that the same value can be retrieved multiple times."""
         foo, bar, _ = three_values
@@ -257,7 +279,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         ]
 
     async def test_overwrite_values_by_key(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can overwrite values by key using mset."""
         foo, bar, buzz = three_values
@@ -272,7 +296,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert await kv_store.amget(["foo", "bar"]) == [buzz, bar]
 
     async def test_yield_keys(
-        self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
+        self,
+        kv_store: BaseStore[str, V],
+        three_values: tuple[V, V, V],
     ) -> None:
         """Test that we can yield keys from the store."""
         foo, bar, _buzz = three_values
@@ -284,5 +310,5 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
 
         assert sorted([key async for key in kv_store.ayield_keys()]) == ["bar", "foo"]
         assert sorted([key async for key in kv_store.ayield_keys(prefix="foo")]) == [
-            "foo"
+            "foo",
         ]

@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from langchain.evaluation.scoring.eval_chain import (
+from langchain_classic.evaluation.scoring.eval_chain import (
     LabeledScoreStringEvalChain,
     ScoreStringEvalChain,
     ScoreStringResultOutputParser,

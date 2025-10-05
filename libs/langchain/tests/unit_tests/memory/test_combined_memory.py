@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from langchain.memory import CombinedMemory, ConversationBufferMemory
+from langchain_classic.memory import CombinedMemory, ConversationBufferMemory
 
 
 @pytest.fixture

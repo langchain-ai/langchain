@@ -2,8 +2,8 @@
 
 from langchain_core.tools import tool
 
-from langchain.agents.agent_types import AgentType
-from langchain.agents.initialize import initialize_agent
+from langchain_classic.agents.agent_types import AgentType
+from langchain_classic.agents.initialize import initialize_agent
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

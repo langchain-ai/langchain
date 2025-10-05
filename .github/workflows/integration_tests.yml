@@ -1,0 +1,201 @@
+# Routine integration tests against partner libraries with live API credentials.
+#
+# Uses `make integration_tests` for each library in the matrix.
+#
+# Runs daily. Can also be triggered manually for immediate updates.
+
+name: "⏰ Integration Tests"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      working-directory-force:
+        type: string
+        description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
+      python-version-force:
+        type: string
+        description: "Python version to use - defaults to 3.10 and 3.13 in matrix - example value: 3.11"
+  schedule:
+    - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
+
+permissions:
+  contents: read
+
+env:
+  POETRY_VERSION: "1.8.4"
+  UV_FROZEN: "true"
+  DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
+  POETRY_LIBS: ("libs/partners/aws")
+
+jobs:
+  # Generate dynamic test matrix based on input parameters or defaults
+  # Only runs on the main repo (for scheduled runs) or when manually triggered
+  compute-matrix:
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    name: "📋 Compute Test Matrix"
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: "🔢 Generate Python & Library Matrix"
+        id: set-matrix
+        env:
+          DEFAULT_LIBS: ${{ env.DEFAULT_LIBS }}
+          WORKING_DIRECTORY_FORCE: ${{ github.event.inputs.working-directory-force || '' }}
+          PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
+        run: |
+          # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
+          # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
+          # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
+          python_version='["3.10", "3.13"]'
+          working_directory="$DEFAULT_LIBS"
+          if [ -n "$PYTHON_VERSION_FORCE" ]; then
+            python_version="[\"$PYTHON_VERSION_FORCE\"]"
+          fi
+          if [ -n "$WORKING_DIRECTORY_FORCE" ]; then
+            working_directory="[\"$WORKING_DIRECTORY_FORCE\"]"
+          fi
+          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          echo $matrix
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+  # Run integration tests against partner libraries with live API credentials
+  # Tests are run with Poetry or UV depending on the library's setup
+  build:
+    if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
+    name: "🐍 Python ${{ matrix.python-version }}: ${{ matrix.working-directory }}"
+    runs-on: ubuntu-latest
+    needs: [compute-matrix]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: langchain
+      - uses: actions/checkout@v5
+        with:
+          repository: langchain-ai/langchain-google
+          path: langchain-google
+      - uses: actions/checkout@v5
+        with:
+          repository: langchain-ai/langchain-aws
+          path: langchain-aws
+
+      - name: "📦 Organize External Libraries"
+        run: |
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai
+          mv langchain-google/libs/genai langchain/libs/partners/google-genai
+          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
+          mv langchain-aws/libs/aws langchain/libs/partners/aws
+
+      - name: "🐍 Set up Python ${{ matrix.python-version }} + Poetry"
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
+        uses: "./langchain/.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          working-directory: langchain/${{ matrix.working-directory }}
+          cache-key: scheduled
+
+      - name: "🐍 Set up Python ${{ matrix.python-version }} + UV"
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        uses: "./langchain/.github/actions/uv_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "🔐 Authenticate to Google Cloud"
+        id: "auth"
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CREDENTIALS }}"
+
+      - name: "🔐 Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: "📦 Install Dependencies (Poetry)"
+        if: contains(env.POETRY_LIBS, matrix.working-directory)
+        run: |
+          echo "Running scheduled tests, installing dependencies with poetry..."
+          cd langchain/${{ matrix.working-directory }}
+          poetry install --with=test_integration,test
+
+      - name: "📦 Install Dependencies (UV)"
+        if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
+        run: |
+          echo "Running scheduled tests, installing dependencies with uv..."
+          cd langchain/${{ matrix.working-directory }}
+          uv sync --group test --group test_integration
+
+      - name: "🚀 Run Integration Tests"
+        env:
+          AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+          ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
+          ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
+          ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ES_URL: ${{ secrets.ES_URL }}
+          ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
+          ES_API_KEY: ${{ secrets.ES_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
+          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
+          WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          cd langchain/${{ matrix.working-directory }}
+          make integration_tests
+
+      - name: "🧹 Clean up External Libraries"
+        # Clean up external libraries to avoid affecting the following git status check
+        run: |
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai \
+            langchain/libs/partners/aws
+
+      - name: "🧹 Verify Clean Working Directory"
+        working-directory: langchain
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'
