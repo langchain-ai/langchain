@@ -6,28 +6,28 @@ import asyncio
 import inspect
 import json
 import typing
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForLLMRun,
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models._utils import (
-    _normalize_messages,
-    _update_message_content_to_blocks,
-)
+from langchain_core.language_models._utils import _normalize_messages
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -36,16 +36,16 @@ from langchain_core.language_models.base import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
-    AIMessageChunk,
     AnyMessage,
     BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
     convert_to_messages,
+    convert_to_openai_image_block,
     is_data_content_block,
     message_chunk_to_message,
 )
-from langchain_core.messages.block_translators.openai import (
-    convert_to_openai_image_block,
-)
+from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -70,7 +70,6 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -131,7 +130,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     if (
                         block.get("type") == "image"
                         and is_data_content_block(block)
-                        and not ("file_id" in block or block.get("source_type") == "id")
+                        and block.get("source_type") != "id"
                     ):
                         if message_to_trace is message:
                             # Shallow copy
@@ -141,22 +140,6 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                         message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
                             convert_to_openai_image_block(block)
                         )
-                    elif (
-                        block.get("type") == "file"
-                        and is_data_content_block(block)  # v0 (image/audio/file) or v1
-                        and "base64" in block
-                        # Backward compat: convert v1 base64 blocks to v0
-                    ):
-                        if message_to_trace is message:
-                            # Shallow copy
-                            message_to_trace = message.model_copy()
-                            message_to_trace.content = list(message_to_trace.content)
-
-                        message_to_trace.content[idx] = {  # type: ignore[index]
-                            **{k: v for k, v in block.items() if k != "base64"},
-                            "data": block["base64"],
-                            "source_type": "base64",
-                        }
                     elif len(block) == 1 and "type" not in block:
                         # Tracing assumes all content blocks have a "type" key. Here
                         # we add this key if it is missing, and there's an obvious
@@ -239,7 +222,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
+class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -316,6 +299,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     """  # noqa: E501
 
+    callback_manager: Optional[BaseCallbackManager] = deprecated(
+        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
+    )(
+        Field(
+            default=None,
+            exclude=True,
+            description="Callback manager to add to the run trace.",
+        )
+    )
+
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     "An optional rate limiter to use for limiting the number of requests."
 
@@ -341,27 +334,26 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     """
 
-    output_version: Optional[str] = Field(
-        default_factory=from_env("LC_OUTPUT_VERSION", default=None)
-    )
-    """Version of ``AIMessage`` output format to store in message content.
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: dict) -> Any:
+        """Emit deprecation warning if ``callback_manager`` is used.
 
-    ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into a
-    standard format. This flag can be used to additionally store the standard format
-    in message content, e.g., for serialization purposes.
+        Args:
+            values (Dict): Values to validate.
 
-    Supported values:
+        Returns:
+            Dict: Validated values.
 
-    - ``"v0"``: provider-specific format in content (can lazily-parse with
-      ``.content_blocks``)
-    - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
-
-    Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
-    new content formats in a backward-compatible way.
-
-    !!! version-added "Added in version 1.0"
-
-    """
+        """
+        if values.get("callback_manager") is not None:
+            warnings.warn(
+                "callback_manager is deprecated. Please use callbacks instead.",
+                DeprecationWarning,
+                stacklevel=5,
+            )
+            values["callbacks"] = values.pop("callback_manager", None)
+        return values
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -400,28 +392,25 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> BaseMessage:
         config = ensure_config(config)
         fallback_object = self.get_fallback()
         if fallback_object:
             self._reset_fallback()
             return fallback_object.invoke(input, config, stop=stop, **kwargs)
         return cast(
-            "AIMessage",
-            cast(
-                "ChatGeneration",
-                self.generate_prompt(
-                    [self._convert_input(input)],
-                    stop=stop,
-                    callbacks=config.get("callbacks"),
-                    tags=config.get("tags"),
-                    metadata=config.get("metadata"),
-                    run_name=config.get("run_name"),
-                    run_id=config.pop("run_id", None),
-                    **kwargs,
-                ).generations[0][0],
-            ).message,
-        )
+            "ChatGeneration",
+            self.generate_prompt(
+                [self._convert_input(input)],
+                stop=stop,
+                callbacks=config.get("callbacks"),
+                tags=config.get("tags"),
+                metadata=config.get("metadata"),
+                run_name=config.get("run_name"),
+                run_id=config.pop("run_id", None),
+                **kwargs,
+            ).generations[0][0],
+        ).message
 
     @override
     async def ainvoke(
@@ -431,7 +420,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AIMessage:
+    ) -> BaseMessage:
         config = ensure_config(config)
         fallback_object = self.get_fallback()
         if fallback_object:
@@ -447,9 +436,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id=config.pop("run_id", None),
             **kwargs,
         )
-        return cast(
-            "AIMessage", cast("ChatGeneration", llm_result.generations[0][0]).message
-        )
+        return cast("ChatGeneration", llm_result.generations[0][0]).message
 
     def _should_stream(
         self,
@@ -494,7 +481,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[AIMessageChunk]:
+    ) -> Iterator[BaseMessageChunk]:
         fallback_object = self.get_fallback()
         if fallback_object:
             self._reset_fallback()
@@ -504,7 +491,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # Model doesn't implement streaming, so use default implementation
             yield cast(
-                "AIMessageChunk",
+                "BaseMessageChunk",
                 self.invoke(input, config=config, stop=stop, **kwargs),
             )
         else:
@@ -549,41 +536,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
-                run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
-                yielded = False
+                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                    if self.output_version == "v1":
-                        # Overwrite .content with .content_blocks
-                        chunk.message = _update_message_content_to_blocks(
-                            chunk.message, "v1"
-                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
                     chunks.append(chunk)
-                    yield cast("AIMessageChunk", chunk.message)
-                    yielded = True
-
-                # Yield a final empty chunk with chunk_position="last" if not yet
-                # yielded
-                if (
-                    yielded
-                    and isinstance(chunk.message, AIMessageChunk)
-                    and not chunk.message.chunk_position
-                ):
-                    empty_content: Union[str, list] = (
-                        "" if isinstance(chunk.message.content, str) else []
-                    )
-                    msg_chunk = AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
-                    )
-                    run_manager.on_llm_new_token(
-                        "", chunk=ChatGenerationChunk(message=msg_chunk)
-                    )
-                    yield msg_chunk
+                    yield chunk.message
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -616,7 +578,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[AIMessageChunk]:
+    ) -> AsyncIterator[BaseMessageChunk]:
         fallback_object = self.get_fallback()
         if fallback_object:
             self._reset_fallback()
@@ -628,7 +590,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
-                "AIMessageChunk",
+                "BaseMessageChunk",
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
             return
@@ -675,8 +637,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
-            run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
-            yielded = False
+            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -685,34 +646,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if chunk.message.id is None:
                     chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
-                    # Overwrite .content with .content_blocks
-                    chunk.message = _update_message_content_to_blocks(
-                        chunk.message, "v1"
-                    )
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
                 )
                 chunks.append(chunk)
-                yield cast("AIMessageChunk", chunk.message)
-                yielded = True
-
-            # Yield a final empty chunk with chunk_position="last" if not yet yielded
-            if (
-                yielded
-                and isinstance(chunk.message, AIMessageChunk)
-                and not chunk.message.chunk_position
-            ):
-                empty_content: Union[str, list] = (
-                    "" if isinstance(chunk.message.content, str) else []
-                )
-                msg_chunk = AIMessageChunk(
-                    content=empty_content, chunk_position="last", id=run_id
-                )
-                await run_manager.on_llm_new_token(
-                    "", chunk=ChatGenerationChunk(message=msg_chunk)
-                )
-                yield msg_chunk
+                yield chunk.message
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -1165,42 +1103,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
-            run_id: Optional[str] = (
-                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
-            )
-            yielded = False
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
-                    # Overwrite .content with .content_blocks
-                    chunk.message = _update_message_content_to_blocks(
-                        chunk.message, "v1"
-                    )
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
-                chunks.append(chunk)
-                yielded = True
-
-            # Yield a final empty chunk with chunk_position="last" if not yet yielded
-            if (
-                yielded
-                and isinstance(chunk.message, AIMessageChunk)
-                and not chunk.message.chunk_position
-            ):
-                empty_content: Union[str, list] = (
-                    "" if isinstance(chunk.message.content, str) else []
-                )
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
-                    )
-                )
-                if run_manager:
-                    run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
@@ -1210,17 +1120,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
-        if self.output_version == "v1":
-            # Overwrite .content with .content_blocks
-            for generation in result.generations:
-                generation.message = _update_message_content_to_blocks(
-                    generation.message, "v1"
-                )
-
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1273,42 +1176,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
-            run_id: Optional[str] = (
-                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
-            )
-            yielded = False
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
-                    # Overwrite .content with .content_blocks
-                    chunk.message = _update_message_content_to_blocks(
-                        chunk.message, "v1"
-                    )
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
-                chunks.append(chunk)
-                yielded = True
-
-            # Yield a final empty chunk with chunk_position="last" if not yet yielded
-            if (
-                yielded
-                and isinstance(chunk.message, AIMessageChunk)
-                and not chunk.message.chunk_position
-            ):
-                empty_content: Union[str, list] = (
-                    "" if isinstance(chunk.message.content, str) else []
-                )
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
-                    )
-                )
-                if run_manager:
-                    await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
@@ -1318,17 +1193,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
 
-        if self.output_version == "v1":
-            # Overwrite .content with .content_blocks
-            for generation in result.generations:
-                generation.message = _update_message_content_to_blocks(
-                    generation.message, "v1"
-                )
-
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1462,6 +1330,40 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Get the fallback."""
         return self.fallback
 
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    def __call__(
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> BaseMessage:
+        """Call the model.
+
+        Args:
+            messages: List of messages.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Raises:
+            ValueError: If the generation is not a chat generation.
+
+        Returns:
+            The model output message.
+
+        """
+        generation = self.generate(
+            [messages], stop=stop, callbacks=callbacks, **kwargs
+        ).generations[0][0]
+        if isinstance(generation, ChatGeneration):
+            return generation.message
+        msg = "Unexpected generation type"
+        raise ValueError(msg)
+
     async def _call_async(
         self,
         messages: list[BaseMessage],
@@ -1477,6 +1379,91 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return generation.message
         msg = "Unexpected generation type"
         raise ValueError(msg)
+
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    def call_as_llm(
+        self, message: str, stop: Optional[list[str]] = None, **kwargs: Any
+    ) -> str:
+        """Call the model.
+
+        Args:
+            message: The input message.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The model output string.
+
+        """
+        return self.predict(message, stop=stop, **kwargs)
+
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
+    def predict(
+        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> str:
+        """Predict the next message.
+
+        Args:
+            text: The input message.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Raises:
+            ValueError: If the output is not a string.
+
+        Returns:
+            The predicted output string.
+
+        """
+        stop_ = None if stop is None else list(stop)
+        result = self([HumanMessage(content=text)], stop=stop_, **kwargs)
+        if isinstance(result.content, str):
+            return result.content
+        msg = "Cannot use predict when output is not a string."
+        raise ValueError(msg)
+
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
+    def predict_messages(
+        self,
+        messages: list[BaseMessage],
+        *,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> BaseMessage:
+        stop_ = None if stop is None else list(stop)
+        return self(messages, stop=stop_, **kwargs)
+
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
+    async def apredict(
+        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> str:
+        stop_ = None if stop is None else list(stop)
+        result = await self._call_async(
+            [HumanMessage(content=text)], stop=stop_, **kwargs
+        )
+        if isinstance(result.content, str):
+            return result.content
+        msg = "Cannot use predict when output is not a string."
+        raise ValueError(msg)
+
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
+    async def apredict_messages(
+        self,
+        messages: list[BaseMessage],
+        *,
+        stop: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> BaseMessage:
+        stop_ = None if stop is None else list(stop)
+        return await self._call_async(messages, stop=stop_, **kwargs)
 
     @property
     @abstractmethod
@@ -1498,7 +1485,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, AIMessage]:
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tools to the model.
 
         Args:
@@ -1531,7 +1518,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -1549,7 +1536,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 ``with_structured_output()``.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -1640,7 +1627,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        !!! warning "Behavior changed in 0.2.26"
+        .. versionchanged:: 0.2.26
+
                 Added support for TypedDict class.
 
         """  # noqa: E501
@@ -1686,7 +1674,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 class SimpleChatModel(BaseChatModel):
     """Simplified implementation for a chat model to inherit from.
 
-    !!! note
+    .. note::
         This implementation is primarily here for backwards compatibility. For new
         implementations, please use ``BaseChatModel`` directly.
 
