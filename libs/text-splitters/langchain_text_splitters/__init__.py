@@ -8,7 +8,7 @@
                                                  RecursiveCharacterTextSplitter -->  <name>TextSplitter
 
 
-.. note::
+!!! note
     **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
 
 

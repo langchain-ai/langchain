@@ -116,7 +116,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
 
-        .. note::
+        !!! note
             This means you won't be able to use non-deployment endpoints.
 
     """

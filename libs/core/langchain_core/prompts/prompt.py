@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -235,7 +234,6 @@ class PromptTemplate(StringPromptTemplate):
     def from_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: Optional[list[str]] = None,
         encoding: Optional[str] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -243,23 +241,13 @@ class PromptTemplate(StringPromptTemplate):
 
         Args:
             template_file: The path to the file containing the prompt template.
-            input_variables: [DEPRECATED] A list of variable names the final prompt
-                template will expect. Defaults to None.
             encoding: The encoding system for opening the template file.
                 If not provided, will use the OS default.
-
-        input_variables is ignored as from_file now delegates to from_template().
 
         Returns:
             The prompt loaded from the file.
         """
         template = Path(template_file).read_text(encoding=encoding)
-        if input_variables:
-            warnings.warn(
-                "`input_variables' is deprecated and ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return cls.from_template(template=template, **kwargs)
 
     @classmethod

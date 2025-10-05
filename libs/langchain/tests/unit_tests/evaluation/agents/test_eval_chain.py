@@ -11,7 +11,7 @@ from langchain_core.tools import tool
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.evaluation.agents.trajectory_eval_chain import (
+from langchain_classic.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
     TrajectoryEvalChain,
     TrajectoryOutputParser,

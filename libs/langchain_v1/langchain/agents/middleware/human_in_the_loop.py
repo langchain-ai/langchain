@@ -1,8 +1,9 @@
 """Human in the loop middleware."""
 
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
@@ -94,6 +95,14 @@ HumanInTheLoopResponse = AcceptPayload | ResponsePayload | EditPayload
 """Aggregated response type for all possible human in the loop responses."""
 
 
+class _DescriptionFactory(Protocol):
+    """Callable that generates a description for a tool call."""
+
+    def __call__(self, tool_call: ToolCall, state: AgentState, runtime: Runtime) -> str:
+        """Generate a description for a tool call."""
+        ...
+
+
 class ToolConfig(TypedDict):
     """Configuration for a tool requiring human in the loop."""
 
@@ -103,8 +112,40 @@ class ToolConfig(TypedDict):
     """Whether the human can approve the current action with edited content."""
     allow_respond: NotRequired[bool]
     """Whether the human can reject the current action with feedback."""
-    description: NotRequired[str]
-    """The description attached to the request for human input."""
+    description: NotRequired[str | _DescriptionFactory]
+    """The description attached to the request for human input.
+
+    Can be either:
+    - A static string describing the approval request
+    - A callable that dynamically generates the description based on agent state,
+      runtime, and tool call information
+
+    Example:
+        .. code-block:: python
+
+            # Static string description
+            config = ToolConfig(
+                allow_accept=True,
+                description="Please review this tool execution"
+            )
+
+            # Dynamic callable description
+            def format_tool_description(
+                tool_call: ToolCall,
+                state: AgentState,
+                runtime: Runtime
+            ) -> str:
+                import json
+                return (
+                    f"Tool: {tool_call['name']}\\n"
+                    f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
+                )
+
+            config = ToolConfig(
+                allow_accept=True,
+                description=format_tool_description
+            )
+    """
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
@@ -121,12 +162,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         Args:
             interrupt_on: Mapping of tool name to allowed actions.
                 If a tool doesn't have an entry, it's auto-approved by default.
-                * `True` indicates all actions are allowed: accept, edit, and respond.
-                * `False` indicates that the tool is auto-approved.
-                * ToolConfig indicates the specific actions allowed for this tool.
+
+                * ``True`` indicates all actions are allowed: accept, edit, and respond.
+                * ``False`` indicates that the tool is auto-approved.
+                * ``ToolConfig`` indicates the specific actions allowed for this tool.
+                  The ToolConfig can include a ``description`` field (str or callable) for
+                  custom formatting of the interrupt description.
             description_prefix: The prefix to use when constructing action requests.
                 This is used to provide context about the tool call and the action being requested.
-                Not used if a tool has a description in its ToolConfig.
+                Not used if a tool has a ``description`` in its ToolConfig.
         """
         super().__init__()
         resolved_tool_configs: dict[str, ToolConfig] = {}
@@ -145,7 +189,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         self.interrupt_on = resolved_tool_configs
         self.description_prefix = description_prefix
 
-    def after_model(self, state: AgentState) -> dict[str, Any] | None:  # type: ignore[override]
+    def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:
@@ -169,7 +213,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return None
 
         # Process all tool calls that require interrupts
-        approved_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
+        revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create interrupt requests for all tools that need approval
@@ -178,10 +222,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
             config = self.interrupt_on[tool_name]
-            description = (
-                config.get("description")
-                or f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
-            )
+
+            # Generate description using the description field (str or callable)
+            description_value = config.get("description")
+            if callable(description_value):
+                description = description_value(tool_call, state, runtime)
+            elif description_value is not None:
+                description = description_value
+            else:
+                description = f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
 
             request: HumanInTheLoopRequest = {
                 "action_request": ActionRequest(
@@ -210,10 +259,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             config = self.interrupt_on[tool_call["name"]]
 
             if response["type"] == "accept" and config.get("allow_accept"):
-                approved_tool_calls.append(tool_call)
+                revised_tool_calls.append(tool_call)
             elif response["type"] == "edit" and config.get("allow_edit"):
                 edited_action = response["args"]
-                approved_tool_calls.append(
+                revised_tool_calls.append(
                     ToolCall(
                         type="tool_call",
                         name=edited_action["action"],
@@ -233,6 +282,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                     tool_call_id=tool_call["id"],
                     status="error",
                 )
+                revised_tool_calls.append(tool_call)
                 artificial_tool_messages.append(tool_message)
             else:
                 allowed_actions = [
@@ -249,9 +299,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 raise ValueError(msg)
 
         # Update the AI message to only include approved tool calls
-        last_ai_msg.tool_calls = approved_tool_calls
+        last_ai_msg.tool_calls = revised_tool_calls
 
-        if len(approved_tool_calls) > 0:
-            return {"messages": [last_ai_msg, *artificial_tool_messages]}
-
-        return {"jump_to": "model", "messages": artificial_tool_messages}
+        return {"messages": [last_ai_msg, *artificial_tool_messages]}

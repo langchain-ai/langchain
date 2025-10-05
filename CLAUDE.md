@@ -26,7 +26,7 @@ def get_user(user_id: str, verbose: bool = False) -> User:
 - Check if the function/class is exported in `__init__.py`
 - Look for existing usage patterns in tests and examples
 - Use keyword-only arguments for new parameters: `*, new_param: str = "default"`
-- Mark experimental features clearly with docstring warnings (using reStructuredText, like `.. warning::`)
+- Mark experimental features clearly with docstring warnings (using MkDocs Material admonitions, like `!!! warning`)
 
 🧠 *Ask yourself:* "Would this change break someone's code if they used it last week?"
 
@@ -166,7 +166,6 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Focus on "why" rather than "what" in descriptions
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
-- Use reStructuredText for docstrings to enable rich formatting
 
 📌 *Tip:* Keep descriptions concise but clear. Only document return values if non-obvious.
 

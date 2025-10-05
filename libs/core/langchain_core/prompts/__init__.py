@@ -8,8 +8,7 @@ from multiple components and prompt values. Prompt classes and functions make co
 
 .. code-block::
 
-    BasePromptTemplate --> PipelinePromptTemplate
-                           StringPromptTemplate --> PromptTemplate
+    BasePromptTemplate --> StringPromptTemplate --> PromptTemplate
                                                     FewShotPromptTemplate
                                                     FewShotPromptWithTemplates
                            BaseChatPromptTemplate --> AutoGPTPrompt
@@ -53,7 +52,6 @@ if TYPE_CHECKING:
         FewShotPromptWithTemplates,
     )
     from langchain_core.prompts.loading import load_prompt
-    from langchain_core.prompts.pipeline import PipelinePromptTemplate
     from langchain_core.prompts.prompt import PromptTemplate
     from langchain_core.prompts.string import (
         StringPromptTemplate,
@@ -75,7 +73,6 @@ __all__ = (
     "FewShotPromptWithTemplates",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
-    "PipelinePromptTemplate",
     "PromptTemplate",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
@@ -104,7 +101,6 @@ _dynamic_imports = {
     "FewShotPromptTemplate": "few_shot",
     "FewShotPromptWithTemplates": "few_shot_with_templates",
     "load_prompt": "loading",
-    "PipelinePromptTemplate": "pipeline",
     "PromptTemplate": "prompt",
     "StringPromptTemplate": "string",
     "check_valid_template": "string",

@@ -8,11 +8,10 @@ from __future__ import annotations
 import base64
 import logging
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
 )
@@ -51,6 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> list[tuple[Document, float]]:
             results["metadatas"][0],
             results["ids"][0],
             results["distances"][0],
+            strict=False,
         )
     ]
 
@@ -62,6 +62,7 @@ def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarra
             results["documents"][0],
             results["metadatas"][0],
             results["embeddings"][0],
+            strict=False,
         )
     ]
 
@@ -1157,7 +1158,7 @@ class Chroma(VectorStore):
         Returns:
             List of Documents.
 
-        ... versionadded:: 0.2.1
+        !!! version-added "Added in 0.2.1"
         """
         results = self.get(ids=list(ids))
         return [
@@ -1166,6 +1167,7 @@ class Chroma(VectorStore):
                 results["documents"],
                 results["metadatas"],
                 results["ids"],
+                strict=False,
             )
         ]
 

@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from langchain.chains.transform import TransformChain
+from langchain_classic.chains.transform import TransformChain
 
 
 def dummy_transform(inputs: dict[str, str]) -> dict[str, str]:

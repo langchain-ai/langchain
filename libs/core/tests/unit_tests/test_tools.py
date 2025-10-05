@@ -2321,7 +2321,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
 
     assert foo.invoke(
         {
@@ -2330,7 +2330,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
 
     with pytest.raises(
         ValueError,
@@ -2342,7 +2342,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
 
     assert foo2.invoke(
         {
@@ -2351,7 +2351,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
 
 
 def test_tool_injected_tool_call_id_override_llm_generated() -> None:
@@ -2360,7 +2360,7 @@ def test_tool_injected_tool_call_id_override_llm_generated() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     # Test that when LLM generates the tool_call_id, it gets overridden
     result = foo.invoke(
@@ -2373,14 +2373,14 @@ def test_tool_injected_tool_call_id_override_llm_generated() -> None:
     )
 
     # The tool should receive the real tool call ID, not the LLM-generated one
-    assert result == ToolMessage(0, tool_call_id="real_tool_call_id")  # type: ignore[arg-type]
+    assert result == ToolMessage("0", tool_call_id="real_tool_call_id")
 
 
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
 
     with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
@@ -2392,7 +2392,7 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[call-overload]
 
 
 def test_tool_return_output_mixin() -> None:

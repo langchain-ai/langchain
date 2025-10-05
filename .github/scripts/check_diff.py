@@ -50,10 +50,6 @@ IGNORED_PARTNERS = [
     "prompty",
 ]
 
-PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
-]
-
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -136,14 +132,11 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "codspeed":
         py_versions = ["3.12"]  # 3.13 is not yet supported
     elif dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        py_versions = ["3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
 
-    elif dir_ in PY_312_MAX_PACKAGES:
-        py_versions = ["3.9", "3.12"]
-
     elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
     elif dir_ == "libs/langchain_v1":
         py_versions = ["3.10", "3.13"]
     elif dir_ in {"libs/cli"}:
@@ -151,9 +144,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
     elif dir_ == ".":
         # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.10", "3.12"]
     else:
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -266,10 +259,9 @@ if __name__ == "__main__":
         ):
             # add all LANGCHAIN_DIRS for infra changes
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
-            dirs_to_run["lint"].add(".")
 
         if file.startswith("libs/core"):
-            dirs_to_run["codspeed"].add(f"libs/core")
+            dirs_to_run["codspeed"].add("libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -310,19 +302,21 @@ if __name__ == "__main__":
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
-        elif file == "libs/packages.yml":
-            continue
         elif file.startswith("libs/"):
+            # Check if this is a root-level file in libs/ (e.g., libs/README.md)
+            file_parts = file.split("/")
+            if len(file_parts) == 2:
+                # Root-level file in libs/, skip it (no tests needed)
+                continue
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in [
+        elif file in [
             "pyproject.toml",
             "uv.lock",
-        ]:  # docs or root uv files
+        ]:  # root uv files
             docs_edited = True
-            dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()
 
@@ -340,9 +334,6 @@ if __name__ == "__main__":
             "codspeed",
         ]
     }
-    map_job_to_configs["test-doc-imports"] = (
-        [{"python-version": "3.12"}] if docs_edited else []
-    )
 
     for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)

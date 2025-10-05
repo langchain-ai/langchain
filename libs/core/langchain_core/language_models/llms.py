@@ -7,7 +7,6 @@ import functools
 import inspect
 import json
 import logging
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
@@ -21,7 +20,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -33,7 +32,6 @@ from tenacity import (
 )
 from typing_extensions import override
 
-from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -51,10 +49,7 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.load import dumpd
 from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
     convert_to_messages,
-    get_buffer_string,
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
@@ -296,25 +291,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     It should take in a prompt and return a string.
     """
 
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
-    """[DEPRECATED]"""
-
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if callback_manager is used."""
-        if values.get("callback_manager") is not None:
-            warnings.warn(
-                "callback_manager is deprecated. Please use callbacks instead.",
-                DeprecationWarning,
-                stacklevel=5,
-            )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
 
     @functools.cached_property
     def _serialized(self) -> dict[str, Any]:
@@ -1308,56 +1287,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    def __call__(
-        self,
-        prompt: str,
-        stop: Optional[list[str]] = None,
-        callbacks: Callbacks = None,
-        *,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Check Cache and run the LLM on the given prompt and input.
-
-        Args:
-            prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            tags: List of tags to associate with the prompt.
-            metadata: Metadata to associate with the prompt.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            The generated text.
-
-        Raises:
-            ValueError: If the prompt is not a string.
-        """
-        if not isinstance(prompt, str):
-            msg = (
-                "Argument `prompt` is expected to be a string. Instead found "
-                f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
-                "`generate` instead."
-            )
-            raise ValueError(msg)  # noqa: TRY004
-        return (
-            self.generate(
-                [prompt],
-                stop=stop,
-                callbacks=callbacks,
-                tags=tags,
-                metadata=metadata,
-                **kwargs,
-            )
-            .generations[0][0]
-            .text
-        )
-
     async def _call_async(
         self,
         prompt: str,
@@ -1378,50 +1307,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             **kwargs,
         )
         return result.generations[0][0].text
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @override
-    def predict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        stop_ = None if stop is None else list(stop)
-        return self(text, stop=stop_, **kwargs)
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @override
-    def predict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        text = get_buffer_string(messages)
-        stop_ = None if stop is None else list(stop)
-        content = self(text, stop=stop_, **kwargs)
-        return AIMessage(content=content)
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @override
-    async def apredict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        stop_ = None if stop is None else list(stop)
-        return await self._call_async(text, stop=stop_, **kwargs)
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @override
-    async def apredict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        text = get_buffer_string(messages)
-        stop_ = None if stop is None else list(stop)
-        content = await self._call_async(text, stop=stop_, **kwargs)
-        return AIMessage(content=content)
 
     def __str__(self) -> str:
         """Return a string representation of the object for printing."""
@@ -1466,10 +1351,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

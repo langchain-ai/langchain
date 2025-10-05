@@ -1,9 +1,11 @@
 """Anthropic prompt caching middleware."""
 
-from typing import Any, Literal
+from typing import Literal
 from warnings import warn
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langgraph.runtime import Runtime
+
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
@@ -39,10 +41,11 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.min_messages_to_cache = min_messages_to_cache
         self.unsupported_model_behavior = unsupported_model_behavior
 
-    def modify_model_request(  # type: ignore[override]
+    def modify_model_request(
         self,
         request: ModelRequest,
-        state: dict[str, Any],  # noqa: ARG002
+        state: AgentState,  # noqa: ARG002
+        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
         try:

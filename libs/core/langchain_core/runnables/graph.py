@@ -601,17 +601,15 @@ class Graph:
 
                 Example config:
 
-                .. code-block:: python
-
+                ```python
                 {
                     "config": {
                         "theme": "neutral",
                         "look": "handDrawn",
-                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
                     }
                 }
-
-
+                ```
         Returns:
             The Mermaid syntax string.
         """
@@ -674,15 +672,15 @@ class Graph:
 
                 Example config:
 
-                .. code-block:: python
-
+                ```python
                 {
                     "config": {
                         "theme": "neutral",
                         "look": "handDrawn",
-                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
                     }
                 }
+                ```
             base_url: The base URL of the Mermaid server for rendering via API.
                 Defaults to None.
 
