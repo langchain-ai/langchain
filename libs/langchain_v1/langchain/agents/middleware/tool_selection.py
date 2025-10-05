@@ -146,9 +146,12 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if not request.tools or len(request.tools) == 0:
             return None
 
+        # Filter to only BaseTool instances (exclude provider-specific tool dicts)
+        base_tools = [tool for tool in request.tools if not isinstance(tool, dict)]
+
         # Validate that always_include tools exist
         if self.always_include:
-            available_tool_names = {tool.name for tool in request.tools}
+            available_tool_names = {tool.name for tool in base_tools}
             missing_tools = [
                 name for name in self.always_include if name not in available_tool_names
             ]
@@ -160,7 +163,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
                 raise ValueError(msg)
 
         # Separate tools that are always included from those available for selection
-        available_tools = [tool for tool in request.tools if tool.name not in self.always_include]
+        available_tools = [tool for tool in base_tools if tool.name not in self.always_include]
 
         # If no tools available for selection, return None
         if not available_tools:
@@ -224,9 +227,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Filter tools based on selection and append always-included tools
-        selected_tools = [tool for tool in available_tools if tool.name in selected_tool_names]
-        always_included_tools = [tool for tool in request.tools if tool.name in self.always_include]
+        selected_tools: list[BaseTool | dict] = [
+            tool for tool in available_tools if tool.name in selected_tool_names
+        ]
+        always_included_tools: list[BaseTool | dict] = [
+            tool
+            for tool in request.tools
+            if not isinstance(tool, dict) and tool.name in self.always_include
+        ]
         selected_tools.extend(always_included_tools)
+
+        # Also preserve any provider-specific tool dicts from the original request
+        provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
+        selected_tools.extend(provider_tools)
+
         request.tools = selected_tools
         return request
 
