@@ -35,6 +35,7 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolInvocationError
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -174,6 +175,12 @@ def _handle_structured_output_error(
     return False, ""
 
 
+def _default_handle_tool_errors(e: Exception) -> str:
+    if isinstance(e, ToolInvocationError):
+        return e.message
+    raise e
+
+
 def create_agent(  # noqa: PLR0915
     *,
     model: str | BaseChatModel,
@@ -231,7 +238,7 @@ def create_agent(  # noqa: PLR0915
     if isinstance(tools, list):
         # Extract built-in provider tools (dict format) and regular tools (BaseTool)
         built_in_tools = [t for t in tools if isinstance(t, dict)]
-        regular_tools = [t for t in tools if not isinstance(t, dict)]
+        regular_tools = [t for t in tools if isinstance(t, BaseTool)]
 
         # Tools that require client-side execution (must be in ToolNode)
         available_tools = middleware_tools + regular_tools
@@ -248,7 +255,17 @@ def create_agent(  # noqa: PLR0915
         if tool_node:
             # Add middleware tools to existing ToolNode
             available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(available_tools)
+            tool_node = ToolNode(
+                tools=available_tools,
+                name=tool_node.name if tool_node else "tools",
+                tags=list(tool_node.tags) if tool_node and tool_node.tags else None,
+                handle_tool_errors=tool_node._handle_tool_errors
+                if tool_node and tool_node._handle_tool_errors
+                else _default_handle_tool_errors,
+                messages_key=tool_node._messages_key
+                if tool_node and tool_node._messages_key
+                else "messages",
+            )
 
             # default_tools includes all client-side tools (no built-ins or structured tools)
             default_tools = available_tools
