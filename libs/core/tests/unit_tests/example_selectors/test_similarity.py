@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -13,21 +13,21 @@ from langchain_core.vectorstores import VectorStore
 
 
 class DummyVectorStore(VectorStore):
-    def __init__(self, init_arg: Optional[str] = None):
+    def __init__(self, init_arg: str | None = None):
         self.texts: list[str] = []
         self.metadatas: list[dict] = []
-        self._embeddings: Optional[Embeddings] = None
+        self._embeddings: Embeddings | None = None
         self.init_arg = init_arg
 
     @property
-    def embeddings(self) -> Optional[Embeddings]:
+    def embeddings(self) -> Embeddings | None:
         return self._embeddings
 
     @override
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         self.texts.extend(texts)
@@ -66,7 +66,7 @@ class DummyVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> "DummyVectorStore":
         store = DummyVectorStore(**kwargs)

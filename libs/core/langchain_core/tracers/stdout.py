@@ -1,7 +1,8 @@
 """Tracers that print to the console."""
 
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run

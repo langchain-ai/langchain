@@ -1,11 +1,8 @@
 """Structured prompt template for a language model."""
 
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from pydantic import BaseModel, Field
@@ -31,16 +28,16 @@ from langchain_core.utils import get_pydantic_field_names
 class StructuredPrompt(ChatPromptTemplate):
     """Structured prompt template for a language model."""
 
-    schema_: Union[dict, type]
+    schema_: dict | type
     """Schema for the structured prompt."""
     structured_output_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     def __init__(
         self,
         messages: Sequence[MessageLikeRepresentation],
-        schema_: Optional[Union[dict, type[BaseModel]]] = None,
+        schema_: dict | type[BaseModel] | None = None,
         *,
-        structured_output_kwargs: Optional[dict[str, Any]] = None,
+        structured_output_kwargs: dict[str, Any] | None = None,
         template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
@@ -80,7 +77,7 @@ class StructuredPrompt(ChatPromptTemplate):
     def from_messages_and_schema(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        schema: Union[dict, type],
+        schema: dict | type,
         **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
@@ -127,26 +124,22 @@ class StructuredPrompt(ChatPromptTemplate):
     @override
     def __or__(
         self,
-        other: Union[
-            Runnable[Any, Other],
-            Callable[[Iterator[Any]], Iterator[Other]],
-            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
-        ],
+        other: Runnable[Any, Other]
+        | Callable[[Iterator[Any]], Iterator[Other]]
+        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+        | Callable[[Any], Other]
+        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
     ) -> RunnableSerializable[dict, Other]:
         return self.pipe(other)
 
     def pipe(
         self,
-        *others: Union[
-            Runnable[Any, Other],
-            Callable[[Iterator[Any]], Iterator[Other]],
-            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
-        ],
-        name: Optional[str] = None,
+        *others: Runnable[Any, Other]
+        | Callable[[Iterator[Any]], Iterator[Other]]
+        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+        | Callable[[Any], Other]
+        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
+        name: str | None = None,
     ) -> RunnableSerializable[dict, Other]:
         """Pipe the structured prompt to a language model.
 

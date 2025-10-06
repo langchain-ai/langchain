@@ -6,7 +6,6 @@ import abc
 import asyncio
 import threading
 import time
-from typing import Optional
 
 
 class BaseRateLimiter(abc.ABC):
@@ -163,7 +162,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         # at a given time.
         self._consume_lock = threading.Lock()
         # The last time we tried to consume tokens.
-        self.last: Optional[float] = None
+        self.last: float | None = None
         self.check_every_n_seconds = check_every_n_seconds
 
     def _consume(self) -> bool:

@@ -7,7 +7,7 @@ via snapshot testing (e.g., see unit tests for runnables).
 
 import contextvars
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from typing_extensions import override
@@ -104,7 +104,7 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
             prompts: list[str],
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
+            parent_run_id: UUID | None = None,
             **kwargs: Any,
         ) -> None:
             if self.name == "StateModifier":

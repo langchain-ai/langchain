@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, model_validator
 from typing_extensions import override
@@ -233,8 +233,8 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     def from_file(
         cls,
-        template_file: Union[str, Path],
-        encoding: Optional[str] = None,
+        template_file: str | Path,
+        encoding: str | None = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
@@ -256,7 +256,7 @@ class PromptTemplate(StringPromptTemplate):
         template: str,
         *,
         template_format: PromptTemplateFormat = "f-string",
-        partial_variables: Optional[dict[str, Any]] = None,
+        partial_variables: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt template from a template.

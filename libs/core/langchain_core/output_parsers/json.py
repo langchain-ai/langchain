@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional, TypeVar, Union
+from typing import Annotated, Any, TypeVar
 
 import jsonpatch  # type: ignore[import-untyped]
 import pydantic
@@ -23,7 +23,7 @@ from langchain_core.utils.json import (
 )
 
 # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]
+PydanticBaseModel = BaseModel | pydantic.BaseModel
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -38,12 +38,12 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore[valid-type]
+    pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
     If None, no validation is performed."""
 
     @override
-    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+    def _diff(self, prev: Any | None, next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
     @staticmethod

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, TextIO, cast
 
 from typing_extensions import Self, override
 
@@ -57,7 +57,7 @@ class FileCallbackHandler(BaseCallbackHandler):
     """
 
     def __init__(
-        self, filename: str, mode: str = "a", color: Optional[str] = None
+        self, filename: str, mode: str = "a", color: str | None = None
     ) -> None:
         """Initialize the file callback handler.
 
@@ -124,7 +124,7 @@ class FileCallbackHandler(BaseCallbackHandler):
     def _write(
         self,
         text: str,
-        color: Optional[str] = None,
+        color: str | None = None,
         end: str = "",
     ) -> None:
         """Write text to the file with deprecation warning if needed.
@@ -190,7 +190,7 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_action(
-        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+        self, action: AgentAction, color: str | None = None, **kwargs: Any
     ) -> Any:
         """Handle agent action by writing the action log.
 
@@ -207,9 +207,9 @@ class FileCallbackHandler(BaseCallbackHandler):
     def on_tool_end(
         self,
         output: str,
-        color: Optional[str] = None,
-        observation_prefix: Optional[str] = None,
-        llm_prefix: Optional[str] = None,
+        color: str | None = None,
+        observation_prefix: str | None = None,
+        llm_prefix: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Handle tool end by writing the output with optional prefixes.
@@ -231,7 +231,7 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_text(
-        self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
+        self, text: str, color: str | None = None, end: str = "", **kwargs: Any
     ) -> None:
         """Handle text output.
 
@@ -247,7 +247,7 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_finish(
-        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+        self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         """Handle agent finish by writing the finish log.
 
