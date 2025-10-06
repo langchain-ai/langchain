@@ -22,7 +22,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o-mini", "stream_usage": True}
+        return {"model": "gpt-4o-mini"}
 
     @property
     def supports_image_inputs(self) -> bool:

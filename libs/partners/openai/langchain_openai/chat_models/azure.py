@@ -615,6 +615,25 @@ class AzureChatOpenAI(BaseChatOpenAI):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
+
+        # Enable stream_usage by default if using default base URL and client
+        if all(
+            getattr(self, key, None) is None
+            for key in (
+                "stream_usage",
+                "openai_proxy",
+                "openai_api_base",
+                "base_url",
+                "client",
+                "root_client",
+                "async_client",
+                "root_async_client",
+                "http_client",
+                "http_async_client",
+            )
+        ):
+            self.stream_usage = True
+
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = self.openai_api_base
