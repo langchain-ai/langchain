@@ -98,7 +98,13 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
@@ -464,11 +470,19 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
-    stream_usage: bool = False
-    """Whether to include usage metadata in streaming output. If True, an additional
+    stream_usage: Optional[bool] = None
+    """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
 
+    This parameter is enabled unless ``openai_api_base`` is set or the model is
+    initialized with a custom client, as many chat completions APIs do not support
+    streaming token usage.
+
     .. versionadded:: 0.3.9
+
+    .. versionchanged:: 0.3.35
+
+        Enabled for default base URL and client.
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
@@ -746,6 +760,28 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+
+        # Enable stream_usage by default if using default base URL and client
+        if (
+            all(
+                getattr(self, key, None) is None
+                for key in (
+                    "stream_usage",
+                    "openai_proxy",
+                    "openai_api_base",
+                    "base_url",
+                    "client",
+                    "root_client",
+                    "async_client",
+                    "root_async_client",
+                    "http_client",
+                    "http_async_client",
+                )
+            )
+            and "OPENAI_BASE_URL" not in os.environ
+        ):
+            self.stream_usage = True
+
         client_params: dict = {
             "api_key": (
                 self.openai_api_key.get_secret_value() if self.openai_api_key else None
@@ -1050,7 +1086,7 @@ class BaseChatOpenAI(BaseChatModel):
         for source in stream_usage_sources:
             if isinstance(source, bool):
                 return source
-        return self.stream_usage
+        return self.stream_usage or False
 
     def _stream(
         self,
