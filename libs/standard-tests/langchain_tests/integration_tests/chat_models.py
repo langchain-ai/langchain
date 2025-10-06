@@ -779,7 +779,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.text, str)
         assert len(result.content) > 0
 
-    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_stream(self, model: BaseChatModel) -> None:
         """Test to verify that ``model.stream(simple_message)`` works.
 
@@ -818,7 +818,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(full.content_blocks) == 1
         assert full.content_blocks[0]["type"] == "text"
 
-    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
         """Test to verify that ``await model.astream(simple_message)`` works.
 
@@ -3021,7 +3021,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.text, str)
         assert len(result.content) > 0
 
-    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_agent_loop(self, model: BaseChatModel) -> None:
         """Test that the model supports a simple ReAct agent loop.
 
