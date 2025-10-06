@@ -36,7 +36,7 @@ from langchain.agents.middleware.planning import (
     write_todos,
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
-from langchain.agents.middleware.call_tracking import (
+from langchain.agents.middleware.model_call_limit import (
     ModelCallLimitMiddleware,
     ModelCallLimitExceededError,
 )
@@ -52,7 +52,7 @@ from langchain.agents.middleware.types import (
     OmitFromOutput,
     PrivateStateAttr,
 )
-from langchain.agents.middleware_agent import create_agent
+from langchain.agents.factory import create_agent
 from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import InjectedState
 
@@ -134,7 +134,7 @@ def test_create_agent_diagram(
         system_prompt="You are a helpful assistant.",
     )
 
-    assert agent_zero.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_zero.get_graph().draw_mermaid() == snapshot
 
     agent_one = create_agent(
         model=FakeToolCallingModel(),
@@ -143,7 +143,7 @@ def test_create_agent_diagram(
         middleware=[NoopOne()],
     )
 
-    assert agent_one.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_one.get_graph().draw_mermaid() == snapshot
 
     agent_two = create_agent(
         model=FakeToolCallingModel(),
@@ -152,7 +152,7 @@ def test_create_agent_diagram(
         middleware=[NoopOne(), NoopTwo()],
     )
 
-    assert agent_two.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_two.get_graph().draw_mermaid() == snapshot
 
     agent_three = create_agent(
         model=FakeToolCallingModel(),
@@ -161,7 +161,7 @@ def test_create_agent_diagram(
         middleware=[NoopOne(), NoopTwo(), NoopThree()],
     )
 
-    assert agent_three.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_three.get_graph().draw_mermaid() == snapshot
 
     agent_four = create_agent(
         model=FakeToolCallingModel(),
@@ -170,7 +170,7 @@ def test_create_agent_diagram(
         middleware=[NoopFour()],
     )
 
-    assert agent_four.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_four.get_graph().draw_mermaid() == snapshot
 
     agent_five = create_agent(
         model=FakeToolCallingModel(),
@@ -179,7 +179,7 @@ def test_create_agent_diagram(
         middleware=[NoopFour(), NoopFive()],
     )
 
-    assert agent_five.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_five.get_graph().draw_mermaid() == snapshot
 
     agent_six = create_agent(
         model=FakeToolCallingModel(),
@@ -188,7 +188,7 @@ def test_create_agent_diagram(
         middleware=[NoopFour(), NoopFive(), NoopSix()],
     )
 
-    assert agent_six.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_six.get_graph().draw_mermaid() == snapshot
 
     agent_seven = create_agent(
         model=FakeToolCallingModel(),
@@ -197,7 +197,7 @@ def test_create_agent_diagram(
         middleware=[NoopSeven()],
     )
 
-    assert agent_seven.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_seven.get_graph().draw_mermaid() == snapshot
 
     agent_eight = create_agent(
         model=FakeToolCallingModel(),
@@ -206,7 +206,7 @@ def test_create_agent_diagram(
         middleware=[NoopSeven(), NoopEight()],
     )
 
-    assert agent_eight.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_eight.get_graph().draw_mermaid() == snapshot
 
     agent_nine = create_agent(
         model=FakeToolCallingModel(),
@@ -215,7 +215,7 @@ def test_create_agent_diagram(
         middleware=[NoopSeven(), NoopEight(), NoopNine()],
     )
 
-    assert agent_nine.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_nine.get_graph().draw_mermaid() == snapshot
 
     agent_ten = create_agent(
         model=FakeToolCallingModel(),
@@ -224,7 +224,7 @@ def test_create_agent_diagram(
         middleware=[NoopTen()],
     )
 
-    assert agent_ten.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_ten.get_graph().draw_mermaid() == snapshot
 
     agent_eleven = create_agent(
         model=FakeToolCallingModel(),
@@ -233,7 +233,7 @@ def test_create_agent_diagram(
         middleware=[NoopTen(), NoopEleven()],
     )
 
-    assert agent_eleven.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_eleven.get_graph().draw_mermaid() == snapshot
 
 
 def test_create_agent_invoke(
@@ -282,7 +282,8 @@ def test_create_agent_invoke(
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[NoopSeven(), NoopEight()],
-    ).compile(checkpointer=sync_checkpointer)
+        checkpointer=sync_checkpointer,
+    )
 
     thread1 = {"configurable": {"thread_id": "1"}}
     assert agent_one.invoke({"messages": ["hello"]}, thread1) == {
@@ -371,7 +372,8 @@ def test_create_agent_jump(
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[NoopSeven(), NoopEight()],
-    ).compile(checkpointer=sync_checkpointer)
+        checkpointer=sync_checkpointer,
+    )
 
     if isinstance(sync_checkpointer, InMemorySaver):
         assert agent_one.get_graph().draw_mermaid() == snapshot
@@ -1260,14 +1262,13 @@ def test_modify_model_request() -> None:
             request.messages.append(HumanMessage("remember to be nice!"))
             return request
 
-    builder = create_agent(
+    agent = create_agent(
         model=FakeToolCallingModel(),
         tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[ModifyMiddleware()],
     )
 
-    agent = builder.compile()
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["messages"][0].content == "Hello"
     assert result["messages"][1].content == "remember to be nice!"
@@ -1314,9 +1315,8 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
         response_format=ToolStrategy(schema=WeatherResponse),
     )
 
-    # Compile and invoke the agent
-    compiled_agent = agent.compile()
-    result = compiled_agent.invoke(
+    # Invoke the agent (already compiled)
+    result = agent.invoke(
         {"messages": [HumanMessage("What's the weather and help me with a query?")]}
     )
 
@@ -1369,7 +1369,6 @@ def test_public_private_state_for_custom_middleware() -> None:
             return {"omit_input": "test", "omit_output": "test", "private_state": "test"}
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
-    agent = agent.compile()
     result = agent.invoke(
         {
             "messages": [HumanMessage("Hello")],
@@ -1404,7 +1403,6 @@ def test_runtime_injected_into_middleware() -> None:
     middleware = CustomMiddleware()
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
-    agent = agent.compile()
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
 
@@ -1435,7 +1433,7 @@ def test_injected_state_in_middleware_agent() -> None:
         tools=[test_state],
         system_prompt="You are a helpful assistant.",
         middleware=[TestMiddleware()],
-    ).compile()
+    )
 
     result = agent.invoke(
         {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
@@ -1465,7 +1463,6 @@ def test_jump_to_is_ephemeral() -> None:
             return {"jump_to": "model"}
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[MyMiddleware()])
-    agent = agent.compile()
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert "jump_to" not in result
 
@@ -1596,7 +1593,6 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
     )
     middleware = PlanningMiddleware()
     agent = create_agent(model=model, middleware=[middleware])
-    agent = agent.compile()
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["todos"] == [{"content": "Task 1", "status": "completed"}]
@@ -1707,7 +1703,6 @@ def test_planning_middleware_custom_system_prompt() -> None:
     )
 
     agent = create_agent(model=model, middleware=[middleware])
-    agent = agent.compile()
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["todos"] == [{"content": "Custom task", "status": "pending"}]
@@ -1781,7 +1776,8 @@ def test_thread_limit_with_create_agent():
         model=model,
         tools=[simple_tool],
         middleware=[ModelCallLimitMiddleware(thread_limit=1)],
-    ).compile(checkpointer=InMemorySaver())
+        checkpointer=InMemorySaver(),
+    )
 
     # First invocation should work - 1 model call, within thread limit
     result = agent.invoke(
@@ -1824,7 +1820,8 @@ def test_run_limit_with_create_agent():
         model=model,
         tools=[simple_tool],
         middleware=[ModelCallLimitMiddleware(run_limit=1)],
-    ).compile(checkpointer=InMemorySaver())
+        checkpointer=InMemorySaver(),
+    )
 
     # This should hit the run limit after the first model call
     result = agent.invoke(
@@ -1911,8 +1908,7 @@ def test_run_limit_resets_between_invocations() -> None:
         tool_calls=[[], [], [], []]
     )  # No tool calls, so only model call per run
 
-    agent = create_agent(model=model, middleware=[middleware])
-    agent = agent.compile(checkpointer=InMemorySaver())
+    agent = create_agent(model=model, middleware=[middleware], checkpointer=InMemorySaver())
 
     thread_config = {"configurable": {"thread_id": "test_thread"}}
     agent.invoke({"messages": [HumanMessage("Hello")]}, thread_config)
@@ -1959,7 +1955,7 @@ async def test_create_agent_async_invoke() -> None:
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[AsyncMiddleware()],
-    ).compile()
+    )
 
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
@@ -2015,7 +2011,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
-    ).compile()
+    )
 
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
@@ -2056,7 +2052,7 @@ async def test_create_agent_async_jump() -> None:
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
-    ).compile()
+    )
 
     result = await agent.ainvoke({"messages": []})
 
@@ -2095,7 +2091,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[SyncMiddleware(), AsyncMiddleware()],
-    ).compile()
+    )
 
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
@@ -2143,7 +2139,7 @@ def test_retry_model_request_hook() -> None:
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
 
-    agent = create_agent(model=failing_model, middleware=[retry_middleware]).compile()
+    agent = create_agent(model=failing_model, middleware=[retry_middleware])
 
     result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -2181,7 +2177,7 @@ def test_retry_model_request_attempt_number() -> None:
     model = AlwaysFailingModel()
     tracker = AttemptTrackingMiddleware()
 
-    agent = create_agent(model=model, middleware=[tracker]).compile()
+    agent = create_agent(model=model, middleware=[tracker])
 
     with pytest.raises(ValueError, match="Always fails"):
         agent.invoke({"messages": [HumanMessage("Test")]})
@@ -2208,7 +2204,7 @@ def test_retry_model_request_no_retry() -> None:
             # Always return None to not retry
             return None
 
-    agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()]).compile()
+    agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
 
     with pytest.raises(ValueError, match="Model error"):
         agent.invoke({"messages": [HumanMessage("Test")]})
@@ -2245,7 +2241,7 @@ def test_model_fallback_middleware() -> None:
     # Only pass fallback models to middleware (not the primary)
     fallback_middleware = ModelFallbackMiddleware(fallback)
 
-    agent = create_agent(model=primary, middleware=[fallback_middleware]).compile()
+    agent = create_agent(model=primary, middleware=[fallback_middleware])
 
     result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -2278,7 +2274,7 @@ def test_model_fallback_middleware_exhausted() -> None:
     # Primary fails (attempt 1), then fallback1 (attempt 2), then fallback2 (attempt 3)
     fallback_middleware = ModelFallbackMiddleware(fallback1, fallback2)
 
-    agent = create_agent(model=primary, middleware=[fallback_middleware]).compile()
+    agent = create_agent(model=primary, middleware=[fallback_middleware])
 
     # Should fail with the last fallback's error
     with pytest.raises(ValueError, match="fallback2 failed"):
@@ -2328,7 +2324,7 @@ def test_retry_model_request_max_attempts() -> None:
     model = AlwaysFailingModel()
     middleware = InfiniteRetryMiddleware()
 
-    agent = create_agent(model=model, middleware=[middleware]).compile()
+    agent = create_agent(model=model, middleware=[middleware])
 
     # Should fail with max attempts error, not infinite loop
     with pytest.raises(RuntimeError, match="Maximum retry attempts \\(100\\) exceeded"):
@@ -2372,7 +2368,7 @@ async def test_retry_model_request_async() -> None:
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
 
-    agent = create_agent(model=failing_model, middleware=[retry_middleware]).compile()
+    agent = create_agent(model=failing_model, middleware=[retry_middleware])
 
     result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
 
@@ -2394,7 +2390,7 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[AsyncOnlyMiddleware()],
-    ).compile()
+    )
 
     with pytest.raises(
         TypeError,
@@ -2427,7 +2423,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         tools=[],
         system_prompt="You are a helpful assistant.",
         middleware=[MixedMiddleware()],
-    ).compile()
+    )
 
     result = agent.invoke({"messages": [HumanMessage("hello")]})
 

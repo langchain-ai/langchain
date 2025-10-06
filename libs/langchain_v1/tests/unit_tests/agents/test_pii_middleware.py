@@ -12,7 +12,7 @@ from langchain.agents.middleware.pii import (
     detect_mac_address,
     detect_url,
 )
-from langchain.agents.middleware_agent import create_agent
+from langchain.agents.factory import create_agent
 
 from .model import FakeToolCallingModel
 
@@ -499,9 +499,8 @@ class TestPIIMiddlewareIntegration:
             middleware=[PIIMiddleware("email", strategy="redact")],
         )
 
-        # Compile and invoke
-        graph = agent.compile()
-        result = graph.invoke({"messages": [HumanMessage("Email: test@example.com")]})
+        # Invoke (agent is already compiled)
+        result = agent.invoke({"messages": [HumanMessage("Email: test@example.com")]})
 
         # Check that email was redacted in the stored messages
         # The first message should have been processed
@@ -602,10 +601,8 @@ class TestMultipleMiddleware:
             ],
         )
 
-        graph = agent.compile()
-
         # Test with email and IP (url would block, so we omit it)
-        result = graph.invoke(
+        result = agent.invoke(
             {"messages": [HumanMessage("Contact: test@example.com, IP: 192.168.1.100")]}
         )
 
