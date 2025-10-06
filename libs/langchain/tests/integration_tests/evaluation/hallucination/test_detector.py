@@ -10,7 +10,8 @@ from langchain.evaluation.hallucination.detector import HallucinationDetector
 # Integration Tests (Real HF model)
 # -----------------------------
 skip_if_no_hf = pytest.mark.skipif(
-    "HF_TOKEN" not in os.environ, reason="Hugging Face token not available"
+    "HF_TOKEN" not in os.environ,
+    reason="Hugging Face token not available"
 )
 
 
@@ -25,7 +26,10 @@ def detector_real() -> HallucinationDetector:
 @skip_if_no_hf
 @pytest.mark.requires("integration")
 def test_extract_claims_integration(detector_real: HallucinationDetector) -> None:
-    text = "Barack Obama was the 44th President of the United States. He was born in Kenya."
+    text = (
+    "Barack Obama was the 44th President of the United States. "
+    "He was born in Kenya."
+    )
     claims = detector_real.extract_claims(text)
     # Check structure and basic logic
     assert isinstance(claims, list)
@@ -39,9 +43,15 @@ def test_extract_claims_integration(detector_real: HallucinationDetector) -> Non
 def test_compute_hallucination_rate_integration(
     detector_real: HallucinationDetector,
 ) -> None:
-    text = "Barack Obama was the 44th President of the United States. He was born in Kenya."
+    text = (
+    "Barack Obama was the 44th President of the United States. "
+    "He was born in Kenya."
+    )
     evidence = [
-        "Barack Obama served as the 44th President of the United States from 2009 to 2017.",
+        (
+        "Barack Obama served as the 44th President of the United States "
+        "from 2009 to 2017."
+        ),
         "Barack Obama was born in Hawaii, not Kenya.",
     ]
     result = detector_real.compute_hallucination_rate(text, evidence)
@@ -78,7 +88,10 @@ def detector_mock() -> Generator[HallucinationDetector, None, None]:
 
 
 def test_extract_claims_mock(detector_mock: HallucinationDetector) -> None:
-    text = "Barack Obama was the 44th President of the United States. He was born in Kenya."
+    text = (
+        "Barack Obama was the 44th President of the United States. "
+        "He was born in Kenya."
+    )
     claims = detector_mock.extract_claims(text)
     assert isinstance(claims, list)
     assert len(claims) == 2
@@ -86,7 +99,10 @@ def test_extract_claims_mock(detector_mock: HallucinationDetector) -> None:
 
 def test_verify_claim_supported_mock(detector_mock: HallucinationDetector) -> None:
     claim = "Barack Obama was the 44th President of the United States"
-    evidence = "Barack Obama served as the 44th President of the United States from 2009 to 2017."
+    evidence = (
+        "Barack Obama served as the 44th President of the United States "
+        "from 2009 to 2017."
+    )
     assert detector_mock.verify_claim(claim, evidence) is True
 
 
@@ -97,9 +113,15 @@ def test_verify_claim_unsupported_mock(detector_mock: HallucinationDetector) -> 
 
 
 def test_compute_hallucination_rate_mock(detector_mock: HallucinationDetector) -> None:
-    text = "Barack Obama was the 44th President of the United States. He was born in Kenya."
+    text = (
+        "Barack Obama was the 44th President of the United States. "
+        "He was born in Kenya."
+    )
     evidence = [
-        "Barack Obama served as the 44th President of the United States from 2009 to 2017.",
+        (
+        "Barack Obama served as the 44th President of the United States "
+        "from 2009 to 2017.",
+        ),
         "Barack Obama was born in Hawaii, not Kenya.",
     ]
     result = detector_mock.compute_hallucination_rate(text, evidence)
