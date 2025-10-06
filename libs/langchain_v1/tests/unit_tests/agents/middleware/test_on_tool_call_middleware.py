@@ -185,7 +185,7 @@ def test_middleware_retry_logic():
                 attempt_count += 1
                 response = yield request
 
-                if response.action == "return":
+                if response.action == "continue":
                     return response
 
                 if response.action == "raise" and attempt < max_retries - 1:
@@ -194,7 +194,7 @@ def test_middleware_retry_logic():
 
                 # Convert error to success message
                 return ToolCallResponse(
-                    action="return",
+                    action="continue",
                     result=ToolMessage(
                         content=f"Failed after {max_retries} attempts",
                         name=request.tool_call["name"],
@@ -311,7 +311,7 @@ def test_multiple_middleware_with_retry():
                 call_log.append(f"retry_attempt_{attempt + 1}")
                 response = yield request
 
-                if response.action == "return":
+                if response.action == "continue":
                     call_log.append("retry_success")
                     return response
 
@@ -357,15 +357,15 @@ def test_mixed_middleware():
     class MixedMiddleware(AgentMiddleware):
         """Middleware with multiple hooks."""
 
-        def before_model(self, state, runtime):
-            call_log.append("before_model")
-            return None
-
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
         ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append("on_tool_call_start")
-            response = yield request
+            for _ in range(3):
+                response = yield request
+                if response.action == "continue":
+                    break
+            # response = yield request
             call_log.append("on_tool_call_end")
             return response
 

@@ -238,7 +238,7 @@ class RetryMiddleware(AgentMiddleware):
             response = yield request
 
             # Success - return immediately
-            if response.action == "return":
+            if response.action == "continue":
                 return response
 
             # Error - check if we should retry
@@ -368,7 +368,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
         response = yield request
 
         # Success - pass through
-        if response.action == "return":
+        if response.action == "continue":
             return response
 
         # Error - check if we should convert
@@ -398,7 +398,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
             )
 
             return ToolCallResponse(
-                action="return",
+                action="continue",
                 result=tool_message,
                 exception=exception,  # Preserve for logging/debugging
             )

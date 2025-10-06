@@ -249,7 +249,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
                     response = yield request
-                    if response.action == "return":
+                    if response.action == "continue":
                         return response
                     if "rate limit" in str(response.exception):
                         time.sleep(2**attempt)

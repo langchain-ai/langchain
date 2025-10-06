@@ -81,7 +81,7 @@ def test_on_tool_call_retry_success() -> None:
         for attempt in range(max_retries):
             response = yield request
 
-            if response.action == "return":
+            if response.action == "continue":
                 return response
 
             # Retry on error
@@ -90,7 +90,7 @@ def test_on_tool_call_retry_success() -> None:
 
             # Final attempt failed - convert to error message
             return ToolCallResponse(
-                action="return",
+                action="continue",
                 result=ToolMessage(
                     content=f"Failed after {max_retries} attempts",
                     name=request.tool_call["name"],
@@ -130,7 +130,7 @@ def test_on_tool_call_convert_error_to_message() -> None:
 
         if response.action == "raise":
             return ToolCallResponse(
-                action="return",
+                action="continue",
                 result=ToolMessage(
                     content=f"Tool failed: {response.exception}",
                     name=request.tool_call["name"],
@@ -201,7 +201,7 @@ def test_on_tool_call_with_handled_errors() -> None:
         return response
 
     # When handle_tool_errors=True, errors are converted to ToolMessages
-    # so handler sees action="return"
+    # so handler sees action="continue"
     tool_node = ToolNode([error_tool], on_tool_call=counting_handler, handle_tool_errors=True)
     result = tool_node.invoke(
         {
@@ -286,9 +286,9 @@ def test_on_tool_call_request_modification() -> None:
 
 def test_on_tool_call_response_validation() -> None:
     """Test that ToolCallResponse validates action and required fields."""
-    # Test action="return" requires result
-    with pytest.raises(ValueError, match=r"action='return' requires a result"):
-        ToolCallResponse(action="return")
+    # Test action="continue" requires result
+    with pytest.raises(ValueError, match=r"action='continue' requires a result"):
+        ToolCallResponse(action="continue")
 
     # Test action="raise" requires exception
     with pytest.raises(ValueError, match=r"action='raise' requires an exception"):
@@ -296,7 +296,7 @@ def test_on_tool_call_response_validation() -> None:
 
     # Valid responses should work
     ToolCallResponse(
-        action="return",
+        action="continue",
         result=ToolMessage(content="test", tool_call_id="1", name="test"),
     )
     ToolCallResponse(action="raise", exception=ValueError("test"))
@@ -361,7 +361,7 @@ def test_on_tool_call_multiple_yields() -> None:
             attempts["count"] += 1
             response = yield request
 
-            if response.action == "return":
+            if response.action == "continue":
                 return response
 
         # All attempts failed
