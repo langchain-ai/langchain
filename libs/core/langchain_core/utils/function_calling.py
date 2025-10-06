@@ -8,13 +8,12 @@ import logging
 import types
 import typing
 import uuid
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
     Union,
     cast,
     get_args,
@@ -103,8 +102,8 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 def _convert_json_schema_to_openai_function(
     schema: dict,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
@@ -137,8 +136,8 @@ def _convert_json_schema_to_openai_function(
 def _convert_pydantic_to_openai_function(
     model: type,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
@@ -184,8 +183,8 @@ convert_pydantic_to_openai_function = deprecated(
 def convert_pydantic_to_openai_tool(
     model: type[BaseModel],
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
 ) -> ToolDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
 
@@ -285,7 +284,9 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
+                field_kwargs = dict(
+                    zip(("default", "description"), annotated_args[1:], strict=False)
+                )
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
@@ -393,9 +394,9 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 
 def convert_to_openai_function(
-    function: Union[dict[str, Any], type, Callable, BaseTool],
+    function: dict[str, Any] | type | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
@@ -520,9 +521,9 @@ _WellKnownOpenAITools = (
 
 
 def convert_to_openai_tool(
-    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a tool-like object to an OpenAI tool schema.
 
@@ -592,9 +593,9 @@ def convert_to_openai_tool(
 
 
 def convert_to_json_schema(
-    schema: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    schema: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a schema representation to a JSON schema.
 
@@ -637,9 +638,9 @@ def convert_to_json_schema(
 def tool_example_to_messages(
     input: str,
     tool_calls: list[BaseModel],
-    tool_outputs: Optional[list[str]] = None,
+    tool_outputs: list[str] | None = None,
     *,
-    ai_response: Optional[str] = None,
+    ai_response: str | None = None,
 ) -> list[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
 
@@ -731,7 +732,7 @@ def tool_example_to_messages(
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
-    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
+    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls, strict=False):
         messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))
 
     if ai_response:
@@ -740,7 +741,7 @@ def tool_example_to_messages(
 
 
 def _parse_google_docstring(
-    docstring: Optional[str],
+    docstring: str | None,
     args: list[str],
     *,
     error_on_invalid_docstring: bool = False,

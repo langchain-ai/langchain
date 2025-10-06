@@ -3,14 +3,11 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from pydantic import BaseModel
@@ -34,7 +31,7 @@ if TYPE_CHECKING:
     from langchain_core.tracers.schemas import Run
 
 
-MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
+MessagesOrDictWithMessages = Sequence["BaseMessage"] | dict[str, Any]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
@@ -229,13 +226,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     """Function that returns a new BaseChatMessageHistory.
     This function should either take a single positional argument ``session_id`` of type
     string and return a corresponding chat message history instance"""
-    input_messages_key: Optional[str] = None
+    input_messages_key: str | None = None
     """Must be specified if the base runnable accepts a dict as input.
     The key in the input dict that contains the messages."""
-    output_messages_key: Optional[str] = None
+    output_messages_key: str | None = None
     """Must be specified if the base Runnable returns a dict as output.
     The key in the output dict that contains the messages."""
-    history_messages_key: Optional[str] = None
+    history_messages_key: str | None = None
     """Must be specified if the base runnable accepts a dict as input and expects a
     separate key for historical messages."""
     history_factory_config: Sequence[ConfigurableFieldSpec]
@@ -244,23 +241,17 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
     def __init__(
         self,
-        runnable: Union[
-            Runnable[
-                list[BaseMessage],
-                Union[str, BaseMessage, MessagesOrDictWithMessages],
-            ],
-            Runnable[
-                dict[str, Any],
-                Union[str, BaseMessage, MessagesOrDictWithMessages],
-            ],
-            LanguageModelLike,
-        ],
+        runnable: Runnable[
+            list[BaseMessage], str | BaseMessage | MessagesOrDictWithMessages
+        ]
+        | Runnable[dict[str, Any], str | BaseMessage | MessagesOrDictWithMessages]
+        | LanguageModelLike,
         get_session_history: GetSessionHistoryCallable,
         *,
-        input_messages_key: Optional[str] = None,
-        output_messages_key: Optional[str] = None,
-        history_messages_key: Optional[str] = None,
-        history_factory_config: Optional[Sequence[ConfigurableFieldSpec]] = None,
+        input_messages_key: str | None = None,
+        output_messages_key: str | None = None,
+        history_messages_key: str | None = None,
+        history_factory_config: Sequence[ConfigurableFieldSpec] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize RunnableWithMessageHistory.
@@ -379,13 +370,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         )
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         fields: dict = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
-                Union[str, BaseMessage, Sequence[BaseMessage]],
+                str | BaseMessage | Sequence[BaseMessage],
                 ...,
             )
         elif self.input_messages_key:
@@ -409,7 +398,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
     @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
         """Get a pydantic model that can be used to validate output to the Runnable.
 
@@ -441,7 +430,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         )
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
+        self, input_val: str | BaseMessage | Sequence[BaseMessage] | dict
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
@@ -479,7 +468,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         raise ValueError(msg)
 
     def _get_output_messages(
-        self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
+        self, output_val: str | BaseMessage | Sequence[BaseMessage] | dict
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
@@ -569,7 +558,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
 
-    def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
+    def _merge_configs(self, *configs: RunnableConfig | None) -> RunnableConfig:
         config = super()._merge_configs(*configs)
         expected_keys = [field_spec.id for field_spec in self.history_factory_config]
 

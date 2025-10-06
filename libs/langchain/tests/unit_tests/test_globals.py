@@ -5,7 +5,7 @@ from langchain_core.globals import get_verbose as core_get_verbose
 from langchain_core.globals import set_debug as core_set_debug
 from langchain_core.globals import set_verbose as core_set_verbose
 
-from langchain.globals import get_debug, get_verbose, set_debug, set_verbose
+from langchain_classic.globals import get_debug, get_verbose, set_debug, set_verbose
 
 
 def test_no_warning() -> None:
@@ -55,7 +55,7 @@ def test_debug_is_settable_via_setter() -> None:
 def test_verbose_is_settable_via_setter() -> None:
     from langchain_core import globals as langchain_globals
 
-    from langchain.chains.base import _get_verbosity
+    from langchain_classic.chains.base import _get_verbosity
 
     previous_value = langchain_globals._verbose
     previous_fn_reading = _get_verbosity()

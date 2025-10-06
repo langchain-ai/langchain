@@ -2,7 +2,7 @@
 
 import re
 from tempfile import NamedTemporaryFile
-from typing import Any, Literal, Union
+from typing import Any, Literal
 from unittest import mock
 
 import pytest
@@ -627,7 +627,7 @@ async def test_prompt_ainvoke_with_metadata() -> None:
 def test_prompt_falsy_vars(
     template_format: PromptTemplateFormat,
     value: Any,
-    expected: Union[str, dict[str, str]],
+    expected: str | dict[str, str],
 ) -> None:
     # each line is value, f-string, mustache
     if template_format == "f-string":

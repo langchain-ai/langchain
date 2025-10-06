@@ -3,7 +3,7 @@ from enum import Enum
 import pytest
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers.enum import EnumOutputParser
+from langchain_classic.output_parsers.enum import EnumOutputParser
 
 
 class Colors(Enum):

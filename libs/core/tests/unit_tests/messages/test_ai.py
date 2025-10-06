@@ -1,4 +1,4 @@
-from typing import Union, cast
+from typing import cast
 
 import pytest
 
@@ -357,9 +357,9 @@ def test_content_blocks() -> None:
     assert chunk.content_blocks == chunk.tool_calls
 
     # test v1 content
-    chunk_1.content = cast("Union[str, list[Union[str, dict]]]", chunk_1.content_blocks)
+    chunk_1.content = cast("str | list[str | dict]", chunk_1.content_blocks)
     chunk_1.response_metadata["output_version"] = "v1"
-    chunk_2.content = cast("Union[str, list[Union[str, dict]]]", chunk_2.content_blocks)
+    chunk_2.content = cast("str | list[str | dict]", chunk_2.content_blocks)
 
     chunk = chunk_1 + chunk_2 + chunk_3
     assert chunk.content == [
@@ -378,12 +378,8 @@ def test_content_blocks() -> None:
     standard_content_2: list[types.ContentBlock] = [
         {"type": "non_standard", "index": 0, "value": {"foo": "baz"}}
     ]
-    chunk_1 = AIMessageChunk(
-        content=cast("Union[str, list[Union[str, dict]]]", standard_content_1)
-    )
-    chunk_2 = AIMessageChunk(
-        content=cast("Union[str, list[Union[str, dict]]]", standard_content_2)
-    )
+    chunk_1 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_1))
+    chunk_2 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_2))
     merged_chunk = chunk_1 + chunk_2
     assert merged_chunk.content == [
         {"type": "non_standard", "index": 0, "value": {"foo": "bar baz"}},
@@ -470,12 +466,8 @@ def test_content_blocks() -> None:
         }
     ]
     standard_content_2 = [{"type": "non_standard", "value": {"foo": "bar"}, "index": 0}]
-    chunk_1 = AIMessageChunk(
-        content=cast("Union[str, list[Union[str, dict]]]", standard_content_1)
-    )
-    chunk_2 = AIMessageChunk(
-        content=cast("Union[str, list[Union[str, dict]]]", standard_content_2)
-    )
+    chunk_1 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_1))
+    chunk_2 = AIMessageChunk(content=cast("str | list[str | dict]", standard_content_2))
     merged_chunk = chunk_1 + chunk_2
     assert merged_chunk.content == [
         {

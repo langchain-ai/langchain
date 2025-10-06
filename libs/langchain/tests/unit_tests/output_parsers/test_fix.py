@@ -10,10 +10,10 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from typing_extensions import override
 
-from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.output_parsers.datetime import DatetimeOutputParser
-from langchain.output_parsers.fix import OutputFixingParser
-from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.datetime import DatetimeOutputParser
+from langchain_classic.output_parsers.fix import OutputFixingParser
+from langchain_classic.output_parsers.prompts import NAIVE_FIX_PROMPT
 
 T = TypeVar("T")
 

@@ -1,4 +1,4 @@
-from langchain.schema.messages import __all__
+from langchain_classic.schema.messages import __all__
 
 EXPECTED_ALL = [
     "AIMessage",

@@ -26,7 +26,6 @@ from langchain_core.messages import AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
-from langgraph.runtime import Runtime
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -63,7 +62,7 @@ class ModelRequest:
     system_prompt: str | None
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
-    tools: list[str]
+    tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any] = field(default_factory=dict)
 
@@ -126,6 +125,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
+    @property
+    def name(self) -> str:
+        """The name of the middleware instance.
+
+        Defaults to the class name, but can be overridden for custom naming.
+        """
+        return self.__class__.__name__
+
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
@@ -159,6 +166,54 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
+
+    def retry_model_request(
+        self,
+        error: Exception,  # noqa: ARG002
+        request: ModelRequest,  # noqa: ARG002
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+        attempt: int,  # noqa: ARG002
+    ) -> ModelRequest | None:
+        """Logic to handle model invocation errors and optionally retry.
+
+        Args:
+            error: The exception that occurred during model invocation.
+            request: The original model request that failed.
+            state: The current agent state.
+            runtime: The langgraph runtime.
+            attempt: The current attempt number (1-indexed).
+
+        Returns:
+            ModelRequest: Modified request to retry with.
+            None: Propagate the error (re-raise).
+        """
+        return None
+
+    async def aretry_model_request(
+        self,
+        error: Exception,
+        request: ModelRequest,
+        state: StateT,
+        runtime: Runtime[ContextT],
+        attempt: int,
+    ) -> ModelRequest | None:
+        """Async logic to handle model invocation errors and optionally retry.
+
+        Args:
+            error: The exception that occurred during model invocation.
+            request: The original model request that failed.
+            state: The current agent state.
+            runtime: The langgraph runtime.
+            attempt: The current attempt number (1-indexed).
+
+        Returns:
+            ModelRequest: Modified request to retry with.
+            None: Propagate the error (re-raise).
+        """
+        return await run_in_executor(
+            None, self.retry_model_request, error, request, state, runtime, attempt
+        )
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):

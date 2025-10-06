@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 try:
     import numpy as np
@@ -25,7 +25,7 @@ except ImportError:
     _HAS_SIMSIMD = False
 
 if TYPE_CHECKING:
-    Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
+    Matrix = list[list[float]] | list[np.ndarray] | np.ndarray
 
 logger = logging.getLogger(__name__)
 

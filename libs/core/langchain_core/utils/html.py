@@ -3,7 +3,6 @@
 import logging
 import re
 from collections.abc import Sequence
-from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ DEFAULT_LINK_REGEX = (
 
 
 def find_all_links(
-    raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
+    raw_html: str, *, pattern: str | re.Pattern | None = None
 ) -> list[str]:
     """Extract all links from a raw HTML string.
 
@@ -54,8 +53,8 @@ def extract_sub_links(
     raw_html: str,
     url: str,
     *,
-    base_url: Optional[str] = None,
-    pattern: Union[str, re.Pattern, None] = None,
+    base_url: str | None = None,
+    pattern: str | re.Pattern | None = None,
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,

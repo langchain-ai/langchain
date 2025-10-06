@@ -1,4 +1,4 @@
-from langchain import storage
+from langchain_classic import storage
 
 EXPECTED_ALL = [
     "EncoderBackedStore",

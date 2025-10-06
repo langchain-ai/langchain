@@ -10,8 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 
@@ -81,7 +79,7 @@ class _TracerCore(ABC):
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @abstractmethod
-    def _persist_run(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:
+    def _persist_run(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Persist a run."""
 
     @staticmethod
@@ -102,7 +100,7 @@ class _TracerCore(ABC):
         except:  # noqa: E722
             return msg
 
-    def _start_trace(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # type: ignore[return]
+    def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
         if run.parent_run_id:
             if parent := self.order_map.get(run.parent_run_id):
@@ -126,9 +124,7 @@ class _TracerCore(ABC):
         self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
 
-    def _get_run(
-        self, run_id: UUID, run_type: Union[str, set[str], None] = None
-    ) -> Run:
+    def _get_run(self, run_id: UUID, run_type: str | set[str] | None = None) -> Run:
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
@@ -136,7 +132,7 @@ class _TracerCore(ABC):
             raise TracerException(msg) from exc
 
         if isinstance(run_type, str):
-            run_types: Union[set[str], None] = {run_type}
+            run_types: set[str] | None = {run_type}
         else:
             run_types = run_type
         if run_types is not None and run.run_type not in run_types:
@@ -152,10 +148,10 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         messages: list[list[BaseMessage]],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a chat model run."""
@@ -196,10 +192,10 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         prompts: list[str],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a llm run."""
@@ -224,8 +220,8 @@ class _TracerCore(ABC):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,  # noqa: ARG002
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,  # noqa: ARG002
     ) -> Run:
         """Append token event to LLM run and return the run."""
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
@@ -291,7 +287,7 @@ class _TracerCore(ABC):
         return llm_run
 
     def _errored_llm_run(
-        self, error: BaseException, run_id: UUID, response: Optional[LLMResult] = None
+        self, error: BaseException, run_id: UUID, response: LLMResult | None = None
     ) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.error = self._get_stacktrace(error)
@@ -319,11 +315,11 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         inputs: dict[str, Any],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_type: Optional[str] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_type: str | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a chain Run."""
@@ -370,7 +366,7 @@ class _TracerCore(ABC):
         self,
         outputs: dict[str, Any],
         run_id: UUID,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
     ) -> Run:
         """Update a chain run with outputs and end time."""
         chain_run = self._get_run(run_id)
@@ -389,7 +385,7 @@ class _TracerCore(ABC):
     def _errored_chain_run(
         self,
         error: BaseException,
-        inputs: Optional[dict[str, Any]],
+        inputs: dict[str, Any] | None,
         run_id: UUID,
     ) -> Run:
         chain_run = self._get_run(run_id)
@@ -405,11 +401,11 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         input_str: str,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
@@ -472,10 +468,10 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         query: str,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a retrieval run."""
@@ -532,7 +528,7 @@ class _TracerCore(ABC):
         """Return self copied."""
         return self
 
-    def _end_trace(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """End a trace for a run.
 
         Args:
@@ -540,7 +536,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_run_create(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process a run upon creation.
 
         Args:
@@ -548,7 +544,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_run_update(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process a run upon update.
 
         Args:
@@ -556,7 +552,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_llm_start(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run upon start.
 
         Args:
@@ -568,8 +564,8 @@ class _TracerCore(ABC):
         self,
         run: Run,  # noqa: ARG002
         token: str,  # noqa: ARG002
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],  # noqa: ARG002
-    ) -> Union[Coroutine[Any, Any, None], None]:
+        chunk: GenerationChunk | ChatGenerationChunk | None,  # noqa: ARG002
+    ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
         Args:
@@ -579,7 +575,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_llm_end(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run.
 
         Args:
@@ -587,7 +583,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_llm_error(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the LLM Run upon error.
 
         Args:
@@ -595,7 +591,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_chain_start(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run upon start.
 
         Args:
@@ -603,7 +599,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_chain_end(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run.
 
         Args:
@@ -611,7 +607,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_chain_error(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chain Run upon error.
 
         Args:
@@ -619,7 +615,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_tool_start(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run upon start.
 
         Args:
@@ -627,7 +623,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_tool_end(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run.
 
         Args:
@@ -635,7 +631,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_tool_error(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Tool Run upon error.
 
         Args:
@@ -643,7 +639,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Chat Model Run upon start.
 
         Args:
@@ -651,7 +647,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_retriever_start(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run upon start.
 
         Args:
@@ -659,7 +655,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_retriever_end(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run.
 
         Args:
@@ -667,7 +663,7 @@ class _TracerCore(ABC):
         """
         return None
 
-    def _on_retriever_error(self, run: Run) -> Union[Coroutine[Any, Any, None], None]:  # noqa: ARG002
+    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
         """Process the Retriever Run upon error.
 
         Args:

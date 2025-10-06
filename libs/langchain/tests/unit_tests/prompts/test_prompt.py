@@ -1,4 +1,4 @@
-from langchain.prompts.prompt import __all__
+from langchain_classic.prompts.prompt import __all__
 
 EXPECTED_ALL = ["Prompt", "PromptTemplate"]
 
