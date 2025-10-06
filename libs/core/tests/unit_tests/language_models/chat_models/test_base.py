@@ -923,8 +923,8 @@ class _AnotherFakeChatModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],  # noqa: ARG002
-        stop: Optional[list[str]] = None,  # noqa: ARG002
-        run_manager: Optional[CallbackManagerForLLMRun] = None,  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
         **kwargs: Any,  # noqa: ARG002
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
@@ -932,8 +932,8 @@ class _AnotherFakeChatModel(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],  # noqa: ARG002
-        stop: Optional[list[str]] = None,  # noqa: ARG002
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
         **kwargs: Any,  # noqa: ARG002
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
@@ -941,8 +941,8 @@ class _AnotherFakeChatModel(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],  # noqa: ARG002
-        stop: Optional[list[str]] = None,  # noqa: ARG002
-        run_manager: Optional[CallbackManagerForLLMRun] = None,  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
         **kwargs: Any,  # noqa: ARG002
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self.chunks:
@@ -951,8 +951,8 @@ class _AnotherFakeChatModel(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],  # noqa: ARG002
-        stop: Optional[list[str]] = None,  # noqa: ARG002
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
         **kwargs: Any,  # noqa: ARG002
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self.chunks:
