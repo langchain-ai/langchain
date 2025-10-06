@@ -872,6 +872,12 @@ def create_agent(  # noqa: PLR0915
             ),
             [loop_entry_node, "tools", exit_node],
         )
+    elif len(structured_output_tools) > 0:
+        graph.add_conditional_edges(
+            loop_exit_node,
+            _make_model_to_model_edge(loop_entry_node, exit_node),
+            [loop_entry_node, exit_node],
+        )
     elif loop_exit_node == "model_request":
         # If no tools and no after_model, go directly to exit_node
         graph.add_edge(loop_exit_node, exit_node)
@@ -1045,6 +1051,29 @@ def _make_model_to_tools_edge(
     return model_to_tools
 
 
+def _make_model_to_model_edge(
+    first_node: str,
+    exit_node: str,
+) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
+    def model_to_model(
+        state: dict[str, Any],
+        runtime: Runtime[ContextT],  # noqa: ARG001
+    ) -> str | list[Send] | None:
+        # 1. Priority: Check for explicit jump_to directive from middleware
+        if jump_to := state.get("jump_to"):
+            return _resolve_jump(jump_to, first_node)
+
+        # 2. Exit condition: A structured response was generated
+        if "structured_response" in state:
+            return exit_node
+
+        # 3. Default: Continue the loop, there may have been an issue
+        #     with structured output generation, so we need to retry
+        return first_node
+
+    return model_to_model
+
+
 def _make_tools_to_model_edge(
     tool_node: ToolNode,
     next_node: str,
@@ -1054,6 +1083,7 @@ def _make_tools_to_model_edge(
     def tools_to_model(state: dict[str, Any], runtime: Runtime[ContextT]) -> str | None:  # noqa: ARG001
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
+        # 1. Exit condition: All executed tools have return_direct=True
         if all(
             tool_node.tools_by_name[c["name"]].return_direct
             for c in last_ai_message.tool_calls
@@ -1061,9 +1091,13 @@ def _make_tools_to_model_edge(
         ):
             return exit_node
 
+        # 2. Exit condition: A structured output tool was executed
         if any(t.name in structured_output_tools for t in tool_messages):
             return exit_node
 
+        # 3. Default: Continue the loop
+        #    Tool execution completed successfully, route back to the model
+        #    so it can process the tool results and decide the next action.
         return next_node
 
     return tools_to_model
