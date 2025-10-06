@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.chat_history import (
@@ -36,8 +36,8 @@ class BaseChatMemory(BaseMemory, ABC):
     chat_memory: BaseChatMessageHistory = Field(
         default_factory=InMemoryChatMessageHistory,
     )
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
+    output_key: str | None = None
+    input_key: str | None = None
     return_messages: bool = False
 
     def _get_input_output(

@@ -1,7 +1,7 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -89,7 +89,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         results = self.reranker.invoke(
@@ -103,7 +103,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         cls,
         llm: BaseLanguageModel,
         *,
-        prompt: Optional[BasePromptTemplate] = None,
+        prompt: BasePromptTemplate | None = None,
         **kwargs: Any,
     ) -> "LLMListwiseRerank":
         """Create a LLMListwiseRerank document compressor from a language model.

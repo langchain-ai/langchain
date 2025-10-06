@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -19,7 +18,7 @@ def create_openai_tools_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
-    strict: Optional[bool] = None,  # noqa: FBT001
+    strict: bool | None = None,  # noqa: FBT001
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 

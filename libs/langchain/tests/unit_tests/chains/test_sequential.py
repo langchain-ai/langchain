@@ -1,7 +1,6 @@
 """Test pipeline functionality."""
 
 import re
-from typing import Optional
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -37,7 +36,7 @@ class FakeChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
@@ -49,7 +48,7 @@ class FakeChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:

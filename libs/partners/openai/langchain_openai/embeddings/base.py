@@ -62,9 +62,12 @@ def _process_batched_chunked_embeddings(
         # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
         total_weight = sum(num_tokens_in_batch[i])
         average = [
-            sum(val * weight for val, weight in zip(embedding, num_tokens_in_batch[i]))
+            sum(
+                val * weight
+                for val, weight in zip(embedding, num_tokens_in_batch[i], strict=False)
+            )
             / total_weight
-            for embedding in zip(*_result)
+            for embedding in zip(*_result, strict=False)
         ]
 
         # should be same as

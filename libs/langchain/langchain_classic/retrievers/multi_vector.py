@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -32,7 +32,7 @@ class MultiVectorRetriever(BaseRetriever):
     vectorstore: VectorStore
     """The underlying vectorstore to use to store small chunks
     and their embedding vectors"""
-    byte_store: Optional[ByteStore] = None
+    byte_store: ByteStore | None = None
     """The lower-level backing storage layer for the parent documents"""
     docstore: BaseStore[str, Document]
     """The storage interface for the parent documents"""

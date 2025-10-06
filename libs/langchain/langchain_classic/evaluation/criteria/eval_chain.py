@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -110,15 +110,11 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
         }
 
 
-CRITERIA_TYPE = Union[
-    Mapping[str, str],
-    Criteria,
-    ConstitutionalPrinciple,
-]
+CRITERIA_TYPE = Mapping[str, str] | Criteria | ConstitutionalPrinciple
 
 
 def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str]],
+    criteria: CRITERIA_TYPE | str | None,
 ) -> dict[str, str]:
     """Resolve the criteria to evaluate.
 
@@ -275,7 +271,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     @classmethod
     def _resolve_prompt(
         cls,
-        prompt: Optional[BasePromptTemplate] = None,
+        prompt: BasePromptTemplate | None = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria"}
         prompt_ = prompt or PROMPT
@@ -290,7 +286,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     @classmethod
     def resolve_criteria(
         cls,
-        criteria: Optional[Union[CRITERIA_TYPE, str]],
+        criteria: CRITERIA_TYPE | str | None,
     ) -> dict[str, str]:
         """Resolve the criteria to evaluate.
 
@@ -319,9 +315,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        criteria: Optional[CRITERIA_TYPE] = None,
+        criteria: CRITERIA_TYPE | None = None,
         *,
-        prompt: Optional[BasePromptTemplate] = None,
+        prompt: BasePromptTemplate | None = None,
         **kwargs: Any,
     ) -> CriteriaEvalChain:
         """Create a `CriteriaEvalChain` instance from an llm and criteria.
@@ -385,8 +381,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     def _get_eval_input(
         self,
         prediction: str,
-        reference: Optional[str],
-        input_: Optional[str],
+        reference: str | None,
+        input_: str | None,
     ) -> dict:
         """Get the evaluation input."""
         input_dict = {
@@ -409,11 +405,11 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -461,11 +457,11 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -525,7 +521,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
     @classmethod
     def _resolve_prompt(
         cls,
-        prompt: Optional[BasePromptTemplate] = None,
+        prompt: BasePromptTemplate | None = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCES
@@ -541,9 +537,9 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        criteria: Optional[CRITERIA_TYPE] = None,
+        criteria: CRITERIA_TYPE | None = None,
         *,
-        prompt: Optional[BasePromptTemplate] = None,
+        prompt: BasePromptTemplate | None = None,
         **kwargs: Any,
     ) -> CriteriaEvalChain:
         """Create a `LabeledCriteriaEvalChain` instance from an llm and criteria.

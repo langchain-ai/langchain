@@ -2,8 +2,9 @@
 
 import json
 import logging
+from collections.abc import Callable
 from operator import eq
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.utils.json import parse_json_markdown
 from typing_extensions import override
@@ -119,7 +120,7 @@ class JsonEqualityEvaluator(StringEvaluator):
 
     """
 
-    def __init__(self, operator: Optional[Callable] = None, **_: Any) -> None:
+    def __init__(self, operator: Callable | None = None, **_: Any) -> None:
         """Initialize the JsonEqualityEvaluator.
 
         Args:
@@ -147,7 +148,7 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _parse_json(
         self,
         string: Any,
-    ) -> Union[dict, list, None, float, bool, int, str]:
+    ) -> dict | list | None | float | bool | int | str:
         if isinstance(string, str):
             return parse_json_markdown(string)
         return string
@@ -156,7 +157,7 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        reference: Optional[str] = None,
+        reference: str | None = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.

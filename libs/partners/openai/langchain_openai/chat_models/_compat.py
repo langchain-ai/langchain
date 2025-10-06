@@ -363,6 +363,8 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     collapsed["server_label"] = server_label
                 collapsed["type"] = "mcp_call"
 
+                if approval_id := current.get("extras", {}).get("approval_request_id"):
+                    collapsed["approval_request_id"] = approval_id
                 if error := nxt.get("extras", {}).get("error"):
                     collapsed["error"] = error
                 if "output" in nxt:

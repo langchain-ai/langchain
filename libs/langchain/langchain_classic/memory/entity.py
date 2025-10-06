@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from itertools import islice
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -39,11 +39,11 @@ class BaseEntityStore(BaseModel, ABC):
     """Abstract base class for Entity store."""
 
     @abstractmethod
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         """Get entity value from store."""
 
     @abstractmethod
-    def set(self, key: str, value: Optional[str]) -> None:
+    def set(self, key: str, value: str | None) -> None:
         """Set entity value in store."""
 
     @abstractmethod
@@ -70,14 +70,14 @@ class BaseEntityStore(BaseModel, ABC):
 class InMemoryEntityStore(BaseEntityStore):
     """In-memory Entity store."""
 
-    store: dict[str, Optional[str]] = {}
+    store: dict[str, str | None] = {}
 
     @override
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         return self.store.get(key, default)
 
     @override
-    def set(self, key: str, value: Optional[str]) -> None:
+    def set(self, key: str, value: str | None) -> None:
         self.store[key] = value
 
     @override
@@ -114,8 +114,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
         url: str = "",
         token: str = "",
         key_prefix: str = "memory_store",
-        ttl: Optional[int] = 60 * 60 * 24,
-        recall_ttl: Optional[int] = 60 * 60 * 24 * 3,
+        ttl: int | None = 60 * 60 * 24,
+        recall_ttl: int | None = 60 * 60 * 24 * 3,
         *args: Any,
         **kwargs: Any,
     ):
@@ -160,7 +160,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
         return f"{self.key_prefix}:{self.session_id}"
 
     @override
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         res = (
             self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
             or default
@@ -172,7 +172,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
         return res
 
     @override
-    def set(self, key: str, value: Optional[str]) -> None:
+    def set(self, key: str, value: str | None) -> None:
         if not value:
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
@@ -226,16 +226,16 @@ class RedisEntityStore(BaseEntityStore):
     redis_client: Any
     session_id: str = "default"
     key_prefix: str = "memory_store"
-    ttl: Optional[int] = 60 * 60 * 24
-    recall_ttl: Optional[int] = 60 * 60 * 24 * 3
+    ttl: int | None = 60 * 60 * 24
+    recall_ttl: int | None = 60 * 60 * 24 * 3
 
     def __init__(
         self,
         session_id: str = "default",
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "memory_store",
-        ttl: Optional[int] = 60 * 60 * 24,
-        recall_ttl: Optional[int] = 60 * 60 * 24 * 3,
+        ttl: int | None = 60 * 60 * 24,
+        recall_ttl: int | None = 60 * 60 * 24 * 3,
         *args: Any,
         **kwargs: Any,
     ):
@@ -286,7 +286,7 @@ class RedisEntityStore(BaseEntityStore):
         return f"{self.key_prefix}:{self.session_id}"
 
     @override
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         res = (
             self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
             or default
@@ -296,7 +296,7 @@ class RedisEntityStore(BaseEntityStore):
         return res
 
     @override
-    def set(self, key: str, value: Optional[str]) -> None:
+    def set(self, key: str, value: str | None) -> None:
         if not value:
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
@@ -410,7 +410,7 @@ class SQLiteEntityStore(BaseEntityStore):
         """
         self._execute_query(create_table_query)
 
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         """Retrieves a value, safely quoting the table name."""
         # `?` placeholder is used for the value to prevent SQL injection
         # Ignore S608 since we validate for malicious table/session names in `__init__`
@@ -419,7 +419,7 @@ class SQLiteEntityStore(BaseEntityStore):
         result = cursor.fetchone()
         return result[0] if result is not None else default
 
-    def set(self, key: str, value: Optional[str]) -> None:
+    def set(self, key: str, value: str | None) -> None:
         """Inserts or replaces a value, safely quoting the table name."""
         if not value:
             return self.delete(key)

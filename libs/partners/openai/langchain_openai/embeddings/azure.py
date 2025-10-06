@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
-from typing import Callable, Optional, Union, cast
+from collections.abc import Awaitable, Callable
+from typing import Optional, Union, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env

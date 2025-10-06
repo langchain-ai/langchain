@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
@@ -33,11 +33,11 @@ class SQLInputWithTables(TypedDict):
 def create_sql_query_chain(
     llm: BaseLanguageModel,
     db: SQLDatabase,
-    prompt: Optional[BasePromptTemplate] = None,
+    prompt: BasePromptTemplate | None = None,
     k: int = 5,
     *,
-    get_col_comments: Optional[bool] = None,
-) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
+    get_col_comments: bool | None = None,
+) -> Runnable[SQLInput | SQLInputWithTables | dict[str, Any], str]:
     r"""Create a chain that generates SQL queries.
 
     *Security Note*: This chain generates SQL queries for the given database.

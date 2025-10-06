@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from langchain_core.callbacks.base import BaseCallbackHandler
 
@@ -15,7 +15,7 @@ def StreamlitCallbackHandler(  # noqa: N802
     max_thought_containers: int = 4,
     expand_new_thoughts: bool = True,
     collapse_completed_thoughts: bool = True,
-    thought_labeler: Optional[LLMThoughtLabeler] = None,
+    thought_labeler: LLMThoughtLabeler | None = None,
 ) -> BaseCallbackHandler:
     """Callback Handler that writes to a Streamlit app.
 

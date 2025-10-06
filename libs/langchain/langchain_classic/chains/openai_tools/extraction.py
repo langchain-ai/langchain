@@ -1,5 +1,3 @@
-from typing import Union
-
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
@@ -51,7 +49,7 @@ If a property is not present and is not required in the function parameters, do 
     ),
 )
 def create_extraction_chain_pydantic(
-    pydantic_schemas: Union[list[type[BaseModel]], type[BaseModel]],
+    pydantic_schemas: list[type[BaseModel]] | type[BaseModel],
     llm: BaseLanguageModel,
     system_message: str = _EXTRACTION_TEMPLATE,
 ) -> Runnable:

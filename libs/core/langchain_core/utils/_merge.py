@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
@@ -80,7 +80,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     return merged
 
 
-def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]:
+def merge_lists(left: list | None, *others: list | None) -> list | None:
     """Add many lists, handling None.
 
     Args:

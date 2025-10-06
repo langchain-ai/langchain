@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -16,7 +15,7 @@ def create_json_chat_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: ChatPromptTemplate,
-    stop_sequence: Union[bool, list[str]] = True,  # noqa: FBT001,FBT002
+    stop_sequence: bool | list[str] = True,  # noqa: FBT001,FBT002
     tools_renderer: ToolsRenderer = render_text_description,
     template_tool_response: str = TEMPLATE_TOOL_RESPONSE,
 ) -> Runnable:

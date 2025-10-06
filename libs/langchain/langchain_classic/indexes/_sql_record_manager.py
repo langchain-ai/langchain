@@ -18,7 +18,7 @@ import contextlib
 import decimal
 import uuid
 from collections.abc import AsyncGenerator, Generator, Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.indexing import RecordManager
 from sqlalchemy import (
@@ -89,9 +89,9 @@ class SQLRecordManager(RecordManager):
         self,
         namespace: str,
         *,
-        engine: Optional[Union[Engine, AsyncEngine]] = None,
-        db_url: Union[None, str, URL] = None,
-        engine_kwargs: Optional[dict[str, Any]] = None,
+        engine: Engine | AsyncEngine | None = None,
+        db_url: None | str | URL = None,
+        engine_kwargs: dict[str, Any] | None = None,
         async_mode: bool = False,
     ) -> None:
         """Initialize the SQLRecordManager.
@@ -126,7 +126,7 @@ class SQLRecordManager(RecordManager):
             msg = "Must specify either db_url or engine, not both"
             raise ValueError(msg)
 
-        _engine: Union[Engine, AsyncEngine]
+        _engine: Engine | AsyncEngine
         if db_url:
             if async_mode:
                 _engine = create_async_engine(db_url, **(engine_kwargs or {}))
@@ -139,7 +139,7 @@ class SQLRecordManager(RecordManager):
             msg = "Something went wrong with configuration of engine."
             raise AssertionError(msg)
 
-        _session_factory: Union[sessionmaker[Session], async_sessionmaker[AsyncSession]]
+        _session_factory: sessionmaker[Session] | async_sessionmaker[AsyncSession]
         if isinstance(_engine, AsyncEngine):
             _session_factory = async_sessionmaker(bind=_engine)
         else:
@@ -258,8 +258,8 @@ class SQLRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the SQLite database."""
         if group_ids is None:
@@ -293,7 +293,7 @@ class SQLRecordManager(RecordManager):
                 "updated_at": update_time,
                 "group_id": group_id,
             }
-            for key, group_id in zip(keys, group_ids)
+            for key, group_id in zip(keys, group_ids, strict=False)
         ]
 
         with self._make_session() as session:
@@ -340,8 +340,8 @@ class SQLRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the SQLite database."""
         if group_ids is None:
@@ -375,7 +375,7 @@ class SQLRecordManager(RecordManager):
                 "updated_at": update_time,
                 "group_id": group_id,
             }
-            for key, group_id in zip(keys, group_ids)
+            for key, group_id in zip(keys, group_ids, strict=False)
         ]
 
         async with self._amake_session() as session:
@@ -455,10 +455,10 @@ class SQLRecordManager(RecordManager):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the SQLite database based on the provided date range."""
         session: Session
@@ -482,10 +482,10 @@ class SQLRecordManager(RecordManager):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the SQLite database based on the provided date range."""
         session: AsyncSession
