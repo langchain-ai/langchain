@@ -596,7 +596,7 @@ class ToolNode(RunnableCallable):
         return combined_outputs
 
     def _execute_tool_sync(
-        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"]
+        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"], config: RunnableConfig
     ) -> ToolCallResponse:
         """Execute tool and return response.
 
@@ -605,7 +605,6 @@ class ToolNode(RunnableCallable):
         """
         call = request.tool_call
         tool = request.tool
-        config = request.config
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -690,11 +689,10 @@ class ToolNode(RunnableCallable):
         tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
-            config=config,
         )
 
         if self._on_tool_call is None:
-            tool_response = self._execute_tool_sync(tool_request, input_type)
+            tool_response = self._execute_tool_sync(tool_request, input_type, config)
         else:
             # Generator protocol: start generator, send responses, receive requests
             gen = self._on_tool_call(tool_request, input, runtime)
@@ -706,7 +704,7 @@ class ToolNode(RunnableCallable):
                 raise ValueError(msg)
 
             while True:
-                tool_response = self._execute_tool_sync(request, input_type)
+                tool_response = self._execute_tool_sync(request, input_type, config)
                 try:
                     request = gen.send(tool_response)
                 except StopIteration as e:
@@ -734,7 +732,7 @@ class ToolNode(RunnableCallable):
         return result
 
     async def _execute_tool_async(
-        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"]
+        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"], config: RunnableConfig
     ) -> ToolCallResponse:
         """Execute tool asynchronously and return response.
 
@@ -743,7 +741,6 @@ class ToolNode(RunnableCallable):
         """
         call = request.tool_call
         tool = request.tool
-        config = request.config
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -828,11 +825,10 @@ class ToolNode(RunnableCallable):
         tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
-            config=config,
         )
 
         if self._on_tool_call is None:
-            tool_response = await self._execute_tool_async(tool_request, input_type)
+            tool_response = await self._execute_tool_async(tool_request, input_type, config)
         else:
             # Generator protocol: handler is sync generator, tool execution is async
             gen = self._on_tool_call(tool_request, input, runtime)
@@ -844,7 +840,7 @@ class ToolNode(RunnableCallable):
                 raise ValueError(msg)
 
             while True:
-                tool_response = await self._execute_tool_async(request, input_type)
+                tool_response = await self._execute_tool_async(request, input_type, config)
                 try:
                     request = gen.send(tool_response)
                 except StopIteration as e:

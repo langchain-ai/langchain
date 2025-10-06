@@ -254,7 +254,6 @@ def test_middleware_request_modification():
             modified_request = ToolCallRequest(
                 tool_call=modified_tool_call,
                 tool=request.tool,
-                config=request.config,
             )
             response = yield modified_request
             return response

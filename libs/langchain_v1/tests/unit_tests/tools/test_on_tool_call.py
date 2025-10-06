@@ -261,7 +261,6 @@ def test_on_tool_call_request_modification() -> None:
         modified_request = ToolCallRequest(
             tool_call=modified_tool_call,
             tool=request.tool,
-            config=request.config,
         )
         response = yield modified_request
         return response
