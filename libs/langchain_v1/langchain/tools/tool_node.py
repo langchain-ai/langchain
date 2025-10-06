@@ -53,6 +53,7 @@ from typing import (
     get_origin,
     get_type_hints,
 )
+from typing import Optional as Optional
 
 from langchain_core.messages import (
     AIMessage,
@@ -512,7 +513,9 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: Optional[BaseStore],
+        # Optional[BaseStore] should not change to BaseStore | None
+        # until we support injection of store using `BaseStore | None` annotation
+        store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         try:
             runtime = get_runtime()
@@ -536,7 +539,9 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: BaseStore | None,
+        # Optional[BaseStore] should not change to BaseStore | None
+        # until we support injection of store using `BaseStore | None` annotation
+        store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         try:
             runtime = get_runtime()
