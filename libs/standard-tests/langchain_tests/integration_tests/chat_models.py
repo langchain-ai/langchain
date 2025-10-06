@@ -779,6 +779,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.text, str)
         assert len(result.content) > 0
 
+    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
     def test_stream(self, model: BaseChatModel) -> None:
         """Test to verify that ``model.stream(simple_message)`` works.
 
@@ -804,13 +805,20 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         """
         num_chunks = 0
+        full: AIMessageChunk | None = None
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
             num_chunks += 1
+            full = chunk if full is None else full + chunk
         assert num_chunks > 0
+        assert isinstance(full, AIMessageChunk)
+        assert full.content
+        assert len(full.content_blocks) == 1
+        assert full.content_blocks[0]["type"] == "text"
 
+    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
         """Test to verify that ``await model.astream(simple_message)`` works.
 
@@ -839,12 +847,18 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         """
         num_chunks = 0
+        full: AIMessageChunk | None = None
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
             num_chunks += 1
+            full = chunk if full is None else full + chunk
         assert num_chunks > 0
+        assert isinstance(full, AIMessageChunk)
+        assert full.content
+        assert len(full.content_blocks) == 1
+        assert full.content_blocks[0]["type"] == "text"
 
     def test_batch(self, model: BaseChatModel) -> None:
         """Test to verify that ``model.batch([messages])`` works.
@@ -3007,6 +3021,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.text, str)
         assert len(result.content) > 0
 
+    @pytest.mark.parametrize("model", ["v0", "v1"], indirect=True)
     def test_agent_loop(self, model: BaseChatModel) -> None:
         """Test that the model supports a simple ReAct agent loop.
 
