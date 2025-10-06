@@ -852,14 +852,12 @@ def create_agent(  # noqa: PLR0915
 
         # base destinations are tools and exit_node
         # we add the loop_entry node to edge destinations if:
-        # - there are before/after model hooks -- to allow for jump_to between iterations
+        # - there is an after model hook(s) -- allows jump_to to model
+        #   potentially artificially injected tool messages, ex HITL
         # - there is a response format -- to allow for jumping to model to handle
         #   regenerating structured output tool calls
         model_to_tools_destinations = ["tools", exit_node]
-        if response_format or (
-            loop_exit_node != "model"
-            and ("model" in _get_can_jump_to(middleware_w_after_model[0], "after_model"))
-        ):
+        if response_format or loop_exit_node != "model":
             model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
