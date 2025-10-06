@@ -257,7 +257,15 @@ if __name__ == "__main__":
                 ".github/scripts/check_diff.py",
             )
         ):
-            # add all LANGCHAIN_DIRS for infra changes
+            # Infrastructure changes (workflows, actions, CI scripts) trigger tests on
+            # all core packages as a safety measure. This ensures that changes to CI/CD
+            # infrastructure don't inadvertently break package testing, even if the change
+            # appears unrelated (e.g., documentation build workflows). This is intentionally
+            # conservative to catch unexpected side effects from workflow modifications.
+            #
+            # Example: A PR modifying .github/workflows/api_doc_build.yml will trigger
+            # lint/test jobs for libs/core, libs/text-splitters, libs/langchain, and
+            # libs/langchain_v1, even though the workflow may only affect documentation.
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
         if file.startswith("libs/core"):
