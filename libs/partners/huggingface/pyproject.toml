@@ -43,9 +43,15 @@ test = [
     "langchain-community",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["ipykernel>=6.29.2,<7.0.0", "langchain-core"]
+dev = [
+    "ipykernel>=6.29.2,<7.0.0",
+    "langchain-core"
+]
 test_integration = []
-typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

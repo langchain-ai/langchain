@@ -47,7 +47,11 @@ test_integration = [
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
-typing = ["mypy>=1.17.1,<2.0.0", "types-tqdm>=4.66.0.5,<5.0.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "types-tqdm>=4.66.0.5,<5.0.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

@@ -35,7 +35,10 @@ test = [
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
-typing = ["mypy>=0.991.0,<1.0.0", "langchain-core"]
+typing = [
+    "mypy>=0.991.0,<1.0.0",
+    "langchain-core"
+]
 dev = ["langchain-core"]
 
 [tool.uv.sources]
