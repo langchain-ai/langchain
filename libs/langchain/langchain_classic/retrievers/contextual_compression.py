@@ -1,68 +1,23 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
-from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.retrievers import BaseRetriever, RetrieverLike
-from pydantic import ConfigDict
-from typing_extensions import override
+from langchain_classic._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_core.vectorstores.base import ContextualCompressionRetriever
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ContextualCompressionRetriever": "langchain_core.vectorstores.base"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ContextualCompressionRetriever(BaseRetriever):
-    """Retriever that wraps a base retriever and compresses the results."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    base_compressor: BaseDocumentCompressor
-    """Compressor for compressing retrieved documents."""
 
-    base_retriever: RetrieverLike
-    """Base Retriever to use for getting relevant documents."""
-
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
-    )
-
-    @override
-    def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
-    ) -> list[Document]:
-        docs = self.base_retriever.invoke(
-            query,
-            config={"callbacks": run_manager.get_child()},
-            **kwargs,
-        )
-        if docs:
-            compressed_docs = self.base_compressor.compress_documents(
-                docs,
-                query,
-                callbacks=run_manager.get_child(),
-            )
-            return list(compressed_docs)
-        return []
-
-    @override
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-        **kwargs: Any,
-    ) -> list[Document]:
-        docs = await self.base_retriever.ainvoke(
-            query,
-            config={"callbacks": run_manager.get_child()},
-            **kwargs,
-        )
-        if docs:
-            compressed_docs = await self.base_compressor.acompress_documents(
-                docs,
-                query,
-                callbacks=run_manager.get_child(),
-            )
-            return list(compressed_docs)
-        return []
+__all__ = [
+    "ContextualCompressionRetriever",
+]
