@@ -22,7 +22,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o-mini", "output_version": "responses/v1"}
+        return {"model": "gpt-4o-mini", "use_responses_api": True}
 
     @property
     def supports_image_tool_message(self) -> bool:
@@ -40,7 +40,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
         {readme}
         """
-        llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
+        llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
         _invoke(llm, input_, stream)
         # invoke twice so first invocation is cached
         return _invoke(llm, input_, stream)
@@ -49,7 +49,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         llm = ChatOpenAI(
             model="o4-mini",
             reasoning={"effort": "medium", "summary": "auto"},
-            output_version="responses/v1",
+            use_responses_api=True,
         )
         input_ = "What was the 3rd highest building in 2000?"
         return _invoke(llm, input_, stream)
