@@ -209,7 +209,7 @@ class ToolInvocationError(Exception):
         super().__init__(self.message)
 
 
-def _default_handle_tool_errors(e: Exception) -> str:
+def _default_handle_tool_errors(e: ToolInvocationError) -> str:
     """Default error handler for tool errors.
 
     If the tool is a tool invocation error, return its message.
