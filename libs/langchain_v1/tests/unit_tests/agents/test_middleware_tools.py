@@ -4,6 +4,7 @@ import pytest
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.agents.factory import create_agent
+from langchain.tools import ToolNode
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
@@ -301,3 +302,21 @@ def test_middleware_with_additional_tools() -> None:
     assert len(tool_messages) == 1
     assert tool_messages[0].name == "middleware_tool"
     assert "middleware" in tool_messages[0].content.lower()
+
+
+def test_tool_node_not_accepted() -> None:
+    """Test that passing a ToolNode instance to create_agent raises an error."""
+
+    @tool
+    def some_tool(input: str) -> str:
+        """Some tool."""
+        return "result"
+
+    tool_node = ToolNode([some_tool])
+
+    with pytest.raises(TypeError, match="'ToolNode' object is not iterable"):
+        create_agent(
+            model=FakeToolCallingModel(),
+            tools=tool_node,  # type: ignore[arg-type]
+            system_prompt="You are a helpful assistant.",
+        )

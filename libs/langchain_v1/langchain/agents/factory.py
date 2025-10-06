@@ -194,7 +194,7 @@ def _handle_structured_output_error(
 
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
-    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
     system_prompt: str | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
@@ -218,8 +218,8 @@ def create_agent(  # noqa: PLR0915
     Args:
         model: The language model for the agent. Can be a string identifier
             (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
-        tools: A list of tools or a ToolNode instance. If ``None`` or an empty list,
-            the agent will consist of a single LLM node without tool calling.
+        tools: A list of tools, dicts, or callables. If ``None`` or an empty list,
+            the agent will consist of a model_request node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
             it will be converted to a SystemMessage and added to the beginning
             of the message list.
@@ -321,42 +321,24 @@ def create_agent(  # noqa: PLR0915
 
     # Setup tools
     tool_node: ToolNode | None = None
-    if isinstance(tools, list):
-        # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
-        built_in_tools = [t for t in tools if isinstance(t, dict)]
-        regular_tools = [t for t in tools if not isinstance(t, dict)]
+    # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
+    built_in_tools = [t for t in tools if isinstance(t, dict)]
+    regular_tools = [t for t in tools if not isinstance(t, dict)]
 
-        # Tools that require client-side execution (must be in ToolNode)
-        available_tools = middleware_tools + regular_tools
+    # Tools that require client-side execution (must be in ToolNode)
+    available_tools = middleware_tools + regular_tools
 
-        # Only create ToolNode if we have client-side tools
-        tool_node = ToolNode(tools=available_tools) if available_tools else None
+    # Only create ToolNode if we have client-side tools
+    tool_node = ToolNode(tools=available_tools) if available_tools else None
 
-        # Default tools for ModelRequest initialization
-        # Use converted BaseTool instances from ToolNode (not raw callables)
-        # Include built-ins and converted tools (can be changed dynamically by middleware)
-        # Structured tools are NOT included - they're added dynamically based on response_format
-        if tool_node:
-            default_tools = list(tool_node.tools_by_name.values()) + built_in_tools
-        else:
-            default_tools = list(built_in_tools)
-    elif isinstance(tools, ToolNode):
-        tool_node = tools
-        if tool_node:
-            # Add middleware tools to existing ToolNode
-            available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(available_tools)
-
-            # default_tools includes all client-side tools (no built-ins or structured tools)
-            default_tools = list(tool_node.tools_by_name.values())
-        else:
-            default_tools = []
-    # No tools provided, only middleware_tools available
-    elif middleware_tools:
-        tool_node = ToolNode(middleware_tools)
-        default_tools = list(tool_node.tools_by_name.values())
+    # Default tools for ModelRequest initialization
+    # Use converted BaseTool instances from ToolNode (not raw callables)
+    # Include built-ins and converted tools (can be changed dynamically by middleware)
+    # Structured tools are NOT included - they're added dynamically based on response_format
+    if tool_node:
+        default_tools = list(tool_node.tools_by_name.values()) + built_in_tools
     else:
-        default_tools = []
+        default_tools = list(built_in_tools)
 
     # validate middleware
     assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
