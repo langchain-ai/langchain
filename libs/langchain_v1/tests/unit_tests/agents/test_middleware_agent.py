@@ -343,6 +343,7 @@ def test_create_agent_jump(
             calls.append("NoopSeven.modify_model_request")
             return request
 
+        @hook_config(can_jump_to=["model"])
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
 
