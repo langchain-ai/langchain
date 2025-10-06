@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from transformers import pipeline as PipelineType
 
+
+pipeline: "PipelineType" | None = None # type: ignore
 # Lazy import for runtime
 try:
     from transformers import pipeline
