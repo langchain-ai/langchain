@@ -90,8 +90,8 @@ class ChatModelTests(BaseStandardTests):
             **{
                 **self.standard_chat_model_params,
                 **self.chat_model_params,
+                **extra_init_params,
             },
-            **extra_init_params,
         )
 
     @pytest.fixture
