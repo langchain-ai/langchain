@@ -2,8 +2,8 @@
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Union
 
 import yaml
 
@@ -134,9 +134,7 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(
-    path: Union[str, Path], encoding: Optional[str] = None
-) -> BasePromptTemplate:
+def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs.
 
     Args:
@@ -160,7 +158,7 @@ def load_prompt(
 
 
 def _load_prompt_from_file(
-    file: Union[str, Path], encoding: Optional[str] = None
+    file: str | Path, encoding: str | None = None
 ) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.

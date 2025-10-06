@@ -7,7 +7,7 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from typing_extensions import override
@@ -30,8 +30,8 @@ class CustomAddTextsVectorstore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[list[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         if not isinstance(texts, list):
@@ -42,7 +42,7 @@ class CustomAddTextsVectorstore(VectorStore):
 
         metadatas_ = metadatas or [{} for _ in texts]
 
-        for text, metadata in zip(texts, metadatas_ or []):
+        for text, metadata in zip(texts, metadatas_ or [], strict=False):
             next_id = next(ids_iter, None)
             id_ = next_id or str(uuid.uuid4())
             self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
@@ -58,7 +58,7 @@ class CustomAddTextsVectorstore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> CustomAddTextsVectorstore:
         vectorstore = CustomAddTextsVectorstore()
@@ -82,7 +82,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         self,
         documents: list[Document],
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         ids_ = []
@@ -104,7 +104,7 @@ class CustomAddDocumentsVectorstore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> CustomAddDocumentsVectorstore:
         vectorstore = CustomAddDocumentsVectorstore()

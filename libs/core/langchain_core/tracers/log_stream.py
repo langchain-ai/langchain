@@ -12,9 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -59,13 +57,13 @@ class LogEntry(TypedDict):
     """List of LLM tokens streamed by this run, if applicable."""
     streamed_output: list[Any]
     """List of output chunks streamed by this run, if available."""
-    inputs: NotRequired[Optional[Any]]
+    inputs: NotRequired[Any | None]
     """Inputs to this run. Not available currently via astream_log."""
-    final_output: Optional[Any]
+    final_output: Any | None
     """Final output of this run.
 
     Only available after the run has finished successfully."""
-    end_time: Optional[str]
+    end_time: str | None
     """ISO-8601 timestamp of when the run ended.
     Only available after the run has finished."""
 
@@ -77,7 +75,7 @@ class RunState(TypedDict):
     """ID of the run."""
     streamed_output: list[Any]
     """List of output chunks streamed by Runnable.stream()"""
-    final_output: Optional[Any]
+    final_output: Any | None
     """Final output of the run, usually the result of aggregating (`+`) streamed_output.
     Updated throughout the run when supported by the Runnable."""
 
@@ -112,7 +110,7 @@ class RunLogPatch:
         """
         self.ops = list(ops)
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
+    def __add__(self, other: RunLogPatch | Any) -> RunLog:
         """Combine two ``RunLogPatch`` instances.
 
         Args:
@@ -160,7 +158,7 @@ class RunLog(RunLogPatch):
         super().__init__(*ops)
         self.state = state
 
-    def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
+    def __add__(self, other: RunLogPatch | Any) -> RunLog:
         """Combine two ``RunLog``s.
 
         Args:
@@ -215,12 +213,12 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self,
         *,
         auto_close: bool = True,
-        include_names: Optional[Sequence[str]] = None,
-        include_types: Optional[Sequence[str]] = None,
-        include_tags: Optional[Sequence[str]] = None,
-        exclude_names: Optional[Sequence[str]] = None,
-        exclude_types: Optional[Sequence[str]] = None,
-        exclude_tags: Optional[Sequence[str]] = None,
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
         # Schema format is for internal use only.
         _schema_format: Literal["original", "streaming_events"] = "streaming_events",
     ) -> None:
@@ -273,7 +271,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.receive_stream = memory_stream.get_receive_stream()
         self._key_map_by_run_id: dict[UUID, str] = {}
         self._counter_map_by_name: dict[str, int] = defaultdict(int)
-        self.root_id: Optional[UUID] = None
+        self.root_id: UUID | None = None
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
         """Iterate over the stream of run logs.
@@ -515,7 +513,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self,
         run: Run,
         token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
+        chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> None:
         """Process new LLM token."""
         index = self._key_map_by_run_id.get(run.id)
@@ -541,7 +539,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
 def _get_standardized_inputs(
     run: Run, schema_format: Literal["original", "streaming_events"]
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Extract standardized inputs from a run.
 
     Standardizes the inputs based on the type of the runnable used.
@@ -583,7 +581,7 @@ def _get_standardized_inputs(
 
 def _get_standardized_outputs(
     run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
-) -> Optional[Any]:
+) -> Any | None:
     """Extract standardized output from a run.
 
     Standardizes the outputs based on the type of the runnable used.
@@ -617,7 +615,7 @@ def _get_standardized_outputs(
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
     value: Any,
-    config: Optional[RunnableConfig] = None,
+    config: RunnableConfig | None = None,
     *,
     stream: LogStreamCallbackHandler,
     diff: Literal[True] = True,
@@ -630,7 +628,7 @@ def _astream_log_implementation(
 def _astream_log_implementation(
     runnable: Runnable[Input, Output],
     value: Any,
-    config: Optional[RunnableConfig] = None,
+    config: RunnableConfig | None = None,
     *,
     stream: LogStreamCallbackHandler,
     diff: Literal[False],
@@ -642,13 +640,13 @@ def _astream_log_implementation(
 async def _astream_log_implementation(
     runnable: Runnable[Input, Output],
     value: Any,
-    config: Optional[RunnableConfig] = None,
+    config: RunnableConfig | None = None,
     *,
     stream: LogStreamCallbackHandler,
     diff: bool = True,
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
+) -> AsyncIterator[RunLogPatch] | AsyncIterator[RunLog]:
     """Implementation of astream_log for a given runnable.
 
     The implementation has been factored out (at least temporarily) as both
@@ -693,8 +691,8 @@ async def _astream_log_implementation(
     # add each chunk to the output stream
     async def consume_astream() -> None:
         try:
-            prev_final_output: Optional[Output] = None
-            final_output: Optional[Output] = None
+            prev_final_output: Output | None = None
+            final_output: Output | None = None
 
             async for chunk in runnable.astream(value, config, **kwargs):
                 prev_final_output = final_output

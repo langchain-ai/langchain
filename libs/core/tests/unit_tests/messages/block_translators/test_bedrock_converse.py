@@ -1,5 +1,3 @@
-from typing import Optional
-
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
@@ -250,10 +248,10 @@ def test_convert_to_v1_from_converse_chunk() -> None:
             "type": "tool_call_chunk",
         },
     ]
-    for chunk, expected in zip(chunks, expected_contents):
+    for chunk, expected in zip(chunks, expected_contents, strict=False):
         assert chunk.content_blocks == [expected]
 
-    full: Optional[AIMessageChunk] = None
+    full: AIMessageChunk | None = None
     for chunk in chunks:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
