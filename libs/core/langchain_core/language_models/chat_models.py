@@ -43,6 +43,7 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.openai import (
     convert_to_openai_image_block,
 )
@@ -533,6 +534,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 yielded = False
+                index = -1
+                index_type = ""
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -542,6 +545,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         chunk.message = _update_message_content_to_blocks(
                             chunk.message, "v1"
                         )
+                        for block in cast(
+                            "list[types.ContentBlock]", chunk.message.content
+                        ):
+                            if block["type"] != index_type:
+                                index_type = block["type"]
+                                index = index + 1
+                            if "index" not in block:
+                                block["index"] = index
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -651,6 +662,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             yielded = False
+            index = -1
+            index_type = ""
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -664,6 +677,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     chunk.message = _update_message_content_to_blocks(
                         chunk.message, "v1"
                     )
+                    for block in cast(
+                        "list[types.ContentBlock]", chunk.message.content
+                    ):
+                        if block["type"] != index_type:
+                            index_type = block["type"]
+                            index = index + 1
+                        if "index" not in block:
+                            block["index"] = index
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
                 )
@@ -1145,6 +1166,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
+            index = -1
+            index_type = ""
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if self.output_version == "v1":
@@ -1152,6 +1175,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     chunk.message = _update_message_content_to_blocks(
                         chunk.message, "v1"
                     )
+                    for block in cast(
+                        "list[types.ContentBlock]", chunk.message.content
+                    ):
+                        if block["type"] != index_type:
+                            index_type = block["type"]
+                            index = index + 1
+                        if "index" not in block:
+                            block["index"] = index
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -1253,6 +1284,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
+            index = -1
+            index_type = ""
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if self.output_version == "v1":
@@ -1260,6 +1293,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     chunk.message = _update_message_content_to_blocks(
                         chunk.message, "v1"
                     )
+                    for block in cast(
+                        "list[types.ContentBlock]", chunk.message.content
+                    ):
+                        if block["type"] != index_type:
+                            index_type = block["type"]
+                            index = index + 1
+                        if "index" not in block:
+                            block["index"] = index
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
