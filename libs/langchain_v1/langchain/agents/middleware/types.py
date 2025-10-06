@@ -224,8 +224,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def on_model_call(
         self,
         request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
+        state: StateT,
+        runtime: Runtime[ContextT],
     ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
         """Generator-based hook to intercept and control model execution.
 
