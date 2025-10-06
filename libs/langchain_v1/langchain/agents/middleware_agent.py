@@ -8,6 +8,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.runtime import Runtime
@@ -636,9 +637,7 @@ def create_agent(  # noqa: PLR0915
         raise RuntimeError(msg)
 
     # Use sync or async based on model capabilities
-    from langgraph._internal._runnable import RunnableCallable
-
-    graph.add_node("model_request", RunnableCallable(model_request, amodel_request))
+    graph.add_node("model_request", RunnableCallable(model_request, amodel_request, trace=False))
 
     # Only add tools node if we have tools
     if tool_node is not None:
@@ -662,7 +661,7 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
                 else None
             )
-            before_agent_node = RunnableCallable(sync_before_agent, async_before_agent)
+            before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(f"{m.name}.before_agent", before_agent_node, input_schema=state_schema)
 
         if (
@@ -681,7 +680,7 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.abefore_model is not AgentMiddleware.abefore_model
                 else None
             )
-            before_node = RunnableCallable(sync_before, async_before)
+            before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
 
         if (
@@ -700,7 +699,7 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.aafter_model is not AgentMiddleware.aafter_model
                 else None
             )
-            after_node = RunnableCallable(sync_after, async_after)
+            after_node = RunnableCallable(sync_after, async_after, trace=False)
             graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
 
         if (
@@ -719,7 +718,7 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
                 else None
             )
-            after_agent_node = RunnableCallable(sync_after_agent, async_after_agent)
+            after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(f"{m.name}.after_agent", after_agent_node, input_schema=state_schema)
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model_request
@@ -751,13 +750,14 @@ def create_agent(  # noqa: PLR0915
         exit_node = END
 
     graph.add_edge(START, entry_node)
-
     # add conditional edges only if tools exist
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, loop_entry_node, structured_output_tools),
-            [loop_entry_node, END],
+            _make_tools_to_model_edge(
+                tool_node, loop_entry_node, structured_output_tools, exit_node
+            ),
+            [loop_entry_node, exit_node],
         )
 
         graph.add_conditional_edges(
@@ -890,7 +890,7 @@ def _make_model_to_tools_edge(
     first_node: str,
     structured_output_tools: dict[str, OutputToolBinding],
     tool_node: ToolNode,
-    exit_destination: str = END,
+    exit_node: str,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
@@ -903,7 +903,7 @@ def _make_model_to_tools_edge(
         # 2. if the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
-            return exit_destination
+            return exit_node
 
         pending_tool_calls = [
             c
@@ -926,7 +926,10 @@ def _make_model_to_tools_edge(
 
 
 def _make_tools_to_model_edge(
-    tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
+    tool_node: ToolNode,
+    next_node: str,
+    structured_output_tools: dict[str, OutputToolBinding],
+    exit_node: str,
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
@@ -936,10 +939,10 @@ def _make_tools_to_model_edge(
             for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
         ):
-            return END
+            return exit_node
 
         if any(t.name in structured_output_tools for t in tool_messages):
-            return END
+            return exit_node
 
         return next_node
 
