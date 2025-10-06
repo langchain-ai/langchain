@@ -42,6 +42,8 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langgraph.runtime import Runtime
+from langgraph.typing import ContextT
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -49,10 +51,8 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
-    from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
-    from langgraph.typing import ContextT
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -1012,8 +1012,10 @@ def _make_model_to_tools_edge(
     structured_output_tools: dict[str, OutputToolBinding],
     tool_node: ToolNode,
     exit_node: str,
-) -> Callable[[dict[str, Any]], str | list[Send] | None]:
-    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
+    def model_to_tools(
+        state: dict[str, Any], runtime: Runtime[ContextT]
+    ) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
@@ -1035,11 +1037,16 @@ def _make_model_to_tools_edge(
         # 3. if there are pending tool calls, jump to the tool node
         if pending_tool_calls:
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, runtime.store)
+                for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        # 4. AIMessage has tool calls, but there are no pending tool calls
+        # 4. if there is a structured response, exit the loop
+        if "structured_response" in state:
+            return exit_node
+
+        # 5. AIMessage has tool calls, but there are no pending tool calls
         # which suggests the injection of artificial tool messages. jump to the first node
         return first_node
 
@@ -1051,8 +1058,8 @@ def _make_tools_to_model_edge(
     next_node: str,
     structured_output_tools: dict[str, OutputToolBinding],
     exit_node: str,
-) -> Callable[[dict[str, Any]], str | None]:
-    def tools_to_model(state: dict[str, Any]) -> str | None:
+) -> Callable[[dict[str, Any], Runtime[ContextT]], str | None]:
+    def tools_to_model(state: dict[str, Any], runtime: Runtime[ContextT]) -> str | None:  # noqa: ARG001
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         if all(
