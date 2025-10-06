@@ -31,13 +31,13 @@ langchain-cli = "langchain_cli.cli:app"
 [dependency-groups]
 dev = ["pytest>=7.4.2,<9.0.0", "pytest-watcher>=0.3.4,<1.0.0"]
 lint = ["ruff>=0.13.1,<0.14", "mypy>=1.18.1,<1.19"]
-test = ["langchain-core", "langchain"]
-typing = ["langchain"]
+test = ["langchain-core", "langchain-classic"]
+typing = ["langchain-classic"]
 test_integration = []
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
-langchain = { path = "../langchain", editable = true }
+langchain-classic = { path = "../langchain", editable = true }
 
 [tool.ruff.format]
 docstring-code-format = true
