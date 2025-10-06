@@ -78,7 +78,7 @@ jobs:
               exit 1
             fi
             echo "Checking out $repo to $REPO_NAME"
-            git clone --depth 1 https://github.com/$repo.git $REPO_NAME
+            git clone --depth 1 --branch v0.3 https://github.com/$repo.git $REPO_NAME
           done
 
       - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
