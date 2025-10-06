@@ -962,21 +962,15 @@ def create_agent(  # noqa: PLR0915
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
-    # Compile the graph with the provided compilation arguments
-    compile_kwargs: dict[str, Any] = {
-        "checkpointer": checkpointer,
-        "store": store,
-        "interrupt_before": interrupt_before,
-        "interrupt_after": interrupt_after,
-        "debug": debug,
-        "name": name,
-    }
-
-    # Add cache parameter if provided
-    if cache is not None:
-        compile_kwargs["cache"] = cache
-
-    return graph.compile(**compile_kwargs)
+    return graph.compile(
+        checkpointer=checkpointer,
+        store=store,
+        interrupt_before=interrupt_before,
+        interrupt_after=interrupt_after,
+        debug=debug,
+        name=name,
+        cache=cache,
+    )
 
 
 def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
