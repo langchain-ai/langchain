@@ -2,6 +2,7 @@
 
 import itertools
 from collections.abc import Callable, Generator, Sequence
+from dataclasses import dataclass
 from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -41,6 +42,22 @@ from langchain.tools import ToolNode
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
+
+
+@dataclass
+class _InternalModelResponse:
+    """Internal wrapper for model responses with additional metadata.
+
+    This wrapper contains the actual ModelResponse that middleware sees,
+    plus internal metadata needed for efficient implementation. Middleware
+    authors never see this wrapper - they only interact with ModelResponse.
+    """
+
+    model_response: ModelResponse
+    """The actual model response that middleware interacts with."""
+
+    effective_response_format: Any = None
+    """The effective response format used for this model call (internal use)."""
 
 
 def _validate_handler_return(value: Any) -> ModelResponse:
@@ -696,7 +713,7 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest) -> ModelResponse:
+    def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
         """Execute model and return response.
 
         This is the core model execution logic wrapped by on_model_call handlers.
@@ -709,10 +726,15 @@ def create_agent(  # noqa: PLR0915
                 messages = [SystemMessage(request.system_prompt), *messages]
 
             output = model_.invoke(messages)
-            return ModelResponse(action="return", result=output)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="return", result=output),
+                effective_response_format=effective_response_format,
+            )
         except Exception as error:  # noqa: BLE001
             # Catch all exceptions from model invocation to wrap in ModelResponse
-            return ModelResponse(action="raise", exception=error)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="raise", exception=error)
+            )
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
@@ -740,9 +762,13 @@ def create_agent(  # noqa: PLR0915
 
         # Execute with or without handler
         current_request = request
+        internal_response: _InternalModelResponse
+        final_response: ModelResponse
+
         if on_model_call_handler is None:
             # No handlers - execute directly
-            model_response = _execute_model_sync(request)
+            internal_response = _execute_model_sync(request)
+            final_response = internal_response.model_response
         else:
             # Use composed handler with generator protocol
             gen = on_model_call_handler(request, state, runtime)
@@ -755,36 +781,37 @@ def create_agent(  # noqa: PLR0915
 
             # Execution loop - generator controls termination via StopIteration
             while True:
-                model_response = _execute_model_sync(current_request)
+                internal_response = _execute_model_sync(current_request)
 
                 try:
-                    current_request = gen.send(model_response)
+                    # Send only the ModelResponse to the generator (not the wrapper)
+                    current_request = gen.send(internal_response.model_response)
                     # Handler yielded again - retry
                 except StopIteration as e:
-                    model_response = _validate_handler_return(e.value)
+                    final_response = _validate_handler_return(e.value)
                     break
 
         # Process the final response
-        if model_response.action == "raise":
-            if model_response.exception is None:
+        if final_response.action == "raise":
+            if final_response.exception is None:
                 msg = "ModelResponse with action='raise' must have an exception"
                 raise ValueError(msg)
-            raise model_response.exception
+            raise final_response.exception
 
-        if model_response.result is None:
+        if final_response.result is None:
             msg = "ModelResponse with action='return' must have a result"
             raise ValueError(msg)
 
-        # Get effective response format from the final request
-        _, effective_response_format = _get_bound_model(current_request)
+        # Use cached effective_response_format from internal response
+        effective_response_format = internal_response.effective_response_format
 
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(model_response.result, effective_response_format),
+            **_handle_model_output(final_response.result, effective_response_format),
         }
 
-    async def _execute_model_async(request: ModelRequest) -> ModelResponse:
+    async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
         """Execute model asynchronously and return response.
 
         This is the core async model execution logic wrapped by on_model_call handlers.
@@ -797,10 +824,15 @@ def create_agent(  # noqa: PLR0915
                 messages = [SystemMessage(request.system_prompt), *messages]
 
             output = await model_.ainvoke(messages)
-            return ModelResponse(action="return", result=output)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="return", result=output),
+                effective_response_format=effective_response_format,
+            )
         except Exception as error:  # noqa: BLE001
             # Catch all exceptions from model invocation to wrap in ModelResponse
-            return ModelResponse(action="raise", exception=error)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="raise", exception=error)
+            )
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -820,9 +852,13 @@ def create_agent(  # noqa: PLR0915
         # Execute with or without handler
         # Note: handler is sync generator, but model execution is async
         current_request = request
+        internal_response: _InternalModelResponse
+        final_response: ModelResponse
+
         if on_model_call_handler is None:
             # No handlers - execute directly
-            model_response = await _execute_model_async(request)
+            internal_response = await _execute_model_async(request)
+            final_response = internal_response.model_response
         else:
             # Use composed handler with generator protocol (sync generator, async execution)
             gen = on_model_call_handler(request, state, runtime)
@@ -835,33 +871,34 @@ def create_agent(  # noqa: PLR0915
 
             # Execution loop - generator controls termination via StopIteration
             while True:
-                model_response = await _execute_model_async(current_request)
+                internal_response = await _execute_model_async(current_request)
 
                 try:
-                    current_request = gen.send(model_response)
+                    # Send only the ModelResponse to the generator (not the wrapper)
+                    current_request = gen.send(internal_response.model_response)
                     # Handler yielded again - retry
                 except StopIteration as e:
-                    model_response = _validate_handler_return(e.value)
+                    final_response = _validate_handler_return(e.value)
                     break
 
         # Process the final response
-        if model_response.action == "raise":
-            if model_response.exception is None:
+        if final_response.action == "raise":
+            if final_response.exception is None:
                 msg = "ModelResponse with action='raise' must have an exception"
                 raise ValueError(msg)
-            raise model_response.exception
+            raise final_response.exception
 
-        if model_response.result is None:
+        if final_response.result is None:
             msg = "ModelResponse with action='return' must have a result"
             raise ValueError(msg)
 
-        # Get effective response format from the final request
-        _, effective_response_format = _get_bound_model(current_request)
+        # Use cached effective_response_format from internal response
+        effective_response_format = internal_response.effective_response_format
 
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(model_response.result, effective_response_format),
+            **_handle_model_output(final_response.result, effective_response_format),
         }
 
     # Use sync or async based on model capabilities
