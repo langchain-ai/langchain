@@ -57,6 +57,15 @@ if PYDANTIC_MAJOR_VERSION == 2:
     TEST_PYDANTIC_MODELS.append(generate_schema_pydantic_v1_from_2())
 
 
+# Configuration for testing different values of output_version
+OUTPUT_VERSION_INIT_PARAMS = {
+    "v0": {},
+    "v1": {"output_version": "v1"},
+}
+
+DEFAULT_OUTPUT_VERSIONS = ["v0"]
+
+
 class ChatModelTests(BaseStandardTests):
     """Base class for chat model tests."""
 
@@ -82,14 +91,17 @@ class ChatModelTests(BaseStandardTests):
             "max_retries": 2,
         }
 
-    @pytest.fixture
-    def model(self) -> BaseChatModel:
+    @pytest.fixture(
+        params=[pytest.param(vid, id=vid) for vid in DEFAULT_OUTPUT_VERSIONS]
+    )
+    def model(self, request: Any) -> BaseChatModel:
         """Model fixture."""
         return self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
                 **self.chat_model_params,
-            }
+            },
+            **OUTPUT_VERSION_INIT_PARAMS[request.param],
         )
 
     @pytest.fixture
