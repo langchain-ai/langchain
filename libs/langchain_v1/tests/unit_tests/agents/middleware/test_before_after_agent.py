@@ -335,20 +335,30 @@ class TestBeforeAndAfterAgentCombined:
             middleware=[log_before_agent, log_before_model, log_after_model, log_after_agent],
         )
 
-        agent.invoke({"messages": [HumanMessage("Test")]})
-
-        # before_agent and after_agent should run exactly once, despite 3 model calls
-        assert execution_log.count("before_agent") == 1, (
-            f"before_agent ran {execution_log.count('before_agent')} times, expected 1"
-        )
-        assert execution_log.count("after_agent") == 1, (
-            f"after_agent ran {execution_log.count('after_agent')} times, expected 1"
-        )
-        # before_agent should run first, after_agent should run last
-        assert execution_log[0] == "before_agent"
-        assert execution_log[-1] == "after_agent"
+        agent.invoke({"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}})
 
         assert execution_log == [
+            "before_agent",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "after_agent",
+        ]
+
+        agent.invoke({"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}})
+
+        assert execution_log == [
+            "before_agent",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "after_agent",
             "before_agent",
             "before_model",
             "after_model",
