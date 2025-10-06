@@ -219,7 +219,7 @@ def create_agent(  # noqa: PLR0915
         model: The language model for the agent. Can be a string identifier
             (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
         tools: A list of tools, dicts, or callables. If ``None`` or an empty list,
-            the agent will consist of a single LLM node without tool calling.
+            the agent will consist of a model_request node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
             it will be converted to a SystemMessage and added to the beginning
             of the message list.
