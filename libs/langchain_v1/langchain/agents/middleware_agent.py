@@ -144,23 +144,6 @@ class AgentComponents:
 
 
 @dataclass
-class SchemaConfiguration(Generic[ContextT]):
-    """Schema configuration for the agent graph."""
-
-    state_schema: type
-    """The complete state schema for the graph."""
-
-    input_schema: type
-    """The input schema (with fields marked as input-only omitted)."""
-
-    output_schema: type
-    """The output schema (with fields marked as output-only omitted)."""
-
-    context_schema: type[ContextT] | None
-    """The context schema for the graph runtime."""
-
-
-@dataclass
 class GraphTopology:
     """Key nodes in the graph topology defining the execution flow.
 
