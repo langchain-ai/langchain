@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -54,7 +54,7 @@ class NatBotChain(Chain):
     llm_chain: Runnable
     objective: str
     """Objective that NatBot is tasked with completing."""
-    llm: Optional[BaseLanguageModel] = None
+    llm: BaseLanguageModel | None = None
     """[Deprecated] LLM wrapper to use."""
     input_url_key: str = "url"  #: :meta private:
     input_browser_content_key: str = "browser_content"  #: :meta private:
@@ -120,7 +120,7 @@ class NatBotChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]

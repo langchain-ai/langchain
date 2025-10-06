@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
 
@@ -13,7 +12,7 @@ class RegexDictParser(BaseOutputParser[dict[str, str]]):
     """The regex pattern to use to parse the output."""
     output_key_to_format: dict[str, str]
     """The keys to use for the output."""
-    no_update_value: Optional[str] = None
+    no_update_value: str | None = None
     """The default key to use for the output."""
 
     @property

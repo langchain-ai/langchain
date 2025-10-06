@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -39,7 +39,7 @@ class EmbeddingRouterChain(RouterChain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = self.vectorstore.similarity_search(_input, k=1)
@@ -49,7 +49,7 @@ class EmbeddingRouterChain(RouterChain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _input = ", ".join([inputs[k] for k in self.routing_keys])
         results = await self.vectorstore.asimilarity_search(_input, k=1)

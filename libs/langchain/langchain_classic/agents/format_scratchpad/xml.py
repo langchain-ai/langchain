@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from langchain_core.agents import AgentAction
 
@@ -21,7 +21,7 @@ def _escape(xml: str) -> str:
 def format_xml(
     intermediate_steps: list[tuple[AgentAction, str]],
     *,
-    escape_format: Optional[Literal["minimal"]] = "minimal",
+    escape_format: Literal["minimal"] | None = "minimal",
 ) -> str:
     """Format the intermediate steps as XML.
 

@@ -1,6 +1,6 @@
 """Test HyDE."""
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from langchain_core.callbacks.manager import (
@@ -39,8 +39,8 @@ class FakeLLM(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
@@ -49,8 +49,8 @@ class FakeLLM(BaseLLM):
     async def _agenerate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])

@@ -3,7 +3,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import yaml
 from langchain_core._api import deprecated
@@ -24,7 +24,7 @@ def _load_agent_from_tools(
     llm: BaseLanguageModel,
     tools: list[Tool],
     **kwargs: Any,
-) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+) -> BaseSingleActionAgent | BaseMultiActionAgent:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
         msg = f"Loading {config_type} agent not supported"
@@ -38,10 +38,10 @@ def _load_agent_from_tools(
 @deprecated("0.1.0", removal="1.0")
 def load_agent_from_config(
     config: dict,
-    llm: Optional[BaseLanguageModel] = None,
-    tools: Optional[list[Tool]] = None,
+    llm: BaseLanguageModel | None = None,
+    tools: list[Tool] | None = None,
     **kwargs: Any,
-) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+) -> BaseSingleActionAgent | BaseMultiActionAgent:
     """Load agent from Config Dict.
 
     Args:
@@ -100,9 +100,9 @@ def load_agent_from_config(
 
 @deprecated("0.1.0", removal="1.0")
 def load_agent(
-    path: Union[str, Path],
+    path: str | Path,
     **kwargs: Any,
-) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+) -> BaseSingleActionAgent | BaseMultiActionAgent:
     """Unified method for loading an agent from LangChainHub or local fs.
 
     Args:
@@ -127,9 +127,9 @@ def load_agent(
 
 
 def _load_agent_from_file(
-    file: Union[str, Path],
+    file: str | Path,
     **kwargs: Any,
-) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+) -> BaseSingleActionAgent | BaseMultiActionAgent:
     """Load agent from file."""
     valid_suffixes = {"json", "yaml"}
     # Convert file to Path object.

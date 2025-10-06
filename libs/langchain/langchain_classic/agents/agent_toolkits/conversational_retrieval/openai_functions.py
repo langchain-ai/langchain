@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.memory import BaseMemory
@@ -29,7 +29,7 @@ def create_conversational_retrieval_agent(
     tools: list[BaseTool],
     remember_intermediate_steps: bool = True,  # noqa: FBT001,FBT002
     memory_key: str = "chat_history",
-    system_message: Optional[SystemMessage] = None,
+    system_message: SystemMessage | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
     max_token_limit: int = 2000,
     **kwargs: Any,

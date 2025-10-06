@@ -1,7 +1,5 @@
 """Interface for tools."""
 
-from typing import Optional
-
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
@@ -23,7 +21,7 @@ class InvalidTool(BaseTool):
         self,
         requested_tool_name: str,
         available_tool_names: list[str],
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
         """Use the tool."""
         available_tool_names_str = ", ".join(list(available_tool_names))
@@ -37,7 +35,7 @@ class InvalidTool(BaseTool):
         self,
         requested_tool_name: str,
         available_tool_names: list[str],
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
     ) -> str:
         """Use the tool asynchronously."""
         available_tool_names_str = ", ".join(list(available_tool_names))

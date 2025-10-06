@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
@@ -66,11 +66,11 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     """The key to use to track the parent id. This will be stored in the
     metadata of child documents."""
-    parent_splitter: Optional[TextSplitter] = None
+    parent_splitter: TextSplitter | None = None
     """The text splitter to use to create parent documents.
     If none, then the parent documents will be the raw documents passed in."""
 
-    child_metadata_fields: Optional[Sequence[str]] = None
+    child_metadata_fields: Sequence[str] | None = None
     """Metadata fields to leave in child documents. If None, leave all parent document
         metadata.
     """
@@ -78,7 +78,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     def _split_docs_for_adding(
         self,
         documents: list[Document],
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         *,
         add_to_docstore: bool = True,
     ) -> tuple[list[Document], list[tuple[str, Document]]]:
@@ -118,7 +118,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     def add_documents(
         self,
         documents: list[Document],
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         add_to_docstore: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
@@ -149,7 +149,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     async def aadd_documents(
         self,
         documents: list[Document],
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         add_to_docstore: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:

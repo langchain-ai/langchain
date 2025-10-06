@@ -4,7 +4,6 @@ import json
 import logging
 import re
 from re import Pattern
-from typing import Optional, Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -34,7 +33,7 @@ class StructuredChatOutputParser(AgentOutputParser):
         return self.format_instructions
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         try:
             action_match = self.pattern.search(text)
             if action_match is not None:
@@ -65,7 +64,7 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
 
     base_parser: AgentOutputParser = Field(default_factory=StructuredChatOutputParser)
     """The base parser to use."""
-    output_fixing_parser: Optional[OutputFixingParser] = None
+    output_fixing_parser: OutputFixingParser | None = None
     """The output fixing parser to use."""
 
     @override
@@ -73,7 +72,7 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         try:
             if self.output_fixing_parser is not None:
                 return self.output_fixing_parser.parse(text)
@@ -85,8 +84,8 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     @classmethod
     def from_llm(
         cls,
-        llm: Optional[BaseLanguageModel] = None,
-        base_parser: Optional[StructuredChatOutputParser] = None,
+        llm: BaseLanguageModel | None = None,
+        base_parser: StructuredChatOutputParser | None = None,
     ) -> StructuredChatOutputParserWithRetries:
         """Create a StructuredChatOutputParserWithRetries from a language model.
 

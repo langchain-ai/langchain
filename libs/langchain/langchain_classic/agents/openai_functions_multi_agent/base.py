@@ -3,7 +3,7 @@
 import json
 from collections.abc import Sequence
 from json import JSONDecodeError
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
@@ -35,7 +35,7 @@ from langchain_classic.agents.format_scratchpad.openai_functions import (
 _FunctionsAgentAction = AgentActionMessageLog
 
 
-def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFinish]:
+def _parse_ai_message(message: BaseMessage) -> list[AgentAction] | AgentFinish:
     """Parse an AI message."""
     if not isinstance(message, AIMessage):
         msg = f"Expected an AI message got {type(message)}"
@@ -206,7 +206,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[list[AgentAction], AgentFinish]:
+    ) -> list[AgentAction] | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -237,7 +237,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[list[AgentAction], AgentFinish]:
+    ) -> list[AgentAction] | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -266,8 +266,8 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
-        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
+        system_message: SystemMessage | None = _NOT_SET,  # type: ignore[assignment]
+        extra_prompt_messages: list[BaseMessagePromptTemplate] | None = None,
     ) -> BasePromptTemplate:
         """Create prompt for this agent.
 
@@ -286,7 +286,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             if system_message is not _NOT_SET
             else SystemMessage(content="You are a helpful AI assistant.")
         )
-        messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
+        messages: list[BaseMessagePromptTemplate | BaseMessage]
         messages = [system_message_] if system_message_ else []
 
         messages.extend(
@@ -303,9 +303,9 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
+        callback_manager: BaseCallbackManager | None = None,
+        extra_prompt_messages: list[BaseMessagePromptTemplate] | None = None,
+        system_message: SystemMessage | None = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools.

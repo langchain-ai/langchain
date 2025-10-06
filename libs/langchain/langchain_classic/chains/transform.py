@@ -2,8 +2,8 @@
 
 import functools
 import logging
-from collections.abc import Awaitable
-from typing import Any, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -35,8 +35,8 @@ class TransformChain(Chain):
     """The keys returned by the transform's output dictionary."""
     transform_cb: Callable[[dict[str, str]], dict[str, str]] = Field(alias="transform")
     """The transform function."""
-    atransform_cb: Optional[Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = (
-        Field(None, alias="atransform")
+    atransform_cb: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None = Field(
+        None, alias="atransform"
     )
     """The async coroutine transform function."""
 
@@ -69,7 +69,7 @@ class TransformChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         return self.transform_cb(inputs)
 
@@ -77,7 +77,7 @@ class TransformChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         if self.atransform_cb is not None:
             return await self.atransform_cb(inputs)

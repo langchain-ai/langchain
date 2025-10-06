@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -82,8 +82,8 @@ Passage:
 def create_extraction_chain(
     schema: dict,
     llm: BaseLanguageModel,
-    prompt: Optional[BasePromptTemplate] = None,
-    tags: Optional[list[str]] = None,
+    prompt: BasePromptTemplate | None = None,
+    tags: list[str] | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
@@ -152,7 +152,7 @@ def create_extraction_chain(
 def create_extraction_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
-    prompt: Optional[BasePromptTemplate] = None,
+    prompt: BasePromptTemplate | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage using pydantic schema.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -67,7 +67,7 @@ def _load_stuff_chain(
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
-    verbose: Optional[bool] = None,
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
@@ -88,10 +88,10 @@ def _load_map_reduce_chain(
     document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
-    collapse_prompt: Optional[BasePromptTemplate] = None,
-    reduce_llm: Optional[BaseLanguageModel] = None,
-    collapse_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
+    collapse_prompt: BasePromptTemplate | None = None,
+    reduce_llm: BaseLanguageModel | None = None,
+    collapse_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
@@ -146,8 +146,8 @@ def _load_refine_chain(
     document_prompt: BasePromptTemplate = refine_prompts.EXAMPLE_PROMPT,
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
-    refine_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
+    refine_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -182,7 +182,7 @@ def _load_refine_chain(
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,  # noqa: FBT001
+    verbose: bool | None = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load a question answering with sources chain.
