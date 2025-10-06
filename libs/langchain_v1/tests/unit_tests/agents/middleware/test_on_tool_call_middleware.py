@@ -14,7 +14,7 @@ from langchain_core.tools import BaseTool, tool
 
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain.agents.middleware_agent import create_agent
-from langchain.tools.tool_node import ToolRequest, ToolResponse
+from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 
 class FakeModel(GenericFakeChatModel):
@@ -81,8 +81,8 @@ def test_single_middleware_on_tool_call():
         """Middleware that logs tool calls."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append(f"before_{request.tool.name}")
             response = yield request
             call_log.append(f"after_{request.tool.name}")
@@ -126,8 +126,8 @@ def test_multiple_middleware_chaining():
         """Outer middleware in the chain."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_order.append("outer_start")
             response = yield request
             call_order.append("outer_end")
@@ -137,8 +137,8 @@ def test_multiple_middleware_chaining():
         """Inner middleware in the chain."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_order.append("inner_start")
             response = yield request
             call_order.append("inner_end")
@@ -174,10 +174,9 @@ def test_middleware_retry_logic():
 
     class RetryMiddleware(AgentMiddleware):
         """Middleware that retries on failure."""
-
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             nonlocal attempt_count
             max_retries = 2
 
@@ -193,7 +192,7 @@ def test_middleware_retry_logic():
                     continue
 
                 # Convert error to success message
-                return ToolResponse(
+                return ToolCallResponse(
                     action="return",
                     result=ToolMessage(
                         content=f"Failed after {max_retries} attempts",
@@ -203,8 +202,7 @@ def test_middleware_retry_logic():
                     ),
                 )
 
-            # Should never reach here
-            return response
+            raise AssertionError("Unreachable")
 
     model = FakeModel(
         messages=iter(
@@ -242,8 +240,8 @@ def test_middleware_request_modification():
         """Middleware that doubles the input."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             # Modify the arguments
             modified_tool_call = {
                 **request.tool_call,
@@ -252,7 +250,7 @@ def test_middleware_request_modification():
                     "y": request.tool_call["args"]["y"] * 2,
                 },
             }
-            modified_request = ToolRequest(
+            modified_request = ToolCallRequest(
                 tool_call=modified_tool_call,
                 tool=request.tool,
                 config=request.config,
@@ -294,8 +292,8 @@ def test_multiple_middleware_with_retry():
         """Outer middleware for monitoring."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append("monitoring_start")
             response = yield request
             call_log.append("monitoring_end")
@@ -305,8 +303,8 @@ def test_multiple_middleware_with_retry():
         """Inner middleware for retries."""
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append("retry_start")
             for attempt in range(2):
                 call_log.append(f"retry_attempt_{attempt + 1}")
@@ -363,8 +361,8 @@ def test_mixed_middleware():
             return None
 
         def on_tool_call(
-            self, request: ToolRequest
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            self, request: ToolCallRequest
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append("on_tool_call_start")
             response = yield request
             call_log.append("on_tool_call_end")

@@ -16,14 +16,14 @@ from langchain_core.messages import ToolMessage
 
 from langchain.agents.middleware.types import AgentMiddleware
 
-# Import ToolResponse locally to avoid circular import
-from langchain.tools.tool_node import ToolResponse
+# Import ToolCallResponse locally to avoid circular import
+from langchain.tools.tool_node import ToolCallResponse
 
 if TYPE_CHECKING:
     from collections.abc import Generator
     from types import UnionType
 
-    from langchain.tools.tool_node import ToolRequest, ToolResponse
+    from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 logger = logging.getLogger(__name__)
 
@@ -233,8 +233,8 @@ class RetryMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     def on_tool_call(
-        self, request: ToolRequest
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        self, request: ToolCallRequest
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Retry tool execution on failures."""
         for attempt in range(1, self.max_retries + 2):  # +1 for initial, +1 for inclusive
             response = yield request
@@ -247,7 +247,7 @@ class RetryMiddleware(AgentMiddleware):
             if response.action == "raise":
                 exception = response.exception
                 if exception is None:
-                    msg = "ToolResponse with action='raise' must have an exception"
+                    msg = "ToolCallResponse with action='raise' must have an exception"
                     raise ValueError(msg)
 
                 # Check if this exception type is retriable
@@ -365,8 +365,8 @@ class ErrorToMessageMiddleware(AgentMiddleware):
         self.message_template = message_template
 
     def on_tool_call(
-        self, request: ToolRequest
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        self, request: ToolCallRequest
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Convert matching errors to ToolMessages."""
         response = yield request
 
@@ -378,7 +378,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
         if response.action == "raise":
             exception = response.exception
             if exception is None:
-                msg = "ToolResponse with action='raise' must have an exception"
+                msg = "ToolCallResponse with action='raise' must have an exception"
                 raise ValueError(msg)
 
             # Check if exception type matches
@@ -400,7 +400,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
                 status="error",
             )
 
-            return ToolResponse(
+            return ToolCallResponse(
                 action="return",
                 result=tool_message,
                 exception=exception,  # Preserve for logging/debugging

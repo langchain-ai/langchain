@@ -99,7 +99,7 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 
 
 @dataclass()
-class ToolRequest:
+class ToolCallRequest:
     """Request passed to on_tool_call handler before tool execution.
 
     Attributes:
@@ -117,7 +117,7 @@ class ToolRequest:
 
 
 @dataclass()
-class ToolResponse:
+class ToolCallResponse:
     """Response returned from on_tool_call handler after tool execution.
 
     The action field determines control flow:
@@ -145,11 +145,11 @@ class ToolResponse:
             raise ValueError(msg)
 
 
-ToolCallHandler = Callable[[ToolRequest], Generator[ToolRequest, ToolResponse, ToolResponse]]
+ToolCallHandler = Callable[[ToolCallRequest], Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]]
 """Generator-based handler that intercepts tool execution.
 
-Receives a ToolRequest, yields modified ToolRequests, receives ToolResponses,
-and returns a final ToolResponse. Supports multiple yields for retry logic.
+Receives a ToolCallRequest, yields modified ToolCallRequests, receives ToolCallResponses,
+and returns a final ToolCallResponse. Supports multiple yields for retry logic.
 """
 
 
@@ -389,8 +389,8 @@ class ToolNode(RunnableCallable):
                 - ignores tool execution errors (they will be re-raised)
 
         on_tool_call: Optional handler to intercept tool execution. Receives
-            ``ToolRequest``, yields potentially modified requests, receives
-            ``ToolResponse`` via ``.send()``, and returns final ``ToolResponse``.
+            ``ToolCallRequest``, yields potentially modified requests, receives
+            ``ToolCallResponse`` via ``.send()``, and returns final ``ToolCallResponse``.
             Enables retries, argument modification, and custom error handling.
             Defaults to ``None``.
 
@@ -441,7 +441,7 @@ class ToolNode(RunnableCallable):
         Intercepting tool calls:
 
         ```python
-        from langchain.tools.tool_node import ToolRequest, ToolResponse
+        from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
         def retry_handler(request):
             \"\"\"Retry failed tool calls up to 3 times.\"\"\"
@@ -575,8 +575,8 @@ class ToolNode(RunnableCallable):
         return combined_outputs
 
     def _execute_tool_sync(
-        self, request: ToolRequest, input_type: Literal["list", "dict", "tool_calls"]
-    ) -> ToolResponse:
+        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"]
+    ) -> ToolCallResponse:
         """Execute tool and return response.
 
         Applies handle_tool_errors configuration. When on_tool_call is configured,
@@ -625,7 +625,7 @@ class ToolNode(RunnableCallable):
                 # Error is not handled
                 if self._on_tool_call is not None:
                     # If handler exists, return action="raise" so handler can decide
-                    return ToolResponse(action="raise", exception=e)
+                    return ToolCallResponse(action="raise", exception=e)
                 # No handler - maintain backward compatibility by raising immediately
                 raise
 
@@ -637,16 +637,16 @@ class ToolNode(RunnableCallable):
                 tool_call_id=call["id"],
                 status="error",
             )
-            return ToolResponse(action="return", result=error_message, exception=e)
+            return ToolCallResponse(action="return", result=error_message, exception=e)
 
         # Process successful response
         if isinstance(response, Command):
             # Validate Command before returning to handler
             validated_command = self._validate_tool_command(response, request.tool_call, input_type)
-            return ToolResponse(action="return", result=validated_command)
+            return ToolCallResponse(action="return", result=validated_command)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
-            return ToolResponse(action="return", result=response)
+            return ToolCallResponse(action="return", result=response)
 
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
@@ -664,7 +664,7 @@ class ToolNode(RunnableCallable):
         tool = self.tools_by_name[call["name"]]
 
         # Create the tool request
-        tool_request = ToolRequest(
+        tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
             config=config,
@@ -689,7 +689,7 @@ class ToolNode(RunnableCallable):
                 except StopIteration as e:
                     if e.value is None:
                         msg = (
-                            "on_tool_call handler must explicitly return a ToolResponse. "
+                            "on_tool_call handler must explicitly return a ToolCallResponse. "
                             "Ensure your handler ends with 'return response'."
                         )
                         raise ValueError(msg)
@@ -699,20 +699,20 @@ class ToolNode(RunnableCallable):
         # Apply action directive
         if tool_response.action == "raise":
             if tool_response.exception is None:
-                msg = "ToolResponse with action='raise' must have an exception"
+                msg = "ToolCallResponse with action='raise' must have an exception"
                 raise ValueError(msg)
             raise tool_response.exception
 
         result = tool_response.result
         if result is None:
-            msg = "ToolResponse with action='return' must have a result"
+            msg = "ToolCallResponse with action='return' must have a result"
             raise ValueError(msg)
 
         return result
 
     async def _execute_tool_async(
-        self, request: ToolRequest, input_type: Literal["list", "dict", "tool_calls"]
-    ) -> ToolResponse:
+        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"]
+    ) -> ToolCallResponse:
         """Execute tool asynchronously and return response.
 
         Applies handle_tool_errors configuration. When on_tool_call is configured,
@@ -761,7 +761,7 @@ class ToolNode(RunnableCallable):
                 # Error is not handled
                 if self._on_tool_call is not None:
                     # If handler exists, return action="raise" so handler can decide
-                    return ToolResponse(action="raise", exception=e)
+                    return ToolCallResponse(action="raise", exception=e)
                 # No handler - maintain backward compatibility by raising immediately
                 raise
 
@@ -773,16 +773,16 @@ class ToolNode(RunnableCallable):
                 tool_call_id=call["id"],
                 status="error",
             )
-            return ToolResponse(action="return", result=error_message, exception=e)
+            return ToolCallResponse(action="return", result=error_message, exception=e)
 
         # Process successful response
         if isinstance(response, Command):
             # Validate Command before returning to handler
             validated_command = self._validate_tool_command(response, request.tool_call, input_type)
-            return ToolResponse(action="return", result=validated_command)
+            return ToolCallResponse(action="return", result=validated_command)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
-            return ToolResponse(action="return", result=response)
+            return ToolCallResponse(action="return", result=response)
 
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
@@ -800,7 +800,7 @@ class ToolNode(RunnableCallable):
         tool = self.tools_by_name[call["name"]]
 
         # Create the tool request
-        tool_request = ToolRequest(
+        tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
             config=config,
@@ -825,7 +825,7 @@ class ToolNode(RunnableCallable):
                 except StopIteration as e:
                     if e.value is None:
                         msg = (
-                            "on_tool_call handler must explicitly return a ToolResponse. "
+                            "on_tool_call handler must explicitly return a ToolCallResponse. "
                             "Ensure your handler ends with 'return response'."
                         )
                         raise ValueError(msg)
@@ -835,13 +835,13 @@ class ToolNode(RunnableCallable):
         # Apply action directive
         if tool_response.action == "raise":
             if tool_response.exception is None:
-                msg = "ToolResponse with action='raise' must have an exception"
+                msg = "ToolCallResponse with action='raise' must have an exception"
                 raise ValueError(msg)
             raise tool_response.exception
 
         result = tool_response.result
         if result is None:
-            msg = "ToolResponse with action='return' must have a result"
+            msg = "ToolCallResponse with action='return' must have a result"
             raise ValueError(msg)
 
         return result

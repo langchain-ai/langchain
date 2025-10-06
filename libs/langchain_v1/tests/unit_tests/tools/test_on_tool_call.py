@@ -7,7 +7,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 
 from langchain.tools import ToolNode
-from langchain.tools.tool_node import ToolRequest, ToolResponse
+from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 
 # Test tools
@@ -41,8 +41,8 @@ def test_on_tool_call_passthrough() -> None:
     """Test that a simple passthrough handler works."""
 
     def passthrough_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Simply pass through without modification."""
         response = yield request
         return response
@@ -72,8 +72,8 @@ def test_on_tool_call_retry_success():
         rate_limit_tool._call_count = 0
 
     def retry_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Retry up to 3 times."""
         max_retries = 3
 
@@ -88,7 +88,7 @@ def test_on_tool_call_retry_success():
                 continue
 
             # Final attempt failed - convert to error message
-            return ToolResponse(
+            return ToolCallResponse(
                 action="return",
                 result=ToolMessage(
                     content=f"Failed after {max_retries} attempts",
@@ -97,8 +97,7 @@ def test_on_tool_call_retry_success():
                     status="error",
                 ),
             )
-
-        return response  # Should never reach here
+        raise AssertionError("Unreachable code")
 
     tool_node = ToolNode([rate_limit_tool], on_tool_call=retry_handler, handle_tool_errors=False)
     result = tool_node.invoke(
@@ -122,13 +121,13 @@ def test_on_tool_call_convert_error_to_message():
     """Test that handler can convert raised errors to error messages."""
 
     def error_to_message_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Convert any error to a user-friendly message."""
         response = yield request
 
         if response.action == "raise":
-            return ToolResponse(
+            return ToolCallResponse(
                 action="return",
                 result=ToolMessage(
                     content=f"Tool failed: {response.exception}",
@@ -166,8 +165,8 @@ def test_on_tool_call_let_error_raise():
     """Test that handler can let errors propagate."""
 
     def let_raise_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Just return the response as-is, letting errors raise."""
         response = yield request
         return response
@@ -194,8 +193,8 @@ def test_on_tool_call_with_handled_errors():
     call_count = {"count": 0}
 
     def counting_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Count how many times we're called."""
         call_count["count"] += 1
         response = yield request
@@ -223,11 +222,11 @@ def test_on_tool_call_with_handled_errors():
 
 
 def test_on_tool_call_must_return_value():
-    """Test that handler must return a ToolResponse."""
+    """Test that handler must return a ToolCallResponse."""
 
     def no_return_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Handler that doesn't return anything."""
         response = yield request
         # Implicit return None
@@ -246,22 +245,22 @@ def test_on_tool_call_must_return_value():
             }
         )
 
-    assert "must explicitly return a ToolResponse" in str(exc_info.value)
+    assert "must explicitly return a ToolCallResponse" in str(exc_info.value)
 
 
 def test_on_tool_call_request_modification():
     """Test that handler can modify the request before execution."""
 
     def double_input_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Double the input value."""
         # Modify the tool call args
         modified_tool_call = {
             **request.tool_call,
             "args": {**request.tool_call["args"], "x": request.tool_call["args"]["x"] * 2},
         }
-        modified_request = ToolRequest(
+        modified_request = ToolCallRequest(
             tool_call=modified_tool_call,
             tool=request.tool,
             config=request.config,
@@ -288,23 +287,23 @@ def test_on_tool_call_request_modification():
 
 
 def test_on_tool_call_response_validation():
-    """Test that ToolResponse validates action and required fields."""
+    """Test that ToolCallResponse validates action and required fields."""
     # Test action="return" requires result
     with pytest.raises(ValueError) as exc_info:
-        ToolResponse(action="return")
+        ToolCallResponse(action="return")
     assert "action='return' requires a result" in str(exc_info.value)
 
     # Test action="raise" requires exception
     with pytest.raises(ValueError) as exc_info:
-        ToolResponse(action="raise")
+        ToolCallResponse(action="raise")
     assert "action='raise' requires an exception" in str(exc_info.value)
 
     # Valid responses should work
-    ToolResponse(
+    ToolCallResponse(
         action="return",
         result=ToolMessage(content="test", tool_call_id="1", name="test"),
     )
-    ToolResponse(action="raise", exception=ValueError("test"))
+    ToolCallResponse(action="raise", exception=ValueError("test"))
 
 
 def test_on_tool_call_without_handler_backward_compat():
@@ -357,8 +356,8 @@ def test_on_tool_call_multiple_yields():
     attempts = {"count": 0}
 
     def multi_yield_handler(
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Yield multiple times to track attempts."""
         max_attempts = 3
 

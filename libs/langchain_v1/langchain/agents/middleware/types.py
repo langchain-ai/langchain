@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
-    from langchain.tools.tool_node import ToolRequest, ToolResponse
+    from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 __all__ = [
     "AgentMiddleware",
@@ -218,8 +218,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def on_tool_call(
         self,
-        request: ToolRequest,
-    ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+        request: ToolCallRequest,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Intercept tool execution to implement retry logic, monitoring, or request modification.
 
         Provides generator-based control over the complete tool execution lifecycle.
@@ -227,10 +227,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         outer middleware wrapping inner middleware (first defined = outermost layer).
 
         Generator Protocol:
-            1. Yield a ToolRequest (potentially modified from the input)
-            2. Receive a ToolResponse via .send()
+            1. Yield a ToolCallRequest (potentially modified from the input)
+            2. Receive a ToolCallResponse via .send()
             3. Optionally yield again to retry
-            4. Return the final ToolResponse to propagate
+            4. Return the final ToolCallResponse to propagate
 
         Args:
             request: Tool invocation details including tool_call, tool instance, and config.

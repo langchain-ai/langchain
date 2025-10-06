@@ -35,7 +35,7 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
-from langchain.tools.tool_node import ToolCallHandler, ToolRequest, ToolResponse
+from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest, ToolCallResponse
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -84,10 +84,10 @@ def _chain_tool_call_handlers(
     if len(handlers) == 1:
         return handlers[0]
 
-    def _extract_return_value(stop_iteration: StopIteration) -> ToolResponse:
-        """Extract ToolResponse from StopIteration, validating protocol compliance."""
+    def _extract_return_value(stop_iteration: StopIteration) -> ToolCallResponse:
+        """Extract ToolCallResponse from StopIteration, validating protocol compliance."""
         if stop_iteration.value is None:
-            msg = "on_tool_call handler must explicitly return a ToolResponse"
+            msg = "on_tool_call handler must explicitly return a ToolCallResponse"
             raise ValueError(msg)
         return stop_iteration.value
 
@@ -95,8 +95,8 @@ def _chain_tool_call_handlers(
         """Compose two handlers where outer wraps inner."""
 
         def composed(
-            request: ToolRequest,
-        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            request: ToolCallRequest,
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             outer_gen = outer(request)
 
             # Initialize outer generator
