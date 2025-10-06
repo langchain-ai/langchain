@@ -1,6 +1,6 @@
 """Handle chained inputs."""
 
-from typing import Optional, TextIO
+from typing import TextIO
 
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
@@ -12,7 +12,7 @@ _TEXT_COLOR_MAPPING = {
 
 
 def get_color_mapping(
-    items: list[str], excluded_colors: Optional[list] = None
+    items: list[str], excluded_colors: list | None = None
 ) -> dict[str, str]:
     """Get mapping for items to a support color.
 
@@ -56,7 +56,7 @@ def get_bolded_text(text: str) -> str:
 
 
 def print_text(
-    text: str, color: Optional[str] = None, end: str = "", file: Optional[TextIO] = None
+    text: str, color: str | None = None, end: str = "", file: TextIO | None = None
 ) -> None:
     """Print text with highlighting and no end characters.
 

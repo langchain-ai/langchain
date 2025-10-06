@@ -3,8 +3,8 @@ from typing import Any, Callable
 from langchain_core.documents import Document
 from typing_extensions import override
 
-from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
-from langchain.storage import InMemoryStore
+from langchain_classic.retrievers.multi_vector import MultiVectorRetriever, SearchType
+from langchain_classic.storage import InMemoryStore
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 

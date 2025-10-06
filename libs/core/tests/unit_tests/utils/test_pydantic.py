@@ -1,7 +1,7 @@
 """Test for some custom pydantic decorators."""
 
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -36,7 +36,7 @@ def test_pre_init_decorator() -> None:
 def test_pre_init_decorator_with_more_defaults() -> None:
     class Foo(BaseModel):
         a: int = 1
-        b: Optional[int] = None
+        b: int | None = None
         c: int = Field(default=2)
         d: int = Field(default_factory=lambda: 3)
 

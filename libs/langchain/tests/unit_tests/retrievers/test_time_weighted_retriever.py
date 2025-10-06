@@ -10,7 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
 
-from langchain.retrievers.time_weighted_retriever import (
+from langchain_classic.retrievers.time_weighted_retriever import (
     TimeWeightedVectorStoreRetriever,
     _get_hours_passed,
 )

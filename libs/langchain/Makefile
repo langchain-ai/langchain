@@ -36,7 +36,7 @@ test_watch_extended:
 integration_tests:
 	uv run --group test --group test_integration pytest tests/integration_tests
 
-check_imports: $(shell find langchain -name '*.py')
+check_imports: $(shell find langchain_classic -name '*.py')
 	uv run python ./scripts/check_imports.py $^
 
 ######################
@@ -48,7 +48,7 @@ PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain
+lint_package: PYTHON_FILES=langchain_classic
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 

@@ -1,4 +1,4 @@
-from langchain.schema.runnable.router import __all__
+from langchain_classic.schema.runnable.router import __all__
 
 EXPECTED_ALL = ["RouterInput", "RouterRunnable"]
 

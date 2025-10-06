@@ -14,7 +14,7 @@ def test_import_all() -> None:
     """Generate the public API for this package."""
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=UserWarning)
-        library_code = PKG_ROOT / "langchain"
+        library_code = PKG_ROOT / "langchain_classic"
         for path in library_code.rglob("*.py"):
             # Calculate the relative path to the module
             module_name = (
@@ -47,7 +47,7 @@ def test_import_all() -> None:
 
 def test_import_all_using_dir() -> None:
     """Generate the public API for this package."""
-    library_code = PKG_ROOT / "langchain"
+    library_code = PKG_ROOT / "langchain_classic"
     for path in library_code.rglob("*.py"):
         # Calculate the relative path to the module
         module_name = (
@@ -81,7 +81,7 @@ def test_no_more_changes_to_proxy_community() -> None:
     should not be adding new imports from langchain to community. This test
     is meant to catch any new changes to the proxy community module.
     """
-    library_code = PKG_ROOT / "langchain"
+    library_code = PKG_ROOT / "langchain_classic"
     hash_ = 0
     for path in library_code.rglob("*.py"):
         # Calculate the relative path to the module

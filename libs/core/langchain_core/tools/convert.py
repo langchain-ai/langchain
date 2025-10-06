@@ -1,7 +1,8 @@
 """Convert functions and runnables to tools."""
 
 import inspect
-from typing import Any, Callable, Literal, Optional, Union, get_type_hints, overload
+from collections.abc import Callable
+from typing import Any, Literal, get_type_hints, overload
 
 from pydantic import BaseModel, Field, create_model
 
@@ -15,14 +16,14 @@ from langchain_core.tools.structured import StructuredTool
 @overload
 def tool(
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     return_direct: bool = False,
-    args_schema: Optional[ArgsSchema] = None,
+    args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
 @overload
@@ -30,9 +31,9 @@ def tool(
     name_or_callable: str,
     runnable: Runnable,
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     return_direct: bool = False,
-    args_schema: Optional[ArgsSchema] = None,
+    args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -44,9 +45,9 @@ def tool(
 def tool(
     name_or_callable: Callable,
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     return_direct: bool = False,
-    args_schema: Optional[ArgsSchema] = None,
+    args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
@@ -58,31 +59,28 @@ def tool(
 def tool(
     name_or_callable: str,
     *,
-    description: Optional[str] = None,
+    description: str | None = None,
     return_direct: bool = False,
-    args_schema: Optional[ArgsSchema] = None,
+    args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Callable | Runnable], BaseTool]: ...
 
 
 def tool(
-    name_or_callable: Optional[Union[str, Callable]] = None,
-    runnable: Optional[Runnable] = None,
+    name_or_callable: str | Callable | None = None,
+    runnable: Runnable | None = None,
     *args: Any,
-    description: Optional[str] = None,
+    description: str | None = None,
     return_direct: bool = False,
-    args_schema: Optional[ArgsSchema] = None,
+    args_schema: ArgsSchema | None = None,
     infer_schema: bool = True,
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Union[
-    BaseTool,
-    Callable[[Union[Callable, Runnable]], BaseTool],
-]:
+) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
     """Make tools out of functions, can be used with or without arguments.
 
     Args:
@@ -231,7 +229,7 @@ def tool(
 
     def _create_tool_factory(
         tool_name: str,
-    ) -> Callable[[Union[Callable, Runnable]], BaseTool]:
+    ) -> Callable[[Callable | Runnable], BaseTool]:
         """Create a decorator that takes a callable and returns a tool.
 
         Args:
@@ -241,7 +239,7 @@ def tool(
             A function that takes a callable or Runnable and returns a tool.
         """
 
-        def _tool_factory(dec_func: Union[Callable, Runnable]) -> BaseTool:
+        def _tool_factory(dec_func: Callable | Runnable) -> BaseTool:
             tool_description = description
             if isinstance(dec_func, Runnable):
                 runnable = dec_func
@@ -251,18 +249,18 @@ def tool(
                     raise ValueError(msg)
 
                 async def ainvoke_wrapper(
-                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                    callbacks: Callbacks | None = None, **kwargs: Any
                 ) -> Any:
                     return await runnable.ainvoke(kwargs, {"callbacks": callbacks})
 
                 def invoke_wrapper(
-                    callbacks: Optional[Callbacks] = None, **kwargs: Any
+                    callbacks: Callbacks | None = None, **kwargs: Any
                 ) -> Any:
                     return runnable.invoke(kwargs, {"callbacks": callbacks})
 
                 coroutine = ainvoke_wrapper
                 func = invoke_wrapper
-                schema: Optional[ArgsSchema] = runnable.input_schema
+                schema: ArgsSchema | None = runnable.input_schema
                 tool_description = description or repr(runnable)
             elif inspect.iscoroutinefunction(dec_func):
                 coroutine = dec_func
@@ -352,7 +350,7 @@ def tool(
     # @tool(parse_docstring=True)
     # def my_tool():
     #    pass
-    def _partial(func: Union[Callable, Runnable]) -> BaseTool:
+    def _partial(func: Callable | Runnable) -> BaseTool:
         """Partial function that takes a callable and returns a tool."""
         name_ = func.get_name() if isinstance(func, Runnable) else func.__name__
         tool_factory = _create_tool_factory(name_)
@@ -370,7 +368,7 @@ def _get_description_from_runnable(runnable: Runnable) -> str:
 def _get_schema_from_runnable_and_arg_types(
     runnable: Runnable,
     name: str,
-    arg_types: Optional[dict[str, type]] = None,
+    arg_types: dict[str, type] | None = None,
 ) -> type[BaseModel]:
     """Infer args_schema for tool."""
     if arg_types is None:
@@ -389,11 +387,11 @@ def _get_schema_from_runnable_and_arg_types(
 
 def convert_runnable_to_tool(
     runnable: Runnable,
-    args_schema: Optional[type[BaseModel]] = None,
+    args_schema: type[BaseModel] | None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    arg_types: Optional[dict[str, type]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    arg_types: dict[str, type] | None = None,
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool.
 
@@ -421,12 +419,10 @@ def convert_runnable_to_tool(
             description=description,
         )
 
-    async def ainvoke_wrapper(
-        callbacks: Optional[Callbacks] = None, **kwargs: Any
-    ) -> Any:
+    async def ainvoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
 
-    def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
+    def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
     if (

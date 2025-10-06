@@ -8,7 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
-from langchain.chat_models.base import __all__, init_chat_model
+from langchain_classic.chat_models.base import __all__, init_chat_model
 
 EXPECTED_ALL = [
     "BaseChatModel",

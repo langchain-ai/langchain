@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -52,7 +52,7 @@ class BaseCache(ABC):
     """
 
     @abstractmethod
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on prompt and llm_string.
 
         A cache implementation is expected to generate a key from the 2-tuple
@@ -97,7 +97,7 @@ class BaseCache(ABC):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments."""
 
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    async def alookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Async look up based on prompt and llm_string.
 
         A cache implementation is expected to generate a key from the 2-tuple
@@ -149,7 +149,7 @@ class BaseCache(ABC):
 class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 
-    def __init__(self, *, maxsize: Optional[int] = None) -> None:
+    def __init__(self, *, maxsize: int | None = None) -> None:
         """Initialize with empty cache.
 
         Args:
@@ -167,7 +167,7 @@ class InMemoryCache(BaseCache):
             raise ValueError(msg)
         self._maxsize = maxsize
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on prompt and llm_string.
 
         Args:
@@ -201,7 +201,7 @@ class InMemoryCache(BaseCache):
         """Clear cache."""
         self._cache = {}
 
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    async def alookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Async look up based on prompt and llm_string.
 
         Args:

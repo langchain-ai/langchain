@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from langchain_core.load import Serializable
 from langchain_core.utils._merge import merge_dicts
@@ -28,7 +28,7 @@ class Generation(Serializable):
     text: str
     """Generated text output."""
 
-    generation_info: Optional[dict[str, Any]] = None
+    generation_info: dict[str, Any] | None = None
     """Raw response from the provider.
 
     May include things like the reason for finishing or token log probabilities.
