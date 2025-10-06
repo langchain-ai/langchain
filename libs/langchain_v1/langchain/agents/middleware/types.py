@@ -302,8 +302,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return response
             ```
         """
-        response = yield request
-        return response
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
