@@ -75,6 +75,7 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import get_runtime
 from langgraph.types import Command, Send
 from pydantic import BaseModel, ValidationError
 
@@ -145,11 +146,13 @@ class ToolCallResponse:
             raise ValueError(msg)
 
 
-ToolCallHandler = Callable[[ToolCallRequest], Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]]
+ToolCallHandler = Callable[
+    [ToolCallRequest, Any, Any], Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]
+]
 """Generator-based handler that intercepts tool execution.
 
-Receives a ToolCallRequest, yields modified ToolCallRequests, receives ToolCallResponses,
-and returns a final ToolCallResponse. Supports multiple yields for retry logic.
+Receives a ToolCallRequest, state, and runtime; yields modified ToolCallRequests;
+receives ToolCallResponses; and returns a final ToolCallResponse. Supports multiple yields for retry logic.
 """
 
 
@@ -510,11 +513,20 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],
     ) -> Any:
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of the LangGrah runtime context (e.g., unit-tests)
+            runtime = None
         tool_calls, input_type = self._parse_input(input, store)
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
+        inputs = [input] * len(tool_calls)
+        runtimes = [runtime] * len(tool_calls)
         with get_executor_for_config(config) as executor:
-            outputs = [*executor.map(self._run_one, tool_calls, input_types, config_list)]
+            outputs = [
+                *executor.map(self._run_one, tool_calls, input_types, config_list, inputs, runtimes)
+            ]
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -525,9 +537,14 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],
     ) -> Any:
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of the LangGrah runtime context (e.g., unit-tests)
+            runtime = None
         tool_calls, input_type = self._parse_input(input, store)
         outputs = await asyncio.gather(
-            *(self._arun_one(call, input_type, config) for call in tool_calls)
+            *(self._arun_one(call, input_type, config, input, runtime) for call in tool_calls)
         )
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -656,6 +673,8 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
     ) -> ToolMessage | Command:
         """Run a single tool call synchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
@@ -674,7 +693,7 @@ class ToolNode(RunnableCallable):
             tool_response = self._execute_tool_sync(tool_request, input_type)
         else:
             # Generator protocol: start generator, send responses, receive requests
-            gen = self._on_tool_call(tool_request)
+            gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
                 request = next(gen)
@@ -792,6 +811,8 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
     ) -> ToolMessage | Command:
         """Run a single tool call asynchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
@@ -810,7 +831,7 @@ class ToolNode(RunnableCallable):
             tool_response = await self._execute_tool_async(tool_request, input_type)
         else:
             # Generator protocol: handler is sync generator, tool execution is async
-            gen = self._on_tool_call(tool_request)
+            gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
                 request = next(gen)

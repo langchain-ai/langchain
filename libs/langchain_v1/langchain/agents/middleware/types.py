@@ -219,6 +219,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def on_tool_call(
         self,
         request: ToolCallRequest,
+        state: StateT,
+        runtime: Runtime[ContextT],
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Intercept tool execution to implement retry logic, monitoring, or request modification.
 
@@ -234,6 +236,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
         Args:
             request: Tool invocation details including tool_call, tool instance, and config.
+            state: Current agent state (readonly context).
+            runtime: LangGraph runtime for accessing user context (readonly context).
 
         Returns:
             Generator for request/response interception.
@@ -242,7 +246,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             Retry on rate limit with exponential backoff:
 
             ```python
-            def on_tool_call(self, request):
+            def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
                     response = yield request
                     if response.action == "return":

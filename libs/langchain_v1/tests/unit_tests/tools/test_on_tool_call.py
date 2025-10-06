@@ -41,7 +41,7 @@ def test_on_tool_call_passthrough() -> None:
     """Test that a simple passthrough handler works."""
 
     def passthrough_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Simply pass through without modification."""
         response = yield request
@@ -72,7 +72,7 @@ def test_on_tool_call_retry_success():
         rate_limit_tool._call_count = 0
 
     def retry_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Retry up to 3 times."""
         max_retries = 3
@@ -121,7 +121,7 @@ def test_on_tool_call_convert_error_to_message():
     """Test that handler can convert raised errors to error messages."""
 
     def error_to_message_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Convert any error to a user-friendly message."""
         response = yield request
@@ -165,7 +165,7 @@ def test_on_tool_call_let_error_raise():
     """Test that handler can let errors propagate."""
 
     def let_raise_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Just return the response as-is, letting errors raise."""
         response = yield request
@@ -193,7 +193,7 @@ def test_on_tool_call_with_handled_errors():
     call_count = {"count": 0}
 
     def counting_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Count how many times we're called."""
         call_count["count"] += 1
@@ -225,7 +225,7 @@ def test_on_tool_call_must_return_value():
     """Test that handler must return a ToolCallResponse."""
 
     def no_return_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Handler that doesn't return anything."""
         response = yield request
@@ -252,7 +252,7 @@ def test_on_tool_call_request_modification():
     """Test that handler can modify the request before execution."""
 
     def double_input_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Double the input value."""
         # Modify the tool call args
@@ -356,7 +356,7 @@ def test_on_tool_call_multiple_yields():
     attempts = {"count": 0}
 
     def multi_yield_handler(
-        request: ToolCallRequest,
+        request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Yield multiple times to track attempts."""
         max_attempts = 3

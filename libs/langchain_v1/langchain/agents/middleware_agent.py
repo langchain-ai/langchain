@@ -52,31 +52,6 @@ def _chain_tool_call_handlers(
 
     Returns:
         Single composed handler, or None if handlers is empty.
-
-    Example:
-        ```python
-        # Auth middleware (outer) + rate limit (inner)
-        def auth(req):
-            resp = yield req
-            if "unauthorized" in str(resp.exception):
-                refresh_token()
-                resp = yield req  # Retry
-            return resp
-
-
-        def rate_limit(req):
-            for attempt in range(3):
-                resp = yield req
-                if "rate limit" not in str(resp.exception):
-                    return resp
-                time.sleep(2**attempt)
-            return resp
-
-
-        handler = _chain_tool_call_handlers([auth, rate_limit])
-        # Request: auth -> rate_limit -> tool
-        # Response: tool -> rate_limit -> auth
-        ```
     """
     if not handlers:
         return None
@@ -96,8 +71,10 @@ def _chain_tool_call_handlers(
 
         def composed(
             request: ToolCallRequest,
+            state: Any,
+            runtime: Any,
         ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-            outer_gen = outer(request)
+            outer_gen = outer(request, state, runtime)
 
             # Initialize outer generator
             try:
@@ -107,7 +84,7 @@ def _chain_tool_call_handlers(
 
             # Outer retry loop
             while True:
-                inner_gen = inner(outer_request)
+                inner_gen = inner(outer_request, state, runtime)
 
                 # Initialize inner generator
                 try:
