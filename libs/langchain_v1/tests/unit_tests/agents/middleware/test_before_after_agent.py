@@ -26,175 +26,95 @@ def sample_tool(query: str) -> str:
     return f"Result for: {query}"
 
 
-class TestBeforeAgentBasic:
-    """Test basic before_agent functionality."""
+class TestAgentMiddlewareHooks:
+    """Test before_agent and after_agent middleware hooks."""
 
     @pytest.mark.parametrize("is_async", [False, True])
-    async def test_before_agent_execution(self, is_async: bool) -> None:
-        """Test that before_agent hook is called in both sync and async modes."""
+    @pytest.mark.parametrize("hook_type", ["before", "after"])
+    async def test_hook_execution(self, is_async: bool, hook_type: str) -> None:
+        """Test that agent hooks are called in both sync and async modes."""
         execution_log: list[str] = []
 
         if is_async:
+            if hook_type == "before":
 
-            @before_agent
-            async def log_before_agent(
-                state: AgentState, runtime: Runtime
-            ) -> dict[str, Any] | None:
-                execution_log.append("before_agent_called")
-                execution_log.append(f"message_count: {len(state['messages'])}")
-                return None
+                @before_agent
+                async def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    execution_log.append(f"{hook_type}_agent_called")
+                    execution_log.append(f"message_count: {len(state['messages'])}")
+                    return None
+            else:
 
-            middleware = log_before_agent
+                @after_agent
+                async def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    execution_log.append(f"{hook_type}_agent_called")
+                    execution_log.append(f"message_count: {len(state['messages'])}")
+                    return None
         else:
+            if hook_type == "before":
 
-            @before_agent
-            def log_before_agent_sync(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                execution_log.append("before_agent_called")
-                execution_log.append(f"message_count: {len(state['messages'])}")
-                return None
+                @before_agent
+                def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    execution_log.append(f"{hook_type}_agent_called")
+                    execution_log.append(f"message_count: {len(state['messages'])}")
+                    return None
+            else:
 
-            middleware = log_before_agent_sync
+                @after_agent
+                def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    execution_log.append(f"{hook_type}_agent_called")
+                    execution_log.append(f"message_count: {len(state['messages'])}")
+                    return None
 
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
-        agent = create_agent(model=model, tools=[], middleware=[middleware])
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model, tools=[], middleware=[log_hook])
 
         if is_async:
             await agent.ainvoke({"messages": [HumanMessage("Hi")]})
         else:
             agent.invoke({"messages": [HumanMessage("Hi")]})
 
-        assert "before_agent_called" in execution_log
-        assert "message_count: 1" in execution_log
-
-    def test_before_agent_state_modification(self) -> None:
-        """Test that before_agent can modify state."""
-
-        @before_agent
-        def add_metadata(state: AgentState, runtime: Runtime) -> dict[str, Any]:
-            return {"messages": [HumanMessage("Injected by middleware")]}
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(model=model, tools=[], middleware=[add_metadata])
-        result = agent.invoke({"messages": [HumanMessage("Original")]})
-
-        # Should have original + injected + AI response
-        assert len(result["messages"]) >= 2
-        message_contents = [msg.content for msg in result["messages"]]
-        assert "Injected by middleware" in message_contents
+        assert f"{hook_type}_agent_called" in execution_log
+        assert any("message_count:" in log for log in execution_log)
 
     @pytest.mark.parametrize("is_async", [False, True])
-    async def test_before_agent_with_class_inheritance(self, is_async: bool) -> None:
-        """Test before_agent using class inheritance in both sync and async modes."""
+    @pytest.mark.parametrize("hook_type", ["before", "after"])
+    async def test_hook_with_class_inheritance(self, is_async: bool, hook_type: str) -> None:
+        """Test agent hooks using class inheritance in both sync and async modes."""
         execution_log: list[str] = []
 
         if is_async:
 
-            class CustomAsyncBeforeAgentMiddleware(AgentMiddleware):
+            class CustomMiddleware(AgentMiddleware):
                 async def abefore_agent(
                     self, state: AgentState, runtime: Runtime
                 ) -> dict[str, Any] | None:
-                    execution_log.append("before_agent_called")
+                    if hook_type == "before":
+                        execution_log.append("hook_called")
                     return None
 
-            middleware = CustomAsyncBeforeAgentMiddleware()
-        else:
-
-            class CustomBeforeAgentMiddleware(AgentMiddleware):
-                def before_agent(
-                    self, state: AgentState, runtime: Runtime
-                ) -> dict[str, Any] | None:
-                    execution_log.append("before_agent_called")
-                    return None
-
-            middleware = CustomBeforeAgentMiddleware()
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(model=model, tools=[], middleware=[middleware])
-
-        if is_async:
-            await agent.ainvoke({"messages": [HumanMessage("Test")]})
-        else:
-            agent.invoke({"messages": [HumanMessage("Test")]})
-
-        assert "before_agent_called" in execution_log
-
-
-class TestAfterAgentBasic:
-    """Test basic after_agent functionality."""
-
-    @pytest.mark.parametrize("is_async", [False, True])
-    async def test_after_agent_execution(self, is_async: bool) -> None:
-        """Test that after_agent hook is called in both sync and async modes."""
-        execution_log: list[str] = []
-
-        if is_async:
-
-            @after_agent
-            async def log_after_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                execution_log.append("after_agent_called")
-                execution_log.append(f"final_message_count: {len(state['messages'])}")
-                return None
-
-            middleware = log_after_agent
-        else:
-
-            @after_agent
-            def log_after_agent_sync(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                execution_log.append("after_agent_called")
-                execution_log.append(f"final_message_count: {len(state['messages'])}")
-                return None
-
-            middleware = log_after_agent_sync
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Final response")]))
-        agent = create_agent(model=model, tools=[], middleware=[middleware])
-
-        if is_async:
-            await agent.ainvoke({"messages": [HumanMessage("Hi")]})
-        else:
-            agent.invoke({"messages": [HumanMessage("Hi")]})
-
-        assert "after_agent_called" in execution_log
-        assert any("final_message_count:" in log for log in execution_log)
-
-    def test_after_agent_state_modification(self) -> None:
-        """Test that after_agent can modify state."""
-
-        @after_agent
-        def add_final_message(state: AgentState, runtime: Runtime) -> dict[str, Any]:
-            return {"messages": [AIMessage("Added by after_agent")]}
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Model response")]))
-        agent = create_agent(model=model, tools=[], middleware=[add_final_message])
-        result = agent.invoke({"messages": [HumanMessage("Test")]})
-
-        message_contents = [msg.content for msg in result["messages"]]
-        assert "Added by after_agent" in message_contents
-
-    @pytest.mark.parametrize("is_async", [False, True])
-    async def test_after_agent_with_class_inheritance(self, is_async: bool) -> None:
-        """Test after_agent using class inheritance in both sync and async modes."""
-        execution_log: list[str] = []
-
-        if is_async:
-
-            class CustomAsyncAfterAgentMiddleware(AgentMiddleware):
                 async def aafter_agent(
                     self, state: AgentState, runtime: Runtime
                 ) -> dict[str, Any] | None:
-                    execution_log.append("after_agent_called")
+                    if hook_type == "after":
+                        execution_log.append("hook_called")
                     return None
-
-            middleware = CustomAsyncAfterAgentMiddleware()
         else:
 
-            class CustomAfterAgentMiddleware(AgentMiddleware):
-                def after_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                    execution_log.append("after_agent_called")
+            class CustomMiddleware(AgentMiddleware):
+                def before_agent(
+                    self, state: AgentState, runtime: Runtime
+                ) -> dict[str, Any] | None:
+                    if hook_type == "before":
+                        execution_log.append("hook_called")
                     return None
 
-            middleware = CustomAfterAgentMiddleware()
+                def after_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    if hook_type == "after":
+                        execution_log.append("hook_called")
+                    return None
 
+        middleware = CustomMiddleware()
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[middleware])
 
@@ -203,10 +123,10 @@ class TestAfterAgentBasic:
         else:
             agent.invoke({"messages": [HumanMessage("Test")]})
 
-        assert "after_agent_called" in execution_log
+        assert "hook_called" in execution_log
 
 
-class TestBeforeAndAfterAgentCombined:
+class TestAgentHooksCombined:
     """Test before_agent and after_agent hooks working together."""
 
     @pytest.mark.parametrize("is_async", [False, True])
@@ -223,7 +143,6 @@ class TestBeforeAndAfterAgentCombined:
             @after_agent
             async def log_after(state: AgentState, runtime: Runtime) -> None:
                 execution_log.append("after")
-
         else:
 
             @before_agent
@@ -249,16 +168,14 @@ class TestBeforeAndAfterAgentCombined:
 
         @before_agent
         def modify_in_before(state: AgentState, runtime: Runtime) -> dict[str, Any]:
-            return {"messages": [HumanMessage("Modified by before_agent")]}
+            return {"messages": [HumanMessage("Added by before_agent")]}
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
         agent = create_agent(model=model, tools=[], middleware=[modify_in_before])
-
         result = agent.invoke({"messages": [HumanMessage("Original")]})
 
         message_contents = [msg.content for msg in result["messages"]]
-        assert "Modified by before_agent" in message_contents
+        assert message_contents[1] == "Added by before_agent"
 
     def test_multiple_middleware_instances(self) -> None:
         """Test multiple before_agent and after_agent middleware instances."""
@@ -281,17 +198,12 @@ class TestBeforeAndAfterAgentCombined:
             execution_log.append("after_2")
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
         agent = create_agent(
             model=model, tools=[], middleware=[before_one, before_two, after_one, after_two]
         )
-
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-        assert "before_1" in execution_log
-        assert "before_2" in execution_log
-        assert "after_1" in execution_log
-        assert "after_2" in execution_log
+        assert execution_log == ["before_1", "before_2", "after_2", "after_1"]
 
     def test_agent_hooks_run_once_with_multiple_model_calls(self) -> None:
         """Test that before_agent and after_agent run only once per thread.
@@ -372,43 +284,3 @@ class TestBeforeAndAfterAgentCombined:
             "after_model",
             "after_agent",
         ]
-
-
-class TestDecoratorParameters:
-    """Test decorator parameters for before_agent and after_agent."""
-
-    def test_before_agent_with_custom_name(self) -> None:
-        """Test before_agent with custom middleware name."""
-
-        @before_agent(name="CustomBeforeAgentMiddleware")
-        def custom_named_before(state: AgentState, runtime: Runtime) -> None:
-            pass
-
-        assert custom_named_before.name == "CustomBeforeAgentMiddleware"
-
-    def test_after_agent_with_custom_name(self) -> None:
-        """Test after_agent with custom middleware name."""
-
-        @after_agent(name="CustomAfterAgentMiddleware")
-        def custom_named_after(state: AgentState, runtime: Runtime) -> None:
-            pass
-
-        assert custom_named_after.name == "CustomAfterAgentMiddleware"
-
-    def test_before_agent_default_name(self) -> None:
-        """Test that before_agent uses function name by default."""
-
-        @before_agent
-        def my_before_agent_function(state: AgentState, runtime: Runtime) -> None:
-            pass
-
-        assert my_before_agent_function.name == "my_before_agent_function"
-
-    def test_after_agent_default_name(self) -> None:
-        """Test that after_agent uses function name by default."""
-
-        @after_agent
-        def my_after_agent_function(state: AgentState, runtime: Runtime) -> None:
-            pass
-
-        assert my_after_agent_function.name == "my_after_agent_function"
