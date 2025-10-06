@@ -335,7 +335,9 @@ class TestBeforeAndAfterAgentCombined:
             middleware=[log_before_agent, log_before_model, log_after_model, log_after_agent],
         )
 
-        agent.invoke({"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}})
+        agent.invoke(
+            {"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}}
+        )
 
         assert execution_log == [
             "before_agent",
@@ -348,7 +350,9 @@ class TestBeforeAndAfterAgentCombined:
             "after_agent",
         ]
 
-        agent.invoke({"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}})
+        agent.invoke(
+            {"messages": [HumanMessage("Test")]}, config={"configurable": {"thread_id": "abc"}}
+        )
 
         assert execution_log == [
             "before_agent",
