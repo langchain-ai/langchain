@@ -855,9 +855,12 @@ def create_agent(  # noqa: PLR0915
         # - there are before/after model hooks -- to allow for jump_to between iterations
         # - there is a response format -- to allow for jumping to model to handle
         #   regenerating structured output tool calls
-        edge_destinations = ["tools", exit_node]
-        if middleware_w_before_model or middleware_w_after_model or response_format:
-            edge_destinations.append(loop_entry_node)
+        model_to_tools_destinations = ["tools", exit_node]
+        if response_format or (
+            loop_exit_node != "model"
+            and ("model" in _get_can_jump_to(middleware_w_after_model[0], "after_model"))
+        ):
+            model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
             loop_exit_node,
@@ -867,7 +870,7 @@ def create_agent(  # noqa: PLR0915
                 tool_node=tool_node,
                 end_destination=exit_node,
             ),
-            edge_destinations,
+            model_to_tools_destinations,
         )
     elif len(structured_output_tools) > 0:
         graph.add_conditional_edges(
@@ -1161,7 +1164,7 @@ def _add_middleware_edge(
         destinations = [default_destination]
 
         if "end" in can_jump_to:
-            destinations.append(END)
+            destinations.append(end_destination)
         if "tools" in can_jump_to:
             destinations.append("tools")
         if "model" in can_jump_to and name != model_destination:
