@@ -7,7 +7,13 @@
       "WebFetch(domain:ai.pydantic.dev)",
       "WebFetch(domain:openai.github.io)",
       "Bash(uv run:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(for file in test_middleware_agent.py test_middleware_decorators.py test_middleware_tools.py test_pii_middleware.py test_tool_call_limit.py)",
+      "Bash(do sed -i '' 's/from langchain\\.agents\\.middleware_agent import/from langchain.agents.factory import/g' \"$file\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
