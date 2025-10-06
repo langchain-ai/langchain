@@ -8,14 +8,14 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	__end__([<p>__end__</p>]):::last
-  	__start__ --> model_request;
-  	model_request --> __end__;
+  	__start__ --> model;
+  	model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.1
@@ -27,16 +27,16 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopOne\2ebefore_model(NoopOne.before_model)
   	__end__([<p>__end__</p>]):::last
-  	NoopOne\2ebefore_model --> model_request;
+  	NoopOne\2ebefore_model --> model;
   	__start__ --> NoopOne\2ebefore_model;
-  	model_request --> __end__;
+  	model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.10
@@ -48,18 +48,18 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopTen\2ebefore_model(NoopTen.before_model)
   	NoopTen\2eafter_model(NoopTen.after_model)
   	__end__([<p>__end__</p>]):::last
-  	NoopTen\2ebefore_model --> model_request;
+  	NoopTen\2ebefore_model --> model;
   	__start__ --> NoopTen\2ebefore_model;
-  	model_request --> NoopTen\2eafter_model;
+  	model --> NoopTen\2eafter_model;
   	NoopTen\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.11
@@ -71,22 +71,22 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopTen\2ebefore_model(NoopTen.before_model)
   	NoopTen\2eafter_model(NoopTen.after_model)
   	NoopEleven\2ebefore_model(NoopEleven.before_model)
   	NoopEleven\2eafter_model(NoopEleven.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEleven\2eafter_model --> NoopTen\2eafter_model;
-  	NoopEleven\2ebefore_model --> model_request;
+  	NoopEleven\2ebefore_model --> model;
   	NoopTen\2ebefore_model --> NoopEleven\2ebefore_model;
   	__start__ --> NoopTen\2ebefore_model;
-  	model_request --> NoopEleven\2eafter_model;
+  	model --> NoopEleven\2eafter_model;
   	NoopTen\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.2
@@ -98,18 +98,18 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopOne\2ebefore_model(NoopOne.before_model)
   	NoopTwo\2ebefore_model(NoopTwo.before_model)
   	__end__([<p>__end__</p>]):::last
   	NoopOne\2ebefore_model --> NoopTwo\2ebefore_model;
-  	NoopTwo\2ebefore_model --> model_request;
+  	NoopTwo\2ebefore_model --> model;
   	__start__ --> NoopOne\2ebefore_model;
-  	model_request --> __end__;
+  	model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.3
@@ -121,20 +121,20 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopOne\2ebefore_model(NoopOne.before_model)
   	NoopTwo\2ebefore_model(NoopTwo.before_model)
   	NoopThree\2ebefore_model(NoopThree.before_model)
   	__end__([<p>__end__</p>]):::last
   	NoopOne\2ebefore_model --> NoopTwo\2ebefore_model;
-  	NoopThree\2ebefore_model --> model_request;
+  	NoopThree\2ebefore_model --> model;
   	NoopTwo\2ebefore_model --> NoopThree\2ebefore_model;
   	__start__ --> NoopOne\2ebefore_model;
-  	model_request --> __end__;
+  	model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.4
@@ -146,16 +146,16 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopFour\2eafter_model(NoopFour.after_model)
   	__end__([<p>__end__</p>]):::last
-  	__start__ --> model_request;
-  	model_request --> NoopFour\2eafter_model;
+  	__start__ --> model;
+  	model --> NoopFour\2eafter_model;
   	NoopFour\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.5
@@ -167,18 +167,18 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopFour\2eafter_model(NoopFour.after_model)
   	NoopFive\2eafter_model(NoopFive.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopFive\2eafter_model --> NoopFour\2eafter_model;
-  	__start__ --> model_request;
-  	model_request --> NoopFive\2eafter_model;
+  	__start__ --> model;
+  	model --> NoopFive\2eafter_model;
   	NoopFour\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.6
@@ -190,20 +190,20 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopFour\2eafter_model(NoopFour.after_model)
   	NoopFive\2eafter_model(NoopFive.after_model)
   	NoopSix\2eafter_model(NoopSix.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopFive\2eafter_model --> NoopFour\2eafter_model;
   	NoopSix\2eafter_model --> NoopFive\2eafter_model;
-  	__start__ --> model_request;
-  	model_request --> NoopSix\2eafter_model;
+  	__start__ --> model;
+  	model --> NoopSix\2eafter_model;
   	NoopFour\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.7
@@ -215,18 +215,18 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
   	__end__([<p>__end__</p>]):::last
-  	NoopSeven\2ebefore_model --> model_request;
+  	NoopSeven\2ebefore_model --> model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopSeven\2eafter_model;
+  	model --> NoopSeven\2eafter_model;
   	NoopSeven\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.8
@@ -238,22 +238,22 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
   	NoopEight\2ebefore_model(NoopEight.before_model)
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model --> model;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	NoopSeven\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_diagram.9
@@ -265,7 +265,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
   	NoopEight\2ebefore_model(NoopEight.before_model)
@@ -276,15 +276,15 @@
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model --> NoopNine\2ebefore_model;
   	NoopNine\2eafter_model --> NoopEight\2eafter_model;
-  	NoopNine\2ebefore_model --> model_request;
+  	NoopNine\2ebefore_model --> model;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopNine\2eafter_model;
+  	model --> NoopNine\2eafter_model;
   	NoopSeven\2eafter_model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[memory]
@@ -296,7 +296,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	tools(tools)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
@@ -305,19 +305,19 @@
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model_request;
+  	NoopEight\2ebefore_model -.-> model;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[postgres]
@@ -329,7 +329,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	tools(tools)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
@@ -338,19 +338,19 @@
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model_request;
+  	NoopEight\2ebefore_model -.-> model;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[postgres_pipe]
@@ -362,7 +362,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	tools(tools)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
@@ -371,19 +371,19 @@
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model_request;
+  	NoopEight\2ebefore_model -.-> model;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[postgres_pool]
@@ -395,7 +395,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	tools(tools)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
@@ -404,19 +404,19 @@
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model_request;
+  	NoopEight\2ebefore_model -.-> model;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---
 # name: test_create_agent_jump[sqlite]
@@ -428,7 +428,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	tools(tools)
   	NoopSeven\2ebefore_model(NoopSeven.before_model)
   	NoopSeven\2eafter_model(NoopSeven.after_model)
@@ -437,18 +437,18 @@
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
   	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model_request;
+  	NoopEight\2ebefore_model -.-> model;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
   	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
   	__start__ --> NoopSeven\2ebefore_model;
-  	model_request --> NoopEight\2eafter_model;
+  	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-  
+
   '''
 # ---

@@ -219,7 +219,7 @@ def create_agent(  # noqa: PLR0915
         model: The language model for the agent. Can be a string identifier
             (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
         tools: A list of tools, dicts, or callables. If ``None`` or an empty list,
-            the agent will consist of a model_request node without a tool calling loop.
+            the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
             it will be converted to a SystemMessage and added to the beginning
             of the message list.
@@ -608,7 +608,7 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings), None
 
-    def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -674,7 +674,7 @@ def create_agent(  # noqa: PLR0915
         msg = f"Maximum retry attempts ({max_attempts}) exceeded"
         raise RuntimeError(msg)
 
-    async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -724,7 +724,7 @@ def create_agent(  # noqa: PLR0915
         raise RuntimeError(msg)
 
     # Use sync or async based on model capabilities
-    graph.add_node("model_request", RunnableCallable(model_request, amodel_request, trace=False))
+    graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
 
     # Only add tools node if we have tools
     if tool_node is not None:
@@ -808,27 +808,27 @@ def create_agent(  # noqa: PLR0915
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(f"{m.name}.after_agent", after_agent_node, input_schema=state_schema)
 
-    # Determine the entry node (runs once at start): before_agent -> before_model -> model_request
+    # Determine the entry node (runs once at start): before_agent -> before_model -> model
     if middleware_w_before_agent:
         entry_node = f"{middleware_w_before_agent[0].name}.before_agent"
     elif middleware_w_before_model:
         entry_node = f"{middleware_w_before_model[0].name}.before_model"
     else:
-        entry_node = "model_request"
+        entry_node = "model"
 
     # Determine the loop entry node (beginning of agent loop, excludes before_agent)
     # This is where tools will loop back to for the next iteration
     if middleware_w_before_model:
         loop_entry_node = f"{middleware_w_before_model[0].name}.before_model"
     else:
-        loop_entry_node = "model_request"
+        loop_entry_node = "model"
 
     # Determine the loop exit node (end of each iteration, can run multiple times)
-    # This is after_model or model_request, but NOT after_agent
+    # This is after_model or model, but NOT after_agent
     if middleware_w_after_model:
         loop_exit_node = f"{middleware_w_after_model[0].name}.after_model"
     else:
-        loop_exit_node = "model_request"
+        loop_exit_node = "model"
 
     # Determine the exit node (runs once at end): after_agent or END
     if middleware_w_after_agent:
@@ -860,7 +860,7 @@ def create_agent(  # noqa: PLR0915
             _make_model_to_model_edge(loop_entry_node, exit_node),
             [loop_entry_node, exit_node],
         )
-    elif loop_exit_node == "model_request":
+    elif loop_exit_node == "model":
         # If no tools and no after_model, go directly to exit_node
         graph.add_edge(loop_exit_node, exit_node)
     # No tools but we have after_model - connect after_model to exit_node
@@ -883,7 +883,7 @@ def create_agent(  # noqa: PLR0915
                 loop_entry_node,
                 can_jump_to=_get_can_jump_to(m1, "before_agent"),
             )
-        # Connect last before_agent to loop_entry_node (before_model or model_request)
+        # Connect last before_agent to loop_entry_node (before_model or model)
         _add_middleware_edge(
             graph,
             f"{middleware_w_before_agent[-1].name}.before_agent",
@@ -902,18 +902,18 @@ def create_agent(  # noqa: PLR0915
                 loop_entry_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
-        # Go directly to model_request after the last before_model
+        # Go directly to model after the last before_model
         _add_middleware_edge(
             graph,
             f"{middleware_w_before_model[-1].name}.before_model",
-            "model_request",
+            "model",
             loop_entry_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
         )
 
     # Add after_model middleware edges
     if middleware_w_after_model:
-        graph.add_edge("model_request", f"{middleware_w_after_model[-1].name}.after_model")
+        graph.add_edge("model", f"{middleware_w_after_model[-1].name}.after_model")
         for idx in range(len(middleware_w_after_model) - 1, 0, -1):
             m1 = middleware_w_after_model[idx]
             m2 = middleware_w_after_model[idx - 1]
