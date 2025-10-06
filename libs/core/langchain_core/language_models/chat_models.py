@@ -33,6 +33,10 @@ from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
+from langchain_core.language_models._serializable_structured_output import (
+    get_serializable_error_handler,
+    get_serializable_none_assigner,
+)
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
@@ -1631,9 +1635,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+                parsed=itemgetter("raw") | output_parser, parsing_error=get_serializable_error_handler()
             )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_none = RunnablePassthrough.assign(parsed=get_serializable_none_assigner())
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
