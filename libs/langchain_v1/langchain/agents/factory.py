@@ -217,9 +217,7 @@ def create_agent(  # noqa: PLR0915
 
     Args:
         model: The language model for the agent. Can be a string identifier
-            (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``),
-            or a callable that takes ``(state, runtime)`` and returns a ``BaseChatModel``
-            for dynamic model selection.
+            (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
         tools: A list of tools or a ToolNode instance. If ``None`` or an empty list,
             the agent will consist of a single LLM node without tool calling.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
