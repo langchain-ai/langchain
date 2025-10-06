@@ -2,6 +2,7 @@
 
 from typing import Any
 
+import pytest
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     AgentMiddleware,
@@ -26,44 +27,41 @@ def sample_tool(query: str) -> str:
 class TestBeforeAgentBasic:
     """Test basic before_agent functionality."""
 
-    def test_sync_before_agent_execution(self) -> None:
-        """Test that before_agent hook is called synchronously."""
-        execution_log = []
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_before_agent_execution(self, is_async: bool) -> None:
+        """Test that before_agent hook is called in both sync and async modes."""
+        execution_log: list[str] = []
 
-        @before_agent
-        def log_before_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            execution_log.append("before_agent_called")
-            execution_log.append(f"message_count: {len(state['messages'])}")
-            return None
+        if is_async:
+
+            @before_agent
+            async def log_before_agent(
+                state: AgentState, runtime: Runtime
+            ) -> dict[str, Any] | None:
+                execution_log.append("before_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
+
+            middleware = log_before_agent
+        else:
+
+            @before_agent
+            def log_before_agent_sync(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                execution_log.append("before_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
+
+            middleware = log_before_agent_sync
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
+        agent = create_agent(model=model, tools=[], middleware=[middleware])
 
-        agent = create_agent(model=model, tools=[], middleware=[log_before_agent])
-
-        agent.invoke({"messages": [HumanMessage("Hi")]})
+        if is_async:
+            await agent.ainvoke({"messages": [HumanMessage("Hi")]})
+        else:
+            agent.invoke({"messages": [HumanMessage("Hi")]})
 
         assert "before_agent_called" in execution_log
-        assert "message_count: 1" in execution_log
-
-    async def test_async_before_agent_execution(self) -> None:
-        """Test that before_agent hook is called asynchronously."""
-        execution_log = []
-
-        @before_agent
-        async def async_log_before_agent(
-            state: AgentState, runtime: Runtime
-        ) -> dict[str, Any] | None:
-            execution_log.append("async_before_agent_called")
-            execution_log.append(f"message_count: {len(state['messages'])}")
-            return None
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello!")]))
-
-        agent = create_agent(model=model, tools=[], middleware=[async_log_before_agent])
-
-        await agent.ainvoke({"messages": [HumanMessage("Hi")]})
-
-        assert "async_before_agent_called" in execution_log
         assert "message_count: 1" in execution_log
 
     def test_before_agent_state_modification(self) -> None:
@@ -74,9 +72,7 @@ class TestBeforeAgentBasic:
             return {"messages": [HumanMessage("Injected by middleware")]}
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
         agent = create_agent(model=model, tools=[], middleware=[add_metadata])
-
         result = agent.invoke({"messages": [HumanMessage("Original")]})
 
         # Should have original + injected + AI response
@@ -84,83 +80,80 @@ class TestBeforeAgentBasic:
         message_contents = [msg.content for msg in result["messages"]]
         assert "Injected by middleware" in message_contents
 
-    def test_before_agent_with_class_inheritance(self) -> None:
-        """Test before_agent using class inheritance."""
-        execution_log = []
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_before_agent_with_class_inheritance(self, is_async: bool) -> None:
+        """Test before_agent using class inheritance in both sync and async modes."""
+        execution_log: list[str] = []
 
-        class CustomBeforeAgentMiddleware(AgentMiddleware):
-            def before_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                execution_log.append("class_before_agent_called")
-                return None
+        if is_async:
 
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+            class CustomAsyncBeforeAgentMiddleware(AgentMiddleware):
+                async def abefore_agent(
+                    self, state: AgentState, runtime: Runtime
+                ) -> dict[str, Any] | None:
+                    execution_log.append("before_agent_called")
+                    return None
 
-        agent = create_agent(model=model, tools=[], middleware=[CustomBeforeAgentMiddleware()])
+            middleware = CustomAsyncBeforeAgentMiddleware()
+        else:
 
-        agent.invoke({"messages": [HumanMessage("Test")]})
+            class CustomBeforeAgentMiddleware(AgentMiddleware):
+                def before_agent(
+                    self, state: AgentState, runtime: Runtime
+                ) -> dict[str, Any] | None:
+                    execution_log.append("before_agent_called")
+                    return None
 
-        assert "class_before_agent_called" in execution_log
-
-    async def test_before_agent_with_async_class_inheritance(self) -> None:
-        """Test async before_agent using class inheritance."""
-        execution_log = []
-
-        class CustomAsyncBeforeAgentMiddleware(AgentMiddleware):
-            async def abefore_agent(
-                self, state: AgentState, runtime: Runtime
-            ) -> dict[str, Any] | None:
-                execution_log.append("async_class_before_agent_called")
-                return None
+            middleware = CustomBeforeAgentMiddleware()
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model, tools=[], middleware=[middleware])
 
-        agent = create_agent(model=model, tools=[], middleware=[CustomAsyncBeforeAgentMiddleware()])
+        if is_async:
+            await agent.ainvoke({"messages": [HumanMessage("Test")]})
+        else:
+            agent.invoke({"messages": [HumanMessage("Test")]})
 
-        await agent.ainvoke({"messages": [HumanMessage("Test")]})
-
-        assert "async_class_before_agent_called" in execution_log
+        assert "before_agent_called" in execution_log
 
 
 class TestAfterAgentBasic:
     """Test basic after_agent functionality."""
 
-    def test_sync_after_agent_execution(self) -> None:
-        """Test that after_agent hook is called synchronously."""
-        execution_log = []
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_after_agent_execution(self, is_async: bool) -> None:
+        """Test that after_agent hook is called in both sync and async modes."""
+        execution_log: list[str] = []
 
-        @after_agent
-        def log_after_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            execution_log.append("after_agent_called")
-            execution_log.append(f"final_message_count: {len(state['messages'])}")
-            return None
+        if is_async:
+
+            @after_agent
+            async def log_after_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                execution_log.append("after_agent_called")
+                execution_log.append(f"final_message_count: {len(state['messages'])}")
+                return None
+
+            middleware = log_after_agent
+        else:
+
+            @after_agent
+            def log_after_agent_sync(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                execution_log.append("after_agent_called")
+                execution_log.append(f"final_message_count: {len(state['messages'])}")
+                return None
+
+            middleware = log_after_agent_sync
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Final response")]))
+        agent = create_agent(model=model, tools=[], middleware=[middleware])
 
-        agent = create_agent(model=model, tools=[], middleware=[log_after_agent])
-
-        agent.invoke({"messages": [HumanMessage("Hi")]})
+        if is_async:
+            await agent.ainvoke({"messages": [HumanMessage("Hi")]})
+        else:
+            agent.invoke({"messages": [HumanMessage("Hi")]})
 
         assert "after_agent_called" in execution_log
         assert any("final_message_count:" in log for log in execution_log)
-
-    async def test_async_after_agent_execution(self) -> None:
-        """Test that after_agent hook is called asynchronously."""
-        execution_log = []
-
-        @after_agent
-        async def async_log_after_agent(
-            state: AgentState, runtime: Runtime
-        ) -> dict[str, Any] | None:
-            execution_log.append("async_after_agent_called")
-            return None
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
-        agent = create_agent(model=model, tools=[], middleware=[async_log_after_agent])
-
-        await agent.ainvoke({"messages": [HumanMessage("Hi")]})
-
-        assert "async_after_agent_called" in execution_log
 
     def test_after_agent_state_modification(self) -> None:
         """Test that after_agent can modify state."""
@@ -170,93 +163,84 @@ class TestAfterAgentBasic:
             return {"messages": [AIMessage("Added by after_agent")]}
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Model response")]))
-
         agent = create_agent(model=model, tools=[], middleware=[add_final_message])
-
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
         message_contents = [msg.content for msg in result["messages"]]
         assert "Added by after_agent" in message_contents
 
-    def test_after_agent_with_class_inheritance(self) -> None:
-        """Test after_agent using class inheritance."""
-        execution_log = []
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_after_agent_with_class_inheritance(self, is_async: bool) -> None:
+        """Test after_agent using class inheritance in both sync and async modes."""
+        execution_log: list[str] = []
 
-        class CustomAfterAgentMiddleware(AgentMiddleware):
-            def after_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                execution_log.append("class_after_agent_called")
-                return None
+        if is_async:
 
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+            class CustomAsyncAfterAgentMiddleware(AgentMiddleware):
+                async def aafter_agent(
+                    self, state: AgentState, runtime: Runtime
+                ) -> dict[str, Any] | None:
+                    execution_log.append("after_agent_called")
+                    return None
 
-        agent = create_agent(model=model, tools=[], middleware=[CustomAfterAgentMiddleware()])
+            middleware = CustomAsyncAfterAgentMiddleware()
+        else:
 
-        agent.invoke({"messages": [HumanMessage("Test")]})
+            class CustomAfterAgentMiddleware(AgentMiddleware):
+                def after_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                    execution_log.append("after_agent_called")
+                    return None
 
-        assert "class_after_agent_called" in execution_log
-
-    async def test_after_agent_with_async_class_inheritance(self) -> None:
-        """Test async after_agent using class inheritance."""
-        execution_log = []
-
-        class CustomAsyncAfterAgentMiddleware(AgentMiddleware):
-            async def aafter_agent(
-                self, state: AgentState, runtime: Runtime
-            ) -> dict[str, Any] | None:
-                execution_log.append("async_class_after_agent_called")
-                return None
+            middleware = CustomAfterAgentMiddleware()
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model, tools=[], middleware=[middleware])
 
-        agent = create_agent(model=model, tools=[], middleware=[CustomAsyncAfterAgentMiddleware()])
+        if is_async:
+            await agent.ainvoke({"messages": [HumanMessage("Test")]})
+        else:
+            agent.invoke({"messages": [HumanMessage("Test")]})
 
-        await agent.ainvoke({"messages": [HumanMessage("Test")]})
-
-        assert "async_class_after_agent_called" in execution_log
+        assert "after_agent_called" in execution_log
 
 
 class TestBeforeAndAfterAgentCombined:
     """Test before_agent and after_agent hooks working together."""
 
-    def test_execution_order(self) -> None:
-        """Test that before_agent executes before after_agent."""
-        execution_log = []
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_execution_order(self, is_async: bool) -> None:
+        """Test that before_agent executes before after_agent in both sync and async modes."""
+        execution_log: list[str] = []
 
-        @before_agent
-        def log_before(state: AgentState, runtime: Runtime) -> None:
-            execution_log.append("before")
+        if is_async:
 
-        @after_agent
-        def log_after(state: AgentState, runtime: Runtime) -> None:
-            execution_log.append("after")
+            @before_agent
+            async def log_before(state: AgentState, runtime: Runtime) -> None:
+                execution_log.append("before")
+
+            @after_agent
+            async def log_after(state: AgentState, runtime: Runtime) -> None:
+                execution_log.append("after")
+
+        else:
+
+            @before_agent
+            def log_before(state: AgentState, runtime: Runtime) -> None:
+                execution_log.append("before")
+
+            @after_agent
+            def log_after(state: AgentState, runtime: Runtime) -> None:
+                execution_log.append("after")
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
         agent = create_agent(model=model, tools=[], middleware=[log_before, log_after])
 
-        agent.invoke({"messages": [HumanMessage("Test")]})
+        if is_async:
+            await agent.ainvoke({"messages": [HumanMessage("Test")]})
+        else:
+            agent.invoke({"messages": [HumanMessage("Test")]})
 
         assert execution_log == ["before", "after"]
-
-    async def test_async_execution_order(self) -> None:
-        """Test async execution order of before_agent and after_agent."""
-        execution_log = []
-
-        @before_agent
-        async def async_log_before(state: AgentState, runtime: Runtime) -> None:
-            execution_log.append("async_before")
-
-        @after_agent
-        async def async_log_after(state: AgentState, runtime: Runtime) -> None:
-            execution_log.append("async_after")
-
-        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-
-        agent = create_agent(model=model, tools=[], middleware=[async_log_before, async_log_after])
-
-        await agent.ainvoke({"messages": [HumanMessage("Test")]})
-
-        assert execution_log == ["async_before", "async_after"]
 
     def test_state_passthrough(self) -> None:
         """Test that state modifications in before_agent are visible to after_agent."""
@@ -313,7 +297,13 @@ class TestBeforeAndAfterAgentCombined:
         assert "after_2" in execution_log
 
     def test_agent_hooks_run_once_with_multiple_model_calls(self) -> None:
-        """Test that before_agent and after_agent run only once even with tool calls."""
+        """Test that before_agent and after_agent run only once per thread.
+
+        This test verifies that agent-level hooks (before_agent, after_agent) execute
+        exactly once per agent invocation, regardless of how many tool calling loops occur.
+        This is different from model-level hooks (before_model, after_model) which run
+        on every model invocation within the tool calling loop.
+        """
         execution_log = []
 
         @before_agent
@@ -324,11 +314,13 @@ class TestBeforeAndAfterAgentCombined:
         def log_after_agent(state: AgentState, runtime: Runtime) -> None:
             execution_log.append("after_agent")
 
-        # Model will call a tool once, then respond with final answer
+        # Model will call a tool twice, then respond with final answer
+        # This creates 3 model invocations total, but agent hooks should still run once
         model = FakeToolCallingModel(
             tool_calls=[
-                [{"name": "sample_tool", "args": {"query": "test"}, "id": "1"}],
-                [],  # Second call returns no tool calls (final answer)
+                [{"name": "sample_tool", "args": {"query": "first"}, "id": "1"}],
+                [{"name": "sample_tool", "args": {"query": "second"}, "id": "2"}],
+                [],  # Third call returns no tool calls (final answer)
             ]
         )
 
@@ -340,9 +332,13 @@ class TestBeforeAndAfterAgentCombined:
 
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-        # before_agent and after_agent should run exactly once
-        assert execution_log.count("before_agent") == 1
-        assert execution_log.count("after_agent") == 1
+        # before_agent and after_agent should run exactly once, despite 3 model calls
+        assert execution_log.count("before_agent") == 1, (
+            f"before_agent ran {execution_log.count('before_agent')} times, expected 1"
+        )
+        assert execution_log.count("after_agent") == 1, (
+            f"after_agent ran {execution_log.count('after_agent')} times, expected 1"
+        )
         # before_agent should run first, after_agent should run last
         assert execution_log[0] == "before_agent"
         assert execution_log[-1] == "after_agent"
