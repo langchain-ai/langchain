@@ -308,8 +308,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def aon_model_call(
         self,
         request: ModelRequest,
-        state: StateT,
-        runtime: Runtime[ContextT],
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
         """Async-compatible generator-based hook to intercept and control model execution.
 
@@ -1373,14 +1373,15 @@ def on_model_call(
             runtime: Runtime[ContextT],
         ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
             # Forward the generator yields and sends
-            gen = func(request, state, runtime)  # type: ignore[arg-type]
-            response = None
+            gen = func(request, state, runtime)
             try:
+                # Initialize generator with first next()
+                request_to_send = next(gen)
+                response = yield request_to_send
+
+                # Forward subsequent sends
                 while True:
-                    if response is None:
-                        request_to_send = gen.send(None)
-                    else:
-                        request_to_send = gen.send(response)
+                    request_to_send = gen.send(response)
                     response = yield request_to_send
             except StopIteration as e:
                 # Validate the return value
@@ -1396,7 +1397,7 @@ def on_model_call(
                         f"got {type(e.value).__name__} instead"
                     )
                     raise TypeError(msg)
-                return e.value  # type: ignore[return-value]
+                return e.value
 
         middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
 

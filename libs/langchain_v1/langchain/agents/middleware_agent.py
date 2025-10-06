@@ -1,7 +1,7 @@
 """Middleware agent implementation."""
 
 import itertools
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -64,8 +64,7 @@ def _validate_handler_return(value: Any) -> ModelResponse:
 
     if not isinstance(value, ModelResponse):
         msg = (
-            f"on_model_call handler must return a ModelResponse, "
-            f"got {type(value).__name__} instead"
+            f"on_model_call handler must return a ModelResponse, got {type(value).__name__} instead"
         )
         raise TypeError(msg)
 
@@ -73,15 +72,15 @@ def _validate_handler_return(value: Any) -> ModelResponse:
 
 
 def _chain_model_call_handlers(
-    handlers: list[
+    handlers: Sequence[
         Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, AgentState, Runtime],
+        [ModelRequest, Any, Any],
         Generator[ModelRequest, ModelResponse, ModelResponse],
     ]
     | None
@@ -131,23 +130,23 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ],
         inner: Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ],
     ) -> Callable[
-        [ModelRequest, AgentState, Runtime],
+        [ModelRequest, Any, Any],
         Generator[ModelRequest, ModelResponse, ModelResponse],
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            state: AgentState,
-            runtime: Runtime,
+            state: Any,
+            runtime: Any,
         ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
             outer_gen = outer(request, state, runtime)
 
@@ -462,17 +461,19 @@ def create_agent(  # noqa: PLR0915
     # Compose on_model_call handlers into a single middleware stack
     on_model_call_handler = None
     if middleware_w_on_model_call:
-        # Check if all middleware have sync implementations
+        # Collect sync implementations from all middleware
         sync_handlers = []
+        all_have_sync = True
         for m in middleware_w_on_model_call:
             if m.__class__.on_model_call is not AgentMiddleware.on_model_call:
                 sync_handlers.append(m.on_model_call)
             else:
                 # No sync implementation for this middleware
-                sync_handlers.append(None)
+                all_have_sync = False
+                break
 
         # Only compose if all have sync implementations
-        if all(h is not None for h in sync_handlers):
+        if all_have_sync and sync_handlers:
             on_model_call_handler = _chain_model_call_handlers(sync_handlers)
 
     state_schemas = {m.state_schema for m in middleware}
@@ -712,7 +713,8 @@ def create_agent(  # noqa: PLR0915
 
             output = model_.invoke(messages)
             return ModelResponse(action="return", result=output)
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001
+            # Catch all exceptions from model invocation to wrap in ModelResponse
             return ModelResponse(action="raise", exception=error)
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -740,6 +742,7 @@ def create_agent(  # noqa: PLR0915
                 raise TypeError(msg)
 
         # Execute with or without handler
+        current_request = request
         if on_model_call_handler is None:
             # No handlers - execute directly
             model_response = _execute_model_sync(request)
@@ -798,7 +801,8 @@ def create_agent(  # noqa: PLR0915
 
             output = await model_.ainvoke(messages)
             return ModelResponse(action="return", result=output)
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001
+            # Catch all exceptions from model invocation to wrap in ModelResponse
             return ModelResponse(action="raise", exception=error)
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -818,6 +822,7 @@ def create_agent(  # noqa: PLR0915
 
         # Execute with or without handler
         # Note: handler is sync generator, but model execution is async
+        current_request = request
         if on_model_call_handler is None:
             # No handlers - execute directly
             model_response = await _execute_model_async(request)
