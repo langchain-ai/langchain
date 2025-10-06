@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -92,7 +92,7 @@ class DocstoreExplorer:
     def __init__(self, docstore: Docstore):
         """Initialize with a docstore, and set initial document to None."""
         self.docstore = docstore
-        self.document: Optional[Document] = None
+        self.document: Document | None = None
         self.lookup_str = ""
         self.lookup_index = 0
 

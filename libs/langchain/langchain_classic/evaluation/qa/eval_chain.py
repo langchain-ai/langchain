@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import string
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -23,7 +23,7 @@ from langchain_classic.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain_classic.schema import RUN_KEY
 
 
-def _get_score(text: str) -> Optional[tuple[str, int]]:
+def _get_score(text: str) -> tuple[str, int] | None:
     match = re.search(r"grade:\s*(correct|incorrect)", text.strip(), re.IGNORECASE)
     if match:
         if match.group(1).upper() == "CORRECT":
@@ -107,7 +107,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: PromptTemplate | None = None,
         **kwargs: Any,
     ) -> QAEvalChain:
         """Load QA Eval Chain from LLM.
@@ -168,8 +168,8 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
         include_run_info: bool = False,
         **kwargs: Any,
@@ -205,8 +205,8 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
         include_run_info: bool = False,
         **kwargs: Any,
@@ -260,7 +260,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: PromptTemplate | None = None,
         **kwargs: Any,
     ) -> ContextQAEvalChain:
         """Load QA Eval Chain from LLM.
@@ -315,8 +315,8 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
         include_run_info: bool = False,
         **kwargs: Any,
@@ -337,8 +337,8 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
         include_run_info: bool = False,
         **kwargs: Any,
@@ -368,7 +368,7 @@ class CotQAEvalChain(ContextQAEvalChain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: PromptTemplate | None = None,
         **kwargs: Any,
     ) -> CotQAEvalChain:
         """Load QA Eval Chain from LLM."""

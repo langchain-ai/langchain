@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -78,7 +78,7 @@ class StructuredChatAgent(Agent):
     @override
     def _get_default_output_parser(
         cls,
-        llm: Optional[BaseLanguageModel] = None,
+        llm: BaseLanguageModel | None = None,
         **kwargs: Any,
     ) -> AgentOutputParser:
         return StructuredChatOutputParserWithRetries.from_llm(llm=llm)
@@ -97,8 +97,8 @@ class StructuredChatAgent(Agent):
         suffix: str = SUFFIX,
         human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[list[str]] = None,
-        memory_prompts: Optional[list[BasePromptTemplate]] = None,
+        input_variables: list[str] | None = None,
+        memory_prompts: list[BasePromptTemplate] | None = None,
     ) -> BasePromptTemplate:
         tool_strings = []
         for tool in tools:
@@ -123,14 +123,14 @@ class StructuredChatAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        output_parser: Optional[AgentOutputParser] = None,
+        callback_manager: BaseCallbackManager | None = None,
+        output_parser: AgentOutputParser | None = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         human_message_template: str = HUMAN_MESSAGE_TEMPLATE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[list[str]] = None,
-        memory_prompts: Optional[list[BasePromptTemplate]] = None,
+        input_variables: list[str] | None = None,
+        memory_prompts: list[BasePromptTemplate] | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools."""
@@ -169,7 +169,7 @@ def create_structured_chat_agent(
     prompt: ChatPromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description_and_args,
     *,
-    stop_sequence: Union[bool, list[str]] = True,
+    stop_sequence: bool | list[str] = True,
 ) -> Runnable:
     """Create an agent aimed at supporting tools with multiple inputs.
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
@@ -48,8 +48,8 @@ class ElasticsearchDatabaseChain(Chain):
     """Elasticsearch database to connect to of type elasticsearch.Elasticsearch."""
     top_k: int = 10
     """Number of results to return from the query"""
-    ignore_indices: Optional[list[str]] = None
-    include_indices: Optional[list[str]] = None
+    ignore_indices: list[str] | None = None
+    include_indices: list[str] | None = None
     input_key: str = "question"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     sample_documents_in_index_info: int = 3
@@ -123,7 +123,7 @@ class ElasticsearchDatabaseChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         input_text = f"{inputs[self.input_key]}\nESQuery:"
@@ -186,9 +186,9 @@ class ElasticsearchDatabaseChain(Chain):
         llm: BaseLanguageModel,
         database: Elasticsearch,
         *,
-        query_prompt: Optional[BasePromptTemplate] = None,
-        answer_prompt: Optional[BasePromptTemplate] = None,
-        query_output_parser: Optional[BaseOutputParser] = None,
+        query_prompt: BasePromptTemplate | None = None,
+        answer_prompt: BasePromptTemplate | None = None,
+        query_output_parser: BaseOutputParser | None = None,
         **kwargs: Any,
     ) -> ElasticsearchDatabaseChain:
         """Convenience method to construct ElasticsearchDatabaseChain from an LLM.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Mapping
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -20,7 +20,7 @@ from langchain_classic.chains.base import Chain
 class Route(NamedTuple):
     """A route to a destination chain."""
 
-    destination: Optional[str]
+    destination: str | None
     next_inputs: dict[str, Any]
 
 
@@ -100,7 +100,7 @@ class MultiRouteChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
@@ -125,7 +125,7 @@ class MultiRouteChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()

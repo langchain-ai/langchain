@@ -8,7 +8,7 @@ import logging
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import yaml
 from langchain_core._api import deprecated
@@ -72,7 +72,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             chains and cannot return as rich of an output as `__call__`.
     """
 
-    memory: Optional[BaseMemory] = None
+    memory: BaseMemory | None = None
     """Optional memory object. Defaults to None.
     Memory is a class that gets called at the start
     and at the end of every chain. At the start, memory loads variables and passes
@@ -89,19 +89,19 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     """Whether or not run in verbose mode. In verbose mode, some intermediate logs
     will be printed to the console. Defaults to the global `verbose` value,
     accessible via `langchain.globals.get_verbose()`."""
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
     """Optional list of tags associated with the chain. Defaults to None.
     These tags will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
-    metadata: Optional[dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
     """Optional metadata associated with the chain. Defaults to None.
     This metadata will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    callback_manager: BaseCallbackManager | None = Field(default=None, exclude=True)
     """[DEPRECATED] Use `callbacks` instead."""
 
     model_config = ConfigDict(
@@ -111,7 +111,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @override
     def get_input_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model("ChainInput", **dict.fromkeys(self.input_keys, (Any, None)))
@@ -119,7 +119,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @override
     def get_output_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
         return create_model(
@@ -131,7 +131,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def invoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         config = ensure_config(config)
@@ -187,7 +187,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     async def ainvoke(
         self,
         input: dict[str, Any],
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         config = ensure_config(config)
@@ -266,7 +266,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @classmethod
     def set_verbose(
         cls,
-        verbose: Optional[bool],  # noqa: FBT001
+        verbose: bool | None,  # noqa: FBT001
     ) -> bool:
         """Set the chain verbosity.
 
@@ -318,7 +318,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Execute the chain.
 
@@ -340,7 +340,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
@@ -368,13 +368,13 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @deprecated("0.1.0", alternative="invoke", removal="1.0")
     def __call__(
         self,
-        inputs: Union[dict[str, Any], Any],
+        inputs: dict[str, Any] | Any,
         return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_name: Optional[str] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_name: str | None = None,
         include_run_info: bool = False,
     ) -> dict[str, Any]:
         """Execute the chain.
@@ -420,13 +420,13 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @deprecated("0.1.0", alternative="ainvoke", removal="1.0")
     async def acall(
         self,
-        inputs: Union[dict[str, Any], Any],
+        inputs: dict[str, Any] | Any,
         return_only_outputs: bool = False,  # noqa: FBT001,FBT002
         callbacks: Callbacks = None,
         *,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_name: Optional[str] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_name: str | None = None,
         include_run_info: bool = False,
     ) -> dict[str, Any]:
         """Asynchronously execute the chain.
@@ -518,7 +518,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             return outputs
         return {**inputs, **outputs}
 
-    def prep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
+    def prep_inputs(self, inputs: dict[str, Any] | Any) -> dict[str, str]:
         """Prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -542,7 +542,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             inputs = dict(inputs, **external_context)
         return inputs
 
-    async def aprep_inputs(self, inputs: Union[dict[str, Any], Any]) -> dict[str, str]:
+    async def aprep_inputs(self, inputs: dict[str, Any] | Any) -> dict[str, str]:
         """Prepare chain inputs, including adding inputs from memory.
 
         Args:
@@ -581,8 +581,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         *args: Any,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Convenience method for executing chain.
@@ -656,8 +656,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         *args: Any,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Convenience method for executing chain.
@@ -759,7 +759,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             _dict["_type"] = self._chain_type
         return _dict
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the chain.
 
         Expects `Chain._chain_type` property to be implemented and for memory to be

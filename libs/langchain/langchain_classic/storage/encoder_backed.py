@@ -1,10 +1,7 @@
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
-    Callable,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from langchain_core.stores import BaseStore
@@ -66,7 +63,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         self.value_serializer = value_serializer
         self.value_deserializer = value_deserializer
 
-    def mget(self, keys: Sequence[K]) -> list[Optional[V]]:
+    def mget(self, keys: Sequence[K]) -> list[V | None]:
         """Get the values associated with the given keys."""
         encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = self.store.mget(encoded_keys)
@@ -75,7 +72,7 @@ class EncoderBackedStore(BaseStore[K, V]):
             for value in values
         ]
 
-    async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
+    async def amget(self, keys: Sequence[K]) -> list[V | None]:
         """Get the values associated with the given keys."""
         encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = await self.store.amget(encoded_keys)
@@ -113,8 +110,8 @@ class EncoderBackedStore(BaseStore[K, V]):
     def yield_keys(
         self,
         *,
-        prefix: Optional[str] = None,
-    ) -> Union[Iterator[K], Iterator[str]]:
+        prefix: str | None = None,
+    ) -> Iterator[K] | Iterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.
@@ -123,8 +120,8 @@ class EncoderBackedStore(BaseStore[K, V]):
     async def ayield_keys(
         self,
         *,
-        prefix: Optional[str] = None,
-    ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
+        prefix: str | None = None,
+    ) -> AsyncIterator[K] | AsyncIterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.

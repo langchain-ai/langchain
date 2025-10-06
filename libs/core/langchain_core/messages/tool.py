@@ -1,7 +1,7 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Literal, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
@@ -147,22 +147,22 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize ``ToolMessage``.
@@ -176,7 +176,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         """
         if content_blocks is not None:
             super().__init__(
-                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                content=cast("str | list[str | dict]", content_blocks),
                 **kwargs,
             )
         else:
@@ -233,7 +233,7 @@ class ToolCall(TypedDict):
     """The name of the tool to be called."""
     args: dict[str, Any]
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -247,7 +247,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],
+    id: str | None,
 ) -> ToolCall:
     """Create a tool call.
 
@@ -283,23 +283,23 @@ class ToolCallChunk(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call."""
-    index: Optional[int]
+    index: int | None
     """The index of the tool call in a sequence."""
     type: NotRequired[Literal["tool_call_chunk"]]
 
 
 def tool_call_chunk(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[int] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    index: int | None = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
 
@@ -319,10 +319,10 @@ def tool_call_chunk(
 
 def invalid_tool_call(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    error: Optional[str] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    error: str | None = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
 

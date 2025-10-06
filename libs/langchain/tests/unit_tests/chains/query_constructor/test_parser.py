@@ -1,6 +1,6 @@
 """Test LLM-generated structured query parsing."""
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import lark
 import pytest
@@ -145,7 +145,7 @@ def test_parse_date_value(x: str) -> None:
         ),
     ],
 )
-def test_parse_datetime_value(x: str, expected: Optional[dict[str, str]]) -> None:
+def test_parse_datetime_value(x: str, expected: dict[str, str] | None) -> None:
     """Test parsing of datetime values with ISO 8601 format."""
     parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
     actual = parsed.value

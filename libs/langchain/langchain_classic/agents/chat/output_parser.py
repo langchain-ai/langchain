@@ -1,7 +1,6 @@
 import json
 import re
 from re import Pattern
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -25,7 +24,7 @@ class ChatOutputParser(AgentOutputParser):
         """Returns formatting instructions for the given output parser."""
         return self.format_instructions
 
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         """Parse the output from the agent into an AgentAction or AgentFinish object.
 
         Args:

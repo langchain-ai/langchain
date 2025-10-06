@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -29,7 +29,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
     """Number of messages to store in buffer."""
 
     @property
-    def buffer(self) -> Union[str, list[BaseMessage]]:
+    def buffer(self) -> str | list[BaseMessage]:
         """String buffer of memory."""
         return self.buffer_as_messages if self.return_messages else self.buffer_as_str
 

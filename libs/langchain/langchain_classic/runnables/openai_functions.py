@@ -1,6 +1,6 @@
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from operator import itemgetter
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -23,18 +23,15 @@ class OpenAIFunction(TypedDict):
 class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):  # type: ignore[no-redef]
     """A runnable that routes to the selected function."""
 
-    functions: Optional[list[OpenAIFunction]]
+    functions: list[OpenAIFunction] | None
 
     def __init__(
         self,
         runnables: Mapping[
             str,
-            Union[
-                Runnable[dict, Any],
-                Callable[[dict], Any],
-            ],
+            Runnable[dict, Any] | Callable[[dict], Any],
         ],
-        functions: Optional[list[OpenAIFunction]] = None,
+        functions: list[OpenAIFunction] | None = None,
     ):
         """Initialize the OpenAIFunctionsRouter.
 

@@ -6,7 +6,7 @@ https://arxiv.org/abs/2212.10496
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.embeddings import Embeddings
@@ -70,7 +70,10 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
             if not embeddings:
                 return []
             num_vectors = len(embeddings)
-            return [sum(dim_values) / num_vectors for dim_values in zip(*embeddings)]
+            return [
+                sum(dim_values) / num_vectors
+                for dim_values in zip(*embeddings, strict=False)
+            ]
 
     def embed_query(self, text: str) -> list[float]:
         """Generate a hypothetical document and embedded it."""
@@ -86,7 +89,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         """Call the internal llm chain."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
@@ -100,8 +103,8 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         cls,
         llm: BaseLanguageModel,
         base_embeddings: Embeddings,
-        prompt_key: Optional[str] = None,
-        custom_prompt: Optional[BasePromptTemplate] = None,
+        prompt_key: str | None = None,
+        custom_prompt: BasePromptTemplate | None = None,
         **kwargs: Any,
     ) -> HypotheticalDocumentEmbedder:
         """Load and use LLMChain with either a specific prompt key or custom prompt."""

@@ -9,13 +9,10 @@ import json
 import logging
 import time
 from abc import abstractmethod
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -63,7 +60,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return values of the agent."""
         return ["output"]
 
-    def get_allowed_tools(self) -> Optional[list[str]]:
+    def get_allowed_tools(self) -> list[str] | None:
         """Get allowed tools."""
         return None
 
@@ -73,7 +70,7 @@ class BaseSingleActionAgent(BaseModel):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -92,7 +89,7 @@ class BaseSingleActionAgent(BaseModel):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -146,7 +143,7 @@ class BaseSingleActionAgent(BaseModel):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
+        callback_manager: BaseCallbackManager | None = None,
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools.
@@ -185,7 +182,7 @@ class BaseSingleActionAgent(BaseModel):
             _dict["_type"] = _type
         return _dict
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the agent.
 
         Args:
@@ -233,7 +230,7 @@ class BaseMultiActionAgent(BaseModel):
         """Return values of the agent."""
         return ["output"]
 
-    def get_allowed_tools(self) -> Optional[list[str]]:
+    def get_allowed_tools(self) -> list[str] | None:
         """Get allowed tools.
 
         Returns:
@@ -247,7 +244,7 @@ class BaseMultiActionAgent(BaseModel):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[list[AgentAction], AgentFinish]:
+    ) -> list[AgentAction] | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -266,7 +263,7 @@ class BaseMultiActionAgent(BaseModel):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[list[AgentAction], AgentFinish]:
+    ) -> list[AgentAction] | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -325,7 +322,7 @@ class BaseMultiActionAgent(BaseModel):
             _dict["_type"] = str(self._agent_type)
         return _dict
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the agent.
 
         Args:
@@ -369,16 +366,16 @@ class BaseMultiActionAgent(BaseModel):
         return {}
 
 
-class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
+class AgentOutputParser(BaseOutputParser[AgentAction | AgentFinish]):
     """Base class for parsing agent output into agent action/finish."""
 
     @abstractmethod
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         """Parse text into agent action/finish."""
 
 
 class MultiActionAgentOutputParser(
-    BaseOutputParser[Union[list[AgentAction], AgentFinish]],
+    BaseOutputParser[list[AgentAction] | AgentFinish],
 ):
     """Base class for parsing agent output into agent actions/finish.
 
@@ -386,7 +383,7 @@ class MultiActionAgentOutputParser(
     """
 
     @abstractmethod
-    def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
+    def parse(self, text: str) -> list[AgentAction] | AgentFinish:
         """Parse text into agent actions/finish.
 
         Args:
@@ -401,7 +398,7 @@ class MultiActionAgentOutputParser(
 class RunnableAgent(BaseSingleActionAgent):
     """Agent powered by Runnables."""
 
-    runnable: Runnable[dict, Union[AgentAction, AgentFinish]]
+    runnable: Runnable[dict, AgentAction | AgentFinish]
     """Runnable to call to get agent action."""
     input_keys_arg: list[str] = []
     return_keys_arg: list[str] = []
@@ -433,7 +430,7 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -469,10 +466,7 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        AgentAction,
-        AgentFinish,
-    ]:
+    ) -> AgentAction | AgentFinish:
         """Async based on past history and current inputs, decide what to do.
 
         Args:
@@ -512,7 +506,7 @@ class RunnableAgent(BaseSingleActionAgent):
 class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Agent powered by Runnables."""
 
-    runnable: Runnable[dict, Union[list[AgentAction], AgentFinish]]
+    runnable: Runnable[dict, list[AgentAction] | AgentFinish]
     """Runnable to call to get agent actions."""
     input_keys_arg: list[str] = []
     return_keys_arg: list[str] = []
@@ -548,10 +542,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        list[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> list[AgentAction] | AgentFinish:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -587,10 +578,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        list[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> list[AgentAction] | AgentFinish:
         """Async based on past history and current inputs, decide what to do.
 
         Args:
@@ -664,7 +652,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -689,7 +677,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -734,7 +722,7 @@ class Agent(BaseSingleActionAgent):
     """LLMChain to use for agent."""
     output_parser: AgentOutputParser
     """Output parser to use for agent."""
-    allowed_tools: Optional[list[str]] = None
+    allowed_tools: list[str] | None = None
     """Allowed tools for the agent. If None, all tools are allowed."""
 
     @override
@@ -744,7 +732,7 @@ class Agent(BaseSingleActionAgent):
         del _dict["output_parser"]
         return _dict
 
-    def get_allowed_tools(self) -> Optional[list[str]]:
+    def get_allowed_tools(self) -> list[str] | None:
         """Get allowed tools."""
         return self.allowed_tools
 
@@ -763,7 +751,7 @@ class Agent(BaseSingleActionAgent):
     def _construct_scratchpad(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
-    ) -> Union[str, list[BaseMessage]]:
+    ) -> str | list[BaseMessage]:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts = ""
         for action, observation in intermediate_steps:
@@ -776,7 +764,7 @@ class Agent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -797,7 +785,7 @@ class Agent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -910,8 +898,8 @@ class Agent(BaseSingleActionAgent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        output_parser: Optional[AgentOutputParser] = None,
+        callback_manager: BaseCallbackManager | None = None,
+        output_parser: AgentOutputParser | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.
@@ -1016,7 +1004,7 @@ class ExceptionTool(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
         return query
 
@@ -1024,19 +1012,19 @@ class ExceptionTool(BaseTool):
     async def _arun(
         self,
         query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
     ) -> str:
         return query
 
 
-NextStepOutput = list[Union[AgentFinish, AgentAction, AgentStep]]
-RunnableAgentType = Union[RunnableAgent, RunnableMultiActionAgent]
+NextStepOutput = list[AgentFinish | AgentAction | AgentStep]
+RunnableAgentType = RunnableAgent | RunnableMultiActionAgent
 
 
 class AgentExecutor(Chain):
     """Agent that is using tools."""
 
-    agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable]
+    agent: BaseSingleActionAgent | BaseMultiActionAgent | Runnable
     """The agent to run for creating a plan and determining actions
     to take at each step of the execution loop."""
     tools: Sequence[BaseTool]
@@ -1044,12 +1032,12 @@ class AgentExecutor(Chain):
     return_intermediate_steps: bool = False
     """Whether to return the agent's trajectory of intermediate steps
     at the end in addition to the final output."""
-    max_iterations: Optional[int] = 15
+    max_iterations: int | None = 15
     """The maximum number of steps to take before ending the execution
     loop.
 
     Setting to 'None' could lead to an infinite loop."""
-    max_execution_time: Optional[float] = None
+    max_execution_time: float | None = None
     """The maximum amount of wall clock time to spend in the execution
     loop.
     """
@@ -1063,9 +1051,7 @@ class AgentExecutor(Chain):
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
-    handle_parsing_errors: Union[bool, str, Callable[[OutputParserException], str]] = (
-        False
-    )
+    handle_parsing_errors: bool | str | Callable[[OutputParserException], str] = False
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
@@ -1074,10 +1060,9 @@ class AgentExecutor(Chain):
      as an argument, and the result of that function will be passed to the agent
       as an observation.
     """
-    trim_intermediate_steps: Union[
-        int,
-        Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]],
-    ] = -1
+    trim_intermediate_steps: (
+        int | Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]]
+    ) = -1
     """How to trim the intermediate steps before returning them.
     Defaults to -1, which means no trimming.
     """
@@ -1085,7 +1070,7 @@ class AgentExecutor(Chain):
     @classmethod
     def from_agent_and_tools(
         cls,
-        agent: Union[BaseSingleActionAgent, BaseMultiActionAgent, Runnable],
+        agent: BaseSingleActionAgent | BaseMultiActionAgent | Runnable,
         tools: Sequence[BaseTool],
         callbacks: Callbacks = None,
         **kwargs: Any,
@@ -1155,7 +1140,7 @@ class AgentExecutor(Chain):
                 logger.exception("Unexpected error getting OutputType from agent")
                 multi_action = False
             else:
-                multi_action = output_type == Union[list[AgentAction], AgentFinish]
+                multi_action = output_type == list[AgentAction] | AgentFinish
 
             stream_runnable = values.pop("stream_runnable", True)
             if multi_action:
@@ -1171,7 +1156,7 @@ class AgentExecutor(Chain):
         return values
 
     @property
-    def _action_agent(self) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
+    def _action_agent(self) -> BaseSingleActionAgent | BaseMultiActionAgent:
         """Type cast self.agent.
 
         If the `agent` attribute is a Runnable, it will be converted one of
@@ -1185,7 +1170,7 @@ class AgentExecutor(Chain):
         return self.agent
 
     @override
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Raise error - saving not supported for Agent Executors.
 
         Args:
@@ -1201,7 +1186,7 @@ class AgentExecutor(Chain):
         )
         raise ValueError(msg)
 
-    def save_agent(self, file_path: Union[Path, str]) -> None:
+    def save_agent(self, file_path: Path | str) -> None:
         """Save the underlying agent.
 
         Args:
@@ -1274,7 +1259,7 @@ class AgentExecutor(Chain):
         self,
         output: AgentFinish,
         intermediate_steps: list,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         if run_manager:
             run_manager.on_agent_finish(output, color="green", verbose=self.verbose)
@@ -1287,7 +1272,7 @@ class AgentExecutor(Chain):
         self,
         output: AgentFinish,
         intermediate_steps: list,
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         if run_manager:
             await run_manager.on_agent_finish(
@@ -1303,7 +1288,7 @@ class AgentExecutor(Chain):
     def _consume_next_step(
         self,
         values: NextStepOutput,
-    ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
+    ) -> AgentFinish | list[tuple[AgentAction, str]]:
         if isinstance(values[-1], AgentFinish):
             if len(values) != 1:
                 msg = "Expected a single AgentFinish output, but got multiple values."
@@ -1317,8 +1302,8 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
+        run_manager: CallbackManagerForChainRun | None = None,
+    ) -> AgentFinish | list[tuple[AgentAction, str]]:
         return self._consume_next_step(
             list(
                 self._iter_next_step(
@@ -1337,8 +1322,8 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Iterator[Union[AgentFinish, AgentAction, AgentStep]]:
+        run_manager: CallbackManagerForChainRun | None = None,
+    ) -> Iterator[AgentFinish | AgentAction | AgentStep]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -1415,7 +1400,7 @@ class AgentExecutor(Chain):
         name_to_tool_map: dict[str, BaseTool],
         color_mapping: dict[str, str],
         agent_action: AgentAction,
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
@@ -1455,8 +1440,8 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
+    ) -> AgentFinish | list[tuple[AgentAction, str]]:
         return self._consume_next_step(
             [
                 a
@@ -1476,8 +1461,8 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentStep]]:
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
+    ) -> AsyncIterator[AgentFinish | AgentAction | AgentStep]:
         """Take a single step in the thought-action-observation loop.
 
         Override this to take control of how the agent makes and acts on choices.
@@ -1562,7 +1547,7 @@ class AgentExecutor(Chain):
         name_to_tool_map: dict[str, BaseTool],
         color_mapping: dict[str, str],
         agent_action: AgentAction,
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> AgentStep:
         if run_manager:
             await run_manager.on_agent_action(
@@ -1603,7 +1588,7 @@ class AgentExecutor(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
@@ -1657,7 +1642,7 @@ class AgentExecutor(Chain):
     async def _acall(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         """Async run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
@@ -1730,7 +1715,7 @@ class AgentExecutor(Chain):
     def _get_tool_return(
         self,
         next_step_output: tuple[AgentAction, str],
-    ) -> Optional[AgentFinish]:
+    ) -> AgentFinish | None:
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -1764,8 +1749,8 @@ class AgentExecutor(Chain):
     @override
     def stream(
         self,
-        input: Union[dict[str, Any], Any],
-        config: Optional[RunnableConfig] = None,
+        input: dict[str, Any] | Any,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[AddableDict]:
         """Enables streaming over steps taken to reach final output.
@@ -1795,8 +1780,8 @@ class AgentExecutor(Chain):
     @override
     async def astream(
         self,
-        input: Union[dict[str, Any], Any],
-        config: Optional[RunnableConfig] = None,
+        input: dict[str, Any] | Any,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[AddableDict]:
         """Async enables streaming over steps taken to reach final output.

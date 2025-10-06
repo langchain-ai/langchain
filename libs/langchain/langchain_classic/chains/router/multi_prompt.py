@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -159,7 +159,7 @@ class MultiPromptChain(MultiRouteChain):
         cls,
         llm: BaseLanguageModel,
         prompt_infos: list[dict[str, str]],
-        default_chain: Optional[Chain] = None,
+        default_chain: Chain | None = None,
         **kwargs: Any,
     ) -> MultiPromptChain:
         """Convenience constructor for instantiating from destination prompts."""

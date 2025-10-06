@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from json import JSONDecodeError
 from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -107,7 +104,7 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
 
 def _is_assistants_builtin_tool(
-    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
 ) -> bool:
     """Determine if tool corresponds to OpenAI Assistants built-in."""
     assistants_builtin_tools = ("code_interpreter", "file_search")
@@ -119,7 +116,7 @@ def _is_assistants_builtin_tool(
 
 
 def _get_assistants_tool(
-    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
@@ -131,12 +128,12 @@ def _get_assistants_tool(
     return convert_to_openai_tool(tool)
 
 
-OutputType = Union[
-    list[OpenAIAssistantAction],
-    OpenAIAssistantFinish,
-    list["ThreadMessage"],
-    list["RequiredActionFunctionToolCall"],
-]
+OutputType = (
+    list[OpenAIAssistantAction]
+    | OpenAIAssistantFinish
+    | list["ThreadMessage"]
+    | list["RequiredActionFunctionToolCall"]
+)
 
 
 class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
@@ -260,10 +257,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         cls,
         name: str,
         instructions: str,
-        tools: Sequence[Union[BaseTool, dict]],
+        tools: Sequence[BaseTool | dict],
         model: str,
         *,
-        client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
+        client: openai.OpenAI | openai.AzureOpenAI | None = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
@@ -293,7 +290,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     def invoke(
         self,
         input: dict,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> OutputType:
         """Invoke assistant.
@@ -392,12 +389,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         cls,
         name: str,
         instructions: str,
-        tools: Sequence[Union[BaseTool, dict]],
+        tools: Sequence[BaseTool | dict],
         model: str,
         *,
-        async_client: Optional[
-            Union[openai.AsyncOpenAI, openai.AsyncAzureOpenAI]
-        ] = None,
+        async_client: openai.AsyncOpenAI | openai.AsyncAzureOpenAI | None = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Async create an AsyncOpenAI Assistant and instantiate the Runnable.
@@ -428,7 +423,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     async def ainvoke(
         self,
         input: dict,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> OutputType:
         """Async invoke assistant.

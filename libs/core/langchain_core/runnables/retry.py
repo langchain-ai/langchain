@@ -3,9 +3,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -126,7 +124,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     wait_exponential_jitter: bool = True
     """Whether to add jitter to the exponential backoff."""
 
-    exponential_jitter_params: Optional[ExponentialJitterParams] = None
+    exponential_jitter_params: ExponentialJitterParams | None = None
     """Parameters for ``tenacity.wait_exponential_jitter``. Namely: ``initial``,
     ``max``, ``exp_base``, and ``jitter`` (all float values).
     """
@@ -174,7 +172,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         retry_state: RetryCallState,
     ) -> list[RunnableConfig]:
         return [
-            self._patch_config(c, rm, retry_state) for c, rm in zip(config, run_manager)
+            self._patch_config(c, rm, retry_state)
+            for c, rm in zip(config, run_manager, strict=False)
         ]
 
     def _invoke(
@@ -197,7 +196,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
@@ -221,7 +220,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     @override
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
@@ -231,7 +230,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         run_manager: list["CallbackManagerForChainRun"],
         config: list[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
+    ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
         not_set: list[Output] = []
@@ -280,7 +279,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -292,7 +291,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     def batch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
@@ -307,7 +306,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         run_manager: list["AsyncCallbackManagerForChainRun"],
         config: list[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
+    ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
         not_set: list[Output] = []
@@ -355,7 +354,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -367,7 +366,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     async def abatch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,

@@ -1,6 +1,6 @@
 """Pass input through a moderation endpoint."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -33,14 +33,14 @@ class OpenAIModerationChain(Chain):
 
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model_name: Optional[str] = None
+    model_name: str | None = None
     """Moderation model name to use."""
     error: bool = False
     """Whether or not to error if bad content was found."""
     input_key: str = "input"  #: :meta private:
     output_key: str = "output"  #: :meta private:
-    openai_api_key: Optional[str] = None
-    openai_organization: Optional[str] = None
+    openai_api_key: str | None = None
+    openai_organization: str | None = None
     openai_pre_1_0: bool = Field(default=False)
 
     @model_validator(mode="before")
@@ -112,7 +112,7 @@ class OpenAIModerationChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         text = inputs[self.input_key]
         if self.openai_pre_1_0:
@@ -126,7 +126,7 @@ class OpenAIModerationChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         if self.openai_pre_1_0:
             return await super()._acall(inputs, run_manager=run_manager)

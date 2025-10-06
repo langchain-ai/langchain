@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
@@ -36,7 +36,7 @@ class MockVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         return list(texts)
@@ -56,7 +56,7 @@ class MockVectorStore(VectorStore):
         cls: type["MockVectorStore"],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> "MockVectorStore":
         return cls()

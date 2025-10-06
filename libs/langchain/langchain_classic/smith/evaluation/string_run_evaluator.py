@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -58,9 +58,7 @@ class StringRunMapper(Serializable):
 class LLMStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object."""
 
-    def serialize_chat_messages(
-        self, messages: Union[list[dict], list[list[dict]]]
-    ) -> str:
+    def serialize_chat_messages(self, messages: list[dict] | list[list[dict]]) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
             if isinstance(messages[0], dict):
@@ -116,11 +114,11 @@ class LLMStringRunMapper(StringRunMapper):
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
             raise ValueError(msg)
-        generations: Union[list[dict], list[list[dict]]] = outputs["generations"]
+        generations: list[dict] | list[list[dict]] = outputs["generations"]
         if not generations:
             msg = "Cannot evaluate LLM run with empty generations."
             raise ValueError(msg)
-        first_generation: Union[dict, list[dict]] = generations[0]
+        first_generation: dict | list[dict] = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
             # Whereas Runs from the API have a list of dicts
@@ -158,16 +156,16 @@ class LLMStringRunMapper(StringRunMapper):
 class ChainStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object from a chain."""
 
-    input_key: Optional[str] = None
+    input_key: str | None = None
     """The key from the model Run's inputs to use as the eval input.
     If not provided, will use the only input key or raise an
     error if there are multiple."""
-    prediction_key: Optional[str] = None
+    prediction_key: str | None = None
     """The key from the model Run's outputs to use as the eval prediction.
     If not provided, will use the only output key or raise an error
     if there are multiple."""
 
-    def _get_key(self, source: dict, key: Optional[str], which: str) -> str:
+    def _get_key(self, source: dict, key: str | None, which: str) -> str:
         if key is not None:
             return source[key]
         if len(source) == 1:
@@ -227,7 +225,7 @@ class ToolStringRunMapper(StringRunMapper):
 class StringExampleMapper(Serializable):
     """Map an example, or row in the dataset, to the inputs of an evaluation."""
 
-    reference_key: Optional[str] = None
+    reference_key: str | None = None
 
     @property
     def output_keys(self) -> list[str]:
@@ -279,7 +277,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     run_mapper: StringRunMapper
     """Maps the Run to a dictionary with 'input' and 'prediction' strings."""
-    example_mapper: Optional[StringExampleMapper] = None
+    example_mapper: StringExampleMapper | None = None
     """Maps the Example (dataset row) to a dictionary
     with a 'reference' string."""
     name: str
@@ -299,7 +297,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     def _prepare_input(self, inputs: dict[str, Any]) -> dict[str, str]:
         run: Run = inputs["run"]
-        example: Optional[Example] = inputs.get("example")
+        example: Example | None = inputs.get("example")
         evaluate_strings_inputs = self.run_mapper(run)
         if not self.string_evaluator.requires_input:
             # Hide warning about unused input
@@ -329,7 +327,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)
@@ -345,7 +343,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def _acall(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Call the evaluation chain."""
         evaluate_strings_inputs = self._prepare_input(inputs)
@@ -368,8 +366,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     def evaluate_run(
         self,
         run: Run,
-        example: Optional[Example] = None,
-        evaluator_run_id: Optional[uuid.UUID] = None,
+        example: Example | None = None,
+        evaluator_run_id: uuid.UUID | None = None,
     ) -> EvaluationResult:
         """Evaluate an example."""
         try:
@@ -387,8 +385,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     async def aevaluate_run(
         self,
         run: Run,
-        example: Optional[Example] = None,
-        evaluator_run_id: Optional[uuid.UUID] = None,
+        example: Example | None = None,
+        evaluator_run_id: uuid.UUID | None = None,
     ) -> EvaluationResult:
         """Evaluate an example."""
         try:
@@ -410,10 +408,10 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         evaluator: StringEvaluator,
         run_type: str,
         data_type: DataType,
-        input_key: Optional[str] = None,
-        prediction_key: Optional[str] = None,
-        reference_key: Optional[str] = None,
-        tags: Optional[list[str]] = None,
+        input_key: str | None = None,
+        prediction_key: str | None = None,
+        reference_key: str | None = None,
+        tags: list[str] | None = None,
     ) -> StringRunEvaluatorChain:
         """Create a StringRunEvaluatorChain.
 

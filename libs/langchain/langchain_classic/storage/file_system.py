@@ -3,7 +3,6 @@ import re
 import time
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 from langchain_core.stores import ByteStore
 
@@ -40,10 +39,10 @@ class LocalFileStore(ByteStore):
 
     def __init__(
         self,
-        root_path: Union[str, Path],
+        root_path: str | Path,
         *,
-        chmod_file: Optional[int] = None,
-        chmod_dir: Optional[int] = None,
+        chmod_file: int | None = None,
+        chmod_dir: int | None = None,
         update_atime: bool = False,
     ) -> None:
         """Implement the BaseStore interface for the local file system.
@@ -107,7 +106,7 @@ class LocalFileStore(ByteStore):
             if self.chmod_dir is not None:
                 dir_path.chmod(self.chmod_dir)
 
-    def mget(self, keys: Sequence[str]) -> list[Optional[bytes]]:
+    def mget(self, keys: Sequence[str]) -> list[bytes | None]:
         """Get the values associated with the given keys.
 
         Args:
@@ -117,7 +116,7 @@ class LocalFileStore(ByteStore):
             A sequence of optional values associated with the keys.
             If a key is not found, the corresponding value will be None.
         """
-        values: list[Optional[bytes]] = []
+        values: list[bytes | None] = []
         for key in keys:
             full_path = self._get_full_path(key)
             if full_path.exists():
@@ -160,7 +159,7 @@ class LocalFileStore(ByteStore):
             if full_path.exists():
                 full_path.unlink()
 
-    def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
+    def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:

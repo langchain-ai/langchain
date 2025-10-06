@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -68,7 +68,7 @@ class XMLAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         log = ""
         for action, observation in intermediate_steps:
             log += (
@@ -93,7 +93,7 @@ class XMLAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         log = ""
         for action, observation in intermediate_steps:
             log += (
@@ -119,7 +119,7 @@ def create_xml_agent(
     prompt: BasePromptTemplate,
     tools_renderer: ToolsRenderer = render_text_description,
     *,
-    stop_sequence: Union[bool, list[str]] = True,
+    stop_sequence: bool | list[str] = True,
 ) -> Runnable:
     r"""Create an agent that uses XML to format its logic.
 

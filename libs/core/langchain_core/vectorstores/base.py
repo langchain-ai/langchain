@@ -25,13 +25,12 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Optional,
     TypeVar,
 )
 
@@ -62,9 +61,9 @@ class VectorStore(ABC):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -98,10 +97,10 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
+            ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
             ]
             if ids is not None:
                 # For backward compatibility
@@ -112,7 +111,7 @@ class VectorStore(ABC):
         raise NotImplementedError(msg)
 
     @property
-    def embeddings(self) -> Optional[Embeddings]:
+    def embeddings(self) -> Embeddings | None:
         """Access the query embedding object if available."""
         logger.debug(
             "The embeddings property has not been implemented for %s",
@@ -120,7 +119,7 @@ class VectorStore(ABC):
         )
         return None
 
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -188,9 +187,7 @@ class VectorStore(ABC):
         """
         return await run_in_executor(None, self.get_by_ids, ids)
 
-    async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    async def adelete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Async delete by vector ID or other criteria.
 
         Args:
@@ -206,9 +203,9 @@ class VectorStore(ABC):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """Async run more texts through the embeddings and add to the vectorstore.
@@ -244,11 +241,11 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
+            ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
 
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
             ]
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
@@ -872,9 +869,9 @@ class VectorStore(ABC):
         cls: type[VST],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings.
@@ -896,9 +893,9 @@ class VectorStore(ABC):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> Self:
         """Async return VectorStore initialized from texts and embeddings.

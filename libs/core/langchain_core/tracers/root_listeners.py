@@ -1,7 +1,7 @@
 """Tracers that call listeners."""
 
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -14,10 +14,10 @@ from langchain_core.tracers.schemas import Run
 if TYPE_CHECKING:
     from uuid import UUID
 
-Listener = Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-AsyncListener = Union[
-    Callable[[Run], Awaitable[None]], Callable[[Run, RunnableConfig], Awaitable[None]]
-]
+Listener = Callable[[Run], None] | Callable[[Run, RunnableConfig], None]
+AsyncListener = (
+    Callable[[Run], Awaitable[None]] | Callable[[Run, RunnableConfig], Awaitable[None]]
+)
 
 
 class RootListenersTracer(BaseTracer):
@@ -30,9 +30,9 @@ class RootListenersTracer(BaseTracer):
         self,
         *,
         config: RunnableConfig,
-        on_start: Optional[Listener],
-        on_end: Optional[Listener],
-        on_error: Optional[Listener],
+        on_start: Listener | None,
+        on_end: Listener | None,
+        on_error: Listener | None,
     ) -> None:
         """Initialize the tracer.
 
@@ -48,7 +48,7 @@ class RootListenersTracer(BaseTracer):
         self._arg_on_start = on_start
         self._arg_on_end = on_end
         self._arg_on_error = on_error
-        self.root_id: Optional[UUID] = None
+        self.root_id: UUID | None = None
 
     def _persist_run(self, run: Run) -> None:
         # This is a legacy method only called once for an entire run tree
@@ -85,9 +85,9 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         self,
         *,
         config: RunnableConfig,
-        on_start: Optional[AsyncListener],
-        on_end: Optional[AsyncListener],
-        on_error: Optional[AsyncListener],
+        on_start: AsyncListener | None,
+        on_end: AsyncListener | None,
+        on_error: AsyncListener | None,
     ) -> None:
         """Initialize the tracer.
 
@@ -103,7 +103,7 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         self._arg_on_start = on_start
         self._arg_on_end = on_end
         self._arg_on_error = on_error
-        self.root_id: Optional[UUID] = None
+        self.root_id: UUID | None = None
 
     async def _persist_run(self, run: Run) -> None:
         # This is a legacy method only called once for an entire run tree

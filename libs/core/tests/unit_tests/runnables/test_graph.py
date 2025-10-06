@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from packaging import version
@@ -484,7 +484,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -509,7 +509,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input

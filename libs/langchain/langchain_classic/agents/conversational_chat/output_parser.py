@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.utils.json import parse_json_markdown
@@ -21,7 +19,7 @@ class ConvoOutputParser(AgentOutputParser):
         """Returns formatting instructions for the given output parser."""
         return self.format_instructions
 
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         """Attempts to parse the given text into an AgentAction or AgentFinish.
 
         Raises:

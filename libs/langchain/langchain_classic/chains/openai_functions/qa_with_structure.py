@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -38,9 +38,9 @@ class AnswerWithSources(BaseModel):
 )
 def create_qa_with_structure_chain(
     llm: BaseLanguageModel,
-    schema: Union[dict, type[BaseModel]],
+    schema: dict | type[BaseModel],
     output_parser: str = "base",
-    prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
+    prompt: PromptTemplate | ChatPromptTemplate | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> LLMChain:
     """Create a question answering chain with structure.
