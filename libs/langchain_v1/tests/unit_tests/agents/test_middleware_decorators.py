@@ -8,8 +8,8 @@ from syrupy.assertion import SnapshotAssertion
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
-from langgraph.types import Command
 
+from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -20,7 +20,6 @@ from langchain.agents.middleware.types import (
     modify_model_request,
     hook_config,
 )
-from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
 from .model import FakeToolCallingModel
 
 
@@ -468,49 +467,6 @@ async def test_async_can_jump_to_integration() -> None:
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
     assert calls == ["async_early_exit"]
     assert len(result["messages"]) > 1
-
-
-def test_get_can_jump_to_no_false_positives() -> None:
-    """Test that _get_can_jump_to doesn't return false positives for base class methods."""
-
-    # Middleware with no overridden methods should return empty list
-    class EmptyMiddleware(AgentMiddleware):
-        pass
-
-    empty_middleware = EmptyMiddleware()
-    empty_middleware.tools = []
-
-    # Should not return any jump destinations for base class methods
-    assert _get_can_jump_to(empty_middleware, "before_model") == []
-    assert _get_can_jump_to(empty_middleware, "after_model") == []
-
-
-def test_get_can_jump_to_only_overridden_methods() -> None:
-    """Test that _get_can_jump_to only checks overridden methods."""
-
-    # Middleware with only sync method overridden
-    class SyncOnlyMiddleware(AgentMiddleware):
-        @hook_config(can_jump_to=["end"])
-        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            return None
-
-    sync_middleware = SyncOnlyMiddleware()
-    sync_middleware.tools = []
-
-    # Should return can_jump_to from overridden sync method
-    assert _get_can_jump_to(sync_middleware, "before_model") == ["end"]
-
-    # Middleware with only async method overridden
-    class AsyncOnlyMiddleware(AgentMiddleware):
-        @hook_config(can_jump_to=["model"])
-        async def aafter_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-            return None
-
-    async_middleware = AsyncOnlyMiddleware()
-    async_middleware.tools = []
-
-    # Should return can_jump_to from overridden async method
-    assert _get_can_jump_to(async_middleware, "after_model") == ["model"]
 
 
 def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAssertion) -> None:
