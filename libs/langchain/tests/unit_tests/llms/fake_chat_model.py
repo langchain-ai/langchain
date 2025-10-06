@@ -2,7 +2,7 @@
 
 import re
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,8 +26,8 @@ class FakeChatModel(SimpleChatModel):
     def _call(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         return "fake response"
@@ -36,8 +36,8 @@ class FakeChatModel(SimpleChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         output_str = "fake response"
@@ -70,10 +70,10 @@ class GenericFakeChatModel(BaseChatModel):
     This can be expanded to accept other types like ``Callables`` / dicts / strings
     to make the interface more generic if needed.
 
-    .. note::
+    !!! note
         If you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    .. warning::
+    !!! warning
         Streaming is not implemented yet. We should try to implement it in the future by
         delegating to invoke and then breaking the resulting output into message chunks.
 
@@ -83,8 +83,8 @@ class GenericFakeChatModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
@@ -95,8 +95,8 @@ class GenericFakeChatModel(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
@@ -201,8 +201,8 @@ class GenericFakeChatModel(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Stream the output of the model."""

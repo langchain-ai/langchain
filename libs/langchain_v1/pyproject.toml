@@ -1,14 +1,14 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.75,<2.0.0",
-    "langchain-text-splitters>=0.3.11,<2.0.0",
+    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-text-splitters>=1.0.0a1,<2.0.0",
     "langgraph>=1.0.0a4,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
@@ -26,16 +26,16 @@ openai = ["langchain-openai"]
 #cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
-#fireworks = ["langchain-fireworks"]
-#ollama = ["langchain-ollama"]
+fireworks = ["langchain-fireworks"]
+ollama = ["langchain-ollama"]
 together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
 #huggingface = ["langchain-huggingface"]
-#groq = ["langchain-groq"]
+groq = ["langchain-groq"]
 aws = ["langchain-aws"]
-#deepseek = ["langchain-deepseek"]
-#xai = ["langchain-xai"]
-#perplexity = ["langchain-perplexity"]
+deepseek = ["langchain-deepseek"]
+xai = ["langchain-xai"]
+perplexity = ["langchain-perplexity"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"

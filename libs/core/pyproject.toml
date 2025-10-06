@@ -1,6 +1,6 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
@@ -72,9 +72,6 @@ enable_error_code = "deprecated"
 disallow_any_generics = false
 warn_return_any = false
 
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

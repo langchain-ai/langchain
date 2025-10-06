@@ -4,23 +4,21 @@ This module was adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
-    We may change the API at any time with no warning.
+    This module is for internal use only. Do not use it in your own code. We may change
+    the API at any time with no warning.
 """
 
 import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import (
     Any,
-    Callable,
     ParamSpec,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -42,7 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 
 
 # Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
+T = TypeVar("T", bound=type | Callable[..., Any] | Any)
 
 
 def _validate_deprecation_params(
@@ -276,7 +274,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast("Union[type, Callable]", obj.fget).__qualname__
+            _name = _name or cast("type | Callable", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -284,19 +282,17 @@ def deprecated(
 
                 def __init__(
                     self,
-                    fget: Union[Callable[[Any], Any], None] = None,
-                    fset: Union[Callable[[Any, Any], None], None] = None,
-                    fdel: Union[Callable[[Any], None], None] = None,
-                    doc: Union[str, None] = None,
+                    fget: Callable[[Any], Any] | None = None,
+                    fset: Callable[[Any, Any], None] | None = None,
+                    fdel: Callable[[Any], None] | None = None,
+                    doc: str | None = None,
                 ) -> None:
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
 
-                def __get__(
-                    self, instance: Any, owner: Union[type, None] = None
-                ) -> Any:
+                def __get__(self, instance: Any, owner: type | None = None) -> Any:
                     if instance is not None or owner is not None:
                         emit_warning()
                     if self.fget is None:
@@ -315,7 +311,7 @@ def deprecated(
                     if self.fdel is not None:
                         self.fdel(instance)
 
-                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
+                def __set_name__(self, owner: type | None, set_name: str) -> None:
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
@@ -330,7 +326,7 @@ def deprecated(
                 )
 
         else:
-            _name = _name or cast("Union[type, Callable]", obj).__qualname__
+            _name = _name or cast("type | Callable", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -363,19 +359,15 @@ def deprecated(
             _alternative
             and _alternative.rsplit(".", maxsplit=1)[-1].lower()
             == _alternative.rsplit(".", maxsplit=1)[-1]
-        ):
-            _alternative = f":meth:`~{_alternative}`"
-        elif _alternative:
-            _alternative = f":class:`~{_alternative}`"
+        ) or _alternative:
+            _alternative = f"`{_alternative}`"
 
         if (
             _alternative_import
             and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
             == _alternative_import.rsplit(".", maxsplit=1)[-1]
-        ):
-            _alternative_import = f":meth:`~{_alternative_import}`"
-        elif _alternative_import:
-            _alternative_import = f":class:`~{_alternative_import}`"
+        ) or _alternative_import:
+            _alternative_import = f"`{_alternative_import}`"
 
         components = [
             _message,
@@ -395,7 +387,7 @@ def deprecated(
         else:
             removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since} {details} {removal_str}
+!!! deprecated "{since} {details} {removal_str}"
 
 {old_doc}\
 """
@@ -544,9 +536,9 @@ def rename_parameter(
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Decorator indicating that parameter *old* of *func* is renamed to *new*.
 
-    The actual implementation of *func* should use *new*, not *old*.  If *old*
-    is passed to *func*, a DeprecationWarning is emitted, and its value is
-    used, even if *new* is also passed by keyword.
+    The actual implementation of *func* should use *new*, not *old*. If *old* is passed
+    to *func*, a DeprecationWarning is emitted, and its value is used, even if *new* is
+    also passed by keyword.
 
     Args:
         since: The version in which the parameter was renamed.

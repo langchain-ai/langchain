@@ -1,6 +1,6 @@
 """Standard, multimodal content blocks for Large Language Model I/O.
 
-.. warning::
+!!! warning
     This module is under active development. The API is unstable and subject to
     change in future releases.
 
@@ -27,18 +27,18 @@ Furthermore, provider-specific fields **within** a standard block are fully supp
 by default in the ``extras`` field of each block. This allows for additional metadata
 to be included without breaking the standard structure.
 
-.. warning::
+!!! warning
     Do not heavily rely on the ``extras`` field for provider-specific data! This field
     is subject to deprecation in future releases as we move towards PEP 728.
 
-.. note::
+!!! note
     Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we
     will add ``extra_items=Any`` as a param to Content Blocks. This will signify to type
     checkers that additional provider-specific fields are allowed outside of the
     ``extras`` field, and that will become the new standard approach to adding
     provider-specific metadata.
 
-    .. dropdown::
+    ??? note
 
         **Example with PEP 728 provider-specific fields:**
 
@@ -129,7 +129,7 @@ Factory functions offer benefits such as:
 
 """
 
-from typing import Any, Literal, Optional, Union, get_args, get_type_hints
+from typing import Any, Literal, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -139,12 +139,12 @@ from langchain_core.utils.utils import ensure_id
 class Citation(TypedDict):
     """Annotation for citing data from a document.
 
-    .. note::
+    !!! note
         ``start``/``end`` indices refer to the **response text**,
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the ``url``).
 
-    .. note::
+    !!! note
         ``create_citation`` may also be used as a factory to create a ``Citation``.
         Benefits include:
 
@@ -211,7 +211,7 @@ class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation data."""
 
 
-Annotation = Union[Citation, NonStandardAnnotation]
+Annotation = Citation | NonStandardAnnotation
 
 
 class TextContentBlock(TypedDict):
@@ -220,7 +220,7 @@ class TextContentBlock(TypedDict):
     This typically represents the main text content of a message, such as the response
     from a language model or the text of a user message.
 
-    .. note::
+    !!! note
         ``create_text_block`` may also be used as a factory to create a
         ``TextContentBlock``. Benefits include:
 
@@ -247,7 +247,7 @@ class TextContentBlock(TypedDict):
     annotations: NotRequired[list[Annotation]]
     """``Citation``s and other annotations."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -266,7 +266,7 @@ class ToolCall(TypedDict):
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
 
-    .. note::
+    !!! note
         ``create_tool_call`` may also be used as a factory to create a
         ``ToolCall``. Benefits include:
 
@@ -278,7 +278,7 @@ class ToolCall(TypedDict):
     type: Literal["tool_call"]
     """Used for discrimination."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -293,7 +293,7 @@ class ToolCall(TypedDict):
     args: dict[str, Any]
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -326,7 +326,7 @@ class ToolCallChunk(TypedDict):
     type: Literal["tool_call_chunk"]
     """Used for serialization."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -334,13 +334,13 @@ class ToolCallChunk(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
 
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """The index of the tool call in a sequence."""
 
     extras: NotRequired[dict[str, Any]]
@@ -360,7 +360,7 @@ class InvalidToolCall(TypedDict):
     type: Literal["invalid_tool_call"]
     """Used for discrimination."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -368,16 +368,16 @@ class InvalidToolCall(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
 
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
 
-    error: Optional[str]
+    error: str | None
     """An error message associated with the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -399,7 +399,7 @@ class ServerToolCall(TypedDict):
     args: dict[str, Any]
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -421,7 +421,7 @@ class ServerToolCallChunk(TypedDict):
     id: NotRequired[str]
     """An identifier associated with the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -446,7 +446,7 @@ class ServerToolResult(TypedDict):
     output: NotRequired[Any]
     """Output of the executed tool."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -456,7 +456,7 @@ class ServerToolResult(TypedDict):
 class ReasoningContentBlock(TypedDict):
     """Reasoning output from a LLM.
 
-    .. note::
+    !!! note
         ``create_reasoning_block`` may also be used as a factory to create a
         ``ReasoningContentBlock``. Benefits include:
 
@@ -485,7 +485,7 @@ class ReasoningContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -498,7 +498,7 @@ class ReasoningContentBlock(TypedDict):
 class ImageContentBlock(TypedDict):
     """Image data.
 
-    .. note::
+    !!! note
         ``create_image_block`` may also be used as a factory to create a
         ``ImageContentBlock``. Benefits include:
 
@@ -529,7 +529,7 @@ class ImageContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -545,7 +545,7 @@ class ImageContentBlock(TypedDict):
 class VideoContentBlock(TypedDict):
     """Video data.
 
-    .. note::
+    !!! note
         ``create_video_block`` may also be used as a factory to create a
         ``VideoContentBlock``. Benefits include:
 
@@ -576,7 +576,7 @@ class VideoContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -592,7 +592,7 @@ class VideoContentBlock(TypedDict):
 class AudioContentBlock(TypedDict):
     """Audio data.
 
-    .. note::
+    !!! note
         ``create_audio_block`` may also be used as a factory to create an
         ``AudioContentBlock``. Benefits include:
         * Automatic ID generation (when not provided)
@@ -622,7 +622,7 @@ class AudioContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -638,17 +638,17 @@ class AudioContentBlock(TypedDict):
 class PlainTextContentBlock(TypedDict):
     """Plaintext data (e.g., from a document).
 
-    .. note::
+    !!! note
         A ``PlainTextContentBlock`` existed in ``langchain-core<1.0.0``. Although the
         name has carried over, the structure has changed significantly. The only shared
         keys between the old and new versions are ``type`` and ``text``, though the
         ``type`` value has changed from ``'text'`` to ``'text-plain'``.
 
-    .. note::
+    !!! note
         Title and context are optional fields that may be passed to the model. See
         Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
 
-    .. note::
+    !!! note
         ``create_plaintext_block`` may also be used as a factory to create a
         ``PlainTextContentBlock``. Benefits include:
 
@@ -675,7 +675,7 @@ class PlainTextContentBlock(TypedDict):
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -707,7 +707,7 @@ class FileContentBlock(TypedDict):
     content block type (e.g., ``ImageContentBlock``, ``AudioContentBlock``,
     ``PlainTextContentBlock``).
 
-    .. note::
+    !!! note
         ``create_file_block`` may also be used as a factory to create a
         ``FileContentBlock``. Benefits include:
 
@@ -738,7 +738,7 @@ class FileContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -769,7 +769,7 @@ class NonStandardContentBlock(TypedDict):
     Has no ``extras`` field, as provider-specific data should be included in the
     ``value`` field.
 
-    .. note::
+    !!! note
         ``create_non_standard_block`` may also be used as a factory to create a
         ``NonStandardContentBlock``. Benefits include:
 
@@ -793,35 +793,31 @@ class NonStandardContentBlock(TypedDict):
     value: dict[str, Any]
     """Provider-specific data."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
 
 # --- Aliases ---
-DataContentBlock = Union[
-    ImageContentBlock,
-    VideoContentBlock,
-    AudioContentBlock,
-    PlainTextContentBlock,
-    FileContentBlock,
-]
+DataContentBlock = (
+    ImageContentBlock
+    | VideoContentBlock
+    | AudioContentBlock
+    | PlainTextContentBlock
+    | FileContentBlock
+)
 
-ToolContentBlock = Union[
-    ToolCall,
-    ToolCallChunk,
-    ServerToolCall,
-    ServerToolCallChunk,
-    ServerToolResult,
-]
+ToolContentBlock = (
+    ToolCall | ToolCallChunk | ServerToolCall | ServerToolCallChunk | ServerToolResult
+)
 
-ContentBlock = Union[
-    TextContentBlock,
-    InvalidToolCall,
-    ReasoningContentBlock,
-    NonStandardContentBlock,
-    DataContentBlock,
-    ToolContentBlock,
-]
+ContentBlock = (
+    TextContentBlock
+    | InvalidToolCall
+    | ReasoningContentBlock
+    | NonStandardContentBlock
+    | DataContentBlock
+    | ToolContentBlock
+)
 
 
 KNOWN_BLOCK_TYPES = {
@@ -922,9 +918,9 @@ def is_data_content_block(block: dict) -> bool:
 def create_text_block(
     text: str,
     *,
-    id: Optional[str] = None,
-    annotations: Optional[list[Annotation]] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    annotations: list[Annotation] | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> TextContentBlock:
     """Create a ``TextContentBlock``.
@@ -938,7 +934,7 @@ def create_text_block(
     Returns:
         A properly formatted ``TextContentBlock``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -962,12 +958,12 @@ def create_text_block(
 
 def create_image_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ImageContentBlock:
     """Create an ``ImageContentBlock``.
@@ -987,7 +983,7 @@ def create_image_block(
         ValueError: If no image source is provided or if ``base64`` is used without
             ``mime_type``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1018,12 +1014,12 @@ def create_image_block(
 
 def create_video_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> VideoContentBlock:
     """Create a ``VideoContentBlock``.
@@ -1043,7 +1039,7 @@ def create_video_block(
         ValueError: If no video source is provided or if ``base64`` is used without
             ``mime_type``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1078,12 +1074,12 @@ def create_video_block(
 
 def create_audio_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> AudioContentBlock:
     """Create an ``AudioContentBlock``.
@@ -1103,7 +1099,7 @@ def create_audio_block(
         ValueError: If no audio source is provided or if ``base64`` is used without
             ``mime_type``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1138,12 +1134,12 @@ def create_audio_block(
 
 def create_file_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> FileContentBlock:
     """Create a ``FileContentBlock``.
@@ -1163,7 +1159,7 @@ def create_file_block(
         ValueError: If no file source is provided or if ``base64`` is used without
             ``mime_type``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1197,14 +1193,14 @@ def create_file_block(
 
 
 def create_plaintext_block(
-    text: Optional[str] = None,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    title: Optional[str] = None,
-    context: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    text: str | None = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    title: str | None = None,
+    context: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> PlainTextContentBlock:
     """Create a ``PlainTextContentBlock``.
@@ -1222,7 +1218,7 @@ def create_plaintext_block(
     Returns:
         A properly formatted ``PlainTextContentBlock``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1259,8 +1255,8 @@ def create_tool_call(
     name: str,
     args: dict[str, Any],
     *,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ToolCall:
     """Create a ``ToolCall``.
@@ -1274,7 +1270,7 @@ def create_tool_call(
     Returns:
         A properly formatted ``ToolCall``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1297,9 +1293,9 @@ def create_tool_call(
 
 
 def create_reasoning_block(
-    reasoning: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    reasoning: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ReasoningContentBlock:
     """Create a ``ReasoningContentBlock``.
@@ -1312,7 +1308,7 @@ def create_reasoning_block(
     Returns:
         A properly formatted ``ReasoningContentBlock``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1335,12 +1331,12 @@ def create_reasoning_block(
 
 def create_citation(
     *,
-    url: Optional[str] = None,
-    title: Optional[str] = None,
-    start_index: Optional[int] = None,
-    end_index: Optional[int] = None,
-    cited_text: Optional[str] = None,
-    id: Optional[str] = None,
+    url: str | None = None,
+    title: str | None = None,
+    start_index: int | None = None,
+    end_index: int | None = None,
+    cited_text: str | None = None,
+    id: str | None = None,
     **kwargs: Any,
 ) -> Citation:
     """Create a ``Citation``.
@@ -1356,7 +1352,7 @@ def create_citation(
     Returns:
         A properly formatted ``Citation``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
@@ -1384,8 +1380,8 @@ def create_citation(
 def create_non_standard_block(
     value: dict[str, Any],
     *,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    index: int | str | None = None,
 ) -> NonStandardContentBlock:
     """Create a ``NonStandardContentBlock``.
 
@@ -1397,7 +1393,7 @@ def create_non_standard_block(
     Returns:
         A properly formatted ``NonStandardContentBlock``.
 
-    .. note::
+    !!! note
         The ``id`` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 

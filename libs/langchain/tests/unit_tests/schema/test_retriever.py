@@ -1,4 +1,4 @@
-from langchain.schema.retriever import __all__
+from langchain_classic.schema.retriever import __all__
 
 EXPECTED_ALL = ["BaseRetriever"]
 

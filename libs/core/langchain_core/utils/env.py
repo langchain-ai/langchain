@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional, Union
+from typing import Any
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -25,9 +25,9 @@ def env_var_is_set(env_var: str) -> bool:
 
 def get_from_dict_or_env(
     data: dict[str, Any],
-    key: Union[str, list[str]],
+    key: str | list[str],
     env_key: str,
-    default: Optional[str] = None,
+    default: str | None = None,
 ) -> str:
     """Get a value from a dictionary or an environment variable.
 
@@ -56,7 +56,7 @@ def get_from_dict_or_env(
     return get_from_env(key_for_err, env_key, default=default)
 
 
-def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
+def get_from_env(key: str, env_key: str, default: str | None = None) -> str:
     """Get a value from a dictionary or an environment variable.
 
     Args:

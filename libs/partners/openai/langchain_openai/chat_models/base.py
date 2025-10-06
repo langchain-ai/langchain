@@ -10,7 +10,7 @@ import re
 import ssl
 import sys
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -19,7 +19,6 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypeVar,
@@ -100,7 +99,13 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
@@ -479,11 +484,18 @@ class BaseChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
-    stream_usage: bool = False
-    """Whether to include usage metadata in streaming output. If True, an additional
+    stream_usage: Optional[bool] = None
+    """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
 
-    .. versionadded:: 0.3.9
+    This parameter is enabled unless ``openai_api_base`` is set or the model is
+    initialized with a custom client, as many chat completions APIs do not support
+    streaming token usage.
+
+    !!! version-added "Added in version 0.3.9"
+
+    !!! warning "Behavior changed in 0.3.35"
+        Enabled for default base URL and client.
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
@@ -519,7 +531,7 @@ class BaseChatOpenAI(BaseChatModel):
     ``'high'``. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
 
-    .. versionadded:: 0.2.14
+    !!! version-added "Added in version 0.2.14"
     """
     reasoning: Optional[dict[str, Any]] = None
     """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
@@ -534,7 +546,7 @@ class BaseChatOpenAI(BaseChatModel):
             "summary": "auto",  # can be "auto", "concise", or "detailed"
         }
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
 
     """
     verbosity: Optional[str] = None
@@ -545,7 +557,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Controls how detailed the model's responses are.
 
-    .. versionadded:: 0.3.28
+    !!! version-added "Added in version 0.3.28"
 
     """
     tiktoken_model_name: Optional[str] = None
@@ -585,7 +597,7 @@ class BaseChatOpenAI(BaseChatModel):
         - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
         - Any other provider-specific parameters
 
-    .. note::
+    !!! note
 
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
@@ -607,7 +619,7 @@ class BaseChatOpenAI(BaseChatModel):
     in.
 
     If a parameter is disabled then it will not be used by default in any methods, e.g.
-    in :meth:`~langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
+    in `langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
     invocation.
     """
@@ -623,7 +635,7 @@ class BaseChatOpenAI(BaseChatModel):
     - ``'reasoning.encrypted_content'``
     - ``'code_interpreter_call.outputs'``
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     service_tier: Optional[str] = None
@@ -635,7 +647,7 @@ class BaseChatOpenAI(BaseChatModel):
     """If True, OpenAI may store response data for future use. Defaults to True
     for the Responses API and False for the Chat Completions API.
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     truncation: Optional[str] = None
@@ -643,7 +655,7 @@ class BaseChatOpenAI(BaseChatModel):
     (default). If ``'auto'``, model may drop input items from the middle of the
     message sequence to fit the context window.
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     use_previous_response_id: bool = False
@@ -674,7 +686,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
-    .. versionadded:: 0.3.26
+    !!! version-added "Added in version 0.3.26"
 
     """
 
@@ -683,7 +695,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     If not specified then will be inferred based on invocation params.
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
     """
 
     output_version: Optional[str] = Field(
@@ -701,7 +713,8 @@ class BaseChatOpenAI(BaseChatModel):
       items into AIMessage content blocks (Responses API only)
     - ``"v1"``: v1 of LangChain cross-provider standard.
 
-    .. versionadded:: 0.3.25
+    !!! warning "Behavior changed in 1.0.0"
+        Default updated to ``"responses/v1"``.
 
     .. versionchanged:: 1.0.0
 
@@ -761,6 +774,28 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+
+        # Enable stream_usage by default if using default base URL and client
+        if (
+            all(
+                getattr(self, key, None) is None
+                for key in (
+                    "stream_usage",
+                    "openai_proxy",
+                    "openai_api_base",
+                    "base_url",
+                    "client",
+                    "root_client",
+                    "async_client",
+                    "root_async_client",
+                    "http_client",
+                    "http_async_client",
+                )
+            )
+            and "OPENAI_BASE_URL" not in os.environ
+        ):
+            self.stream_usage = True
+
         client_params: dict = {
             "api_key": (
                 self.openai_api_key.get_secret_value() if self.openai_api_key else None
@@ -1073,7 +1108,7 @@ class BaseChatOpenAI(BaseChatModel):
         for source in stream_usage_sources:
             if isinstance(source, bool):
                 return source
-        return self.stream_usage
+        return self.stream_usage or False
 
     def _stream(
         self,
@@ -1650,7 +1685,7 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
                 - str of the form ``'<<tool_name>>'``: calls <<tool_name>> tool.
@@ -1668,10 +1703,9 @@ class BaseChatOpenAI(BaseChatModel):
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
             kwargs: Any additional parameters are passed directly to
-                :meth:`~langchain_openai.chat_models.base.ChatOpenAI.bind`.
+                `langchain_openai.chat_models.base.ChatOpenAI.bind`.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
 
         """  # noqa: E501
@@ -1742,7 +1776,7 @@ class BaseChatOpenAI(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -1791,7 +1825,7 @@ class BaseChatOpenAI(BaseChatModel):
                 If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
-                .. dropdown:: Example
+                ??? note "Example"
 
                     .. code-block:: python
 
@@ -1829,7 +1863,7 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
@@ -1840,19 +1874,17 @@ class BaseChatOpenAI(BaseChatModel):
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.1.20
-
+        !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
             Support for ``method="json_schema"`` added.
 
-        .. versionchanged:: 0.3.12
+        !!! warning "Behavior changed in 0.3.12"
             Support for ``tools`` added.
 
-        .. versionchanged:: 0.3.21
+        !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.
 
         """  # noqa: E501
@@ -2023,7 +2055,7 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""OpenAI chat model integration.
 
-    .. dropdown:: Setup
+    ??? note "Setup"
         :open:
 
         Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
@@ -2033,7 +2065,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             pip install -U langchain-openai
             export OPENAI_API_KEY="your-api-key"
 
-    .. dropdown:: Key init args — completion params
+    ??? note "Key init args — completion params"
 
         model: str
             Name of OpenAI model to use.
@@ -2051,7 +2083,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions in the params section.
 
-    .. dropdown:: Key init args — client params
+    ??? note "Key init args — client params"
 
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
@@ -2068,7 +2100,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions in the params section.
 
-    .. dropdown:: Instantiate
+    ??? note "Instantiate"
 
         .. code-block:: python
 
@@ -2086,7 +2118,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 # other params...
             )
 
-        .. note::
+        !!! note
             Any param which is not explicitly supported will be passed directly to the
             ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
             invoked. For example:
@@ -2106,7 +2138,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
 
-    .. dropdown:: Invoke
+    ??? note "Invoke"
 
         .. code-block:: python
 
@@ -2138,7 +2170,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    .. dropdown:: Stream
+    ??? note "Stream"
 
         .. code-block:: python
 
@@ -2179,7 +2211,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 id="run-bf917526-7f58-4683-84f7-36a6b671d140",
             )
 
-    .. dropdown:: Async
+    ??? note "Async"
 
         .. code-block:: python
 
@@ -2214,7 +2246,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             )
 
-    .. dropdown:: Tool calling
+    ??? note "Tool calling"
 
         .. code-block:: python
 
@@ -2271,7 +2303,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             ]
 
-        .. note::
+        !!! note
             ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
             that defaults to ``True``. This parameter can be set to ``False`` to
             disable parallel tool calls:
@@ -2299,16 +2331,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See ``ChatOpenAI.bind_tools()`` method for more.
 
-    .. dropdown:: Built-in tools
+    ??? note "Built-in tools"
 
-        .. versionadded:: 0.3.9
+        !!! version-added "Added in version 0.3.9"
 
         You can access `built-in tools <https://platform.openai.com/docs/guides/tools?api-mode=responses>`_
         supported by the OpenAI Responses API. See LangChain
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
         detail.
 
-        .. note::
+        !!! note
             ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
             AIMessage format when using the Responses API. Setting
 
@@ -2352,9 +2384,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 }
             ]
 
-    .. dropdown:: Managing conversation state
+    ??? note "Managing conversation state"
 
-        .. versionadded:: 0.3.9
+        !!! version-added "Added in version 0.3.9"
 
         OpenAI's Responses API supports management of
         `conversation state <https://platform.openai.com/docs/guides/conversation-state?api-mode=responses>`_.
@@ -2391,7 +2423,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
-        .. versionadded:: 0.3.26
+        !!! version-added "Added in version 0.3.26"
 
         You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
         Input messages up to the most recent response will then be dropped from request
@@ -2402,12 +2434,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
 
-    .. dropdown:: Reasoning output
+    ??? note "Reasoning output"
 
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
 
-        .. note::
+        !!! note
             ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
             AIMessage format when using the Responses API. Setting
 
@@ -2447,7 +2479,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Output: 3³ = 27
             Reasoning: The user wants to know...
 
-    .. dropdown:: Structured output
+    ??? note "Structured output"
 
         .. code-block:: python
 
@@ -2479,7 +2511,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See ``ChatOpenAI.with_structured_output()`` for more.
 
-    .. dropdown:: JSON mode
+    ??? note "JSON mode"
 
         .. code-block:: python
 
@@ -2493,7 +2525,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
 
-    .. dropdown:: Image input
+    ??? note "Image input"
 
         .. code-block:: python
 
@@ -2519,7 +2551,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
 
-    .. dropdown:: Token usage
+    ??? note "Token usage"
 
         .. code-block:: python
 
@@ -2554,7 +2586,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
-    .. dropdown:: Logprobs
+    ??? note "Logprobs"
 
         .. code-block:: python
 
@@ -2614,7 +2646,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 ]
             }
 
-    .. dropdown:: Response metadata
+    ??? note "Response metadata"
 
         .. code-block:: python
 
@@ -2635,7 +2667,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "logprobs": None,
             }
 
-    .. dropdown:: Flex processing
+    ??? note "Flex processing"
 
         OpenAI offers a variety of
         `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
@@ -2656,7 +2688,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         See OpenAI `flex processing docs <https://platform.openai.com/docs/guides/flex-processing>`__
         for more detail.
 
-    .. dropdown:: OpenAI-compatible APIs
+    ??? note "OpenAI-compatible APIs"
 
         ``ChatOpenAI`` can be used with OpenAI-compatible APIs like `LM Studio <https://lmstudio.ai/>`__,
         `vLLM <https://github.com/vllm-project/vllm>`__,
@@ -2690,7 +2722,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 extra_body={"use_beam_search": True, "best_of": 4},
             )
 
-    .. dropdown:: model_kwargs vs extra_body
+    ??? note "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
 
@@ -2737,11 +2769,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         - ``model_kwargs``: Parameters are **merged into top-level** request payload
         - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
 
-        .. important::
+        !!! important
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 
-    .. dropdown:: Prompt caching optimization
+    ??? note "Prompt caching optimization"
 
         For high-volume applications with repetitive prompts, use ``prompt_cache_key``
         per-invocation to improve cache hit rates and reduce costs:
@@ -2870,7 +2902,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -2912,7 +2944,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                .. note::
+                !!! note
                     ``strict`` can only be non-null if ``method`` is ``'json_schema'`` or ``'function_calling'``.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
@@ -2924,7 +2956,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
-                .. dropdown:: Example
+                ??? note "Example"
 
                     .. code-block:: python
 
@@ -2962,7 +2994,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
@@ -2973,26 +3005,23 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.1.20
-
+        !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
             Support for ``method="json_schema"`` added.
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
             ``method`` default changed from "function_calling" to "json_schema".
 
-        .. versionchanged:: 0.3.12
+        !!! warning "Behavior changed in 0.3.12"
             Support for ``tools`` added.
 
-        .. versionchanged:: 0.3.21
+        !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
 
             Note, OpenAI has a number of restrictions on what types of schemas can be
             provided if ``strict`` = True. When using Pydantic, our model cannot
@@ -3030,7 +3059,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=False
+        ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -3063,7 +3092,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
             .. code-block:: python
 
@@ -3092,7 +3121,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False, strict=False
+        ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -3123,7 +3152,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=OpenAI function schema, method="json_schema", include_raw=False
+        ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -3153,7 +3182,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 
@@ -3182,7 +3211,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+        ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 
@@ -3387,7 +3416,7 @@ class OpenAIRefusalError(Exception):
     See here for more on refusals:
     https://platform.openai.com/docs/guides/structured-outputs/refusals
 
-    .. versionadded:: 0.1.21
+    !!! version-added "Added in version 0.1.21"
     """
 
 

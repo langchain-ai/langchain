@@ -1,16 +1,16 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.75,<2.0.0",
+    "langchain-core>=1.0.0a6,<2.0.0",
 ]
 name = "langchain-text-splitters"
-version = "0.3.11"
+version = "1.0.0a1"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
@@ -64,9 +64,6 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = ["konlpy", "nltk",]
 ignore_missing_imports = true
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

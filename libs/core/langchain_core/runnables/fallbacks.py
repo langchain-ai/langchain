@@ -5,7 +5,7 @@ import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
@@ -51,41 +51,39 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     more convenient to use the ``with_fallbacks`` method on a Runnable.
 
     Example:
+        ```python
+        from langchain_core.chat_models.openai import ChatOpenAI
+        from langchain_core.chat_models.anthropic import ChatAnthropic
 
-        .. code-block:: python
+        model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
+            [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        )
+        # Will usually use ChatAnthropic, but fallback to ChatOpenAI
+        # if ChatAnthropic fails.
+        model.invoke("hello")
 
-            from langchain_core.chat_models.openai import ChatOpenAI
-            from langchain_core.chat_models.anthropic import ChatAnthropic
+        # And you can also use fallbacks at the level of a chain.
+        # Here if both LLM providers fail, we'll fallback to a good hardcoded
+        # response.
 
-            model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
-                [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.output_parser import StrOutputParser
+        from langchain_core.runnables import RunnableLambda
+
+
+        def when_all_is_lost(inputs):
+            return (
+                "Looks like our LLM providers are down. "
+                "Here's a nice 🦜️ emoji for you instead."
             )
-            # Will usually use ChatAnthropic, but fallback to ChatOpenAI
-            # if ChatAnthropic fails.
-            model.invoke("hello")
-
-            # And you can also use fallbacks at the level of a chain.
-            # Here if both LLM providers fail, we'll fallback to a good hardcoded
-            # response.
-
-            from langchain_core.prompts import PromptTemplate
-            from langchain_core.output_parser import StrOutputParser
-            from langchain_core.runnables import RunnableLambda
 
 
-            def when_all_is_lost(inputs):
-                return (
-                    "Looks like our LLM providers are down. "
-                    "Here's a nice 🦜️ emoji for you instead."
-                )
-
-
-            chain_with_fallback = (
-                PromptTemplate.from_template("Tell me a joke about {topic}")
-                | model
-                | StrOutputParser()
-            ).with_fallbacks([RunnableLambda(when_all_is_lost)])
-
+        chain_with_fallback = (
+            PromptTemplate.from_template("Tell me a joke about {topic}")
+            | model
+            | StrOutputParser()
+        ).with_fallbacks([RunnableLambda(when_all_is_lost)])
+        ```
     """
 
     runnable: Runnable[Input, Output]
@@ -97,7 +95,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
-    exception_key: Optional[str] = None
+    exception_key: str | None = None
     """If string is specified then handled exceptions will be passed to fallbacks as
         part of the input under the specified key. If None, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks
@@ -118,14 +116,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.OutputType
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         return self.runnable.get_input_schema(config)
 
     @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
         return self.runnable.get_output_schema(config)
 
@@ -166,7 +162,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -218,8 +214,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def ainvoke(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Output:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -268,10 +264,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def batch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if self.exception_key is not None and not all(
             isinstance(input_, dict) for input_ in inputs
@@ -307,7 +303,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 name=config.get("run_name") or self.get_name(),
                 run_id=config.pop("run_id", None),
             )
-            for cm, input_, config in zip(callback_managers, inputs, configs)
+            for cm, input_, config in zip(
+                callback_managers, inputs, configs, strict=False
+            )
         ]
 
         to_return: dict[int, Any] = {}
@@ -325,7 +323,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 return_exceptions=True,
                 **kwargs,
             )
-            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(
+                sorted(run_again.copy().items()), outputs, strict=False
+            ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -360,10 +360,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def abatch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if self.exception_key is not None and not all(
             isinstance(input_, dict) for input_ in inputs
@@ -400,11 +400,13 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     name=config.get("run_name") or self.get_name(),
                     run_id=config.pop("run_id", None),
                 )
-                for cm, input_, config in zip(callback_managers, inputs, configs)
+                for cm, input_, config in zip(
+                    callback_managers, inputs, configs, strict=False
+                )
             )
         )
 
-        to_return: dict[int, Union[Output, BaseException]] = {}
+        to_return: dict[int, Output | BaseException] = {}
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
@@ -420,7 +422,9 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 **kwargs,
             )
 
-            for (i, input_), output in zip(sorted(run_again.copy().items()), outputs):
+            for (i, input_), output in zip(
+                sorted(run_again.copy().items()), outputs, strict=False
+            ):
                 if isinstance(output, BaseException) and not isinstance(
                     output, self.exceptions_to_handle
                 ):
@@ -460,8 +464,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -507,7 +511,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise first_error
 
         yield chunk
-        output: Optional[Output] = chunk
+        output: Output | None = chunk
         try:
             for chunk in stream:
                 yield chunk
@@ -524,8 +528,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         if self.exception_key is not None and not isinstance(input, dict):
             msg = (
@@ -571,7 +575,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             raise first_error
 
         yield chunk
-        output: Optional[Output] = chunk
+        output: Output | None = chunk
         try:
             async for chunk in stream:
                 yield chunk
@@ -595,27 +599,27 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             self.fallbacks is replaced with getattr(x, name).
 
         Example:
-            .. code-block:: python
+            ```python
+            from langchain_openai import ChatOpenAI
+            from langchain_anthropic import ChatAnthropic
 
-                from langchain_openai import ChatOpenAI
-                from langchain_anthropic import ChatAnthropic
+            gpt_4o = ChatOpenAI(model="gpt-4o")
+            claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+            llm = gpt_4o.with_fallbacks([claude_3_sonnet])
 
-                gpt_4o = ChatOpenAI(model="gpt-4o")
-                claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
-                llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+            llm.model_name
+            # -> "gpt-4o"
 
-                llm.model_name
-                # -> "gpt-4o"
+            # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
+            # Equivalent to:
+            # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+            llm.bind_tools([...])
+            # -> RunnableWithFallbacks(
+                runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
+                fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
+            )
 
-                # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
-                # Equivalent to:
-                # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
-                llm.bind_tools([...])
-                # -> RunnableWithFallbacks(
-                    runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
-                    fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
-                )
-
+            ```
         """  # noqa: E501
         attr = getattr(self.runnable, name)
         if _returns_runnable(attr):

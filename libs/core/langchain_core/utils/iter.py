@@ -9,9 +9,7 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -26,9 +24,9 @@ class NoLock:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Return False (exception not suppressed)."""
         return False
@@ -42,7 +40,7 @@ def tee_peer(
     peers: list[deque[T]],
     lock: AbstractContextManager[Any],
 ) -> Generator[T, None, None]:
-    """An individual iterator of a :py:func:`~.tee`.
+    """An individual iterator of a `.tee`.
 
     This function is a generator that yields items from the shared iterator
     ``iterator``. It buffers items until the least advanced iterator has
@@ -108,22 +106,22 @@ class Tee(Generic[T]):
             await a.anext(previous)  # advance one iterator
             return a.map(operator.sub, previous, current)
 
-    Unlike :py:func:`itertools.tee`, :py:func:`~.tee` returns a custom type instead
-    of a :py:class:`tuple`. Like a tuple, it can be indexed, iterated and unpacked
-    to get the child iterators. In addition, its :py:meth:`~.tee.aclose` method
+    Unlike `itertools.tee`, `.tee` returns a custom type instead
+    of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
+    to get the child iterators. In addition, its `.tee.aclose` method
     immediately closes all children, and it can be used in an ``async with`` context
     for the same effect.
 
     If ``iterable`` is an iterator and read elsewhere, ``tee`` will *not*
     provide these items. Also, ``tee`` must internally buffer each item until the
     last iterator has yielded it; if the most and least advanced iterator differ
-    by most data, using a :py:class:`list` is more efficient (but not lazy).
+    by most data, using a :py`list` is more efficient (but not lazy).
 
     If the underlying iterable is concurrency safe (``anext`` may be awaited
     concurrently) the resulting iterators are concurrency safe as well. Otherwise,
     the iterators are safe if there is only ever one single "most advanced" iterator.
     To enforce sequential use of ``anext``, provide a ``lock``
-    - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
+    - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
 
     """
@@ -133,7 +131,7 @@ class Tee(Generic[T]):
         iterable: Iterator[T],
         n: int = 2,
         *,
-        lock: Optional[AbstractContextManager[Any]] = None,
+        lock: AbstractContextManager[Any] | None = None,
     ):
         """Create a ``tee``.
 
@@ -165,9 +163,7 @@ class Tee(Generic[T]):
     @overload
     def __getitem__(self, item: slice) -> tuple[Iterator[T], ...]: ...
 
-    def __getitem__(
-        self, item: Union[int, slice]
-    ) -> Union[Iterator[T], tuple[Iterator[T], ...]]:
+    def __getitem__(self, item: int | slice) -> Iterator[T] | tuple[Iterator[T], ...]:
         """Return the child iterator(s) at the given index or slice."""
         return self._children[item]
 
@@ -185,9 +181,9 @@ class Tee(Generic[T]):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Close all child iterators.
 
@@ -207,7 +203,7 @@ class Tee(Generic[T]):
 safetee = Tee
 
 
-def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[list[T]]:
+def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:

@@ -35,7 +35,7 @@ open source projects at [huntr](https://huntr.com/bounties/disclose/?target=http
 Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
-2) The [langchain-ai/langchain](https://docs.langchain.com/oss/python/contributing/code#supporting-packages) monorepo structure.
+2) The [langchain-ai/langchain](https://docs.langchain.com/oss/python/contributing/code#repository-structure) monorepo structure.
 3) The [Best Practices](#best-practices) above to understand what we consider to be a security vulnerability vs. developer responsibility.
 
 ### In-Scope Targets

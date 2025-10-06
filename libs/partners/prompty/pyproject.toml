@@ -1,14 +1,17 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
-dependencies = ["langchain-core>=0.3.76,<1.0.0", "pyyaml>=6.0.1,<7.0.0"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.0.0a1,<2.0.0",
+    "pyyaml>=6.0.1,<7.0.0"
+]
 name = "langchain-prompty"
-version = "0.1.2"
+version = "1.0.0a1"
 description = "An integration package connecting Prompty and LangChain"
 readme = "README.md"
 
@@ -27,7 +30,7 @@ test = [
     "freezegun>=1.2.2,<2.0.0",
     "syrupy>=4.0.2,<5.0.0",
     "langchain-core",
-    "langchain",
+    "langchain-classic",
     "langchain-text-splitters",
     "langchain-tests",
 ]
@@ -47,11 +50,8 @@ typing = [
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-text-splitters = { path = "../../text-splitters", editable = true }
-langchain = { path = "../../langchain", editable = true }
+langchain-classic = { path = "../../langchain", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

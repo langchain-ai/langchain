@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Self
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def _extract_reasoning_from_additional_kwargs(
     message: BaseMessage,
-) -> Optional[types.ReasoningContentBlock]:
+) -> types.ReasoningContentBlock | None:
     """Extract `reasoning_content` from `additional_kwargs`.
 
     Handles reasoning content stored in various formats:
@@ -70,9 +70,9 @@ class TextAccessor(str):
         This method exists solely to support legacy code that calls ``.text()``
         as a method. New code should use property access (``.text``) instead.
 
-        .. deprecated:: 1.0.0
-            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
-            instead. This method will be removed in 2.0.0.
+        !!! deprecated
+            As of `langchain-core` 1.0.0, calling ``.text()`` as a method is deprecated.
+            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -95,7 +95,7 @@ class BaseMessage(Serializable):
     Messages are the inputs and outputs of a ``ChatModel``.
     """
 
-    content: Union[str, list[Union[str, dict]]]
+    content: str | list[str | dict]
     """The string contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
@@ -117,7 +117,7 @@ class BaseMessage(Serializable):
 
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     """An optional name for the message.
 
     This can be used to provide a human-readable name for the message.
@@ -127,7 +127,7 @@ class BaseMessage(Serializable):
 
     """
 
-    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
+    id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional unique identifier for the message.
 
     This should ideally be provided by the provider/model which created the message.
@@ -141,22 +141,22 @@ class BaseMessage(Serializable):
     @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize ``BaseMessage``.
@@ -195,7 +195,7 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        .. versionadded:: 1.0.0
+        !!! version-added "Added in version 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
@@ -261,9 +261,9 @@ class BaseMessage(Serializable):
 
         Can be used as both property (``message.text``) and method (``message.text()``).
 
-        .. deprecated:: 1.0.0
-            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
-            instead. This method will be removed in 2.0.0.
+        !!! deprecated
+            As of langchain-core 1.0.0, calling ``.text()`` as a method is deprecated.
+            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
@@ -325,9 +325,9 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, list[Union[str, dict]]],
-    *contents: Union[str, list[Union[str, dict]]],
-) -> Union[str, list[Union[str, dict]]]:
+    first_content: str | list[str | dict],
+    *contents: str | list[str | dict],
+) -> str | list[str | dict]:
     """Merge multiple message contents.
 
     Args:
@@ -338,7 +338,7 @@ def merge_content(
         The merged content.
 
     """
-    merged: Union[str, list[Union[str, dict]]]
+    merged: str | list[str | dict]
     merged = "" if first_content is None else first_content
 
     for content in contents:

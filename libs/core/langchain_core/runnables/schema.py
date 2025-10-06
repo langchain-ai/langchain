@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -28,7 +28,7 @@ class EventData(TypedDict, total=False):
 
     This field is only available if the Runnable raised an exception.
 
-    .. versionadded:: 1.0.0
+    !!! version-added "Added in version 1.0.0"
     """
     output: Any
     """The output of the Runnable that generated the event.
@@ -53,46 +53,44 @@ class BaseStreamEvent(TypedDict):
     Schema of a streaming event which is produced from the astream_events method.
 
     Example:
-
-        .. code-block:: python
-
-            from langchain_core.runnables import RunnableLambda
+        ```python
+        from langchain_core.runnables import RunnableLambda
 
 
-            async def reverse(s: str) -> str:
-                return s[::-1]
+        async def reverse(s: str) -> str:
+            return s[::-1]
 
 
-            chain = RunnableLambda(func=reverse)
+        chain = RunnableLambda(func=reverse)
 
-            events = [event async for event in chain.astream_events("hello")]
+        events = [event async for event in chain.astream_events("hello")]
 
-            # will produce the following events
-            # (where some fields have been omitted for brevity):
-            [
-                {
-                    "data": {"input": "hello"},
-                    "event": "on_chain_start",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-                {
-                    "data": {"chunk": "olleh"},
-                    "event": "on_chain_stream",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-                {
-                    "data": {"output": "olleh"},
-                    "event": "on_chain_end",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-            ]
-
+        # will produce the following events
+        # (where some fields have been omitted for brevity):
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+        ]
+        ```
     """
 
     event: str
@@ -172,7 +170,7 @@ class StandardStreamEvent(BaseStreamEvent):
 class CustomStreamEvent(BaseStreamEvent):
     """Custom stream event created by the user.
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
     """
 
     # Overwrite the event field to be more specific.
@@ -184,4 +182,4 @@ class CustomStreamEvent(BaseStreamEvent):
     """The data associated with the event. Free form and can be anything."""
 
 
-StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
+StreamEvent = StandardStreamEvent | CustomStreamEvent

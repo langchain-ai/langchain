@@ -141,17 +141,18 @@ def init_chat_model(
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             config_prefix is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
-        temperature: Model temperature.
-        max_tokens: Max output tokens.
-        timeout: The maximum time (in seconds) to wait for a response from the model
-            before canceling the request.
-        max_retries: The maximum number of attempts the system will make to resend a
-            request if it fails due to issues like network timeouts or rate limits.
-        base_url: The URL of the API endpoint where requests are sent.
-        rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
-            rate limits.
         kwargs: Additional model-specific keyword args to pass to
-            ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
+            ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``. Examples
+            include:
+                * temperature: Model temperature.
+                * max_tokens: Max output tokens.
+                * timeout: The maximum time (in seconds) to wait for a response from the model
+                    before canceling the request.
+                * max_retries: The maximum number of attempts the system will make to resend a
+                    request if it fails due to issues like network timeouts or rate limits.
+                * base_url: The URL of the API endpoint where requests are sent.
+                * rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+                    rate limits.
 
     Returns:
         A BaseChatModel corresponding to the model_name and model_provider specified if
@@ -162,7 +163,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    .. dropdown:: Init non-configurable model
+    ??? note "Init non-configurable model"
         :open:
 
         .. code-block:: python
@@ -179,7 +180,7 @@ def init_chat_model(
             gemini_2_flash.invoke("what's your name")
 
 
-    .. dropdown:: Partially configurable model with no default
+    ??? note "Partially configurable model with no default"
 
         .. code-block:: python
 
@@ -199,7 +200,7 @@ def init_chat_model(
             )
             # claude-3.5 sonnet response
 
-    .. dropdown:: Fully configurable model with a default
+    ??? note "Fully configurable model with a default"
 
         .. code-block:: python
 
@@ -227,7 +228,7 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
-    .. dropdown:: Bind tools to a configurable model
+    ??? note "Bind tools to a configurable model"
 
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
@@ -269,14 +270,12 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
 
-    .. versionadded:: 0.2.7
+    !!! version-added "Added in version 0.2.7"
 
-    .. versionchanged:: 0.2.8
-
+    !!! warning "Behavior changed in 0.2.8"
         Support for ``configurable_fields`` and ``config_prefix`` added.
 
-    .. versionchanged:: 0.2.12
-
+    !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
         (langchain_ollama.ChatOllama). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -285,12 +284,10 @@ def init_chat_model(
         Support for AWS Bedrock models via the Converse API added
         (model_provider="bedrock_converse").
 
-    .. versionchanged:: 0.3.5
-
+    !!! warning "Behavior changed in 0.3.5"
         Out of beta.
 
-    .. versionchanged:: 0.3.19
-
+    !!! warning "Behavior changed in 0.3.19"
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501

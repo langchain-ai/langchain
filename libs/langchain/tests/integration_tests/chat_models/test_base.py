@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_tests.integration_tests import ChatModelIntegrationTests
 from pydantic import BaseModel
 
-from langchain.chat_models import init_chat_model
+from langchain_classic.chat_models import init_chat_model
 
 
 class Multiply(BaseModel):

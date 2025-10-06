@@ -1,7 +1,7 @@
 """Fake LLM wrapper for testing purposes."""
 
 from collections.abc import Mapping
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -12,8 +12,8 @@ from typing_extensions import override
 class FakeLLM(LLM):
     """Fake LLM wrapper for testing purposes."""
 
-    queries: Optional[Mapping] = None
-    sequential_responses: Optional[bool] = False
+    queries: Mapping | None = None
+    sequential_responses: bool | None = False
     response_index: int = 0
 
     @model_validator(mode="before")
@@ -37,8 +37,8 @@ class FakeLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         if self.sequential_responses:

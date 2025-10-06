@@ -1,6 +1,6 @@
 """Helper class to draw a state graph into a PNG file."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -18,15 +18,14 @@ class PngDrawer:
     It requires ``graphviz`` and ``pygraphviz`` to be installed.
 
     Example:
-
-        .. code-block:: python
-
-            drawer = PngDrawer()
-            drawer.draw(state_graph, "graph.png")
+        ```python
+        drawer = PngDrawer()
+        drawer.draw(state_graph, "graph.png")
+        ```
     """
 
     def __init__(
-        self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None
+        self, fontname: str | None = None, labels: LabelsDict | None = None
     ) -> None:
         """Initializes the PNG drawer.
 
@@ -96,7 +95,7 @@ class PngDrawer:
         viz: Any,
         source: str,
         target: str,
-        label: Optional[str] = None,
+        label: str | None = None,
         conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Adds an edge to the graph.
@@ -117,7 +116,7 @@ class PngDrawer:
             style="dotted" if conditional else "solid",
         )
 
-    def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
+    def draw(self, graph: Graph, output_path: str | None = None) -> bytes | None:
         """Draw the given state graph into a PNG file.
 
         Requires `graphviz` and `pygraphviz` to be installed.

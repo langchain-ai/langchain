@@ -1,11 +1,15 @@
 """Runnable that selects which branch to run based on a condition."""
 
-from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -45,21 +49,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     If no condition evaluates to True, the default branch is run on the input.
 
     Examples:
+        ```python
+        from langchain_core.runnables import RunnableBranch
 
-        .. code-block:: python
+        branch = RunnableBranch(
+            (lambda x: isinstance(x, str), lambda x: x.upper()),
+            (lambda x: isinstance(x, int), lambda x: x + 1),
+            (lambda x: isinstance(x, float), lambda x: x * 2),
+            lambda x: "goodbye",
+        )
 
-            from langchain_core.runnables import RunnableBranch
-
-            branch = RunnableBranch(
-                (lambda x: isinstance(x, str), lambda x: x.upper()),
-                (lambda x: isinstance(x, int), lambda x: x + 1),
-                (lambda x: isinstance(x, float), lambda x: x * 2),
-                lambda x: "goodbye",
-            )
-
-            branch.invoke("hello")  # "HELLO"
-            branch.invoke(None)  # "goodbye"
-
+        branch.invoke("hello")  # "HELLO"
+        branch.invoke(None)  # "goodbye"
+        ```
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
@@ -69,17 +71,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     def __init__(
         self,
-        *branches: Union[
-            tuple[
-                Union[
-                    Runnable[Input, bool],
-                    Callable[[Input], bool],
-                    Callable[[Input], Awaitable[bool]],
-                ],
-                RunnableLike,
-            ],
-            RunnableLike,  # To accommodate the default branch
-        ],
+        *branches: tuple[
+            Runnable[Input, bool]
+            | Callable[[Input], bool]
+            | Callable[[Input], Awaitable[bool]],
+            RunnableLike,
+        ]
+        | RunnableLike,
     ) -> None:
         """A Runnable that runs one of two branches based on a condition.
 
@@ -156,9 +154,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -189,7 +185,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -248,7 +244,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @override
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -298,8 +294,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -319,7 +315,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
-        final_output: Optional[Output] = None
+        final_output: Output | None = None
         final_output_supported = True
 
         try:
@@ -382,8 +378,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         """First evaluates the condition, then delegate to true or false branch.
 
@@ -403,7 +399,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             name=config.get("run_name") or self.get_name(),
             run_id=config.pop("run_id", None),
         )
-        final_output: Optional[Output] = None
+        final_output: Output | None = None
         final_output_supported = True
 
         try:

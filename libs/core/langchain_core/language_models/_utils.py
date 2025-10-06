@@ -3,10 +3,8 @@ from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Literal,
-    Optional,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 if TYPE_CHECKING:
@@ -17,7 +15,7 @@ from langchain_core.messages.content import (
 
 
 def is_openai_data_block(
-    block: dict, filter_: Union[Literal["image", "audio", "file"], None] = None
+    block: dict, filter_: Literal["image", "audio", "file"] | None = None
 ) -> bool:
     """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
@@ -88,7 +86,7 @@ class ParsedDataUri(TypedDict):
     mime_type: str
 
 
-def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
+def _parse_data_uri(uri: str) -> ParsedDataUri | None:
     """Parse a data URI into its components.
 
     If parsing fails, return None. If either MIME type or data is missing, return None.
@@ -142,13 +140,13 @@ def _normalize_messages(
             directly; this may change in the future
     - LangChain v0 standard content blocks for backward compatibility
 
-    .. versionchanged:: 1.0.0
+    !!! warning "Behavior changed in 1.0.0"
         In previous versions, this function returned messages in LangChain v0 format.
         Now, it returns messages in LangChain v1 format, which upgraded chat models now
         expect to receive when passing back in message history. For backward
         compatibility, this function will convert v0 message content to v1 format.
 
-    .. dropdown:: v0 Content Block Schemas
+    ??? note "v0 Content Block Schemas"
 
         ``URLContentBlock``:
 
@@ -304,7 +302,7 @@ def _ensure_message_copy(message: T, formatted_message: T) -> T:
 
 
 def _update_content_block(
-    formatted_message: "BaseMessage", idx: int, new_block: Union[ContentBlock, dict]
+    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict
 ) -> None:
     """Update a content block at the given index, handling type issues."""
     # Type ignore needed because:

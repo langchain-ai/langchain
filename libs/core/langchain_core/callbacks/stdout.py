@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class StdOutCallbackHandler(BaseCallbackHandler):
     """Callback Handler that prints to std out."""
 
-    def __init__(self, color: Optional[str] = None) -> None:
+    def __init__(self, color: str | None = None) -> None:
         """Initialize callback handler.
 
         Args:
@@ -55,7 +55,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_action(
-        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+        self, action: AgentAction, color: str | None = None, **kwargs: Any
     ) -> Any:
         """Run on agent action.
 
@@ -70,9 +70,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     def on_tool_end(
         self,
         output: Any,
-        color: Optional[str] = None,
-        observation_prefix: Optional[str] = None,
-        llm_prefix: Optional[str] = None,
+        color: str | None = None,
+        observation_prefix: str | None = None,
+        llm_prefix: str | None = None,
         **kwargs: Any,
     ) -> None:
         """If not the final action, print out observation.
@@ -96,7 +96,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
     def on_text(
         self,
         text: str,
-        color: Optional[str] = None,
+        color: str | None = None,
         end: str = "",
         **kwargs: Any,
     ) -> None:
@@ -112,7 +112,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_finish(
-        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+        self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         """Run on the agent end.
 

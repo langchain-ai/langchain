@@ -6,10 +6,10 @@ import copy
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Final, Literal, Optional, Union, cast
+from typing import Any, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -846,7 +846,7 @@ class ChatAnthropic(BaseChatModel):
 
             "After examining both images carefully, I can see that they are actually identical."
 
-        .. dropdown:: Files API
+        ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
             `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
@@ -909,7 +909,7 @@ class ChatAnthropic(BaseChatModel):
 
             "This appears to be a simple document..."
 
-        .. dropdown:: Files API
+        ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
             `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
@@ -1077,7 +1077,7 @@ class ChatAnthropic(BaseChatModel):
         Prompt caching reduces processing time and costs for repetitive tasks or prompts
         with consistent elements
 
-        .. note::
+        !!! note
             Only certain models support prompt caching.
             See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
             for a full list.
@@ -1128,7 +1128,7 @@ class ChatAnthropic(BaseChatModel):
                 cache_control={"type": "ephemeral"},
             )
 
-        .. dropdown:: Extended caching
+        ??? note "Extended caching"
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
             apply one hour caching by setting ``ttl`` to ``'1h'``.
@@ -1274,7 +1274,7 @@ class ChatAnthropic(BaseChatModel):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
-        .. dropdown::  Web search
+        ??? note "Web search"
 
             .. code-block:: python
 
@@ -1291,7 +1291,7 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
 
-        .. dropdown::  Web fetch (beta)
+        ??? note "Web fetch (beta)"
 
             .. code-block:: python
 
@@ -1311,7 +1311,7 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm_with_tools.invoke("Please analyze the content at https://example.com/article")
 
-        .. dropdown::  Code execution
+        ??? note "Code execution"
 
             .. code-block:: python
 
@@ -1327,7 +1327,7 @@ class ChatAnthropic(BaseChatModel):
                     "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                 )
 
-        .. dropdown::  Remote MCP
+        ??? note "Remote MCP"
 
             .. code-block:: python
 
@@ -1357,7 +1357,7 @@ class ChatAnthropic(BaseChatModel):
                     "spec (modelcontextprotocol/modelcontextprotocol) support?"
                 )
 
-        .. dropdown::  Text editor
+        ??? note "Text editor"
 
             .. code-block:: python
 
@@ -1383,7 +1383,7 @@ class ChatAnthropic(BaseChatModel):
                 'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
                 'type': 'tool_call'}]
 
-        .. dropdown::  Memory tool
+        ??? note "Memory tool"
 
             .. code-block:: python
 
@@ -1925,7 +1925,7 @@ class ChatAnthropic(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
-                by :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`.
+                by `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
@@ -1934,9 +1934,9 @@ class ChatAnthropic(BaseChatModel):
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
 
-                .. versionadded:: 0.3.2
+                !!! version-added "Added in version 0.3.2"
             kwargs: Any additional parameters are passed directly to
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
+                `langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
         Example:
 
@@ -2207,7 +2207,7 @@ class ChatAnthropic(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
             include_raw:
@@ -2220,7 +2220,7 @@ class ChatAnthropic(BaseChatModel):
             kwargs: Additional keyword arguments are ignored.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -2310,8 +2310,7 @@ class ChatAnthropic(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. versionchanged:: 0.1.22
-
+        !!! warning "Behavior changed in 0.1.22"
                 Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
@@ -2420,8 +2419,7 @@ class ChatAnthropic(BaseChatModel):
 
                 403
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
                 Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
 
         """  # noqa: D214,E501

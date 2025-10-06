@@ -8,10 +8,8 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Optional,
     TypedDict,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -24,7 +22,6 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
-from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -137,7 +134,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         list. If False then a named argument with name `variable_name` must be passed
         in, even if the value is an empty list."""
 
-    n_messages: Optional[PositiveInt] = None
+    n_messages: PositiveInt | None = None
     """Maximum number of messages to include. If None, then will include all.
     Defaults to None."""
 
@@ -232,7 +229,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         cls,
         template: str,
         template_format: PromptTemplateFormat = "f-string",
-        partial_variables: Optional[dict[str, Any]] = None,
+        partial_variables: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Self:
         """Create a class from a string template.
@@ -261,15 +258,13 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     @classmethod
     def from_template_file(
         cls,
-        template_file: Union[str, Path],
-        input_variables: list[str],  # noqa: ARG003  # Deprecated
+        template_file: str | Path,
         **kwargs: Any,
     ) -> Self:
         """Create a class from a template file.
 
         Args:
             template_file: path to a template file. String or Path.
-            input_variables: list of input variables.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -383,20 +378,20 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
 
 
 class _TextTemplateParam(TypedDict, total=False):
-    text: Union[str, dict]
+    text: str | dict
 
 
 class _ImageTemplateParam(TypedDict, total=False):
-    image_url: Union[str, dict]
+    image_url: str | dict
 
 
 class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     """Human message prompt template. This is a message sent from the user."""
 
-    prompt: Union[
-        StringPromptTemplate,
-        list[Union[StringPromptTemplate, ImagePromptTemplate, DictPromptTemplate]],
-    ]
+    prompt: (
+        StringPromptTemplate
+        | list[StringPromptTemplate | ImagePromptTemplate | DictPromptTemplate]
+    )
     """Prompt template."""
     additional_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
@@ -406,13 +401,11 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     @classmethod
     def from_template(
         cls: type[Self],
-        template: Union[
-            str,
-            list[Union[str, _TextTemplateParam, _ImageTemplateParam, dict[str, Any]]],
-        ],
+        template: str
+        | list[str | _TextTemplateParam | _ImageTemplateParam | dict[str, Any]],
         template_format: PromptTemplateFormat = "f-string",
         *,
-        partial_variables: Optional[dict[str, Any]] = None,
+        partial_variables: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Self:
         """Create a class from a string template.
@@ -432,7 +425,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             ValueError: If the template is not a string or list of strings.
         """
         if isinstance(template, str):
-            prompt: Union[StringPromptTemplate, list] = PromptTemplate.from_template(
+            prompt: StringPromptTemplate | list = PromptTemplate.from_template(
                 template,
                 template_format=template_format,
                 partial_variables=partial_variables,
@@ -529,7 +522,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
     @classmethod
     def from_template_file(
         cls: type[Self],
-        template_file: Union[str, Path],
+        template_file: str | Path,
         input_variables: list[str],
         **kwargs: Any,
     ) -> Self:
@@ -596,9 +589,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: Union[str, ImageURL, dict[str, Any]] = prompt.format(
-                    **inputs
-                )
+                formatted: str | ImageURL | dict[str, Any] = prompt.format(**inputs)
                 content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
                 formatted = prompt.format(**inputs)
@@ -628,7 +619,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: Union[str, ImageURL, dict[str, Any]] = await prompt.aformat(
+                formatted: str | ImageURL | dict[str, Any] = await prompt.aformat(
                     **inputs
                 )
                 content.append({"type": "text", "text": formatted})
@@ -772,17 +763,14 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
-MessageLike = Union[BaseMessagePromptTemplate, BaseMessage, BaseChatPromptTemplate]
+MessageLike = BaseMessagePromptTemplate | BaseMessage | BaseChatPromptTemplate
 
-MessageLikeRepresentation = Union[
-    MessageLike,
-    tuple[
-        Union[str, type],
-        Union[str, list[dict], list[object]],
-    ],
-    str,
-    dict[str, Any],
-]
+MessageLikeRepresentation = (
+    MessageLike
+    | tuple[str | type, str | list[dict] | list[object]]
+    | str
+    | dict[str, Any]
+)
 
 
 class ChatPromptTemplate(BaseChatPromptTemplate):
@@ -791,9 +779,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Use to create flexible templated prompts for chat models.
 
     Examples:
-
-        .. versionchanged:: 0.2.24
-
+        !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
             init.
@@ -1108,41 +1094,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return cls.from_messages([message])
 
     @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_role_strings(
-        cls, string_messages: list[tuple[str, str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role, template) tuples.
-
-        Args:
-            string_messages: list of (role, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls(
-            messages=[
-                ChatMessagePromptTemplate.from_template(template, role=role)
-                for role, template in string_messages
-            ]
-        )
-
-    @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_strings(
-        cls, string_messages: list[tuple[type[BaseMessagePromptTemplate], str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role class, template) tuples.
-
-        Args:
-            string_messages: list of (role class, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls.from_messages(string_messages)
-
-    @classmethod
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
@@ -1306,9 +1257,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     @overload
     def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
-    def __getitem__(
-        self, index: Union[int, slice]
-    ) -> Union[MessageLike, ChatPromptTemplate]:
+    def __getitem__(self, index: int | slice) -> MessageLike | ChatPromptTemplate:
         """Use to index into the chat template.
 
         Returns:
@@ -1331,7 +1280,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type. Used for serialization."""
         return "chat"
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save prompt to file.
 
         Args:
@@ -1355,7 +1304,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
 def _create_template_from_message_type(
     message_type: str,
-    template: Union[str, list],
+    template: str | list,
     template_format: PromptTemplateFormat = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
@@ -1427,7 +1376,7 @@ def _create_template_from_message_type(
 def _convert_to_message_template(
     message: MessageLikeRepresentation,
     template_format: PromptTemplateFormat = "f-string",
-) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
+) -> BaseMessage | BaseMessagePromptTemplate | BaseChatPromptTemplate:
     """Instantiate a message from a variety of message formats.
 
     The message format can be one of the following:
@@ -1450,9 +1399,9 @@ def _convert_to_message_template(
         ValueError: If 2-tuple does not have 2 elements.
     """
     if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
-        message_: Union[
-            BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate
-        ] = message
+        message_: BaseMessage | BaseMessagePromptTemplate | BaseChatPromptTemplate = (
+            message
+        )
     elif isinstance(message, BaseMessage):
         message_ = message
     elif isinstance(message, str):
