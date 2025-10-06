@@ -12,12 +12,17 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from typing_extensions import override
 
-from langchain_core.documents import Document
+from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores.base import ContextualCompressionRetriever
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+
+    from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun, Callbacks
+    from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 
 
 class CustomAddTextsVectorstore(VectorStore):
@@ -292,3 +297,300 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+class FakeRetriever(BaseRetriever):
+    """Fake retriever for testing."""
+
+    docs: list[Document] = []
+    """Documents to return."""
+
+    @override
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Return the documents."""
+        return self.docs
+
+    @override
+    async def _aget_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Async return the documents."""
+        return self.docs
+
+
+class FakeCompressor(BaseDocumentCompressor):
+    """Fake compressor for testing."""
+
+    filter_fn: Any | None = None
+    """Optional filter function to apply to documents."""
+
+    @override
+    def compress_documents(
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Callbacks | None = None,
+    ) -> Sequence[Document]:
+        """Compress documents."""
+        if self.filter_fn:
+            return [doc for doc in documents if self.filter_fn(doc, query)]
+        # Default: return first half of documents
+        return documents[: len(documents) // 2] if documents else []
+
+    @override
+    async def acompress_documents(
+        self,
+        documents: Sequence[Document],
+        query: str,
+        callbacks: Callbacks | None = None,
+    ) -> Sequence[Document]:
+        """Async compress documents."""
+        if self.filter_fn:
+            return [doc for doc in documents if self.filter_fn(doc, query)]
+        # Default: return first half of documents
+        return documents[: len(documents) // 2] if documents else []
+
+
+def test_contextual_compression_retriever_sync() -> None:
+    """Test ContextualCompressionRetriever synchronous retrieval."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="doc1", metadata={"id": 1}),
+        Document(page_content="doc2", metadata={"id": 2}),
+        Document(page_content="doc3", metadata={"id": 3}),
+        Document(page_content="doc4", metadata={"id": 4}),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Create compressor that returns first half
+    compressor = FakeCompressor()
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test retrieval
+    result = retriever.invoke("test query")
+
+    # Should return first 2 documents (first half of 4)
+    assert len(result) == 2
+    assert result[0].page_content == "doc1"
+    assert result[1].page_content == "doc2"
+
+
+async def test_contextual_compression_retriever_async() -> None:
+    """Test ContextualCompressionRetriever asynchronous retrieval."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="doc1", metadata={"id": 1}),
+        Document(page_content="doc2", metadata={"id": 2}),
+        Document(page_content="doc3", metadata={"id": 3}),
+        Document(page_content="doc4", metadata={"id": 4}),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Create compressor that returns first half
+    compressor = FakeCompressor()
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test async retrieval
+    result = await retriever.ainvoke("test query")
+
+    # Should return first 2 documents (first half of 4)
+    assert len(result) == 2
+    assert result[0].page_content == "doc1"
+    assert result[1].page_content == "doc2"
+
+
+def test_contextual_compression_retriever_empty_results() -> None:
+    """Test ContextualCompressionRetriever with empty results from base retriever."""
+    # Create base retriever with no documents
+    base_retriever = FakeRetriever(docs=[])
+
+    # Create compressor
+    compressor = FakeCompressor()
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test retrieval with empty results
+    result = retriever.invoke("test query")
+
+    # Should return empty list
+    assert result == []
+
+
+async def test_contextual_compression_retriever_empty_results_async() -> None:
+    """Test ContextualCompressionRetriever async with empty results."""
+    # Create base retriever with no documents
+    base_retriever = FakeRetriever(docs=[])
+
+    # Create compressor
+    compressor = FakeCompressor()
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test async retrieval with empty results
+    result = await retriever.ainvoke("test query")
+
+    # Should return empty list
+    assert result == []
+
+
+def test_contextual_compression_retriever_custom_filter() -> None:
+    """Test ContextualCompressionRetriever with custom filtering logic."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="apple", metadata={"category": "fruit"}),
+        Document(page_content="carrot", metadata={"category": "vegetable"}),
+        Document(page_content="banana", metadata={"category": "fruit"}),
+        Document(page_content="broccoli", metadata={"category": "vegetable"}),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Create compressor that filters for fruits only
+    def filter_fruits(doc: Document, _query: str) -> bool:
+        return doc.metadata.get("category") == "fruit"
+
+    compressor = FakeCompressor(filter_fn=filter_fruits)
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test retrieval
+    result = retriever.invoke("test query")
+
+    # Should return only fruit documents
+    assert len(result) == 2
+    assert result[0].page_content == "apple"
+    assert result[1].page_content == "banana"
+
+
+async def test_contextual_compression_retriever_custom_filter_async() -> None:
+    """Test ContextualCompressionRetriever async with custom filtering logic."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="apple", metadata={"category": "fruit"}),
+        Document(page_content="carrot", metadata={"category": "vegetable"}),
+        Document(page_content="banana", metadata={"category": "fruit"}),
+        Document(page_content="broccoli", metadata={"category": "vegetable"}),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Create compressor that filters for fruits only
+    def filter_fruits(doc: Document, _query: str) -> bool:
+        return doc.metadata.get("category") == "fruit"
+
+    compressor = FakeCompressor(filter_fn=filter_fruits)
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test async retrieval
+    result = await retriever.ainvoke("test query")
+
+    # Should return only fruit documents
+    assert len(result) == 2
+    assert result[0].page_content == "apple"
+    assert result[1].page_content == "banana"
+
+
+def test_contextual_compression_retriever_all_filtered_out() -> None:
+    """Test ContextualCompressionRetriever when all documents are filtered out."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="doc1", metadata={"score": 0.1}),
+        Document(page_content="doc2", metadata={"score": 0.2}),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Create compressor that filters out all documents
+    def filter_high_scores(doc: Document, _query: str) -> bool:
+        return doc.metadata.get("score", 0.0) > 0.9
+
+    compressor = FakeCompressor(filter_fn=filter_high_scores)
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test retrieval
+    result = retriever.invoke("test query")
+
+    # Should return empty list
+    assert result == []
+
+
+def test_contextual_compression_retriever_callbacks() -> None:
+    """Test that ContextualCompressionRetriever properly invokes compressor."""
+    # Create base retriever with documents
+    docs = [
+        Document(page_content="doc1"),
+        Document(page_content="doc2"),
+        Document(page_content="doc3"),
+        Document(page_content="doc4"),
+    ]
+    base_retriever = FakeRetriever(docs=docs)
+
+    # Track if compress_documents was called
+    compress_called = []
+
+    class TrackingCompressor(BaseDocumentCompressor):
+        """Compressor that tracks method calls."""
+
+        def compress_documents(
+            self,
+            documents: Sequence[Document],
+            query: str,
+            callbacks: Callbacks | None = None,
+        ) -> Sequence[Document]:
+            """Compress documents and track the call."""
+            compress_called.append(
+                {"documents": documents, "query": query, "callbacks": callbacks}
+            )
+            return documents[:1]  # Return first document only
+
+    compressor = TrackingCompressor()
+
+    # Create contextual compression retriever
+    retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=base_retriever
+    )
+
+    # Test retrieval with callbacks
+    result = retriever.invoke("test query")
+
+    # Verify compress_documents was called
+    assert len(compress_called) == 1
+    # Verify query was passed
+    assert compress_called[0]["query"] == "test query"
+    # Verify callbacks were passed (not None in this context)
+    assert compress_called[0]["callbacks"] is not None
+    # Verify result is compressed (1 doc instead of 4)
+    assert len(result) == 1
+    assert result[0].page_content == "doc1"
