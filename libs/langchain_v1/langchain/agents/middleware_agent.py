@@ -452,10 +452,7 @@ def create_agent(  # noqa: PLR0915
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
     middleware_w_on_model_call = [
-        m
-        for m in middleware
-        if m.__class__.on_model_call is not AgentMiddleware.on_model_call
-        or m.__class__.aon_model_call is not AgentMiddleware.aon_model_call
+        m for m in middleware if m.__class__.on_model_call is not AgentMiddleware.on_model_call
     ]
 
     # Compose on_model_call handlers into a single middleware stack

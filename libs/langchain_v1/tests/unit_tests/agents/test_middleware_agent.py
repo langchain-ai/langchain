@@ -2363,56 +2363,6 @@ def test_on_model_call_max_attempts() -> None:
     assert middleware.attempt_count == 10
 
 
-async def test_on_model_call_async() -> None:
-    """Test async on_model_call hook."""
-    call_count = {"value": 0}
-
-    class AsyncFailingModel(BaseChatModel):
-        """Model that fails on first async call, succeeds on second."""
-
-        def _generate(self, messages, **kwargs):
-            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="sync"))])
-
-        async def _agenerate(self, messages, **kwargs):
-            call_count["value"] += 1
-            if call_count["value"] == 1:
-                raise ValueError("First async call fails")
-            return ChatResult(
-                generations=[ChatGeneration(message=AIMessage(content="Async retry success"))]
-            )
-
-        @property
-        def _llm_type(self):
-            return "async_failing"
-
-    class AsyncRetryMiddleware(AgentMiddleware):
-        def __init__(self):
-            super().__init__()
-            self.retry_count = 0
-
-        async def aon_model_call(self, request, state, runtime):
-            response = yield request
-
-            if response.action == "raise":
-                # Retry on error
-                self.retry_count += 1
-                response = yield request
-
-            return response
-
-    failing_model = AsyncFailingModel()
-    retry_middleware = AsyncRetryMiddleware()
-
-    agent = create_agent(model=failing_model, middleware=[retry_middleware]).compile()
-
-    result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
-
-    # Should have retried once
-    assert retry_middleware.retry_count == 1
-    # Should have succeeded on second attempt
-    assert result["messages"][1].content == "Async retry success"
-
-
 def test_on_model_call_rewrite_response() -> None:
     """Test that middleware can rewrite model responses."""
 

@@ -305,38 +305,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         response = yield request
         return response
 
-    def aon_model_call(
-        self,
-        request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
-        """Async-compatible generator-based hook to intercept and control model execution.
-
-        Note: This is a sync generator that works with async model execution,
-        following the same pattern as ToolNode's on_tool_call handler.
-        The generator protocol itself is synchronous, but the model invocation
-        it wraps can be async.
-
-        See on_model_call for detailed documentation.
-
-        Args:
-            request: The initial model request.
-            state: The current agent state.
-            runtime: The langgraph runtime.
-
-        Yields:
-            ModelRequest: The request to execute.
-
-        Receives (via .send()):
-            ModelResponse: The response from the model call.
-
-        Returns:
-            ModelResponse: The final response to use.
-        """
-        response = yield request
-        return response
-
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
 
@@ -1401,8 +1369,6 @@ def on_model_call(
 
         middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
 
-        # Set both on_model_call and aon_model_call to the same sync generator
-        # The generator protocol is sync, but can wrap both sync and async model execution
         return type(
             middleware_name,
             (AgentMiddleware,),
@@ -1410,7 +1376,6 @@ def on_model_call(
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "on_model_call": wrapped,
-                "aon_model_call": wrapped,
             },
         )()
 
