@@ -120,7 +120,7 @@ def test_compute_hallucination_rate_mock(detector_mock: HallucinationDetector) -
     evidence = [
         (
         "Barack Obama served as the 44th President of the United States "
-        "from 2009 to 2017.",
+        "from 2009 to 2017."
         ),
         "Barack Obama was born in Hawaii, not Kenya.",
     ]
