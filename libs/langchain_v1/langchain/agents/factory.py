@@ -19,9 +19,9 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.runtime import Runtime
+from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Send
-from langgraph.typing import ContextT
+from langgraph.typing import ContextT  # noqa: TC002
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
