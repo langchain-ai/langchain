@@ -9,7 +9,7 @@ from __future__ import annotations
 import inspect
 import logging
 import time
-from collections.abc import Callable
+from types import UnionType
 from typing import TYPE_CHECKING, Union, get_args, get_origin, get_type_hints
 
 from langchain_core.messages import ToolMessage
@@ -17,13 +17,10 @@ from langchain_core.messages import ToolMessage
 from langchain.agents.middleware.types import AgentMiddleware
 
 # Import ToolCallResponse locally to avoid circular import
-from langchain.tools.tool_node import ToolCallResponse
+from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
-    from types import UnionType
-
-    from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
+    from collections.abc import Callable, Generator
 
 logger = logging.getLogger(__name__)
 
@@ -72,13 +69,14 @@ def _infer_retriable_types(
         if first_param.name in type_hints:
             origin = get_origin(first_param.annotation)
             # Handle Union types
-            if origin in [Union, UnionType]:  # type: ignore[has-type]
+            if origin in [Union, UnionType]:
                 args = get_args(first_param.annotation)
                 if all(isinstance(arg, type) and issubclass(arg, Exception) for arg in args):
                     return tuple(args)
                 msg = (
                     "All types in retry predicate annotation must be Exception types. "
-                    "For example, `def should_retry(e: Union[TimeoutError, ConnectionError]) -> bool`. "
+                    "For example, `def should_retry(e: Union[TimeoutError, "
+                    "ConnectionError]) -> bool`. "
                     f"Got '{first_param.annotation}' instead."
                 )
                 raise ValueError(msg)
@@ -260,14 +258,13 @@ class RetryMiddleware(AgentMiddleware):
                     return response
 
                 # If predicate is provided, check if we should retry
-                if self._retry_predicate is not None:
-                    if not self._retry_predicate(exception):
-                        logger.debug(
-                            "Retry predicate returned False for %s in tool %s",
-                            type(exception).__name__,
-                            request.tool_call["name"],
-                        )
-                        return response
+                if self._retry_predicate is not None and not self._retry_predicate(exception):
+                    logger.debug(
+                        "Retry predicate returned False for %s in tool %s",
+                        type(exception).__name__,
+                        request.tool_call["name"],
+                    )
+                    return response
 
                 # Last attempt - return error
                 if attempt > self.max_retries:

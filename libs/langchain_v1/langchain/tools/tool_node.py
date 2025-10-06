@@ -152,7 +152,8 @@ ToolCallHandler = Callable[
 """Generator-based handler that intercepts tool execution.
 
 Receives a ToolCallRequest, state, and runtime; yields modified ToolCallRequests;
-receives ToolCallResponses; and returns a final ToolCallResponse. Supports multiple yields for retry logic.
+receives ToolCallResponses; and returns a final ToolCallResponse. Supports multiple
+yields for retry logic.
 """
 
 
@@ -511,7 +512,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: Optional[BaseStore],
+        store: BaseStore | None,
     ) -> Any:
         try:
             runtime = get_runtime()
@@ -535,7 +536,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: Optional[BaseStore],
+        store: BaseStore | None,
     ) -> Any:
         try:
             runtime = get_runtime()
