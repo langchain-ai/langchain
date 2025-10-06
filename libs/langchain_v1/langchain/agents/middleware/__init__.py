@@ -1,5 +1,10 @@
 """Middleware plugins for agents."""
 
+from .call_tracking import ModelCallLimitMiddleware
+from .context_editing import (
+    ClearToolUsesEdit,
+    ContextEditingMiddleware,
+)
 from .human_in_the_loop import HumanInTheLoopMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
@@ -24,8 +29,11 @@ __all__ = [
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
+    "ClearToolUsesEdit",
+    "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
     "LLMToolSelectorMiddleware",
+    "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
     "ModelRequest",
     "PIIDetectionError",
