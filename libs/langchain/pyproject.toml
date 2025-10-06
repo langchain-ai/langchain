@@ -75,6 +75,8 @@ test = [
     "packaging>=24.2.0,<26.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "transformers>=4.35.0,<5.0.0",
+    "torch>=2.1.0,<3.0.0",
 ]
 test_integration = [
     "vcrpy>=7.0.0,<8.0.0",
