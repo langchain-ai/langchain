@@ -39,6 +39,7 @@ aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
+transformers = ["transformers>=4.0.0,<5.0.0"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
@@ -83,6 +84,7 @@ test_integration = [
     "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
+    "transformers>=4.0.0,<5.0.0",
 ]
 lint = [
     "ruff>=0.13.1,<0.14.0",
