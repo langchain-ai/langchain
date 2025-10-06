@@ -31,5 +31,5 @@ def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
     required_dependencies = {Requirement(dep).name for dep in dependencies}
 
     assert sorted(required_dependencies) == sorted(
-        ["langchain-core", "langchain-text-splitters", "langgraph", "pydantic"]
+        ["langchain-core", "langgraph", "pydantic"]
     )
