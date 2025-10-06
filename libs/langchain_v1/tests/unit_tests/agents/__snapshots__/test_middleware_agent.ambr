@@ -15,7 +15,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.1
@@ -36,7 +36,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.10
@@ -59,7 +59,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.11
@@ -86,7 +86,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.2
@@ -109,7 +109,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.3
@@ -134,7 +134,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.4
@@ -155,7 +155,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.5
@@ -178,7 +178,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.6
@@ -203,7 +203,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.7
@@ -226,7 +226,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.8
@@ -253,7 +253,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_diagram.9
@@ -284,7 +284,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_jump[memory]
@@ -317,7 +317,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_jump[postgres]
@@ -350,7 +350,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_jump[postgres_pipe]
@@ -383,7 +383,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_jump[postgres_pool]
@@ -416,7 +416,7 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
 # name: test_create_agent_jump[sqlite]
@@ -449,6 +449,6 @@
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
-
+  
   '''
 # ---
