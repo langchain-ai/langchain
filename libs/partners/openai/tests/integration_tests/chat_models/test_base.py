@@ -233,7 +233,7 @@ def test_openai_invoke() -> None:
 
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-4.1-mini")
 
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("I'm Pickle Rick"):
@@ -247,7 +247,7 @@ def test_stream() -> None:
     aggregate: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
-    for chunk in llm.stream("Hello", stream_usage=True):
+    for chunk in llm.stream("Hello"):
         assert isinstance(chunk.content, str)
         aggregate = chunk if aggregate is None else aggregate + chunk
         assert isinstance(chunk, AIMessageChunk)
@@ -310,13 +310,14 @@ async def test_astream() -> None:
             assert chunks_with_token_counts == 0
             assert full.usage_metadata is None
 
-    llm = ChatOpenAI(temperature=0, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
-    await _test_stream(llm.astream("Hello"), expect_usage=False)
+    llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
     await _test_stream(
         llm.astream("Hello", stream_options={"include_usage": True}), expect_usage=True
     )
     await _test_stream(llm.astream("Hello", stream_usage=True), expect_usage=True)
     llm = ChatOpenAI(
+        model="gpt-4.1-mini",
         temperature=0,
         max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         model_kwargs={"stream_options": {"include_usage": True}},
@@ -326,7 +327,12 @@ async def test_astream() -> None:
         llm.astream("Hello", stream_options={"include_usage": False}),
         expect_usage=False,
     )
-    llm = ChatOpenAI(temperature=0, max_tokens=MAX_TOKEN_COUNT, stream_usage=True)  # type: ignore[call-arg]
+    llm = ChatOpenAI(
+        model="gpt-4.1-mini",
+        temperature=0,
+        max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
+        stream_usage=True,
+    )
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
