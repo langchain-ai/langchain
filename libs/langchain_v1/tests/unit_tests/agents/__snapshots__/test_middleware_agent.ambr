@@ -10,12 +10,19 @@
   	__start__([<p>__start__</p>]):::first
   	model(model)
   	tools(tools)
+  	NoopZero\2ebefore_agent(NoopZero.before_agent)
+  	NoopOne\2eafter_agent(NoopOne.after_agent)
+  	NoopTwo\2eafter_agent(NoopTwo.after_agent)
   	__end__([<p>__end__</p>]):::last
-  	__start__ --> model;
-  	model -.-> __end__;
+  	NoopTwo\2eafter_agent --> NoopOne\2eafter_agent;
+  	NoopZero\2ebefore_agent -.-> NoopTwo\2eafter_agent;
+  	NoopZero\2ebefore_agent -.-> model;
+  	__start__ --> NoopZero\2ebefore_agent;
+  	model -.-> NoopTwo\2eafter_agent;
   	model -.-> tools;
-  	tools -.-> __end__;
+  	tools -.-> NoopTwo\2eafter_agent;
   	tools -.-> model;
+  	NoopOne\2eafter_agent --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc

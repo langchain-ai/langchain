@@ -425,6 +425,7 @@ def test_agent_graph_with_jump_to_end_as_after_agent(snapshot: SnapshotAssertion
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
+        middleware=[NoopZero(), NoopOne(), NoopTwo()],
     )
 
     assert agent_one.get_graph().draw_mermaid() == snapshot
