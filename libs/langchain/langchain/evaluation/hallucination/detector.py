@@ -1,15 +1,12 @@
-from typing import TYPE_CHECKING
+from typing import Callable, Optional, Any
 
-if TYPE_CHECKING:
-    from transformers import pipeline as PipelineType
-
-
-pipeline: "PipelineType" | None = None # type: ignore
-# Lazy import for runtime
+# Lazy import for optional transformers dependency
+pipeline: Optional[Callable[..., Any]] = None
 try:
-    from transformers import pipeline
+    from transformers import pipeline as _pipeline
+    pipeline = _pipeline
 except ImportError:
-    pipeline = None
+    pass
 
 
 class HallucinationDetector:
