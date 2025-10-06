@@ -395,7 +395,3 @@ def test_mixed_middleware():
     assert "on_tool_call_end" in call_log
     # before_model runs before on_tool_call
     assert call_log.index("before_model") < call_log.index("on_tool_call_start")
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
