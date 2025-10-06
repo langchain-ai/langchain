@@ -478,9 +478,10 @@ class BaseChatOpenAI(BaseChatModel):
     initialized with a custom client, as many chat completions APIs do not support
     streaming token usage.
 
-    !!! version-added "Added in version 0.3.9"
+    .. versionadded:: 0.3.9
 
-    !!! warning "Behavior changed in 0.3.35"
+    .. versionchanged:: 0.3.35
+
         Enabled for default base URL and client.
     """
     max_retries: Optional[int] = None
