@@ -98,7 +98,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
-    structured_response: NotRequired[ResponseT]
+    structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
     thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
     run_model_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
 
