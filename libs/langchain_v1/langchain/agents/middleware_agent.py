@@ -1,12 +1,12 @@
 """Middleware agent implementation."""
 
-import itertools
 from collections.abc import Callable, Sequence
-from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
+from dataclasses import dataclass
+from typing import Annotated, Any, Generic, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, run_in_executor
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -20,6 +20,7 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,
+    MiddlewareHookInfo,
     ModelRequest,
     OmitFromSchema,
     PublicAgentState,
@@ -40,6 +41,184 @@ from langchain.tools import ToolNode
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
+
+
+# ============================================================================
+# Data Structures for Agent Graph Construction
+# ============================================================================
+
+
+@dataclass
+class MiddlewareHooks:
+    """Middleware hooks categorized by type for graph construction."""
+
+    before_agent: list[MiddlewareHookInfo]
+    """Hooks that run once before the agent starts."""
+
+    before_model: list[MiddlewareHookInfo]
+    """Hooks that run before each model call in the agent loop."""
+
+    modify_model_request: list[MiddlewareHookInfo]
+    """Hooks that modify the model request before calling the model."""
+
+    after_model: list[MiddlewareHookInfo]
+    """Hooks that run after each model call in the agent loop."""
+
+    after_agent: list[MiddlewareHookInfo]
+    """Hooks that run once after the agent completes."""
+
+    retry: list[MiddlewareHookInfo]
+    """Hooks that handle model invocation errors and optionally retry."""
+
+    @classmethod
+    def from_middleware_list(
+        cls,
+        middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]],
+    ) -> "MiddlewareHooks":
+        """Extract and categorize all hooks from middleware instances.
+
+        Args:
+            middleware: Sequence of middleware instances to analyze.
+
+        Returns:
+            MiddlewareHooks with all hooks organized by type.
+        """
+        hooks_by_type: dict[str, list[MiddlewareHookInfo]] = {
+            "before_agent": [],
+            "before_model": [],
+            "modify_model_request": [],
+            "after_model": [],
+            "after_agent": [],
+            "retry": [],
+        }
+
+        # Map hook names to their category
+        hook_name_mapping = {
+            "before_agent": "before_agent",
+            "before_model": "before_model",
+            "modify_model_request": "modify_model_request",
+            "after_model": "after_model",
+            "after_agent": "after_agent",
+            "retry_model_request": "retry",
+        }
+
+        for m in middleware:
+            for hook_name, category in hook_name_mapping.items():
+                if hook_info := m.hook_info(hook_name):
+                    hooks_by_type[category].append(hook_info)
+
+        return cls(
+            before_agent=hooks_by_type["before_agent"],
+            before_model=hooks_by_type["before_model"],
+            modify_model_request=hooks_by_type["modify_model_request"],
+            after_model=hooks_by_type["after_model"],
+            after_agent=hooks_by_type["after_agent"],
+            retry=hooks_by_type["retry"],
+        )
+
+
+@dataclass
+class AgentComponents:
+    """Core components and configuration for agent construction."""
+
+    model: BaseChatModel
+    """The language model to use for the agent."""
+
+    tool_node: ToolNode | None
+    """The tool execution node, or None if no tools are available."""
+
+    middleware_hooks: MiddlewareHooks
+    """Middleware hooks organized by type."""
+
+    structured_output_tools: dict[str, OutputToolBinding]
+    """Tools used for structured output parsing."""
+
+    default_tools: list[BaseTool | dict]
+    """Default tools available to the agent (regular tools + middleware tools + built-ins)."""
+
+    initial_response_format: ResponseFormat | None
+    """The initial response format configuration."""
+
+    system_prompt: str | None
+    """The system prompt for the agent."""
+
+
+@dataclass
+class SchemaConfiguration(Generic[ContextT]):
+    """Schema configuration for the agent graph."""
+
+    state_schema: type
+    """The complete state schema for the graph."""
+
+    input_schema: type
+    """The input schema (with fields marked as input-only omitted)."""
+
+    output_schema: type
+    """The output schema (with fields marked as output-only omitted)."""
+
+    context_schema: type[ContextT] | None
+    """The context schema for the graph runtime."""
+
+
+@dataclass
+class GraphTopology:
+    """Key nodes in the graph topology defining the execution flow.
+
+    The agent graph has the following structure:
+    START -> entry_node -> [loop: loop_entry_node -> model -> loop_exit_node -> tools]
+    -> exit_node -> END
+
+    - entry_node: Runs once at the start (before_agent hooks)
+    - loop_entry_node: Beginning of agent loop (before_model hooks)
+    - loop_exit_node: End of each loop iteration (after_model hooks)
+    - exit_node: Runs once at the end (after_agent hooks) or END
+    """
+
+    entry_node: str
+    """The first node executed (START -> entry_node)."""
+
+    loop_entry_node: str
+    """Where the agent loop begins (where tools loop back to)."""
+
+    loop_exit_node: str
+    """The last node in each loop iteration."""
+
+    exit_node: str
+    """The final node before END (or END itself)."""
+
+    @classmethod
+    def compute(cls, hooks: MiddlewareHooks) -> "GraphTopology":
+        """Compute graph topology from middleware hook configuration.
+
+        Args:
+            hooks: The categorized middleware hooks.
+
+        Returns:
+            GraphTopology describing the flow through the graph.
+        """
+        # Entry node (runs once at start): before_agent -> before_model -> model_request
+        if hooks.before_agent:
+            entry_node = hooks.before_agent[0].node_name
+        elif hooks.before_model:
+            entry_node = hooks.before_model[0].node_name
+        else:
+            entry_node = "model_request"
+
+        # Loop entry node (beginning of agent loop, excludes before_agent)
+        loop_entry_node = hooks.before_model[0].node_name if hooks.before_model else "model_request"
+
+        # Loop exit node (end of each iteration, excludes after_agent)
+        loop_exit_node = hooks.after_model[0].node_name if hooks.after_model else "model_request"
+
+        # Exit node (runs once at end): after_agent or END
+        exit_node = hooks.after_agent[-1].node_name if hooks.after_agent else END
+
+        return cls(
+            entry_node=entry_node,
+            loop_entry_node=loop_entry_node,
+            loop_exit_node=loop_exit_node,
+            exit_node=exit_node,
+        )
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -87,39 +266,112 @@ def _extract_metadata(type_: type) -> list:
     return []
 
 
-def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> list[JumpTo]:
-    """Get the can_jump_to list from either sync or async hook methods.
+# ============================================================================
+# Setup and Initialization Functions
+# ============================================================================
+
+
+def _setup_components(
+    model: str | BaseChatModel,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None,
+    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]],
+    response_format: ResponseFormat[ResponseT] | type[ResponseT] | None,
+    system_prompt: str | None,
+) -> AgentComponents:
+    """Setup and validate agent components.
 
     Args:
-        middleware: The middleware instance to inspect.
-        hook_name: The name of the hook ('before_model' or 'after_model').
+        model: Model name or instance.
+        tools: Tools for the agent.
+        middleware: Middleware instances.
+        response_format: Response format configuration.
+        system_prompt: System prompt for the agent.
 
     Returns:
-        List of jump destinations, or empty list if not configured.
+        AgentComponents with all components configured and validated.
     """
-    # Get the base class method for comparison
-    base_sync_method = getattr(AgentMiddleware, hook_name, None)
-    base_async_method = getattr(AgentMiddleware, f"a{hook_name}", None)
+    # Initialize chat model
+    if isinstance(model, str):
+        model = init_chat_model(model)
 
-    # Try sync method first - only if it's overridden from base class
-    sync_method = getattr(middleware.__class__, hook_name, None)
-    if (
-        sync_method
-        and sync_method is not base_sync_method
-        and hasattr(sync_method, "__can_jump_to__")
-    ):
-        return sync_method.__can_jump_to__
+    # Handle tools being None or empty
+    if tools is None:
+        tools = []
 
-    # Try async method - only if it's overridden from base class
-    async_method = getattr(middleware.__class__, f"a{hook_name}", None)
-    if (
-        async_method
-        and async_method is not base_async_method
-        and hasattr(async_method, "__can_jump_to__")
-    ):
-        return async_method.__can_jump_to__
+    # Convert response format and setup structured output tools
+    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
+    if response_format is None:
+        initial_response_format = None
+    elif isinstance(response_format, (ToolStrategy, ProviderStrategy, AutoStrategy)):
+        initial_response_format = response_format
+    else:
+        # Raw schema - wrap in AutoStrategy to enable auto-detection
+        initial_response_format = AutoStrategy(schema=response_format)
 
-    return []
+    # For AutoStrategy, convert to ToolStrategy to setup tools upfront
+    tool_strategy_for_setup: ToolStrategy | None = None
+    if isinstance(initial_response_format, AutoStrategy):
+        tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
+    elif isinstance(initial_response_format, ToolStrategy):
+        tool_strategy_for_setup = initial_response_format
+
+    structured_output_tools: dict[str, OutputToolBinding] = {}
+    if tool_strategy_for_setup:
+        for response_schema in tool_strategy_for_setup.schema_specs:
+            structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
+            structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
+
+    middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
+
+    # Setup tools
+    tool_node: ToolNode | None = None
+    default_tools: list[BaseTool | dict[str, Any]]
+
+    if isinstance(tools, list):
+        # Extract built-in provider tools (dict format) and regular tools (BaseTool)
+        built_in_tools = [t for t in tools if isinstance(t, dict)]
+        regular_tools = [t for t in tools if not isinstance(t, dict)]
+
+        # Tools that require client-side execution
+        available_tools = middleware_tools + regular_tools
+
+        # Only create ToolNode if we have client-side tools
+        tool_node = ToolNode(tools=available_tools) if available_tools else None
+
+        # Default tools for ModelRequest initialization
+        default_tools = regular_tools + middleware_tools + built_in_tools
+    elif isinstance(tools, ToolNode):
+        tool_node = tools
+        if tool_node:
+            # Add middleware tools to existing ToolNode
+            available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
+            tool_node = ToolNode(available_tools)
+
+            # default_tools includes all client-side tools
+            default_tools = available_tools
+        else:
+            default_tools = middleware_tools
+    else:
+        # No tools provided, only middleware_tools available
+        default_tools = middleware_tools
+
+    # Validate middleware
+    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
+        "Please remove duplicate middleware instances."
+    )
+
+    # Categorize middleware by hooks
+    middleware_hooks = MiddlewareHooks.from_middleware_list(middleware)
+
+    return AgentComponents(
+        model=model,
+        tool_node=tool_node,
+        middleware_hooks=middleware_hooks,
+        structured_output_tools=structured_output_tools,
+        default_tools=default_tools,
+        initial_response_format=initial_response_format,
+        system_prompt=system_prompt,
+    )
 
 
 def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
@@ -143,6 +395,58 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
         if model_name
         else False
     )
+
+
+# ============================================================================
+# Node Building Functions
+# ============================================================================
+
+
+def _create_hook_node(hook_info: MiddlewareHookInfo) -> RunnableCallable:
+    """Create a graph node for a middleware hook.
+
+    Args:
+        hook_info: Information about the hook to create a node for.
+
+    Returns:
+        RunnableCallable that supports both sync and async execution.
+    """
+    return RunnableCallable(hook_info.sync_fn, hook_info.async_fn, trace=False)
+
+
+def _add_middleware_nodes(
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    components: AgentComponents,
+    state_schema: type,
+) -> None:
+    """Add all middleware hook nodes to the graph.
+
+    Args:
+        graph: The state graph to add nodes to.
+        components: Agent components with middleware hooks.
+        state_schema: The state schema for input validation.
+    """
+    hooks = components.middleware_hooks
+
+    # Add before_agent nodes
+    for hook_info in hooks.before_agent:
+        node = _create_hook_node(hook_info)
+        graph.add_node(hook_info.node_name, node, input_schema=state_schema)
+
+    # Add before_model nodes
+    for hook_info in hooks.before_model:
+        node = _create_hook_node(hook_info)
+        graph.add_node(hook_info.node_name, node, input_schema=state_schema)
+
+    # Add after_model nodes
+    for hook_info in hooks.after_model:
+        node = _create_hook_node(hook_info)
+        graph.add_node(hook_info.node_name, node, input_schema=state_schema)
+
+    # Add after_agent nodes
+    for hook_info in hooks.after_agent:
+        node = _create_hook_node(hook_info)
+        graph.add_node(hook_info.node_name, node, input_schema=state_schema)
 
 
 def _handle_structured_output_error(
@@ -175,6 +479,157 @@ def _handle_structured_output_error(
     return False, ""
 
 
+# ============================================================================
+# Edge Building Functions
+# ============================================================================
+
+
+def _connect_entry_edges(
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    topology: GraphTopology,
+) -> None:
+    """Connect the entry edge from START to the entry node.
+
+    Args:
+        graph: The state graph to add edges to.
+        topology: Graph topology configuration.
+    """
+    graph.add_edge(START, topology.entry_node)
+
+
+def _connect_loop_edges(
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    topology: GraphTopology,
+    components: AgentComponents,
+) -> None:
+    """Connect conditional edges for the agent loop (tools <-> model).
+
+    Args:
+        graph: The state graph to add edges to.
+        topology: Graph topology configuration.
+        components: Agent components with tool configuration.
+    """
+    tool_node = components.tool_node
+    structured_output_tools = components.structured_output_tools
+
+    if tool_node is None:
+        # No tools - connect loop_exit directly to exit_node
+        if topology.loop_exit_node == "model_request":
+            graph.add_edge(topology.loop_exit_node, topology.exit_node)
+        else:
+            # We have after_model but no tools
+            _add_middleware_edge(
+                graph,
+                topology.loop_exit_node,
+                topology.exit_node,
+                topology.loop_entry_node,
+                can_jump_to=components.middleware_hooks.after_model[0].can_jump_to,
+            )
+        return
+
+    # Add conditional edge from tools back to model or exit
+    graph.add_conditional_edges(
+        "tools",
+        _make_tools_to_model_edge(
+            tool_node, topology.loop_entry_node, structured_output_tools, topology.exit_node
+        ),
+        [topology.loop_entry_node, topology.exit_node],
+    )
+
+    # Add conditional edge from model to tools or exit
+    graph.add_conditional_edges(
+        topology.loop_exit_node,
+        _make_model_to_tools_edge(
+            topology.loop_entry_node, structured_output_tools, tool_node, topology.exit_node
+        ),
+        [topology.loop_entry_node, "tools", topology.exit_node],
+    )
+
+
+def _connect_middleware_chains(
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    components: AgentComponents,
+    topology: GraphTopology,
+) -> None:
+    """Connect middleware hooks in chains.
+
+    Args:
+        graph: The state graph to add edges to.
+        components: Agent components with middleware hooks.
+        topology: Graph topology configuration.
+    """
+    hooks = components.middleware_hooks
+
+    # Connect before_agent chain
+    if hooks.before_agent:
+        for i in range(len(hooks.before_agent) - 1):
+            _add_middleware_edge(
+                graph,
+                hooks.before_agent[i].node_name,
+                hooks.before_agent[i + 1].node_name,
+                topology.loop_entry_node,
+                can_jump_to=hooks.before_agent[i].can_jump_to,
+            )
+        # Connect last before_agent to loop_entry_node
+        _add_middleware_edge(
+            graph,
+            hooks.before_agent[-1].node_name,
+            topology.loop_entry_node,
+            topology.loop_entry_node,
+            can_jump_to=hooks.before_agent[-1].can_jump_to,
+        )
+
+    # Connect before_model chain
+    if hooks.before_model:
+        for i in range(len(hooks.before_model) - 1):
+            _add_middleware_edge(
+                graph,
+                hooks.before_model[i].node_name,
+                hooks.before_model[i + 1].node_name,
+                topology.loop_entry_node,
+                can_jump_to=hooks.before_model[i].can_jump_to,
+            )
+        # Connect last before_model to model_request
+        _add_middleware_edge(
+            graph,
+            hooks.before_model[-1].node_name,
+            "model_request",
+            topology.loop_entry_node,
+            can_jump_to=hooks.before_model[-1].can_jump_to,
+        )
+
+    # Connect after_model chain (reverse order)
+    if hooks.after_model:
+        graph.add_edge("model_request", hooks.after_model[-1].node_name)
+        for i in range(len(hooks.after_model) - 1, 0, -1):
+            _add_middleware_edge(
+                graph,
+                hooks.after_model[i].node_name,
+                hooks.after_model[i - 1].node_name,
+                topology.loop_entry_node,
+                can_jump_to=hooks.after_model[i].can_jump_to,
+            )
+
+    # Connect after_agent chain (reverse order)
+    if hooks.after_agent:
+        for i in range(len(hooks.after_agent) - 1, 0, -1):
+            _add_middleware_edge(
+                graph,
+                hooks.after_agent[i].node_name,
+                hooks.after_agent[i - 1].node_name,
+                topology.loop_entry_node,
+                can_jump_to=hooks.after_agent[i].can_jump_to,
+            )
+        # Connect first after_agent to END
+        _add_middleware_edge(
+            graph,
+            hooks.after_agent[0].node_name,
+            END,
+            topology.loop_entry_node,
+            can_jump_to=hooks.after_agent[0].can_jump_to,
+        )
+
+
 def create_agent(  # noqa: PLR0915
     *,
     model: str | BaseChatModel,
@@ -186,118 +641,23 @@ def create_agent(  # noqa: PLR0915
 ) -> StateGraph[
     AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
 ]:
-    """Create a middleware agent graph."""
-    # init chat model
-    if isinstance(model, str):
-        model = init_chat_model(model)
+    """Create a middleware agent graph.
 
-    # Handle tools being None or empty
-    if tools is None:
-        tools = []
+    Args:
+        model: Model name or BaseChatModel instance.
+        tools: Tools for the agent to use.
+        system_prompt: System prompt for the agent.
+        middleware: Middleware instances to customize agent behavior.
+        response_format: Response format configuration for structured outputs.
+        context_schema: Context schema for the graph runtime.
 
-    # Convert response format and setup structured output tools
-    # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
-    # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
-    # but may be replaced with ProviderStrategy later based on model capabilities.
-    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
-    if response_format is None:
-        initial_response_format = None
-    elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        # Preserve explicitly requested strategies
-        initial_response_format = response_format
-    elif isinstance(response_format, AutoStrategy):
-        # AutoStrategy provided - preserve it for later auto-detection
-        initial_response_format = response_format
-    else:
-        # Raw schema - wrap in AutoStrategy to enable auto-detection
-        initial_response_format = AutoStrategy(schema=response_format)
+    Returns:
+        StateGraph configured with all nodes and edges.
+    """
+    # Phase 1: Setup and validate components
+    components = _setup_components(model, tools, middleware, response_format, system_prompt)
 
-    # For AutoStrategy, convert to ToolStrategy to setup tools upfront
-    # (may be replaced with ProviderStrategy later based on model)
-    tool_strategy_for_setup: ToolStrategy | None = None
-    if isinstance(initial_response_format, AutoStrategy):
-        tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
-    elif isinstance(initial_response_format, ToolStrategy):
-        tool_strategy_for_setup = initial_response_format
-
-    structured_output_tools: dict[str, OutputToolBinding] = {}
-    if tool_strategy_for_setup:
-        for response_schema in tool_strategy_for_setup.schema_specs:
-            structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
-            structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
-    middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
-
-    # Setup tools
-    tool_node: ToolNode | None = None
-    if isinstance(tools, list):
-        # Extract built-in provider tools (dict format) and regular tools (BaseTool)
-        built_in_tools = [t for t in tools if isinstance(t, dict)]
-        regular_tools = [t for t in tools if not isinstance(t, dict)]
-
-        # Tools that require client-side execution (must be in ToolNode)
-        available_tools = middleware_tools + regular_tools
-
-        # Only create ToolNode if we have client-side tools
-        tool_node = ToolNode(tools=available_tools) if available_tools else None
-
-        # Default tools for ModelRequest initialization
-        # Include built-ins and regular tools (can be changed dynamically by middleware)
-        # Structured tools are NOT included - they're added dynamically based on response_format
-        default_tools = regular_tools + middleware_tools + built_in_tools
-    elif isinstance(tools, ToolNode):
-        tool_node = tools
-        if tool_node:
-            # Add middleware tools to existing ToolNode
-            available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(available_tools)
-
-            # default_tools includes all client-side tools (no built-ins or structured tools)
-            default_tools = available_tools
-    else:
-        # No tools provided, only middleware_tools available
-        default_tools = middleware_tools
-
-    # validate middleware
-    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
-    middleware_w_before_agent = [
-        m
-        for m in middleware
-        if m.__class__.before_agent is not AgentMiddleware.before_agent
-        or m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
-    ]
-    middleware_w_before_model = [
-        m
-        for m in middleware
-        if m.__class__.before_model is not AgentMiddleware.before_model
-        or m.__class__.abefore_model is not AgentMiddleware.abefore_model
-    ]
-    middleware_w_modify_model_request = [
-        m
-        for m in middleware
-        if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
-        or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
-    ]
-    middleware_w_after_model = [
-        m
-        for m in middleware
-        if m.__class__.after_model is not AgentMiddleware.after_model
-        or m.__class__.aafter_model is not AgentMiddleware.aafter_model
-    ]
-    middleware_w_after_agent = [
-        m
-        for m in middleware
-        if m.__class__.after_agent is not AgentMiddleware.after_agent
-        or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
-    ]
-    middleware_w_retry = [
-        m
-        for m in middleware
-        if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request
-        or m.__class__.aretry_model_request is not AgentMiddleware.aretry_model_request
-    ]
-
+    # Phase 2: Create schemas
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
 
@@ -305,7 +665,7 @@ def create_agent(  # noqa: PLR0915
     input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
     output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
 
-    # create graph, add nodes
+    # Phase 3: Create graph
     graph: StateGraph[
         AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
     ] = StateGraph(
@@ -314,6 +674,15 @@ def create_agent(  # noqa: PLR0915
         output_schema=output_schema,
         context_schema=context_schema,
     )
+
+    # Phase 4: Define model request handlers (need access to components via closure)
+    # These are inner functions because they need access to components
+    structured_output_tools = components.structured_output_tools
+    default_tools = components.default_tools
+    initial_response_format = components.initial_response_format
+    model_instance = components.model
+    middleware_w_modify_model_request = components.middleware_hooks.modify_model_request
+    middleware_w_retry = components.middleware_hooks.retry
 
     def _handle_model_output(
         output: AIMessage, effective_response_format: ResponseFormat | None
@@ -524,29 +893,28 @@ def create_agent(  # noqa: PLR0915
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
-            model=model,
+            model=model_instance,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_prompt=components.system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
-                m.modify_model_request(request, state, runtime)
+        for hook_info in middleware_w_modify_model_request:
+            if hook_info.sync_fn:
+                hook_info.sync_fn(request, state, runtime)
             else:
                 msg = (
                     f"No synchronous function provided for "
-                    f'{m.__class__.__name__}.amodify_model_request".'
+                    f"{hook_info.middleware_name}.amodify_model_request"
                     "\nEither initialize with a synchronous function or invoke"
                     " via the async API (ainvoke, astream, etc.)"
                 )
                 raise TypeError(msg)
 
         # Retry loop for model invocation with error handling
-        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
         max_attempts = 100
         for attempt in range(1, max_attempts + 1):
             try:
@@ -564,18 +932,17 @@ def create_agent(  # noqa: PLR0915
                 }
             except Exception as error:
                 # Try retry_model_request on each middleware
-                for m in middleware_w_retry:
-                    if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request:
-                        if retry_request := m.retry_model_request(
+                for hook_info in middleware_w_retry:
+                    if hook_info.sync_fn:
+                        if retry_request := hook_info.sync_fn(
                             error, request, state, runtime, attempt
                         ):
-                            # Break on first middleware that wants to retry
                             request = retry_request
                             break
                     else:
                         msg = (
                             f"No synchronous function provided for "
-                            f'{m.__class__.__name__}.aretry_model_request".'
+                            f"{hook_info.middleware_name}.aretry_model_request"
                             "\nEither initialize with a synchronous function or invoke"
                             " via the async API (ainvoke, astream, etc.)"
                         )
@@ -590,20 +957,26 @@ def create_agent(  # noqa: PLR0915
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
-            model=model,
+            model=model_instance,
             tools=default_tools,
-            system_prompt=system_prompt,
+            system_prompt=components.system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            await m.amodify_model_request(request, state, runtime)
+        for hook_info in middleware_w_modify_model_request:
+            if hook_info.async_fn:
+                await hook_info.async_fn(request, state, runtime)
+            elif hook_info.sync_fn:
+                # Fallback to sync if only sync is implemented
+                await run_in_executor(None, hook_info.sync_fn, request, state, runtime)
+            else:
+                msg = f"No function provided for {hook_info.middleware_name}.modify_model_request"
+                raise RuntimeError(msg)
 
         # Retry loop for model invocation with error handling
-        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
         max_attempts = 100
         for attempt in range(1, max_attempts + 1):
             try:
@@ -621,241 +994,41 @@ def create_agent(  # noqa: PLR0915
                 }
             except Exception as error:
                 # Try retry_model_request on each middleware
-                for m in middleware_w_retry:
-                    if retry_request := await m.aretry_model_request(
-                        error, request, state, runtime, attempt
-                    ):
-                        # Break on first middleware that wants to retry
+                for hook_info in middleware_w_retry:
+                    retry_request = None
+                    if hook_info.async_fn:
+                        retry_request = await hook_info.async_fn(
+                            error, request, state, runtime, attempt
+                        )
+                    elif hook_info.sync_fn:
+                        # Fallback to sync if only sync is implemented
+                        retry_request = await run_in_executor(
+                            None, hook_info.sync_fn, error, request, state, runtime, attempt
+                        )
+
+                    if retry_request:
                         request = retry_request
                         break
                 else:
-                    # If no middleware wants to retry, re-raise the error
                     raise
 
         # If we exit the loop, max attempts exceeded
         msg = f"Maximum retry attempts ({max_attempts}) exceeded"
         raise RuntimeError(msg)
 
-    # Use sync or async based on model capabilities
+    # Phase 5: Add nodes to graph
     graph.add_node("model_request", RunnableCallable(model_request, amodel_request, trace=False))
+    if components.tool_node is not None:
+        graph.add_node("tools", components.tool_node)
+    _add_middleware_nodes(graph, components, state_schema)
 
-    # Only add tools node if we have tools
-    if tool_node is not None:
-        graph.add_node("tools", tool_node)
+    # Phase 6: Compute graph topology
+    topology = GraphTopology.compute(components.middleware_hooks)
 
-    # Add middleware nodes
-    for m in middleware:
-        if (
-            m.__class__.before_agent is not AgentMiddleware.before_agent
-            or m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
-        ):
-            # Use RunnableCallable to support both sync and async
-            # Pass None for sync if not overridden to avoid signature conflicts
-            sync_before_agent = (
-                m.before_agent
-                if m.__class__.before_agent is not AgentMiddleware.before_agent
-                else None
-            )
-            async_before_agent = (
-                m.abefore_agent
-                if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
-                else None
-            )
-            before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
-            graph.add_node(f"{m.name}.before_agent", before_agent_node, input_schema=state_schema)
-
-        if (
-            m.__class__.before_model is not AgentMiddleware.before_model
-            or m.__class__.abefore_model is not AgentMiddleware.abefore_model
-        ):
-            # Use RunnableCallable to support both sync and async
-            # Pass None for sync if not overridden to avoid signature conflicts
-            sync_before = (
-                m.before_model
-                if m.__class__.before_model is not AgentMiddleware.before_model
-                else None
-            )
-            async_before = (
-                m.abefore_model
-                if m.__class__.abefore_model is not AgentMiddleware.abefore_model
-                else None
-            )
-            before_node = RunnableCallable(sync_before, async_before, trace=False)
-            graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
-
-        if (
-            m.__class__.after_model is not AgentMiddleware.after_model
-            or m.__class__.aafter_model is not AgentMiddleware.aafter_model
-        ):
-            # Use RunnableCallable to support both sync and async
-            # Pass None for sync if not overridden to avoid signature conflicts
-            sync_after = (
-                m.after_model
-                if m.__class__.after_model is not AgentMiddleware.after_model
-                else None
-            )
-            async_after = (
-                m.aafter_model
-                if m.__class__.aafter_model is not AgentMiddleware.aafter_model
-                else None
-            )
-            after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
-
-        if (
-            m.__class__.after_agent is not AgentMiddleware.after_agent
-            or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
-        ):
-            # Use RunnableCallable to support both sync and async
-            # Pass None for sync if not overridden to avoid signature conflicts
-            sync_after_agent = (
-                m.after_agent
-                if m.__class__.after_agent is not AgentMiddleware.after_agent
-                else None
-            )
-            async_after_agent = (
-                m.aafter_agent
-                if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
-                else None
-            )
-            after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
-            graph.add_node(f"{m.name}.after_agent", after_agent_node, input_schema=state_schema)
-
-    # Determine the entry node (runs once at start): before_agent -> before_model -> model_request
-    if middleware_w_before_agent:
-        entry_node = f"{middleware_w_before_agent[0].name}.before_agent"
-    elif middleware_w_before_model:
-        entry_node = f"{middleware_w_before_model[0].name}.before_model"
-    else:
-        entry_node = "model_request"
-
-    # Determine the loop entry node (beginning of agent loop, excludes before_agent)
-    # This is where tools will loop back to for the next iteration
-    if middleware_w_before_model:
-        loop_entry_node = f"{middleware_w_before_model[0].name}.before_model"
-    else:
-        loop_entry_node = "model_request"
-
-    # Determine the loop exit node (end of each iteration, can run multiple times)
-    # This is after_model or model_request, but NOT after_agent
-    if middleware_w_after_model:
-        loop_exit_node = f"{middleware_w_after_model[0].name}.after_model"
-    else:
-        loop_exit_node = "model_request"
-
-    # Determine the exit node (runs once at end): after_agent or END
-    if middleware_w_after_agent:
-        exit_node = f"{middleware_w_after_agent[-1].name}.after_agent"
-    else:
-        exit_node = END
-
-    graph.add_edge(START, entry_node)
-    # add conditional edges only if tools exist
-    if tool_node is not None:
-        graph.add_conditional_edges(
-            "tools",
-            _make_tools_to_model_edge(
-                tool_node, loop_entry_node, structured_output_tools, exit_node
-            ),
-            [loop_entry_node, exit_node],
-        )
-
-        graph.add_conditional_edges(
-            loop_exit_node,
-            _make_model_to_tools_edge(
-                loop_entry_node, structured_output_tools, tool_node, exit_node
-            ),
-            [loop_entry_node, "tools", exit_node],
-        )
-    elif loop_exit_node == "model_request":
-        # If no tools and no after_model, go directly to exit_node
-        graph.add_edge(loop_exit_node, exit_node)
-    # No tools but we have after_model - connect after_model to exit_node
-    else:
-        _add_middleware_edge(
-            graph,
-            f"{middleware_w_after_model[0].name}.after_model",
-            exit_node,
-            loop_entry_node,
-            can_jump_to=_get_can_jump_to(middleware_w_after_model[0], "after_model"),
-        )
-
-    # Add before_agent middleware edges
-    if middleware_w_before_agent:
-        for m1, m2 in itertools.pairwise(middleware_w_before_agent):
-            _add_middleware_edge(
-                graph,
-                f"{m1.name}.before_agent",
-                f"{m2.name}.before_agent",
-                loop_entry_node,
-                can_jump_to=_get_can_jump_to(m1, "before_agent"),
-            )
-        # Connect last before_agent to loop_entry_node (before_model or model_request)
-        _add_middleware_edge(
-            graph,
-            f"{middleware_w_before_agent[-1].name}.before_agent",
-            loop_entry_node,
-            loop_entry_node,
-            can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
-        )
-
-    # Add before_model middleware edges
-    if middleware_w_before_model:
-        for m1, m2 in itertools.pairwise(middleware_w_before_model):
-            _add_middleware_edge(
-                graph,
-                f"{m1.name}.before_model",
-                f"{m2.name}.before_model",
-                loop_entry_node,
-                can_jump_to=_get_can_jump_to(m1, "before_model"),
-            )
-        # Go directly to model_request after the last before_model
-        _add_middleware_edge(
-            graph,
-            f"{middleware_w_before_model[-1].name}.before_model",
-            "model_request",
-            loop_entry_node,
-            can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
-        )
-
-    # Add after_model middleware edges
-    if middleware_w_after_model:
-        graph.add_edge("model_request", f"{middleware_w_after_model[-1].name}.after_model")
-        for idx in range(len(middleware_w_after_model) - 1, 0, -1):
-            m1 = middleware_w_after_model[idx]
-            m2 = middleware_w_after_model[idx - 1]
-            _add_middleware_edge(
-                graph,
-                f"{m1.name}.after_model",
-                f"{m2.name}.after_model",
-                loop_entry_node,
-                can_jump_to=_get_can_jump_to(m1, "after_model"),
-            )
-        # Note: Connection from after_model to after_agent/END is handled above
-        # in the conditional edges section
-
-    # Add after_agent middleware edges
-    if middleware_w_after_agent:
-        # Chain after_agent middleware (runs once at the very end, before END)
-        for idx in range(len(middleware_w_after_agent) - 1, 0, -1):
-            m1 = middleware_w_after_agent[idx]
-            m2 = middleware_w_after_agent[idx - 1]
-            _add_middleware_edge(
-                graph,
-                f"{m1.name}.after_agent",
-                f"{m2.name}.after_agent",
-                loop_entry_node,
-                can_jump_to=_get_can_jump_to(m1, "after_agent"),
-            )
-
-        # Connect the last after_agent to END
-        _add_middleware_edge(
-            graph,
-            f"{middleware_w_after_agent[0].name}.after_agent",
-            END,
-            loop_entry_node,
-            can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
-        )
+    # Phase 7: Connect edges
+    _connect_entry_edges(graph, topology)
+    _connect_loop_edges(graph, topology, components)
+    _connect_middleware_chains(graph, components, topology)
 
     return graph
 

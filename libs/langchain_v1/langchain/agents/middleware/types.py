@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from enum import Enum
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -41,6 +42,8 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "ContextT",
+    "HookImplementation",
+    "MiddlewareHookInfo",
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
@@ -57,6 +60,15 @@ JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
 ResponseT = TypeVar("ResponseT")
+
+
+class HookImplementation(str, Enum):
+    """Tracks which implementation variants exist for a middleware hook."""
+
+    NONE = "none"
+    SYNC_ONLY = "sync"
+    ASYNC_ONLY = "async"
+    BOTH = "both"
 
 
 @dataclass
@@ -115,6 +127,56 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
+
+
+@dataclass
+class MiddlewareHookInfo:
+    """Information about a specific middleware hook implementation.
+
+    This class encapsulates metadata about how a middleware implements a particular hook,
+    including the actual hook functions and jump configuration.
+    """
+
+    middleware_name: str
+    """The name of the middleware that implements this hook."""
+
+    hook_name: str
+    """The name of the hook (e.g., 'before_model', 'after_agent')."""
+
+    sync_fn: Callable[..., Any] | None
+    """The synchronous hook function, or None if not implemented."""
+
+    async_fn: Callable[..., Any] | None
+    """The asynchronous hook function, or None if not implemented."""
+
+    can_jump_to: list[JumpTo]
+    """Valid jump destinations for this hook."""
+
+    @property
+    def node_name(self) -> str:
+        """The graph node name for this hook."""
+        return f"{self.middleware_name}.{self.hook_name}"
+
+    @property
+    def has_sync(self) -> bool:
+        """Whether this hook has a sync implementation."""
+        return self.sync_fn is not None
+
+    @property
+    def has_async(self) -> bool:
+        """Whether this hook has an async implementation."""
+        return self.async_fn is not None
+
+    @property
+    def implementation(self) -> HookImplementation:
+        """Which variants (sync/async/both) are implemented."""
+        if self.has_sync and self.has_async:
+            return HookImplementation.BOTH
+        if self.has_sync:
+            return HookImplementation.SYNC_ONLY
+        if self.has_async:
+            return HookImplementation.ASYNC_ONLY
+        return HookImplementation.NONE
 
 
 class AgentMiddleware(Generic[StateT, ContextT]):
@@ -235,6 +297,94 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
+
+    def hook_info(self, hook_name: str) -> MiddlewareHookInfo | None:
+        """Get information about this middleware's implementation of a specific hook.
+
+        Args:
+            hook_name: The name of the hook to inspect (e.g., 'before_model', 'after_agent').
+
+        Returns:
+            MiddlewareHookInfo if the hook is implemented, None otherwise.
+
+        Example:
+            >>> middleware = MyMiddleware()
+            >>> info = middleware.hook_info("before_model")
+            >>> if info:
+            ...     print(f"Has sync: {info.has_sync}, Has async: {info.has_async}")
+        """
+        base_class = AgentMiddleware
+        middleware_class = self.__class__
+
+        # Check sync and async variants
+        sync_name = hook_name
+        async_name = f"a{hook_name}"
+
+        base_sync_method = getattr(base_class, sync_name, None)
+        base_async_method = getattr(base_class, async_name, None)
+
+        middleware_sync_method = getattr(middleware_class, sync_name, None)
+        middleware_async_method = getattr(middleware_class, async_name, None)
+
+        has_custom_sync = middleware_sync_method is not base_sync_method
+        has_custom_async = middleware_async_method is not base_async_method
+
+        if not has_custom_sync and not has_custom_async:
+            return None
+
+        # Get the actual bound methods - only include customized implementations
+        sync_fn = getattr(self, sync_name) if has_custom_sync else None
+        async_fn = getattr(self, async_name) if has_custom_async else None
+
+        # Get can_jump_to from either sync or async variant
+        can_jump_to: list[JumpTo] = []
+        if has_custom_sync:
+            can_jump_to = getattr(middleware_sync_method, "__can_jump_to__", [])
+        elif has_custom_async:
+            can_jump_to = getattr(middleware_async_method, "__can_jump_to__", [])
+
+        return MiddlewareHookInfo(
+            middleware_name=self.name,
+            hook_name=hook_name,
+            sync_fn=sync_fn,
+            async_fn=async_fn,
+            can_jump_to=can_jump_to,
+        )
+
+    def all_hook_info(self) -> dict[str, MiddlewareHookInfo]:
+        """Get information about all hooks implemented by this middleware.
+
+        Returns:
+            Dictionary mapping hook names to their MiddlewareHookInfo.
+
+        Example:
+            >>> middleware = MyMiddleware()
+            >>> for hook_name, info in middleware.all_hook_info().items():
+            ...     print(f"{hook_name}: sync={info.has_sync}, async={info.has_async}")
+        """
+        hook_names = [
+            "before_agent",
+            "before_model",
+            "modify_model_request",
+            "after_model",
+            "after_agent",
+            "retry_model_request",
+        ]
+        return {name: info for name in hook_names if (info := self.hook_info(name)) is not None}
+
+    @property
+    def implemented_hooks(self) -> list[str]:
+        """List of hook names this middleware implements.
+
+        Returns:
+            List of hook names that are overridden from the base class.
+
+        Example:
+            >>> middleware = MyMiddleware()
+            >>> print(middleware.implemented_hooks)
+            ['before_model', 'after_model']
+        """
+        return list(self.all_hook_info().keys())
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
