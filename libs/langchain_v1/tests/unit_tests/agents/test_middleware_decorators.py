@@ -16,10 +16,11 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     before_model,
     after_model,
+    dynamic_prompt,
     modify_model_request,
     hook_config,
 )
-from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
+from langchain.agents.factory import create_agent, _get_can_jump_to
 from .model import FakeToolCallingModel
 
 
@@ -136,7 +137,7 @@ def test_all_decorators_integration() -> None:
     agent = create_agent(
         model=FakeToolCallingModel(), middleware=[track_before, track_modify, track_after]
     )
-    agent = agent.compile()
+    # Agent is already compiled
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == ["before", "modify", "after"]
@@ -225,7 +226,7 @@ def test_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = agent.invoke({"messages": [HumanMessage("exit")]})
@@ -338,7 +339,7 @@ async def test_async_decorators_integration() -> None:
         model=FakeToolCallingModel(),
         middleware=[track_async_before, track_async_modify, track_async_after],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == ["async_before", "async_modify", "async_after"]
@@ -394,7 +395,7 @@ async def test_mixed_sync_async_decorators_integration() -> None:
             track_sync_after,
         ],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == [
@@ -455,7 +456,7 @@ async def test_async_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = await agent.ainvoke({"messages": [HumanMessage("exit")]})
@@ -526,7 +527,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_before_with_jump]
     )
 
-    assert agent_async_before.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_before.get_graph().draw_mermaid() == snapshot
 
     # Test 2: Async after_model with can_jump_to
     @after_model(can_jump_to=["model", "end"])
@@ -539,7 +540,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_after_with_jump]
     )
 
-    assert agent_async_after.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_after.get_graph().draw_mermaid() == snapshot
 
     # Test 3: Multiple async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -555,7 +556,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[async_before_early_exit, async_after_retry],
     )
 
-    assert agent_multiple_async.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_multiple_async.get_graph().draw_mermaid() == snapshot
 
     # Test 4: Mixed sync and async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -571,4 +572,146 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[sync_before_with_jump, async_after_with_jumps],
     )
 
-    assert agent_mixed.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_mixed.get_graph().draw_mermaid() == snapshot
+
+
+def test_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with basic usage."""
+
+    @dynamic_prompt
+    def my_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Dynamic test prompt"
+
+    assert isinstance(my_prompt, AgentMiddleware)
+    assert my_prompt.state_schema == AgentState
+    assert my_prompt.tools == []
+    assert my_prompt.__class__.__name__ == "my_prompt"
+
+    # Verify it modifies the request correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+    result = my_prompt.modify_model_request(
+        original_request, {"messages": [HumanMessage("Hello")]}, None
+    )
+    assert result.system_prompt == "Dynamic test prompt"
+
+
+def test_dynamic_prompt_uses_state() -> None:
+    """Test that dynamic_prompt can use state information."""
+
+    @dynamic_prompt
+    def custom_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        msg_count = len(state["messages"])
+        return f"Prompt with {msg_count} messages"
+
+    # Verify it uses state correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+    result = custom_prompt.modify_model_request(
+        original_request, {"messages": [HumanMessage("Hello"), HumanMessage("World")]}, None
+    )
+    assert result.system_prompt == "Prompt with 2 messages"
+
+
+def test_dynamic_prompt_integration() -> None:
+    """Test dynamic_prompt decorator in a full agent."""
+
+    prompt_calls = 0
+
+    @dynamic_prompt
+    def context_aware_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"you are a helpful assistant."
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "you are a helpful assistant.-Hello"
+
+
+async def test_async_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with async function."""
+
+    @dynamic_prompt
+    async def async_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Async dynamic prompt"
+
+    assert isinstance(async_prompt, AgentMiddleware)
+    assert async_prompt.state_schema == AgentState
+    assert async_prompt.tools == []
+    assert async_prompt.__class__.__name__ == "async_prompt"
+
+
+async def test_async_dynamic_prompt_integration() -> None:
+    """Test async dynamic_prompt decorator in a full agent."""
+
+    prompt_calls = 0
+
+    @dynamic_prompt
+    async def async_context_prompt(
+        request: ModelRequest, state: AgentState, runtime: Runtime
+    ) -> str:
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"Async assistant."
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
+    # Agent is already compiled
+
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "Async assistant.-Hello"
+
+
+def test_dynamic_prompt_overwrites_system_prompt() -> None:
+    """Test that dynamic_prompt overwrites the original system_prompt."""
+
+    @dynamic_prompt
+    def override_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Overridden prompt."
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        system_prompt="Original static prompt",
+        middleware=[override_prompt],
+    )
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["messages"][-1].content == "Overridden prompt.-Hello"
+
+
+def test_dynamic_prompt_multiple_in_sequence() -> None:
+    """Test multiple dynamic_prompt decorators in sequence (last wins)."""
+
+    @dynamic_prompt
+    def first_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "First prompt."
+
+    @dynamic_prompt
+    def second_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+        return "Second prompt."
+
+    # When used together, the last middleware in the list should win
+    # since they're both modify_model_request hooks executed in sequence
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[first_prompt, second_prompt])
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["messages"][-1].content == "Second prompt.-Hello"

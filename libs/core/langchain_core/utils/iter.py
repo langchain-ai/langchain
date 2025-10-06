@@ -9,9 +9,7 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -26,9 +24,9 @@ class NoLock:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Return False (exception not suppressed)."""
         return False
@@ -133,7 +131,7 @@ class Tee(Generic[T]):
         iterable: Iterator[T],
         n: int = 2,
         *,
-        lock: Optional[AbstractContextManager[Any]] = None,
+        lock: AbstractContextManager[Any] | None = None,
     ):
         """Create a ``tee``.
 
@@ -165,9 +163,7 @@ class Tee(Generic[T]):
     @overload
     def __getitem__(self, item: slice) -> tuple[Iterator[T], ...]: ...
 
-    def __getitem__(
-        self, item: Union[int, slice]
-    ) -> Union[Iterator[T], tuple[Iterator[T], ...]]:
+    def __getitem__(self, item: int | slice) -> Iterator[T] | tuple[Iterator[T], ...]:
         """Return the child iterator(s) at the given index or slice."""
         return self._children[item]
 
@@ -185,9 +181,9 @@ class Tee(Generic[T]):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> Literal[False]:
         """Close all child iterators.
 
@@ -207,7 +203,7 @@ class Tee(Generic[T]):
 safetee = Tee
 
 
-def batch_iterate(size: Optional[int], iterable: Iterable[T]) -> Iterator[list[T]]:
+def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:

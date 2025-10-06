@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field
 
@@ -34,7 +34,7 @@ def _get_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Union[str, tuple[str, list[Document]]]:
+) -> str | tuple[str, list[Document]]:
     docs = retriever.invoke(query, config={"callbacks": callbacks})
     content = document_separator.join(
         format_document(doc, document_prompt) for doc in docs
@@ -52,7 +52,7 @@ async def _aget_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
     response_format: Literal["content", "content_and_artifact"] = "content",
-) -> Union[str, tuple[str, list[Document]]]:
+) -> str | tuple[str, list[Document]]:
     docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
     content = document_separator.join(
         [await aformat_document(doc, document_prompt) for doc in docs]
@@ -69,7 +69,7 @@ def create_retriever_tool(
     name: str,
     description: str,
     *,
-    document_prompt: Optional[BasePromptTemplate] = None,
+    document_prompt: BasePromptTemplate | None = None,
     document_separator: str = "\n\n",
     response_format: Literal["content", "content_and_artifact"] = "content",
 ) -> Tool:

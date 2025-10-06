@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
+from collections.abc import Callable
 from string import Formatter
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, create_model
 

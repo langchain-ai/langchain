@@ -83,13 +83,15 @@ class ChatModelTests(BaseStandardTests):
         }
 
     @pytest.fixture
-    def model(self) -> BaseChatModel:
+    def model(self, request: Any) -> BaseChatModel:
         """Model fixture."""
+        extra_init_params = getattr(request, "param", None) or {}
         return self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
                 **self.chat_model_params,
-            }
+            },
+            **extra_init_params,
         )
 
     @pytest.fixture

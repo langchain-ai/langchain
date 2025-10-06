@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
@@ -15,12 +15,12 @@ if TYPE_CHECKING:
 class Visitor(ABC):
     """Defines interface for IR translation using a visitor pattern."""
 
-    allowed_comparators: Optional[Sequence[Comparator]] = None
+    allowed_comparators: Sequence[Comparator] | None = None
     """Allowed comparators for the visitor."""
-    allowed_operators: Optional[Sequence[Operator]] = None
+    allowed_operators: Sequence[Operator] | None = None
     """Allowed operators for the visitor."""
 
-    def _validate_func(self, func: Union[Operator, Comparator]) -> None:
+    def _validate_func(self, func: Operator | Comparator) -> None:
         if (
             isinstance(func, Operator)
             and self.allowed_operators is not None
@@ -174,16 +174,16 @@ class StructuredQuery(Expr):
 
     query: str
     """Query string."""
-    filter: Optional[FilterDirective]
+    filter: FilterDirective | None
     """Filtering expression."""
-    limit: Optional[int]
+    limit: int | None
     """Limit on the number of results."""
 
     def __init__(
         self,
         query: str,
-        filter: Optional[FilterDirective],  # noqa: A002
-        limit: Optional[int] = None,
+        filter: FilterDirective | None,  # noqa: A002
+        limit: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create a StructuredQuery.

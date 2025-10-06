@@ -2,7 +2,7 @@
 
 import warnings
 from functools import cached_property
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from typing_extensions import override
 
@@ -48,7 +48,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> dict:
         return self._call_with_config(
             lambda x: self.format(**x),

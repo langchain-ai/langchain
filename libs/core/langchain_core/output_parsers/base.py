@@ -8,9 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import override
@@ -71,7 +69,7 @@ class BaseGenerationOutputParser(
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return str | AnyMessage
 
     @property
     @override
@@ -84,8 +82,8 @@ class BaseGenerationOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -107,9 +105,9 @@ class BaseGenerationOutputParser(
     @override
     async def ainvoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -165,7 +163,7 @@ class BaseOutputParser(
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return str | AnyMessage
 
     @property
     @override
@@ -192,8 +190,8 @@ class BaseOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -215,9 +213,9 @@ class BaseOutputParser(
     @override
     async def ainvoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(

@@ -3,7 +3,7 @@
 import copy
 import json
 from types import GenericAlias
-from typing import Any, Optional, Union
+from typing import Any
 
 import jsonpatch  # type: ignore[import-untyped]
 from pydantic import BaseModel, model_validator
@@ -74,7 +74,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         return "json_functions"
 
     @override
-    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+    def _diff(self, prev: Any | None, next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
@@ -217,7 +217,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
 
     """
 
-    pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
+    pydantic_schema: type[BaseModel] | dict[str, type[BaseModel]]
     """The pydantic schema to parse the output with.
 
     If multiple schemas are provided, then the function name will be used to

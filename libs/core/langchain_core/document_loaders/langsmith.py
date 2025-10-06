@@ -3,8 +3,8 @@
 import datetime
 import json
 import uuid
-from collections.abc import Iterator, Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Iterator, Sequence
+from typing import Any
 
 from langsmith import Client as LangSmithClient
 from typing_extensions import override
@@ -42,19 +42,19 @@ class LangSmithLoader(BaseLoader):
     def __init__(
         self,
         *,
-        dataset_id: Optional[Union[uuid.UUID, str]] = None,
-        dataset_name: Optional[str] = None,
-        example_ids: Optional[Sequence[Union[uuid.UUID, str]]] = None,
-        as_of: Optional[Union[datetime.datetime, str]] = None,
-        splits: Optional[Sequence[str]] = None,
+        dataset_id: uuid.UUID | str | None = None,
+        dataset_name: str | None = None,
+        example_ids: Sequence[uuid.UUID | str] | None = None,
+        as_of: datetime.datetime | str | None = None,
+        splits: Sequence[str] | None = None,
         inline_s3_urls: bool = True,
         offset: int = 0,
-        limit: Optional[int] = None,
-        metadata: Optional[dict] = None,
-        filter: Optional[str] = None,  # noqa: A002
+        limit: int | None = None,
+        metadata: dict | None = None,
+        filter: str | None = None,  # noqa: A002
         content_key: str = "",
-        format_content: Optional[Callable[..., str]] = None,
-        client: Optional[LangSmithClient] = None,
+        format_content: Callable[..., str] | None = None,
+        client: LangSmithClient | None = None,
         **client_kwargs: Any,
     ) -> None:
         """Create a LangSmith loader.
@@ -129,7 +129,7 @@ class LangSmithLoader(BaseLoader):
             yield Document(content_str, metadata=metadata)
 
 
-def _stringify(x: Union[str, dict]) -> str:
+def _stringify(x: str | dict) -> str:
     if isinstance(x, str):
         return x
     try:

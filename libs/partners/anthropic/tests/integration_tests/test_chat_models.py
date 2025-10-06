@@ -319,7 +319,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
@@ -335,7 +335,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     chat_messages: list[BaseMessage] = [
@@ -379,7 +379,7 @@ def test_streaming() -> None:
     llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
 
     response = llm.generate([[HumanMessage(content="I'm Pickle Rick")]])
@@ -395,7 +395,7 @@ async def test_astreaming() -> None:
     llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
 
     response = await llm.agenerate([[HumanMessage(content="I'm Pickle Rick")]])

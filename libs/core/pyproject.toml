@@ -1,6 +1,6 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
-version = "1.0.0a6"
+version = "1.0.0a7"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -72,9 +72,6 @@ enable_error_code = "deprecated"
 disallow_any_generics = false
 warn_return_any = false
 
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

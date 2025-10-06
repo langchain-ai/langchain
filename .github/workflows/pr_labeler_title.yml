@@ -12,7 +12,7 @@ on:
 
 jobs:
   pr-title-labeler:
-    name: 'label'
+    name: "label"
     permissions:
       contents: read
       pull-requests: write
@@ -20,9 +20,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Label PR based on title
-      # Archived repo; latest commit (v0.1.0)
-      uses: grafana/pr-labeler-action@f19222d3ef883d2ca5f04420fdfe8148003763f0
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        configuration-path: .github/pr-title-labeler.yml
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Label PR based on title
+        # Archived repo; latest commit (v0.1.0)
+        uses: grafana/pr-labeler-action@f19222d3ef883d2ca5f04420fdfe8148003763f0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/pr-title-labeler.yml

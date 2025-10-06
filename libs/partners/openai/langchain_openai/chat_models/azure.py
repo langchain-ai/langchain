@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import AsyncIterator, Awaitable, Iterator
-from typing import Any, Callable, Optional, TypeVar, Union
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any, Literal, Optional, TypeVar, Union
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -15,7 +15,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
-from typing_extensions import Literal, Self
+from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -615,6 +615,25 @@ class AzureChatOpenAI(BaseChatOpenAI):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
+
+        # Enable stream_usage by default if using default base URL and client
+        if all(
+            getattr(self, key, None) is None
+            for key in (
+                "stream_usage",
+                "openai_proxy",
+                "openai_api_base",
+                "base_url",
+                "client",
+                "root_client",
+                "async_client",
+                "root_async_client",
+                "http_client",
+                "http_async_client",
+            )
+        ):
+            self.stream_usage = True
+
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = self.openai_api_base
@@ -758,7 +777,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 "prompt_filter_results"
             ]
         for chat_gen, response_choice in zip(
-            chat_result.generations, response["choices"]
+            chat_result.generations, response["choices"], strict=False
         ):
             chat_gen.generation_info = chat_gen.generation_info or {}
             chat_gen.generation_info["content_filter_results"] = response_choice.get(

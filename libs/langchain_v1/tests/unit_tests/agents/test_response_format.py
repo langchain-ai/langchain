@@ -1,9 +1,11 @@
 """Test suite for create_agent with structured output response_format permutations."""
 
+import json
+
 import pytest
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Sequence, Any, Callable
 
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
@@ -13,10 +15,16 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
+from langchain.tools import tool
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+from langchain.messages import AIMessage
+from langchain_core.messages import BaseMessage
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.runnables import Runnable
 from tests.unit_tests.agents.model import FakeToolCallingModel
+from langchain.tools import BaseTool
 
 
 # Test data models
@@ -74,12 +82,14 @@ location_json_schema = {
 }
 
 
+@tool
 def get_weather() -> str:
     """Get the weather."""
 
     return "The weather is sunny and 75°F."
 
 
+@tool
 def get_location() -> str:
     """Get the current location."""
 
@@ -674,6 +684,89 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
+
+
+class TestDynamicModelWithResponseFormat:
+    """Test response_format with middleware that modifies the model."""
+
+    def test_middleware_model_swap_provider_to_tool_strategy(self) -> None:
+        """Test that strategy resolution is deferred until after middleware modifies the model.
+
+        Verifies that when a raw schema is provided, ``_supports_provider_strategy`` is called
+        on the middleware-modified model (not the original), ensuring the correct strategy is
+        selected based on the final model's capabilities.
+        """
+        from unittest.mock import patch
+        from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+        from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+
+        # Custom model that we'll use to test whether the tool strategy is applied
+        # correctly at runtime.
+        class CustomModel(GenericFakeChatModel):
+            tool_bindings: list[Any] = []
+
+            def bind_tools(
+                self,
+                tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, BaseMessage]:
+                # Record every tool binding event.
+                self.tool_bindings.append(tools)
+                return self
+
+        model = CustomModel(
+            messages=iter(
+                [
+                    # Simulate model returning structured output directly
+                    # (this is what provider strategy would do)
+                    json.dumps(WEATHER_DATA),
+                ]
+            )
+        )
+
+        # Create middleware that swaps the model in the request
+        class ModelSwappingMiddleware(AgentMiddleware):
+            def modify_model_request(self, request: ModelRequest, state, runtime) -> ModelRequest:
+                # Replace the model with our custom test model
+                request.model = model
+                return request
+
+        # Track which model is checked for provider strategy support
+        calls = []
+
+        def mock_supports_provider_strategy(model) -> bool:
+            """Track which model is checked and return True for ProviderStrategy."""
+            calls.append(model)
+            return True
+
+        # Use raw Pydantic model (not wrapped in ToolStrategy or ProviderStrategy)
+        # This should auto-detect strategy based on model capabilities
+        agent = create_agent(
+            model=model,
+            tools=[],
+            # Raw schema - should auto-detect strategy
+            response_format=WeatherBaseModel,
+            middleware=[ModelSwappingMiddleware()],
+        )
+
+        with patch(
+            "langchain.agents.factory._supports_provider_strategy",
+            side_effect=mock_supports_provider_strategy,
+        ):
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        # Verify strategy resolution was deferred: check was called once during _get_bound_model
+        assert len(calls) == 1
+
+        # Verify successful parsing of JSON as structured output via ProviderStrategy
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        # Two messages: Human input message and AI response with JSON content
+        assert len(response["messages"]) == 2
+        ai_message = response["messages"][1]
+        assert isinstance(ai_message, AIMessage)
+        # ProviderStrategy doesn't use tool calls - it parses content directly
+        assert ai_message.tool_calls == []
+        assert ai_message.content == json.dumps(WEATHER_DATA)
 
 
 def test_union_of_types() -> None:

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Literal, Optional, cast
+from collections.abc import Callable
+from typing import Any, Literal, Optional, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
@@ -44,6 +45,12 @@ def test_initialization() -> None:
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
+    llm = ChatAnthropic(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_anthropic_client_caching() -> None:

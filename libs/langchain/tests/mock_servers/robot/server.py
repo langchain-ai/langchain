@@ -1,7 +1,7 @@
 """A mock Robot server."""
 
 from enum import Enum
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any
 from uuid import uuid4
 
 import uvicorn
@@ -80,8 +80,8 @@ class WalkInput(BaseModel):
     """Input for walking."""
 
     direction: Direction
-    speed: Optional[float]
-    style_or_cautiousness: Union[Style, Cautiousness]
+    speed: float | None
+    style_or_cautiousness: Style | Cautiousness
     other_commands: Any
 
 

@@ -1,4 +1,4 @@
-from langchain.load import __all__
+from langchain_classic.load import __all__
 
 EXPECTED_ALL = [
     "dumpd",

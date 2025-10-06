@@ -1,4 +1,4 @@
-from langchain import embeddings
+from langchain_classic import embeddings
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
