@@ -537,8 +537,8 @@ def create_agent(  # noqa: PLR0915
         # Check if any requested tools are unknown CLIENT-SIDE tools
         unknown_tool_names = []
         for t in request.tools:
-            # Only validate BaseTool instances (skip built-in dict tools and callables)
-            if isinstance(t, dict) or callable(t):
+            # Only validate BaseTool instances (skip built-in dict tools)
+            if isinstance(t, dict):
                 continue
             if isinstance(t, BaseTool) and t.name not in available_tools_by_name:
                 unknown_tool_names.append(t.name)
