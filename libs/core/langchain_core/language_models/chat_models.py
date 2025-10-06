@@ -471,6 +471,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if "stream" in kwargs:
             return kwargs["stream"]
 
+        if getattr(self, "streaming", False):
+            return True
+
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
         return any(isinstance(h, _StreamingCallbackHandler) for h in handlers)

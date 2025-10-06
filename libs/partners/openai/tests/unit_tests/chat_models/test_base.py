@@ -89,6 +89,12 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
 
 
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:
+    llm = ChatOpenAI(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
+
+
 def test_openai_client_caching() -> None:
     """Test that the OpenAI client is cached."""
     llm1 = ChatOpenAI(model="gpt-4.1-mini")
