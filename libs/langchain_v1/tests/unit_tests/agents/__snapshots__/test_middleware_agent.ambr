@@ -1,4 +1,27 @@
 # serializer version: 1
+# name: test_agent_graph_with_jump_to_end_as_after_agent
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model(model)
+  	tools(tools)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model;
+  	model -.-> __end__;
+  	model -.-> tools;
+  	tools -.-> __end__;
+  	tools -.-> model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
 # name: test_create_agent_diagram
   '''
   ---
@@ -446,6 +469,29 @@
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
   	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_simple_agent_graph
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model(model)
+  	tools(tools)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model;
+  	model -.-> __end__;
+  	model -.-> tools;
+  	tools -.-> __end__;
+  	tools -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
