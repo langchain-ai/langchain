@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -49,7 +49,7 @@ class AgentAction(Serializable):
 
     tool: str
     """The name of the Tool to execute."""
-    tool_input: Union[str, dict]
+    tool_input: str | dict
     """The input to pass in to the Tool."""
     log: str
     """Additional information to log about the action.
@@ -62,9 +62,7 @@ class AgentAction(Serializable):
     type: Literal["AgentAction"] = "AgentAction"
 
     # Override init to support instantiation by position for backward compat.
-    def __init__(
-        self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
-    ):
+    def __init__(self, tool: str, tool_input: str | dict, log: str, **kwargs: Any):
         """Create an AgentAction.
 
         Args:

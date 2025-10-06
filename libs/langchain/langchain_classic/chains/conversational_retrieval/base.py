@@ -5,8 +5,9 @@ from __future__ import annotations
 import inspect
 import warnings
 from abc import abstractmethod
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -35,7 +36,7 @@ from langchain_classic.chains.question_answering import load_qa_chain
 
 # Depending on the memory type and configuration, the chat history format may differ.
 # This needs to be consolidated.
-CHAT_TURN_TYPE = Union[tuple[str, str], BaseMessage]
+CHAT_TURN_TYPE = tuple[str, str] | BaseMessage
 
 
 _ROLE_MAP = {"human": "Human: ", "ai": "Assistant: "}
@@ -94,10 +95,10 @@ class BaseConversationalRetrievalChain(Chain):
     """Return the retrieved source documents as part of the final result."""
     return_generated_question: bool = False
     """Return the generated question as part of the final result."""
-    get_chat_history: Optional[Callable[[list[CHAT_TURN_TYPE]], str]] = None
+    get_chat_history: Callable[[list[CHAT_TURN_TYPE]], str] | None = None
     """An optional function to get a string of the chat history.
     If None is provided, will use a default."""
-    response_if_no_docs_found: Optional[str] = None
+    response_if_no_docs_found: str | None = None
     """If specified, the chain will return a fixed response if no docs
     are found for the question. """
 
@@ -115,7 +116,7 @@ class BaseConversationalRetrievalChain(Chain):
     @override
     def get_input_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         return InputType
 
@@ -145,7 +146,7 @@ class BaseConversationalRetrievalChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
@@ -202,7 +203,7 @@ class BaseConversationalRetrievalChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs["question"]
@@ -247,7 +248,7 @@ class BaseConversationalRetrievalChain(Chain):
         return output
 
     @override
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         if self.get_chat_history:
             msg = "Chain not saveable when `get_chat_history` is not None."
             raise ValueError(msg)
@@ -385,7 +386,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
     retriever: BaseRetriever
     """Retriever to use to fetch documents."""
-    max_tokens_limit: Optional[int] = None
+    max_tokens_limit: int | None = None
     """If set, enforces that the documents returned are less than this limit.
 
     This is only enforced if ``combine_docs_chain`` is of type StuffDocumentsChain.
@@ -447,8 +448,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
         verbose: bool = False,  # noqa: FBT001,FBT002
-        condense_question_llm: Optional[BaseLanguageModel] = None,
-        combine_docs_chain_kwargs: Optional[dict] = None,
+        condense_question_llm: BaseLanguageModel | None = None,
+        combine_docs_chain_kwargs: dict | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:
@@ -557,7 +558,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         vectorstore: VectorStore,
         condense_question_prompt: BasePromptTemplate = CONDENSE_QUESTION_PROMPT,
         chain_type: str = "stuff",
-        combine_docs_chain_kwargs: Optional[dict] = None,
+        combine_docs_chain_kwargs: dict | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> BaseConversationalRetrievalChain:

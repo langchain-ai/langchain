@@ -1,6 +1,6 @@
 """Chain that combines documents by stuffing into context."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -26,8 +26,8 @@ def create_stuff_documents_chain(
     llm: LanguageModelLike,
     prompt: BasePromptTemplate,
     *,
-    output_parser: Optional[BaseOutputParser] = None,
-    document_prompt: Optional[BasePromptTemplate] = None,
+    output_parser: BaseOutputParser | None = None,
+    document_prompt: BasePromptTemplate | None = None,
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     document_variable_name: str = DOCUMENTS_KEY,
 ) -> Runnable[dict[str, Any], Any]:
@@ -226,7 +226,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         inputs[self.document_variable_name] = self.document_separator.join(doc_strings)
         return inputs
 
-    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> int | None:
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list

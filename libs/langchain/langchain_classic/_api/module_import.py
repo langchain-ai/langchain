@@ -1,5 +1,6 @@
 import importlib
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core._api import internal, warn_deprecated
 
@@ -15,9 +16,9 @@ ALLOWED_TOP_LEVEL_PKGS = {
 def create_importer(
     package: str,
     *,
-    module_lookup: Optional[dict[str, str]] = None,
-    deprecated_lookups: Optional[dict[str, str]] = None,
-    fallback_module: Optional[str] = None,
+    module_lookup: dict[str, str] | None = None,
+    deprecated_lookups: dict[str, str] | None = None,
+    fallback_module: str | None = None,
 ) -> Callable[[str], Any]:
     """Create a function that helps retrieve objects from their new locations.
 

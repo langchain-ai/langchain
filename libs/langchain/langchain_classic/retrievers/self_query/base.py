@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
@@ -344,9 +344,9 @@ class SelfQueryRetriever(BaseRetriever):
         llm: BaseLanguageModel,
         vectorstore: VectorStore,
         document_contents: str,
-        metadata_field_info: Sequence[Union[AttributeInfo, dict]],
-        structured_query_translator: Optional[Visitor] = None,
-        chain_kwargs: Optional[dict] = None,
+        metadata_field_info: Sequence[AttributeInfo | dict],
+        structured_query_translator: Visitor | None = None,
+        chain_kwargs: dict | None = None,
         enable_limit: bool = False,  # noqa: FBT001,FBT002
         use_original_query: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,

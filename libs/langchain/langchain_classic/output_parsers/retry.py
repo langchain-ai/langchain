@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, TypeVar, Union
+from typing import Annotated, Any, TypeVar
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -63,7 +63,7 @@ class RetryOutputParser(BaseOutputParser[T]):
     # Should be an LLMChain but we want to avoid top-level imports from
     # langchain_classic.chains
     retry_chain: Annotated[
-        Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any],
+        RunnableSerializable[RetryOutputParserRetryChainInput, str] | Any,
         SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
@@ -199,10 +199,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     # Should be an LLMChain but we want to avoid top-level imports from
     # langchain_classic.chains
     retry_chain: Annotated[
-        Union[
-            RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str],
-            Any,
-        ],
+        RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str] | Any,
         SkipValidation(),
     ]
     """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""

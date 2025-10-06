@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
 from typing_extensions import override
@@ -19,7 +18,7 @@ class RegexParser(BaseOutputParser[dict[str, str]]):
     """The regex to use to parse the output."""
     output_keys: list[str]
     """The keys to use for the output."""
-    default_output_key: Optional[str] = None
+    default_output_key: str | None = None
     """The default key to use for the output."""
 
     @property

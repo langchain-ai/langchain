@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.outputs import LLMResult
 from typing_extensions import override
@@ -33,7 +33,7 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[list[str]] = None,
+        answer_prefix_tokens: list[str] | None = None,
         strip_tokens: bool = True,
         stream_prefix: bool = False,
     ) -> None:

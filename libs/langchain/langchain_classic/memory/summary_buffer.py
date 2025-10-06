@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -30,11 +30,11 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     memory_key: str = "history"
 
     @property
-    def buffer(self) -> Union[str, list[BaseMessage]]:
+    def buffer(self) -> str | list[BaseMessage]:
         """String buffer of memory."""
         return self.load_memory_variables({})[self.memory_key]
 
-    async def abuffer(self) -> Union[str, list[BaseMessage]]:
+    async def abuffer(self) -> str | list[BaseMessage]:
         """Async memory buffer."""
         memory_variables = await self.aload_memory_variables({})
         return memory_variables[self.memory_key]

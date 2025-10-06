@@ -1,6 +1,6 @@
 import datetime
 from copy import deepcopy
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -43,7 +43,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     other_score_keys: list[str] = []
     """Other keys in the metadata to factor into the score, e.g. 'importance'."""
 
-    default_salience: Optional[float] = None
+    default_salience: float | None = None
     """The salience to assign memories not retrieved from the vector store.
 
     None assigns no salience to documents not fetched from the vector store.
@@ -64,7 +64,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     def _get_combined_score(
         self,
         document: Document,
-        vector_relevance: Optional[float],
+        vector_relevance: float | None,
         current_time: datetime.datetime,
     ) -> float:
         """Return the combined score for a document."""
@@ -114,7 +114,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
     def _get_rescored_docs(
         self,
-        docs_and_scores: dict[Any, tuple[Document, Optional[float]]],
+        docs_and_scores: dict[Any, tuple[Document, float | None]],
     ) -> list[Document]:
         current_time = datetime.datetime.now()
         rescored_docs = [

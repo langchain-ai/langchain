@@ -1,7 +1,7 @@
 """Loading datasets and evaluators."""
 
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 
@@ -88,7 +88,7 @@ def load_dataset(uri: str) -> list[dict]:
 
 _EVALUATOR_MAP: dict[
     EvaluatorType,
-    Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]],
+    type[LLMEvalChain] | type[Chain] | type[StringEvaluator],
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
@@ -116,9 +116,9 @@ _EVALUATOR_MAP: dict[
 def load_evaluator(
     evaluator: EvaluatorType,
     *,
-    llm: Optional[BaseLanguageModel] = None,
+    llm: BaseLanguageModel | None = None,
     **kwargs: Any,
-) -> Union[Chain, StringEvaluator]:
+) -> Chain | StringEvaluator:
     """Load the requested evaluation chain specified by a string.
 
     Parameters
@@ -183,10 +183,10 @@ def load_evaluator(
 def load_evaluators(
     evaluators: Sequence[EvaluatorType],
     *,
-    llm: Optional[BaseLanguageModel] = None,
-    config: Optional[dict] = None,
+    llm: BaseLanguageModel | None = None,
+    config: dict | None = None,
     **kwargs: Any,
-) -> list[Union[Chain, StringEvaluator]]:
+) -> list[Chain | StringEvaluator]:
     """Load evaluators specified by a list of evaluator types.
 
     Parameters

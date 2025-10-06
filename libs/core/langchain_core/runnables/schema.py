@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -182,4 +182,4 @@ class CustomStreamEvent(BaseStreamEvent):
     """The data associated with the event. Free form and can be anything."""
 
 
-StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
+StreamEvent = StandardStreamEvent | CustomStreamEvent

@@ -1,7 +1,7 @@
 """Load summarizing chains."""
 
 from collections.abc import Mapping
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -38,7 +38,7 @@ def _load_stuff_chain(
     *,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "text",
-    verbose: Optional[bool] = None,
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
@@ -72,13 +72,13 @@ def _load_map_reduce_chain(
     combine_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_document_variable_name: str = "text",
     map_reduce_document_variable_name: str = "text",
-    collapse_prompt: Optional[BasePromptTemplate] = None,
-    reduce_llm: Optional[BaseLanguageModel] = None,
-    collapse_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
+    collapse_prompt: BasePromptTemplate | None = None,
+    reduce_llm: BaseLanguageModel | None = None,
+    collapse_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
     token_max: int = 3000,
     callbacks: Callbacks = None,
-    collapse_max_retries: Optional[int] = None,
+    collapse_max_retries: int | None = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     map_chain = LLMChain(
@@ -179,8 +179,8 @@ def _load_refine_chain(
     refine_prompt: BasePromptTemplate = refine_prompts.REFINE_PROMPT,
     document_variable_name: str = "text",
     initial_response_name: str = "existing_answer",
-    refine_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
+    refine_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
     initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
@@ -199,7 +199,7 @@ def _load_refine_chain(
 def load_summarize_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,  # noqa: FBT001
+    verbose: bool | None = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load summarizing chain.

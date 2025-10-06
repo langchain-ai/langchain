@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Callable, Optional
+from collections.abc import Callable, Sequence
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -33,10 +32,10 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     """Similarity function for comparing documents. Function expected to take as input
     two matrices (List[List[float]]) and return a matrix of scores where higher values
     indicate greater similarity."""
-    k: Optional[int] = 20
+    k: int | None = 20
     """The number of relevant documents to return. Can be set to None, in which case
     `similarity_threshold` must be specified. Defaults to 20."""
-    similarity_threshold: Optional[float] = None
+    similarity_threshold: float | None = None
     """Threshold for determining when two documents are similar enough
     to be considered redundant. Defaults to None, must be specified if `k` is set
     to None."""
@@ -58,7 +57,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
         try:
@@ -102,7 +101,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
         try:

@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -35,7 +35,7 @@ class FakeTranslator(Visitor):
     )
     allowed_operators = (Operator.AND, Operator.OR, Operator.NOT)
 
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
+    def _format_func(self, func: Operator | Comparator) -> str:
         self._validate_func(func)
         return f"${func.value}"
 

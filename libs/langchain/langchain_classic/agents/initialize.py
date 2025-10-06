@@ -2,7 +2,7 @@
 
 import contextlib
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -24,12 +24,12 @@ from langchain_classic.agents.types import AGENT_TO_CLASS
 def initialize_agent(
     tools: Sequence[BaseTool],
     llm: BaseLanguageModel,
-    agent: Optional[AgentType] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
-    agent_path: Optional[str] = None,
-    agent_kwargs: Optional[dict] = None,
+    agent: AgentType | None = None,
+    callback_manager: BaseCallbackManager | None = None,
+    agent_path: str | None = None,
+    agent_kwargs: dict | None = None,
     *,
-    tags: Optional[Sequence[str]] = None,
+    tags: Sequence[str] | None = None,
     **kwargs: Any,
 ) -> AgentExecutor:
     """Load an agent executor given tools and LLM.

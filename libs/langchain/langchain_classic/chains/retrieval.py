@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.retrievers import (
     BaseRetriever,
@@ -10,7 +10,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 
 
 def create_retrieval_chain(
-    retriever: Union[BaseRetriever, Runnable[dict, RetrieverOutput]],
+    retriever: BaseRetriever | Runnable[dict, RetrieverOutput],
     combine_docs_chain: Runnable[dict[str, Any], str],
 ) -> Runnable:
     """Create retrieval chain that retrieves documents and then passes them on.
