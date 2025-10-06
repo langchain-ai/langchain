@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager
@@ -80,7 +80,7 @@ class ConversationalAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
-        input_variables: Optional[list[str]] = None,
+        input_variables: list[str] | None = None,
     ) -> PromptTemplate:
         """Create prompt in the style of the zero-shot agent.
 
@@ -124,14 +124,14 @@ class ConversationalAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        output_parser: Optional[AgentOutputParser] = None,
+        callback_manager: BaseCallbackManager | None = None,
+        output_parser: AgentOutputParser | None = None,
         prefix: str = PREFIX,
         suffix: str = SUFFIX,
         format_instructions: str = FORMAT_INSTRUCTIONS,
         ai_prefix: str = "AI",
         human_prefix: str = "Human",
-        input_variables: Optional[list[str]] = None,
+        input_variables: list[str] | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.

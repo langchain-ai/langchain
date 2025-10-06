@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -87,7 +87,7 @@ class ChatAgent(Agent):
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[list[str]] = None,
+        input_variables: list[str] | None = None,
     ) -> BasePromptTemplate:
         """Create a prompt from a list of tools.
 
@@ -127,13 +127,13 @@ class ChatAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        output_parser: Optional[AgentOutputParser] = None,
+        callback_manager: BaseCallbackManager | None = None,
+        output_parser: AgentOutputParser | None = None,
         system_message_prefix: str = SYSTEM_MESSAGE_PREFIX,
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[list[str]] = None,
+        input_variables: list[str] | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.

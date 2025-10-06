@@ -1,6 +1,6 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -98,7 +98,7 @@ class SequentialChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         known_values = inputs.copy()
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
@@ -111,7 +111,7 @@ class SequentialChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         known_values = inputs.copy()
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
@@ -176,7 +176,7 @@ class SimpleSequentialChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]
@@ -199,7 +199,7 @@ class SimpleSequentialChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         _input = inputs[self.input_key]

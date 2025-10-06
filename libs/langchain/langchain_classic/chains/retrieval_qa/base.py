@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -76,9 +76,9 @@ class BaseRetrievalQA(Chain):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
+        prompt: PromptTemplate | None = None,
         callbacks: Callbacks = None,
-        llm_chain_kwargs: Optional[dict] = None,
+        llm_chain_kwargs: dict | None = None,
         **kwargs: Any,
     ) -> BaseRetrievalQA:
         """Initialize from LLM."""
@@ -111,7 +111,7 @@ class BaseRetrievalQA(Chain):
         cls,
         llm: BaseLanguageModel,
         chain_type: str = "stuff",
-        chain_type_kwargs: Optional[dict] = None,
+        chain_type_kwargs: dict | None = None,
         **kwargs: Any,
     ) -> BaseRetrievalQA:
         """Load chain from chain type."""
@@ -135,7 +135,7 @@ class BaseRetrievalQA(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
@@ -180,7 +180,7 @@ class BaseRetrievalQA(Chain):
     async def _acall(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -50,7 +50,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_pairwise_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, list[CRITERIA_TYPE]]],
+    criteria: CRITERIA_TYPE | str | list[CRITERIA_TYPE] | None,
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -241,8 +241,8 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         cls,
         llm: BaseLanguageModel,
         *,
-        prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
+        prompt: PromptTemplate | None = None,
+        criteria: CRITERIA_TYPE | str | None = None,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the PairwiseStringEvalChain from an LLM.
@@ -284,8 +284,8 @@ Performance may be significantly worse with other models.",
         self,
         prediction: str,
         prediction_b: str,
-        input_: Optional[str],
-        reference: Optional[str],
+        input_: str | None,
+        reference: str | None,
     ) -> dict:
         """Prepare the input for the chain.
 
@@ -321,11 +321,11 @@ Performance may be significantly worse with other models.",
         *,
         prediction: str,
         prediction_b: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
+        input: str | None = None,
+        reference: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -367,11 +367,11 @@ Performance may be significantly worse with other models.",
         *,
         prediction: str,
         prediction_b: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -435,8 +435,8 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         cls,
         llm: BaseLanguageModel,
         *,
-        prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
+        prompt: PromptTemplate | None = None,
+        criteria: CRITERIA_TYPE | str | None = None,
         **kwargs: Any,
     ) -> PairwiseStringEvalChain:
         """Initialize the LabeledPairwiseStringEvalChain from an LLM.

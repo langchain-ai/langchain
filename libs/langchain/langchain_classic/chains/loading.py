@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from langchain_core._api import deprecated
@@ -705,7 +705,7 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     ),
     removal="1.0",
 )
-def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
+def load_chain(path: str | Path, **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""
     if isinstance(path, str) and path.startswith("lc://"):
         msg = (
@@ -717,7 +717,7 @@ def load_chain(path: Union[str, Path], **kwargs: Any) -> Chain:
     return _load_chain_from_file(path, **kwargs)
 
 
-def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
+def _load_chain_from_file(file: str | Path, **kwargs: Any) -> Chain:
     """Load chain from file."""
     # Convert file to Path object.
     file_path = Path(file) if isinstance(file, str) else file

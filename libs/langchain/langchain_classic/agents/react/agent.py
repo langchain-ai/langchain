@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Optional, Union
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
@@ -18,10 +17,10 @@ def create_react_agent(
     llm: BaseLanguageModel,
     tools: Sequence[BaseTool],
     prompt: BasePromptTemplate,
-    output_parser: Optional[AgentOutputParser] = None,
+    output_parser: AgentOutputParser | None = None,
     tools_renderer: ToolsRenderer = render_text_description,
     *,
-    stop_sequence: Union[bool, list[str]] = True,
+    stop_sequence: bool | list[str] = True,
 ) -> Runnable:
     r"""Create an agent that uses ReAct prompting.
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from collections.abc import Callable
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel

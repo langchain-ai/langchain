@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -37,7 +36,7 @@ class SelfAskOutputParser(AgentOutputParser):
     finish_string: str = "So the final answer is: "
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         last_line = text.split("\n")[-1]
         if not any(follow in last_line for follow in self.followups):
             if self.finish_string not in last_line:

@@ -5,7 +5,7 @@ import json
 import operator
 from functools import reduce
 from itertools import cycle
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -53,8 +53,8 @@ class FakeListLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Increment counter, and then return response in that index."""
@@ -463,7 +463,7 @@ async def test_runnable_agent() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
@@ -570,9 +570,9 @@ async def test_runnable_agent_with_function_calls() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
-        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
+        return cast("AgentFinish | AgentAction", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -682,9 +682,9 @@ async def test_runnable_with_multi_action_per_step() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
-        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
+        return cast("AgentFinish | AgentAction", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:

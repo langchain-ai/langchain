@@ -1,6 +1,6 @@
 """Vectorstore stubs for the indexing api."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
@@ -34,8 +34,8 @@ class VectorStoreIndexWrapper(BaseModel):
     def query(
         self,
         question: str,
-        llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[dict[str, Any]] = None,
+        llm: BaseLanguageModel | None = None,
+        retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
         """Query the vectorstore using the provided LLM.
@@ -69,8 +69,8 @@ class VectorStoreIndexWrapper(BaseModel):
     async def aquery(
         self,
         question: str,
-        llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[dict[str, Any]] = None,
+        llm: BaseLanguageModel | None = None,
+        retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
         """Asynchronously query the vectorstore using the provided LLM.
@@ -104,8 +104,8 @@ class VectorStoreIndexWrapper(BaseModel):
     def query_with_sources(
         self,
         question: str,
-        llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[dict[str, Any]] = None,
+        llm: BaseLanguageModel | None = None,
+        retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict:
         """Query the vectorstore and retrieve the answer along with sources.
@@ -139,8 +139,8 @@ class VectorStoreIndexWrapper(BaseModel):
     async def aquery_with_sources(
         self,
         question: str,
-        llm: Optional[BaseLanguageModel] = None,
-        retriever_kwargs: Optional[dict[str, Any]] = None,
+        llm: BaseLanguageModel | None = None,
+        retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict:
         """Asynchronously query the vectorstore and retrieve the answer and sources.

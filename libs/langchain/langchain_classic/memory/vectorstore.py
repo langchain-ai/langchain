@@ -1,7 +1,7 @@
 """Class for a VectorStore-backed memory object."""
 
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
@@ -33,7 +33,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     memory_key: str = "history"  #: :meta private:
     """Key name to locate the memories in the result of load_memory_variables."""
 
-    input_key: Optional[str] = None
+    input_key: str | None = None
     """Key name to index the inputs to load_memory_variables."""
 
     return_docs: bool = False
@@ -56,8 +56,8 @@ class VectorStoreRetrieverMemory(BaseMemory):
     def _documents_to_memory_variables(
         self,
         docs: list[Document],
-    ) -> dict[str, Union[list[Document], str]]:
-        result: Union[list[Document], str]
+    ) -> dict[str, list[Document] | str]:
+        result: list[Document] | str
         if not self.return_docs:
             result = "\n".join([doc.page_content for doc in docs])
         else:
@@ -67,7 +67,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     def load_memory_variables(
         self,
         inputs: dict[str, Any],
-    ) -> dict[str, Union[list[Document], str]]:
+    ) -> dict[str, list[Document] | str]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
@@ -77,7 +77,7 @@ class VectorStoreRetrieverMemory(BaseMemory):
     async def aload_memory_variables(
         self,
         inputs: dict[str, Any],
-    ) -> dict[str, Union[list[Document], str]]:
+    ) -> dict[str, list[Document] | str]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]

@@ -7,8 +7,6 @@ from collections.abc import AsyncIterator, Iterator
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 from uuid import UUID
 
@@ -48,10 +46,10 @@ class AgentExecutorIterator:
         inputs: Any,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_name: Optional[str] = None,
-        run_id: Optional[UUID] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_name: str | None = None,
+        run_id: UUID | None = None,
         include_run_info: bool = False,
         yield_actions: bool = False,
     ):
@@ -89,10 +87,10 @@ class AgentExecutorIterator:
 
     _inputs: dict[str, str]
     callbacks: Callbacks
-    tags: Optional[list[str]]
-    metadata: Optional[dict[str, Any]]
-    run_name: Optional[str]
-    run_id: Optional[UUID]
+    tags: list[str] | None
+    metadata: dict[str, Any] | None
+    run_name: str | None
+    run_id: UUID | None
     include_run_info: bool
     yield_actions: bool
 
@@ -155,7 +153,7 @@ class AgentExecutorIterator:
     def make_final_outputs(
         self,
         outputs: dict[str, Any],
-        run_manager: Union[CallbackManagerForChainRun, AsyncCallbackManagerForChainRun],
+        run_manager: CallbackManagerForChainRun | AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
         """Make final outputs for the iterator.
 
@@ -324,7 +322,7 @@ class AgentExecutorIterator:
 
     def _process_next_step_output(
         self,
-        next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
+        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
         run_manager: CallbackManagerForChainRun,
     ) -> AddableDict:
         """Process the output of the next step.
@@ -353,7 +351,7 @@ class AgentExecutorIterator:
 
     async def _aprocess_next_step_output(
         self,
-        next_step_output: Union[AgentFinish, list[tuple[AgentAction, str]]],
+        next_step_output: AgentFinish | list[tuple[AgentAction, str]],
         run_manager: AsyncCallbackManagerForChainRun,
     ) -> AddableDict:
         """Process the output of the next async step.

@@ -1,7 +1,7 @@
 __all__ = ["LoggingCallbackHandler"]
 
 import logging
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from langchain_core.exceptions import TracerException
@@ -19,7 +19,7 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         self,
         logger: logging.Logger,
         log_level: int = logging.INFO,
-        extra: Optional[dict] = None,
+        extra: dict | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LoggingCallbackHandler.
@@ -43,7 +43,7 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         text: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
         try:

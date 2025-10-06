@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
@@ -48,11 +48,11 @@ class MultiRetrievalQAChain(MultiRouteChain):
         cls,
         llm: BaseLanguageModel,
         retriever_infos: list[dict[str, Any]],
-        default_retriever: Optional[BaseRetriever] = None,
-        default_prompt: Optional[PromptTemplate] = None,
-        default_chain: Optional[Chain] = None,
+        default_retriever: BaseRetriever | None = None,
+        default_prompt: PromptTemplate | None = None,
+        default_chain: Chain | None = None,
         *,
-        default_chain_llm: Optional[BaseLanguageModel] = None,
+        default_chain_llm: BaseLanguageModel | None = None,
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
         """Create a multi retrieval qa chain from an LLM and a default chain.

@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -38,7 +37,7 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     llm1: BaseChatModel = init_chat_model(
         model_name,
         model_provider=model_provider,

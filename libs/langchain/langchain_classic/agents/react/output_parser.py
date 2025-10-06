@@ -1,5 +1,4 @@
 import re
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -12,7 +11,7 @@ class ReActOutputParser(AgentOutputParser):
     """Output parser for the ReAct agent."""
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         action_prefix = "Action: "
         if not text.strip().split("\n")[-1].startswith(action_prefix):
             msg = f"Could not parse LLM Output: {text}"

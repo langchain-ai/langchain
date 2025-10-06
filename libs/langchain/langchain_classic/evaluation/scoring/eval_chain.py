@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
@@ -51,7 +51,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, list[CRITERIA_TYPE]]],
+    criteria: CRITERIA_TYPE | str | list[CRITERIA_TYPE] | None,
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -177,7 +177,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_parser: BaseOutputParser = Field(
         default_factory=ScoreStringResultOutputParser,
     )
-    normalize_by: Optional[float] = None
+    normalize_by: float | None = None
     """The value to normalize the score by, if specified."""
     criterion_name: str
     """The name of the criterion being evaluated."""
@@ -241,9 +241,9 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         cls,
         llm: BaseLanguageModel,
         *,
-        prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
-        normalize_by: Optional[float] = None,
+        prompt: PromptTemplate | None = None,
+        criteria: CRITERIA_TYPE | str | None = None,
+        normalize_by: float | None = None,
         **kwargs: Any,
     ) -> ScoreStringEvalChain:
         """Initialize the ScoreStringEvalChain from an LLM.
@@ -296,8 +296,8 @@ Performance may be significantly worse with other models.",
     def _prepare_input(
         self,
         prediction: str,
-        input_: Optional[str],
-        reference: Optional[str],
+        input_: str | None,
+        reference: str | None,
     ) -> dict:
         """Prepare the input for the chain.
 
@@ -333,11 +333,11 @@ Performance may be significantly worse with other models.",
         self,
         *,
         prediction: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
+        input: str | None = None,
+        reference: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -374,11 +374,11 @@ Performance may be significantly worse with other models.",
         self,
         *,
         prediction: str,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        reference: str | None = None,
+        input: str | None = None,
         callbacks: Callbacks = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -434,9 +434,9 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         cls,
         llm: BaseLanguageModel,
         *,
-        prompt: Optional[PromptTemplate] = None,
-        criteria: Optional[Union[CRITERIA_TYPE, str]] = None,
-        normalize_by: Optional[float] = None,
+        prompt: PromptTemplate | None = None,
+        criteria: CRITERIA_TYPE | str | None = None,
+        normalize_by: float | None = None,
         **kwargs: Any,
     ) -> LabeledScoreStringEvalChain:
         """Initialize the LabeledScoreStringEvalChain from an LLM.

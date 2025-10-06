@@ -1,6 +1,6 @@
 """Unit tests for agents."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.agents import AgentAction, AgentStep
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
@@ -24,8 +24,8 @@ class FakeListLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Increment counter, and then return response in that index."""

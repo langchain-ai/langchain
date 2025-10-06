@@ -4,9 +4,7 @@ from sys import platform
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     TypedDict,
-    Union,
 )
 
 if TYPE_CHECKING:
@@ -35,8 +33,8 @@ class ElementInViewPort(TypedDict):
 
     node_index: str
     backend_node_id: int
-    node_name: Optional[str]
-    node_value: Optional[str]
+    node_name: str | None
+    node_value: str | None
     node_meta: list[str]
     is_clickable: bool
     origin_x: int
@@ -111,7 +109,7 @@ class Crawler:
                 "window.innerHeight;"
             )
 
-    def click(self, id_: Union[str, int]) -> None:
+    def click(self, id_: str | int) -> None:
         """Click on an element with the given id.
 
         Args:
@@ -135,7 +133,7 @@ class Crawler:
         else:
             print("Could not find element")  # noqa: T201
 
-    def type(self, id_: Union[str, int], text: str) -> None:
+    def type(self, id_: str | int, text: str) -> None:
         """Type text into an element with the given id.
 
         Args:
@@ -215,12 +213,12 @@ class Crawler:
         child_nodes: dict[str, list[dict[str, Any]]] = {}
         elements_in_view_port: list[ElementInViewPort] = []
 
-        anchor_ancestry: dict[str, tuple[bool, Optional[int]]] = {"-1": (False, None)}
-        button_ancestry: dict[str, tuple[bool, Optional[int]]] = {"-1": (False, None)}
+        anchor_ancestry: dict[str, tuple[bool, int | None]] = {"-1": (False, None)}
+        button_ancestry: dict[str, tuple[bool, int | None]] = {"-1": (False, None)}
 
         def convert_name(
-            node_name: Optional[str],
-            has_click_handler: Optional[bool],  # noqa: FBT001
+            node_name: str | None,
+            has_click_handler: bool | None,  # noqa: FBT001
         ) -> str:
             if node_name == "a":
                 return "link"
@@ -239,7 +237,7 @@ class Crawler:
         ) -> dict[str, str]:
             values = {}
 
-            for [key_index, value_index] in zip(*(iter(attributes),) * 2):
+            for [key_index, value_index] in zip(*(iter(attributes),) * 2, strict=False):
                 if value_index < 0:
                     continue
                 key = strings[key_index]
@@ -255,12 +253,12 @@ class Crawler:
             return values
 
         def add_to_hash_tree(
-            hash_tree: dict[str, tuple[bool, Optional[int]]],
+            hash_tree: dict[str, tuple[bool, int | None]],
             tag: str,
             node_id: int,
-            node_name: Optional[str],
+            node_name: str | None,
             parent_id: int,
-        ) -> tuple[bool, Optional[int]]:
+        ) -> tuple[bool, int | None]:
             parent_id_str = str(parent_id)
             if parent_id_str not in hash_tree:
                 parent_name = strings[node_names[parent_id]].lower()
@@ -275,7 +273,7 @@ class Crawler:
             # even if the anchor is nested in another anchor, we set the "root" for all
             # descendants to be ::Self
             if node_name == tag:
-                value: tuple[bool, Optional[int]] = (True, node_id)
+                value: tuple[bool, int | None] = (True, node_id)
             elif (
                 is_parent_desc_anchor
             ):  # reuse the parent's anchor_id (which could be much higher in the tree)
@@ -294,7 +292,7 @@ class Crawler:
 
         for index, node_name_index in enumerate(node_names):
             node_parent = parent[index]
-            node_name: Optional[str] = strings[node_name_index].lower()
+            node_name: str | None = strings[node_name_index].lower()
 
             is_ancestor_of_anchor, anchor_id = add_to_hash_tree(
                 anchor_ancestry, "a", index, node_name, node_parent
@@ -432,7 +430,7 @@ class Crawler:
             node_name = element.get("node_name")
             element_node_value = element.get("node_value")
             node_is_clickable = element.get("is_clickable")
-            node_meta_data: Optional[list[str]] = element.get("node_meta")
+            node_meta_data: list[str] | None = element.get("node_meta")
 
             inner_text = f"{element_node_value} " if element_node_value else ""
             meta = ""
