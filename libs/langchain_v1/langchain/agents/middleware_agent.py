@@ -8,13 +8,13 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
-from langgraph._internal._runnable import RunnableCallable
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -754,7 +754,9 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, loop_entry_node, structured_output_tools, exit_node),
+            _make_tools_to_model_edge(
+                tool_node, loop_entry_node, structured_output_tools, exit_node
+            ),
             [loop_entry_node, exit_node],
         )
 
@@ -924,7 +926,10 @@ def _make_model_to_tools_edge(
 
 
 def _make_tools_to_model_edge(
-    tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding], exit_node: str
+    tool_node: ToolNode,
+    next_node: str,
+    structured_output_tools: dict[str, OutputToolBinding],
+    exit_node: str,
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
