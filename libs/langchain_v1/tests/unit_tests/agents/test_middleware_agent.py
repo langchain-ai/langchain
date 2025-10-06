@@ -48,6 +48,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     hook_config,
     ModelRequest,
+    ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
@@ -2110,9 +2111,9 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     ]
 
 
-# Tests for retry_model_request hook
-def test_retry_model_request_hook() -> None:
-    """Test that retry_model_request hook is called on model errors."""
+# Tests for on_model_call hook
+def test_on_model_call_hook() -> None:
+    """Test that on_model_call hook is called on model errors."""
     call_count = {"value": 0}
 
     class FailingModel(BaseChatModel):
@@ -2135,10 +2136,15 @@ def test_retry_model_request_hook() -> None:
             super().__init__()
             self.retry_count = 0
 
-        def retry_model_request(self, error, request, state, runtime, attempt):
-            self.retry_count += 1
-            # Return the same request to retry
-            return request
+        def on_model_call(self, request, state, runtime):
+            response = yield request
+
+            if response.action == "raise":
+                # Retry on error
+                self.retry_count += 1
+                response = yield request
+
+            return response
 
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
@@ -2154,8 +2160,8 @@ def test_retry_model_request_hook() -> None:
     assert result["messages"][1].content == "Success on retry"
 
 
-def test_retry_model_request_attempt_number() -> None:
-    """Test that attempt number is correctly passed to retry_model_request."""
+def test_on_model_call_retry_count() -> None:
+    """Test that on_model_call can retry multiple times."""
 
     class AlwaysFailingModel(BaseChatModel):
         """Model that always fails."""
@@ -2172,11 +2178,20 @@ def test_retry_model_request_attempt_number() -> None:
             super().__init__()
             self.attempts = []
 
-        def retry_model_request(self, error, request, state, runtime, attempt):
-            self.attempts.append(attempt)
-            if attempt < 3:  # noqa: PLR2004
-                return request  # Retry
-            return None  # Stop after 3 attempts
+        def on_model_call(self, request, state, runtime):
+            max_retries = 3
+            for attempt in range(max_retries):
+                self.attempts.append(attempt + 1)
+                response = yield request
+
+                if response.action == "return":
+                    return response
+
+                if attempt < max_retries - 1:
+                    continue  # Retry
+
+            # All retries failed
+            return response
 
     model = AlwaysFailingModel()
     tracker = AttemptTrackingMiddleware()
@@ -2186,12 +2201,12 @@ def test_retry_model_request_attempt_number() -> None:
     with pytest.raises(ValueError, match="Always fails"):
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-    # Should have been called with attempts 1, 2, 3
+    # Should have attempted 3 times
     assert tracker.attempts == [1, 2, 3]
 
 
-def test_retry_model_request_no_retry() -> None:
-    """Test that error is propagated when no middleware wants to retry."""
+def test_on_model_call_no_retry() -> None:
+    """Test that error is propagated when middleware doesn't retry."""
 
     class FailingModel(BaseChatModel):
         """Model that always fails."""
@@ -2204,9 +2219,10 @@ def test_retry_model_request_no_retry() -> None:
             return "failing"
 
     class NoRetryMiddleware(AgentMiddleware):
-        def retry_model_request(self, error, request, state, runtime, attempt):
-            # Always return None to not retry
-            return None
+        def on_model_call(self, request, state, runtime):
+            response = yield request
+            # Don't retry, just return the error response
+            return response
 
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()]).compile()
 
@@ -2301,8 +2317,8 @@ def test_model_fallback_middleware_initialization() -> None:
     assert len(middleware.models) == 2
 
 
-def test_retry_model_request_max_attempts() -> None:
-    """Test that retry stops after maximum attempts."""
+def test_on_model_call_max_attempts() -> None:
+    """Test that middleware controls termination via retry limits."""
 
     class AlwaysFailingModel(BaseChatModel):
         """Model that always fails."""
@@ -2314,32 +2330,41 @@ def test_retry_model_request_max_attempts() -> None:
         def _llm_type(self):
             return "always_failing"
 
-    class InfiniteRetryMiddleware(AgentMiddleware):
-        """Middleware that always wants to retry (buggy behavior)."""
+    class LimitedRetryMiddleware(AgentMiddleware):
+        """Middleware that limits its own retries."""
 
-        def __init__(self):
+        def __init__(self, max_retries: int = 10):
             super().__init__()
+            self.max_retries = max_retries
             self.attempt_count = 0
 
-        def retry_model_request(self, error, request, state, runtime, attempt):
-            self.attempt_count = attempt
-            return request  # Always retry (infinite loop without limit)
+        def on_model_call(self, request, state, runtime):
+            for attempt in range(self.max_retries):
+                self.attempt_count += 1
+                response = yield request
+
+                if response.action == "return":
+                    return response
+                # Continue to retry
+
+            # All retries exhausted, return the last error
+            return response
 
     model = AlwaysFailingModel()
-    middleware = InfiniteRetryMiddleware()
+    middleware = LimitedRetryMiddleware(max_retries=10)
 
     agent = create_agent(model=model, middleware=[middleware]).compile()
 
-    # Should fail with max attempts error, not infinite loop
-    with pytest.raises(RuntimeError, match="Maximum retry attempts \\(100\\) exceeded"):
+    # Should fail with the model's error after middleware stops retrying
+    with pytest.raises(ValueError, match="Always fails"):
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-    # Should have attempted 100 times
-    assert middleware.attempt_count == 100
+    # Should have attempted exactly 10 times as configured
+    assert middleware.attempt_count == 10
 
 
-async def test_retry_model_request_async() -> None:
-    """Test async retry_model_request hook."""
+async def test_on_model_call_async() -> None:
+    """Test async on_model_call hook."""
     call_count = {"value": 0}
 
     class AsyncFailingModel(BaseChatModel):
@@ -2365,9 +2390,15 @@ async def test_retry_model_request_async() -> None:
             super().__init__()
             self.retry_count = 0
 
-        async def aretry_model_request(self, error, request, state, runtime, attempt):
-            self.retry_count += 1
-            return request  # Retry with same request
+        async def aon_model_call(self, request, state, runtime):
+            response = yield request
+
+            if response.action == "raise":
+                # Retry on error
+                self.retry_count += 1
+                response = yield request
+
+            return response
 
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
@@ -2380,6 +2411,86 @@ async def test_retry_model_request_async() -> None:
     assert retry_middleware.retry_count == 1
     # Should have succeeded on second attempt
     assert result["messages"][1].content == "Async retry success"
+
+
+def test_on_model_call_rewrite_response() -> None:
+    """Test that middleware can rewrite model responses."""
+
+    class SimpleModel(BaseChatModel):
+        """Model that returns a simple response."""
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Original response"))]
+            )
+
+        @property
+        def _llm_type(self):
+            return "simple"
+
+    class ResponseRewriteMiddleware(AgentMiddleware):
+        """Middleware that rewrites the response."""
+
+        def on_model_call(self, request, state, runtime):
+            response = yield request
+
+            # Rewrite the response
+            if response.action == "return" and response.result:
+                rewritten_message = AIMessage(content=f"REWRITTEN: {response.result.content}")
+                response = ModelResponse(action="return", result=rewritten_message)
+
+            return response
+
+    model = SimpleModel()
+    middleware = ResponseRewriteMiddleware()
+
+    agent = create_agent(model=model, middleware=[middleware]).compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Response should be rewritten by middleware
+    assert result["messages"][1].content == "REWRITTEN: Original response"
+
+
+def test_on_model_call_convert_error_to_response() -> None:
+    """Test that middleware can convert errors to successful responses."""
+
+    class AlwaysFailingModel(BaseChatModel):
+        """Model that always fails."""
+
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Model error")
+
+        @property
+        def _llm_type(self):
+            return "failing"
+
+    class ErrorToResponseMiddleware(AgentMiddleware):
+        """Middleware that converts errors to success responses."""
+
+        def on_model_call(self, request, state, runtime):
+            response = yield request
+
+            # Convert error to success response
+            if response.action == "raise":
+                fallback_message = AIMessage(
+                    content=f"Error occurred: {response.exception}. Using fallback response."
+                )
+                response = ModelResponse(action="return", result=fallback_message)
+
+            return response
+
+    model = AlwaysFailingModel()
+    middleware = ErrorToResponseMiddleware()
+
+    agent = create_agent(model=model, middleware=[middleware]).compile()
+
+    # Should not raise, middleware converts error to response
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Response should be the fallback from middleware
+    assert "Error occurred" in result["messages"][1].content
+    assert "fallback response" in result["messages"][1].content
 
 
 def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:

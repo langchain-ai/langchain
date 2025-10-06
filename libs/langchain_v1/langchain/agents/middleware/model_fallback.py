@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langgraph.runtime import Runtime
+    from langgraph.typing import ContextT
 
 
 class ModelFallbackMiddleware(AgentMiddleware):
@@ -64,31 +70,43 @@ class ModelFallbackMiddleware(AgentMiddleware):
             else:
                 self.models.append(model)
 
-    def retry_model_request(
+    def on_model_call(
         self,
-        error: Exception,  # noqa: ARG002
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-        attempt: int,
-    ) -> ModelRequest | None:
-        """Retry with the next fallback model.
+        state: Any,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        """Try fallback models in sequence on errors.
 
         Args:
-            error: The exception that occurred during model invocation.
-            request: The original model request that failed.
+            request: The initial model request.
             state: The current agent state.
             runtime: The langgraph runtime.
-            attempt: The current attempt number (1-indexed).
+
+        Yields:
+            ModelRequest: The request to execute.
+
+        Receives (via .send()):
+            ModelResponse: The response from the model call.
 
         Returns:
-            ModelRequest with the next fallback model, or None if all models exhausted.
+            ModelResponse: The final response to use.
         """
-        # attempt 1 = primary model failed, try models[0] (first fallback)
-        fallback_index = attempt - 1
-        # All fallback models exhausted
-        if fallback_index >= len(self.models):
-            return None
-        # Try next fallback model
-        request.model = self.models[fallback_index]
-        return request
+        # Try primary model first
+        current_request = request
+        response = yield current_request
+
+        # If success, return immediately
+        if response.action == "return":
+            return response
+
+        # Try each fallback model
+        for fallback_model in self.models:
+            current_request.model = fallback_model
+            response = yield current_request
+
+            if response.action == "return":
+                return response
+
+        # All models failed, return last error
+        return response

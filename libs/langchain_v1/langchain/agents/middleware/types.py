@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from inspect import iscoroutinefunction
 from typing import (
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AnyMessage  # noqa: TC002
+from langchain_core.messages import AIMessage, AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
@@ -42,6 +42,7 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ModelRequest",
+    "ModelResponse",
     "OmitFromSchema",
     "PublicAgentState",
     "after_agent",
@@ -51,6 +52,7 @@ __all__ = [
     "dynamic_prompt",
     "hook_config",
     "modify_model_request",
+    "on_model_call",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -70,6 +72,45 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ModelResponse:
+    """Response from a model call.
+
+    Used in the on_model_call generator protocol to represent the result
+    of a model invocation, whether successful or failed.
+
+    Middleware can modify this response to:
+    - Rewrite the result message content
+    - Convert errors to successful responses (error recovery)
+    - Convert successful responses to errors (validation failures)
+    - Add metadata or modify message attributes
+
+    Examples:
+        Rewrite response content:
+        ```python
+        if response.action == "return":
+            modified = AIMessage(content=f"Enhanced: {response.result.content}")
+            response = ModelResponse(action="return", result=modified)
+        ```
+
+        Convert error to success:
+        ```python
+        if response.action == "raise":
+            fallback = AIMessage(content="Using fallback response")
+            response = ModelResponse(action="return", result=fallback)
+        ```
+    """
+
+    action: Literal["return", "raise"]
+    """The action to take: 'return' for success, 'raise' for error."""
+
+    result: AIMessage | None = None
+    """The AI message result if action is 'return'. Can be rewritten by middleware."""
+
+    exception: Exception | None = None
+    """The exception if action is 'raise'."""
 
 
 @dataclass
@@ -180,53 +221,121 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
-    def retry_model_request(
+    def on_model_call(
         self,
-        error: Exception,  # noqa: ARG002
-        request: ModelRequest,  # noqa: ARG002
+        request: ModelRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-        attempt: int,  # noqa: ARG002
-    ) -> ModelRequest | None:
-        """Logic to handle model invocation errors and optionally retry.
+    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        """Generator-based hook to intercept and control model execution.
+
+        This hook allows middleware to:
+        - Intercept model calls before execution
+        - Modify requests dynamically
+        - Implement retry logic by yielding multiple times
+        - Handle errors and convert them to responses
+        - Rewrite response content (e.g., post-processing, formatting)
+        - Compose with other middleware (outer wraps inner)
+
+        The generator protocol:
+        1. Yield a ModelRequest to execute the model
+        2. Receive a ModelResponse via .send() with the result or error
+        3. Optionally yield again to retry with a modified request
+        4. Return a final ModelResponse (can be modified)
 
         Args:
-            error: The exception that occurred during model invocation.
-            request: The original model request that failed.
+            request: The initial model request.
             state: The current agent state.
             runtime: The langgraph runtime.
-            attempt: The current attempt number (1-indexed).
+
+        Yields:
+            ModelRequest: The request to execute.
+
+        Receives (via .send()):
+            ModelResponse: The response from the model call.
 
         Returns:
-            ModelRequest: Modified request to retry with.
-            None: Propagate the error (re-raise).
-        """
-        return None
+            ModelResponse: The final response to use (can be rewritten).
 
-    async def aretry_model_request(
+        Examples:
+            Implementing retry logic:
+            ```python
+            def on_model_call(self, request, state, runtime):
+                max_retries = 3
+                for attempt in range(max_retries):
+                    response = yield request
+
+                    if response.action == "return":
+                        return response
+
+                    if attempt < max_retries - 1:
+                        # Modify request and retry
+                        continue
+
+                # All retries failed
+                return response
+            ```
+
+            Rewriting response content:
+            ```python
+            def on_model_call(self, request, state, runtime):
+                response = yield request
+
+                # Post-process successful responses
+                if response.action == "return" and response.result:
+                    enhanced = AIMessage(content=self.enhance(response.result.content))
+                    response = ModelResponse(action="return", result=enhanced)
+
+                return response
+            ```
+
+            Converting errors to fallback responses:
+            ```python
+            def on_model_call(self, request, state, runtime):
+                response = yield request
+
+                # Provide fallback on error
+                if response.action == "raise":
+                    fallback = AIMessage(content="Service unavailable")
+                    response = ModelResponse(action="return", result=fallback)
+
+                return response
+            ```
+        """
+        response = yield request
+        return response
+
+    def aon_model_call(
         self,
-        error: Exception,
         request: ModelRequest,
         state: StateT,
         runtime: Runtime[ContextT],
-        attempt: int,
-    ) -> ModelRequest | None:
-        """Async logic to handle model invocation errors and optionally retry.
+    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        """Async-compatible generator-based hook to intercept and control model execution.
+
+        Note: This is a sync generator that works with async model execution,
+        following the same pattern as ToolNode's on_tool_call handler.
+        The generator protocol itself is synchronous, but the model invocation
+        it wraps can be async.
+
+        See on_model_call for detailed documentation.
 
         Args:
-            error: The exception that occurred during model invocation.
-            request: The original model request that failed.
+            request: The initial model request.
             state: The current agent state.
             runtime: The langgraph runtime.
-            attempt: The current attempt number (1-indexed).
+
+        Yields:
+            ModelRequest: The request to execute.
+
+        Receives (via .send()):
+            ModelResponse: The response from the model call.
 
         Returns:
-            ModelRequest: Modified request to retry with.
-            None: Propagate the error (re-raise).
+            ModelResponse: The final response to use.
         """
-        return await run_in_executor(
-            None, self.retry_model_request, error, request, state, runtime, attempt
-        )
+        response = yield request
+        return response
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
@@ -264,6 +373,20 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> str | Awaitable[str]:
         """Generate a system prompt string based on the request, state, and runtime."""
+        ...
+
+
+class _CallableReturningModelResponseGenerator(Protocol[StateT_contra, ContextT]):
+    """Callable that returns a generator for model call interception.
+
+    Note: Returns a sync generator that works with both sync and async model execution,
+    following the same pattern as ToolNode's on_tool_call handler.
+    """
+
+    def __call__(
+        self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
+    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        """Generate responses to intercept and control model execution."""
         ...
 
 
@@ -1116,6 +1239,177 @@ def dynamic_prompt(
                 "state_schema": AgentState,
                 "tools": [],
                 "modify_model_request": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def on_model_call(
+    func: _CallableReturningModelResponseGenerator[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def on_model_call(
+    func: None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableReturningModelResponseGenerator[StateT, ContextT]],
+    AgentMiddleware[StateT, ContextT],
+]: ...
+
+
+def on_model_call(
+    func: _CallableReturningModelResponseGenerator[StateT, ContextT] | None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableReturningModelResponseGenerator[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Decorator used to dynamically create a middleware with the on_model_call hook.
+
+    This decorator creates middleware that can intercept model calls, implement
+    retry logic, handle errors, and rewrite responses through a generator-based protocol.
+
+    Args:
+        func: The generator function to be decorated. Must accept:
+            `request: ModelRequest, state: StateT, runtime: Runtime[ContextT]` and
+            yield ModelRequest, receive ModelResponse, and return ModelResponse.
+        state_schema: Optional custom state schema type. If not provided, uses the default
+            AgentState schema.
+        tools: Optional list of additional tools to register with this middleware.
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
+
+    Returns:
+        Either an AgentMiddleware instance (if func is provided) or a decorator function
+        that can be applied to a function.
+
+    The decorated function should:
+        - Yield ModelRequest to execute the model
+        - Receive ModelResponse via .send() with results or errors
+        - Return final ModelResponse (can be rewritten)
+
+    Examples:
+        Basic retry logic:
+        ```python
+        @on_model_call
+        def retry_on_error(
+            request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+            max_retries = 3
+            for attempt in range(max_retries):
+                response = yield request
+
+                if response.action == "return":
+                    return response
+
+                if attempt < max_retries - 1:
+                    # Modify request and retry
+                    continue
+
+            # All retries failed
+            return response
+        ```
+
+        Model fallback:
+        ```python
+        @on_model_call
+        def fallback_model(
+            request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+            # Try primary model
+            response = yield request
+
+            if response.action == "return":
+                return response
+
+            # Try fallback model
+            request.model = fallback_model_instance
+            response = yield request
+            return response
+        ```
+
+        Rewrite response content:
+        ```python
+        @on_model_call
+        def uppercase_responses(
+            request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+            response = yield request
+
+            # Rewrite successful responses
+            if response.action == "return" and response.result:
+                modified = AIMessage(content=response.result.content.upper())
+                response = ModelResponse(action="return", result=modified)
+
+            return response
+        ```
+    """
+
+    def decorator(
+        func: _CallableReturningModelResponseGenerator[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        # on_model_call handlers are always sync generators, even when used with async execution
+        # This follows the same pattern as ToolNode's on_tool_call handler
+
+        def wrapped(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            request: ModelRequest,
+            state: StateT,
+            runtime: Runtime[ContextT],
+        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+            # Forward the generator yields and sends
+            gen = func(request, state, runtime)  # type: ignore[arg-type]
+            response = None
+            try:
+                while True:
+                    if response is None:
+                        request_to_send = gen.send(None)
+                    else:
+                        request_to_send = gen.send(response)
+                    response = yield request_to_send
+            except StopIteration as e:
+                # Validate the return value
+                if e.value is None:
+                    msg = (
+                        "on_model_call handler must explicitly return a ModelResponse. "
+                        "Ensure your handler ends with 'return response'."
+                    )
+                    raise ValueError(msg)
+                if not isinstance(e.value, ModelResponse):
+                    msg = (
+                        f"on_model_call handler must return a ModelResponse, "
+                        f"got {type(e.value).__name__} instead"
+                    )
+                    raise TypeError(msg)
+                return e.value  # type: ignore[return-value]
+
+        middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
+
+        # Set both on_model_call and aon_model_call to the same sync generator
+        # The generator protocol is sync, but can wrap both sync and async model execution
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": state_schema or AgentState,
+                "tools": tools or [],
+                "on_model_call": wrapped,
+                "aon_model_call": wrapped,
             },
         )()
 

@@ -17,6 +17,7 @@ from .types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
+    ModelResponse,
     after_agent,
     after_model,
     before_agent,
@@ -24,6 +25,7 @@ from .types import (
     dynamic_prompt,
     hook_config,
     modify_model_request,
+    on_model_call,
 )
 
 __all__ = [
@@ -38,6 +40,7 @@ __all__ = [
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
     "ModelRequest",
+    "ModelResponse",
     "PIIDetectionError",
     "PIIMiddleware",
     "PlanningMiddleware",
@@ -50,4 +53,5 @@ __all__ = [
     "dynamic_prompt",
     "hook_config",
     "modify_model_request",
+    "on_model_call",
 ]
