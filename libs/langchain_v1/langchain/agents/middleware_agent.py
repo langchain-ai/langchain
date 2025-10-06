@@ -8,6 +8,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
+from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.runtime import Runtime
@@ -260,7 +261,13 @@ def create_agent(  # noqa: PLR0915
     assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
         "Please remove duplicate middleware instances."
     )
-    middleware_w_before = [
+    middleware_w_before_agent = [
+        m
+        for m in middleware
+        if m.__class__.before_agent is not AgentMiddleware.before_agent
+        or m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
+    ]
+    middleware_w_before_model = [
         m
         for m in middleware
         if m.__class__.before_model is not AgentMiddleware.before_model
@@ -272,11 +279,17 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
         or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
     ]
-    middleware_w_after = [
+    middleware_w_after_model = [
         m
         for m in middleware
         if m.__class__.after_model is not AgentMiddleware.after_model
         or m.__class__.aafter_model is not AgentMiddleware.aafter_model
+    ]
+    middleware_w_after_agent = [
+        m
+        for m in middleware
+        if m.__class__.after_agent is not AgentMiddleware.after_agent
+        or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
     middleware_w_retry = [
         m
@@ -624,9 +637,7 @@ def create_agent(  # noqa: PLR0915
         raise RuntimeError(msg)
 
     # Use sync or async based on model capabilities
-    from langgraph._internal._runnable import RunnableCallable
-
-    graph.add_node("model_request", RunnableCallable(model_request, amodel_request))
+    graph.add_node("model_request", RunnableCallable(model_request, amodel_request, trace=False))
 
     # Only add tools node if we have tools
     if tool_node is not None:
@@ -634,6 +645,25 @@ def create_agent(  # noqa: PLR0915
 
     # Add middleware nodes
     for m in middleware:
+        if (
+            m.__class__.before_agent is not AgentMiddleware.before_agent
+            or m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_before_agent = (
+                m.before_agent
+                if m.__class__.before_agent is not AgentMiddleware.before_agent
+                else None
+            )
+            async_before_agent = (
+                m.abefore_agent
+                if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
+                else None
+            )
+            before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
+            graph.add_node(f"{m.name}.before_agent", before_agent_node, input_schema=state_schema)
+
         if (
             m.__class__.before_model is not AgentMiddleware.before_model
             or m.__class__.abefore_model is not AgentMiddleware.abefore_model
@@ -650,7 +680,7 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.abefore_model is not AgentMiddleware.abefore_model
                 else None
             )
-            before_node = RunnableCallable(sync_before, async_before)
+            before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
 
         if (
@@ -669,74 +699,163 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.aafter_model is not AgentMiddleware.aafter_model
                 else None
             )
-            after_node = RunnableCallable(sync_after, async_after)
+            after_node = RunnableCallable(sync_after, async_after, trace=False)
             graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
 
-    # add start edge
-    first_node = (
-        f"{middleware_w_before[0].name}.before_model" if middleware_w_before else "model_request"
-    )
-    last_node = (
-        f"{middleware_w_after[0].name}.after_model" if middleware_w_after else "model_request"
-    )
-    graph.add_edge(START, first_node)
+        if (
+            m.__class__.after_agent is not AgentMiddleware.after_agent
+            or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_after_agent = (
+                m.after_agent
+                if m.__class__.after_agent is not AgentMiddleware.after_agent
+                else None
+            )
+            async_after_agent = (
+                m.aafter_agent
+                if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
+                else None
+            )
+            after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
+            graph.add_node(f"{m.name}.after_agent", after_agent_node, input_schema=state_schema)
 
+    # Determine the entry node (runs once at start): before_agent -> before_model -> model_request
+    if middleware_w_before_agent:
+        entry_node = f"{middleware_w_before_agent[0].name}.before_agent"
+    elif middleware_w_before_model:
+        entry_node = f"{middleware_w_before_model[0].name}.before_model"
+    else:
+        entry_node = "model_request"
+
+    # Determine the loop entry node (beginning of agent loop, excludes before_agent)
+    # This is where tools will loop back to for the next iteration
+    if middleware_w_before_model:
+        loop_entry_node = f"{middleware_w_before_model[0].name}.before_model"
+    else:
+        loop_entry_node = "model_request"
+
+    # Determine the loop exit node (end of each iteration, can run multiple times)
+    # This is after_model or model_request, but NOT after_agent
+    if middleware_w_after_model:
+        loop_exit_node = f"{middleware_w_after_model[0].name}.after_model"
+    else:
+        loop_exit_node = "model_request"
+
+    # Determine the exit node (runs once at end): after_agent or END
+    if middleware_w_after_agent:
+        exit_node = f"{middleware_w_after_agent[-1].name}.after_agent"
+    else:
+        exit_node = END
+
+    graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, first_node, structured_output_tools),
-            [first_node, END],
-        )
-        graph.add_conditional_edges(
-            last_node,
-            _make_model_to_tools_edge(first_node, structured_output_tools, tool_node),
-            [first_node, "tools", END],
-        )
-    elif last_node == "model_request":
-        # If no tools, just go to END from model
-        graph.add_edge(last_node, END)
-    else:
-        # If after_model, then need to check for can_jump_to
-        _add_middleware_edge(
-            graph,
-            f"{middleware_w_after[0].name}.after_model",
-            END,
-            first_node,
-            can_jump_to=_get_can_jump_to(middleware_w_after[0], "after_model"),
+            _make_tools_to_model_edge(
+                tool_node, loop_entry_node, structured_output_tools, exit_node
+            ),
+            [loop_entry_node, exit_node],
         )
 
-    # Add middleware edges (same as before)
-    if middleware_w_before:
-        for m1, m2 in itertools.pairwise(middleware_w_before):
+        graph.add_conditional_edges(
+            loop_exit_node,
+            _make_model_to_tools_edge(
+                loop_entry_node, structured_output_tools, tool_node, exit_node
+            ),
+            [loop_entry_node, "tools", exit_node],
+        )
+    elif loop_exit_node == "model_request":
+        # If no tools and no after_model, go directly to exit_node
+        graph.add_edge(loop_exit_node, exit_node)
+    # No tools but we have after_model - connect after_model to exit_node
+    else:
+        _add_middleware_edge(
+            graph,
+            f"{middleware_w_after_model[0].name}.after_model",
+            exit_node,
+            loop_entry_node,
+            can_jump_to=_get_can_jump_to(middleware_w_after_model[0], "after_model"),
+        )
+
+    # Add before_agent middleware edges
+    if middleware_w_before_agent:
+        for m1, m2 in itertools.pairwise(middleware_w_before_agent):
+            _add_middleware_edge(
+                graph,
+                f"{m1.name}.before_agent",
+                f"{m2.name}.before_agent",
+                loop_entry_node,
+                can_jump_to=_get_can_jump_to(m1, "before_agent"),
+            )
+        # Connect last before_agent to loop_entry_node (before_model or model_request)
+        _add_middleware_edge(
+            graph,
+            f"{middleware_w_before_agent[-1].name}.before_agent",
+            loop_entry_node,
+            loop_entry_node,
+            can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
+        )
+
+    # Add before_model middleware edges
+    if middleware_w_before_model:
+        for m1, m2 in itertools.pairwise(middleware_w_before_model):
             _add_middleware_edge(
                 graph,
                 f"{m1.name}.before_model",
                 f"{m2.name}.before_model",
-                first_node,
+                loop_entry_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
             graph,
-            f"{middleware_w_before[-1].name}.before_model",
+            f"{middleware_w_before_model[-1].name}.before_model",
             "model_request",
-            first_node,
-            can_jump_to=_get_can_jump_to(middleware_w_before[-1], "before_model"),
+            loop_entry_node,
+            can_jump_to=_get_can_jump_to(middleware_w_before_model[-1], "before_model"),
         )
 
-    if middleware_w_after:
-        graph.add_edge("model_request", f"{middleware_w_after[-1].name}.after_model")
-        for idx in range(len(middleware_w_after) - 1, 0, -1):
-            m1 = middleware_w_after[idx]
-            m2 = middleware_w_after[idx - 1]
+    # Add after_model middleware edges
+    if middleware_w_after_model:
+        graph.add_edge("model_request", f"{middleware_w_after_model[-1].name}.after_model")
+        for idx in range(len(middleware_w_after_model) - 1, 0, -1):
+            m1 = middleware_w_after_model[idx]
+            m2 = middleware_w_after_model[idx - 1]
             _add_middleware_edge(
                 graph,
                 f"{m1.name}.after_model",
                 f"{m2.name}.after_model",
-                first_node,
+                loop_entry_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
+        # Note: Connection from after_model to after_agent/END is handled above
+        # in the conditional edges section
+
+    # Add after_agent middleware edges
+    if middleware_w_after_agent:
+        # Chain after_agent middleware (runs once at the very end, before END)
+        for idx in range(len(middleware_w_after_agent) - 1, 0, -1):
+            m1 = middleware_w_after_agent[idx]
+            m2 = middleware_w_after_agent[idx - 1]
+            _add_middleware_edge(
+                graph,
+                f"{m1.name}.after_agent",
+                f"{m2.name}.after_agent",
+                loop_entry_node,
+                can_jump_to=_get_can_jump_to(m1, "after_agent"),
+            )
+
+        # Connect the last after_agent to END
+        _add_middleware_edge(
+            graph,
+            f"{middleware_w_after_agent[0].name}.after_agent",
+            END,
+            loop_entry_node,
+            can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
+        )
 
     return graph
 
@@ -768,7 +887,10 @@ def _fetch_last_ai_and_tool_messages(
 
 
 def _make_model_to_tools_edge(
-    first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
+    first_node: str,
+    structured_output_tools: dict[str, OutputToolBinding],
+    tool_node: ToolNode,
+    exit_node: str,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
@@ -778,10 +900,10 @@ def _make_model_to_tools_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # 2. if the model hasn't called any tools, jump to END
+        # 2. if the model hasn't called any tools, exit the loop
         # this is the classic exit condition for an agent loop
         if len(last_ai_message.tool_calls) == 0:
-            return END
+            return exit_node
 
         pending_tool_calls = [
             c
@@ -804,7 +926,10 @@ def _make_model_to_tools_edge(
 
 
 def _make_tools_to_model_edge(
-    tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
+    tool_node: ToolNode,
+    next_node: str,
+    structured_output_tools: dict[str, OutputToolBinding],
+    exit_node: str,
 ) -> Callable[[dict[str, Any]], str | None]:
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
@@ -814,10 +939,10 @@ def _make_tools_to_model_edge(
             for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
         ):
-            return END
+            return exit_node
 
         if any(t.name in structured_output_tools for t in tool_messages):
-            return END
+            return exit_node
 
         return next_node
 
