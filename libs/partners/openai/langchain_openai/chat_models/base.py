@@ -762,20 +762,23 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
 
         # Enable stream_usage by default if using default base URL and client
-        if all(
-            getattr(self, key, None) is None
-            for key in (
-                "stream_usage",
-                "openai_proxy",
-                "openai_api_base",
-                "base_url",
-                "client",
-                "root_client",
-                "async_client",
-                "root_async_client",
-                "http_client",
-                "http_async_client",
+        if (
+            all(
+                getattr(self, key, None) is None
+                for key in (
+                    "stream_usage",
+                    "openai_proxy",
+                    "openai_api_base",
+                    "base_url",
+                    "client",
+                    "root_client",
+                    "async_client",
+                    "root_async_client",
+                    "http_client",
+                    "http_async_client",
+                )
             )
+            and "OPENAI_BASE_URL" not in os.environ
         ):
             self.stream_usage = True
 
