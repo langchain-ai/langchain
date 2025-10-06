@@ -82,12 +82,14 @@ location_json_schema = {
 }
 
 
+@tool
 def get_weather() -> str:
     """Get the weather."""
 
     return "The weather is sunny and 75°F."
 
 
+@tool
 def get_location() -> str:
     """Get the current location."""
 

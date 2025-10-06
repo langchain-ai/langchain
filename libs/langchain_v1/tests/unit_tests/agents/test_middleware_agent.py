@@ -36,7 +36,7 @@ from langchain.agents.middleware.planning import (
     write_todos,
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
-from langchain.agents.middleware.call_tracking import (
+from langchain.agents.middleware.model_call_limit import (
     ModelCallLimitMiddleware,
     ModelCallLimitExceededError,
 )
