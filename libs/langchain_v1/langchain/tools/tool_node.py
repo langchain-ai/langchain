@@ -512,7 +512,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: BaseStore | None,
+        store: Optional[BaseStore],
     ) -> Any:
         try:
             runtime = get_runtime()
