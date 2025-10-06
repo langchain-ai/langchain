@@ -1,7 +1,7 @@
 """Middleware agent implementation."""
 
 import itertools
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -35,10 +35,120 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolCallHandler, ToolRequest, ToolResponse
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
+
+
+def _chain_tool_call_handlers(
+    handlers: list[ToolCallHandler],
+) -> ToolCallHandler | None:
+    """Compose multiple tool call handlers into a single middleware stack.
+
+    Args:
+        handlers: Handlers in middleware order (first = outermost layer).
+
+    Returns:
+        Single composed handler, or None if handlers is empty.
+
+    Example:
+        ```python
+        # Auth middleware (outer) + rate limit (inner)
+        def auth(req):
+            resp = yield req
+            if "unauthorized" in str(resp.exception):
+                refresh_token()
+                resp = yield req  # Retry
+            return resp
+
+
+        def rate_limit(req):
+            for attempt in range(3):
+                resp = yield req
+                if "rate limit" not in str(resp.exception):
+                    return resp
+                time.sleep(2**attempt)
+            return resp
+
+
+        handler = _chain_tool_call_handlers([auth, rate_limit])
+        # Request: auth -> rate_limit -> tool
+        # Response: tool -> rate_limit -> auth
+        ```
+    """
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def _extract_return_value(stop_iteration: StopIteration) -> ToolResponse:
+        """Extract ToolResponse from StopIteration, validating protocol compliance."""
+        if stop_iteration.value is None:
+            msg = "on_tool_call handler must explicitly return a ToolResponse"
+            raise ValueError(msg)
+        return stop_iteration.value
+
+    def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
+        """Compose two handlers where outer wraps inner."""
+
+        def composed(
+            request: ToolRequest,
+        ) -> Generator[ToolRequest, ToolResponse, ToolResponse]:
+            outer_gen = outer(request)
+
+            # Initialize outer generator
+            try:
+                outer_request = next(outer_gen)
+            except StopIteration as e:
+                return _extract_return_value(e)
+
+            # Outer retry loop
+            while True:
+                inner_gen = inner(outer_request)
+
+                # Initialize inner generator
+                try:
+                    inner_request = next(inner_gen)
+                except StopIteration as e:
+                    # Inner returned immediately - send to outer
+                    inner_response = _extract_return_value(e)
+                    try:
+                        outer_request = outer_gen.send(inner_response)
+                        continue  # Outer retrying
+                    except StopIteration as e:
+                        return _extract_return_value(e)
+
+                # Inner retry loop - yield to next layer (or tool)
+                while True:
+                    tool_response = yield inner_request
+
+                    try:
+                        inner_request = inner_gen.send(tool_response)
+                        # Inner retrying - continue inner loop
+                    except StopIteration as e:
+                        # Inner done - send response to outer
+                        inner_response = _extract_return_value(e)
+                        break
+
+                # Send inner's final response to outer
+                try:
+                    outer_request = outer_gen.send(inner_response)
+                    # Outer retrying - continue outer loop
+                except StopIteration as e:
+                    # Outer done - return final response
+                    return _extract_return_value(e)
+
+        return composed
+
+    # Compose right-to-left: handlers[0](handlers[1](...(handlers[-1](tool))))
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -226,6 +336,20 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
+    # Validate middleware and collect handlers
+    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
+        "Please remove duplicate middleware instances."
+    )
+    middleware_w_on_tool_call = [
+        m for m in middleware if m.__class__.on_tool_call is not AgentMiddleware.on_tool_call
+    ]
+
+    # Chain all on_tool_call handlers into a single composed handler
+    on_tool_call_handler = None
+    if middleware_w_on_tool_call:
+        handlers = [m.on_tool_call for m in middleware_w_on_tool_call]
+        on_tool_call_handler = _chain_tool_call_handlers(handlers)
+
     # Setup tools
     tool_node: ToolNode | None = None
     if isinstance(tools, list):
@@ -237,7 +361,11 @@ def create_agent(  # noqa: PLR0915
         available_tools = middleware_tools + regular_tools
 
         # Only create ToolNode if we have client-side tools
-        tool_node = ToolNode(tools=available_tools) if available_tools else None
+        tool_node = (
+            ToolNode(tools=available_tools, on_tool_call=on_tool_call_handler)
+            if available_tools
+            else None
+        )
 
         # Default tools for ModelRequest initialization
         # Include built-ins and regular tools (can be changed dynamically by middleware)
@@ -248,7 +376,7 @@ def create_agent(  # noqa: PLR0915
         if tool_node:
             # Add middleware tools to existing ToolNode
             available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(available_tools)
+            tool_node = ToolNode(available_tools, on_tool_call=on_tool_call_handler)
 
             # default_tools includes all client-side tools (no built-ins or structured tools)
             default_tools = available_tools
@@ -256,10 +384,6 @@ def create_agent(  # noqa: PLR0915
         # No tools provided, only middleware_tools available
         default_tools = middleware_tools
 
-    # validate middleware
-    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
     middleware_w_before = [
         m
         for m in middleware
