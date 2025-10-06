@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from langchain.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
 
 
 def test_boolean_output_parser_parse() -> None:

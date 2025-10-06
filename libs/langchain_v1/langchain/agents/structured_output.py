@@ -405,4 +405,18 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         return str(content)
 
 
-ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT]
+class AutoStrategy(Generic[SchemaT]):
+    """Automatically select the best strategy for structured output."""
+
+    schema: type[SchemaT]
+    """Schema for automatic mode."""
+
+    def __init__(
+        self,
+        schema: type[SchemaT],
+    ) -> None:
+        """Initialize AutoStrategy with schema."""
+        self.schema = schema
+
+
+ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]

@@ -6,7 +6,9 @@ import pandas as pd
 import pytest
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
+from langchain_classic.output_parsers.pandas_dataframe import (
+    PandasDataFrameOutputParser,
+)
 
 df = pd.DataFrame(
     {

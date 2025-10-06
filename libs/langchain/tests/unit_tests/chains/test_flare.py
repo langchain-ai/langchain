@@ -7,7 +7,7 @@ from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableSequence
 
-from langchain.chains.flare.base import FlareChain
+from langchain_classic.chains.flare.base import FlareChain
 
 
 class _EmptyRetriever(BaseRetriever):

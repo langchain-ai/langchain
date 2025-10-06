@@ -1,12 +1,11 @@
 import pathlib
 import re
-from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from typing_extensions import override
 
-from langchain.callbacks import FileCallbackHandler
-from langchain.chains.base import Chain
+from langchain_classic.callbacks import FileCallbackHandler
+from langchain_classic.chains.base import Chain
 
 
 class FakeChain(Chain):
@@ -30,7 +29,7 @@ class FakeChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         return {"bar": "bar"}
 

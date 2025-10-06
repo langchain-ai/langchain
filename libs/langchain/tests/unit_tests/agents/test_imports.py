@@ -1,4 +1,4 @@
-from langchain import agents
+from langchain_classic import agents
 
 EXPECTED_ALL = [
     "Agent",

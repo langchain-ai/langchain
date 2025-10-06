@@ -49,7 +49,7 @@ def test_anthropic_streaming_callback() -> None:
     llm = AnthropicLLM(
         model=MODEL,  # type: ignore[call-arg]
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
@@ -70,7 +70,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     llm = AnthropicLLM(
         model=MODEL,  # type: ignore[call-arg]
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     result = await llm.agenerate(["How many toes do dogs have?"])

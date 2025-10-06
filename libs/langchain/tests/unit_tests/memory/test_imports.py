@@ -1,4 +1,4 @@
-from langchain import memory
+from langchain_classic import memory
 
 EXPECTED_ALL = [
     "AstraDBChatMessageHistory",

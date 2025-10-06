@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
+from langchain_classic.evaluation.parsing.json_schema import JsonSchemaEvaluator
 
 
 @pytest.fixture

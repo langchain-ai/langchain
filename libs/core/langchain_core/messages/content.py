@@ -129,7 +129,7 @@ Factory functions offer benefits such as:
 
 """
 
-from typing import Any, Literal, Optional, Union, get_args, get_type_hints
+from typing import Any, Literal, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -211,7 +211,7 @@ class NonStandardAnnotation(TypedDict):
     """Provider-specific annotation data."""
 
 
-Annotation = Union[Citation, NonStandardAnnotation]
+Annotation = Citation | NonStandardAnnotation
 
 
 class TextContentBlock(TypedDict):
@@ -247,7 +247,7 @@ class TextContentBlock(TypedDict):
     annotations: NotRequired[list[Annotation]]
     """``Citation``s and other annotations."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -278,7 +278,7 @@ class ToolCall(TypedDict):
     type: Literal["tool_call"]
     """Used for discrimination."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -293,7 +293,7 @@ class ToolCall(TypedDict):
     args: dict[str, Any]
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -326,7 +326,7 @@ class ToolCallChunk(TypedDict):
     type: Literal["tool_call_chunk"]
     """Used for serialization."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -334,13 +334,13 @@ class ToolCallChunk(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
 
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """The index of the tool call in a sequence."""
 
     extras: NotRequired[dict[str, Any]]
@@ -360,7 +360,7 @@ class InvalidToolCall(TypedDict):
     type: Literal["invalid_tool_call"]
     """Used for discrimination."""
 
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -368,16 +368,16 @@ class InvalidToolCall(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
 
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
 
-    error: Optional[str]
+    error: str | None
     """An error message associated with the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -399,7 +399,7 @@ class ServerToolCall(TypedDict):
     args: dict[str, Any]
     """The arguments to the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -421,7 +421,7 @@ class ServerToolCallChunk(TypedDict):
     id: NotRequired[str]
     """An identifier associated with the tool call."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -446,7 +446,7 @@ class ServerToolResult(TypedDict):
     output: NotRequired[Any]
     """Output of the executed tool."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -485,7 +485,7 @@ class ReasoningContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -529,7 +529,7 @@ class ImageContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -576,7 +576,7 @@ class VideoContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -622,7 +622,7 @@ class AudioContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -675,7 +675,7 @@ class PlainTextContentBlock(TypedDict):
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -738,7 +738,7 @@ class FileContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -793,35 +793,31 @@ class NonStandardContentBlock(TypedDict):
     value: dict[str, Any]
     """Provider-specific data."""
 
-    index: NotRequired[Union[int, str]]
+    index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
 
 
 # --- Aliases ---
-DataContentBlock = Union[
-    ImageContentBlock,
-    VideoContentBlock,
-    AudioContentBlock,
-    PlainTextContentBlock,
-    FileContentBlock,
-]
+DataContentBlock = (
+    ImageContentBlock
+    | VideoContentBlock
+    | AudioContentBlock
+    | PlainTextContentBlock
+    | FileContentBlock
+)
 
-ToolContentBlock = Union[
-    ToolCall,
-    ToolCallChunk,
-    ServerToolCall,
-    ServerToolCallChunk,
-    ServerToolResult,
-]
+ToolContentBlock = (
+    ToolCall | ToolCallChunk | ServerToolCall | ServerToolCallChunk | ServerToolResult
+)
 
-ContentBlock = Union[
-    TextContentBlock,
-    InvalidToolCall,
-    ReasoningContentBlock,
-    NonStandardContentBlock,
-    DataContentBlock,
-    ToolContentBlock,
-]
+ContentBlock = (
+    TextContentBlock
+    | InvalidToolCall
+    | ReasoningContentBlock
+    | NonStandardContentBlock
+    | DataContentBlock
+    | ToolContentBlock
+)
 
 
 KNOWN_BLOCK_TYPES = {
@@ -922,9 +918,9 @@ def is_data_content_block(block: dict) -> bool:
 def create_text_block(
     text: str,
     *,
-    id: Optional[str] = None,
-    annotations: Optional[list[Annotation]] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    annotations: list[Annotation] | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> TextContentBlock:
     """Create a ``TextContentBlock``.
@@ -962,12 +958,12 @@ def create_text_block(
 
 def create_image_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ImageContentBlock:
     """Create an ``ImageContentBlock``.
@@ -1018,12 +1014,12 @@ def create_image_block(
 
 def create_video_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> VideoContentBlock:
     """Create a ``VideoContentBlock``.
@@ -1078,12 +1074,12 @@ def create_video_block(
 
 def create_audio_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> AudioContentBlock:
     """Create an ``AudioContentBlock``.
@@ -1138,12 +1134,12 @@ def create_audio_block(
 
 def create_file_block(
     *,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    mime_type: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    mime_type: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> FileContentBlock:
     """Create a ``FileContentBlock``.
@@ -1197,14 +1193,14 @@ def create_file_block(
 
 
 def create_plaintext_block(
-    text: Optional[str] = None,
-    url: Optional[str] = None,
-    base64: Optional[str] = None,
-    file_id: Optional[str] = None,
-    title: Optional[str] = None,
-    context: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    text: str | None = None,
+    url: str | None = None,
+    base64: str | None = None,
+    file_id: str | None = None,
+    title: str | None = None,
+    context: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> PlainTextContentBlock:
     """Create a ``PlainTextContentBlock``.
@@ -1259,8 +1255,8 @@ def create_tool_call(
     name: str,
     args: dict[str, Any],
     *,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ToolCall:
     """Create a ``ToolCall``.
@@ -1297,9 +1293,9 @@ def create_tool_call(
 
 
 def create_reasoning_block(
-    reasoning: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    reasoning: str | None = None,
+    id: str | None = None,
+    index: int | str | None = None,
     **kwargs: Any,
 ) -> ReasoningContentBlock:
     """Create a ``ReasoningContentBlock``.
@@ -1335,12 +1331,12 @@ def create_reasoning_block(
 
 def create_citation(
     *,
-    url: Optional[str] = None,
-    title: Optional[str] = None,
-    start_index: Optional[int] = None,
-    end_index: Optional[int] = None,
-    cited_text: Optional[str] = None,
-    id: Optional[str] = None,
+    url: str | None = None,
+    title: str | None = None,
+    start_index: int | None = None,
+    end_index: int | None = None,
+    cited_text: str | None = None,
+    id: str | None = None,
     **kwargs: Any,
 ) -> Citation:
     """Create a ``Citation``.
@@ -1384,8 +1380,8 @@ def create_citation(
 def create_non_standard_block(
     value: dict[str, Any],
     *,
-    id: Optional[str] = None,
-    index: Optional[Union[int, str]] = None,
+    id: str | None = None,
+    index: int | str | None = None,
 ) -> NonStandardContentBlock:
     """Create a ``NonStandardContentBlock``.
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from langchain_core.runnables import run_in_executor
 
@@ -51,7 +51,7 @@ class BaseLoader(ABC):  # noqa: B024
         return [document async for document in self.alazy_load()]
 
     def load_and_split(
-        self, text_splitter: Optional[TextSplitter] = None
+        self, text_splitter: TextSplitter | None = None
     ) -> list[Document]:
         """Load Documents and split into chunks. Chunks are returned as Documents.
 
