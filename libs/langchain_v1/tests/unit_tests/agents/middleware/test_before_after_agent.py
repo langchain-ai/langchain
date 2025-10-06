@@ -8,6 +8,8 @@ from langchain.agents.middleware import (
     AgentMiddleware,
     AgentState,
     after_agent,
+    after_model,
+    before_model,
     before_agent,
 )
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -244,23 +246,18 @@ class TestBeforeAndAfterAgentCombined:
 
     def test_state_passthrough(self) -> None:
         """Test that state modifications in before_agent are visible to after_agent."""
-        collected_states = {}
 
         @before_agent
         def modify_in_before(state: AgentState, runtime: Runtime) -> dict[str, Any]:
             return {"messages": [HumanMessage("Modified by before_agent")]}
 
-        @after_agent
-        def capture_in_after(state: AgentState, runtime: Runtime) -> None:
-            collected_states["messages"] = state["messages"]
-
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
 
-        agent = create_agent(model=model, tools=[], middleware=[modify_in_before, capture_in_after])
+        agent = create_agent(model=model, tools=[], middleware=[modify_in_before])
 
-        agent.invoke({"messages": [HumanMessage("Original")]})
+        result = agent.invoke({"messages": [HumanMessage("Original")]})
 
-        message_contents = [msg.content for msg in collected_states["messages"]]
+        message_contents = [msg.content for msg in result["messages"]]
         assert "Modified by before_agent" in message_contents
 
     def test_multiple_middleware_instances(self) -> None:
@@ -310,9 +307,17 @@ class TestBeforeAndAfterAgentCombined:
         def log_before_agent(state: AgentState, runtime: Runtime) -> None:
             execution_log.append("before_agent")
 
+        @before_model
+        def log_before_model(state: AgentState, runtime: Runtime) -> None:
+            execution_log.append("before_model")
+
         @after_agent
         def log_after_agent(state: AgentState, runtime: Runtime) -> None:
             execution_log.append("after_agent")
+
+        @after_model
+        def log_after_model(state: AgentState, runtime: Runtime) -> None:
+            execution_log.append("after_model")
 
         # Model will call a tool twice, then respond with final answer
         # This creates 3 model invocations total, but agent hooks should still run once
@@ -327,7 +332,7 @@ class TestBeforeAndAfterAgentCombined:
         agent = create_agent(
             model=model,
             tools=[sample_tool],
-            middleware=[log_before_agent, log_after_agent],
+            middleware=[log_before_agent, log_before_model, log_after_model, log_after_agent],
         )
 
         agent.invoke({"messages": [HumanMessage("Test")]})
@@ -342,6 +347,17 @@ class TestBeforeAndAfterAgentCombined:
         # before_agent should run first, after_agent should run last
         assert execution_log[0] == "before_agent"
         assert execution_log[-1] == "after_agent"
+
+        assert execution_log == [
+            "before_agent",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "before_model",
+            "after_model",
+            "after_agent",
+        ]
 
 
 class TestDecoratorParameters:
