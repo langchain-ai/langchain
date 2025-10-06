@@ -356,15 +356,15 @@ def test_mixed_middleware():
     class MixedMiddleware(AgentMiddleware):
         """Middleware with multiple hooks."""
 
+        def before_model(self, state, runtime):
+            call_log.append("before_model")
+            return None
+
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
         ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
             call_log.append("on_tool_call_start")
-            for _ in range(3):
-                response = yield request
-                if response.action == "continue":
-                    break
-            # response = yield request
+            response = yield request
             call_log.append("on_tool_call_end")
             return response
 
