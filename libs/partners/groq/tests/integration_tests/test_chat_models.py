@@ -27,7 +27,7 @@ from tests.unit_tests.fake.callbacks import (
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
 
 # gpt-oss doesn't support `reasoning_effort`
-REASONING_MODEL_NAME = "deepseek-r1-distill-llama-70b"
+REASONING_MODEL_NAME = "qwen/qwen3-32b"
 
 
 #
@@ -646,7 +646,15 @@ def test_setting_service_tier_streaming() -> None:
     chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="flex")
     chunks = list(chat.stream("Why is the sky blue?", service_tier="auto"))
 
-    assert chunks[-1].response_metadata.get("service_tier") == "auto"
+    # Find the final chunk with finish_reason
+    final_chunk = None
+    for chunk in chunks:
+        if chunk.response_metadata.get("finish_reason"):
+            final_chunk = chunk
+            break
+
+    assert final_chunk is not None
+    assert final_chunk.response_metadata.get("service_tier") == "auto"
 
 
 async def test_setting_service_tier_request_async() -> None:

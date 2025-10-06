@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Mapping
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Any, Optional, Union, cast
 
 import openai
 from langchain_core.language_models import LangSmithParams
@@ -49,7 +49,7 @@ class AzureOpenAI(BaseOpenAI):
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
 
-        .. note::
+        !!! note
             This means you won't be able to use non-deployment endpoints.
 
     """

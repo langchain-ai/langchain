@@ -2,8 +2,8 @@
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Union
 
 import yaml
 
@@ -53,7 +53,7 @@ def _load_template(var_name: str, config: dict) -> dict:
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
         if template_path.suffix == ".txt":
-            template = template_path.read_text()
+            template = template_path.read_text(encoding="utf-8")
         else:
             raise ValueError
         # Set the template variable to the extracted variable.
@@ -67,7 +67,7 @@ def _load_examples(config: dict) -> dict:
         pass
     elif isinstance(config["examples"], str):
         path = Path(config["examples"])
-        with path.open() as f:
+        with path.open(encoding="utf-8") as f:
             if path.suffix == ".json":
                 examples = json.load(f)
             elif path.suffix in {".yaml", ".yml"}:
@@ -134,9 +134,7 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(
-    path: Union[str, Path], encoding: Optional[str] = None
-) -> BasePromptTemplate:
+def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs.
 
     Args:
@@ -160,7 +158,7 @@ def load_prompt(
 
 
 def _load_prompt_from_file(
-    file: Union[str, Path], encoding: Optional[str] = None
+    file: str | Path, encoding: str | None = None
 ) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.

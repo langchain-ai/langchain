@@ -1,4 +1,4 @@
-from langchain.schema.vectorstore import __all__
+from langchain_classic.schema.vectorstore import __all__
 
 EXPECTED_ALL = ["VectorStore", "VectorStoreRetriever", "VST"]
 

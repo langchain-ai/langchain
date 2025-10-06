@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -35,12 +35,12 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """VectorStore that contains information about examples."""
     k: int = 4
     """Number of examples to select."""
-    example_keys: Optional[list[str]] = None
+    example_keys: list[str] | None = None
     """Optional keys to filter examples to."""
-    input_keys: Optional[list[str]] = None
+    input_keys: list[str] | None = None
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
-    vectorstore_kwargs: Optional[dict[str, Any]] = None
+    vectorstore_kwargs: dict[str, Any] | None = None
     """Extra arguments passed to similarity_search function of the vectorstore."""
 
     model_config = ConfigDict(
@@ -49,9 +49,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     )
 
     @staticmethod
-    def _example_to_text(
-        example: dict[str, str], input_keys: Optional[list[str]]
-    ) -> str:
+    def _example_to_text(example: dict[str, str], input_keys: list[str] | None) -> str:
         if input_keys:
             return " ".join(sorted_values({key: example[key] for key in input_keys}))
         return " ".join(sorted_values(example))
@@ -142,10 +140,10 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         *,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -186,10 +184,10 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         *,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Async create k-shot example selector using example list and embeddings.
@@ -273,10 +271,10 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         fetch_k: int = 20,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -321,10 +319,10 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         vectorstore_cls: type[VectorStore],
         *,
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         fetch_k: int = 20,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.

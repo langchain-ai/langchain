@@ -1,6 +1,6 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
@@ -15,7 +15,7 @@ dependencies = [
     "gritql>=0.2.0,<1.0.0",
 ]
 name = "langchain-cli"
-version = "0.0.37"
+version = "1.0.0a1"
 description = "CLI for interacting with LangChain"
 readme = "README.md"
 

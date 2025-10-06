@@ -1,7 +1,7 @@
 """Custom **exceptions** for LangChain."""
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class LangChainException(Exception):  # noqa: N818
@@ -24,8 +24,8 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
     def __init__(
         self,
         error: Any,
-        observation: Optional[str] = None,
-        llm_output: Optional[str] = None,
+        observation: str | None = None,
+        llm_output: str | None = None,
         send_to_llm: bool = False,  # noqa: FBT001,FBT002
     ):
         """Create an OutputParserException.

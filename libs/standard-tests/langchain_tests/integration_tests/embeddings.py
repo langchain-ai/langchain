@@ -33,7 +33,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
                 # Return initialization parameters for the model.
                 return {"model": "model-001"}
 
-    .. note::
+    !!! note
         API references for individual test methods include troubleshooting tips.
 
     """
@@ -41,7 +41,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     def test_embed_query(self, model: Embeddings) -> None:
         """Test embedding a string query.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
@@ -62,7 +62,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     def test_embed_documents(self, model: Embeddings) -> None:
         """Test embedding a list of strings.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
@@ -82,7 +82,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     async def test_aembed_query(self, model: Embeddings) -> None:
         """Test embedding a string query async.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
@@ -103,7 +103,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     async def test_aembed_documents(self, model: Embeddings) -> None:
         """Test embedding a list of strings async.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
