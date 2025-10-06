@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
-
-from langchain_core.output_parsers.base import OutputParserLike
+from typing import Any
 
 
 class SerializableParsingErrorHandler:
@@ -16,7 +14,7 @@ class SerializableParsingErrorHandler:
 
     def __call__(self, _: Any) -> None:
         """Return None for any input, mimicking lambda _: None behavior."""
-        return None
+        return
 
     def __repr__(self) -> str:
         """Provide a clear representation for debugging."""
@@ -26,6 +24,10 @@ class SerializableParsingErrorHandler:
         """Support equality comparison for testing."""
         return isinstance(other, SerializableParsingErrorHandler)
 
+    def __hash__(self) -> int:
+        """Support hashing for set/dict operations."""
+        return hash(self.__class__.__name__)
+
     def __getstate__(self) -> dict[str, Any]:
         """Control pickle serialization for production robustness."""
         # This class has no state to preserve, return empty dict
@@ -34,7 +36,6 @@ class SerializableParsingErrorHandler:
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Control pickle deserialization for production robustness."""
         # This class has no state to restore, nothing to do
-        pass
 
 
 class SerializableNoneAssigner:
@@ -45,7 +46,7 @@ class SerializableNoneAssigner:
 
     def __call__(self, _: Any) -> None:
         """Return None for any input, used as fallback parsed value."""
-        return None
+        return
 
     def __repr__(self) -> str:
         """Provide a clear representation for debugging."""
@@ -55,6 +56,10 @@ class SerializableNoneAssigner:
         """Support equality comparison for testing."""
         return isinstance(other, SerializableNoneAssigner)
 
+    def __hash__(self) -> int:
+        """Support hashing for set/dict operations."""
+        return hash(self.__class__.__name__)
+
     def __getstate__(self) -> dict[str, Any]:
         """Control pickle serialization for production robustness."""
         # This class has no state to preserve, return empty dict
@@ -63,7 +68,6 @@ class SerializableNoneAssigner:
     def __setstate__(self, state: dict[str, Any]) -> None:
         """Control pickle deserialization for production robustness."""
         # This class has no state to restore, nothing to do
-        pass
 
 
 def get_serializable_error_handler() -> SerializableParsingErrorHandler:
