@@ -34,7 +34,6 @@ from langchain.agents import (
     AgentState,
     create_agent,
 )
-from langchain.agents.react_agent import _validate_chat_history
 from langchain.tools import (
     ToolNode,
     InjectedState,
@@ -110,7 +109,7 @@ async def test_no_prompt_async(async_checkpointer: BaseCheckpointSaver) -> None:
 
 def test_system_message_prompt() -> None:
     prompt = SystemMessage(content="Foo")
-    agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
+    agent = create_agent(FakeToolCallingModel(), [], system_prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {"messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]}
@@ -119,7 +118,7 @@ def test_system_message_prompt() -> None:
 
 def test_string_prompt() -> None:
     prompt = "Foo"
-    agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
+    agent = create_agent(FakeToolCallingModel(), [], system_prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {"messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]}
@@ -131,7 +130,7 @@ def test_callable_prompt() -> None:
         modified_message = f"Bar {state['messages'][-1].content}"
         return [HumanMessage(content=modified_message)]
 
-    agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
+    agent = create_agent(FakeToolCallingModel(), [], system_prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {"messages": [*inputs, AIMessage(content="Bar hi?", id="0")]}
@@ -143,7 +142,7 @@ async def test_callable_prompt_async() -> None:
         modified_message = f"Bar {state['messages'][-1].content}"
         return [HumanMessage(content=modified_message)]
 
-    agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
+    agent = create_agent(FakeToolCallingModel(), [], system_prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = await agent.ainvoke({"messages": inputs})
     expected_response = {"messages": [*inputs, AIMessage(content="Bar hi?", id="0")]}
@@ -155,7 +154,7 @@ def test_runnable_prompt() -> None:
         lambda state: [HumanMessage(content=f"Baz {state['messages'][-1].content}")]
     )
 
-    agent = create_agent(FakeToolCallingModel(), [], prompt=prompt)
+    agent = create_agent(FakeToolCallingModel(), [], system_prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {"messages": [*inputs, AIMessage(content="Baz hi?", id="0")]}
@@ -222,14 +221,14 @@ async def test_prompt_with_store_async() -> None:
     model = FakeToolCallingModel()
 
     # test state modifier that uses store works
-    agent = create_agent(model, [add], prompt=prompt, store=in_memory_store)
+    agent = create_agent(model, [add], system_prompt=prompt, store=in_memory_store)
     response = await agent.ainvoke(
         {"messages": [("user", "hi")]}, {"configurable": {"user_id": "1"}}
     )
     assert response["messages"][-1].content == "User name is Alice-hi"
 
     # test state modifier that doesn't use store works
-    agent = create_agent(model, [add], prompt=prompt_no_store, store=in_memory_store)
+    agent = create_agent(model, [add], system_prompt=prompt_no_store, store=in_memory_store)
     response = await agent.ainvoke(
         {"messages": [("user", "hi")]}, {"configurable": {"user_id": "2"}}
     )
@@ -276,67 +275,9 @@ def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
         )
 
 
-def test__validate_messages() -> None:
-    # empty input
-    _validate_chat_history([])
-
-    # single human message
-    _validate_chat_history(
-        [
-            HumanMessage(content="What's the weather?"),
-        ]
-    )
-
-    # human + AI
-    _validate_chat_history(
-        [
-            HumanMessage(content="What's the weather?"),
-            AIMessage(content="The weather is sunny and 75°F."),
-        ]
-    )
-
-    # Answered tool calls
-    _validate_chat_history(
-        [
-            HumanMessage(content="What's the weather?"),
-            AIMessage(
-                content="Let me check that for you.",
-                tool_calls=[{"id": "call1", "name": "get_weather", "args": {}}],
-            ),
-            ToolMessage(content="Sunny, 75°F", tool_call_id="call1"),
-            AIMessage(content="The weather is sunny and 75°F."),
-        ]
-    )
-
-    # Unanswered tool calls
-    with pytest.raises(ValueError):
-        _validate_chat_history(
-            [
-                AIMessage(
-                    content="I'll check that for you.",
-                    tool_calls=[
-                        {"id": "call1", "name": "get_weather", "args": {}},
-                        {"id": "call2", "name": "get_time", "args": {}},
-                    ],
-                )
-            ]
-        )
-
-    with pytest.raises(ValueError):
-        _validate_chat_history(
-            [
-                HumanMessage(content="What's the weather and time?"),
-                AIMessage(
-                    content="I'll check that for you.",
-                    tool_calls=[
-                        {"id": "call1", "name": "get_weather", "args": {}},
-                        {"id": "call2", "name": "get_time", "args": {}},
-                    ],
-                ),
-                ToolMessage(content="Sunny, 75°F", tool_call_id="call1"),
-                AIMessage(content="The weather is sunny and 75°F. Let me check the time."),
-            ]
-        )
+# Test removed: _validate_chat_history function no longer exists
+# def test__validate_messages() -> None:
+#     pass
 
 
 def test__infer_handled_types() -> None:
@@ -1044,360 +985,6 @@ def test_tool_node_node_interrupt(
             id=AnyStr(),
         ),
     )
-
-
-def test_dynamic_model_basic() -> None:
-    """Test basic dynamic model functionality."""
-
-    def dynamic_model(state, runtime: Runtime):
-        # Return different models based on state
-        if "urgent" in state["messages"][-1].content:
-            return FakeToolCallingModel(tool_calls=[])
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [])
-
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert len(result["messages"]) == 2
-    assert result["messages"][-1].content == "hello"
-
-    result = agent.invoke({"messages": [HumanMessage("urgent help")]})
-    assert len(result["messages"]) == 2
-    assert result["messages"][-1].content == "urgent help"
-
-
-def test_dynamic_model_with_tools() -> None:
-    """Test dynamic model with tool calling."""
-
-    @dec_tool
-    def basic_tool(x: int) -> str:
-        """Basic tool."""
-        return f"basic: {x}"
-
-    @dec_tool
-    def advanced_tool(x: int) -> str:
-        """Advanced tool."""
-        return f"advanced: {x}"
-
-    def dynamic_model(state: dict, runtime: Runtime) -> BaseChatModel:
-        # Return model with different behaviors based on message content
-        if "advanced" in state["messages"][-1].content:
-            return FakeToolCallingModel(
-                tool_calls=[
-                    [{"args": {"x": 1}, "id": "1", "name": "advanced_tool"}],
-                    [],
-                ]
-            )
-        return FakeToolCallingModel(
-            tool_calls=[[{"args": {"x": 1}, "id": "1", "name": "basic_tool"}], []]
-        )
-
-    agent = create_agent(dynamic_model, [basic_tool, advanced_tool])
-
-    # Test basic tool usage
-    result = agent.invoke({"messages": [HumanMessage("basic request")]})
-    assert len(result["messages"]) == 3
-    tool_message = result["messages"][-1]
-    assert tool_message.content == "basic: 1"
-    assert tool_message.name == "basic_tool"
-
-    # Test advanced tool usage
-    result = agent.invoke({"messages": [HumanMessage("advanced request")]})
-    assert len(result["messages"]) == 3
-    tool_message = result["messages"][-1]
-    assert tool_message.content == "advanced: 1"
-    assert tool_message.name == "advanced_tool"
-
-
-@dataclasses.dataclass
-class Context:
-    user_id: str
-
-
-def test_dynamic_model_with_context() -> None:
-    """Test dynamic model using config parameters."""
-
-    def dynamic_model(state, runtime: Runtime[Context]):
-        # Use context to determine model behavior
-        user_id = runtime.context.user_id
-        if user_id == "user_premium":
-            return FakeToolCallingModel(tool_calls=[])
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [], context_schema=Context)
-
-    # Test with basic user
-    result = agent.invoke(
-        {"messages": [HumanMessage("hello")]},
-        context=Context(user_id="user_basic"),
-    )
-    assert len(result["messages"]) == 2
-
-    # Test with premium user
-    result = agent.invoke(
-        {"messages": [HumanMessage("hello")]},
-        context=Context(user_id="user_premium"),
-    )
-    assert len(result["messages"]) == 2
-
-
-def test_dynamic_model_with_state_schema() -> None:
-    """Test dynamic model with custom state schema."""
-
-    class CustomDynamicState(AgentState):
-        model_preference: str = "default"
-
-    def dynamic_model(state: CustomDynamicState, runtime: Runtime) -> BaseChatModel:
-        # Use custom state field to determine model
-        if state.get("model_preference") == "advanced":
-            return FakeToolCallingModel(tool_calls=[])
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [], state_schema=CustomDynamicState)
-
-    result = agent.invoke({"messages": [HumanMessage("hello")], "model_preference": "advanced"})
-    assert len(result["messages"]) == 2
-    assert result["model_preference"] == "advanced"
-
-
-def test_dynamic_model_with_prompt() -> None:
-    """Test dynamic model with different prompt types."""
-
-    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
-        return FakeToolCallingModel(tool_calls=[])
-
-    # Test with string prompt
-    agent = create_agent(dynamic_model, [], prompt="system_msg")
-    result = agent.invoke({"messages": [HumanMessage("human_msg")]})
-    assert result["messages"][-1].content == "system_msg-human_msg"
-
-    # Test with callable prompt
-    def dynamic_prompt(state: AgentState) -> list[MessageLikeRepresentation]:
-        """Generate a dynamic system message based on state."""
-        return [{"role": "system", "content": "system_msg"}, *list(state["messages"])]
-
-    agent = create_agent(dynamic_model, [], prompt=dynamic_prompt)
-    result = agent.invoke({"messages": [HumanMessage("human_msg")]})
-    assert result["messages"][-1].content == "system_msg-human_msg"
-
-
-async def test_dynamic_model_async() -> None:
-    """Test dynamic model with async operations."""
-
-    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [])
-
-    result = await agent.ainvoke({"messages": [HumanMessage("hello async")]})
-    assert len(result["messages"]) == 2
-    assert result["messages"][-1].content == "hello async"
-
-
-def test_dynamic_model_with_structured_response() -> None:
-    """Test dynamic model with structured response format."""
-
-    class TestResponse(BaseModel):
-        message: str
-        confidence: float
-
-    def dynamic_model(state, runtime: Runtime):
-        return FakeToolCallingModel(
-            tool_calls=[
-                [
-                    ToolCall(
-                        name="TestResponse",
-                        args={"message": "dynamic response", "confidence": 0.9},
-                        id="1",
-                        type="tool_call",
-                    )
-                ]
-            ],
-        )
-
-    agent = create_agent(dynamic_model, [], response_format=TestResponse)
-
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert "structured_response" in result
-    assert result["structured_response"].message == "dynamic response"
-    assert result["structured_response"].confidence == 0.9
-
-
-def test_dynamic_model_with_checkpointer(sync_checkpointer) -> None:
-    """Test dynamic model with checkpointer."""
-    call_count = 0
-
-    def dynamic_model(state: AgentState, runtime: Runtime) -> BaseChatModel:
-        nonlocal call_count
-        call_count += 1
-        return FakeToolCallingModel(
-            tool_calls=[],
-            # Incrementing the call count as it is used to assign an id
-            # to the AIMessage.
-            # The default reducer semantics are to overwrite an existing message
-            # with the new one if the id matches.
-            index=call_count,
-        )
-
-    agent = create_agent(dynamic_model, [], checkpointer=sync_checkpointer)
-    config = {"configurable": {"thread_id": "test_dynamic"}}
-
-    # First call
-    result1 = agent.invoke({"messages": [HumanMessage("hello")]}, config)
-    assert len(result1["messages"]) == 2  # Human + AI message
-
-    # Second call - should load from checkpoint
-    result2 = agent.invoke({"messages": [HumanMessage("world")]}, config)
-    assert len(result2["messages"]) == 4
-
-    # Dynamic model should be called each time
-    assert call_count >= 2
-
-
-def test_dynamic_model_state_dependent_tools() -> None:
-    """Test dynamic model that changes available tools based on state."""
-
-    @dec_tool
-    def tool_a(x: int) -> str:
-        """Tool A."""
-        return f"A: {x}"
-
-    @dec_tool
-    def tool_b(x: int) -> str:
-        """Tool B."""
-        return f"B: {x}"
-
-    def dynamic_model(state, runtime: Runtime):
-        # Switch tools based on message history
-        if any("use_b" in msg.content for msg in state["messages"]):
-            return FakeToolCallingModel(
-                tool_calls=[[{"args": {"x": 2}, "id": "1", "name": "tool_b"}], []]
-            )
-        return FakeToolCallingModel(
-            tool_calls=[[{"args": {"x": 1}, "id": "1", "name": "tool_a"}], []]
-        )
-
-    agent = create_agent(dynamic_model, [tool_a, tool_b])
-
-    # Ask to use tool B
-    result = agent.invoke({"messages": [HumanMessage("use_b please")]})
-    last_message = result["messages"][-1]
-    assert isinstance(last_message, ToolMessage)
-    assert last_message.content == "B: 2"
-
-    # Ask to use tool A
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    last_message = result["messages"][-1]
-    assert isinstance(last_message, ToolMessage)
-    assert last_message.content == "A: 1"
-
-
-def test_dynamic_model_error_handling() -> None:
-    """Test error handling in dynamic model."""
-
-    def failing_dynamic_model(state, runtime: Runtime):
-        if "fail" in state["messages"][-1].content:
-            msg = "Dynamic model failed"
-            raise ValueError(msg)
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(failing_dynamic_model, [])
-
-    # Normal operation should work
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert len(result["messages"]) == 2
-
-    # Should propagate the error
-    with pytest.raises(ValueError, match="Dynamic model failed"):
-        agent.invoke({"messages": [HumanMessage("fail now")]})
-
-
-def test_dynamic_model_vs_static_model_behavior() -> None:
-    """Test that dynamic and static models produce equivalent results when configured the same."""
-    # Static model
-    static_model = FakeToolCallingModel(tool_calls=[])
-    static_agent = create_agent(static_model, [])
-
-    # Dynamic model returning the same model
-    def dynamic_model(state, runtime: Runtime):
-        return FakeToolCallingModel(tool_calls=[])
-
-    dynamic_agent = create_agent(dynamic_model, [])
-
-    input_msg = {"messages": [HumanMessage("test message")]}
-
-    static_result = static_agent.invoke(input_msg)
-    dynamic_result = dynamic_agent.invoke(input_msg)
-
-    # Results should be equivalent (content-wise, IDs may differ)
-    assert len(static_result["messages"]) == len(dynamic_result["messages"])
-    assert static_result["messages"][0].content == dynamic_result["messages"][0].content
-    assert static_result["messages"][1].content == dynamic_result["messages"][1].content
-
-
-def test_dynamic_model_receives_correct_state() -> None:
-    """Test that the dynamic model function receives the correct state, not the model input."""
-    received_states = []
-
-    class CustomAgentState(AgentState):
-        custom_field: str
-
-    def dynamic_model(state, runtime: Runtime) -> BaseChatModel:
-        # Capture the state that's passed to the dynamic model function
-        received_states.append(state)
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [], state_schema=CustomAgentState)
-
-    # Test with initial state
-    input_state = {"messages": [HumanMessage("hello")], "custom_field": "test_value"}
-    agent.invoke(input_state)
-
-    # The dynamic model function should receive the original state, not the processed model input
-    assert len(received_states) == 1
-    received_state = received_states[0]
-
-    # Should have the custom field from original state
-    assert "custom_field" in received_state
-    assert received_state["custom_field"] == "test_value"
-
-    # Should have the original messages
-    assert len(received_state["messages"]) == 1
-    assert received_state["messages"][0].content == "hello"
-
-
-async def test_dynamic_model_receives_correct_state_async() -> None:
-    """Test that the async dynamic model function receives the correct state, not the model input."""
-    received_states = []
-
-    class CustomAgentStateAsync(AgentState):
-        custom_field: str
-
-    def dynamic_model(state, runtime: Runtime):
-        # Capture the state that's passed to the dynamic model function
-        received_states.append(state)
-        return FakeToolCallingModel(tool_calls=[])
-
-    agent = create_agent(dynamic_model, [], state_schema=CustomAgentStateAsync)
-
-    # Test with initial state
-    input_state = {
-        "messages": [HumanMessage("hello async")],
-        "custom_field": "test_value_async",
-    }
-    await agent.ainvoke(input_state)
-
-    # The dynamic model function should receive the original state, not the processed model input
-    assert len(received_states) == 1
-    received_state = received_states[0]
-
-    # Should have the custom field from original state
-    assert "custom_field" in received_state
-    assert received_state["custom_field"] == "test_value_async"
-
-    # Should have the original messages
-    assert len(received_state["messages"]) == 1
-    assert received_state["messages"][0].content == "hello async"
 
 
 def test_pre_model_hook() -> None:

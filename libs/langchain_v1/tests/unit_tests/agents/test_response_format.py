@@ -748,7 +748,7 @@ class TestDynamicModelWithResponseFormat:
         )
 
         with patch(
-            "langchain.agents.middleware_agent._supports_provider_strategy",
+            "langchain.agents.factory._supports_provider_strategy",
             side_effect=mock_supports_provider_strategy,
         ):
             response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
