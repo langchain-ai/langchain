@@ -383,6 +383,54 @@ def test_create_agent_jump(
     assert calls == ["NoopSeven.before_model", "NoopEight.before_model"]
 
 
+def test_simple_agent_graph(snapshot: SnapshotAssertion) -> None:
+    @tool
+    def my_tool(input_string: str) -> str:
+        """A great tool."""
+        return input_string
+
+    agent_one = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+        ),
+        tools=[my_tool],
+        system_prompt="You are a helpful assistant.",
+    )
+
+    assert agent_one.get_graph().draw_mermaid() == snapshot
+
+
+def test_agent_graph_with_jump_to_end_as_after_agent(snapshot: SnapshotAssertion) -> None:
+    @tool
+    def my_tool(input_string: str) -> str:
+        """A great tool."""
+        return input_string
+
+    class NoopZero(AgentMiddleware):
+        @hook_config(can_jump_to=["end"])
+        def before_agent(self, state, runtime) -> None:
+            return None
+
+    class NoopOne(AgentMiddleware):
+        def after_agent(self, state, runtime) -> None:
+            return None
+
+    class NoopTwo(AgentMiddleware):
+        def after_agent(self, state, runtime) -> None:
+            return None
+
+    agent_one = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+        ),
+        tools=[my_tool],
+        system_prompt="You are a helpful assistant.",
+        middleware=[NoopZero(), NoopOne(), NoopTwo()],
+    )
+
+    assert agent_one.get_graph().draw_mermaid() == snapshot
+
+
 # Tests for HumanInTheLoopMiddleware
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
