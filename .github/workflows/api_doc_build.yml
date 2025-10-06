@@ -106,7 +106,7 @@ jobs:
         working-directory: langchain
         run: |
           # Install all partner packages in editable mode with overrides
-          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt --prerelease=allow
 
           # Install core langchain and other main packages
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
