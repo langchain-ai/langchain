@@ -1,6 +1,6 @@
 """Derivations of standard content blocks from LangChain v0 multimodal content."""
 
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from langchain_core.messages import content as types
 
@@ -45,7 +45,7 @@ def _convert_v0_multimodal_input_to_v1(
 
 def _convert_legacy_v0_content_block_to_v1(
     block: dict,
-) -> Union[types.ContentBlock, dict]:
+) -> types.ContentBlock | dict:
     """Convert a LangChain v0 content block to v1 format.
 
     Preserves unknown keys as extras to avoid data loss.

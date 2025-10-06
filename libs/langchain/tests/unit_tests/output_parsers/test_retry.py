@@ -9,9 +9,9 @@ from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from typing_extensions import override
 
-from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.output_parsers.datetime import DatetimeOutputParser
-from langchain.output_parsers.retry import (
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.datetime import DatetimeOutputParser
+from langchain_classic.output_parsers.retry import (
     NAIVE_RETRY_PROMPT,
     NAIVE_RETRY_WITH_ERROR_PROMPT,
     RetryOutputParser,

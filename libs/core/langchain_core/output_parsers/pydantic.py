@@ -1,7 +1,7 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic, Optional
+from typing import Annotated, Generic
 
 import pydantic
 from pydantic import SkipValidation
@@ -44,7 +44,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
 
     def parse_result(
         self, result: list[Generation], *, partial: bool = False
-    ) -> Optional[TBaseModel]:
+    ) -> TBaseModel | None:
         """Parse the result of an LLM call to a pydantic object.
 
         Args:

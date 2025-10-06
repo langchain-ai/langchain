@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
-    Union,
 )
 
 from pydantic import Field, SkipValidation
@@ -44,9 +41,9 @@ class StructuredTool(BaseTool):
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
-    func: Optional[Callable[..., Any]] = None
+    func: Callable[..., Any] | None = None
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[Any]]] = None
+    coroutine: Callable[..., Awaitable[Any]] | None = None
     """The asynchronous version of the function."""
 
     # --- Runnable ---
@@ -55,8 +52,8 @@ class StructuredTool(BaseTool):
     @override
     async def ainvoke(
         self,
-        input: Union[str, dict, ToolCall],
-        config: Optional[RunnableConfig] = None,
+        input: str | dict | ToolCall,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         if not self.coroutine:
@@ -71,7 +68,7 @@ class StructuredTool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
         """Use the tool.
@@ -98,7 +95,7 @@ class StructuredTool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
         """Use the tool asynchronously.
@@ -128,12 +125,12 @@ class StructuredTool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Optional[Callable] = None,
-        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        func: Callable | None = None,
+        coroutine: Callable[..., Awaitable[Any]] | None = None,
+        name: str | None = None,
+        description: str | None = None,
         return_direct: bool = False,  # noqa: FBT001,FBT002
-        args_schema: Optional[ArgsSchema] = None,
+        args_schema: ArgsSchema | None = None,
         infer_schema: bool = True,  # noqa: FBT001,FBT002
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",

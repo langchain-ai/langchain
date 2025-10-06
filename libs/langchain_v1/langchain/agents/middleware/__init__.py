@@ -6,9 +6,13 @@ from .context_editing import (
     ContextEditingMiddleware,
 )
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .model_fallback import ModelFallbackMiddleware
+from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
+from .tool_call_limit import ToolCallLimitMiddleware
+from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
     AgentMiddleware,
     AgentState,
@@ -28,10 +32,15 @@ __all__ = [
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
+    "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
+    "ModelFallbackMiddleware",
     "ModelRequest",
+    "PIIDetectionError",
+    "PIIMiddleware",
     "PlanningMiddleware",
     "SummarizationMiddleware",
+    "ToolCallLimitMiddleware",
     "after_model",
     "before_model",
     "dynamic_prompt",

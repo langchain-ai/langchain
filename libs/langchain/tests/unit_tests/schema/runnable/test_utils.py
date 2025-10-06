@@ -1,4 +1,4 @@
-from langchain.schema.runnable.utils import __all__
+from langchain_classic.schema.runnable.utils import __all__
 
 EXPECTED_ALL = [
     "AddableDict",

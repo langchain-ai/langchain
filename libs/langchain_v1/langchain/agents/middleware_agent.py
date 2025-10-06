@@ -24,6 +24,7 @@ from langchain.agents.middleware.types import (
     PublicAgentState,
 )
 from langchain.agents.structured_output import (
+    AutoStrategy,
     MultipleStructuredOutputsError,
     OutputToolBinding,
     ProviderStrategy,
@@ -194,22 +195,33 @@ def create_agent(  # noqa: PLR0915
         tools = []
 
     # Convert response format and setup structured output tools
-    # Raw schemas are converted to ToolStrategy upfront to calculate tools during agent creation.
-    # If auto-detection is needed, the strategy may be replaced with ProviderStrategy later.
-    initial_response_format: ToolStrategy | ProviderStrategy | None
-    is_auto_detect: bool
+    # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
+    # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
+    # but may be replaced with ProviderStrategy later based on model capabilities.
+    initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
     if response_format is None:
-        initial_response_format, is_auto_detect = None, False
+        initial_response_format = None
     elif isinstance(response_format, (ToolStrategy, ProviderStrategy)):
         # Preserve explicitly requested strategies
-        initial_response_format, is_auto_detect = response_format, False
+        initial_response_format = response_format
+    elif isinstance(response_format, AutoStrategy):
+        # AutoStrategy provided - preserve it for later auto-detection
+        initial_response_format = response_format
     else:
-        # Raw schema - convert to ToolStrategy for now (may be replaced with ProviderStrategy)
-        initial_response_format, is_auto_detect = ToolStrategy(schema=response_format), True
+        # Raw schema - wrap in AutoStrategy to enable auto-detection
+        initial_response_format = AutoStrategy(schema=response_format)
+
+    # For AutoStrategy, convert to ToolStrategy to setup tools upfront
+    # (may be replaced with ProviderStrategy later based on model)
+    tool_strategy_for_setup: ToolStrategy | None = None
+    if isinstance(initial_response_format, AutoStrategy):
+        tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
+    elif isinstance(initial_response_format, ToolStrategy):
+        tool_strategy_for_setup = initial_response_format
 
     structured_output_tools: dict[str, OutputToolBinding] = {}
-    if isinstance(initial_response_format, ToolStrategy):
-        for response_schema in initial_response_format.schema_specs:
+    if tool_strategy_for_setup:
+        for response_schema in tool_strategy_for_setup.schema_specs:
             structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
@@ -217,35 +229,35 @@ def create_agent(  # noqa: PLR0915
     # Setup tools
     tool_node: ToolNode | None = None
     if isinstance(tools, list):
-        # Extract builtin provider tools (dict format)
-        builtin_tools = [t for t in tools if isinstance(t, dict)]
+        # Extract built-in provider tools (dict format) and regular tools (BaseTool)
+        built_in_tools = [t for t in tools if isinstance(t, dict)]
         regular_tools = [t for t in tools if not isinstance(t, dict)]
 
-        # Add structured output tools to regular tools
-        structured_tools = [info.tool for info in structured_output_tools.values()]
-        all_tools = middleware_tools + regular_tools + structured_tools
+        # Tools that require client-side execution (must be in ToolNode)
+        available_tools = middleware_tools + regular_tools
 
-        # Only create ToolNode if we have tools
-        tool_node = ToolNode(tools=all_tools) if all_tools else None
-        default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
+        # Only create ToolNode if we have client-side tools
+        tool_node = ToolNode(tools=available_tools) if available_tools else None
+
+        # Default tools for ModelRequest initialization
+        # Include built-ins and regular tools (can be changed dynamically by middleware)
+        # Structured tools are NOT included - they're added dynamically based on response_format
+        default_tools = regular_tools + middleware_tools + built_in_tools
     elif isinstance(tools, ToolNode):
-        # tools is ToolNode or None
         tool_node = tools
         if tool_node:
-            default_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            # Update tool node to know about tools provided by middleware
-            all_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(all_tools)
-            # Add structured output tools
-            for info in structured_output_tools.values():
-                default_tools.append(info.tool)
+            # Add middleware tools to existing ToolNode
+            available_tools = list(tool_node.tools_by_name.values()) + middleware_tools
+            tool_node = ToolNode(available_tools)
+
+            # default_tools includes all client-side tools (no built-ins or structured tools)
+            default_tools = available_tools
     else:
-        default_tools = (
-            list(structured_output_tools.values()) if structured_output_tools else []
-        ) + middleware_tools
+        # No tools provided, only middleware_tools available
+        default_tools = middleware_tools
 
     # validate middleware
-    assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (  # noqa: S101
+    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
         "Please remove duplicate middleware instances."
     )
     middleware_w_before = [
@@ -265,6 +277,12 @@ def create_agent(  # noqa: PLR0915
         for m in middleware
         if m.__class__.after_model is not AgentMiddleware.after_model
         or m.__class__.aafter_model is not AgentMiddleware.aafter_model
+    ]
+    middleware_w_retry = [
+        m
+        for m in middleware
+        if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request
+        or m.__class__.aretry_model_request is not AgentMiddleware.aretry_model_request
     ]
 
     state_schemas = {m.state_schema for m in middleware}
@@ -393,36 +411,56 @@ def create_agent(  # noqa: PLR0915
             Tuple of (bound_model, effective_response_format) where ``effective_response_format``
             is the actual strategy used (may differ from initial if auto-detected).
         """
-        # Validate requested tools are available
-        tools_by_name = {t.name: t for t in default_tools}
-        unknown_tool_names = [t.name for t in request.tools if t.name not in tools_by_name]
+        # Validate ONLY client-side tools that need to exist in tool_node
+        # Build map of available client-side tools (regular_tools + middleware_tools)
+        available_tools_by_name = {t.name: t for t in default_tools if isinstance(t, BaseTool)}
+
+        # Check if any requested tools are unknown CLIENT-SIDE tools
+        unknown_tool_names = []
+        for t in request.tools:
+            # Only validate BaseTool instances (skip built-in dict tools)
+            if isinstance(t, dict):
+                continue
+            if t.name not in available_tools_by_name:
+                unknown_tool_names.append(t.name)
+
         if unknown_tool_names:
-            available_tools = sorted(tools_by_name.keys())
+            available_tool_names = sorted(available_tools_by_name.keys())
             msg = (
                 f"Middleware returned unknown tool names: {unknown_tool_names}\n\n"
-                f"Available tools: {available_tools}\n\n"
+                f"Available client-side tools: {available_tool_names}\n\n"
                 "To fix this issue:\n"
                 "1. Ensure the tools are passed to create_agent() via "
                 "the 'tools' parameter\n"
                 "2. If using custom middleware with tools, ensure "
                 "they're registered via middleware.tools attribute\n"
                 "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values"
+                "the actual tool.name values\n"
+                "Note: Built-in provider tools (dict format) can be added dynamically."
             )
             raise ValueError(msg)
 
         # Determine effective response format (auto-detect if needed)
-        effective_response_format: ResponseFormat | None = request.response_format
-        if (
-            # User provided raw schema - auto-detect best strategy based on model
-            is_auto_detect
-            and isinstance(request.response_format, ToolStrategy)
-            and
-            # Model supports provider strategy - use it instead
-            _supports_provider_strategy(request.model)
-        ):
-            effective_response_format = ProviderStrategy(schema=response_format)  # type: ignore[arg-type]
-            # else: keep ToolStrategy from initial conversion
+        effective_response_format: ResponseFormat | None
+        if isinstance(request.response_format, AutoStrategy):
+            # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
+            if _supports_provider_strategy(request.model):
+                # Model supports provider strategy - use it
+                effective_response_format = ProviderStrategy(schema=request.response_format.schema)
+            else:
+                # Model doesn't support provider strategy - use ToolStrategy
+                effective_response_format = ToolStrategy(schema=request.response_format.schema)
+        else:
+            # User explicitly specified a strategy - preserve it
+            effective_response_format = request.response_format
+
+        # Build final tools list including structured output tools
+        # request.tools already contains both BaseTool and dict (built-in) tools
+        final_tools = list(request.tools)
+        if isinstance(effective_response_format, ToolStrategy):
+            # Add structured output tools to final tools list
+            structured_tools = [info.tool for info in structured_output_tools.values()]
+            final_tools.extend(structured_tools)
 
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
@@ -430,26 +468,41 @@ def create_agent(  # noqa: PLR0915
             kwargs = effective_response_format.to_model_kwargs()
             return (
                 request.model.bind_tools(
-                    request.tools, strict=True, **kwargs, **request.model_settings
+                    final_tools, strict=True, **kwargs, **request.model_settings
                 ),
                 effective_response_format,
             )
 
         if isinstance(effective_response_format, ToolStrategy):
+            # Current implementation requires that tools used for structured output
+            # have to be declared upfront when creating the agent as part of the
+            # response format. Middleware is allowed to change the response format
+            # to a subset of the original structured tools when using ToolStrategy,
+            # but not to add new structured tools that weren't declared upfront.
+            # Compute output binding
+            for tc in effective_response_format.schema_specs:
+                if tc.name not in structured_output_tools:
+                    msg = (
+                        f"ToolStrategy specifies tool '{tc.name}' "
+                        "which wasn't declared in the original "
+                        "response format when creating the agent."
+                    )
+                    raise ValueError(msg)
+
             # Force tool use if we have structured output tools
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return (
                 request.model.bind_tools(
-                    request.tools, tool_choice=tool_choice, **request.model_settings
+                    final_tools, tool_choice=tool_choice, **request.model_settings
                 ),
                 effective_response_format,
             )
 
         # No structured output - standard model binding
-        if request.tools:
+        if final_tools:
             return (
                 request.model.bind_tools(
-                    request.tools, tool_choice=request.tool_choice, **request.model_settings
+                    final_tools, tool_choice=request.tool_choice, **request.model_settings
                 ),
                 None,
             )
@@ -479,18 +532,47 @@ def create_agent(  # noqa: PLR0915
                 )
                 raise TypeError(msg)
 
-        # Get the bound model (with auto-detection if needed)
-        model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        # Retry loop for model invocation with error handling
+        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
+        max_attempts = 100
+        for attempt in range(1, max_attempts + 1):
+            try:
+                # Get the bound model (with auto-detection if needed)
+                model_, effective_response_format = _get_bound_model(request)
+                messages = request.messages
+                if request.system_prompt:
+                    messages = [SystemMessage(request.system_prompt), *messages]
 
-        output = model_.invoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
-        }
+                output = model_.invoke(messages)
+                return {
+                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+                    **_handle_model_output(output, effective_response_format),
+                }
+            except Exception as error:
+                # Try retry_model_request on each middleware
+                for m in middleware_w_retry:
+                    if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request:
+                        if retry_request := m.retry_model_request(
+                            error, request, state, runtime, attempt
+                        ):
+                            # Break on first middleware that wants to retry
+                            request = retry_request
+                            break
+                    else:
+                        msg = (
+                            f"No synchronous function provided for "
+                            f'{m.__class__.__name__}.aretry_model_request".'
+                            "\nEither initialize with a synchronous function or invoke"
+                            " via the async API (ainvoke, astream, etc.)"
+                        )
+                        raise TypeError(msg)
+                else:
+                    raise
+
+        # If we exit the loop, max attempts exceeded
+        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
+        raise RuntimeError(msg)
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -507,18 +589,39 @@ def create_agent(  # noqa: PLR0915
         for m in middleware_w_modify_model_request:
             await m.amodify_model_request(request, state, runtime)
 
-        # Get the bound model (with auto-detection if needed)
-        model_, effective_response_format = _get_bound_model(request)
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        # Retry loop for model invocation with error handling
+        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
+        max_attempts = 100
+        for attempt in range(1, max_attempts + 1):
+            try:
+                # Get the bound model (with auto-detection if needed)
+                model_, effective_response_format = _get_bound_model(request)
+                messages = request.messages
+                if request.system_prompt:
+                    messages = [SystemMessage(request.system_prompt), *messages]
 
-        output = await model_.ainvoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
-        }
+                output = await model_.ainvoke(messages)
+                return {
+                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+                    **_handle_model_output(output, effective_response_format),
+                }
+            except Exception as error:
+                # Try retry_model_request on each middleware
+                for m in middleware_w_retry:
+                    if retry_request := await m.aretry_model_request(
+                        error, request, state, runtime, attempt
+                    ):
+                        # Break on first middleware that wants to retry
+                        request = retry_request
+                        break
+                else:
+                    # If no middleware wants to retry, re-raise the error
+                    raise
+
+        # If we exit the loop, max attempts exceeded
+        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
+        raise RuntimeError(msg)
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable
@@ -548,9 +651,7 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             before_node = RunnableCallable(sync_before, async_before)
-            graph.add_node(
-                f"{m.__class__.__name__}.before_model", before_node, input_schema=state_schema
-            )
+            graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
 
         if (
             m.__class__.after_model is not AgentMiddleware.after_model
@@ -569,20 +670,14 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after)
-            graph.add_node(
-                f"{m.__class__.__name__}.after_model", after_node, input_schema=state_schema
-            )
+            graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
 
     # add start edge
     first_node = (
-        f"{middleware_w_before[0].__class__.__name__}.before_model"
-        if middleware_w_before
-        else "model_request"
+        f"{middleware_w_before[0].name}.before_model" if middleware_w_before else "model_request"
     )
     last_node = (
-        f"{middleware_w_after[0].__class__.__name__}.after_model"
-        if middleware_w_after
-        else "model_request"
+        f"{middleware_w_after[0].name}.after_model" if middleware_w_after else "model_request"
     )
     graph.add_edge(START, first_node)
 
@@ -605,7 +700,7 @@ def create_agent(  # noqa: PLR0915
         # If after_model, then need to check for can_jump_to
         _add_middleware_edge(
             graph,
-            f"{middleware_w_after[0].__class__.__name__}.after_model",
+            f"{middleware_w_after[0].name}.after_model",
             END,
             first_node,
             can_jump_to=_get_can_jump_to(middleware_w_after[0], "after_model"),
@@ -616,29 +711,29 @@ def create_agent(  # noqa: PLR0915
         for m1, m2 in itertools.pairwise(middleware_w_before):
             _add_middleware_edge(
                 graph,
-                f"{m1.__class__.__name__}.before_model",
-                f"{m2.__class__.__name__}.before_model",
+                f"{m1.name}.before_model",
+                f"{m2.name}.before_model",
                 first_node,
                 can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
             graph,
-            f"{middleware_w_before[-1].__class__.__name__}.before_model",
+            f"{middleware_w_before[-1].name}.before_model",
             "model_request",
             first_node,
             can_jump_to=_get_can_jump_to(middleware_w_before[-1], "before_model"),
         )
 
     if middleware_w_after:
-        graph.add_edge("model_request", f"{middleware_w_after[-1].__class__.__name__}.after_model")
+        graph.add_edge("model_request", f"{middleware_w_after[-1].name}.after_model")
         for idx in range(len(middleware_w_after) - 1, 0, -1):
             m1 = middleware_w_after[idx]
             m2 = middleware_w_after[idx - 1]
             _add_middleware_edge(
                 graph,
-                f"{m1.__class__.__name__}.after_model",
-                f"{m2.__class__.__name__}.after_model",
+                f"{m1.name}.after_model",
+                f"{m2.name}.after_model",
                 first_node,
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )

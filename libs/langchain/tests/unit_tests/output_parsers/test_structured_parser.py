@@ -2,7 +2,7 @@ from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain_classic.output_parsers import ResponseSchema, StructuredOutputParser
 
 
 def test_parse() -> None:

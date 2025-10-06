@@ -11,9 +11,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import override
@@ -82,7 +80,7 @@ class BaseStore(ABC, Generic[K, V]):
     """
 
     @abstractmethod
-    def mget(self, keys: Sequence[K]) -> list[Optional[V]]:
+    def mget(self, keys: Sequence[K]) -> list[V | None]:
         """Get the values associated with the given keys.
 
         Args:
@@ -93,7 +91,7 @@ class BaseStore(ABC, Generic[K, V]):
             If a key is not found, the corresponding value will be None.
         """
 
-    async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
+    async def amget(self, keys: Sequence[K]) -> list[V | None]:
         """Async get the values associated with the given keys.
 
         Args:
@@ -138,9 +136,7 @@ class BaseStore(ABC, Generic[K, V]):
         return await run_in_executor(None, self.mdelete, keys)
 
     @abstractmethod
-    def yield_keys(
-        self, *, prefix: Optional[str] = None
-    ) -> Union[Iterator[K], Iterator[str]]:
+    def yield_keys(self, *, prefix: str | None = None) -> Iterator[K] | Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
@@ -153,8 +149,8 @@ class BaseStore(ABC, Generic[K, V]):
         """
 
     async def ayield_keys(
-        self, *, prefix: Optional[str] = None
-    ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
+        self, *, prefix: str | None = None
+    ) -> AsyncIterator[K] | AsyncIterator[str]:
         """Async get an iterator over keys that match the given prefix.
 
         Args:
@@ -184,7 +180,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """Initialize an empty store."""
         self.store: dict[str, V] = {}
 
-    def mget(self, keys: Sequence[str]) -> list[Optional[V]]:
+    def mget(self, keys: Sequence[str]) -> list[V | None]:
         """Get the values associated with the given keys.
 
         Args:
@@ -196,7 +192,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return [self.store.get(key) for key in keys]
 
-    async def amget(self, keys: Sequence[str]) -> list[Optional[V]]:
+    async def amget(self, keys: Sequence[str]) -> list[V | None]:
         """Async get the values associated with the given keys.
 
         Args:
@@ -235,7 +231,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         self.mdelete(keys)
 
-    def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
+    def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
         """Get an iterator over keys that match the given prefix.
 
         Args:
@@ -251,7 +247,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                 if key.startswith(prefix):
                     yield key
 
-    async def ayield_keys(self, prefix: Optional[str] = None) -> AsyncIterator[str]:
+    async def ayield_keys(self, prefix: str | None = None) -> AsyncIterator[str]:
         """Async get an async iterator over keys that match the given prefix.
 
         Args:

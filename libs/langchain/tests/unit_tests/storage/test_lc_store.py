@@ -5,8 +5,8 @@ from typing import cast
 import pytest
 from langchain_core.documents import Document
 
-from langchain.storage._lc_store import create_kv_docstore, create_lc_store
-from langchain.storage.file_system import LocalFileStore
+from langchain_classic.storage._lc_store import create_kv_docstore, create_lc_store
+from langchain_classic.storage.file_system import LocalFileStore
 
 
 @pytest.fixture

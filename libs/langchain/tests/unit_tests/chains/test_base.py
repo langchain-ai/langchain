@@ -2,7 +2,7 @@
 
 import re
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
@@ -10,8 +10,8 @@ from langchain_core.memory import BaseMemory
 from langchain_core.tracers.context import collect_runs
 from typing_extensions import override
 
-from langchain.chains.base import Chain
-from langchain.schema import RUN_KEY
+from langchain_classic.chains.base import Chain
+from langchain_classic.schema import RUN_KEY
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -26,7 +26,7 @@ class FakeMemory(BaseMemory):
     @override
     def load_memory_variables(
         self,
-        inputs: Optional[dict[str, Any]] = None,
+        inputs: dict[str, Any] | None = None,
     ) -> dict[str, str]:
         """Return baz variable."""
         return {"baz": "foo"}
@@ -59,7 +59,7 @@ class FakeChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         if self.be_correct:
             return {"bar": "baz"}

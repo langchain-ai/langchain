@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.embeddings.base import (
+from langchain_classic.embeddings.base import (
     _SUPPORTED_PROVIDERS,
     _infer_model_and_provider,
     _parse_model_string,
