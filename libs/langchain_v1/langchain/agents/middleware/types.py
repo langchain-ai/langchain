@@ -223,9 +223,9 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     def on_model_call(
         self,
-        request: ModelRequest,
-        state: StateT,
-        runtime: Runtime[ContextT],
+        request: ModelRequest,  # noqa: ARG002
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
         """Generator-based hook to intercept and control model execution.
 
@@ -302,6 +302,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return response
             ```
         """
+        raise NotImplementedError
+        yield  # Make this a generator for type checking
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
