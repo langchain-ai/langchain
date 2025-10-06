@@ -47,6 +47,12 @@ def test_initialization() -> None:
         assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
+    llm = ChatAnthropic(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
+
+
 def test_anthropic_client_caching() -> None:
     """Test that the OpenAI client is cached."""
     llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
