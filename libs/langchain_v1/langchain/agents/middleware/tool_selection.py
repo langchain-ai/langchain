@@ -181,7 +181,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
         # Get the last user message from the conversation history
         last_user_message: HumanMessage
-        for message in request.messages:
+        for message in reversed(request.messages):
             if isinstance(message, HumanMessage):
                 last_user_message = message
                 break
