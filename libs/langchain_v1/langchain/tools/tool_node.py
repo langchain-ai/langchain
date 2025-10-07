@@ -661,7 +661,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    def _run_one(
+    def _run_one(  # noqa: PLR0911, PLR0912
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -735,12 +735,16 @@ class ToolNode(RunnableCallable):
                     )
             else:
                 # Normal flow: execute the tool with the request
-                tool_message = self._execute_tool_sync(yielded, input_type, config)
+                tool_message_or_command = self._execute_tool_sync(yielded, input_type, config)
+
+                # Commands bypass the generator protocol
+                if isinstance(tool_message_or_command, Command):
+                    return tool_message_or_command
 
                 # Send tool message back to generator
-                last_sent_message = tool_message
+                last_sent_message = tool_message_or_command
                 try:
-                    yielded = gen.send(tool_message)
+                    yielded = gen.send(tool_message_or_command)
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message
@@ -840,7 +844,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    async def _arun_one(
+    async def _arun_one(  # noqa: PLR0911, PLR0912
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -914,12 +918,18 @@ class ToolNode(RunnableCallable):
                     )
             else:
                 # Normal flow: execute the tool with the request
-                tool_message = await self._execute_tool_async(yielded, input_type, config)
+                tool_message_or_command = await self._execute_tool_async(
+                    yielded, input_type, config
+                )
+
+                # Commands bypass the generator protocol
+                if isinstance(tool_message_or_command, Command):
+                    return tool_message_or_command
 
                 # Send tool message back to generator
-                last_sent_message = tool_message
+                last_sent_message = tool_message_or_command
                 try:
-                    yielded = gen.send(tool_message)
+                    yielded = gen.send(tool_message_or_command)
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message

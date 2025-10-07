@@ -144,7 +144,7 @@ def test_handler_validation_no_return() -> None:
         """Handler that returns None explicitly - should still work."""
         yield request
         # Explicit None return - protocol uses last sent message as result
-        return None  # type: ignore[return-value]
+        return None
 
     tool_node = ToolNode([add], on_tool_call=handler_with_explicit_none)
 
@@ -182,7 +182,7 @@ def test_handler_validation_no_yield() -> None:
         # End immediately without yielding anything
         # Need unreachable yield to make this a generator function
         if False:
-            yield request  # type: ignore[unreachable]
+            yield request
         return
 
     tool_node = ToolNode([add], on_tool_call=bad_handler)
@@ -637,7 +637,7 @@ def test_conditional_direct_return() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that returns cached or executes based on condition."""
         a = request.tool_call["args"]["a"]
 
