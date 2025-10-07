@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import itertools
+from collections.abc import Generator
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -29,6 +31,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     JumpTo,
     ModelRequest,
+    ModelResponse,
     OmitFromSchema,
     PublicAgentState,
 )
@@ -46,7 +49,7 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -57,6 +60,180 @@ if TYPE_CHECKING:
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
+
+
+@dataclass
+class _InternalModelResponse:
+    """Internal wrapper for model responses with cached metadata.
+
+    Wraps ModelResponse with effective_response_format to avoid redundant
+    _get_bound_model calls. Middleware only sees the inner ModelResponse.
+    """
+
+    model_response: ModelResponse
+    """The model response visible to middleware."""
+
+    effective_response_format: Any = None
+    """Cached response format after auto-detection."""
+
+
+def _validate_handler_return(value: Any) -> ModelResponse:
+    """Validate handler return value is a ModelResponse.
+
+    Args:
+        value: Value from handler's StopIteration.
+
+    Returns:
+        Validated ModelResponse.
+
+    Raises:
+        ValueError: If value is None.
+        TypeError: If value is not a ModelResponse.
+    """
+    if value is None:
+        msg = (
+            "on_model_call handler must explicitly return a ModelResponse. "
+            "Ensure your handler ends with 'return response'."
+        )
+        raise ValueError(msg)
+
+    if not isinstance(value, ModelResponse):
+        msg = (
+            f"on_model_call handler must return a ModelResponse, got {type(value).__name__} instead"
+        )
+        raise TypeError(msg)
+
+    return value
+
+
+def _chain_model_call_handlers(
+    handlers: list[
+        Callable[
+            [ModelRequest, AgentState, Runtime],
+            Generator[ModelRequest, ModelResponse, ModelResponse],
+        ]
+    ],
+) -> (
+    Callable[
+        [ModelRequest, AgentState, Runtime],
+        Generator[ModelRequest, ModelResponse, ModelResponse],
+    ]
+    | None
+):
+    """Compose multiple on_model_call handlers into single middleware stack.
+
+    Composes handlers so first in list becomes outermost layer. Each handler
+    can intercept and modify both requests (going down) and responses (coming up).
+
+    Args:
+        handlers: List of handlers. First handler wraps all others.
+
+    Returns:
+        Composed handler, or None if handlers empty.
+
+    Example:
+        ```python
+        # handlers=[auth, retry] means: auth wraps retry
+        # Flow: auth-before -> retry-before -> model -> retry-after -> auth-after
+        def auth(req, state, runtime):
+            resp = yield req
+            if "unauthorized" in str(resp.exception):
+                refresh_token()
+                resp = yield req
+            return resp
+
+        def retry(req, state, runtime):
+            for _ in range(3):
+                resp = yield req
+                if resp.action == "return":
+                    return resp
+            return resp
+
+        handler = _chain_model_call_handlers([auth, retry])
+        ```
+    """
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def _extract_return_value(stop_iteration: StopIteration) -> ModelResponse:
+        """Extract ModelResponse from StopIteration, validating protocol compliance."""
+        return _validate_handler_return(stop_iteration.value)
+
+    def compose_two(
+        outer: Callable[
+            [ModelRequest, AgentState, Runtime],
+            Generator[ModelRequest, ModelResponse, ModelResponse],
+        ],
+        inner: Callable[
+            [ModelRequest, AgentState, Runtime],
+            Generator[ModelRequest, ModelResponse, ModelResponse],
+        ],
+    ) -> Callable[
+        [ModelRequest, AgentState, Runtime],
+        Generator[ModelRequest, ModelResponse, ModelResponse],
+    ]:
+        """Compose two handlers where outer wraps inner."""
+
+        def composed(
+            request: ModelRequest,
+            state: AgentState,
+            runtime: Runtime,
+        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+            outer_gen = outer(request, state, runtime)
+
+            # Initialize outer generator
+            try:
+                outer_request = next(outer_gen)
+            except StopIteration as e:
+                return _extract_return_value(e)
+
+            # Outer retry loop
+            while True:
+                inner_gen = inner(outer_request, state, runtime)
+
+                # Initialize inner generator
+                try:
+                    inner_request = next(inner_gen)
+                except StopIteration as e:
+                    # Inner returned immediately - send to outer
+                    inner_response = _extract_return_value(e)
+                    try:
+                        outer_request = outer_gen.send(inner_response)
+                        continue  # Outer retrying
+                    except StopIteration as e:
+                        return _extract_return_value(e)
+
+                # Inner retry loop - yield to next layer (or model)
+                while True:
+                    model_response = yield inner_request
+
+                    try:
+                        inner_request = inner_gen.send(model_response)
+                        # Inner retrying - continue inner loop
+                    except StopIteration as e:
+                        # Inner done - send response to outer
+                        inner_response = _extract_return_value(e)
+                        break
+
+                # Send inner's final response to outer
+                try:
+                    outer_request = outer_gen.send(inner_response)
+                    # Outer retrying - continue outer loop
+                except StopIteration as e:
+                    # Outer done - return final response
+                    return _extract_return_value(e)
+
+        return composed
+
+    # Compose right-to-left: handlers[0](handlers[1](...(handlers[-1](model))))
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -374,12 +551,17 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.after_agent is not AgentMiddleware.after_agent
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
-    middleware_w_retry = [
+    middleware_w_on_model_call = [
         m
         for m in middleware
-        if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request
-        or m.__class__.aretry_model_request is not AgentMiddleware.aretry_model_request
+        if m.__class__.on_model_call is not AgentMiddleware.on_model_call
     ]
+
+    # Compose on_model_call handlers into a single middleware stack
+    on_model_call_handler = None
+    if middleware_w_on_model_call:
+        sync_handlers = [m.on_model_call for m in middleware_w_on_model_call]
+        on_model_call_handler = _chain_model_call_handlers(sync_handlers)
 
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
@@ -608,6 +790,29 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings), None
 
+    def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
+        """Execute model and return response.
+
+        This is the core model execution logic wrapped by on_model_call handlers.
+        """
+        try:
+            # Get the bound model (with auto-detection if needed)
+            model_, effective_response_format = _get_bound_model(request)
+            messages = request.messages
+            if request.system_prompt:
+                messages = [SystemMessage(request.system_prompt), *messages]
+
+            output = model_.invoke(messages)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="return", result=output),
+                effective_response_format=effective_response_format,
+            )
+        except Exception as error:  # noqa: BLE001
+            # Catch all exceptions from model invocation to wrap in ModelResponse
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="raise", exception=error)
+            )
+
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
@@ -622,7 +827,7 @@ def create_agent(  # noqa: PLR0915
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
             if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
-                m.modify_model_request(request, state, runtime)
+                request = m.modify_model_request(request, state, runtime)
             else:
                 msg = (
                     f"No synchronous function provided for "
@@ -632,47 +837,79 @@ def create_agent(  # noqa: PLR0915
                 )
                 raise TypeError(msg)
 
-        # Retry loop for model invocation with error handling
-        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
-        max_attempts = 100
-        for attempt in range(1, max_attempts + 1):
+        # Execute with or without handler
+        current_request = request
+        internal_response: _InternalModelResponse
+        final_response: ModelResponse
+
+        if on_model_call_handler is None:
+            # No handlers - execute directly
+            internal_response = _execute_model_sync(request)
+            final_response = internal_response.model_response
+        else:
+            # Use composed handler with generator protocol
+            gen = on_model_call_handler(request, state, runtime)
+
             try:
-                # Get the bound model (with auto-detection if needed)
-                model_, effective_response_format = _get_bound_model(request)
-                messages = request.messages
-                if request.system_prompt:
-                    messages = [SystemMessage(request.system_prompt), *messages]
+                current_request = next(gen)
+            except StopIteration:
+                msg = "on_model_call handler must yield at least once to request model execution"
+                raise ValueError(msg)
 
-                output = model_.invoke(messages)
-                return {
-                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-                    **_handle_model_output(output, effective_response_format),
-                }
-            except Exception as error:
-                # Try retry_model_request on each middleware
-                for m in middleware_w_retry:
-                    if m.__class__.retry_model_request is not AgentMiddleware.retry_model_request:
-                        if retry_request := m.retry_model_request(
-                            error, request, state, runtime, attempt
-                        ):
-                            # Break on first middleware that wants to retry
-                            request = retry_request
-                            break
-                    else:
-                        msg = (
-                            f"No synchronous function provided for "
-                            f'{m.__class__.__name__}.aretry_model_request".'
-                            "\nEither initialize with a synchronous function or invoke"
-                            " via the async API (ainvoke, astream, etc.)"
-                        )
-                        raise TypeError(msg)
-                else:
-                    raise
+            # Execution loop - generator controls termination via StopIteration
+            while True:
+                internal_response = _execute_model_sync(current_request)
 
-        # If we exit the loop, max attempts exceeded
-        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
-        raise RuntimeError(msg)
+                try:
+                    # Send only the ModelResponse to the generator (not the wrapper)
+                    current_request = gen.send(internal_response.model_response)
+                    # Handler yielded again - retry
+                except StopIteration as e:
+                    final_response = _validate_handler_return(e.value)
+                    break
+
+        # Process the final response
+        if final_response.action == "raise":
+            if final_response.exception is None:
+                msg = "ModelResponse with action='raise' must have an exception"
+                raise ValueError(msg)
+            raise final_response.exception
+
+        if final_response.result is None:
+            msg = "ModelResponse with action='return' must have a result"
+            raise ValueError(msg)
+
+        # Use cached effective_response_format from internal response
+        effective_response_format = internal_response.effective_response_format
+
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+            **_handle_model_output(final_response.result, effective_response_format),
+        }
+
+    async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
+        """Execute model asynchronously and return response.
+
+        This is the core async model execution logic wrapped by on_model_call handlers.
+        """
+        try:
+            # Get the bound model (with auto-detection if needed)
+            model_, effective_response_format = _get_bound_model(request)
+            messages = request.messages
+            if request.system_prompt:
+                messages = [SystemMessage(request.system_prompt), *messages]
+
+            output = await model_.ainvoke(messages)
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="return", result=output),
+                effective_response_format=effective_response_format,
+            )
+        except Exception as error:  # noqa: BLE001
+            # Catch all exceptions from model invocation to wrap in ModelResponse
+            return _InternalModelResponse(
+                model_response=ModelResponse(action="raise", exception=error)
+            )
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -687,41 +924,59 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            await m.amodify_model_request(request, state, runtime)
+            request = await m.amodify_model_request(request, state, runtime)
 
-        # Retry loop for model invocation with error handling
-        # Hard limit of 100 attempts to prevent infinite loops from buggy middleware
-        max_attempts = 100
-        for attempt in range(1, max_attempts + 1):
+        # Execute with or without handler
+        # Note: handler is sync generator, but model execution is async
+        current_request = request
+        internal_response: _InternalModelResponse
+        final_response: ModelResponse
+
+        if on_model_call_handler is None:
+            # No handlers - execute directly
+            internal_response = await _execute_model_async(request)
+            final_response = internal_response.model_response
+        else:
+            # Use composed handler with generator protocol (sync generator, async execution)
+            gen = on_model_call_handler(request, state, runtime)
+
             try:
-                # Get the bound model (with auto-detection if needed)
-                model_, effective_response_format = _get_bound_model(request)
-                messages = request.messages
-                if request.system_prompt:
-                    messages = [SystemMessage(request.system_prompt), *messages]
+                current_request = next(gen)
+            except StopIteration:
+                msg = "on_model_call handler must yield at least once to request model execution"
+                raise ValueError(msg)
 
-                output = await model_.ainvoke(messages)
-                return {
-                    "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-                    "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-                    **_handle_model_output(output, effective_response_format),
-                }
-            except Exception as error:
-                # Try retry_model_request on each middleware
-                for m in middleware_w_retry:
-                    if retry_request := await m.aretry_model_request(
-                        error, request, state, runtime, attempt
-                    ):
-                        # Break on first middleware that wants to retry
-                        request = retry_request
-                        break
-                else:
-                    # If no middleware wants to retry, re-raise the error
-                    raise
+            # Execution loop - generator controls termination via StopIteration
+            while True:
+                internal_response = await _execute_model_async(current_request)
 
-        # If we exit the loop, max attempts exceeded
-        msg = f"Maximum retry attempts ({max_attempts}) exceeded"
-        raise RuntimeError(msg)
+                try:
+                    # Send only the ModelResponse to the generator (not the wrapper)
+                    current_request = gen.send(internal_response.model_response)
+                    # Handler yielded again - retry
+                except StopIteration as e:
+                    final_response = _validate_handler_return(e.value)
+                    break
+
+        # Process the final response
+        if final_response.action == "raise":
+            if final_response.exception is None:
+                msg = "ModelResponse with action='raise' must have an exception"
+                raise ValueError(msg)
+            raise final_response.exception
+
+        if final_response.result is None:
+            msg = "ModelResponse with action='return' must have a result"
+            raise ValueError(msg)
+
+        # Use cached effective_response_format from internal response
+        effective_response_format = internal_response.effective_response_format
+
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+            **_handle_model_output(final_response.result, effective_response_format),
+        }
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
