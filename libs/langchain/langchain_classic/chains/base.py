@@ -164,7 +164,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         try:
             self._validate_inputs(inputs)
             outputs = (
-                self._call(inputs, run_manager=run_manager)
+                self._call(inputs, run_manager=run_manager, config=config)
                 if new_arg_supported
                 else self._call(inputs)
             )
@@ -219,7 +219,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         try:
             self._validate_inputs(inputs)
             outputs = (
-                await self._acall(inputs, run_manager=run_manager)
+                await self._acall(inputs, run_manager=run_manager, config=config)
                 if new_arg_supported
                 else await self._acall(inputs)
             )
@@ -319,6 +319,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: CallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> dict[str, Any]:
         """Execute the chain.
 
@@ -331,6 +332,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain, including tags, metadata,
+                callbacks, and other runtime settings.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
@@ -341,6 +344,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None, # noqa: ARG002
     ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
@@ -353,6 +357,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain, including tags, metadata,
+                callbacks, and other runtime settings.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
