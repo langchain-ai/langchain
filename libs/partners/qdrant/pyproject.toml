@@ -9,7 +9,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.10.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
 ]
 name = "langchain-qdrant"
 version = "1.0.0a1"
@@ -43,7 +43,11 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy>=1.10.0,<2.0.0", "simsimd>=6.0.0,<7.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "simsimd>=6.0.0,<7.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

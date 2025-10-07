@@ -8,7 +8,7 @@ license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-openai>=1.0.0a3,<2.0.0",
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "requests>=2.0.0,<3.0.0",
     "aiohttp>=3.9.1,<4.0.0",
 ]
@@ -38,7 +38,11 @@ test = [
 ]
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
-typing = ["mypy>=1.10.0,<2.0.0", "types-requests>=2.0.0,<3.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "types-requests>=2.0.0,<3.0.0",
+    "langchain-core"
+]
 dev = ["langchain-core"]
 
 [tool.uv.sources]
