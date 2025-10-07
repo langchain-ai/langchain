@@ -13,13 +13,17 @@ dependencies = [
 ]
 name = "langchain-anthropic"
 version = "1.0.0a3"
-description = "An integration package connecting Anthropic and LangChain"
+description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-anthropic%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
