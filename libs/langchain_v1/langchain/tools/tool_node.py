@@ -104,14 +104,11 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 
 @dataclass()
 class ToolCallRequest:
-    """Tool execution request passed to on_tool_call handlers.
-
-    Handlers can inspect or modify the tool call before execution.
+    """Request object passed to on_tool_call handlers before tool execution.
 
     Attributes:
-        tool_call: Tool call containing name, args, and id. Modify ``tool_call["args"]``
-            to change arguments before execution.
-        tool: Tool instance to be invoked.
+        tool_call: Tool call dict with name, args, and id.
+        tool: Tool instance that will be invoked.
     """
 
     tool_call: ToolCall
@@ -120,14 +117,14 @@ class ToolCallRequest:
 
 @dataclass()
 class ToolCallResponse:
-    """Tool execution response returned by on_tool_call handlers.
+    """Response object returned by on_tool_call handlers after tool execution.
 
     Attributes:
-        action: How to handle the tool execution result. Use ``"continue"`` to
-            return a result to the agent, or ``"raise"`` to propagate an exception.
-        result: Tool execution result. Required when ``action="continue"``.
-        exception: Exception from tool execution. Required when ``action="raise"``.
-            May also be present with ``action="continue"`` for logging purposes.
+        action: Control flow directive. ``"continue"`` returns result to agent;
+            ``"raise"`` propagates exception.
+        result: Tool execution result. Required when action is ``"continue"``.
+        exception: Exception from tool execution. Required when action is ``"raise"``.
+            May be present with ``"continue"`` for logging.
     """
 
     action: Literal["continue", "raise"]
@@ -147,21 +144,32 @@ class ToolCallResponse:
 ToolCallHandler = Callable[
     [ToolCallRequest, Any, Any], Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]
 ]
-"""Handler function that intercepts tool execution.
+"""Generator function that intercepts tool calls for custom handling.
 
-Use this to implement retry logic, error handling, or request modification. The handler
-receives a tool request, yields it for execution, receives the response, and can retry
-by yielding again or return the final response.
+The handler receives (request, state, runtime), yields request(s) for execution,
+receives response(s), and returns a final response. Multiple yields enable retry logic.
+
+Args:
+    request: ToolCallRequest to execute.
+    state: Full agent state (messages list or state dict).
+    runtime: LangGraph runtime object, or None outside runtime context.
+
+Yields:
+    ToolCallRequest to execute (may be modified from input).
+
+Receives:
+    ToolCallResponse from execution.
+
+Returns:
+    Final ToolCallResponse determining control flow.
 
 Example:
-    ```python
     def retry_handler(request, state, runtime):
         for attempt in range(3):
             response = yield request
             if response.exception is None:
-                return response  # Success
-        return response  # Failed after retries
-    ```
+                return response
+        return response
 """
 
 
@@ -451,7 +459,7 @@ class ToolNode(RunnableCallable):
         messages_key: str = "messages",
         on_tool_call: ToolCallHandler | None = None,
     ) -> None:
-        """Initialize the ToolNode with the provided tools and configuration.
+        """Initialize the ToolNode with tools and configuration.
 
         Args:
             tools: Sequence of tools to make available for execution.
@@ -459,8 +467,8 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            on_tool_call: Optional handler to intercept tool calls. Useful for implementing
-                retries, modifying requests, or custom error handling.
+            on_tool_call: Optional handler to intercept tool execution. Enables
+                retries, request modification, and custom error handling.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -576,9 +584,17 @@ class ToolNode(RunnableCallable):
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolCallResponse:
-        """Execute a tool call and handle errors per configuration.
+        """Execute tool call synchronously with configured error handling.
 
-        Returns error responses for handler delegation when on_tool_call is set.
+        Args:
+            request: Tool execution request.
+            input_type: Format of input ("list", "dict", or "tool_calls").
+            config: Runnable configuration.
+
+        Returns:
+            Response with action="continue" and result, or action="raise" with exception.
+            When on_tool_call is configured, unhandled errors return action="raise"
+            instead of raising immediately.
         """
         call = request.tool_call
         tool = request.tool
@@ -655,7 +671,18 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Run a single tool call synchronously."""
+        """Execute a single tool call synchronously.
+
+        Args:
+            call: Tool call dict with name, args, and id.
+            input_type: Format of input ("list", "dict", or "tool_calls").
+            config: Runnable configuration.
+            input: Full agent state (messages or state dict).
+            runtime: LangGraph runtime, or None if outside runtime context.
+
+        Returns:
+            ToolMessage with execution result or Command for control flow.
+        """
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
 
@@ -714,9 +741,17 @@ class ToolNode(RunnableCallable):
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolCallResponse:
-        """Execute a tool call asynchronously and handle errors per configuration.
+        """Execute tool call asynchronously with configured error handling.
 
-        Returns error responses for handler delegation when on_tool_call is set.
+        Args:
+            request: Tool execution request.
+            input_type: Format of input ("list", "dict", or "tool_calls").
+            config: Runnable configuration.
+
+        Returns:
+            Response with action="continue" and result, or action="raise" with exception.
+            When on_tool_call is configured, unhandled errors return action="raise"
+            instead of raising immediately.
         """
         call = request.tool_call
         tool = request.tool
@@ -793,7 +828,18 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Run a single tool call asynchronously."""
+        """Execute a single tool call asynchronously.
+
+        Args:
+            call: Tool call dict with name, args, and id.
+            input_type: Format of input ("list", "dict", or "tool_calls").
+            config: Runnable configuration.
+            input: Full agent state (messages or state dict).
+            runtime: LangGraph runtime, or None if outside runtime context.
+
+        Returns:
+            ToolMessage with execution result or Command for control flow.
+        """
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
 
