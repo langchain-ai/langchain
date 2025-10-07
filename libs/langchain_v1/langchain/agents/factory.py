@@ -44,9 +44,10 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest, ToolCallResponse
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Generator, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -192,6 +193,112 @@ def _handle_structured_output_error(
     return False, ""
 
 
+def _chain_tool_call_handlers(
+    handlers: list[ToolCallHandler],
+) -> ToolCallHandler | None:
+    """Compose multiple tool call handlers into a single middleware stack.
+
+    Args:
+        handlers: Handlers in middleware order (first = outermost layer).
+
+    Returns:
+        Single composed handler, or None if handlers is empty.
+
+    Example:
+        Auth middleware (outer) wraps rate limit (inner):
+
+        def auth(req, state, runtime):
+            resp = yield req
+            if "unauthorized" in str(resp.exception):
+                refresh_token()
+                resp = yield req  # Retry
+            return resp
+
+        def rate_limit(req, state, runtime):
+            for attempt in range(3):
+                resp = yield req
+                if "rate limit" not in str(resp.exception):
+                    return resp
+                time.sleep(2**attempt)
+            return resp
+
+        handler = _chain_tool_call_handlers([auth, rate_limit])
+        # Request: auth -> rate_limit -> tool
+        # Response: tool -> rate_limit -> auth
+    """
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def _extract_return_value(stop_iteration: StopIteration) -> ToolCallResponse:
+        """Extract ToolCallResponse from StopIteration, validating protocol compliance."""
+        if stop_iteration.value is None:
+            msg = "on_tool_call handler must explicitly return a ToolCallResponse"
+            raise ValueError(msg)
+        return stop_iteration.value
+
+    def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
+        """Compose two handlers where outer wraps inner."""
+
+        def composed(
+            request: ToolCallRequest, state: Any, runtime: Any
+        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+            outer_gen = outer(request, state, runtime)
+
+            # Initialize outer generator
+            try:
+                outer_request = next(outer_gen)
+            except StopIteration as e:
+                return _extract_return_value(e)
+
+            # Outer retry loop
+            while True:
+                inner_gen = inner(outer_request, state, runtime)
+
+                # Initialize inner generator
+                try:
+                    inner_request = next(inner_gen)
+                except StopIteration as e:
+                    # Inner returned immediately - send to outer
+                    inner_response = _extract_return_value(e)
+                    try:
+                        outer_request = outer_gen.send(inner_response)
+                    except StopIteration as e2:
+                        return _extract_return_value(e2)
+                    continue
+
+                # Inner retry loop
+                while True:
+                    # Yield to actual tool execution
+                    tool_response = yield inner_request
+
+                    # Send response to inner
+                    try:
+                        inner_request = inner_gen.send(tool_response)
+                    except StopIteration as e:
+                        # Inner is done - send final response to outer
+                        inner_response = _extract_return_value(e)
+                        break
+
+                # Send inner's final response to outer
+                try:
+                    outer_request = outer_gen.send(inner_response)
+                except StopIteration as e:
+                    # Outer is done
+                    return _extract_return_value(e)
+
+        return composed
+
+    # Chain all handlers: first -> second -> ... -> last
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
+
+
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -319,6 +426,17 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
+    # Collect middleware with on_tool_call hooks
+    middleware_w_on_tool_call = [
+        m for m in middleware if m.__class__.on_tool_call is not AgentMiddleware.on_tool_call
+    ]
+
+    # Chain all on_tool_call handlers into a single composed handler
+    on_tool_call_handler = None
+    if middleware_w_on_tool_call:
+        handlers = [m.on_tool_call for m in middleware_w_on_tool_call]
+        on_tool_call_handler = _chain_tool_call_handlers(handlers)
+
     # Setup tools
     tool_node: ToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
@@ -329,7 +447,11 @@ def create_agent(  # noqa: PLR0915
     available_tools = middleware_tools + regular_tools
 
     # Only create ToolNode if we have client-side tools
-    tool_node = ToolNode(tools=available_tools) if available_tools else None
+    tool_node = (
+        ToolNode(tools=available_tools, on_tool_call=on_tool_call_handler)
+        if available_tools
+        else None
+    )
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)

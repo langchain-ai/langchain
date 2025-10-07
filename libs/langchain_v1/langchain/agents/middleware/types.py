@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from inspect import iscoroutinefunction
 from typing import (
@@ -20,6 +20,8 @@ from langchain_core.runnables import run_in_executor
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable
+
+    from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
@@ -235,6 +237,49 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
+
+    def on_tool_call(
+        self,
+        request: ToolCallRequest,
+        state: Any,
+        runtime: Any,
+    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        """Intercept tool execution for retry logic, monitoring, or request modification.
+
+        Generator protocol enabling fine-grained control over tool execution lifecycle.
+        Multiple middleware can define this hook; they compose automatically with
+        outer middleware wrapping inner middleware (first defined = outermost).
+
+        Args:
+            request: Tool execution request with tool call and tool instance.
+            state: Full agent state (messages list or state dict).
+            runtime: LangGraph runtime object, or None outside runtime context.
+
+        Yields:
+            ToolCallRequest to execute (may be modified from input).
+
+        Receives:
+            ToolCallResponse from execution via .send().
+
+        Returns:
+            Final ToolCallResponse determining control flow (action="continue"
+            with result, or action="raise" with exception).
+
+        Example:
+            Retry on rate limit:
+
+            def on_tool_call(self, request, state, runtime):
+                for attempt in range(3):
+                    response = yield request
+                    if response.action == "continue":
+                        return response
+                    if "rate limit" in str(response.exception):
+                        time.sleep(2**attempt)
+                        continue
+                    return response
+        """
+        response = yield request
+        return response
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):

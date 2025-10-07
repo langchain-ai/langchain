@@ -702,24 +702,32 @@ class ToolNode(RunnableCallable):
 
             try:
                 request = next(gen)
-            except StopIteration:
-                msg = "on_tool_call handler must yield at least once before returning"
-                raise ValueError(msg)
-
-            while True:
-                tool_response = self._execute_tool_sync(request, input_type, config)
-                try:
-                    request = gen.send(tool_response)
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolCallResponse. "
-                            "Ensure your handler ends with 'return response' instead of "
-                            "implicit None."
-                        )
-                        raise ValueError(msg)
-                    tool_response = e.value
-                    break
+            except StopIteration as e:
+                # Handler returned immediately without yielding - extract return value
+                if e.value is None:
+                    msg = (
+                        "on_tool_call handler must explicitly return a ToolCallResponse. "
+                        "Ensure your handler ends with 'return response' instead of "
+                        "implicit None."
+                    )
+                    raise ValueError(msg)
+                tool_response = e.value
+            else:
+                # Handler yielded - continue with normal execution loop
+                while True:
+                    tool_response = self._execute_tool_sync(request, input_type, config)
+                    try:
+                        request = gen.send(tool_response)
+                    except StopIteration as e:
+                        if e.value is None:
+                            msg = (
+                                "on_tool_call handler must explicitly return a ToolCallResponse. "
+                                "Ensure your handler ends with 'return response' instead of "
+                                "implicit None."
+                            )
+                            raise ValueError(msg)
+                        tool_response = e.value
+                        break
 
         # Handle the final response
         if tool_response.action == "raise":
@@ -859,24 +867,32 @@ class ToolNode(RunnableCallable):
 
             try:
                 request = next(gen)
-            except StopIteration:
-                msg = "on_tool_call handler must yield at least once before returning"
-                raise ValueError(msg)
-
-            while True:
-                tool_response = await self._execute_tool_async(request, input_type, config)
-                try:
-                    request = gen.send(tool_response)
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolCallResponse. "
-                            "Ensure your handler ends with 'return response' instead of "
-                            "implicit None."
-                        )
-                        raise ValueError(msg)
-                    tool_response = e.value
-                    break
+            except StopIteration as e:
+                # Handler returned immediately without yielding - extract return value
+                if e.value is None:
+                    msg = (
+                        "on_tool_call handler must explicitly return a ToolCallResponse. "
+                        "Ensure your handler ends with 'return response' instead of "
+                        "implicit None."
+                    )
+                    raise ValueError(msg)
+                tool_response = e.value
+            else:
+                # Handler yielded - continue with normal execution loop
+                while True:
+                    tool_response = await self._execute_tool_async(request, input_type, config)
+                    try:
+                        request = gen.send(tool_response)
+                    except StopIteration as e:
+                        if e.value is None:
+                            msg = (
+                                "on_tool_call handler must explicitly return a ToolCallResponse. "
+                                "Ensure your handler ends with 'return response' instead of "
+                                "implicit None."
+                            )
+                            raise ValueError(msg)
+                        tool_response = e.value
+                        break
 
         # Handle the final response
         if tool_response.action == "raise":
