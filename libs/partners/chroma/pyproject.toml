@@ -18,9 +18,13 @@ description = "An integration package connecting Chroma and LangChain."
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-chroma%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/chroma"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-chroma%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_chroma/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [

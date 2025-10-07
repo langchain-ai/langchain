@@ -2,6 +2,8 @@
 
 This package contains the LangChain integration with Microsoft Prompty.
 
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/microsoft) for more details.
+
 ## Installation
 
 ```bash

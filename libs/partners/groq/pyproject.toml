@@ -16,9 +16,13 @@ description = "An integration package connecting Groq and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-groq%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/groq"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-groq%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_groq/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [

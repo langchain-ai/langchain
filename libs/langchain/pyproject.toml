@@ -41,9 +41,12 @@ xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-classic%3D%3D1%22"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
