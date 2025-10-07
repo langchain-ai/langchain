@@ -97,7 +97,7 @@ def _infer_retriable_types(
     return (Exception,)
 
 
-class RetryMiddleware(AgentMiddleware):
+class ToolRetryMiddleware(AgentMiddleware):
     """Retry failed tool calls with constant delay.
 
     This middleware catches tool execution errors and retries them up to a maximum
@@ -108,9 +108,9 @@ class RetryMiddleware(AgentMiddleware):
         Retry only network errors:
 
         ```python
-        from langchain.agents.middleware import RetryMiddleware
+        from langchain.agents.middleware import ToolRetryMiddleware
 
-        middleware = RetryMiddleware(
+        middleware = ToolRetryMiddleware(
             max_retries=3,
             delay=2.0,
             retry_on=(TimeoutError, ConnectionError),
@@ -139,7 +139,7 @@ class RetryMiddleware(AgentMiddleware):
             return False
 
 
-        middleware = RetryMiddleware(
+        middleware = ToolRetryMiddleware(
             max_retries=3,
             retry_on=should_retry,
         )
@@ -149,7 +149,7 @@ class RetryMiddleware(AgentMiddleware):
 
         ```python
         from langchain.agents.middleware import (
-            RetryMiddleware,
+            ToolRetryMiddleware,
             ErrorToMessageMiddleware,
         )
 
@@ -158,7 +158,7 @@ class RetryMiddleware(AgentMiddleware):
             tools=[my_tool],
             middleware=[
                 # Outer: retry network errors
-                RetryMiddleware(
+                ToolRetryMiddleware(
                     max_retries=3,
                     delay=2.0,
                     retry_on=(TimeoutError, ConnectionError),
@@ -231,7 +231,7 @@ class RetryMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     def on_tool_call(
-        self, request: ToolCallRequest
+        self, request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Retry tool execution on failures."""
         for attempt in range(1, self.max_retries + 2):  # +1 for initial, +1 for inclusive
@@ -287,7 +287,7 @@ class RetryMiddleware(AgentMiddleware):
                 continue
 
         # Should never reach here
-        msg = f"Unexpected control flow in RetryMiddleware for tool {request.tool_call['name']}"
+        msg = f"Unexpected control flow in ToolRetryMiddleware for tool {request.tool_call['name']}"
         raise RuntimeError(msg)
 
 
@@ -321,7 +321,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
 
         ```python
         from langchain.agents.middleware import (
-            RetryMiddleware,
+            ToolRetryMiddleware,
             ErrorToMessageMiddleware,
         )
 
@@ -330,7 +330,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
             tools=[my_tool],
             middleware=[
                 # Outer: retry all errors
-                RetryMiddleware(max_retries=3),
+                ToolRetryMiddleware(max_retries=3),
                 # Inner: convert validation errors to messages
                 ErrorToMessageMiddleware(
                     exception_types=(ValidationError,),
@@ -362,7 +362,7 @@ class ErrorToMessageMiddleware(AgentMiddleware):
         self.message_template = message_template
 
     def on_tool_call(
-        self, request: ToolCallRequest
+        self, request: ToolCallRequest, state, runtime
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
         """Convert matching errors to ToolMessages."""
         response = yield request

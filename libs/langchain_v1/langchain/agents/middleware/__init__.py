@@ -9,7 +9,7 @@ from .summarization import SummarizationMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
 from .tool_error_handling import (
     ErrorToMessageMiddleware,
-    RetryMiddleware,
+    ToolRetryMiddleware,
 )
 from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
@@ -36,7 +36,7 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "PlanningMiddleware",
-    "RetryMiddleware",
+    "ToolRetryMiddleware",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
     "after_model",
