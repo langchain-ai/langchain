@@ -22,7 +22,7 @@ description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.optional-dependencies]
-# community = ["langchain-community"]
+#community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
 #azure-ai = ["langchain-azure-ai"]
