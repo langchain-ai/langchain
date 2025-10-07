@@ -76,6 +76,7 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import get_runtime
 from langgraph.types import Command, Send
 from pydantic import BaseModel, ValidationError
 
@@ -557,7 +558,10 @@ class ToolNode(RunnableCallable):
         return combined_outputs
 
     def _execute_tool_sync(
-        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"], config: RunnableConfig
+        self,
+        request: ToolCallRequest,
+        input_type: Literal["list", "dict", "tool_calls"],
+        config: RunnableConfig,
     ) -> ToolCallResponse:
         """Execute tool and return response.
 
@@ -653,8 +657,11 @@ class ToolNode(RunnableCallable):
             tool_response = self._execute_tool_sync(tool_request, input_type, config)
         else:
             # Generator protocol: start generator, send responses, receive requests
-            from langgraph.runtime import get_current_runtime
-            runtime = get_current_runtime()
+            try:
+                runtime = get_runtime()
+            except RuntimeError:
+                # Called outside of langgraph runtime (e.g., from unit tests)
+                runtime = None
 
             # Get state from config
             state = config.get("configurable", {}).get("__pregel_state")
@@ -696,7 +703,10 @@ class ToolNode(RunnableCallable):
         return result
 
     async def _execute_tool_async(
-        self, request: ToolCallRequest, input_type: Literal["list", "dict", "tool_calls"], config: RunnableConfig
+        self,
+        request: ToolCallRequest,
+        input_type: Literal["list", "dict", "tool_calls"],
+        config: RunnableConfig,
     ) -> ToolCallResponse:
         """Execute tool asynchronously and return response.
 
@@ -792,8 +802,11 @@ class ToolNode(RunnableCallable):
             tool_response = await self._execute_tool_async(tool_request, input_type, config)
         else:
             # Generator protocol: handler is sync generator, tool execution is async
-            from langgraph.runtime import get_current_runtime
-            runtime = get_current_runtime()
+            try:
+                runtime = get_runtime()
+            except RuntimeError:
+                # Called outside langgraph runtime context
+                runtime = None
 
             # Get state from config
             state = config.get("configurable", {}).get("__pregel_state")
