@@ -44,6 +44,7 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolCallResponse
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -54,7 +55,7 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest, ToolCallResponse
+    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -234,10 +235,13 @@ def _chain_tool_call_handlers(
         return handlers[0]
 
     def _extract_return_value(stop_iteration: StopIteration) -> ToolCallResponse:
-        """Extract return value from StopIteration, raising if None."""
+        """Extract return value from StopIteration, auto-wrap ToolMessage, raise if None."""
         if stop_iteration.value is None:
-            msg = "on_tool_call handler must explicitly return a ToolCallResponse"
+            msg = "on_tool_call handler must explicitly return a ToolCallResponse or ToolMessage"
             raise ValueError(msg)
+        # Auto-wrap ToolMessage in ToolCallResponse
+        if isinstance(stop_iteration.value, ToolMessage):
+            return ToolCallResponse(action="return", result=stop_iteration.value)
         return stop_iteration.value
 
     def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
@@ -245,7 +249,9 @@ def _chain_tool_call_handlers(
 
         def composed(
             request: ToolCallRequest, state: Any, runtime: Any
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[
+            ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage
+        ]:
             outer_gen = outer(request, state, runtime)
 
             # Initialize outer generator
@@ -256,6 +262,15 @@ def _chain_tool_call_handlers(
 
             # Outer retry loop
             while True:
+                # If outer yielded a ToolMessage, bypass inner handler and yield directly
+                if isinstance(outer_request, ToolMessage):
+                    tool_response = yield outer_request
+                    try:
+                        outer_request = outer_gen.send(tool_response)
+                    except StopIteration as e:
+                        return _extract_return_value(e)
+                    continue
+
                 inner_gen = inner(outer_request, state, runtime)
 
                 # Initialize inner generator

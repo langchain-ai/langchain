@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AnyMessage  # noqa: TC002
+from langchain_core.messages import AnyMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
@@ -243,11 +243,12 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ToolCallRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
         """Intercept tool execution for retries, monitoring, or request modification.
 
         Generator protocol for fine-grained control over tool execution. Multiple
         middleware with on_tool_call compose automatically: first defined = outermost.
+        When a tool execution fails, the exception is thrown into the generator.
 
         Args:
             request: Tool execution request with tool call dict and BaseTool instance.
@@ -255,27 +256,61 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             runtime: LangGraph runtime.
 
         Yields:
-            ToolCallRequest to execute (may be modified from input).
+            ToolCallRequest to execute (may be modified from input), or ToolMessage
+            to short-circuit tool execution with a cached/predefined result.
 
         Receives:
-            ToolCallResponse via .send() after execution.
+            ToolCallResponse via .send() after successful execution.
+
+        Raises:
+            Exception thrown into generator when tool execution fails.
 
         Returns:
             ToolCallResponse with action="return" and result, or action="raise"
-            and exception.
+            and exception. Can also return ToolMessage directly, which will be
+            auto-wrapped in ToolCallResponse(action="return", result=message).
 
         Example:
-            Retry on rate limit errors:
+            Retry on rate limit errors (exception-based):
 
             def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
+                    try:
+                        response = yield request
+                        return response  # Success
+                    except Exception as e:
+                        if "rate limit" in str(e):
+                            time.sleep(2**attempt)
+                            continue
+                        raise  # Propagate non-rate-limit errors
+
+            Error handling with fallback:
+
+            def on_tool_call(self, request, state, runtime):
+                try:
                     response = yield request
-                    if response.action == "return":
-                        return response
-                    if "rate limit" in str(response.exception):
-                        time.sleep(2**attempt)
-                        continue
                     return response
+                except Exception as e:
+                    return ToolMessage(
+                        content=f"Error: {e}",
+                        tool_call_id=request.tool_call["id"],
+                        name=request.tool_call["name"],
+                        status="error",
+                    )
+
+            Short-circuit with cached result (return directly):
+
+            def on_tool_call(self, request, state, runtime):
+                if cached := check_cache(request.tool_call):
+                    if False:
+                        yield  # Makes this a generator
+                    return ToolMessage(
+                        content=cached,
+                        tool_call_id=request.tool_call["id"],
+                        name=request.tool_call["name"],
+                    )
+                response = yield request
+                return response
         """
         response = yield request
         return response

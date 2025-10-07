@@ -143,26 +143,55 @@ class ToolCallResponse:
 
 
 ToolCallHandler = Callable[
-    [ToolCallRequest, Any, Any], Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]
+    [ToolCallRequest, Any, Any],
+    Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage],
 ]
 """Generator that intercepts tool execution.
 
-Handler receives (request, state, runtime), yields request(s) for execution,
-receives response(s) via .send(), and returns final response. Multiple yields
-enable retry loops.
+Handler receives (request, state, runtime), yields request(s) or message(s) for execution,
+receives response(s) via .send(), and returns final response. When a tool execution fails,
+the exception is thrown into the generator, allowing Pythonic exception handling.
 
 Signature:
-    (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest,
-    receives ToolCallResponse via .send(), and returns ToolCallResponse.
+    (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest or ToolMessage,
+    receives ToolCallResponse via .send(), and returns ToolCallResponse or ToolMessage.
 
 Example:
-    Retry on error up to 3 times:
+    Retry on error up to 3 times (exception-based):
 
     def retry_handler(request, state, runtime):
         for attempt in range(3):
+            try:
+                response = yield request
+                return response  # Success
+            except Exception as e:
+                if attempt == 2:
+                    raise  # Give up, propagate exception
+                # Otherwise retry
+
+    Error handling with fallback:
+
+    def error_handler(request, state, runtime):
+        try:
             response = yield request
-            if response.exception is None:
-                return response
+            return response
+        except Exception as e:
+            # Return error message instead of propagating
+            return ToolMessage(
+                content=f"Error: {e}",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
+                status="error",
+            )
+
+    Short-circuit with cached result (return directly):
+
+    def cache_handler(request, state, runtime):
+        if cached := get_from_cache(request):
+            if False:
+                yield  # Makes this a generator
+            return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+        response = yield request
         return response
 """
 
@@ -663,7 +692,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    def _run_one(
+    def _run_one(  # noqa: PLR0912, PLR0915
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -701,33 +730,89 @@ class ToolNode(RunnableCallable):
             gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
-                request = next(gen)
+                yielded = next(gen)
             except StopIteration as e:
                 # Handler returned immediately without yielding - extract return value
                 if e.value is None:
                     msg = (
-                        "on_tool_call handler must explicitly return a ToolCallResponse. "
-                        "Ensure your handler ends with 'return response' instead of "
-                        "implicit None."
+                        "on_tool_call handler must explicitly return a ToolCallResponse "
+                        "or ToolMessage. Ensure your handler ends with 'return response' "
+                        "instead of implicit None."
                     )
                     raise ValueError(msg)
-                tool_response = e.value
+                # Auto-wrap ToolMessage in ToolCallResponse
+                if isinstance(e.value, ToolMessage):
+                    tool_response = ToolCallResponse(action="return", result=e.value)
+                else:
+                    tool_response = e.value
             else:
-                # Handler yielded - continue with normal execution loop
+                # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
                 while True:
-                    tool_response = self._execute_tool_sync(request, input_type, config)
-                    try:
-                        request = gen.send(tool_response)
-                    except StopIteration as e:
-                        if e.value is None:
-                            msg = (
-                                "on_tool_call handler must explicitly return a ToolCallResponse. "
-                                "Ensure your handler ends with 'return response' instead of "
-                                "implicit None."
-                            )
-                            raise ValueError(msg)
-                        tool_response = e.value
-                        break
+                    if isinstance(yielded, ToolMessage):
+                        # Short-circuit: handler provided a ToolMessage directly
+                        # Skip tool execution and use this message as the result
+                        tool_response = ToolCallResponse(action="return", result=yielded)
+                        # Send response back to generator to get final return value
+                        try:
+                            yielded = gen.send(tool_response)
+                            # If generator yields again, continue the loop
+                        except StopIteration as e:
+                            if e.value is None:
+                                msg = (
+                                    "on_tool_call handler must explicitly return a "
+                                    "ToolCallResponse or ToolMessage. Ensure your handler "
+                                    "ends with 'return response' instead of implicit None."
+                                )
+                                raise ValueError(msg)
+                            # Auto-wrap ToolMessage in ToolCallResponse
+                            if isinstance(e.value, ToolMessage):
+                                tool_response = ToolCallResponse(action="return", result=e.value)
+                            else:
+                                tool_response = e.value
+                            break
+                    else:
+                        # Normal flow: execute the tool with the request
+                        tool_response = self._execute_tool_sync(yielded, input_type, config)
+
+                        # If tool execution failed, throw exception into generator
+                        if tool_response.action == "raise":
+                            try:
+                                yielded = gen.throw(tool_response.exception)
+                                # Generator caught exception and yielded again (retry)
+                            except StopIteration as e:
+                                # Generator caught exception and returned
+                                if e.value is None:
+                                    msg = (
+                                        "on_tool_call handler must explicitly return a "
+                                        "ToolCallResponse or ToolMessage. Ensure your handler "
+                                        "ends with 'return response' instead of implicit None."
+                                    )
+                                    raise ValueError(msg)
+                                # Auto-wrap ToolMessage in ToolCallResponse
+                                if isinstance(e.value, ToolMessage):
+                                    tool_response = ToolCallResponse(action="return", result=e.value)
+                                else:
+                                    tool_response = e.value
+                                break
+                            # If generator doesn't catch, exception propagates naturally
+                        else:
+                            # Tool succeeded, send response normally
+                            try:
+                                yielded = gen.send(tool_response)
+                            except StopIteration as e:
+                                if e.value is None:
+                                    msg = (
+                                        "on_tool_call handler must explicitly return a "
+                                        "ToolCallResponse or ToolMessage. Ensure your handler "
+                                        "ends with 'return response' instead of implicit None."
+                                    )
+                                    raise ValueError(msg)
+                                # Auto-wrap ToolMessage in ToolCallResponse
+                                if isinstance(e.value, ToolMessage):
+                                    tool_response = ToolCallResponse(action="return", result=e.value)
+                                else:
+                                    tool_response = e.value
+                                break
 
         # Handle the final response
         if tool_response.action == "raise":
@@ -830,7 +915,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    async def _arun_one(
+    async def _arun_one(  # noqa: PLR0912, PLR0915
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -868,33 +953,89 @@ class ToolNode(RunnableCallable):
             gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
-                request = next(gen)
+                yielded = next(gen)
             except StopIteration as e:
                 # Handler returned immediately without yielding - extract return value
                 if e.value is None:
                     msg = (
-                        "on_tool_call handler must explicitly return a ToolCallResponse. "
-                        "Ensure your handler ends with 'return response' instead of "
-                        "implicit None."
+                        "on_tool_call handler must explicitly return a ToolCallResponse "
+                        "or ToolMessage. Ensure your handler ends with 'return response' "
+                        "instead of implicit None."
                     )
                     raise ValueError(msg)
-                tool_response = e.value
+                # Auto-wrap ToolMessage in ToolCallResponse
+                if isinstance(e.value, ToolMessage):
+                    tool_response = ToolCallResponse(action="return", result=e.value)
+                else:
+                    tool_response = e.value
             else:
-                # Handler yielded - continue with normal execution loop
+                # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
                 while True:
-                    tool_response = await self._execute_tool_async(request, input_type, config)
-                    try:
-                        request = gen.send(tool_response)
-                    except StopIteration as e:
-                        if e.value is None:
-                            msg = (
-                                "on_tool_call handler must explicitly return a ToolCallResponse. "
-                                "Ensure your handler ends with 'return response' instead of "
-                                "implicit None."
-                            )
-                            raise ValueError(msg)
-                        tool_response = e.value
-                        break
+                    if isinstance(yielded, ToolMessage):
+                        # Short-circuit: handler provided a ToolMessage directly
+                        # Skip tool execution and use this message as the result
+                        tool_response = ToolCallResponse(action="return", result=yielded)
+                        # Send response back to generator to get final return value
+                        try:
+                            yielded = gen.send(tool_response)
+                            # If generator yields again, continue the loop
+                        except StopIteration as e:
+                            if e.value is None:
+                                msg = (
+                                    "on_tool_call handler must explicitly return a "
+                                    "ToolCallResponse or ToolMessage. Ensure your handler "
+                                    "ends with 'return response' instead of implicit None."
+                                )
+                                raise ValueError(msg)
+                            # Auto-wrap ToolMessage in ToolCallResponse
+                            if isinstance(e.value, ToolMessage):
+                                tool_response = ToolCallResponse(action="return", result=e.value)
+                            else:
+                                tool_response = e.value
+                            break
+                    else:
+                        # Normal flow: execute the tool with the request
+                        tool_response = await self._execute_tool_async(yielded, input_type, config)
+
+                        # If tool execution failed, throw exception into generator
+                        if tool_response.action == "raise":
+                            try:
+                                yielded = gen.throw(tool_response.exception)
+                                # Generator caught exception and yielded again (retry)
+                            except StopIteration as e:
+                                # Generator caught exception and returned
+                                if e.value is None:
+                                    msg = (
+                                        "on_tool_call handler must explicitly return a "
+                                        "ToolCallResponse or ToolMessage. Ensure your handler "
+                                        "ends with 'return response' instead of implicit None."
+                                    )
+                                    raise ValueError(msg)
+                                # Auto-wrap ToolMessage in ToolCallResponse
+                                if isinstance(e.value, ToolMessage):
+                                    tool_response = ToolCallResponse(action="return", result=e.value)
+                                else:
+                                    tool_response = e.value
+                                break
+                            # If generator doesn't catch, exception propagates naturally
+                        else:
+                            # Tool succeeded, send response normally
+                            try:
+                                yielded = gen.send(tool_response)
+                            except StopIteration as e:
+                                if e.value is None:
+                                    msg = (
+                                        "on_tool_call handler must explicitly return a "
+                                        "ToolCallResponse or ToolMessage. Ensure your handler "
+                                        "ends with 'return response' instead of implicit None."
+                                    )
+                                    raise ValueError(msg)
+                                # Auto-wrap ToolMessage in ToolCallResponse
+                                if isinstance(e.value, ToolMessage):
+                                    tool_response = ToolCallResponse(action="return", result=e.value)
+                                else:
+                                    tool_response = e.value
+                                break
 
         # Handle the final response
         if tool_response.action == "raise":
