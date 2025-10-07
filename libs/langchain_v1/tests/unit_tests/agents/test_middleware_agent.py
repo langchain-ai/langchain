@@ -2188,6 +2188,7 @@ def test_on_model_call_hook() -> None:
                 self.retry_count += 1
                 result = yield request
                 # Generator ends
+
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
 
@@ -2267,6 +2268,7 @@ def test_on_model_call_no_retry() -> None:
             response = yield request
             # Don't retry, just return the error response
             # Generator ends
+
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
 
     with pytest.raises(ValueError, match="Model error"):
@@ -2445,6 +2447,7 @@ async def test_on_model_call_async() -> None:
                 self.retry_count += 1
                 result = yield request
                 # Generator ends
+
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
 

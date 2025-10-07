@@ -23,6 +23,7 @@ class TestOnModelCallDecorator:
         def passthrough_middleware(request, state, runtime):
             response = yield request
             # Generator ends
+
         # Should return an AgentMiddleware instance
         assert isinstance(passthrough_middleware, AgentMiddleware)
 
@@ -41,6 +42,7 @@ class TestOnModelCallDecorator:
         def my_middleware(request, state, runtime):
             response = yield request
             # Generator ends
+
         assert isinstance(my_middleware, AgentMiddleware)
         assert my_middleware.__class__.__name__ == "CustomMiddleware"
 
@@ -64,6 +66,7 @@ class TestOnModelCallDecorator:
                 # Retry once
                 result = yield request
                 # Generator ends
+
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         agent = create_agent(model=model, middleware=[retry_once])
 
@@ -80,6 +83,7 @@ class TestOnModelCallDecorator:
             result = yield request
             modified = AIMessage(content=result.content.upper())
             yield modified
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[uppercase_responses])
 
@@ -101,6 +105,7 @@ class TestOnModelCallDecorator:
             except Exception:
                 fallback = AIMessage(content="Fallback response")
                 yield fallback
+
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[error_to_fallback])
 
@@ -117,6 +122,7 @@ class TestOnModelCallDecorator:
             state_values.append(state.get("messages"))
             response = yield request
             # Generator ends
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[log_state])
 
@@ -137,12 +143,14 @@ class TestOnModelCallDecorator:
             response = yield request
             execution_order.append("outer-after")
             # Generator ends
+
         @on_model_call
         def inner_middleware(request, state, runtime):
             execution_order.append("inner-before")
             response = yield request
             execution_order.append("inner-after")
             # Generator ends
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[outer_middleware, inner_middleware])
 
@@ -167,6 +175,7 @@ class TestOnModelCallDecorator:
         def middleware_with_schema(request, state, runtime):
             response = yield request
             # Generator ends
+
         assert isinstance(middleware_with_schema, AgentMiddleware)
         # Custom state schema should be set
         assert middleware_with_schema.state_schema == CustomState
@@ -184,6 +193,7 @@ class TestOnModelCallDecorator:
         def middleware_with_tools(request, state, runtime):
             response = yield request
             # Generator ends
+
         assert isinstance(middleware_with_tools, AgentMiddleware)
         assert len(middleware_with_tools.tools) == 1
         assert middleware_with_tools.tools[0].name == "test_tool"
@@ -196,11 +206,13 @@ class TestOnModelCallDecorator:
         def middleware_no_parens(request, state, runtime):
             response = yield request
             # Generator ends
+
         # With parentheses
         @on_model_call()
         def middleware_with_parens(request, state, runtime):
             response = yield request
             # Generator ends
+
         assert isinstance(middleware_no_parens, AgentMiddleware)
         assert isinstance(middleware_with_parens, AgentMiddleware)
 
@@ -211,6 +223,7 @@ class TestOnModelCallDecorator:
         def my_custom_middleware(request, state, runtime):
             response = yield request
             # Generator ends
+
         assert my_custom_middleware.__class__.__name__ == "my_custom_middleware"
 
     def test_decorator_mixed_with_class_middleware(self) -> None:
@@ -223,12 +236,14 @@ class TestOnModelCallDecorator:
             response = yield request
             execution_order.append("decorated-after")
             # Generator ends
+
         class ClassMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 execution_order.append("class-before")
                 response = yield request
                 execution_order.append("class-after")
                 # Generator ends
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(
             model=model,
@@ -290,6 +305,7 @@ class TestOnModelCallDecorator:
             response = yield request
             call_log.append("after")
             # Generator ends
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Async response")]))
         agent = create_agent(model=model, middleware=[logging_middleware])
 
@@ -316,6 +332,7 @@ class TestOnModelCallDecorator:
             modified_prompts.append(modified_request.system_prompt)
             response = yield modified_request
             # Generator ends
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[add_system_prompt])
 
@@ -336,6 +353,7 @@ class TestOnModelCallDecorator:
             content = f"[START] {content} [END]"
             modified = AIMessage(content=content)
             yield modified
+
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello")]))
         agent = create_agent(model=model, middleware=[multi_transform])
 
