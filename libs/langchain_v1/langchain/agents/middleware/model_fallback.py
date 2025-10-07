@@ -86,9 +86,6 @@ class ModelFallbackMiddleware(AgentMiddleware):
         Receives:
             AIMessage via .send() on success, or exception via .throw() on error.
 
-        Returns:
-            Final AIMessage from first successful model.
-
         Raises:
             Exception: If all models fail, re-raises last exception.
         """
@@ -96,8 +93,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         # Try primary model first
         try:
-            result = yield request
-            return result  # noqa: TRY300
+            yield request
+            return  # Success - generator ends, consumer uses last result
         except Exception as e:  # noqa: BLE001
             last_exception = e
             # Try fallbacks
@@ -106,8 +103,8 @@ class ModelFallbackMiddleware(AgentMiddleware):
         for fallback_model in self.models:
             request.model = fallback_model
             try:
-                result = yield request
-                return result  # noqa: TRY300
+                yield request
+                return  # Success - generator ends, consumer uses last result
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue  # Try next fallback

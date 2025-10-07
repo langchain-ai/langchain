@@ -228,7 +228,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         1. Yield ModelRequest to execute the model.
         2. Receive AIMessage via .send() on success, or exception via .throw() on error.
         3. Optionally yield again to retry.
-        4. Return final AIMessage.
+        4. Generator ends naturally - consumer uses last successful AIMessage.
 
         Middleware can implement retry logic, error handling, response rewriting,
         and request modification using standard try/except. Multiple middleware
@@ -246,21 +246,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             AIMessage via .send() on success.
             Exception via .throw() on error.
 
-        Returns:
-            Final AIMessage to use.
-
         Examples:
             Retry on error:
             ```python
             def on_model_call(self, request, state, runtime):
                 for attempt in range(3):
                     try:
-                        result = yield request
-                        return result
+                        yield request
+                        break  # Success
                     except Exception:
                         if attempt == 2:
                             raise
-                return result
             ```
 
             Rewrite response:
@@ -268,22 +264,20 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=f"[{result.content}]")
-                return modified
+                yield modified
             ```
 
             Error to fallback:
             ```python
             def on_model_call(self, request, state, runtime):
                 try:
-                    result = yield request
-                    return result
+                    yield request
                 except Exception:
                     fallback = AIMessage(content="Service unavailable")
-                    return fallback
+                    yield fallback
             ```
         """
-        result = yield request
-        return result
+        yield request
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
@@ -1254,12 +1248,11 @@ def on_model_call(
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    result = yield request
-                    return result
+                    yield request
+                    break  # Success
                 except Exception:
                     if attempt == max_retries - 1:
                         raise
-            return result
         ```
 
         Model fallback:
@@ -1270,15 +1263,14 @@ def on_model_call(
         ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             # Try primary model
             try:
-                result = yield request
-                return result
+                yield request
+                return  # Success
             except Exception:
                 pass
 
             # Try fallback model
             request.model = fallback_model_instance
-            result = yield request
-            return result
+            yield request
         ```
 
         Rewrite response content:
@@ -1289,7 +1281,7 @@ def on_model_call(
         ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             result = yield request
             modified = AIMessage(content=result.content.upper())
-            return modified
+            yield modified
         ```
     """
 

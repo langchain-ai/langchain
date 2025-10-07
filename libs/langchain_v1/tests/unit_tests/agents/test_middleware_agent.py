@@ -2182,13 +2182,12 @@ def test_on_model_call_hook() -> None:
         def on_model_call(self, request, state, runtime):
             try:
                 result = yield request
-                return result
+                # Generator ends
             except Exception:
                 # Retry on error
                 self.retry_count += 1
                 result = yield request
-                return result
-
+                # Generator ends
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
 
@@ -2228,7 +2227,7 @@ def test_on_model_call_retry_count() -> None:
                 self.attempts.append(attempt + 1)
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception as e:
                     last_exception = e
                     if attempt < max_retries - 1:
@@ -2267,8 +2266,7 @@ def test_on_model_call_no_retry() -> None:
         def on_model_call(self, request, state, runtime):
             response = yield request
             # Don't retry, just return the error response
-            return response
-
+            # Generator ends
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
 
     with pytest.raises(ValueError, match="Model error"):
@@ -2389,7 +2387,7 @@ def test_on_model_call_max_attempts() -> None:
                 self.attempt_count += 1
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception as e:
                     last_exception = e
                     # Continue to retry
@@ -2441,13 +2439,12 @@ async def test_on_model_call_async() -> None:
         def on_model_call(self, request, state, runtime):
             try:
                 result = yield request
-                return result
+                # Generator ends
             except Exception:
                 # Retry on error
                 self.retry_count += 1
                 result = yield request
-                return result
-
+                # Generator ends
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
 
@@ -2485,7 +2482,7 @@ def test_on_model_call_rewrite_response() -> None:
 
             # Rewrite the response
             rewritten_message = AIMessage(content=f"REWRITTEN: {result.content}")
-            return rewritten_message
+            yield rewritten_message
 
     model = SimpleModel()
     middleware = ResponseRewriteMiddleware()
@@ -2517,13 +2514,13 @@ def test_on_model_call_convert_error_to_response() -> None:
         def on_model_call(self, request, state, runtime):
             try:
                 result = yield request
-                return result
+                # Generator ends
             except Exception as e:
                 # Convert error to success response
                 fallback_message = AIMessage(
                     content=f"Error occurred: {e}. Using fallback response."
                 )
-                return fallback_message
+                yield fallback_message
 
     model = AlwaysFailingModel()
     middleware = ErrorToResponseMiddleware()

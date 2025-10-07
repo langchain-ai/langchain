@@ -21,8 +21,7 @@ class TestBasicOnModelCall:
         class PassthroughMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 response = yield request
-                return response
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
         agent = create_agent(model=model, middleware=[PassthroughMiddleware()])
 
@@ -40,8 +39,7 @@ class TestBasicOnModelCall:
                 call_log.append("before")
                 result = yield request
                 call_log.append("after")
-                return result
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[LoggingMiddleware()])
 
@@ -61,8 +59,7 @@ class TestBasicOnModelCall:
             def on_model_call(self, request, state, runtime):
                 self.call_count += 1
                 response = yield request
-                return response
-
+                # Generator ends
         counter = CountingMiddleware()
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Reply")]))
         agent = create_agent(model=model, middleware=[counter])
@@ -94,12 +91,11 @@ class TestRetryMiddleware:
             def on_model_call(self, request, state, runtime):
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception:
                     self.retry_count += 1
                     result = yield request
-                    return result
-
+                    # Generator ends
         retry_middleware = RetryOnceMiddleware()
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         agent = create_agent(model=model, middleware=[retry_middleware])
@@ -128,7 +124,7 @@ class TestRetryMiddleware:
                     self.attempts.append(attempt + 1)
                     try:
                         result = yield request
-                        return result
+                        # Generator ends
                     except Exception as e:
                         last_exception = e
                         continue
@@ -156,8 +152,7 @@ class TestResponseRewriting:
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=result.content.upper())
-                return modified
-
+                yield modified
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[UppercaseMiddleware()])
 
@@ -176,8 +171,7 @@ class TestResponseRewriting:
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=f"{self.prefix}{result.content}")
-                return modified
-
+                yield modified
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[PrefixMiddleware(prefix="[BOT]: ")])
 
@@ -200,11 +194,10 @@ class TestErrorHandling:
             def on_model_call(self, request, state, runtime):
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception:
                     fallback = AIMessage(content="Error handled gracefully")
-                    return fallback
-
+                yield fallback
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[ErrorToSuccessMiddleware()])
 
@@ -224,11 +217,10 @@ class TestErrorHandling:
             def on_model_call(self, request, state, runtime):
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except ConnectionError:
                     fallback = AIMessage(content="Network issue, try again later")
-                    return fallback
-
+                yield fallback
         model = SpecificErrorModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[SelectiveErrorMiddleware()])
 
@@ -249,15 +241,13 @@ class TestMiddlewareComposition:
                 execution_order.append("outer-before")
                 response = yield request
                 execution_order.append("outer-after")
-                return response
-
+                # Generator ends
         class InnerMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 execution_order.append("inner-before")
                 response = yield request
                 execution_order.append("inner-after")
-                return response
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[OuterMiddleware(), InnerMiddleware()])
 
@@ -288,21 +278,19 @@ class TestMiddlewareComposition:
                 log.append("logging-before")
                 result = yield request
                 log.append("logging-after")
-                return result
-
+                # Generator ends
         class RetryMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 log.append("retry-before")
                 try:
                     result = yield request
                     log.append("retry-after")
-                    return result
+                    # Generator ends
                 except Exception:
                     log.append("retry-retrying")
                     result = yield request
                     log.append("retry-after")
-                    return result
-
+                    # Generator ends
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         # Logging is outer, Retry is inner
         agent = create_agent(model=model, middleware=[LoggingMiddleware(), RetryMiddleware()])
@@ -326,14 +314,12 @@ class TestMiddlewareComposition:
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=f"[PREFIX] {result.content}")
-                return modified
-
+                yield modified
         class SuffixMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=f"{result.content} [SUFFIX]")
-                return modified
-
+                yield modified
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Middle")]))
         # Prefix is outer, Suffix is inner
         # Inner (Suffix) runs first, then Outer (Prefix)
@@ -359,17 +345,15 @@ class TestMiddlewareComposition:
             def on_model_call(self, request, state, runtime):
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception:
                     result = yield request
-                    return result
-
+                    # Generator ends
         class UppercaseMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 result = yield request
                 modified = AIMessage(content=result.content.upper())
-                return modified
-
+                yield modified
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="success")]))
         # Retry outer, Uppercase inner
         agent = create_agent(model=model, middleware=[RetryMiddleware(), UppercaseMiddleware()])
@@ -388,22 +372,19 @@ class TestMiddlewareComposition:
                 execution_order.append("first-before")
                 response = yield request
                 execution_order.append("first-after")
-                return response
-
+                # Generator ends
         class SecondMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 execution_order.append("second-before")
                 response = yield request
                 execution_order.append("second-after")
-                return response
-
+                # Generator ends
         class ThirdMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 execution_order.append("third-before")
                 response = yield request
                 execution_order.append("third-after")
-                return response
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(
             model=model,
@@ -435,8 +416,7 @@ class TestAsyncOnModelCall:
                 log.append("before")
                 response = yield request
                 log.append("after")
-                return response
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Async response")]))
         agent = create_agent(model=model, middleware=[LoggingMiddleware()])
 
@@ -460,11 +440,10 @@ class TestAsyncOnModelCall:
             def on_model_call(self, request, state, runtime):
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception:
                     result = yield request
-                    return result
-
+                    # Generator ends
         model = AsyncFailOnceThenSucceed(messages=iter([AIMessage(content="Async success")]))
         agent = create_agent(model=model, middleware=[RetryMiddleware()])
 
@@ -487,8 +466,7 @@ class TestEdgeCases:
                 modified_request = request
                 modified_messages.append(len(modified_request.messages))
                 response = yield modified_request
-                return response
-
+                # Generator ends
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[RequestModifyingMiddleware()])
 
@@ -505,12 +483,11 @@ class TestEdgeCases:
                 attempts.append("first-attempt")
                 try:
                     result = yield request
-                    return result
+                    # Generator ends
                 except Exception:
                     attempts.append("retry-attempt")
                     result = yield request
-                    return result
-
+                    # Generator ends
         call_count = {"value": 0}
 
         class FailFirstSucceedSecond(GenericFakeChatModel):

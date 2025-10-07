@@ -152,93 +152,119 @@ def _chain_model_call_handlers(  # noqa: PLR0915
     ]:
         """Compose two handlers where outer wraps inner.
 
-        Routes both .send(AIMessage) and .throw(Exception) from caller through
-        middleware layers, allowing each handler to catch exceptions.
+        Yields ModelRequest for execution or AIMessage for short-circuit results.
+        Never uses return values - relies on last yield being tracked by caller.
         """
 
         def composed(
             request: ModelRequest,
             state: Any,
             runtime: Any,
-        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
+        ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
             outer_gen = outer(request, state, runtime)
 
             # Initialize outer generator
             try:
                 outer_request = next(outer_gen)
-            except StopIteration as e:
-                return e.value  # Outer returned immediately
+            except StopIteration:
+                msg = "on_model_call handler must yield at least once"
+                raise ValueError(msg)
 
             # Outer retry loop
             while True:
+                # Check if outer yielded AIMessage (short-circuit)
+                if isinstance(outer_request, AIMessage):
+                    # Outer is short-circuiting, yield it to caller
+                    yield outer_request
+                    # Consume outer to completion
+                    try:
+                        next(outer_gen)
+                        msg = "on_model_call handler should not yield after yielding AIMessage"
+                        raise ValueError(msg)
+                    except StopIteration:
+                        pass
+                    return
+
+                # Outer yielded ModelRequest - pass to inner
                 inner_gen = inner(outer_request, state, runtime)
 
                 # Initialize inner generator
                 try:
                     inner_request = next(inner_gen)
-                except StopIteration as e:
-                    # Inner returned immediately - send to outer
-                    try:
-                        outer_request = outer_gen.send(e.value)
-                        continue  # Outer is retrying
-                    except StopIteration as e:
-                        return e.value  # Outer done
+                except StopIteration:
+                    msg = "on_model_call handler must yield at least once"
+                    raise ValueError(msg)
 
-                # Inner retry loop - yield to caller (model execution)
-                inner_final_result = None
+                # Inner retry loop
+                inner_result: AIMessage | None = None
                 outer_is_retrying = False
                 while True:
+                    # Check if inner yielded AIMessage (short-circuit)
+                    if isinstance(inner_request, AIMessage):
+                        # Inner is short-circuiting, send to outer
+                        inner_result = inner_request
+                        # Consume inner to completion
+                        try:
+                            next(inner_gen)
+                            msg = "on_model_call handler should not yield after yielding AIMessage"
+                            raise ValueError(msg)
+                        except StopIteration:
+                            pass
+                        break  # Exit inner loop
+
                     try:
-                        # Yield request to caller - caller will .send() or .throw()
+                        # Yield inner's request to caller for execution
                         model_result = yield inner_request
 
-                        # If we reach here, caller used .send(AIMessage)
+                        # Send result to inner
                         try:
                             inner_request = inner_gen.send(model_result)
-                            # Inner is retrying - continue inner loop
-                        except StopIteration as e:
-                            # Inner finished successfully
-                            inner_final_result = e.value
-                            break  # Exit inner retry loop
+                            # Inner yielded again - check type in next iteration
+                        except StopIteration:
+                            # Inner finished, use the result we got
+                            inner_result = model_result
+                            break
 
                     except Exception as exc:  # noqa: BLE001
-                        # Caller used .throw(Exception)
-                        # Route exception to inner handler
+                        # Caller threw exception, route to inner
                         try:
                             inner_request = inner_gen.throw(exc)
-                            # Inner caught exception and is retrying
-                            # Continue inner loop
-                        except StopIteration as e:
-                            # Inner returned after handling exception
-                            inner_final_result = e.value
-                            break  # Exit inner retry loop
+                            # Inner caught and yielded again
+                        except StopIteration:
+                            # Inner finished after handling exception
+                            inner_result = None
+                            break
                         except Exception as inner_unhandled:  # noqa: BLE001
-                            # Inner didn't catch - propagate to outer
+                            # Inner didn't catch, propagate to outer
                             try:
                                 outer_request = outer_gen.throw(inner_unhandled)
-                                # Outer caught and is retrying - continue outer loop
+                                # Outer caught and is retrying
                                 outer_is_retrying = True
-                                break  # Exit inner loop to restart with outer's new request
-                            except StopIteration as e:
-                                # Outer returned after handling exception
-                                return e.value
+                                break
+                            except StopIteration:
+                                # Outer finished after handling exception
+                                return
                             except Exception:
-                                # Outer didn't catch either - propagate to caller
+                                # Outer didn't catch either
                                 raise
 
-                # If outer is retrying, skip sending result and continue outer loop
+                # If outer is retrying, continue outer loop with new request
                 if outer_is_retrying:
                     continue
 
                 # Inner finished - send result to outer
-                # inner_final_result is guaranteed to be set by this point
-                assert inner_final_result is not None  # noqa: S101
+                if inner_result is None:
+                    # Inner failed without result
+                    return
+
                 try:
-                    outer_request = outer_gen.send(inner_final_result)
-                    # Outer is retrying - continue outer loop
-                except StopIteration as e:
-                    # Outer finished
-                    return e.value
+                    outer_request = outer_gen.send(inner_result)
+                    # Outer yielded again - continue outer loop to check type
+                except StopIteration:
+                    # Outer finished - yield the inner result for caller to see
+                    if inner_result is not None:
+                        yield inner_result
+                    return
 
         return composed
 
@@ -873,34 +899,54 @@ def create_agent(  # noqa: PLR0915
                 msg = "on_model_call handler must yield at least once to request model execution"
                 raise ValueError(msg)
 
-            # Execution loop - use .send() for success, .throw() for errors
+            # Execution loop - track last AIMessage seen
+            last_ai_message: AIMessage | None = None
+            effective_response_format: Any = None
             while True:
-                internal_response = _execute_model_sync(current_request)
-
-                try:
-                    if internal_response.exception is None:
-                        # Success - send AIMessage to handler
-                        assert internal_response.result is not None  # noqa: S101
-                        current_request = gen.send(internal_response.result)
-                    else:
-                        # Error - throw exception to handler
-                        current_request = gen.throw(internal_response.exception)
-                    # Handler yielded again - retry
-                except StopIteration as e:
-                    # Handler returned final result
-                    output = e.value
+                # Check if handler yielded AIMessage (short-circuit result)
+                if isinstance(current_request, AIMessage):
+                    # Handler short-circuited with this result
+                    last_ai_message = current_request
+                    # Try to get next yield (should be done)
+                    try:
+                        current_request = next(gen)
+                        # Handler yielded again after AIMessage - continue loop
+                    except StopIteration:
+                        # Handler finished, use the AIMessage
+                        break
+                elif isinstance(current_request, ModelRequest):
+                    # Execute the model request
+                    internal_response = _execute_model_sync(current_request)
                     effective_response_format = internal_response.effective_response_format
-                    break
-                except Exception:
-                    # Handler didn't catch exception - propagate
-                    raise
+
+                    try:
+                        if internal_response.exception is None:
+                            # Success - send AIMessage to handler
+                            assert internal_response.result is not None  # noqa: S101
+                            last_ai_message = internal_response.result
+                            current_request = gen.send(internal_response.result)
+                        else:
+                            # Error - throw exception to handler
+                            current_request = gen.throw(internal_response.exception)
+                        # Handler yielded again - check what it yielded in next iteration
+                    except StopIteration:
+                        # Handler finished
+                        break
+                    except Exception:
+                        # Handler didn't catch exception - propagate
+                        raise
+                else:
+                    msg = f"Handler yielded unexpected type: {type(current_request).__name__}"
+                    raise TypeError(msg)
+
+            output = last_ai_message
 
             # Validate final result
             if output is None:
-                msg = "on_model_call handler must return AIMessage"
+                msg = "on_model_call handler must complete with at least one successful model call"
                 raise ValueError(msg)
             if not isinstance(output, AIMessage):
-                msg = f"on_model_call handler must return AIMessage, got {type(output).__name__}"
+                msg = f"on_model_call handler must end with AIMessage, got {type(output).__name__}"
                 raise TypeError(msg)
 
         # output is guaranteed to be AIMessage at this point
@@ -974,34 +1020,54 @@ def create_agent(  # noqa: PLR0915
                 msg = "on_model_call handler must yield at least once to request model execution"
                 raise ValueError(msg)
 
-            # Execution loop - use .send() for success, .throw() for errors
+            # Execution loop - track last AIMessage seen
+            last_ai_message: AIMessage | None = None
+            effective_response_format: Any = None
             while True:
-                internal_response = await _execute_model_async(current_request)
-
-                try:
-                    if internal_response.exception is None:
-                        # Success - send AIMessage to handler
-                        assert internal_response.result is not None  # noqa: S101
-                        current_request = gen.send(internal_response.result)
-                    else:
-                        # Error - throw exception to handler
-                        current_request = gen.throw(internal_response.exception)
-                    # Handler yielded again - retry
-                except StopIteration as e:
-                    # Handler returned final result
-                    output = e.value
+                # Check if handler yielded AIMessage (short-circuit result)
+                if isinstance(current_request, AIMessage):
+                    # Handler short-circuited with this result
+                    last_ai_message = current_request
+                    # Try to get next yield (should be done)
+                    try:
+                        current_request = next(gen)
+                        # Handler yielded again after AIMessage - continue loop
+                    except StopIteration:
+                        # Handler finished, use the AIMessage
+                        break
+                elif isinstance(current_request, ModelRequest):
+                    # Execute the model request
+                    internal_response = await _execute_model_async(current_request)
                     effective_response_format = internal_response.effective_response_format
-                    break
-                except Exception:
-                    # Handler didn't catch exception - propagate
-                    raise
+
+                    try:
+                        if internal_response.exception is None:
+                            # Success - send AIMessage to handler
+                            assert internal_response.result is not None  # noqa: S101
+                            last_ai_message = internal_response.result
+                            current_request = gen.send(internal_response.result)
+                        else:
+                            # Error - throw exception to handler
+                            current_request = gen.throw(internal_response.exception)
+                        # Handler yielded again - check what it yielded in next iteration
+                    except StopIteration:
+                        # Handler finished
+                        break
+                    except Exception:
+                        # Handler didn't catch exception - propagate
+                        raise
+                else:
+                    msg = f"Handler yielded unexpected type: {type(current_request).__name__}"
+                    raise TypeError(msg)
+
+            output = last_ai_message
 
             # Validate final result
             if output is None:
-                msg = "on_model_call handler must return AIMessage"
+                msg = "on_model_call handler must complete with at least one successful model call"
                 raise ValueError(msg)
             if not isinstance(output, AIMessage):
-                msg = f"on_model_call handler must return AIMessage, got {type(output).__name__}"
+                msg = f"on_model_call handler must end with AIMessage, got {type(output).__name__}"
                 raise TypeError(msg)
 
         # output is guaranteed to be AIMessage at this point
