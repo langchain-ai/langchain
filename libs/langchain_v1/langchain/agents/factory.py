@@ -44,6 +44,7 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolCallWithContext
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -865,7 +866,6 @@ def create_agent(  # noqa: PLR0915
             _make_model_to_tools_edge(
                 model_destination=loop_entry_node,
                 structured_output_tools=structured_output_tools,
-                tool_node=tool_node,
                 end_destination=exit_node,
             ),
             model_to_tools_destinations,
@@ -1023,11 +1023,11 @@ def _make_model_to_tools_edge(
     *,
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
-    tool_node: ToolNode,
     end_destination: str,
 ) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
     def model_to_tools(
-        state: dict[str, Any], runtime: Runtime[ContextT]
+        state: dict[str, Any],
+        runtime: Runtime[ContextT],  # noqa: ARG001
     ) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
@@ -1053,11 +1053,17 @@ def _make_model_to_tools_edge(
 
         # 3. if there are pending tool calls, jump to the tool node
         if pending_tool_calls:
-            pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, runtime.store)
-                for call in pending_tool_calls
+            return [
+                Send(
+                    "tools",
+                    ToolCallWithContext(
+                        __type="tool_call_with_context",
+                        tool_call=tool_call,
+                        state=state,
+                    ),
+                )
+                for tool_call in pending_tool_calls
             ]
-            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 4. if there is a structured response, exit the loop
         if "structured_response" in state:

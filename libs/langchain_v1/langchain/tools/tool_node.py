@@ -47,6 +47,7 @@ from typing import (
     Any,
     Literal,
     Optional,
+    TypedDict,
     Union,
     cast,
     get_args,
@@ -98,6 +99,29 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
     " {error}\n"
     " Please fix the error and try again."
 )
+
+
+class ToolCallWithContext(TypedDict):
+    """ToolCall with additional context for graph state.
+
+    This is an internal data structure meant to help the ToolNode accept
+    tool calls with additional context (e.g. state) when dispatched using the
+    Send API.
+
+    The Send API is used in create_agent to distribute tool calls in parallel
+    and support human-in-the-loop workflows where graph execution may be paused
+    for an indefinite time.
+    """
+
+    tool_call: ToolCall
+    __type: Literal["tool_call_with_context"]
+    """Type to parameterize the payload.
+
+    Using "__" as a prefix to be defensive against potential name collisions with
+    regular user state.
+    """
+    state: Any
+    """The state is provided as additional context."""
 
 
 def msg_content_output(output: Any) -> str | list[dict]:
@@ -431,7 +455,8 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        tool_calls, input_type = self._parse_input(input)
+        tool_calls = [self._inject_tool_args(call, input, store) for call in tool_calls]
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
         with get_executor_for_config(config) as executor:
@@ -446,7 +471,8 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        tool_calls, input_type = self._parse_input(input)
+        tool_calls = [self._inject_tool_args(call, input, store) for call in tool_calls]
         outputs = await asyncio.gather(
             *(self._arun_one(call, input_type, config) for call in tool_calls)
         )
@@ -631,7 +657,6 @@ class ToolNode(RunnableCallable):
     def _parse_input(
         self,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
-        store: BaseStore | None,
     ) -> tuple[list[ToolCall], Literal["list", "dict", "tool_calls"]]:
         input_type: Literal["list", "dict", "tool_calls"]
         if isinstance(input, list):
@@ -641,6 +666,14 @@ class ToolNode(RunnableCallable):
                 return tool_calls, input_type
             input_type = "list"
             messages = input
+        elif isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            # Handle ToolCallWithContext from Send API
+            # mypy will not be able to type narrow correctly since the signature
+            # for input contains dict[str, Any]. We'd need to narrow dict[str, Any]
+            # before we can apply correct typing.
+            input_with_ctx = cast("ToolCallWithContext", input)
+            input_type = "tool_calls"
+            return [input_with_ctx["tool_call"]], input_type
         elif isinstance(input, dict) and (messages := input.get(self._messages_key, [])):
             input_type = "dict"
         elif messages := getattr(input, self._messages_key, []):
@@ -656,9 +689,7 @@ class ToolNode(RunnableCallable):
             msg = "No AIMessage found in input"
             raise ValueError(msg)
 
-        tool_calls = [
-            self.inject_tool_args(call, input, store) for call in latest_ai_message.tool_calls
-        ]
+        tool_calls = list(latest_ai_message.tool_calls)
         return tool_calls, input_type
 
     def _validate_tool_call(self, call: ToolCall) -> ToolMessage | None:
@@ -696,14 +727,20 @@ class ToolNode(RunnableCallable):
                     err_msg += f" State should contain fields {required_fields_str}."
                 raise ValueError(err_msg)
 
-        if isinstance(input, dict):
+        # Extract state from ToolCallWithContext if present
+        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            state = input["state"]
+        else:
+            state = input
+
+        if isinstance(state, dict):
             tool_state_args = {
-                tool_arg: input[state_field] if state_field else input
+                tool_arg: state[state_field] if state_field else state
                 for tool_arg, state_field in state_args.items()
             }
         else:
             tool_state_args = {
-                tool_arg: getattr(input, state_field) if state_field else input
+                tool_arg: getattr(state, state_field) if state_field else state
                 for tool_arg, state_field in state_args.items()
             }
 
@@ -731,7 +768,7 @@ class ToolNode(RunnableCallable):
         }
         return tool_call
 
-    def inject_tool_args(
+    def _inject_tool_args(
         self,
         tool_call: ToolCall,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
@@ -739,10 +776,11 @@ class ToolNode(RunnableCallable):
     ) -> ToolCall:
         """Inject graph state and store into tool call arguments.
 
-        This method enables tools to access graph context that should not be controlled
-        by the model. Tools can declare dependencies on graph state or persistent storage
-        using InjectedState and InjectedStore annotations. This method automatically
-        identifies these dependencies and injects the appropriate values.
+        This is an internal method that enables tools to access graph context that
+        should not be controlled by the model. Tools can declare dependencies on graph
+        state or persistent storage using InjectedState and InjectedStore annotations.
+        This method automatically identifies these dependencies and injects the
+        appropriate values.
 
         The injection process preserves the original tool call structure while adding
         the necessary context arguments. This allows tools to be both model-callable
@@ -765,10 +803,8 @@ class ToolNode(RunnableCallable):
                        or if state injection requirements cannot be satisfied.
 
         Note:
-            This method is automatically called during tool execution but can also
-            be used manually when working with the Send API or custom routing logic.
-            The injection is performed on a copy of the tool call to avoid mutating
-            the original.
+            This method is called automatically during tool execution. It should not
+            be called from outside the ToolNode.
         """
         if tool_call["name"] not in self.tools_by_name:
             return tool_call
