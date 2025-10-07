@@ -233,71 +233,68 @@ def _chain_tool_call_handlers(
     if len(handlers) == 1:
         return handlers[0]
 
-    def _extract_return_value(stop_iteration: StopIteration) -> ToolMessage:
-        """Extract return value from StopIteration, raise if None."""
-        if stop_iteration.value is None:
-            msg = "on_tool_call handler must explicitly return a ToolMessage"
-            raise ValueError(msg)
-        return stop_iteration.value
-
     def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ToolCallRequest, state: Any, runtime: Any
-        ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+        ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
             outer_gen = outer(request, state, runtime)
+            last_sent_to_outer: ToolMessage | None = None
 
             # Initialize outer generator
             try:
                 outer_request = next(outer_gen)
-            except StopIteration as e:
-                return _extract_return_value(e)
+            except StopIteration:
+                msg = "outer handler must yield at least once"
+                raise ValueError(msg)
 
             # Outer retry loop
             while True:
                 # If outer yielded a ToolMessage, bypass inner handler and yield directly
                 if isinstance(outer_request, ToolMessage):
                     tool_message = yield outer_request
+                    last_sent_to_outer = tool_message
                     try:
                         outer_request = outer_gen.send(tool_message)
-                    except StopIteration as e:
-                        return _extract_return_value(e)
+                    except StopIteration:
+                        # Outer ended - final result is what we sent to it
+                        return
                     continue
 
                 inner_gen = inner(outer_request, state, runtime)
+                last_sent_to_inner: ToolMessage | None = None
 
                 # Initialize inner generator
                 try:
                     inner_request = next(inner_gen)
-                except StopIteration as e:
-                    # Inner returned immediately - send to outer
-                    inner_message = _extract_return_value(e)
-                    try:
-                        outer_request = outer_gen.send(inner_message)
-                    except StopIteration as e2:
-                        return _extract_return_value(e2)
-                    continue
+                except StopIteration:
+                    msg = "inner handler must yield at least once"
+                    raise ValueError(msg)
 
                 # Inner retry loop
                 while True:
                     # Yield to actual tool execution
                     tool_message = yield inner_request
+                    last_sent_to_inner = tool_message
 
                     # Send message to inner
                     try:
                         inner_request = inner_gen.send(tool_message)
-                    except StopIteration as e:
-                        # Inner is done - send final message to outer
-                        inner_message = _extract_return_value(e)
+                    except StopIteration:
+                        # Inner is done - final message from inner is last_sent_to_inner
                         break
 
                 # Send inner's final message to outer
+                if last_sent_to_inner is None:
+                    msg = "inner handler ended without receiving any ToolMessage"
+                    raise ValueError(msg)
+                last_sent_to_outer = last_sent_to_inner
                 try:
-                    outer_request = outer_gen.send(inner_message)
-                except StopIteration as e:
-                    # Outer is done
-                    return _extract_return_value(e)
+                    outer_request = outer_gen.send(last_sent_to_inner)
+                except StopIteration:
+                    # Outer is done - final result is what we sent to it
+                    return
 
         return composed
 

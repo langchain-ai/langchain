@@ -117,40 +117,41 @@ class ToolCallRequest:
 
 ToolCallHandler = Callable[
     [ToolCallRequest, Any, Any],
-    Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage],
+    Generator[ToolCallRequest | ToolMessage, ToolMessage, None],
 ]
 """Generator that intercepts tool execution.
 
 Handler receives (request, state, runtime), yields request(s) or message(s) for execution,
-receives ToolMessage via .send(), and returns final ToolMessage.
+receives ToolMessage via .send(). The final result is the last ToolMessage sent to the
+handler before it completes.
 
 Signature:
     (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest or ToolMessage,
-    receives ToolMessage via .send(), and returns ToolMessage.
+    receives ToolMessage via .send(), and completes naturally (no explicit return).
 
 Example:
     Passthrough handler:
 
     def passthrough_handler(request, state, runtime):
-        message = yield request
-        return message
+        yield request
+        # Final result is the ToolMessage sent back after execution
 
-    Short-circuit with cached result (return directly):
+    Short-circuit with cached result:
 
     def cache_handler(request, state, runtime):
         if cached := get_from_cache(request):
-            if False:
-                yield  # Makes this a generator
-            return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-        message = yield request
-        return message
+            yield ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+            # Final result is the cached ToolMessage sent back
+        else:
+            yield request
+            # Final result is the execution ToolMessage sent back
 
     Modify arguments before execution:
 
     def modify_handler(request, state, runtime):
         request.tool_call["args"]["value"] *= 2  # Double the value
-        message = yield request
-        return message
+        yield request
+        # Final result is the execution ToolMessage sent back
 """
 
 
@@ -682,50 +683,41 @@ class ToolNode(RunnableCallable):
 
         # Generator protocol: start generator, send messages, receive requests/messages
         gen = self._on_tool_call(tool_request, input, runtime)
+        last_sent_message: ToolMessage | None = None
 
         try:
             yielded = next(gen)
-        except StopIteration as e:
-            # Handler returned immediately without yielding - extract return value
-            if e.value is None:
-                msg = (
-                    "on_tool_call handler must explicitly return a ToolMessage. "
-                    "Ensure your handler ends with 'return message' instead of implicit None."
-                )
-                raise ValueError(msg)
-            return e.value
+        except StopIteration:
+            # Handler ended immediately without yielding
+            msg = (
+                "on_tool_call handler must yield at least once. "
+                "The final result is the last ToolMessage sent to the handler."
+            )
+            raise ValueError(msg)
 
         # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
         while True:
             if isinstance(yielded, ToolMessage):
                 # Short-circuit: handler provided a ToolMessage directly
-                # Send it back to generator to get final return value
+                # Send it back to generator
+                last_sent_message = yielded
                 try:
                     yielded = gen.send(yielded)
                     # If generator yields again, continue the loop
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolMessage. "
-                            "Ensure your handler ends with 'return message' instead of implicit None."
-                        )
-                        raise ValueError(msg)
-                    return e.value
+                except StopIteration:
+                    # Handler ended - return the last message we sent to it
+                    return last_sent_message
             else:
                 # Normal flow: execute the tool with the request
                 tool_message = self._execute_tool_sync(yielded, input_type, config)
 
                 # Send tool message back to generator
+                last_sent_message = tool_message
                 try:
                     yielded = gen.send(tool_message)
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolMessage. "
-                            "Ensure your handler ends with 'return message' instead of implicit None."
-                        )
-                        raise ValueError(msg)
-                    return e.value
+                except StopIteration:
+                    # Handler ended - return the last message we sent to it
+                    return last_sent_message
 
     async def _execute_tool_async(
         self,
@@ -846,50 +838,41 @@ class ToolNode(RunnableCallable):
 
         # Generator protocol: handler is sync generator, tool execution is async
         gen = self._on_tool_call(tool_request, input, runtime)
+        last_sent_message: ToolMessage | None = None
 
         try:
             yielded = next(gen)
-        except StopIteration as e:
-            # Handler returned immediately without yielding - extract return value
-            if e.value is None:
-                msg = (
-                    "on_tool_call handler must explicitly return a ToolMessage. "
-                    "Ensure your handler ends with 'return message' instead of implicit None."
-                )
-                raise ValueError(msg)
-            return e.value
+        except StopIteration:
+            # Handler ended immediately without yielding
+            msg = (
+                "on_tool_call handler must yield at least once. "
+                "The final result is the last ToolMessage sent to the handler."
+            )
+            raise ValueError(msg)
 
         # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
         while True:
             if isinstance(yielded, ToolMessage):
                 # Short-circuit: handler provided a ToolMessage directly
-                # Send it back to generator to get final return value
+                # Send it back to generator
+                last_sent_message = yielded
                 try:
                     yielded = gen.send(yielded)
                     # If generator yields again, continue the loop
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolMessage. "
-                            "Ensure your handler ends with 'return message' instead of implicit None."
-                        )
-                        raise ValueError(msg)
-                    return e.value
+                except StopIteration:
+                    # Handler ended - return the last message we sent to it
+                    return last_sent_message
             else:
                 # Normal flow: execute the tool with the request
                 tool_message = await self._execute_tool_async(yielded, input_type, config)
 
                 # Send tool message back to generator
+                last_sent_message = tool_message
                 try:
                     yielded = gen.send(tool_message)
-                except StopIteration as e:
-                    if e.value is None:
-                        msg = (
-                            "on_tool_call handler must explicitly return a ToolMessage. "
-                            "Ensure your handler ends with 'return message' instead of implicit None."
-                        )
-                        raise ValueError(msg)
-                    return e.value
+                except StopIteration:
+                    # Handler ended - return the last message we sent to it
+                    return last_sent_message
 
     def _parse_input(
         self,

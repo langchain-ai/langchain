@@ -33,10 +33,9 @@ def test_passthrough_handler() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Simple passthrough handler."""
         message = yield request
-        return message
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -69,10 +68,9 @@ async def test_passthrough_handler_async() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Simple passthrough handler."""
         response = yield request
-        return response
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -104,14 +102,13 @@ def test_modify_arguments() -> None:
 
     def modify_args_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Handler that doubles the input arguments."""
         # Modify the arguments
         request.tool_call["args"]["a"] *= 2
         request.tool_call["args"]["b"] *= 2
 
         response = yield request
-        return response
 
     tool_node = ToolNode([add], on_tool_call=modify_args_handler)
 
@@ -139,47 +136,58 @@ def test_modify_arguments() -> None:
 
 
 def test_handler_validation_no_return() -> None:
-    """Test that handler without explicit return raises error."""
+    """Test that handler with explicit None return works (returns last sent message)."""
 
-    def bad_handler(
+    def handler_with_explicit_none(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
-        """Handler that doesn't return explicitly."""
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that returns None explicitly - should still work."""
         yield request
-        # Implicit None return
+        # Explicit None return - protocol uses last sent message as result
         return None  # type: ignore[return-value]
 
-    tool_node = ToolNode([add], on_tool_call=bad_handler)
+    tool_node = ToolNode([add], on_tool_call=handler_with_explicit_none)
 
-    with pytest.raises(ValueError, match="must explicitly return a ToolMessage"):
-        tool_node.invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "adding",
-                        tool_calls=[
-                            {
-                                "name": "add",
-                                "args": {"a": 1, "b": 2},
-                                "id": "call_6",
-                            }
-                        ],
-                    )
-                ]
-            }
-        )
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "adding",
+                    tool_calls=[
+                        {
+                            "name": "add",
+                            "args": {"a": 1, "b": 2},
+                            "id": "call_6",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    assert isinstance(result, dict)
+    messages = result["messages"]
+    assert len(messages) == 1
+    assert isinstance(messages[0], ToolMessage)
+    assert messages[0].content == "3"
 
 
 def test_handler_validation_no_yield() -> None:
     """Test that handler must yield at least once."""
 
-    def bad_handler(request: ToolCallRequest, _state: Any, _runtime: Any) -> ToolMessage:
-        """Handler that doesn't yield - not even a generator."""
-        return ToolMessage(content="fake", tool_call_id=request.tool_call["id"])
+    def bad_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that ends immediately without yielding."""
+        # End immediately without yielding anything
+        # Need unreachable yield to make this a generator function
+        if False:
+            yield request  # type: ignore[unreachable]
+        return
 
-    tool_node = ToolNode([add], on_tool_call=bad_handler)  # type: ignore[arg-type]
+    tool_node = ToolNode([add], on_tool_call=bad_handler)
 
-    with pytest.raises((TypeError, ValueError)):
+    with pytest.raises(ValueError, match="must yield at least once"):
         tool_node.invoke(
             {
                 "messages": [
@@ -203,13 +211,12 @@ def test_handler_with_handle_tool_errors_true() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Simple passthrough handler."""
         message = yield request
         # When handle_tool_errors=True, errors should be converted to error messages
         assert isinstance(message, ToolMessage)
         assert message.status == "error"
-        return message
 
     tool_node = ToolNode([failing_tool], on_tool_call=passthrough_handler, handle_tool_errors=True)
 
@@ -241,12 +248,11 @@ def test_multiple_tool_calls_with_handler() -> None:
 
     def counting_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Handler that counts calls."""
         nonlocal call_count
         call_count += 1
         response = yield request
-        return response
 
     tool_node = ToolNode([add], on_tool_call=counting_handler)
 
@@ -310,13 +316,12 @@ async def test_handler_with_async_execution() -> None:
 
     def modifying_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Handler that modifies arguments."""
         # Add 10 to both arguments
         request.tool_call["args"]["a"] += 10
         request.tool_call["args"]["b"] += 10
         response = yield request
-        return response
 
     tool_node = ToolNode([async_add], on_tool_call=modifying_handler)
 
@@ -348,7 +353,7 @@ def test_short_circuit_with_tool_message() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that returns cached result without executing tool."""
         # Yield a ToolMessage directly instead of a ToolCallRequest
         cached_result = ToolMessage(
@@ -359,7 +364,6 @@ def test_short_circuit_with_tool_message() -> None:
         message = yield cached_result
         # Message should be our cached message sent back
         assert message == cached_result
-        return message
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -392,7 +396,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that returns cached result without executing tool."""
         cached_result = ToolMessage(
             content="async_cached_result",
@@ -400,7 +404,6 @@ async def test_short_circuit_with_tool_message_async() -> None:
             name=request.tool_call["name"],
         )
         response = yield cached_result
-        return response
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -433,7 +436,7 @@ def test_conditional_short_circuit() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that caches even numbers, executes odd."""
         call_count["count"] += 1
         a = request.tool_call["args"]["a"]
@@ -446,11 +449,9 @@ def test_conditional_short_circuit() -> None:
                 name=request.tool_call["name"],
             )
             response = yield cached
-            return response
         else:
             # Odd: execute normally
             response = yield request
-            return response
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -503,7 +504,7 @@ def test_short_circuit_then_retry() -> None:
 
     def cache_then_retry_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Try cached result first, then execute tool if needed."""
         attempt_count["count"] += 1
 
@@ -518,11 +519,9 @@ def test_short_circuit_then_retry() -> None:
             # Simulate cache validation failure, need fresh result
             # Yield the actual request to execute the tool
             response = yield request
-            return response
         else:
             # Subsequent calls: execute normally
             response = yield request
-            return response
 
     tool_node = ToolNode([add], on_tool_call=cache_then_retry_handler)
 
@@ -554,14 +553,14 @@ def test_direct_return_tool_message() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that returns ToolMessage directly."""
         # Return ToolMessage directly
         # Note: We still need this to be a generator, so we use return (not yield)
         # The generator protocol will catch the StopIteration with the return value
         if False:
             yield  # Makes this a generator function
-        return ToolMessage(
+        yield ToolMessage(
             content="direct_return",
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
@@ -598,11 +597,11 @@ async def test_direct_return_tool_message_async() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Handler that returns ToolMessage directly."""
         if False:
             yield  # Makes this a generator function
-        return ToolMessage(
+        yield ToolMessage(
             content="async_direct_return",
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
@@ -638,7 +637,7 @@ def test_conditional_direct_return() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Handler that returns cached or executes based on condition."""
         a = request.tool_call["args"]["a"]
 
@@ -646,7 +645,7 @@ def test_conditional_direct_return() -> None:
             # Return ToolMessage directly for zero
             if False:
                 yield  # Makes this a generator
-            return ToolMessage(
+            yield ToolMessage(
                 content="zero_cached",
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
@@ -654,7 +653,6 @@ def test_conditional_direct_return() -> None:
         else:
             # Execute tool normally
             message = yield request
-            return message
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 

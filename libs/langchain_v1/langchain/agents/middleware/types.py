@@ -243,7 +243,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ToolCallRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
         """Intercept tool execution for retries, monitoring, or request modification.
 
         Generator protocol for fine-grained control over tool execution. Multiple
@@ -259,41 +259,41 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             to short-circuit tool execution with a cached/predefined result.
 
         Receives:
-            ToolMessage via .send() after tool execution.
+            ToolMessage via .send() after tool execution. The final result is the last
+            ToolMessage sent to the handler before it completes.
 
         Returns:
-            ToolMessage with final execution result.
+            None (completes naturally, final result is last sent ToolMessage).
 
         Example:
             Passthrough handler:
 
             def on_tool_call(self, request, state, runtime):
-                message = yield request
-                return message
+                yield request
+                # Final result is the ToolMessage sent back after execution
 
-            Short-circuit with cached result (return directly):
+            Short-circuit with cached result:
 
             def on_tool_call(self, request, state, runtime):
                 if cached := check_cache(request.tool_call):
-                    if False:
-                        yield  # Makes this a generator
-                    return ToolMessage(
+                    yield ToolMessage(
                         content=cached,
                         tool_call_id=request.tool_call["id"],
                         name=request.tool_call["name"],
                     )
-                message = yield request
-                return message
+                    # Final result is the cached ToolMessage sent back
+                else:
+                    yield request
+                    # Final result is the execution ToolMessage sent back
 
             Modify arguments before execution:
 
             def on_tool_call(self, request, state, runtime):
                 request.tool_call["args"]["value"] *= 2  # Double the value
-                message = yield request
-                return message
+                yield request
+                # Final result is the execution ToolMessage sent back
         """
-        message = yield request
-        return message
+        yield request
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
