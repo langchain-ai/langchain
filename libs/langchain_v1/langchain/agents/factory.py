@@ -1027,7 +1027,6 @@ def _make_model_to_tools_edge(
 ) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
     def model_to_tools(
         state: dict[str, Any],
-        runtime: Runtime[ContextT],  # noqa: ARG001
     ) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
