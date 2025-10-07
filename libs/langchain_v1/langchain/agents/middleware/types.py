@@ -1304,7 +1304,7 @@ def on_model_call(
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
-            return func(request, state, runtime)  # type: ignore[return-value]
+            return func(request, state, runtime)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
 

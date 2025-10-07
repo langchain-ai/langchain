@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Generator
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -107,15 +106,15 @@ def _validate_handler_return(value: Any) -> ModelResponse:
 
 
 def _chain_model_call_handlers(
-    handlers: list[
+    handlers: Sequence[
         Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, AgentState, Runtime],
+        [ModelRequest, Any, Any],
         Generator[ModelRequest, ModelResponse, ModelResponse],
     ]
     | None
@@ -166,23 +165,23 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ],
         inner: Callable[
-            [ModelRequest, AgentState, Runtime],
+            [ModelRequest, Any, Any],
             Generator[ModelRequest, ModelResponse, ModelResponse],
         ],
     ) -> Callable[
-        [ModelRequest, AgentState, Runtime],
+        [ModelRequest, Any, Any],
         Generator[ModelRequest, ModelResponse, ModelResponse],
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            state: AgentState,
-            runtime: Runtime,
+            state: Any,
+            runtime: Any,
         ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
             outer_gen = outer(request, state, runtime)
 
