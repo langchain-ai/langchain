@@ -44,7 +44,6 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
-from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest, ToolCallResponse
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -54,6 +53,8 @@ if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+
+    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest, ToolCallResponse
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -194,7 +195,7 @@ def _handle_structured_output_error(
 
 
 def _chain_tool_call_handlers(
-    handlers: list[ToolCallHandler],
+    handlers: Sequence[ToolCallHandler],
 ) -> ToolCallHandler | None:
     """Compose multiple tool call handlers into a single middleware stack.
 
@@ -233,7 +234,7 @@ def _chain_tool_call_handlers(
         return handlers[0]
 
     def _extract_return_value(stop_iteration: StopIteration) -> ToolCallResponse:
-        """Extract ToolCallResponse from StopIteration, validating protocol compliance."""
+        """Extract return value from StopIteration, raising if None."""
         if stop_iteration.value is None:
             msg = "on_tool_call handler must explicitly return a ToolCallResponse"
             raise ValueError(msg)

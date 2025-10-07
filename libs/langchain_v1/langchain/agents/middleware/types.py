@@ -241,32 +241,31 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def on_tool_call(
         self,
         request: ToolCallRequest,
-        state: Any,
-        runtime: Any,
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Intercept tool execution for retry logic, monitoring, or request modification.
+        """Intercept tool execution for retries, monitoring, or request modification.
 
-        Generator protocol enabling fine-grained control over tool execution lifecycle.
-        Multiple middleware can define this hook; they compose automatically with
-        outer middleware wrapping inner middleware (first defined = outermost).
+        Generator protocol for fine-grained control over tool execution. Multiple
+        middleware with on_tool_call compose automatically: first defined = outermost.
 
         Args:
-            request: Tool execution request with tool call and tool instance.
-            state: Full agent state (messages list or state dict).
-            runtime: LangGraph runtime object, or None outside runtime context.
+            request: Tool execution request with tool call dict and BaseTool instance.
+            state: Current agent state.
+            runtime: LangGraph runtime.
 
         Yields:
             ToolCallRequest to execute (may be modified from input).
 
         Receives:
-            ToolCallResponse from execution via .send().
+            ToolCallResponse via .send() after execution.
 
         Returns:
-            Final ToolCallResponse determining control flow (action="return"
-            with result, or action="raise" with exception).
+            ToolCallResponse with action="return" and result, or action="raise"
+            and exception.
 
         Example:
-            Retry on rate limit:
+            Retry on rate limit errors:
 
             def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
