@@ -1,4 +1,4 @@
-.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests help extended_tests
+.PHONY: all coverage test tests extended_tests test_watch test_watch_extended integration_tests check_imports lint format lint_diff format_diff lint_package lint_tests help
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -68,13 +68,6 @@ format format_diff:
 
 help:
 	@echo '===================='
-	@echo 'clean                        - run docs_clean and api_docs_clean'
-	@echo 'docs_build                   - build the documentation'
-	@echo 'docs_clean                   - clean the documentation build artifacts'
-	@echo 'docs_linkcheck               - run linkchecker on the documentation'
-	@echo 'api_docs_build               - build the API Reference documentation'
-	@echo 'api_docs_clean               - clean the API Reference documentation build artifacts'
-	@echo 'api_docs_linkcheck           - run linkchecker on the API Reference documentation'
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
@@ -86,4 +79,3 @@ help:
 	@echo 'extended_tests               - run only extended unit tests'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'integration_tests            - run integration tests'
-	@echo '-- DOCUMENTATION tasks are from the top-level Makefile --'

@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, Any, Literal
 import pytest
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListChatModel,
@@ -23,7 +26,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
@@ -907,6 +909,56 @@ async def test_output_version_ainvoke(monkeypatch: Any) -> None:
     assert response.response_metadata["output_version"] == "v1"
 
 
+class _AnotherFakeChatModel(BaseChatModel):
+    responses: Iterator[AIMessage]
+    """Responses for _generate."""
+
+    chunks: Iterator[AIMessageChunk]
+    """Responses for _stream."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "another-fake-chat-model"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> Iterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+
 def test_output_version_stream(monkeypatch: Any) -> None:
     messages = [AIMessage("foo bar")]
 
@@ -923,7 +975,7 @@ def test_output_version_stream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full_v1: BaseMessageChunk | None = None
+    full_v1: AIMessageChunk | None = None
     for chunk in llm.stream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -935,6 +987,58 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         full_v1 = chunk if full_v1 is None else full_v1 + chunk
     assert isinstance(full_v1, AIMessageChunk)
     assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = llm_with_rich_content.invoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
@@ -969,7 +1073,7 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full_v1: BaseMessageChunk | None = None
+    full_v1: AIMessageChunk | None = None
     async for chunk in llm.astream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -981,6 +1085,58 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         full_v1 = chunk if full_v1 is None else full_v1 + chunk
     assert isinstance(full_v1, AIMessageChunk)
     assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = await llm_with_rich_content.ainvoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")

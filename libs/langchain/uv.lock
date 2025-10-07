@@ -2285,7 +2285,7 @@ wheels = [
 
 [[package]]
 name = "langchain-classic"
-version = "0.3.27"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11'" },
@@ -2496,7 +2496,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a6"
+version = "1.0.0a7"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2661,7 +2661,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.0a3"
+version = "1.0.0a4"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },

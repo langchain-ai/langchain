@@ -7,7 +7,10 @@
       "WebFetch(domain:ai.pydantic.dev)",
       "WebFetch(domain:openai.github.io)",
       "Bash(uv run:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)"
     ],
     "deny": [],
     "ask": []

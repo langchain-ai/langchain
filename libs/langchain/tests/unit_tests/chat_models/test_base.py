@@ -167,7 +167,7 @@ def test_configurable() -> None:
             "store": None,
             "extra_body": None,
             "include_response_headers": False,
-            "stream_usage": False,
+            "stream_usage": True,
             "use_previous_response_id": False,
             "use_responses_api": None,
         },
