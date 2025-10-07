@@ -28,6 +28,7 @@ from langchain_core.messages import AnyMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
+from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -35,7 +36,6 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -243,7 +243,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ToolCallRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Intercept tool execution for retries, monitoring, or request modification.
 
         Generator protocol for fine-grained control over tool execution. Multiple
@@ -259,15 +259,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             runtime: LangGraph runtime.
 
         Yields:
-            ToolCallRequest to execute (may be modified from input), or ToolMessage
-            to short-circuit tool execution with a cached/predefined result.
+            ToolCallRequest to execute (may be modified from input), ToolMessage to
+            short-circuit with cached result, or Command for control flow.
 
         Receives:
-            ToolMessage via .send() after tool execution. The final result is the last
-            ToolMessage sent to the handler before it completes.
+            ToolMessage or Command via .send() after tool execution. The final result is
+            the last value sent to the handler before it completes.
 
         Returns:
-            None (completes naturally, final result is last sent ToolMessage).
+            None (completes naturally, final result is last sent value).
 
         Raises:
             Exception: Can throw exceptions to signal errors. Converted to error
@@ -278,7 +278,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             def on_tool_call(self, request, state, runtime):
                 yield request
-                # Final result is the ToolMessage sent back after execution
+                # Final result is the ToolMessage or Command sent back after execution
 
             Short-circuit with cached result:
 
@@ -292,14 +292,23 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     # Final result is the cached ToolMessage sent back
                 else:
                     yield request
-                    # Final result is the execution ToolMessage sent back
+                    # Final result is the execution ToolMessage or Command sent back
+
+            Short-circuit with Command:
+
+            def on_tool_call(self, request, state, runtime):
+                if should_stop():
+                    yield Command(goto="end")
+                    # Final result is the Command sent back
+                else:
+                    yield request
 
             Modify arguments before execution:
 
             def on_tool_call(self, request, state, runtime):
                 request.tool_call["args"]["value"] *= 2  # Double the value
                 yield request
-                # Final result is the execution ToolMessage sent back
+                # Final result is the execution ToolMessage or Command sent back
 
             Retry middleware with exception on exhaustion:
 

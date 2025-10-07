@@ -117,27 +117,27 @@ class ToolCallRequest:
 
 ToolCallHandler = Callable[
     [ToolCallRequest, Any, Any],
-    Generator[ToolCallRequest | ToolMessage, ToolMessage, None],
+    Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None],
 ]
 """Generator that intercepts tool execution.
 
-Handler receives (request, state, runtime), yields request(s) or message(s) for execution,
-receives ToolMessage via .send(). The final result is the last ToolMessage sent to the
-handler before it completes.
+Handler receives (request, state, runtime), yields request(s), message(s), or Command(s),
+receives ToolMessage or Command via .send(). The final result is the last value sent to
+the handler before it completes.
 
 The handler can also throw exceptions to signal errors. If handle_tool_errors is configured,
 exceptions will be caught and converted to error ToolMessages. Otherwise, they propagate.
 
 Signature:
-    (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest or ToolMessage,
-    receives ToolMessage via .send(), and completes naturally (no explicit return).
+    (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest, ToolMessage,
+    or Command; receives ToolMessage or Command via .send(); completes naturally.
 
 Example:
     Passthrough handler:
 
     def passthrough_handler(request, state, runtime):
         yield request
-        # Final result is the ToolMessage sent back after execution
+        # Final result is the ToolMessage or Command sent back after execution
 
     Short-circuit with cached result:
 
@@ -147,14 +147,14 @@ Example:
             # Final result is the cached ToolMessage sent back
         else:
             yield request
-            # Final result is the execution ToolMessage sent back
+            # Final result is the execution ToolMessage or Command sent back
 
     Modify arguments before execution:
 
     def modify_handler(request, state, runtime):
         request.tool_call["args"]["value"] *= 2  # Double the value
         yield request
-        # Final result is the execution ToolMessage sent back
+        # Final result is the execution ToolMessage or Command sent back
 
     Retry middleware with exception on failure:
 
@@ -467,9 +467,9 @@ class ToolNode(RunnableCallable):
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
             on_tool_call: Generator handler to intercept tool execution. Receives
-                ToolCallRequest, yields requests or messages, receives ToolMessage via
-                .send(). Final result is last ToolMessage sent to handler. Enables
-                retries, caching, and request modification.
+                ToolCallRequest, yields requests, messages, or Commands; receives
+                ToolMessage or Command via .send(). Final result is last value sent to
+                handler. Enables retries, caching, request modification, and control flow.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -662,7 +662,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    def _run_one(  # noqa: PLR0911, PLR0912
+    def _run_one(  # noqa: PLR0912
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -698,7 +698,9 @@ class ToolNode(RunnableCallable):
 
         # Generator protocol: start generator, send messages, receive requests/messages
         gen = self._on_tool_call(tool_request, input, runtime)
-        last_sent_message: ToolMessage | None = None
+        last_sent_value: ToolMessage | Command | None = None
+        first_yield = True
+        short_circuited_immediately = False
 
         try:
             yielded = next(gen)
@@ -706,22 +708,37 @@ class ToolNode(RunnableCallable):
             # Handler ended immediately without yielding
             msg = (
                 "on_tool_call handler must yield at least once. "
-                "The final result is the last ToolMessage sent to the handler."
+                "The final result is the last value sent to the handler."
             )
             raise ValueError(msg)
 
-        # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
+        # Handler yielded - check if short-circuit (ToolMessage/Command) or normal (ToolCallRequest)
         while True:
-            if isinstance(yielded, ToolMessage):
-                # Short-circuit: handler provided a ToolMessage directly
+            if isinstance(yielded, (ToolMessage, Command)):
+                # Handler yielded ToolMessage or Command
+                if first_yield:
+                    # First yield is ToolMessage/Command = immediate short-circuit
+                    short_circuited_immediately = True
+                elif short_circuited_immediately:
+                    # Already short-circuited immediately, cannot yield again
+                    msg = (
+                        "on_tool_call handler yielded multiple values after short-circuit. "
+                        "After yielding ToolMessage or Command as first yield, handler must "
+                        "end or throw."
+                    )
+                    raise ValueError(msg)
+                # Otherwise: this is response modification after execution - allowed
+
+                first_yield = False
+
                 # Send it back to generator
-                last_sent_message = yielded
+                last_sent_value = yielded
                 try:
                     yielded = gen.send(yielded)
                     # If generator yields again, continue the loop
                 except StopIteration:
-                    # Handler ended - return the last message we sent to it
-                    return last_sent_message
+                    # Handler ended - return the last value we sent to it
+                    return last_sent_value
                 except Exception as e:
                     # Handler threw an exception
                     if not self._handle_tool_errors:
@@ -736,19 +753,24 @@ class ToolNode(RunnableCallable):
                     )
             else:
                 # Normal flow: execute the tool with the request
+                if short_circuited_immediately:
+                    msg = (
+                        "on_tool_call handler yielded ToolCallRequest after short-circuit. "
+                        "After short-circuit, handler must end or throw."
+                    )
+                    raise ValueError(msg)
+
+                first_yield = False
+
                 tool_message_or_command = self._execute_tool_sync(yielded, input_type, config)
 
-                # Commands bypass the generator protocol
-                if isinstance(tool_message_or_command, Command):
-                    return tool_message_or_command
-
-                # Send tool message back to generator
-                last_sent_message = tool_message_or_command
+                # Send result back to generator (ToolMessage or Command)
+                last_sent_value = tool_message_or_command
                 try:
                     yielded = gen.send(tool_message_or_command)
                 except StopIteration:
-                    # Handler ended - return the last message we sent to it
-                    return last_sent_message
+                    # Handler ended - return the last value we sent to it
+                    return last_sent_value
                 except Exception as e:
                     # Handler threw an exception
                     if not self._handle_tool_errors:
@@ -845,7 +867,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    async def _arun_one(  # noqa: PLR0911, PLR0912
+    async def _arun_one(  # noqa: PLR0912
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -881,7 +903,9 @@ class ToolNode(RunnableCallable):
 
         # Generator protocol: handler is sync generator, tool execution is async
         gen = self._on_tool_call(tool_request, input, runtime)
-        last_sent_message: ToolMessage | None = None
+        last_sent_value: ToolMessage | Command | None = None
+        first_yield = True
+        short_circuited_immediately = False
 
         try:
             yielded = next(gen)
@@ -889,22 +913,37 @@ class ToolNode(RunnableCallable):
             # Handler ended immediately without yielding
             msg = (
                 "on_tool_call handler must yield at least once. "
-                "The final result is the last ToolMessage sent to the handler."
+                "The final result is the last value sent to the handler."
             )
             raise ValueError(msg)
 
-        # Handler yielded - check if it's a ToolMessage (short-circuit) or ToolCallRequest
+        # Handler yielded - check if short-circuit (ToolMessage/Command) or normal (ToolCallRequest)
         while True:
-            if isinstance(yielded, ToolMessage):
-                # Short-circuit: handler provided a ToolMessage directly
+            if isinstance(yielded, (ToolMessage, Command)):
+                # Handler yielded ToolMessage or Command
+                if first_yield:
+                    # First yield is ToolMessage/Command = immediate short-circuit
+                    short_circuited_immediately = True
+                elif short_circuited_immediately:
+                    # Already short-circuited immediately, cannot yield again
+                    msg = (
+                        "on_tool_call handler yielded multiple values after short-circuit. "
+                        "After yielding ToolMessage or Command as first yield, handler must "
+                        "end or throw."
+                    )
+                    raise ValueError(msg)
+                # Otherwise: this is response modification after execution - allowed
+
+                first_yield = False
+
                 # Send it back to generator
-                last_sent_message = yielded
+                last_sent_value = yielded
                 try:
                     yielded = gen.send(yielded)
                     # If generator yields again, continue the loop
                 except StopIteration:
-                    # Handler ended - return the last message we sent to it
-                    return last_sent_message
+                    # Handler ended - return the last value we sent to it
+                    return last_sent_value
                 except Exception as e:
                     # Handler threw an exception
                     if not self._handle_tool_errors:
@@ -919,21 +958,26 @@ class ToolNode(RunnableCallable):
                     )
             else:
                 # Normal flow: execute the tool with the request
+                if short_circuited_immediately:
+                    msg = (
+                        "on_tool_call handler yielded ToolCallRequest after short-circuit. "
+                        "After short-circuit, handler must end or throw."
+                    )
+                    raise ValueError(msg)
+
+                first_yield = False
+
                 tool_message_or_command = await self._execute_tool_async(
                     yielded, input_type, config
                 )
 
-                # Commands bypass the generator protocol
-                if isinstance(tool_message_or_command, Command):
-                    return tool_message_or_command
-
-                # Send tool message back to generator
-                last_sent_message = tool_message_or_command
+                # Send result back to generator (ToolMessage or Command)
+                last_sent_value = tool_message_or_command
                 try:
                     yielded = gen.send(tool_message_or_command)
                 except StopIteration:
-                    # Handler ended - return the last message we sent to it
-                    return last_sent_message
+                    # Handler ended - return the last value we sent to it
+                    return last_sent_value
                 except Exception as e:
                     # Handler threw an exception
                     if not self._handle_tool_errors:

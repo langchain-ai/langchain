@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
+from langgraph.types import Command
 
 from langchain.tools.tool_node import (
     ToolCallRequest,
@@ -28,12 +29,18 @@ def failing_tool(a: int) -> int:
     raise ValueError(msg)
 
 
+@tool
+def command_tool(goto: str) -> Command:
+    """A tool that returns a Command."""
+    return Command(goto=goto)
+
+
 def test_passthrough_handler() -> None:
     """Test a simple passthrough handler that doesn't modify anything."""
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Simple passthrough handler."""
         yield request
 
@@ -68,7 +75,7 @@ async def test_passthrough_handler_async() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Simple passthrough handler."""
         yield request
 
@@ -102,7 +109,7 @@ def test_modify_arguments() -> None:
 
     def modify_args_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that doubles the input arguments."""
         # Modify the arguments
         request.tool_call["args"]["a"] *= 2
@@ -140,7 +147,7 @@ def test_handler_validation_no_return() -> None:
 
     def handler_with_explicit_none(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns None explicitly - should still work."""
         yield request
         # Explicit None return - protocol uses last sent message as result
@@ -177,7 +184,7 @@ def test_handler_validation_no_yield() -> None:
 
     def bad_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that ends immediately without yielding."""
         # End immediately without yielding anything
         # Need unreachable yield to make this a generator function
@@ -211,7 +218,7 @@ def test_handler_with_handle_tool_errors_true() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Simple passthrough handler."""
         message = yield request
         # When handle_tool_errors=True, errors should be converted to error messages
@@ -248,7 +255,7 @@ def test_multiple_tool_calls_with_handler() -> None:
 
     def counting_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that counts calls."""
         nonlocal call_count
         call_count += 1
@@ -316,7 +323,7 @@ async def test_handler_with_async_execution() -> None:
 
     def modifying_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that modifies arguments."""
         # Add 10 to both arguments
         request.tool_call["args"]["a"] += 10
@@ -353,7 +360,7 @@ def test_short_circuit_with_tool_message() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns cached result without executing tool."""
         # Yield a ToolMessage directly instead of a ToolCallRequest
         cached_result = ToolMessage(
@@ -396,7 +403,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns cached result without executing tool."""
         cached_result = ToolMessage(
             content="async_cached_result",
@@ -436,7 +443,7 @@ def test_conditional_short_circuit() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that caches even numbers, executes odd."""
         call_count["count"] += 1
         a = request.tool_call["args"]["a"]
@@ -498,62 +505,12 @@ def test_conditional_short_circuit() -> None:
     assert tool_message2.content == "7"  # Actual execution: 3 + 4
 
 
-def test_short_circuit_then_retry() -> None:
-    """Test handler that yields ToolMessage then retries with actual tool."""
-    attempt_count = {"count": 0}
-
-    def cache_then_retry_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
-        """Try cached result first, then execute tool if needed."""
-        attempt_count["count"] += 1
-
-        # First attempt: try cached result
-        if attempt_count["count"] == 1:
-            cached = ToolMessage(
-                content="stale_cache",
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-            )
-            yield cached
-            # Simulate cache validation failure, need fresh result
-            # Yield the actual request to execute the tool
-            yield request
-        else:
-            # Subsequent calls: execute normally
-            yield request
-
-    tool_node = ToolNode([add], on_tool_call=cache_then_retry_handler)
-
-    result = tool_node.invoke(
-        {
-            "messages": [
-                AIMessage(
-                    "adding",
-                    tool_calls=[
-                        {
-                            "name": "add",
-                            "args": {"a": 5, "b": 6},
-                            "id": "call_20",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    tool_message = result["messages"][-1]
-    # Should have the actual result from the tool, not the cached value
-    assert tool_message.content == "11"
-    assert attempt_count["count"] == 1
-
-
 def test_direct_return_tool_message() -> None:
     """Test handler that returns ToolMessage directly without yielding."""
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns ToolMessage directly."""
         # Return ToolMessage directly
         # Note: We still need this to be a generator, so we use return (not yield)
@@ -597,7 +554,7 @@ async def test_direct_return_tool_message_async() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns ToolMessage directly."""
         if False:
             yield  # Makes this a generator function
@@ -637,7 +594,7 @@ def test_conditional_direct_return() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that returns cached or executes based on condition."""
         a = request.tool_call["args"]["a"]
 
@@ -704,7 +661,7 @@ def test_handler_can_throw_exception() -> None:
 
     def throwing_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that throws an exception after receiving response."""
         response = yield request
         # Check response and throw if invalid
@@ -744,7 +701,7 @@ def test_handler_throw_without_handle_errors() -> None:
 
     def throwing_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that throws an exception."""
         yield request
         msg = "Handler error"
@@ -777,7 +734,7 @@ def test_retry_middleware_with_exception() -> None:
 
     def retry_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that retries up to 3 times, then throws."""
         max_retries = 3
 
@@ -827,7 +784,7 @@ async def test_async_handler_can_throw_exception() -> None:
 
     def throwing_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
         """Handler that throws an exception after receiving response."""
         response = yield request
         if isinstance(response, ToolMessage):
@@ -859,3 +816,267 @@ async def test_async_handler_can_throw_exception() -> None:
     assert isinstance(messages[0], ToolMessage)
     assert messages[0].status == "error"
     assert "Async handler rejected the response" in messages[0].content
+
+
+def test_handler_cannot_yield_multiple_tool_messages() -> None:
+    """Test that yielding multiple ToolMessages is rejected."""
+
+    def multi_message_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that incorrectly yields multiple ToolMessages."""
+        # First short-circuit
+        yield ToolMessage("first", tool_call_id=request.tool_call["id"], name="add")
+        # Second short-circuit - should fail
+        yield ToolMessage("second", tool_call_id=request.tool_call["id"], name="add")
+
+    tool_node = ToolNode([add], on_tool_call=multi_message_handler)
+
+    with pytest.raises(
+        ValueError,
+        match="on_tool_call handler yielded multiple values after short-circuit",
+    ):
+        tool_node.invoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "adding",
+                        tool_calls=[
+                            {
+                                "name": "add",
+                                "args": {"a": 1, "b": 2},
+                                "id": "call_multi_1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+def test_handler_cannot_yield_request_after_tool_message() -> None:
+    """Test that yielding ToolCallRequest after ToolMessage is rejected."""
+
+    def confused_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that incorrectly switches from short-circuit to execution."""
+        # First short-circuit with cached result
+        yield ToolMessage("cached", tool_call_id=request.tool_call["id"], name="add")
+        # Then try to execute - should fail
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=confused_handler)
+
+    with pytest.raises(
+        ValueError,
+        match="on_tool_call handler yielded ToolCallRequest after short-circuit",
+    ):
+        tool_node.invoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "adding",
+                        tool_calls=[
+                            {
+                                "name": "add",
+                                "args": {"a": 1, "b": 2},
+                                "id": "call_confused_1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+def test_handler_can_short_circuit_with_command() -> None:
+    """Test that handler can short-circuit by yielding Command."""
+
+    def command_handler(
+        _request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that short-circuits with Command."""
+        # Short-circuit with Command instead of executing tool
+        yield Command(goto="end")
+
+    tool_node = ToolNode([add], on_tool_call=command_handler)
+
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "adding",
+                    tool_calls=[
+                        {
+                            "name": "add",
+                            "args": {"a": 1, "b": 2},
+                            "id": "call_cmd_1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Should get Command in result list
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], Command)
+    assert result[0].goto == "end"
+
+
+def test_handler_cannot_yield_multiple_commands() -> None:
+    """Test that yielding multiple Commands is rejected."""
+
+    def multi_command_handler(
+        _request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that incorrectly yields multiple Commands."""
+        # First short-circuit
+        yield Command(goto="step1")
+        # Second short-circuit - should fail
+        yield Command(goto="step2")
+
+    tool_node = ToolNode([add], on_tool_call=multi_command_handler)
+
+    with pytest.raises(
+        ValueError,
+        match="on_tool_call handler yielded multiple values after short-circuit",
+    ):
+        tool_node.invoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "adding",
+                        tool_calls=[
+                            {
+                                "name": "add",
+                                "args": {"a": 1, "b": 2},
+                                "id": "call_multicmd_1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+def test_handler_cannot_yield_request_after_command() -> None:
+    """Test that yielding ToolCallRequest after Command is rejected."""
+
+    def command_then_request_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that incorrectly yields request after Command."""
+        # First short-circuit with Command
+        yield Command(goto="somewhere")
+        # Then try to execute - should fail
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=command_then_request_handler)
+
+    with pytest.raises(
+        ValueError,
+        match="on_tool_call handler yielded ToolCallRequest after short-circuit",
+    ):
+        tool_node.invoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "adding",
+                        tool_calls=[
+                            {
+                                "name": "add",
+                                "args": {"a": 1, "b": 2},
+                                "id": "call_cmdreq_1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+def test_tool_returning_command_sent_to_handler() -> None:
+    """Test that when tool returns Command, it's sent to handler."""
+    received_commands = []
+
+    def command_inspector_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that inspects Command returned by tool."""
+        result = yield request
+        # Should receive Command from tool
+        if isinstance(result, Command):
+            received_commands.append(result)
+        # Can end here, returning the Command
+
+    tool_node = ToolNode([command_tool], on_tool_call=command_inspector_handler)
+
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "navigating",
+                    tool_calls=[
+                        {
+                            "name": "command_tool",
+                            "args": {"goto": "next_step"},
+                            "id": "call_cmdtool_1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Handler should have received the Command
+    assert len(received_commands) == 1
+    assert received_commands[0].goto == "next_step"
+
+    # Final result should be the Command in result list
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], Command)
+    assert result[0].goto == "next_step"
+
+
+def test_handler_can_modify_command_from_tool() -> None:
+    """Test that handler can inspect and modify Command from tool."""
+
+    def command_modifier_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that modifies Command returned by tool."""
+        result = yield request
+        # Modify the Command
+        if isinstance(result, Command):
+            modified_cmd = Command(goto=f"modified_{result.goto}")
+            yield modified_cmd
+        # Otherwise pass through
+
+    tool_node = ToolNode([command_tool], on_tool_call=command_modifier_handler)
+
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "navigating",
+                    tool_calls=[
+                        {
+                            "name": "command_tool",
+                            "args": {"goto": "original"},
+                            "id": "call_cmdmod_1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Final result should be the modified Command in result list
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], Command)
+    assert result[0].goto == "modified_original"
