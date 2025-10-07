@@ -615,12 +615,14 @@ def _build_index(dirs: List[str]) -> None:
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     doc = """# LangChain Python API Reference
 
-Welcome to the LangChain Python API reference. This is a reference for all
+Welcome to the LangChain v0.3 Python API reference. This is a reference for all
 `langchain-x` packages.
 
-For user guides see [https://python.langchain.com](https://python.langchain.com).
+These pages refer to the the v0.3 versions of LangChain packages and integrations. To
+visit the documentation for the latest versions of LangChain, visit [https://docs.langchain.com](https://docs.langchain.com)
+and [https://reference.langchain.com/python/](https://reference.langchain.com/python/) (for references.)
 
-For the legacy API reference hosted on ReadTheDocs see [https://api.python.langchain.com/](https://api.python.langchain.com/).
+For the legacy API reference (<v0.3) hosted on ReadTheDocs see [https://api.python.langchain.com/](https://api.python.langchain.com/).
 """
 
     if main_:
