@@ -9,7 +9,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
+from langchain.tools.tool_node import ToolCallRequest
 from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
 
 
@@ -41,7 +41,7 @@ def test_simple_logging_middleware() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append(f"before_{request.tool.name}")
             response = yield request
             call_log.append(f"after_{request.tool.name}")
@@ -80,7 +80,7 @@ def test_request_modification_middleware() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             # Add prefix to query
             if request.tool.name == "search":
                 original_query = request.tool_call["args"]["query"]
@@ -121,16 +121,15 @@ def test_response_inspection_middleware() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             response = yield request
 
             # Record response details
-            if response.result and isinstance(response.result, ToolMessage):
+            if isinstance(response, ToolMessage):
                 inspected_responses.append(
                     {
                         "tool_name": request.tool.name,
-                        "content": response.result.content,
-                        "action": response.action,
+                        "content": response.content,
                     }
                 )
 
@@ -160,7 +159,6 @@ def test_response_inspection_middleware() -> None:
     # Middleware should have inspected the response
     assert len(inspected_responses) == 1
     assert inspected_responses[0]["tool_name"] == "search"
-    assert inspected_responses[0]["action"] == "return"
 
 
 def test_conditional_retry_middleware() -> None:
@@ -172,7 +170,7 @@ def test_conditional_retry_middleware() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             nonlocal call_count
             max_retries = 2
 
@@ -182,9 +180,8 @@ def test_conditional_retry_middleware() -> None:
 
                 # Check if we should retry based on content
                 if (
-                    response.result
-                    and isinstance(response.result, ToolMessage)
-                    and "retry_marker" in response.result.content
+                    isinstance(response, ToolMessage)
+                    and "retry_marker" in response.content
                     and attempt < max_retries - 1
                 ):
                     # Continue to retry
@@ -230,7 +227,7 @@ def test_multiple_middleware_composition() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("outer_before")
             response = yield request
             call_log.append("outer_after")
@@ -241,7 +238,7 @@ def test_multiple_middleware_composition() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("inner_before")
             response = yield request
             call_log.append("inner_after")
@@ -281,7 +278,7 @@ def test_middleware_with_multiple_tool_calls() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append(request.tool.name)
             response = yield request
             return response
@@ -326,7 +323,7 @@ def test_middleware_access_to_state() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             # Record state - state could be dict or list
             if state is not None:
                 if isinstance(state, dict) and "messages" in state:
@@ -404,7 +401,7 @@ def test_generator_composition_immediate_outer_return() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("outer_yield")
             # Yield once (required by protocol), then return immediately with custom result
             response = yield request
@@ -415,14 +412,14 @@ def test_generator_composition_immediate_outer_return() -> None:
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            return ToolCallResponse(action="return", result=modified)
+            return modified
 
     class InnerMiddleware(AgentMiddleware):
         """Inner middleware."""
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("inner_called")
             response = yield request
             call_log.append("inner_got_response")
@@ -464,18 +461,18 @@ def test_generator_composition_short_circuit() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("outer_before")
             response = yield request
             call_log.append("outer_after")
             # Modify response from inner
-            if response.result and isinstance(response.result, ToolMessage):
+            if isinstance(response, ToolMessage):
                 modified = ToolMessage(
-                    content=f"outer_wrapped: {response.result.content}",
-                    tool_call_id=response.result.tool_call_id,
-                    name=response.result.name,
+                    content=f"outer_wrapped: {response.content}",
+                    tool_call_id=response.tool_call_id,
+                    name=response.name,
                 )
-                return ToolCallResponse(action="return", result=modified)
+                return modified
             return response
 
     class InnerShortCircuitMiddleware(AgentMiddleware):
@@ -483,18 +480,15 @@ def test_generator_composition_short_circuit() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("inner_short_circuit")
             # Yield request but return custom response instead of actual tool result
             _ = yield request
             # Return custom result without using actual tool response
-            return ToolCallResponse(
-                action="return",
-                result=ToolMessage(
-                    content="inner_short_circuit_result",
-                    tool_call_id=request.tool_call["id"],
-                    name=request.tool_call["name"],
-                ),
+            return ToolMessage(
+                content="inner_short_circuit_result",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
             )
 
     model = FakeToolCallingModel(
@@ -534,16 +528,12 @@ def test_generator_composition_outer_retry_loop() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             for attempt in range(3):
                 call_log.append(f"outer_attempt_{attempt}")
                 response = yield request
                 # Check if inner returned a marker for retry
-                if (
-                    response.result
-                    and isinstance(response.result, ToolMessage)
-                    and "retry" in response.result.content
-                ):
+                if isinstance(response, ToolMessage) and "retry" in response.content:
                     continue
                 return response
             return response
@@ -553,20 +543,17 @@ def test_generator_composition_outer_retry_loop() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             nonlocal inner_call_count
             inner_call_count += 1
             call_log.append(f"inner_call_{inner_call_count}")
 
             # First two calls: request retry
             if inner_call_count <= 2:
-                return ToolCallResponse(
-                    action="return",
-                    result=ToolMessage(
-                        content=f"retry_{inner_call_count}",
-                        tool_call_id=request.tool_call["id"],
-                        name=request.tool_call["name"],
-                    ),
+                return ToolMessage(
+                    content=f"retry_{inner_call_count}",
+                    tool_call_id=request.tool_call["id"],
+                    name=request.tool_call["name"],
                 )
 
             # Third call: succeed
@@ -616,16 +603,12 @@ def test_generator_composition_nested_retries() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             for outer_attempt in range(2):
                 call_log.append(f"outer_{outer_attempt}")
                 response = yield request
 
-                if (
-                    response.result
-                    and isinstance(response.result, ToolMessage)
-                    and response.result.content == "inner_final_failure"
-                ):
+                if isinstance(response, ToolMessage) and response.content == "inner_final_failure":
                     # Inner failed, retry once
                     continue
 
@@ -637,14 +620,14 @@ def test_generator_composition_nested_retries() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             for inner_attempt in range(2):
                 call_log.append(f"inner_{inner_attempt}")
                 response = yield request
 
                 # Check for error in tool result
-                if response.result and isinstance(response.result, ToolMessage):
-                    if inner_attempt == 0 and "Results for:" in response.result.content:
+                if isinstance(response, ToolMessage):
+                    if inner_attempt == 0 and "Results for:" in response.content:
                         # First attempt succeeded, but let's pretend it's a soft failure
                         # to test inner retry
                         continue
@@ -652,13 +635,10 @@ def test_generator_composition_nested_retries() -> None:
                 return response
 
             # Inner exhausted retries
-            return ToolCallResponse(
-                action="return",
-                result=ToolMessage(
-                    content="inner_final_failure",
-                    tool_call_id=request.tool_call["id"],
-                    name=request.tool_call["name"],
-                ),
+            return ToolMessage(
+                content="inner_final_failure",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
             )
 
     model = FakeToolCallingModel(
@@ -698,7 +678,7 @@ def test_generator_composition_three_levels() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("outer_before")
             response = yield request
             call_log.append("outer_after")
@@ -709,7 +689,7 @@ def test_generator_composition_three_levels() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("middle_before")
             response = yield request
             call_log.append("middle_after")
@@ -720,7 +700,7 @@ def test_generator_composition_three_levels() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("inner_before")
             response = yield request
             call_log.append("inner_after")
@@ -768,18 +748,18 @@ def test_generator_composition_return_value_extraction() -> None:
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             response = yield request
 
             # Explicitly return a modified response
-            if response.result and isinstance(response.result, ToolMessage):
+            if isinstance(response, ToolMessage):
                 modified = ToolMessage(
-                    content=f"modified: {response.result.content}",
-                    tool_call_id=response.result.tool_call_id,
-                    name=response.result.name,
+                    content=f"modified: {response.content}",
+                    tool_call_id=response.tool_call_id,
+                    name=response.name,
                 )
                 final_content.append(modified.content)
-                return ToolCallResponse(action="return", result=modified)
+                return modified
 
             return response
 
@@ -819,7 +799,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("first_before")
             response = yield request
             call_log.append("first_after")
@@ -830,18 +810,15 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("second_intercept")
             # Yield request but ignore the actual result
             _ = yield request
             # Return custom result
-            return ToolCallResponse(
-                action="return",
-                result=ToolMessage(
-                    content="intercepted_result",
-                    tool_call_id=request.tool_call["id"],
-                    name=request.tool_call["name"],
-                ),
+            return ToolMessage(
+                content="intercepted_result",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
             )
 
     class ThirdPassthroughMiddleware(AgentMiddleware):
@@ -849,7 +826,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
 
         def on_tool_call(
             self, request: ToolCallRequest, state, runtime
-        ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+        ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
             call_log.append("third_called")
             response = yield request
             call_log.append("third_after")

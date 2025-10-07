@@ -44,7 +44,6 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
-from langchain.tools.tool_node import ToolCallResponse
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Sequence
@@ -234,14 +233,11 @@ def _chain_tool_call_handlers(
     if len(handlers) == 1:
         return handlers[0]
 
-    def _extract_return_value(stop_iteration: StopIteration) -> ToolCallResponse:
-        """Extract return value from StopIteration, auto-wrap ToolMessage, raise if None."""
+    def _extract_return_value(stop_iteration: StopIteration) -> ToolMessage:
+        """Extract return value from StopIteration, raise if None."""
         if stop_iteration.value is None:
-            msg = "on_tool_call handler must explicitly return a ToolCallResponse or ToolMessage"
+            msg = "on_tool_call handler must explicitly return a ToolMessage"
             raise ValueError(msg)
-        # Auto-wrap ToolMessage in ToolCallResponse
-        if isinstance(stop_iteration.value, ToolMessage):
-            return ToolCallResponse(action="return", result=stop_iteration.value)
         return stop_iteration.value
 
     def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
@@ -249,9 +245,7 @@ def _chain_tool_call_handlers(
 
         def composed(
             request: ToolCallRequest, state: Any, runtime: Any
-        ) -> Generator[
-            ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage
-        ]:
+        ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
             outer_gen = outer(request, state, runtime)
 
             # Initialize outer generator
@@ -264,9 +258,9 @@ def _chain_tool_call_handlers(
             while True:
                 # If outer yielded a ToolMessage, bypass inner handler and yield directly
                 if isinstance(outer_request, ToolMessage):
-                    tool_response = yield outer_request
+                    tool_message = yield outer_request
                     try:
-                        outer_request = outer_gen.send(tool_response)
+                        outer_request = outer_gen.send(tool_message)
                     except StopIteration as e:
                         return _extract_return_value(e)
                     continue
@@ -278,9 +272,9 @@ def _chain_tool_call_handlers(
                     inner_request = next(inner_gen)
                 except StopIteration as e:
                     # Inner returned immediately - send to outer
-                    inner_response = _extract_return_value(e)
+                    inner_message = _extract_return_value(e)
                     try:
-                        outer_request = outer_gen.send(inner_response)
+                        outer_request = outer_gen.send(inner_message)
                     except StopIteration as e2:
                         return _extract_return_value(e2)
                     continue
@@ -288,19 +282,19 @@ def _chain_tool_call_handlers(
                 # Inner retry loop
                 while True:
                     # Yield to actual tool execution
-                    tool_response = yield inner_request
+                    tool_message = yield inner_request
 
-                    # Send response to inner
+                    # Send message to inner
                     try:
-                        inner_request = inner_gen.send(tool_response)
+                        inner_request = inner_gen.send(tool_message)
                     except StopIteration as e:
-                        # Inner is done - send final response to outer
-                        inner_response = _extract_return_value(e)
+                        # Inner is done - send final message to outer
+                        inner_message = _extract_return_value(e)
                         break
 
-                # Send inner's final response to outer
+                # Send inner's final message to outer
                 try:
-                    outer_request = outer_gen.send(inner_response)
+                    outer_request = outer_gen.send(inner_message)
                 except StopIteration as e:
                     # Outer is done
                     return _extract_return_value(e)

@@ -21,7 +21,7 @@ from langchain_core.runnables import run_in_executor
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langchain.tools.tool_node import ToolCallRequest, ToolCallResponse
+    from langchain.tools.tool_node import ToolCallRequest
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage, ToolMessage  # noqa: TC002
@@ -243,12 +243,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ToolCallRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Intercept tool execution for retries, monitoring, or request modification.
 
         Generator protocol for fine-grained control over tool execution. Multiple
         middleware with on_tool_call compose automatically: first defined = outermost.
-        When a tool execution fails, the exception is thrown into the generator.
 
         Args:
             request: Tool execution request with tool call dict and BaseTool instance.
@@ -260,43 +259,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             to short-circuit tool execution with a cached/predefined result.
 
         Receives:
-            ToolCallResponse via .send() after successful execution.
-
-        Raises:
-            Exception thrown into generator when tool execution fails.
+            ToolMessage via .send() after tool execution.
 
         Returns:
-            ToolCallResponse with action="return" and result, or action="raise"
-            and exception. Can also return ToolMessage directly, which will be
-            auto-wrapped in ToolCallResponse(action="return", result=message).
+            ToolMessage with final execution result.
 
         Example:
-            Retry on rate limit errors (exception-based):
+            Passthrough handler:
 
             def on_tool_call(self, request, state, runtime):
-                for attempt in range(3):
-                    try:
-                        response = yield request
-                        return response  # Success
-                    except Exception as e:
-                        if "rate limit" in str(e):
-                            time.sleep(2**attempt)
-                            continue
-                        raise  # Propagate non-rate-limit errors
-
-            Error handling with fallback:
-
-            def on_tool_call(self, request, state, runtime):
-                try:
-                    response = yield request
-                    return response
-                except Exception as e:
-                    return ToolMessage(
-                        content=f"Error: {e}",
-                        tool_call_id=request.tool_call["id"],
-                        name=request.tool_call["name"],
-                        status="error",
-                    )
+                message = yield request
+                return message
 
             Short-circuit with cached result (return directly):
 
@@ -309,11 +282,18 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         tool_call_id=request.tool_call["id"],
                         name=request.tool_call["name"],
                     )
-                response = yield request
-                return response
+                message = yield request
+                return message
+
+            Modify arguments before execution:
+
+            def on_tool_call(self, request, state, runtime):
+                request.tool_call["args"]["value"] *= 2  # Double the value
+                message = yield request
+                return message
         """
-        response = yield request
-        return response
+        message = yield request
+        return message
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):

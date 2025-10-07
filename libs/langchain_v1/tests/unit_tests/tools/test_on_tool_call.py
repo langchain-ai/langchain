@@ -9,7 +9,6 @@ from langchain_core.tools import tool
 
 from langchain.tools.tool_node import (
     ToolCallRequest,
-    ToolCallResponse,
     ToolNode,
 )
 
@@ -34,10 +33,10 @@ def test_passthrough_handler() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Simple passthrough handler."""
-        response = yield request
-        return response
+        message = yield request
+        return message
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -70,7 +69,7 @@ async def test_passthrough_handler_async() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Simple passthrough handler."""
         response = yield request
         return response
@@ -105,7 +104,7 @@ def test_modify_arguments() -> None:
 
     def modify_args_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Handler that doubles the input arguments."""
         # Modify the arguments
         request.tool_call["args"]["a"] *= 2
@@ -139,127 +138,12 @@ def test_modify_arguments() -> None:
     assert tool_message.content == "6"
 
 
-def test_error_to_message_handler() -> None:
-    """Test handler that converts errors to successful ToolMessage."""
-
-    def error_to_message_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Handler that converts errors to messages."""
-        try:
-            response = yield request
-            return response  # Success case
-        except Exception as e:
-            # Convert exception to error message
-            error_message = ToolMessage(
-                content=f"Error: {e}",
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-                status="error",
-            )
-            return ToolCallResponse(
-                action="return", result=error_message, exception=e
-            )
-
-    tool_node = ToolNode(
-        [failing_tool], on_tool_call=error_to_message_handler, handle_tool_errors=False
-    )
-
-    result = tool_node.invoke(
-        {
-            "messages": [
-                AIMessage(
-                    "failing",
-                    tool_calls=[
-                        {
-                            "name": "failing_tool",
-                            "args": {"a": 1},
-                            "id": "call_4",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    tool_message = result["messages"][-1]
-    assert isinstance(tool_message, ToolMessage)
-    assert "Error:" in tool_message.content
-    assert "This tool always fails" in tool_message.content
-    assert tool_message.status == "error"
-
-
-def test_retry_handler() -> None:
-    """Test handler that retries with modified arguments on error."""
-    attempt_count = 0
-
-    def retry_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Handler that retries up to 2 times."""
-        nonlocal attempt_count
-        max_retries = 2
-
-        for attempt in range(max_retries):
-            attempt_count += 1
-            try:
-                response = yield request
-                return response  # Success
-            except Exception as e:
-                # If this was the last retry, give up
-                if attempt == max_retries - 1:
-                    # Convert error to message
-                    error_message = ToolMessage(
-                        content=f"Failed after {max_retries} retries: {e}",
-                        tool_call_id=request.tool_call["id"],
-                        name=request.tool_call["name"],
-                        status="error",
-                    )
-                    return ToolCallResponse(
-                        action="return", result=error_message, exception=e
-                    )
-
-                # Otherwise, try with different args (won't help in this case, but demonstrates retry)
-                request.tool_call["args"]["a"] += 1
-
-        # This should never be reached
-        msg = "Unreachable"
-        raise RuntimeError(msg)
-
-    tool_node = ToolNode([failing_tool], on_tool_call=retry_handler, handle_tool_errors=False)
-
-    result = tool_node.invoke(
-        {
-            "messages": [
-                AIMessage(
-                    "failing",
-                    tool_calls=[
-                        {
-                            "name": "failing_tool",
-                            "args": {"a": 1},
-                            "id": "call_5",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    # Verify we attempted 2 times
-    assert attempt_count == 2
-
-    tool_message = result["messages"][-1]
-    assert isinstance(tool_message, ToolMessage)
-    assert "Failed after 2 retries" in tool_message.content
-    assert tool_message.status == "error"
-
-
 def test_handler_validation_no_return() -> None:
     """Test that handler without explicit return raises error."""
 
     def bad_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Handler that doesn't return explicitly."""
         yield request
         # Implicit None return
@@ -267,7 +151,7 @@ def test_handler_validation_no_return() -> None:
 
     tool_node = ToolNode([add], on_tool_call=bad_handler)
 
-    with pytest.raises(ValueError, match="must explicitly return a ToolCallResponse"):
+    with pytest.raises(ValueError, match="must explicitly return a ToolMessage"):
         tool_node.invoke(
             {
                 "messages": [
@@ -289,12 +173,9 @@ def test_handler_validation_no_return() -> None:
 def test_handler_validation_no_yield() -> None:
     """Test that handler must yield at least once."""
 
-    def bad_handler(request: ToolCallRequest, _state: Any, _runtime: Any) -> ToolCallResponse:
+    def bad_handler(request: ToolCallRequest, _state: Any, _runtime: Any) -> ToolMessage:
         """Handler that doesn't yield - not even a generator."""
-        return ToolCallResponse(
-            action="return",
-            result=ToolMessage(content="fake", tool_call_id=request.tool_call["id"]),
-        )
+        return ToolMessage(content="fake", tool_call_id=request.tool_call["id"])
 
     tool_node = ToolNode([add], on_tool_call=bad_handler)  # type: ignore[arg-type]
 
@@ -317,51 +198,18 @@ def test_handler_validation_no_yield() -> None:
         )
 
 
-def test_handler_can_raise_error() -> None:
-    """Test handler that propagates errors by not catching exceptions."""
-
-    def raise_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Handler that propagates errors by not catching them."""
-        response = yield request  # Exception will propagate if there's an error
-        return response  # Only reached if no exception
-
-    tool_node = ToolNode([failing_tool], on_tool_call=raise_handler, handle_tool_errors=False)
-
-    with pytest.raises(ValueError, match="This tool always fails"):
-        tool_node.invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "failing",
-                        tool_calls=[
-                            {
-                                "name": "failing_tool",
-                                "args": {"a": 1},
-                                "id": "call_8",
-                            }
-                        ],
-                    )
-                ]
-            }
-        )
-
-
 def test_handler_with_handle_tool_errors_true() -> None:
     """Test that handle_tool_errors=True works with on_tool_call handler."""
 
     def passthrough_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Simple passthrough handler."""
-        response = yield request
+        message = yield request
         # When handle_tool_errors=True, errors should be converted to error messages
-        assert response.action == "return"
-        assert response.result is not None
-        assert isinstance(response.result, ToolMessage)
-        assert response.result.status == "error"
-        return response
+        assert isinstance(message, ToolMessage)
+        assert message.status == "error"
+        return message
 
     tool_node = ToolNode([failing_tool], on_tool_call=passthrough_handler, handle_tool_errors=True)
 
@@ -393,7 +241,7 @@ def test_multiple_tool_calls_with_handler() -> None:
 
     def counting_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Handler that counts calls."""
         nonlocal call_count
         call_count += 1
@@ -452,33 +300,6 @@ def test_tool_call_request_dataclass() -> None:
     assert request.tool_call["name"] == "add"
 
 
-def test_tool_call_response_dataclass_validation() -> None:
-    """Test ToolCallResponse validation."""
-    # Valid continue response
-    continue_response = ToolCallResponse(
-        action="return",
-        result=ToolMessage(content="success", tool_call_id="1"),
-    )
-    assert continue_response.action == "return"
-    assert continue_response.result is not None
-
-    # Valid raise response
-    raise_response = ToolCallResponse(
-        action="raise",
-        exception=ValueError("error"),
-    )
-    assert raise_response.action == "raise"
-    assert raise_response.exception is not None
-
-    # Invalid: continue without result
-    with pytest.raises(ValueError, match="action='return' requires a result"):
-        ToolCallResponse(action="return")
-
-    # Invalid: raise without exception
-    with pytest.raises(ValueError, match="action='raise' requires an exception"):
-        ToolCallResponse(action="raise")
-
-
 async def test_handler_with_async_execution() -> None:
     """Test handler works correctly with async tool execution."""
 
@@ -489,7 +310,7 @@ async def test_handler_with_async_execution() -> None:
 
     def modifying_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Handler that modifies arguments."""
         # Add 10 to both arguments
         request.tool_call["args"]["a"] += 10
@@ -522,76 +343,12 @@ async def test_handler_with_async_execution() -> None:
     assert tool_message.content == "23"
 
 
-def test_response_validation_action_continue() -> None:
-    """Test ToolCallResponse validation for action='return'."""
-
-    def bad_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Handler that returns invalid response."""
-        yield request
-        # Return continue without result - this should be caught by validation
-        return ToolCallResponse(action="return", result=None)
-
-    tool_node = ToolNode([add], on_tool_call=bad_handler)
-
-    with pytest.raises(ValueError, match="action='return' requires a result"):
-        tool_node.invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "adding",
-                        tool_calls=[
-                            {
-                                "name": "add",
-                                "args": {"a": 1, "b": 2},
-                                "id": "call_14",
-                            }
-                        ],
-                    )
-                ]
-            }
-        )
-
-
-def test_response_validation_action_raise() -> None:
-    """Test ToolCallResponse validation for action='raise'."""
-
-    def bad_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse]:
-        """Handler that returns invalid response."""
-        yield request
-        # Return raise without exception
-        return ToolCallResponse(action="raise", exception=None)
-
-    tool_node = ToolNode([add], on_tool_call=bad_handler)
-
-    with pytest.raises(ValueError, match="action='raise' requires an exception"):
-        tool_node.invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "adding",
-                        tool_calls=[
-                            {
-                                "name": "add",
-                                "args": {"a": 1, "b": 2},
-                                "id": "call_15",
-                            }
-                        ],
-                    )
-                ]
-            }
-        )
-
-
 def test_short_circuit_with_tool_message() -> None:
     """Test handler that yields ToolMessage to short-circuit tool execution."""
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Handler that returns cached result without executing tool."""
         # Yield a ToolMessage directly instead of a ToolCallRequest
         cached_result = ToolMessage(
@@ -599,11 +356,10 @@ def test_short_circuit_with_tool_message() -> None:
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
         )
-        response = yield cached_result
-        # Response should contain our cached message
-        assert response.action == "return"
-        assert response.result == cached_result
-        return response
+        message = yield cached_result
+        # Message should be our cached message sent back
+        assert message == cached_result
+        return message
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -636,7 +392,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Handler that returns cached result without executing tool."""
         cached_result = ToolMessage(
             content="async_cached_result",
@@ -677,7 +433,7 @@ def test_conditional_short_circuit() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Handler that caches even numbers, executes odd."""
         call_count["count"] += 1
         a = request.tool_call["args"]["a"]
@@ -747,7 +503,7 @@ def test_short_circuit_then_retry() -> None:
 
     def cache_then_retry_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Try cached result first, then execute tool if needed."""
         attempt_count["count"] += 1
 
@@ -798,9 +554,9 @@ def test_direct_return_tool_message() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Handler that returns ToolMessage directly."""
-        # Return ToolMessage directly - should be auto-wrapped in ToolCallResponse
+        # Return ToolMessage directly
         # Note: We still need this to be a generator, so we use return (not yield)
         # The generator protocol will catch the StopIteration with the return value
         if False:
@@ -842,7 +598,7 @@ async def test_direct_return_tool_message_async() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
+    ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, ToolMessage]:
         """Handler that returns ToolMessage directly."""
         if False:
             yield  # Makes this a generator function
@@ -882,12 +638,14 @@ def test_conditional_direct_return() -> None:
 
     def conditional_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest, ToolCallResponse, ToolCallResponse | ToolMessage]:
+    ) -> Generator[ToolCallRequest, ToolMessage, ToolMessage]:
         """Handler that returns cached or executes based on condition."""
         a = request.tool_call["args"]["a"]
 
         if a == 0:
             # Return ToolMessage directly for zero
+            if False:
+                yield  # Makes this a generator
             return ToolMessage(
                 content="zero_cached",
                 tool_call_id=request.tool_call["id"],
@@ -895,8 +653,8 @@ def test_conditional_direct_return() -> None:
             )
         else:
             # Execute tool normally
-            response = yield request
-            return response
+            message = yield request
+            return message
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -941,171 +699,3 @@ def test_conditional_direct_return() -> None:
 
     tool_message2 = result2["messages"][-1]
     assert tool_message2.content == "7"  # Actual execution: 3 + 4
-
-def test_exception_thrown_into_generator() -> None:
-    """Test that exceptions are thrown into generator when tool fails."""
-
-    def exception_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
-        """Handler that catches exceptions."""
-        try:
-            response = yield request
-            return response
-        except Exception as e:
-            # Catch exception and return error message
-            return ToolMessage(
-                content=f"Caught: {e}",
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-                status="error",
-            )
-
-    tool_node = ToolNode([failing_tool], on_tool_call=exception_handler, handle_tool_errors=False)
-
-    result = tool_node.invoke(
-        {
-            "messages": [
-                AIMessage(
-                    "failing",
-                    tool_calls=[
-                        {
-                            "name": "failing_tool",
-                            "args": {"a": 5},
-                            "id": "call_25",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    tool_message = result["messages"][-1]
-    assert isinstance(tool_message, ToolMessage)
-    assert "Caught:" in tool_message.content
-    assert "This tool always fails" in tool_message.content
-    assert tool_message.status == "error"
-
-
-def test_exception_retry_with_throw() -> None:
-    """Test retry logic using exception throwing."""
-    attempt_count = {"count": 0}
-
-    def retry_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
-        """Handler that retries up to 3 times using exception handling."""
-        for attempt in range(3):
-            attempt_count["count"] += 1
-            try:
-                response = yield request
-                return response  # Success
-            except Exception as e:
-                if attempt == 2:
-                    # Give up, return error message
-                    return ToolMessage(
-                        content=f"Failed after 3 attempts: {e}",
-                        tool_call_id=request.tool_call["id"],
-                        name=request.tool_call["name"],
-                        status="error",
-                    )
-                # Otherwise retry
-        return ToolCallResponse(action="return", result=ToolMessage(content="unreachable", tool_call_id=""))
-
-    tool_node = ToolNode([failing_tool], on_tool_call=retry_handler, handle_tool_errors=False)
-
-    result = tool_node.invoke(
-        {
-            "messages": [
-                AIMessage(
-                    "failing",
-                    tool_calls=[
-                        {
-                            "name": "failing_tool",
-                            "args": {"a": 10},
-                            "id": "call_26",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    tool_message = result["messages"][-1]
-    assert isinstance(tool_message, ToolMessage)
-    assert "Failed after 3 attempts" in tool_message.content
-    assert attempt_count["count"] == 3
-
-
-def test_exception_propagation() -> None:
-    """Test that uncaught exceptions propagate."""
-
-    def no_catch_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
-        """Handler that doesn't catch exceptions."""
-        response = yield request
-        return response
-
-    tool_node = ToolNode([failing_tool], on_tool_call=no_catch_handler, handle_tool_errors=False)
-
-    with pytest.raises(ValueError, match="This tool always fails"):
-        tool_node.invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "failing",
-                        tool_calls=[
-                            {
-                                "name": "failing_tool",
-                                "args": {"a": 7},
-                                "id": "call_27",
-                            }
-                        ],
-                    )
-                ]
-            }
-        )
-
-
-async def test_exception_thrown_into_generator_async() -> None:
-    """Test that exceptions are thrown into generator in async execution."""
-
-    def exception_handler(
-        request: ToolCallRequest, _state: Any, _runtime: Any
-    ) -> Generator[ToolCallRequest | ToolMessage, ToolCallResponse, ToolCallResponse | ToolMessage]:
-        """Handler that catches exceptions."""
-        try:
-            response = yield request
-            return response
-        except Exception as e:
-            return ToolMessage(
-                content=f"Async caught: {e}",
-                tool_call_id=request.tool_call["id"],
-                name=request.tool_call["name"],
-                status="error",
-            )
-
-    tool_node = ToolNode([failing_tool], on_tool_call=exception_handler, handle_tool_errors=False)
-
-    result = await tool_node.ainvoke(
-        {
-            "messages": [
-                AIMessage(
-                    "failing",
-                    tool_calls=[
-                        {
-                            "name": "failing_tool",
-                            "args": {"a": 8},
-                            "id": "call_28",
-                        }
-                    ],
-                )
-            ]
-        }
-    )
-
-    tool_message = result["messages"][-1]
-    assert isinstance(tool_message, ToolMessage)
-    assert "Async caught:" in tool_message.content
-    assert "This tool always fails" in tool_message.content
