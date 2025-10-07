@@ -199,11 +199,10 @@ class TestErrorHandling:
         class ErrorToSuccessMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 try:
-                    result = yield request
-                    # Generator ends
+                    yield request
                 except Exception:
                     fallback = AIMessage(content="Error handled gracefully")
-                yield fallback
+                    yield fallback
 
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[ErrorToSuccessMiddleware()])
@@ -223,11 +222,10 @@ class TestErrorHandling:
         class SelectiveErrorMiddleware(AgentMiddleware):
             def on_model_call(self, request, state, runtime):
                 try:
-                    result = yield request
-                    # Generator ends
+                    yield request
                 except ConnectionError:
                     fallback = AIMessage(content="Network issue, try again later")
-                yield fallback
+                    yield fallback
 
         model = SpecificErrorModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[SelectiveErrorMiddleware()])
@@ -235,6 +233,194 @@ class TestErrorHandling:
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
         assert result["messages"][1].content == "Network issue, try again later"
+
+    def test_error_handling_with_success_path(self) -> None:
+        """Test that error handling middleware works correctly on both success and error paths."""
+        call_log = []
+
+        class ErrorRecoveryMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                try:
+                    call_log.append("before-yield")
+                    yield request
+                    call_log.append("after-yield-success")
+                except Exception:
+                    call_log.append("caught-error")
+                    fallback = AIMessage(content="Recovered from error")
+                    yield fallback
+
+        # Test 1: Success path
+        call_log.clear()
+        model1 = GenericFakeChatModel(messages=iter([AIMessage(content="Success")]))
+        agent1 = create_agent(model=model1, middleware=[ErrorRecoveryMiddleware()])
+        result1 = agent1.invoke({"messages": [HumanMessage("Test")]})
+
+        assert result1["messages"][1].content == "Success"
+        assert call_log == ["before-yield", "after-yield-success"]
+
+        # Test 2: Error path
+        call_log.clear()
+
+        class AlwaysFailModel(GenericFakeChatModel):
+            def _generate(self, messages, **kwargs):
+                raise ValueError("Model error")
+
+        model2 = AlwaysFailModel(messages=iter([]))
+        agent2 = create_agent(model=model2, middleware=[ErrorRecoveryMiddleware()])
+        result2 = agent2.invoke({"messages": [HumanMessage("Test")]})
+
+        assert result2["messages"][1].content == "Recovered from error"
+        assert call_log == ["before-yield", "caught-error"]
+
+
+class TestShortCircuit:
+    """Test short-circuit patterns with on_model_call."""
+
+    def test_cache_short_circuit(self) -> None:
+        """Test middleware that short-circuits with cached response."""
+        cache = {}
+        model_calls = []
+
+        class CachingMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                # Simple cache key based on last message
+                cache_key = str(request.messages[-1].content) if request.messages else ""
+
+                if cache_key in cache:
+                    # Short-circuit with cached result
+                    yield cache[cache_key]
+                else:
+                    # Execute and cache
+                    result = yield request
+                    cache[cache_key] = result
+
+        class TrackingModel(GenericFakeChatModel):
+            def _generate(self, messages, **kwargs):
+                model_calls.append(len(messages))
+                return super()._generate(messages, **kwargs)
+
+        model = TrackingModel(
+            messages=iter(
+                [
+                    AIMessage(content="Response 1"),
+                    AIMessage(content="Response 2"),
+                ]
+            )
+        )
+        agent = create_agent(model=model, middleware=[CachingMiddleware()])
+
+        # First call - cache miss, calls model
+        result1 = agent.invoke({"messages": [HumanMessage("Hello")]})
+        assert result1["messages"][1].content == "Response 1"
+        assert len(model_calls) == 1
+
+        # Second call with same message - cache hit, doesn't call model
+        result2 = agent.invoke({"messages": [HumanMessage("Hello")]})
+        assert result2["messages"][1].content == "Response 1"
+        assert len(model_calls) == 1  # Still 1, no new call
+
+        # Third call with different message - cache miss, calls model
+        result3 = agent.invoke({"messages": [HumanMessage("Goodbye")]})
+        assert result3["messages"][1].content == "Response 2"
+        assert len(model_calls) == 2  # New call
+
+
+class TestRequestModification:
+    """Test request modification with on_model_call."""
+
+    def test_add_system_prompt(self) -> None:
+        """Test middleware that adds a system prompt to requests."""
+        received_requests = []
+
+        class SystemPromptMiddleware(AgentMiddleware):
+            def __init__(self, system_prompt: str):
+                super().__init__()
+                self.system_prompt = system_prompt
+
+            def on_model_call(self, request, state, runtime):
+                # Modify request to add system prompt
+                modified_request = ModelRequest(
+                    model=request.model,
+                    system_prompt=self.system_prompt,
+                    messages=request.messages,
+                    tools=request.tools,
+                    tool_choice=request.tool_choice,
+                    response_format=request.response_format,
+                    model_settings=request.model_settings,
+                )
+                received_requests.append(modified_request)
+                yield modified_request
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(
+            model=model,
+            middleware=[SystemPromptMiddleware(system_prompt="You are a helpful assistant.")],
+        )
+
+        result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+        assert len(received_requests) == 1
+        assert received_requests[0].system_prompt == "You are a helpful assistant."
+        assert result["messages"][1].content == "Response"
+
+
+class TestStateAndRuntime:
+    """Test state and runtime access in on_model_call."""
+
+    def test_access_state_in_middleware(self) -> None:
+        """Test middleware can read and use state."""
+        state_values = []
+
+        class StateAwareMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                # Access state
+                state_values.append(
+                    {
+                        "thread_model_call_count": state.get("thread_model_call_count", 0),
+                        "messages_count": len(state.get("messages", [])),
+                    }
+                )
+                yield request
+
+        model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
+        agent = create_agent(model=model, middleware=[StateAwareMiddleware()])
+
+        result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+        assert len(state_values) == 1
+        assert state_values[0]["messages_count"] == 1  # Just the human message
+        assert result["messages"][1].content == "Response"
+
+    def test_retry_with_state_tracking(self) -> None:
+        """Test middleware that tracks retry count in state."""
+
+        class StateTrackingRetryMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                max_retries = 2
+                for attempt in range(max_retries):
+                    try:
+                        yield request
+                        break  # Success
+                    except Exception:
+                        if attempt == max_retries - 1:
+                            raise
+
+        call_count = {"value": 0}
+
+        class FailOnceThenSucceed(GenericFakeChatModel):
+            def _generate(self, messages, **kwargs):
+                call_count["value"] += 1
+                if call_count["value"] == 1:
+                    raise ValueError("First fails")
+                return super()._generate(messages, **kwargs)
+
+        model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
+        agent = create_agent(model=model, middleware=[StateTrackingRetryMiddleware()])
+
+        result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+        assert call_count["value"] == 2  # Failed once, succeeded second time
+        assert result["messages"][1].content == "Success"
 
 
 class TestMiddlewareComposition:

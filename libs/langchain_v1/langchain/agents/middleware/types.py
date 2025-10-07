@@ -42,7 +42,6 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ModelRequest",
-    "ModelResponse",
     "OmitFromSchema",
     "PublicAgentState",
     "after_agent",
@@ -72,40 +71,6 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class ModelResponse:
-    """Result of a model invocation, successful or failed.
-
-    Returned by model execution and passed to on_model_call middleware.
-    Middleware can modify the response to rewrite content, convert errors
-    to fallback responses, or add metadata.
-
-    Examples:
-        Rewrite response content:
-        ```python
-        if response.action == "return":
-            modified = AIMessage(content=f"Enhanced: {response.result.content}")
-            response = ModelResponse(action="return", result=modified)
-        ```
-
-        Convert error to fallback response:
-        ```python
-        if response.action == "raise":
-            fallback = AIMessage(content="Using fallback response")
-            response = ModelResponse(action="return", result=fallback)
-        ```
-    """
-
-    action: Literal["return", "raise"]
-    """Action indicating success ('return') or error ('raise')."""
-
-    result: AIMessage | None = None
-    """The AI message result when action is 'return'."""
-
-    exception: Exception | None = None
-    """The exception when action is 'raise'."""
 
 
 @dataclass
@@ -275,6 +240,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 except Exception:
                     fallback = AIMessage(content="Service unavailable")
                     yield fallback
+
+            Cache/short-circuit:
+            ```python
+            def on_model_call(self, request, state, runtime):
+                if cached := get_cache(request):
+                    yield cached  # Short-circuit with cached result
+                else:
+                    result = yield request
+                    save_cache(request, result)
             ```
         """
         yield request
