@@ -1,7 +1,7 @@
 """Prompt template that contains few shot examples."""
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
@@ -17,7 +17,7 @@ from langchain_core.prompts.string import (
 class FewShotPromptWithTemplates(StringPromptTemplate):
     """Prompt template that contains few shot examples."""
 
-    examples: Optional[list[dict]] = None
+    examples: list[dict] | None = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
@@ -34,7 +34,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
-    prefix: Optional[StringPromptTemplate] = None
+    prefix: StringPromptTemplate | None = None
     """A PromptTemplate to put before the examples."""
 
     template_format: PromptTemplateFormat = "f-string"
@@ -210,7 +210,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot_with_templates"
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the prompt to a file.
 
         Args:

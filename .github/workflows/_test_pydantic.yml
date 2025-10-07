@@ -1,4 +1,6 @@
-name: '🐍 Pydantic Version Testing'
+# Facilitate unit testing against different Pydantic versions for a provided package.
+
+name: "🐍 Pydantic Version Testing"
 
 on:
   workflow_call:
@@ -31,32 +33,32 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: 'Pydantic ~=${{ inputs.pydantic-version }}'
+    name: "Pydantic ~=${{ inputs.pydantic-version }}"
     steps:
-      - name: '📋 Checkout Code'
+      - name: "📋 Checkout Code"
         uses: actions/checkout@v5
 
-      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
+      - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
           cache-suffix: test-pydantic-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
 
-      - name: '📦 Install Test Dependencies'
+      - name: "📦 Install Test Dependencies"
         shell: bash
         run: uv sync --group test
 
-      - name: '🔄 Install Specific Pydantic Version'
+      - name: "🔄 Install Specific Pydantic Version"
         shell: bash
         run: VIRTUAL_ENV=.venv uv pip install pydantic~=${{ inputs.pydantic-version }}
 
-      - name: '🧪 Run Core Tests'
+      - name: "🧪 Run Core Tests"
         shell: bash
         run: |
           make test
 
-      - name: '🧹 Verify Clean Working Directory'
+      - name: "🧹 Verify Clean Working Directory"
         shell: bash
         run: |
           set -eu

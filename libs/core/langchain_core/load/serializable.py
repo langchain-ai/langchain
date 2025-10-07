@@ -6,9 +6,7 @@ from abc import ABC
 from typing import (
     Any,
     Literal,
-    Optional,
     TypedDict,
-    Union,
     cast,
 )
 
@@ -53,7 +51,7 @@ class SerializedNotImplemented(BaseSerialized):
 
     type: Literal["not_implemented"]
     """The type of the object. Must be ``'not_implemented'``."""
-    repr: Optional[str]
+    repr: str | None
     """The representation of the object. Optional."""
 
 
@@ -111,7 +109,7 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""  # noqa: D419
+        """"""  # noqa: D419  # Intentional blank docstring
         super().__init__(*args, **kwargs)
 
     @classmethod
@@ -188,7 +186,7 @@ class Serializable(BaseModel, ABC):
             if (k not in type(self).model_fields or try_neq_default(v, k, self))
         ]
 
-    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
         """Serialize the object to JSON.
 
         Raises:

@@ -6,15 +6,10 @@ from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    PrivateAttr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 from typing_extensions import Self
 
-from ._utils import validate_model
+from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 
 class OllamaEmbeddings(BaseModel, Embeddings):
@@ -81,9 +76,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
             from langchain_ollama import OllamaEmbeddings
 
-            embed = OllamaEmbeddings(
-                model="llama3"
-            )
+            embed = OllamaEmbeddings(model="llama3")
 
     Embed single text:
         .. code-block:: python
@@ -131,37 +124,55 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
 
-    .. versionadded:: 0.3.4
+    !!! version-added "Added in version 0.3.4"
 
     """
 
     base_url: Optional[str] = None
-    """Base url the model is hosted under."""
+    """Base url the model is hosted under.
+
+    If none, defaults to the Ollama client default.
+
+    Supports `userinfo` auth in the format `http://username:password@localhost:11434`.
+    Useful if your Ollama server is behind a proxy.
+
+    !!! warning
+        `userinfo` is not secure and should only be used for local testing or
+        in secure environments. Avoid using it in production or over unsecured
+        networks.
+
+    !!! note
+        If using `userinfo`, ensure that the Ollama server is configured to
+        accept and validate these credentials.
+
+    !!! note
+        `userinfo` headers are passed to both sync and async clients.
+
+    """
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients.
+    """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
 
     Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
     to synchronous and asynchronous clients.
-
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to the httpx
-    AsyncClient.
+    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
 
-    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    These are clients unique to the async client; for shared args use ``client_kwargs``.
 
+    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before
-    passing to the HTTPX Client.
+    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
 
-    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
+    These are clients unique to the sync client; for shared args use ``client_kwargs``.
 
+    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
     _client: Optional[Client] = PrivateAttr(default=None)
@@ -263,6 +274,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Set clients to use for Ollama."""
         client_kwargs = self.client_kwargs or {}
 
+        cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
+        merge_auth_headers(client_kwargs, auth_headers)
+
         sync_client_kwargs = client_kwargs
         if self.sync_client_kwargs:
             sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
@@ -271,8 +285,8 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         if self.async_client_kwargs:
             async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
 
-        self._client = Client(host=self.base_url, **sync_client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        self._client = Client(host=cleaned_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=cleaned_url, **async_client_kwargs)
         if self.validate_model_on_init:
             validate_model(self._client, self.model)
         return self

@@ -4,10 +4,10 @@ import functools
 import os
 import uuid
 import warnings
-from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
+from collections.abc import Callable
 from itertools import islice
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -22,11 +22,13 @@ from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
+
     DictFilter = dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, models.Filter]
 
 
-class QdrantException(Exception):
+class QdrantException(Exception):  # noqa: N818
     """`Qdrant` related exceptions."""
 
 
@@ -85,14 +87,14 @@ class Qdrant(VectorStore):
         vector_name: Optional[str] = VECTOR_NAME,
         async_client: Optional[Any] = None,
         embedding_function: Optional[Callable] = None,  # deprecated
-    ):
+    ) -> None:
         """Initialize with necessary components."""
         if not isinstance(client, QdrantClient):
             msg = (
                 f"client should be an instance of qdrant_client.QdrantClient, "
                 f"got {type(client)}"
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         if async_client is not None and not isinstance(async_client, AsyncQdrantClient):
             msg = (
@@ -1342,6 +1344,7 @@ class Qdrant(VectorStore):
 
                 from langchain_qdrant import Qdrant
                 from langchain_openai import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
 
@@ -1583,6 +1586,7 @@ class Qdrant(VectorStore):
 
                 from langchain_qdrant import Qdrant
                 from langchain_openai import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
 
@@ -2239,6 +2243,7 @@ class Qdrant(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
@@ -2279,6 +2284,7 @@ class Qdrant(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 

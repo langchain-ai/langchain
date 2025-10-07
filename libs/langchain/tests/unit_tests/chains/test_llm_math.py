@@ -2,8 +2,8 @@
 
 import pytest
 
-from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.llm_math.prompt import _PROMPT_TEMPLATE
+from langchain_classic.chains.llm_math.base import LLMMathChain
+from langchain_classic.chains.llm_math.prompt import _PROMPT_TEMPLATE
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

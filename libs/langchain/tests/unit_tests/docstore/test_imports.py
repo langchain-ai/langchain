@@ -1,4 +1,4 @@
-from langchain import docstore
+from langchain_classic import docstore
 
 EXPECTED_ALL = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
 

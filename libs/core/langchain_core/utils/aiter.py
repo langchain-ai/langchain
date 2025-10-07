@@ -11,17 +11,15 @@ from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
+    Callable,
     Iterator,
 )
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
-    Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -36,8 +34,8 @@ _no_default = object()
 # https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
 # before 3.10, the builtin anext() was not available
 def py_anext(
-    iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, Any, None]]:
+    iterator: AsyncIterator[T], default: T | Any = _no_default
+) -> Awaitable[T | Any | None]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.
@@ -68,7 +66,7 @@ def py_anext(
     if default is _no_default:
         return __anext__(iterator)
 
-    async def anext_impl() -> Union[T, Any]:
+    async def anext_impl() -> T | Any:
         try:
             # The C code is way more low-level than this, as it implements
             # all methods of the iterator protocol. In this implementation
@@ -90,9 +88,9 @@ class NoLock:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> bool:
         """Return False, exception not suppressed."""
         return False
@@ -106,7 +104,7 @@ async def tee_peer(
     peers: list[deque[T]],
     lock: AbstractAsyncContextManager[Any],
 ) -> AsyncGenerator[T, None]:
-    """An individual iterator of a :py:func:`~.tee`.
+    """An individual iterator of a `tee`.
 
     This function is a generator that yields items from the shared iterator
     ``iterator``. It buffers items until the least advanced iterator has
@@ -165,29 +163,29 @@ class Tee(Generic[T]):
     A ``tee`` works lazily and can handle an infinite ``iterable``, provided
     that all iterators advance.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         async def derivative(sensor_data):
             previous, current = a.tee(sensor_data, n=2)
             await a.anext(previous)  # advance one iterator
             return a.map(operator.sub, previous, current)
 
-    Unlike :py:func:`itertools.tee`, :py:func:`~.tee` returns a custom type instead
-    of a :py:class:`tuple`. Like a tuple, it can be indexed, iterated and unpacked
-    to get the child iterators. In addition, its :py:meth:`~.tee.aclose` method
+    Unlike `itertools.tee`, `.tee` returns a custom type instead
+    of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
+    to get the child iterators. In addition, its `.tee.aclose` method
     immediately closes all children, and it can be used in an ``async with`` context
     for the same effect.
 
     If ``iterable`` is an iterator and read elsewhere, ``tee`` will *not*
     provide these items. Also, ``tee`` must internally buffer each item until the
     last iterator has yielded it; if the most and least advanced iterator differ
-    by most data, using a :py:class:`list` is more efficient (but not lazy).
+    by most data, using a :py`list` is more efficient (but not lazy).
 
     If the underlying iterable is concurrency safe (``anext`` may be awaited
     concurrently) the resulting iterators are concurrency safe as well. Otherwise,
     the iterators are safe if there is only ever one single "most advanced" iterator.
     To enforce sequential use of ``anext``, provide a ``lock``
-    - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
+    - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
 
     """
@@ -197,7 +195,7 @@ class Tee(Generic[T]):
         iterable: AsyncIterator[T],
         n: int = 2,
         *,
-        lock: Optional[AbstractAsyncContextManager[Any]] = None,
+        lock: AbstractAsyncContextManager[Any] | None = None,
     ):
         """Create a ``tee``.
 
@@ -230,8 +228,8 @@ class Tee(Generic[T]):
     def __getitem__(self, item: slice) -> tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
-        self, item: Union[int, slice]
-    ) -> Union[AsyncIterator[T], tuple[AsyncIterator[T], ...]]:
+        self, item: int | slice
+    ) -> AsyncIterator[T] | tuple[AsyncIterator[T], ...]:
         """Return the child iterator(s) for the given index or slice."""
         return self._children[item]
 
@@ -249,9 +247,9 @@ class Tee(Generic[T]):
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> bool:
         """Close all child iterators.
 
@@ -292,9 +290,7 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
     """
 
-    def __init__(
-        self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
-    ) -> None:
+    def __init__(self, thing: AsyncGenerator[Any, Any] | AsyncIterator[Any]) -> None:
         """Create the context manager.
 
         Args:
@@ -303,15 +299,15 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
         self.thing = thing
 
     @override
-    async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
+    async def __aenter__(self) -> AsyncGenerator[Any, Any] | AsyncIterator[Any]:
         return self.thing
 
     @override
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if hasattr(self.thing, "aclose"):
             await self.thing.aclose()

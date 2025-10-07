@@ -6,17 +6,14 @@ import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 import yaml
@@ -57,16 +54,16 @@ class BasePromptTemplate(
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
-    output_parser: Optional[BaseOutputParser] = None
+    output_parser: BaseOutputParser | None = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
 
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
-    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
+    metadata: typing.Dict[str, Any] | None = None  # noqa: UP006
     """Metadata to be used for tracing."""
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
     """Tags to be used for tracing."""
 
     @model_validator(mode="after")
@@ -123,12 +120,10 @@ class BasePromptTemplate(
     @override
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
-        return Union[StringPromptValue, ChatPromptValueConcrete]
+        return StringPromptValue | ChatPromptValueConcrete
 
     @override
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         """Get the input schema for the prompt.
 
         Args:
@@ -195,7 +190,7 @@ class BasePromptTemplate(
 
     @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> PromptValue:
         """Invoke the prompt.
 
@@ -221,7 +216,7 @@ class BasePromptTemplate(
 
     @override
     async def ainvoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> PromptValue:
         """Async invoke the prompt.
 
@@ -267,7 +262,7 @@ class BasePromptTemplate(
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+    def partial(self, **kwargs: str | Callable[[], str]) -> BasePromptTemplate:
         """Return a partial of the prompt template.
 
         Args:
@@ -345,7 +340,7 @@ class BasePromptTemplate(
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the prompt.
 
         Args:
@@ -379,10 +374,10 @@ class BasePromptTemplate(
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

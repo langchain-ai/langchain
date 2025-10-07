@@ -9,9 +9,9 @@ from blockbuster import blockbuster_ctx
 
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain") as bb:
+    with blockbuster_ctx("langchain_classic") as bb:
         bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain/__init__.py",
+            "langchain_classic/__init__.py",
             "<module>",
         )
 

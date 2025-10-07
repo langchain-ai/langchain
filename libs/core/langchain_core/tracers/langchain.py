@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from langsmith import Client, get_tracing_context
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_EXECUTOR: Optional[ThreadPoolExecutor] = None
+_EXECUTOR: ThreadPoolExecutor | None = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -76,10 +76,10 @@ class LangChainTracer(BaseTracer):
 
     def __init__(
         self,
-        example_id: Optional[Union[UUID, str]] = None,
-        project_name: Optional[str] = None,
-        client: Optional[Client] = None,
-        tags: Optional[list[str]] = None,
+        example_id: UUID | str | None = None,
+        project_name: str | None = None,
+        client: Client | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -98,7 +98,7 @@ class LangChainTracer(BaseTracer):
         self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self.tags = tags or []
-        self.latest_run: Optional[Run] = None
+        self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
@@ -122,10 +122,10 @@ class LangChainTracer(BaseTracer):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -242,8 +242,8 @@ class LangChainTracer(BaseTracer):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,
     ) -> Run:
         run_id_str = str(run_id)
         if run_id_str not in self.run_has_token_event_map:

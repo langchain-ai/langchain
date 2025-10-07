@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from langchain.chains import OpenAIModerationChain
-from langchain.chains.openai_functions.openapi import get_openapi_chain
+from langchain_classic.chains import OpenAIModerationChain
+from langchain_classic.chains.openai_functions.openapi import get_openapi_chain
 
 api_spec = {
     "openapi": "3.0.0",

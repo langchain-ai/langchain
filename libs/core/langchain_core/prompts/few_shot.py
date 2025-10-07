@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -33,11 +33,11 @@ if TYPE_CHECKING:
 class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
 
-    examples: Optional[list[dict]] = None
+    examples: list[dict] | None = None
     """Examples to format into the prompt.
     Either this or example_selector should be provided."""
 
-    example_selector: Optional[BaseExampleSelector] = None
+    example_selector: BaseExampleSelector | None = None
     """ExampleSelector to choose the examples to format into the prompt.
     Either this or examples should be provided."""
 
@@ -229,7 +229,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot"
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the prompt template to a file.
 
         Args:
@@ -281,7 +281,10 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [("human", "What is {input}?"), ("ai", "{output}")]
+                [
+                    ("human", "What is {input}?"),
+                    ("ai", "{output}"),
+                ]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
@@ -362,7 +365,7 @@ class FewShotChatMessagePromptTemplate(
     """A list of the names of the variables the prompt template will use
     to pass to the example_selector, if provided."""
 
-    example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
+    example_prompt: BaseMessagePromptTemplate | BaseChatPromptTemplate
     """The class to format each example."""
 
     @classmethod

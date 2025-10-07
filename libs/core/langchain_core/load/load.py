@@ -3,7 +3,7 @@
 import importlib
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
@@ -50,12 +50,11 @@ class Reviver:
 
     def __init__(
         self,
-        secrets_map: Optional[dict[str, str]] = None,
-        valid_namespaces: Optional[list[str]] = None,
+        secrets_map: dict[str, str] | None = None,
+        valid_namespaces: list[str] | None = None,
         secrets_from_env: bool = True,  # noqa: FBT001,FBT002
-        additional_import_mappings: Optional[
-            dict[tuple[str, ...], tuple[str, ...]]
-        ] = None,
+        additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]]
+        | None = None,
         *,
         ignore_unserializable_fields: bool = False,
     ) -> None:
@@ -187,10 +186,10 @@ class Reviver:
 def loads(
     text: str,
     *,
-    secrets_map: Optional[dict[str, str]] = None,
-    valid_namespaces: Optional[list[str]] = None,
+    secrets_map: dict[str, str] | None = None,
+    valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
@@ -231,10 +230,10 @@ def loads(
 def load(
     obj: Any,
     *,
-    secrets_map: Optional[dict[str, str]] = None,
-    valid_namespaces: Optional[list[str]] = None,
+    secrets_map: dict[str, str] | None = None,
+    valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON object.

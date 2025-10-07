@@ -4,7 +4,7 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
             result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
             callback.usage_metadata
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
@@ -44,7 +44,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
 
@@ -119,7 +119,7 @@ def get_usage_metadata_callback(
                 llm_2.invoke("Hello")
                 print(cb.usage_metadata)
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
@@ -131,10 +131,10 @@ def get_usage_metadata_callback(
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
+    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
         ContextVar(name, default=None)
     )
     register_configure_hook(usage_metadata_callback_var, inheritable=True)

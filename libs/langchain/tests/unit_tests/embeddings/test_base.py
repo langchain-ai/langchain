@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.embeddings.base import (
+from langchain_classic.embeddings.base import (
     _SUPPORTED_PROVIDERS,
     _infer_model_and_provider,
     _parse_model_string,
@@ -88,7 +88,7 @@ def test_infer_model_and_provider_errors() -> None:
         _infer_model_and_provider("model", provider="")
 
     # Test invalid provider
-    with pytest.raises(ValueError, match="Provider 'invalid' is not supported.") as exc:
+    with pytest.raises(ValueError, match="Provider 'invalid' is not supported") as exc:
         _infer_model_and_provider("model", provider="invalid")
     # Test provider list is in error
     for provider in _SUPPORTED_PROVIDERS:

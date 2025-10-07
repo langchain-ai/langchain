@@ -2,14 +2,14 @@
 
 import pytest
 
-from langchain.evaluation.criteria.eval_chain import (
+from langchain_classic.evaluation.criteria.eval_chain import (
     _SUPPORTED_CRITERIA,
     Criteria,
     CriteriaEvalChain,
     CriteriaResultOutputParser,
     LabeledCriteriaEvalChain,
 )
-from langchain.evaluation.schema import StringEvaluator
+from langchain_classic.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -92,7 +92,7 @@ def test_criteria_eval_chain_missing_reference() -> None:
         criteria={"my criterion": "my criterion description"},
     )
     with pytest.raises(
-        ValueError, match="LabeledCriteriaEvalChain requires a reference string."
+        ValueError, match="LabeledCriteriaEvalChain requires a reference string"
     ):
         chain.evaluate_strings(prediction="my prediction", input="my input")
 

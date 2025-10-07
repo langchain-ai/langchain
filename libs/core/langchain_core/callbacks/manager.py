@@ -8,10 +8,11 @@ import functools
 import logging
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
@@ -62,14 +63,14 @@ def _get_debug() -> bool:
 @contextmanager
 def trace_as_chain_group(
     group_name: str,
-    callback_manager: Optional[CallbackManager] = None,
+    callback_manager: CallbackManager | None = None,
     *,
-    inputs: Optional[dict[str, Any]] = None,
-    project_name: Optional[str] = None,
-    example_id: Optional[Union[str, UUID]] = None,
-    run_id: Optional[UUID] = None,
-    tags: Optional[list[str]] = None,
-    metadata: Optional[dict[str, Any]] = None,
+    inputs: dict[str, Any] | None = None,
+    project_name: str | None = None,
+    example_id: str | UUID | None = None,
+    run_id: UUID | None = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> Generator[CallbackManagerForChainGroup, None, None]:
     """Get a callback manager for a chain group in a context manager.
 
@@ -92,7 +93,7 @@ def trace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    .. note:
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -146,14 +147,14 @@ def trace_as_chain_group(
 @asynccontextmanager
 async def atrace_as_chain_group(
     group_name: str,
-    callback_manager: Optional[AsyncCallbackManager] = None,
+    callback_manager: AsyncCallbackManager | None = None,
     *,
-    inputs: Optional[dict[str, Any]] = None,
-    project_name: Optional[str] = None,
-    example_id: Optional[Union[str, UUID]] = None,
-    run_id: Optional[UUID] = None,
-    tags: Optional[list[str]] = None,
-    metadata: Optional[dict[str, Any]] = None,
+    inputs: dict[str, Any] | None = None,
+    project_name: str | None = None,
+    example_id: str | UUID | None = None,
+    run_id: UUID | None = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> AsyncGenerator[AsyncCallbackManagerForChainGroup, None]:
     """Get an async callback manager for a chain group in a context manager.
 
@@ -179,7 +180,7 @@ async def atrace_as_chain_group(
     Yields:
         The async callback manager for the chain group.
 
-    .. note:
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -251,13 +252,13 @@ def shielded(func: Func) -> Func:
 def handle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
-    ignore_condition_name: Optional[str],
+    ignore_condition_name: str | None,
     *args: Any,
     **kwargs: Any,
 ) -> None:
     """Generic event handler for CallbackManager.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -272,7 +273,7 @@ def handle_event(
     coros: list[Coroutine[Any, Any, Any]] = []
 
     try:
-        message_strings: Optional[list[str]] = None
+        message_strings: list[str] | None = None
         for handler in handlers:
             try:
                 if ignore_condition_name is None or not getattr(
@@ -366,7 +367,7 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
 async def _ahandle_event_for_handler(
     handler: BaseCallbackHandler,
     event_name: str,
-    ignore_condition_name: Optional[str],
+    ignore_condition_name: str | None,
     *args: Any,
     **kwargs: Any,
 ) -> None:
@@ -418,13 +419,13 @@ async def _ahandle_event_for_handler(
 async def ahandle_event(
     handlers: list[BaseCallbackHandler],
     event_name: str,
-    ignore_condition_name: Optional[str],
+    ignore_condition_name: str | None,
     *args: Any,
     **kwargs: Any,
 ) -> None:
     """Async generic event handler for ``AsyncCallbackManager``.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -464,11 +465,11 @@ class BaseRunManager(RunManagerMixin):
         run_id: UUID,
         handlers: list[BaseCallbackHandler],
         inheritable_handlers: list[BaseCallbackHandler],
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        inheritable_tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        inheritable_metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        inheritable_tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        inheritable_metadata: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the run manager.
 
@@ -572,7 +573,7 @@ class RunManager(BaseRunManager):
 class ParentRunManager(RunManager):
     """Sync Parent Run Manager."""
 
-    def get_child(self, tag: Optional[str] = None) -> CallbackManager:
+    def get_child(self, tag: str | None = None) -> CallbackManager:
         """Get a child callback manager.
 
         Args:
@@ -657,7 +658,7 @@ class AsyncRunManager(BaseRunManager, ABC):
 class AsyncParentRunManager(AsyncRunManager):
     """Async Parent Run Manager."""
 
-    def get_child(self, tag: Optional[str] = None) -> AsyncCallbackManager:
+    def get_child(self, tag: str | None = None) -> AsyncCallbackManager:
         """Get a child callback manager.
 
         Args:
@@ -684,7 +685,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -783,7 +784,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM generates a new token.
@@ -865,7 +866,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
     """Callback manager for chain run."""
 
-    def on_chain_end(self, outputs: Union[dict[str, Any], Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any] | Any, **kwargs: Any) -> None:
         """Run when chain ends running.
 
         Args:
@@ -973,9 +974,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
         )
 
     @shielded
-    async def on_chain_end(
-        self, outputs: Union[dict[str, Any], Any], **kwargs: Any
-    ) -> None:
+    async def on_chain_end(self, outputs: dict[str, Any] | Any, **kwargs: Any) -> None:
         """Run when a chain ends running.
 
         Args:
@@ -1320,7 +1319,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: dict[str, Any],
         prompts: list[str],
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1372,7 +1371,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         serialized: dict[str, Any],
         messages: list[list[BaseMessage]],
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> list[CallbackManagerForLLMRun]:
         """Run when chat model starts running.
@@ -1425,9 +1424,9 @@ class CallbackManager(BaseCallbackManager):
 
     def on_chain_start(
         self,
-        serialized: Optional[dict[str, Any]],
-        inputs: Union[dict[str, Any], Any],
-        run_id: Optional[UUID] = None,
+        serialized: dict[str, Any] | None,
+        inputs: dict[str, Any] | Any,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> CallbackManagerForChainRun:
         """Run when chain starts running.
@@ -1471,11 +1470,11 @@ class CallbackManager(BaseCallbackManager):
     @override
     def on_tool_start(
         self,
-        serialized: Optional[dict[str, Any]],
+        serialized: dict[str, Any] | None,
         input_str: str,
-        run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        run_id: UUID | None = None,
+        parent_run_id: UUID | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> CallbackManagerForToolRun:
         """Run when tool starts running.
@@ -1528,10 +1527,10 @@ class CallbackManager(BaseCallbackManager):
     @override
     def on_retriever_start(
         self,
-        serialized: Optional[dict[str, Any]],
+        serialized: dict[str, Any] | None,
         query: str,
-        run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> CallbackManagerForRetrieverRun:
         """Run when the retriever starts running.
@@ -1577,7 +1576,7 @@ class CallbackManager(BaseCallbackManager):
         self,
         name: str,
         data: Any,
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
@@ -1594,7 +1593,7 @@ class CallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
 
         """
         if not self.handlers:
@@ -1626,10 +1625,10 @@ class CallbackManager(BaseCallbackManager):
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
         verbose: bool = False,  # noqa: FBT001,FBT002
-        inheritable_tags: Optional[list[str]] = None,
-        local_tags: Optional[list[str]] = None,
-        inheritable_metadata: Optional[dict[str, Any]] = None,
-        local_metadata: Optional[dict[str, Any]] = None,
+        inheritable_tags: list[str] | None = None,
+        local_tags: list[str] | None = None,
+        inheritable_metadata: dict[str, Any] | None = None,
+        local_metadata: dict[str, Any] | None = None,
     ) -> CallbackManager:
         """Configure the callback manager.
 
@@ -1670,8 +1669,8 @@ class CallbackManagerForChainGroup(CallbackManager):
     def __init__(
         self,
         handlers: list[BaseCallbackHandler],
-        inheritable_handlers: Optional[list[BaseCallbackHandler]] = None,
-        parent_run_id: Optional[UUID] = None,
+        inheritable_handlers: list[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
         *,
         parent_run_manager: CallbackManagerForChainRun,
         **kwargs: Any,
@@ -1775,7 +1774,7 @@ class CallbackManagerForChainGroup(CallbackManager):
             manager.add_handler(handler, inherit=True)
         return manager
 
-    def on_chain_end(self, outputs: Union[dict[str, Any], Any], **kwargs: Any) -> None:
+    def on_chain_end(self, outputs: dict[str, Any] | Any, **kwargs: Any) -> None:
         """Run when traced chain group ends.
 
         Args:
@@ -1814,7 +1813,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: dict[str, Any],
         prompts: list[str],
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> list[AsyncCallbackManagerForLLMRun]:
         """Run when LLM starts running.
@@ -1903,7 +1902,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         serialized: dict[str, Any],
         messages: list[list[BaseMessage]],
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> list[AsyncCallbackManagerForLLMRun]:
         """Async run when LLM starts running.
@@ -1973,9 +1972,9 @@ class AsyncCallbackManager(BaseCallbackManager):
 
     async def on_chain_start(
         self,
-        serialized: Optional[dict[str, Any]],
-        inputs: Union[dict[str, Any], Any],
-        run_id: Optional[UUID] = None,
+        serialized: dict[str, Any] | None,
+        inputs: dict[str, Any] | Any,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
         """Async run when chain starts running.
@@ -2020,10 +2019,10 @@ class AsyncCallbackManager(BaseCallbackManager):
     @override
     async def on_tool_start(
         self,
-        serialized: Optional[dict[str, Any]],
+        serialized: dict[str, Any] | None,
         input_str: str,
-        run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForToolRun:
         """Run when the tool starts running.
@@ -2071,7 +2070,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         self,
         name: str,
         data: Any,
-        run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
@@ -2088,7 +2087,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
@@ -2116,10 +2115,10 @@ class AsyncCallbackManager(BaseCallbackManager):
     @override
     async def on_retriever_start(
         self,
-        serialized: Optional[dict[str, Any]],
+        serialized: dict[str, Any] | None,
         query: str,
-        run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
+        run_id: UUID | None = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForRetrieverRun:
         """Run when the retriever starts running.
@@ -2168,10 +2167,10 @@ class AsyncCallbackManager(BaseCallbackManager):
         inheritable_callbacks: Callbacks = None,
         local_callbacks: Callbacks = None,
         verbose: bool = False,  # noqa: FBT001,FBT002
-        inheritable_tags: Optional[list[str]] = None,
-        local_tags: Optional[list[str]] = None,
-        inheritable_metadata: Optional[dict[str, Any]] = None,
-        local_metadata: Optional[dict[str, Any]] = None,
+        inheritable_tags: list[str] | None = None,
+        local_tags: list[str] | None = None,
+        inheritable_metadata: dict[str, Any] | None = None,
+        local_metadata: dict[str, Any] | None = None,
     ) -> AsyncCallbackManager:
         """Configure the async callback manager.
 
@@ -2211,8 +2210,8 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
     def __init__(
         self,
         handlers: list[BaseCallbackHandler],
-        inheritable_handlers: Optional[list[BaseCallbackHandler]] = None,
-        parent_run_id: Optional[UUID] = None,
+        inheritable_handlers: list[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
         *,
         parent_run_manager: AsyncCallbackManagerForChainRun,
         **kwargs: Any,
@@ -2316,9 +2315,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
             manager.add_handler(handler, inherit=True)
         return manager
 
-    async def on_chain_end(
-        self, outputs: Union[dict[str, Any], Any], **kwargs: Any
-    ) -> None:
+    async def on_chain_end(self, outputs: dict[str, Any] | Any, **kwargs: Any) -> None:
         """Run when traced chain group ends.
 
         Args:
@@ -2350,10 +2347,10 @@ def _configure(
     callback_manager_cls: type[T],
     inheritable_callbacks: Callbacks = None,
     local_callbacks: Callbacks = None,
-    inheritable_tags: Optional[list[str]] = None,
-    local_tags: Optional[list[str]] = None,
-    inheritable_metadata: Optional[dict[str, Any]] = None,
-    local_metadata: Optional[dict[str, Any]] = None,
+    inheritable_tags: list[str] | None = None,
+    local_tags: list[str] | None = None,
+    inheritable_metadata: dict[str, Any] | None = None,
+    local_metadata: dict[str, Any] | None = None,
     *,
     verbose: bool = False,
 ) -> T:
@@ -2383,7 +2380,7 @@ def _configure(
     tracing_context = get_tracing_context()
     tracing_metadata = tracing_context["metadata"]
     tracing_tags = tracing_context["tags"]
-    run_tree: Optional[Run] = tracing_context["parent"]
+    run_tree: Run | None = tracing_context["parent"]
     parent_run_id = None if run_tree is None else run_tree.id
     callback_manager = callback_manager_cls(
         handlers=[],
@@ -2528,7 +2525,7 @@ def _configure(
 
 
 async def adispatch_custom_event(
-    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+    name: str, data: Any, *, config: RunnableConfig | None = None
 ) -> None:
     """Dispatch an adhoc event to the handlers.
 
@@ -2614,14 +2611,14 @@ async def adispatch_custom_event(
             ):
                 print(event)
 
-    .. warning::
+    !!! warning
         If using python <= 3.10 and async, you MUST
         specify the `config` parameter or the function will raise an error.
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.
@@ -2654,7 +2651,7 @@ async def adispatch_custom_event(
 
 
 def dispatch_custom_event(
-    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+    name: str, data: Any, *, config: RunnableConfig | None = None
 ) -> None:
     """Dispatch an adhoc event.
 
@@ -2697,7 +2694,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.

@@ -1,6 +1,6 @@
 from langchain_core.agents import AgentAction, AgentFinish
 
-from langchain.agents.output_parsers.xml import XMLAgentOutputParser
+from langchain_classic.agents.output_parsers.xml import XMLAgentOutputParser
 
 
 def test_tool_usage() -> None:
@@ -36,7 +36,7 @@ def test_finish() -> None:
 
 def test_malformed_xml_with_nested_tags() -> None:
     """Test handling of tool names with XML tags via format_xml minimal escaping."""
-    from langchain.agents.format_scratchpad.xml import format_xml
+    from langchain_classic.agents.format_scratchpad.xml import format_xml
 
     # Create an AgentAction with XML tags in the tool name
     action = AgentAction(tool="search<tool>nested</tool>", tool_input="query", log="")
