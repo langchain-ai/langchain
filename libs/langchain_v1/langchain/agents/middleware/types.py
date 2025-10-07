@@ -244,82 +244,37 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
-        """Intercept tool execution for retries, monitoring, or request modification.
+        """Intercept tool execution for retries, monitoring, or modification.
 
-        Generator protocol for fine-grained control over tool execution. Multiple
-        middleware with on_tool_call compose automatically: first defined = outermost.
-
-        The handler can also throw exceptions to signal errors. If handle_tool_errors
-        is configured on the ToolNode, exceptions will be caught and converted to error
-        ToolMessages. Otherwise, they propagate to the caller.
+        Multiple middleware compose automatically (first defined = outermost).
+        Exceptions propagate unless handle_tool_errors is configured on ToolNode.
 
         Args:
-            request: Tool execution request with tool call dict and BaseTool instance.
+            request: Tool call request with call dict and BaseTool instance.
             state: Current agent state.
             runtime: LangGraph runtime.
 
         Yields:
-            ToolCallRequest to execute (may be modified from input), ToolMessage to
-            short-circuit with cached result, or Command for control flow.
+            ToolCallRequest (execute tool), ToolMessage (cached result),
+            or Command (control flow).
 
         Receives:
-            ToolMessage or Command via .send() after tool execution. The final result is
-            the last value sent to the handler before it completes.
-
-        Returns:
-            None (completes naturally, final result is last sent value).
-
-        Raises:
-            Exception: Can throw exceptions to signal errors. Converted to error
-                ToolMessage if handle_tool_errors is configured, otherwise propagates.
+            ToolMessage or Command via .send() after execution.
 
         Example:
-            Passthrough handler:
+            Modify request:
 
             def on_tool_call(self, request, state, runtime):
+                request.tool_call["args"]["value"] *= 2
                 yield request
-                # Final result is the ToolMessage or Command sent back after execution
 
-            Short-circuit with cached result:
-
-            def on_tool_call(self, request, state, runtime):
-                if cached := check_cache(request.tool_call):
-                    yield ToolMessage(
-                        content=cached,
-                        tool_call_id=request.tool_call["id"],
-                        name=request.tool_call["name"],
-                    )
-                    # Final result is the cached ToolMessage sent back
-                else:
-                    yield request
-                    # Final result is the execution ToolMessage or Command sent back
-
-            Short-circuit with Command:
-
-            def on_tool_call(self, request, state, runtime):
-                if should_stop():
-                    yield Command(goto="end")
-                    # Final result is the Command sent back
-                else:
-                    yield request
-
-            Modify arguments before execution:
-
-            def on_tool_call(self, request, state, runtime):
-                request.tool_call["args"]["value"] *= 2  # Double the value
-                yield request
-                # Final result is the execution ToolMessage or Command sent back
-
-            Retry middleware with exception on exhaustion:
+            Retry on error:
 
             def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
                     response = yield request
-                    if is_retriable_error(response):
-                        if attempt == 2:
-                            raise ValueError("Max retries exhausted")
-                        continue
-                    break  # Success
+                    if valid(response) or attempt == 2:
+                        return
         """
         yield request
 

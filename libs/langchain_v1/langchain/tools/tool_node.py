@@ -119,53 +119,34 @@ ToolCallHandler = Callable[
     [ToolCallRequest, Any, Any],
     Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None],
 ]
-"""Generator that intercepts tool execution.
+"""Generator-based handler for intercepting tool execution.
 
-Handler receives (request, state, runtime), yields request(s), message(s), or Command(s),
-receives ToolMessage or Command via .send(). The final result is the last value sent to
-the handler before it completes.
+Receives (request, state, runtime), yields ToolCallRequest/ToolMessage/Command,
+receives results via .send(). Returns None; the last value sent becomes the result.
 
-The handler can also throw exceptions to signal errors. If handle_tool_errors is configured,
-exceptions will be caught and converted to error ToolMessages. Otherwise, they propagate.
-
-Signature:
-    (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest, ToolMessage,
-    or Command; receives ToolMessage or Command via .send(); completes naturally.
+Exceptions propagate unless handle_tool_errors is configured on ToolNode.
 
 Example:
-    Passthrough handler:
+    Passthrough:
 
-    def passthrough_handler(request, state, runtime):
+    def handler(request, state, runtime):
         yield request
-        # Final result is the ToolMessage or Command sent back after execution
 
-    Short-circuit with cached result:
+    Cache result:
 
-    def cache_handler(request, state, runtime):
-        if cached := get_from_cache(request):
+    def handler(request, state, runtime):
+        if cached := get_cache(request):
             yield ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-            # Final result is the cached ToolMessage sent back
         else:
             yield request
-            # Final result is the execution ToolMessage or Command sent back
 
-    Modify arguments before execution:
+    Retry with validation:
 
-    def modify_handler(request, state, runtime):
-        request.tool_call["args"]["value"] *= 2  # Double the value
-        yield request
-        # Final result is the execution ToolMessage or Command sent back
-
-    Retry middleware with exception on failure:
-
-    def retry_handler(request, state, runtime):
+    def handler(request, state, runtime):
         for attempt in range(3):
             response = yield request
-            if is_success(response):
-                return  # Success - end with this response
-            if attempt == 2:
-                raise ValueError("All retries exhausted")
-        # Exception converted to error ToolMessage if handle_tool_errors=True
+            if valid(response) or attempt == 2:
+                return
 """
 
 
@@ -585,20 +566,18 @@ class ToolNode(RunnableCallable):
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolMessage | Command:
-        """Execute tool call with error handling.
-
-        Applies handle_tool_errors configuration. Unhandled exceptions are raised.
+        """Execute tool call with configured error handling.
 
         Args:
             request: Tool execution request.
-            input_type: Input format ("list", "dict", "tool_calls").
+            input_type: Input format.
             config: Runnable configuration.
 
         Returns:
-            ToolMessage with execution result or Command for control flow.
+            ToolMessage or Command.
 
         Raises:
-            Exception: When tool execution fails and handle_tool_errors is False.
+            Exception: If tool fails and handle_tool_errors is False.
         """
         call = request.tool_call
         tool = request.tool
@@ -670,17 +649,17 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call, applying on_tool_call handler if configured.
+        """Execute single tool call with on_tool_call handler if configured.
 
         Args:
-            call: Tool call dict with name, args, and id.
-            input_type: Input format ("list", "dict", "tool_calls").
+            call: Tool call dict.
+            input_type: Input format.
             config: Runnable configuration.
-            input: Full agent state (messages list or state dict).
-            runtime: LangGraph runtime, or None outside runtime context.
+            input: Agent state.
+            runtime: LangGraph runtime or None.
 
         Returns:
-            ToolMessage with execution result or Command for control flow.
+            ToolMessage or Command.
         """
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
@@ -790,20 +769,18 @@ class ToolNode(RunnableCallable):
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolMessage | Command:
-        """Execute tool call asynchronously with error handling.
-
-        Applies handle_tool_errors configuration. Unhandled exceptions are raised.
+        """Execute tool call asynchronously with configured error handling.
 
         Args:
             request: Tool execution request.
-            input_type: Input format ("list", "dict", "tool_calls").
+            input_type: Input format.
             config: Runnable configuration.
 
         Returns:
-            ToolMessage with execution result or Command for control flow.
+            ToolMessage or Command.
 
         Raises:
-            Exception: When tool execution fails and handle_tool_errors is False.
+            Exception: If tool fails and handle_tool_errors is False.
         """
         call = request.tool_call
         tool = request.tool
@@ -875,17 +852,17 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call asynchronously, applying on_tool_call handler if configured.
+        """Execute single tool call asynchronously with on_tool_call handler if configured.
 
         Args:
-            call: Tool call dict with name, args, and id.
-            input_type: Input format ("list", "dict", "tool_calls").
+            call: Tool call dict.
+            input_type: Input format.
             config: Runnable configuration.
-            input: Full agent state (messages list or state dict).
-            runtime: LangGraph runtime, or None outside runtime context.
+            input: Agent state.
+            runtime: LangGraph runtime or None.
 
         Returns:
-            ToolMessage with execution result or Command for control flow.
+            ToolMessage or Command.
         """
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message

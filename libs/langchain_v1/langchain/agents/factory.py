@@ -197,35 +197,18 @@ def _handle_structured_output_error(
 def _chain_tool_call_handlers(
     handlers: Sequence[ToolCallHandler],
 ) -> ToolCallHandler | None:
-    """Compose multiple tool call handlers into a single middleware stack.
+    """Compose handlers into middleware stack (first = outermost).
 
     Args:
-        handlers: Handlers in middleware order (first = outermost layer).
+        handlers: Handlers in middleware order.
 
     Returns:
-        Single composed handler, or None if handlers is empty.
+        Composed handler, or None if empty.
 
     Example:
-        Auth middleware (outer) wraps rate limit (inner):
-
-        def auth(req, state, runtime):
-            resp = yield req
-            if "unauthorized" in str(resp.exception):
-                refresh_token()
-                resp = yield req  # Retry
-            return resp
-
-        def rate_limit(req, state, runtime):
-            for attempt in range(3):
-                resp = yield req
-                if "rate limit" not in str(resp.exception):
-                    return resp
-                time.sleep(2**attempt)
-            return resp
-
-        handler = _chain_tool_call_handlers([auth, rate_limit])
-        # Request: auth -> rate_limit -> tool
-        # Response: tool -> rate_limit -> auth
+        handler = _chain_tool_call_handlers([auth, cache, retry])
+        # Request flows: auth -> cache -> retry -> tool
+        # Response flows: tool -> retry -> cache -> auth
     """
     if not handlers:
         return None
