@@ -251,7 +251,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     save_cache(request, result)
             ```
         """
-        yield request
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
