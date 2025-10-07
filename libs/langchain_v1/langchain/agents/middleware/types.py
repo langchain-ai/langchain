@@ -441,7 +441,7 @@ def before_model(
 
     Returns:
         Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function its wrapping.
+        that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -851,7 +851,7 @@ def before_agent(
 
     Returns:
         Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function its wrapping.
+        that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state

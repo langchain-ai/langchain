@@ -5,7 +5,7 @@ This module provides prebuilt functionality for executing tools in LangGraph.
 Tools are functions that models can call to interact with external systems,
 APIs, databases, or perform computations.
 
-The module implements several key design patterns:
+The module implements design patterns for:
 - Parallel execution of multiple tool calls for efficiency
 - Robust error handling with customizable error messages
 - State injection for tools that need access to graph state
@@ -236,9 +236,8 @@ def _handle_tool_error(
 ) -> str:
     """Generate error message content based on exception handling configuration.
 
-    This function centralizes error message generation logic, supporting different
-    error handling strategies configured via the ToolNode's handle_tool_errors
-    parameter.
+    Supports different error handling strategies configured via the ToolNode's
+    handle_tool_errors parameter.
 
     Args:
         e: The exception that occurred during tool execution.
@@ -276,9 +275,9 @@ def _handle_tool_error(
 def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], ...]:
     """Infer exception types handled by a custom error handler function.
 
-    This function analyzes the type annotations of a custom error handler to determine
-    which exception types it's designed to handle. This enables type-safe error handling
-    where only specific exceptions are caught and processed by the handler.
+    Analyzes the type annotations of a custom error handler to determine which
+    exception types it handles. Enables type-safe error handling where only
+    specific exceptions are caught and processed by the handler.
 
     Args:
         handler: A callable that takes an exception and returns an error message string.
@@ -343,7 +342,7 @@ class ToolNode(RunnableCallable):
     """A node for executing tools in LangGraph workflows.
 
     Handles tool execution patterns including function calls, state injection,
-    persistent storage, and control flow. Manages parallel execution,
+    persistent storage, and control flow. Manages parallel execution and
     error handling.
 
     Input Formats:
@@ -467,8 +466,9 @@ class ToolNode(RunnableCallable):
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
             on_tool_call: Generator handler to intercept tool execution. Receives
-                ToolCallRequest, yields requests, receives ToolCallResponse via .send(),
-                and returns final ToolCallResponse. Enables retries and request modification.
+                ToolCallRequest, yields requests or messages, receives ToolMessage via
+                .send(). Final result is last ToolMessage sent to handler. Enables
+                retries, caching, and request modification.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -1057,14 +1057,9 @@ class ToolNode(RunnableCallable):
     ) -> ToolCall:
         """Inject graph state and store into tool call arguments.
 
-        This method enables tools to access graph context that should not be controlled
-        by the model. Tools can declare dependencies on graph state or persistent storage
-        using InjectedState and InjectedStore annotations. This method automatically
-        identifies these dependencies and injects the appropriate values.
-
-        The injection process preserves the original tool call structure while adding
-        the necessary context arguments. This allows tools to be both model-callable
-        and context-aware without exposing internal state management to the model.
+        Tools can declare dependencies on graph state or persistent storage using
+        InjectedState and InjectedStore annotations. This method identifies these
+        dependencies and injects the appropriate values.
 
         Args:
             tool_call: The tool call dictionary to augment with injected arguments.
@@ -1174,13 +1169,11 @@ def tools_condition(
 ) -> Literal["tools", "__end__"]:
     """Conditional routing function for tool-calling workflows.
 
-    This utility function implements the standard conditional logic for ReAct-style
-    agents: if the last AI message contains tool calls, route to the tool execution
-    node; otherwise, end the workflow. This pattern is fundamental to most tool-calling
-    agent architectures.
+    Implements conditional logic for ReAct-style agents: if the last AI message
+    contains tool calls, route to the tool execution node; otherwise, end the
+    workflow.
 
-    The function handles multiple state formats commonly used in LangGraph applications,
-    making it flexible for different graph designs while maintaining consistent behavior.
+    The function handles multiple state formats commonly used in LangGraph applications.
 
     Args:
         state: The current graph state to examine for tool calls. Supported formats:
@@ -1403,9 +1396,9 @@ class InjectedStore(InjectedToolArg):
 def _is_injection(type_arg: Any, injection_type: type[InjectedState | InjectedStore]) -> bool:
     """Check if a type argument represents an injection annotation.
 
-    This utility function determines whether a type annotation indicates that
-    an argument should be injected with state or store data. It handles both
-    direct annotations and nested annotations within Union or Annotated types.
+    Determines whether a type annotation indicates an argument should be injected
+    with state or store data. Handles both direct annotations and nested annotations
+    within Union or Annotated types.
 
     Args:
         type_arg: The type argument to check for injection annotations.
@@ -1427,9 +1420,9 @@ def _is_injection(type_arg: Any, injection_type: type[InjectedState | InjectedSt
 def _get_state_args(tool: BaseTool) -> dict[str, str | None]:
     """Extract state injection mappings from tool annotations.
 
-    This function analyzes a tool's input schema to identify arguments that should
-    be injected with graph state. It processes InjectedState annotations to build
-    a mapping of tool argument names to state field names.
+    Analyzes a tool's input schema to identify arguments that should be injected
+    with graph state. Processes InjectedState annotations to build a mapping of
+    tool argument names to state field names.
 
     Args:
         tool: The tool to analyze for state injection requirements.
@@ -1465,9 +1458,8 @@ def _get_state_args(tool: BaseTool) -> dict[str, str | None]:
 def _get_store_arg(tool: BaseTool) -> str | None:
     """Extract store injection argument from tool annotations.
 
-    This function analyzes a tool's input schema to identify the argument that
-    should be injected with the graph store. Only one store argument is supported
-    per tool.
+    Analyzes a tool's input schema to identify the argument that should be injected
+    with the graph store. Only one store argument is supported per tool.
 
     Args:
         tool: The tool to analyze for store injection requirements.
