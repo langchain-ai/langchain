@@ -82,13 +82,13 @@ def _chain_model_call_handlers(  # noqa: PLR0915
     handlers: Sequence[
         Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, AIMessage, AIMessage],
+            Generator[ModelRequest | AIMessage, AIMessage, None],
         ]
     ],
 ) -> (
     Callable[
         [ModelRequest, Any, Any],
-        Generator[ModelRequest, AIMessage, AIMessage],
+        Generator[ModelRequest | AIMessage, AIMessage, None],
     ]
     | None
 ):
@@ -137,18 +137,18 @@ def _chain_model_call_handlers(  # noqa: PLR0915
     if len(handlers) == 1:
         return handlers[0]
 
-    def compose_two(
+    def compose_two(  # noqa: PLR0915
         outer: Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, AIMessage, AIMessage],
+            Generator[ModelRequest | AIMessage, AIMessage, None],
         ],
         inner: Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, AIMessage, AIMessage],
+            Generator[ModelRequest | AIMessage, AIMessage, None],
         ],
     ) -> Callable[
         [ModelRequest, Any, Any],
-        Generator[ModelRequest, AIMessage, AIMessage],
+        Generator[ModelRequest | AIMessage, AIMessage, None],
     ]:
         """Compose two handlers where outer wraps inner.
 
@@ -156,7 +156,7 @@ def _chain_model_call_handlers(  # noqa: PLR0915
         Never uses return values - relies on last yield being tracked by caller.
         """
 
-        def composed(
+        def composed(  # noqa: PLR0915
             request: ModelRequest,
             state: Any,
             runtime: Any,
@@ -854,7 +854,7 @@ def create_agent(  # noqa: PLR0915
                 effective_response_format=None,
             )
 
-    def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:  # noqa: PLR0915
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -879,8 +879,9 @@ def create_agent(  # noqa: PLR0915
                 raise TypeError(msg)
 
         # Execute with or without handler
-        current_request = request
+        current_request: ModelRequest | AIMessage = request
         internal_response: _InternalModelResponse
+        effective_response_format: Any = None
 
         if on_model_call_handler is None:
             # No handlers - execute directly
@@ -901,7 +902,6 @@ def create_agent(  # noqa: PLR0915
 
             # Execution loop - track last AIMessage seen
             last_ai_message: AIMessage | None = None
-            effective_response_format: Any = None
             while True:
                 # Check if handler yielded AIMessage (short-circuit result)
                 if isinstance(current_request, AIMessage):
@@ -983,7 +983,7 @@ def create_agent(  # noqa: PLR0915
                 effective_response_format=None,
             )
 
-    async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+    async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:  # noqa: PLR0915
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -1000,8 +1000,9 @@ def create_agent(  # noqa: PLR0915
 
         # Execute with or without handler
         # Note: handler is sync generator, but model execution is async
-        current_request = request
+        current_request: ModelRequest | AIMessage = request
         internal_response: _InternalModelResponse
+        effective_response_format: Any = None
 
         if on_model_call_handler is None:
             # No handlers - execute directly
@@ -1022,7 +1023,6 @@ def create_agent(  # noqa: PLR0915
 
             # Execution loop - track last AIMessage seen
             last_ai_message: AIMessage | None = None
-            effective_response_format: Any = None
             while True:
                 # Check if handler yielded AIMessage (short-circuit result)
                 if isinstance(current_request, AIMessage):

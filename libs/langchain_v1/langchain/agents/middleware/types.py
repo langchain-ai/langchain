@@ -221,7 +221,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ModelRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest, AIMessage, AIMessage]:
+    ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
         """Intercept and control model execution via generator protocol.
 
         Protocol:

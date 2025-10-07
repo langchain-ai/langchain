@@ -72,7 +72,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
         request: ModelRequest,
         state: Any,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest, AIMessage, AIMessage]:
+    ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
         """Try fallback models in sequence on errors.
 
         Args:
@@ -94,20 +94,22 @@ class ModelFallbackMiddleware(AgentMiddleware):
         # Try primary model first
         try:
             yield request
-            return  # Success - generator ends, consumer uses last result
         except Exception as e:  # noqa: BLE001
             last_exception = e
             # Try fallbacks
+        else:
+            return  # Success - generator ends, consumer uses last result
 
         # Try each fallback model
         for fallback_model in self.models:
             request.model = fallback_model
             try:
                 yield request
-                return  # Success - generator ends, consumer uses last result
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue  # Try next fallback
+            else:
+                return  # Success - generator ends, consumer uses last result
 
         # All models failed - re-raise last exception
         if last_exception:
