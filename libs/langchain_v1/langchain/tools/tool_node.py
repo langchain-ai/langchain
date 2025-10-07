@@ -490,11 +490,21 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of LangGraph runtime context (e.g., unit tests)
+            runtime = None
+
         tool_calls, input_type = self._parse_input(input, store)
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
+        inputs = [input] * len(tool_calls)
+        runtimes = [runtime] * len(tool_calls)
         with get_executor_for_config(config) as executor:
-            outputs = [*executor.map(self._run_one, tool_calls, input_types, config_list)]
+            outputs = [
+                *executor.map(self._run_one, tool_calls, input_types, config_list, inputs, runtimes)
+            ]
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -505,9 +515,15 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of LangGraph runtime context (e.g., unit tests)
+            runtime = None
+
         tool_calls, input_type = self._parse_input(input, store)
         outputs = await asyncio.gather(
-            *(self._arun_one(call, input_type, config) for call in tool_calls)
+            *(self._arun_one(call, input_type, config, input, runtime) for call in tool_calls)
         )
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -636,6 +652,8 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
     ) -> ToolMessage | Command:
         """Run a single tool call synchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
@@ -653,16 +671,7 @@ class ToolNode(RunnableCallable):
             tool_response = self._execute_tool_sync(tool_request, input_type, config)
         else:
             # Generator protocol: start generator, send responses, receive requests
-            try:
-                runtime = get_runtime()
-            except RuntimeError:
-                # Called outside of langgraph runtime (e.g., from unit tests)
-                runtime = None
-
-            # Get state from config
-            state = config.get("configurable", {}).get("__pregel_state")
-
-            gen = self._on_tool_call(tool_request, state, runtime)
+            gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
                 request = next(gen)
@@ -781,6 +790,8 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
     ) -> ToolMessage | Command:
         """Run a single tool call asynchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
@@ -798,16 +809,7 @@ class ToolNode(RunnableCallable):
             tool_response = await self._execute_tool_async(tool_request, input_type, config)
         else:
             # Generator protocol: handler is sync generator, tool execution is async
-            try:
-                runtime = get_runtime()
-            except RuntimeError:
-                # Called outside langgraph runtime context
-                runtime = None
-
-            # Get state from config
-            state = config.get("configurable", {}).get("__pregel_state")
-
-            gen = self._on_tool_call(tool_request, state, runtime)
+            gen = self._on_tool_call(tool_request, input, runtime)
 
             try:
                 request = next(gen)
