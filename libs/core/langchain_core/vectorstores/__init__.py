@@ -5,15 +5,20 @@ from typing import TYPE_CHECKING
 from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
-    from langchain_core.vectorstores.base import VST, VectorStore, VectorStoreRetriever, ContextualCompressionRetriever
+    from langchain_core.vectorstores.base import (
+        VST,
+        ContextualCompressionRetriever,
+        VectorStore,
+        VectorStoreRetriever,
+    )
     from langchain_core.vectorstores.in_memory import InMemoryVectorStore
 
 __all__ = (
     "VST",
+    "ContextualCompressionRetriever",
     "InMemoryVectorStore",
     "VectorStore",
     "VectorStoreRetriever",
-    "ContextualCompressionRetriever",
 )
 
 _dynamic_imports = {
