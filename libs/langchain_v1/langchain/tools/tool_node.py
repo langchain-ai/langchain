@@ -682,7 +682,8 @@ class ToolNode(RunnableCallable):
                     if e.value is None:
                         msg = (
                             "on_tool_call handler must explicitly return a ToolCallResponse. "
-                            "Ensure your handler ends with 'return response' instead of implicit None."
+                            "Ensure your handler ends with 'return response' instead of "
+                            "implicit None."
                         )
                         raise ValueError(msg)
                     tool_response = e.value
@@ -827,7 +828,8 @@ class ToolNode(RunnableCallable):
                     if e.value is None:
                         msg = (
                             "on_tool_call handler must explicitly return a ToolCallResponse. "
-                            "Ensure your handler ends with 'return response' instead of implicit None."
+                            "Ensure your handler ends with 'return response' instead of "
+                            "implicit None."
                         )
                         raise ValueError(msg)
                     tool_response = e.value
