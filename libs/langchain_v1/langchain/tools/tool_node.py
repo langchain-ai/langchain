@@ -125,6 +125,9 @@ Handler receives (request, state, runtime), yields request(s) or message(s) for 
 receives ToolMessage via .send(). The final result is the last ToolMessage sent to the
 handler before it completes.
 
+The handler can also throw exceptions to signal errors. If handle_tool_errors is configured,
+exceptions will be caught and converted to error ToolMessages. Otherwise, they propagate.
+
 Signature:
     (ToolCallRequest, state, runtime) -> Generator that yields ToolCallRequest or ToolMessage,
     receives ToolMessage via .send(), and completes naturally (no explicit return).
@@ -152,6 +155,17 @@ Example:
         request.tool_call["args"]["value"] *= 2  # Double the value
         yield request
         # Final result is the execution ToolMessage sent back
+
+    Retry middleware with exception on failure:
+
+    def retry_handler(request, state, runtime):
+        for attempt in range(3):
+            response = yield request
+            if is_success(response):
+                return  # Success - end with this response
+            if attempt == 2:
+                raise ValueError("All retries exhausted")
+        # Exception converted to error ToolMessage if handle_tool_errors=True
 """
 
 
@@ -707,6 +721,18 @@ class ToolNode(RunnableCallable):
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message
+                except Exception as e:
+                    # Handler threw an exception
+                    if not self._handle_tool_errors:
+                        raise
+                    # Convert to error message
+                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
+                    return ToolMessage(
+                        content=content,
+                        name=tool_request.tool_call["name"],
+                        tool_call_id=tool_request.tool_call["id"],
+                        status="error",
+                    )
             else:
                 # Normal flow: execute the tool with the request
                 tool_message = self._execute_tool_sync(yielded, input_type, config)
@@ -718,6 +744,18 @@ class ToolNode(RunnableCallable):
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message
+                except Exception as e:
+                    # Handler threw an exception
+                    if not self._handle_tool_errors:
+                        raise
+                    # Convert to error message
+                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
+                    return ToolMessage(
+                        content=content,
+                        name=tool_request.tool_call["name"],
+                        tool_call_id=tool_request.tool_call["id"],
+                        status="error",
+                    )
 
     async def _execute_tool_async(
         self,
@@ -862,6 +900,18 @@ class ToolNode(RunnableCallable):
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message
+                except Exception as e:
+                    # Handler threw an exception
+                    if not self._handle_tool_errors:
+                        raise
+                    # Convert to error message
+                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
+                    return ToolMessage(
+                        content=content,
+                        name=tool_request.tool_call["name"],
+                        tool_call_id=tool_request.tool_call["id"],
+                        status="error",
+                    )
             else:
                 # Normal flow: execute the tool with the request
                 tool_message = await self._execute_tool_async(yielded, input_type, config)
@@ -873,6 +923,18 @@ class ToolNode(RunnableCallable):
                 except StopIteration:
                     # Handler ended - return the last message we sent to it
                     return last_sent_message
+                except Exception as e:
+                    # Handler threw an exception
+                    if not self._handle_tool_errors:
+                        raise
+                    # Convert to error message
+                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
+                    return ToolMessage(
+                        content=content,
+                        name=tool_request.tool_call["name"],
+                        tool_call_id=tool_request.tool_call["id"],
+                        status="error",
+                    )
 
     def _parse_input(
         self,

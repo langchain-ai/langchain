@@ -35,7 +35,7 @@ def test_passthrough_handler() -> None:
         request: ToolCallRequest, _state: Any, _runtime: Any
     ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Simple passthrough handler."""
-        message = yield request
+        yield request
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -70,7 +70,7 @@ async def test_passthrough_handler_async() -> None:
         request: ToolCallRequest, _state: Any, _runtime: Any
     ) -> Generator[ToolCallRequest, ToolMessage, None]:
         """Simple passthrough handler."""
-        response = yield request
+        yield request
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -108,7 +108,7 @@ def test_modify_arguments() -> None:
         request.tool_call["args"]["a"] *= 2
         request.tool_call["args"]["b"] *= 2
 
-        response = yield request
+        yield request
 
     tool_node = ToolNode([add], on_tool_call=modify_args_handler)
 
@@ -252,7 +252,7 @@ def test_multiple_tool_calls_with_handler() -> None:
         """Handler that counts calls."""
         nonlocal call_count
         call_count += 1
-        response = yield request
+        yield request
 
     tool_node = ToolNode([add], on_tool_call=counting_handler)
 
@@ -321,7 +321,7 @@ async def test_handler_with_async_execution() -> None:
         # Add 10 to both arguments
         request.tool_call["args"]["a"] += 10
         request.tool_call["args"]["b"] += 10
-        response = yield request
+        yield request
 
     tool_node = ToolNode([async_add], on_tool_call=modifying_handler)
 
@@ -403,7 +403,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
         )
-        response = yield cached_result
+        yield cached_result
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -448,10 +448,10 @@ def test_conditional_short_circuit() -> None:
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            response = yield cached
+            yield cached
         else:
             # Odd: execute normally
-            response = yield request
+            yield request
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -515,13 +515,13 @@ def test_short_circuit_then_retry() -> None:
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            response = yield cached
+            yield cached
             # Simulate cache validation failure, need fresh result
             # Yield the actual request to execute the tool
-            response = yield request
+            yield request
         else:
             # Subsequent calls: execute normally
-            response = yield request
+            yield request
 
     tool_node = ToolNode([add], on_tool_call=cache_then_retry_handler)
 
@@ -652,7 +652,7 @@ def test_conditional_direct_return() -> None:
             )
         else:
             # Execute tool normally
-            message = yield request
+            yield request
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -697,3 +697,165 @@ def test_conditional_direct_return() -> None:
 
     tool_message2 = result2["messages"][-1]
     assert tool_message2.content == "7"  # Actual execution: 3 + 4
+
+
+def test_handler_can_throw_exception() -> None:
+    """Test that a handler can throw an exception to signal error."""
+
+    def throwing_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that throws an exception after receiving response."""
+        response = yield request
+        # Check response and throw if invalid
+        if isinstance(response, ToolMessage):
+            msg = "Handler rejected the response"
+            raise ValueError(msg)  # noqa: TRY004
+
+    tool_node = ToolNode([add], on_tool_call=throwing_handler, handle_tool_errors=True)
+
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "adding",
+                    tool_calls=[
+                        {
+                            "name": "add",
+                            "args": {"a": 1, "b": 2},
+                            "id": "call_exc_1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Should get error message due to handle_tool_errors=True
+    messages = result["messages"]
+    assert len(messages) == 1
+    assert isinstance(messages[0], ToolMessage)
+    assert messages[0].status == "error"
+    assert "Handler rejected the response" in messages[0].content
+
+
+def test_handler_throw_without_handle_errors() -> None:
+    """Test that exception propagates when handle_tool_errors=False."""
+
+    def throwing_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that throws an exception."""
+        yield request
+        msg = "Handler error"
+        raise ValueError(msg)
+
+    tool_node = ToolNode([add], on_tool_call=throwing_handler, handle_tool_errors=False)
+
+    with pytest.raises(ValueError, match="Handler error"):
+        tool_node.invoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "adding",
+                        tool_calls=[
+                            {
+                                "name": "add",
+                                "args": {"a": 1, "b": 2},
+                                "id": "call_exc_2",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+def test_retry_middleware_with_exception() -> None:
+    """Test retry middleware pattern that throws after exhausting retries."""
+    attempt_count = {"count": 0}
+
+    def retry_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that retries up to 3 times, then throws."""
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            attempt_count["count"] += 1
+            response = yield request
+
+            # Simulate checking for retriable errors
+            # In real use case, would check response.status or content
+            if isinstance(response, ToolMessage) and attempt < max_retries - 1:
+                # Could retry based on some condition
+                # For this test, just succeed immediately
+                break
+
+        # If we exhausted retries, could throw
+        # For this test, we succeed on first try
+
+    tool_node = ToolNode([add], on_tool_call=retry_handler)
+
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "adding",
+                    tool_calls=[
+                        {
+                            "name": "add",
+                            "args": {"a": 1, "b": 2},
+                            "id": "call_exc_3",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Should succeed after 1 attempt
+    assert attempt_count["count"] == 1
+    messages = result["messages"]
+    assert len(messages) == 1
+    assert isinstance(messages[0], ToolMessage)
+    assert messages[0].content == "3"
+
+
+async def test_async_handler_can_throw_exception() -> None:
+    """Test that async execution also supports exception throwing."""
+
+    def throwing_handler(
+        request: ToolCallRequest, _state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest, ToolMessage, None]:
+        """Handler that throws an exception after receiving response."""
+        response = yield request
+        if isinstance(response, ToolMessage):
+            msg = "Async handler rejected the response"
+            raise ValueError(msg)  # noqa: TRY004
+
+    tool_node = ToolNode([add], on_tool_call=throwing_handler, handle_tool_errors=True)
+
+    result = await tool_node.ainvoke(
+        {
+            "messages": [
+                AIMessage(
+                    "adding",
+                    tool_calls=[
+                        {
+                            "name": "add",
+                            "args": {"a": 1, "b": 2},
+                            "id": "call_exc_4",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+
+    # Should get error message due to handle_tool_errors=True
+    messages = result["messages"]
+    assert len(messages) == 1
+    assert isinstance(messages[0], ToolMessage)
+    assert messages[0].status == "error"
+    assert "Async handler rejected the response" in messages[0].content

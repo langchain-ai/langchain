@@ -249,6 +249,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Generator protocol for fine-grained control over tool execution. Multiple
         middleware with on_tool_call compose automatically: first defined = outermost.
 
+        The handler can also throw exceptions to signal errors. If handle_tool_errors
+        is configured on the ToolNode, exceptions will be caught and converted to error
+        ToolMessages. Otherwise, they propagate to the caller.
+
         Args:
             request: Tool execution request with tool call dict and BaseTool instance.
             state: Current agent state.
@@ -264,6 +268,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
         Returns:
             None (completes naturally, final result is last sent ToolMessage).
+
+        Raises:
+            Exception: Can throw exceptions to signal errors. Converted to error
+                ToolMessage if handle_tool_errors is configured, otherwise propagates.
 
         Example:
             Passthrough handler:
@@ -292,6 +300,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 request.tool_call["args"]["value"] *= 2  # Double the value
                 yield request
                 # Final result is the execution ToolMessage sent back
+
+            Retry middleware with exception on exhaustion:
+
+            def on_tool_call(self, request, state, runtime):
+                for attempt in range(3):
+                    response = yield request
+                    if is_retriable_error(response):
+                        if attempt == 2:
+                            raise ValueError("Max retries exhausted")
+                        continue
+                    break  # Success
         """
         yield request
 

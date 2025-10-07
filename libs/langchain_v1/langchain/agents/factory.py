@@ -240,7 +240,6 @@ def _chain_tool_call_handlers(
             request: ToolCallRequest, state: Any, runtime: Any
         ) -> Generator[ToolCallRequest | ToolMessage, ToolMessage, None]:
             outer_gen = outer(request, state, runtime)
-            last_sent_to_outer: ToolMessage | None = None
 
             # Initialize outer generator
             try:
@@ -254,7 +253,6 @@ def _chain_tool_call_handlers(
                 # If outer yielded a ToolMessage, bypass inner handler and yield directly
                 if isinstance(outer_request, ToolMessage):
                     tool_message = yield outer_request
-                    last_sent_to_outer = tool_message
                     try:
                         outer_request = outer_gen.send(tool_message)
                     except StopIteration:
@@ -289,7 +287,6 @@ def _chain_tool_call_handlers(
                 if last_sent_to_inner is None:
                     msg = "inner handler ended without receiving any ToolMessage"
                     raise ValueError(msg)
-                last_sent_to_outer = last_sent_to_inner
                 try:
                     outer_request = outer_gen.send(last_sent_to_inner)
                 except StopIteration:
