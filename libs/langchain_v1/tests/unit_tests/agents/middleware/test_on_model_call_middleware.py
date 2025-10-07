@@ -608,6 +608,62 @@ class TestMiddlewareComposition:
             "first-after",
         ]
 
+    def test_middle_retry_middleware(self) -> None:
+        """Test that middle middleware doing retry causes inner to execute twice."""
+        execution_order = []
+        model_calls = []
+
+        class OuterMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                execution_order.append("outer-before")
+                yield request
+                execution_order.append("outer-after")
+
+        class MiddleRetryMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                execution_order.append("middle-before")
+                # Always retry once (yield twice)
+                yield request
+                execution_order.append("middle-retry")
+                yield request
+                execution_order.append("middle-after")
+
+        class InnerMiddleware(AgentMiddleware):
+            def on_model_call(self, request, state, runtime):
+                execution_order.append("inner-before")
+                yield request
+                execution_order.append("inner-after")
+
+        class TrackingModel(GenericFakeChatModel):
+            def _generate(self, messages, **kwargs):
+                model_calls.append(len(messages))
+                return super()._generate(messages, **kwargs)
+
+        model = TrackingModel(
+            messages=iter([AIMessage(content="Response 1"), AIMessage(content="Response 2")])
+        )
+        agent = create_agent(
+            model=model,
+            middleware=[OuterMiddleware(), MiddleRetryMiddleware(), InnerMiddleware()],
+        )
+
+        agent.invoke({"messages": [HumanMessage("Test")]})
+
+        # Middle yields twice, so inner runs twice
+        assert execution_order == [
+            "outer-before",
+            "middle-before",
+            "inner-before",  # First execution
+            "inner-after",
+            "middle-retry",  # Middle yields again
+            "inner-before",  # Second execution
+            "inner-after",
+            "middle-after",
+            "outer-after",
+        ]
+        # Model should be called twice
+        assert len(model_calls) == 2
+
 
 class TestAsyncOnModelCall:
     """Test async execution with on_model_call."""
