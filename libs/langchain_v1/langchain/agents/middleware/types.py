@@ -221,18 +221,18 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         request: ModelRequest,
         state: StateT,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+    ) -> Generator[ModelRequest, AIMessage, AIMessage]:
         """Intercept and control model execution via generator protocol.
 
         Protocol:
         1. Yield ModelRequest to execute the model.
-        2. Receive ModelResponse via .send() containing result or error.
+        2. Receive AIMessage via .send() on success, or exception via .throw() on error.
         3. Optionally yield again to retry.
-        4. Return final ModelResponse.
+        4. Return final AIMessage.
 
         Middleware can implement retry logic, error handling, response rewriting,
-        and request modification. Multiple middleware compose with first in list
-        as outermost layer.
+        and request modification using standard try/except. Multiple middleware
+        compose with first in list as outermost layer.
 
         Args:
             request: Initial model request to execute.
@@ -243,44 +243,47 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             ModelRequest to execute.
 
         Receives:
-            ModelResponse via .send() after each yield.
+            AIMessage via .send() on success.
+            Exception via .throw() on error.
 
         Returns:
-            Final ModelResponse to use.
+            Final AIMessage to use.
 
         Examples:
             Retry on error:
             ```python
             def on_model_call(self, request, state, runtime):
                 for attempt in range(3):
-                    response = yield request
-                    if response.action == "return":
-                        return response
-                return response
+                    try:
+                        result = yield request
+                        return result
+                    except Exception:
+                        if attempt == 2:
+                            raise
+                return result
             ```
 
             Rewrite response:
             ```python
             def on_model_call(self, request, state, runtime):
-                response = yield request
-                if response.action == "return" and response.result:
-                    modified = AIMessage(content=f"[{response.result.content}]")
-                    response = ModelResponse(action="return", result=modified)
-                return response
+                result = yield request
+                modified = AIMessage(content=f"[{result.content}]")
+                return modified
             ```
 
             Error to fallback:
             ```python
             def on_model_call(self, request, state, runtime):
-                response = yield request
-                if response.action == "raise":
+                try:
+                    result = yield request
+                    return result
+                except Exception:
                     fallback = AIMessage(content="Service unavailable")
-                    response = ModelResponse(action="return", result=fallback)
-                return response
+                    return fallback
             ```
         """
-        response = yield request
-        return response
+        result = yield request
+        return result
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
@@ -325,11 +328,12 @@ class _CallableReturningModelResponseGenerator(Protocol[StateT_contra, ContextT]
     """Callable returning generator for model call interception.
 
     Returns sync generator that works with both sync and async model execution.
+    Generator receives AIMessage via .send() or exception via .throw().
     """
 
     def __call__(
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+    ) -> Generator[ModelRequest, AIMessage, AIMessage]:
         """Return generator to intercept model execution."""
         ...
 
@@ -1226,12 +1230,13 @@ def on_model_call(
     """Create middleware with on_model_call hook from a generator function.
 
     Converts a generator function into middleware that can intercept model calls,
-    implement retry logic, handle errors, and rewrite responses.
+    implement retry logic, handle errors, and rewrite responses using standard
+    Python exception handling.
 
     Args:
         func: Generator function accepting (request, state, runtime) that yields
-            ModelRequest, receives ModelResponse via .send(), and returns
-            final ModelResponse.
+            ModelRequest, receives AIMessage via .send() on success or exception
+            via .throw() on error, and returns final AIMessage.
         state_schema: Custom state schema. Defaults to AgentState.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
@@ -1245,20 +1250,16 @@ def on_model_call(
         @on_model_call
         def retry_on_error(
             request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             max_retries = 3
             for attempt in range(max_retries):
-                response = yield request
-
-                if response.action == "return":
-                    return response
-
-                if attempt < max_retries - 1:
-                    # Modify request and retry
-                    continue
-
-            # All retries failed
-            return response
+                try:
+                    result = yield request
+                    return result
+                except Exception:
+                    if attempt == max_retries - 1:
+                        raise
+            return result
         ```
 
         Model fallback:
@@ -1266,17 +1267,18 @@ def on_model_call(
         @on_model_call
         def fallback_model(
             request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             # Try primary model
-            response = yield request
-
-            if response.action == "return":
-                return response
+            try:
+                result = yield request
+                return result
+            except Exception:
+                pass
 
             # Try fallback model
             request.model = fallback_model_instance
-            response = yield request
-            return response
+            result = yield request
+            return result
         ```
 
         Rewrite response content:
@@ -1284,14 +1286,10 @@ def on_model_call(
         @on_model_call
         def uppercase_responses(
             request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
-            response = yield request
-
-            if response.action == "return" and response.result:
-                modified = AIMessage(content=response.result.content.upper())
-                response = ModelResponse(action="return", result=modified)
-
-            return response
+        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
+            result = yield request
+            modified = AIMessage(content=result.content.upper())
+            return modified
         ```
     """
 
@@ -1303,7 +1301,7 @@ def on_model_call(
             request: ModelRequest,
             state: StateT,
             runtime: Runtime[ContextT],
-        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             return func(request, state, runtime)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))

@@ -30,7 +30,6 @@ from langchain.agents.middleware.types import (
     AgentState,
     JumpTo,
     ModelRequest,
-    ModelResponse,
     OmitFromSchema,
     PublicAgentState,
 )
@@ -63,59 +62,33 @@ ResponseT = TypeVar("ResponseT")
 
 @dataclass
 class _InternalModelResponse:
-    """Internal wrapper for model responses with cached metadata.
+    """Internal wrapper for model execution results.
 
-    Wraps ModelResponse with effective_response_format to avoid redundant
-    _get_bound_model calls. Middleware only sees the inner ModelResponse.
+    Contains either a successful result or an exception, plus cached metadata.
+    Middleware receives either AIMessage via .send() or Exception via .throw().
     """
 
-    model_response: ModelResponse
-    """The model response visible to middleware."""
+    result: AIMessage | None
+    """The AI message result on success."""
+
+    exception: Exception | None
+    """The exception on error."""
 
     effective_response_format: Any = None
     """Cached response format after auto-detection."""
 
 
-def _validate_handler_return(value: Any) -> ModelResponse:
-    """Validate handler return value is a ModelResponse.
-
-    Args:
-        value: Value from handler's StopIteration.
-
-    Returns:
-        Validated ModelResponse.
-
-    Raises:
-        ValueError: If value is None.
-        TypeError: If value is not a ModelResponse.
-    """
-    if value is None:
-        msg = (
-            "on_model_call handler must explicitly return a ModelResponse. "
-            "Ensure your handler ends with 'return response'."
-        )
-        raise ValueError(msg)
-
-    if not isinstance(value, ModelResponse):
-        msg = (
-            f"on_model_call handler must return a ModelResponse, got {type(value).__name__} instead"
-        )
-        raise TypeError(msg)
-
-    return value
-
-
-def _chain_model_call_handlers(
+def _chain_model_call_handlers(  # noqa: PLR0915
     handlers: Sequence[
         Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, ModelResponse, ModelResponse],
+            Generator[ModelRequest, AIMessage, AIMessage],
         ]
     ],
 ) -> (
     Callable[
         [ModelRequest, Any, Any],
-        Generator[ModelRequest, ModelResponse, ModelResponse],
+        Generator[ModelRequest, AIMessage, AIMessage],
     ]
     | None
 ):
@@ -135,19 +108,24 @@ def _chain_model_call_handlers(
         # handlers=[auth, retry] means: auth wraps retry
         # Flow: auth-before -> retry-before -> model -> retry-after -> auth-after
         def auth(req, state, runtime):
-            resp = yield req
-            if "unauthorized" in str(resp.exception):
+            try:
+                result = yield req
+                return result
+            except UnauthorizedError:
                 refresh_token()
-                resp = yield req
-            return resp
+                result = yield req
+                return result
 
 
         def retry(req, state, runtime):
-            for _ in range(3):
-                resp = yield req
-                if resp.action == "return":
-                    return resp
-            return resp
+            for attempt in range(3):
+                try:
+                    result = yield req
+                    return result
+                except Exception:
+                    if attempt == 2:
+                        raise
+            return result
 
 
         handler = _chain_model_call_handlers([auth, retry])
@@ -159,37 +137,37 @@ def _chain_model_call_handlers(
     if len(handlers) == 1:
         return handlers[0]
 
-    def _extract_return_value(stop_iteration: StopIteration) -> ModelResponse:
-        """Extract ModelResponse from StopIteration, validating protocol compliance."""
-        return _validate_handler_return(stop_iteration.value)
-
     def compose_two(
         outer: Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, ModelResponse, ModelResponse],
+            Generator[ModelRequest, AIMessage, AIMessage],
         ],
         inner: Callable[
             [ModelRequest, Any, Any],
-            Generator[ModelRequest, ModelResponse, ModelResponse],
+            Generator[ModelRequest, AIMessage, AIMessage],
         ],
     ) -> Callable[
         [ModelRequest, Any, Any],
-        Generator[ModelRequest, ModelResponse, ModelResponse],
+        Generator[ModelRequest, AIMessage, AIMessage],
     ]:
-        """Compose two handlers where outer wraps inner."""
+        """Compose two handlers where outer wraps inner.
+
+        Routes both .send(AIMessage) and .throw(Exception) from caller through
+        middleware layers, allowing each handler to catch exceptions.
+        """
 
         def composed(
             request: ModelRequest,
             state: Any,
             runtime: Any,
-        ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+        ) -> Generator[ModelRequest, AIMessage, AIMessage]:
             outer_gen = outer(request, state, runtime)
 
             # Initialize outer generator
             try:
                 outer_request = next(outer_gen)
             except StopIteration as e:
-                return _extract_return_value(e)
+                return e.value  # Outer returned immediately
 
             # Outer retry loop
             while True:
@@ -200,32 +178,67 @@ def _chain_model_call_handlers(
                     inner_request = next(inner_gen)
                 except StopIteration as e:
                     # Inner returned immediately - send to outer
-                    inner_response = _extract_return_value(e)
                     try:
-                        outer_request = outer_gen.send(inner_response)
-                        continue  # Outer retrying
+                        outer_request = outer_gen.send(e.value)
+                        continue  # Outer is retrying
                     except StopIteration as e:
-                        return _extract_return_value(e)
+                        return e.value  # Outer done
 
-                # Inner retry loop - yield to next layer (or model)
+                # Inner retry loop - yield to caller (model execution)
+                inner_final_result = None
+                outer_is_retrying = False
                 while True:
-                    model_response = yield inner_request
-
                     try:
-                        inner_request = inner_gen.send(model_response)
-                        # Inner retrying - continue inner loop
-                    except StopIteration as e:
-                        # Inner done - send response to outer
-                        inner_response = _extract_return_value(e)
-                        break
+                        # Yield request to caller - caller will .send() or .throw()
+                        model_result = yield inner_request
 
-                # Send inner's final response to outer
+                        # If we reach here, caller used .send(AIMessage)
+                        try:
+                            inner_request = inner_gen.send(model_result)
+                            # Inner is retrying - continue inner loop
+                        except StopIteration as e:
+                            # Inner finished successfully
+                            inner_final_result = e.value
+                            break  # Exit inner retry loop
+
+                    except Exception as exc:  # noqa: BLE001
+                        # Caller used .throw(Exception)
+                        # Route exception to inner handler
+                        try:
+                            inner_request = inner_gen.throw(exc)
+                            # Inner caught exception and is retrying
+                            # Continue inner loop
+                        except StopIteration as e:
+                            # Inner returned after handling exception
+                            inner_final_result = e.value
+                            break  # Exit inner retry loop
+                        except Exception as inner_unhandled:  # noqa: BLE001
+                            # Inner didn't catch - propagate to outer
+                            try:
+                                outer_request = outer_gen.throw(inner_unhandled)
+                                # Outer caught and is retrying - continue outer loop
+                                outer_is_retrying = True
+                                break  # Exit inner loop to restart with outer's new request
+                            except StopIteration as e:
+                                # Outer returned after handling exception
+                                return e.value
+                            except Exception:
+                                # Outer didn't catch either - propagate to caller
+                                raise
+
+                # If outer is retrying, skip sending result and continue outer loop
+                if outer_is_retrying:
+                    continue
+
+                # Inner finished - send result to outer
+                # inner_final_result is guaranteed to be set by this point
+                assert inner_final_result is not None  # noqa: S101
                 try:
-                    outer_request = outer_gen.send(inner_response)
-                    # Outer retrying - continue outer loop
+                    outer_request = outer_gen.send(inner_final_result)
+                    # Outer is retrying - continue outer loop
                 except StopIteration as e:
-                    # Outer done - return final response
-                    return _extract_return_value(e)
+                    # Outer finished
+                    return e.value
 
         return composed
 
@@ -790,7 +803,7 @@ def create_agent(  # noqa: PLR0915
         return request.model.bind(**request.model_settings), None
 
     def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model and return response.
+        """Execute model and return result or exception.
 
         This is the core model execution logic wrapped by on_model_call handlers.
         """
@@ -803,13 +816,16 @@ def create_agent(  # noqa: PLR0915
 
             output = model_.invoke(messages)
             return _InternalModelResponse(
-                model_response=ModelResponse(action="return", result=output),
+                result=output,
+                exception=None,
                 effective_response_format=effective_response_format,
             )
         except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation to wrap in ModelResponse
+            # Catch all exceptions from model invocation
             return _InternalModelResponse(
-                model_response=ModelResponse(action="raise", exception=error)
+                result=None,
+                exception=error,
+                effective_response_format=None,
             )
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -839,12 +855,14 @@ def create_agent(  # noqa: PLR0915
         # Execute with or without handler
         current_request = request
         internal_response: _InternalModelResponse
-        final_response: ModelResponse
 
         if on_model_call_handler is None:
             # No handlers - execute directly
             internal_response = _execute_model_sync(request)
-            final_response = internal_response.model_response
+            if internal_response.exception is not None:
+                raise internal_response.exception
+            output = internal_response.result
+            effective_response_format = internal_response.effective_response_format
         else:
             # Use composed handler with generator protocol
             gen = on_model_call_handler(request, state, runtime)
@@ -855,40 +873,46 @@ def create_agent(  # noqa: PLR0915
                 msg = "on_model_call handler must yield at least once to request model execution"
                 raise ValueError(msg)
 
-            # Execution loop - generator controls termination via StopIteration
+            # Execution loop - use .send() for success, .throw() for errors
             while True:
                 internal_response = _execute_model_sync(current_request)
 
                 try:
-                    # Send only the ModelResponse to the generator (not the wrapper)
-                    current_request = gen.send(internal_response.model_response)
+                    if internal_response.exception is None:
+                        # Success - send AIMessage to handler
+                        assert internal_response.result is not None  # noqa: S101
+                        current_request = gen.send(internal_response.result)
+                    else:
+                        # Error - throw exception to handler
+                        current_request = gen.throw(internal_response.exception)
                     # Handler yielded again - retry
                 except StopIteration as e:
-                    final_response = _validate_handler_return(e.value)
+                    # Handler returned final result
+                    output = e.value
+                    effective_response_format = internal_response.effective_response_format
                     break
+                except Exception:
+                    # Handler didn't catch exception - propagate
+                    raise
 
-        # Process the final response
-        if final_response.action == "raise":
-            if final_response.exception is None:
-                msg = "ModelResponse with action='raise' must have an exception"
+            # Validate final result
+            if output is None:
+                msg = "on_model_call handler must return AIMessage"
                 raise ValueError(msg)
-            raise final_response.exception
+            if not isinstance(output, AIMessage):
+                msg = f"on_model_call handler must return AIMessage, got {type(output).__name__}"
+                raise TypeError(msg)
 
-        if final_response.result is None:
-            msg = "ModelResponse with action='return' must have a result"
-            raise ValueError(msg)
-
-        # Use cached effective_response_format from internal response
-        effective_response_format = internal_response.effective_response_format
-
+        # output is guaranteed to be AIMessage at this point
+        assert isinstance(output, AIMessage)  # noqa: S101
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(final_response.result, effective_response_format),
+            **_handle_model_output(output, effective_response_format),
         }
 
     async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model asynchronously and return response.
+        """Execute model asynchronously and return result or exception.
 
         This is the core async model execution logic wrapped by on_model_call handlers.
         """
@@ -901,13 +925,16 @@ def create_agent(  # noqa: PLR0915
 
             output = await model_.ainvoke(messages)
             return _InternalModelResponse(
-                model_response=ModelResponse(action="return", result=output),
+                result=output,
+                exception=None,
                 effective_response_format=effective_response_format,
             )
         except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation to wrap in ModelResponse
+            # Catch all exceptions from model invocation
             return _InternalModelResponse(
-                model_response=ModelResponse(action="raise", exception=error)
+                result=None,
+                exception=error,
+                effective_response_format=None,
             )
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -929,12 +956,14 @@ def create_agent(  # noqa: PLR0915
         # Note: handler is sync generator, but model execution is async
         current_request = request
         internal_response: _InternalModelResponse
-        final_response: ModelResponse
 
         if on_model_call_handler is None:
             # No handlers - execute directly
             internal_response = await _execute_model_async(request)
-            final_response = internal_response.model_response
+            if internal_response.exception is not None:
+                raise internal_response.exception
+            output = internal_response.result
+            effective_response_format = internal_response.effective_response_format
         else:
             # Use composed handler with generator protocol (sync generator, async execution)
             gen = on_model_call_handler(request, state, runtime)
@@ -945,36 +974,42 @@ def create_agent(  # noqa: PLR0915
                 msg = "on_model_call handler must yield at least once to request model execution"
                 raise ValueError(msg)
 
-            # Execution loop - generator controls termination via StopIteration
+            # Execution loop - use .send() for success, .throw() for errors
             while True:
                 internal_response = await _execute_model_async(current_request)
 
                 try:
-                    # Send only the ModelResponse to the generator (not the wrapper)
-                    current_request = gen.send(internal_response.model_response)
+                    if internal_response.exception is None:
+                        # Success - send AIMessage to handler
+                        assert internal_response.result is not None  # noqa: S101
+                        current_request = gen.send(internal_response.result)
+                    else:
+                        # Error - throw exception to handler
+                        current_request = gen.throw(internal_response.exception)
                     # Handler yielded again - retry
                 except StopIteration as e:
-                    final_response = _validate_handler_return(e.value)
+                    # Handler returned final result
+                    output = e.value
+                    effective_response_format = internal_response.effective_response_format
                     break
+                except Exception:
+                    # Handler didn't catch exception - propagate
+                    raise
 
-        # Process the final response
-        if final_response.action == "raise":
-            if final_response.exception is None:
-                msg = "ModelResponse with action='raise' must have an exception"
+            # Validate final result
+            if output is None:
+                msg = "on_model_call handler must return AIMessage"
                 raise ValueError(msg)
-            raise final_response.exception
+            if not isinstance(output, AIMessage):
+                msg = f"on_model_call handler must return AIMessage, got {type(output).__name__}"
+                raise TypeError(msg)
 
-        if final_response.result is None:
-            msg = "ModelResponse with action='return' must have a result"
-            raise ValueError(msg)
-
-        # Use cached effective_response_format from internal response
-        effective_response_format = internal_response.effective_response_format
-
+        # output is guaranteed to be AIMessage at this point
+        assert isinstance(output, AIMessage)  # noqa: S101
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(final_response.result, effective_response_format),
+            **_handle_model_output(output, effective_response_format),
         }
 
     # Use sync or async based on model capabilities

@@ -9,7 +9,6 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
-    ModelResponse,
     on_model_call,
 )
 
@@ -60,11 +59,13 @@ class TestOnModelCallDecorator:
 
         @on_model_call
         def retry_once(request, state, runtime):
-            response = yield request
-            if response.action == "raise":
+            try:
+                result = yield request
+                return result
+            except Exception:
                 # Retry once
-                response = yield request
-            return response
+                result = yield request
+                return result
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         agent = create_agent(model=model, middleware=[retry_once])
@@ -79,11 +80,9 @@ class TestOnModelCallDecorator:
 
         @on_model_call
         def uppercase_responses(request, state, runtime):
-            response = yield request
-            if response.action == "return" and response.result:
-                modified = AIMessage(content=response.result.content.upper())
-                response = ModelResponse(action="return", result=modified)
-            return response
+            result = yield request
+            modified = AIMessage(content=result.content.upper())
+            return modified
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[uppercase_responses])
@@ -101,11 +100,12 @@ class TestOnModelCallDecorator:
 
         @on_model_call
         def error_to_fallback(request, state, runtime):
-            response = yield request
-            if response.action == "raise":
+            try:
+                result = yield request
+                return result
+            except Exception:
                 fallback = AIMessage(content="Fallback response")
-                response = ModelResponse(action="return", result=fallback)
-            return response
+                return fallback
 
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[error_to_fallback])
@@ -278,17 +278,15 @@ class TestOnModelCallDecorator:
             max_retries = 3
             for attempt in range(max_retries):
                 attempts.append(attempt + 1)
-                response = yield request
-
-                if response.action == "return":
-                    return response
-
-                # On error, continue to next attempt
-                if attempt < max_retries - 1:
-                    continue  # Retry
-
-            # All retries failed
-            return response
+                try:
+                    result = yield request
+                    return result
+                except Exception:
+                    # On error, continue to next attempt
+                    if attempt < max_retries - 1:
+                        continue  # Retry
+                    else:
+                        raise  # All retries failed
 
         model = UnreliableModel(messages=iter([AIMessage(content="Finally worked")]))
         agent = create_agent(model=model, middleware=[retry_with_tracking])
@@ -348,17 +346,15 @@ class TestOnModelCallDecorator:
 
         @on_model_call
         def multi_transform(request, state, runtime):
-            response = yield request
+            result = yield request
 
-            if response.action == "return" and response.result:
-                # First transformation: uppercase
-                content = response.result.content.upper()
-                # Second transformation: add prefix and suffix
-                content = f"[START] {content} [END]"
-                modified = AIMessage(content=content)
-                response = ModelResponse(action="return", result=modified)
+            # First transformation: uppercase
+            content = result.content.upper()
+            # Second transformation: add prefix and suffix
+            content = f"[START] {content} [END]"
+            modified = AIMessage(content=content)
 
-            return response
+            return modified
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello")]))
         agent = create_agent(model=model, middleware=[multi_transform])

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelRequest,
-    ModelResponse,
 )
 from langchain.chat_models import init_chat_model
 
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.messages import AIMessage
     from langgraph.runtime import Runtime
     from langgraph.typing import ContextT
 
@@ -72,7 +72,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
         request: ModelRequest,
         state: Any,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest, ModelResponse, ModelResponse]:
+    ) -> Generator[ModelRequest, AIMessage, AIMessage]:
         """Try fallback models in sequence on errors.
 
         Args:
@@ -84,26 +84,37 @@ class ModelFallbackMiddleware(AgentMiddleware):
             ModelRequest to execute.
 
         Receives:
-            ModelResponse from each attempt.
+            AIMessage via .send() on success, or exception via .throw() on error.
 
         Returns:
-            Final ModelResponse (success or last error).
-        """
-        # Try primary model first
-        current_request = request
-        response = yield current_request
+            Final AIMessage from first successful model.
 
-        # If success, return immediately
-        if response.action == "return":
-            return response
+        Raises:
+            Exception: If all models fail, re-raises last exception.
+        """
+        last_exception = None
+
+        # Try primary model first
+        try:
+            result = yield request
+            return result  # noqa: TRY300
+        except Exception as e:  # noqa: BLE001
+            last_exception = e
+            # Try fallbacks
 
         # Try each fallback model
         for fallback_model in self.models:
-            current_request.model = fallback_model
-            response = yield current_request
+            request.model = fallback_model
+            try:
+                result = yield request
+                return result  # noqa: TRY300
+            except Exception as e:  # noqa: BLE001
+                last_exception = e
+                continue  # Try next fallback
 
-            if response.action == "return":
-                return response
-
-        # All models failed, return last error
-        return response
+        # All models failed - re-raise last exception
+        if last_exception:
+            raise last_exception
+        # This should never be reached, but satisfies type checker
+        msg = "No models to try"
+        raise RuntimeError(msg)
