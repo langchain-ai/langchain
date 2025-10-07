@@ -157,7 +157,7 @@ def test_error_to_message_handler() -> None:
                 status="error",
             )
             return ToolCallResponse(
-                action="continue", result=error_message, exception=response.exception
+                action="return", result=error_message, exception=response.exception
             )
 
         return response
@@ -219,7 +219,7 @@ def test_retry_handler() -> None:
                     status="error",
                 )
                 return ToolCallResponse(
-                    action="continue", result=error_message, exception=response.exception
+                    action="return", result=error_message, exception=response.exception
                 )
 
             # Otherwise, try with different args (won't help in this case, but demonstrates retry)
@@ -295,7 +295,7 @@ def test_handler_validation_no_yield() -> None:
     def bad_handler(request: ToolCallRequest, _state: Any, _runtime: Any) -> ToolCallResponse:
         """Handler that doesn't yield - not even a generator."""
         return ToolCallResponse(
-            action="continue",
+            action="return",
             result=ToolMessage(content="fake", tool_call_id=request.tool_call["id"]),
         )
 
@@ -365,7 +365,7 @@ def test_handler_with_handle_tool_errors_true() -> None:
         """Simple passthrough handler."""
         response = yield request
         # When handle_tool_errors=True, errors should be converted to error messages
-        assert response.action == "continue"
+        assert response.action == "return"
         assert response.result is not None
         assert isinstance(response.result, ToolMessage)
         assert response.result.status == "error"
@@ -464,10 +464,10 @@ def test_tool_call_response_dataclass_validation() -> None:
     """Test ToolCallResponse validation."""
     # Valid continue response
     continue_response = ToolCallResponse(
-        action="continue",
+        action="return",
         result=ToolMessage(content="success", tool_call_id="1"),
     )
-    assert continue_response.action == "continue"
+    assert continue_response.action == "return"
     assert continue_response.result is not None
 
     # Valid raise response
@@ -479,8 +479,8 @@ def test_tool_call_response_dataclass_validation() -> None:
     assert raise_response.exception is not None
 
     # Invalid: continue without result
-    with pytest.raises(ValueError, match="action='continue' requires a result"):
-        ToolCallResponse(action="continue")
+    with pytest.raises(ValueError, match="action='return' requires a result"):
+        ToolCallResponse(action="return")
 
     # Invalid: raise without exception
     with pytest.raises(ValueError, match="action='raise' requires an exception"):
@@ -531,7 +531,7 @@ async def test_handler_with_async_execution() -> None:
 
 
 def test_response_validation_action_continue() -> None:
-    """Test ToolCallResponse validation for action='continue'."""
+    """Test ToolCallResponse validation for action='return'."""
 
     def bad_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
@@ -539,11 +539,11 @@ def test_response_validation_action_continue() -> None:
         """Handler that returns invalid response."""
         yield request
         # Return continue without result - this should be caught by validation
-        return ToolCallResponse(action="continue", result=None)
+        return ToolCallResponse(action="return", result=None)
 
     tool_node = ToolNode([add], on_tool_call=bad_handler)
 
-    with pytest.raises(ValueError, match="action='continue' requires a result"):
+    with pytest.raises(ValueError, match="action='return' requires a result"):
         tool_node.invoke(
             {
                 "messages": [

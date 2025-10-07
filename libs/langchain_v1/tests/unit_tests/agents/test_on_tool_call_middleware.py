@@ -160,7 +160,7 @@ def test_response_inspection_middleware() -> None:
     # Middleware should have inspected the response
     assert len(inspected_responses) == 1
     assert inspected_responses[0]["tool_name"] == "search"
-    assert inspected_responses[0]["action"] == "continue"
+    assert inspected_responses[0]["action"] == "return"
 
 
 def test_conditional_retry_middleware() -> None:
@@ -415,7 +415,7 @@ def test_generator_composition_immediate_outer_return() -> None:
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            return ToolCallResponse(action="continue", result=modified)
+            return ToolCallResponse(action="return", result=modified)
 
     class InnerMiddleware(AgentMiddleware):
         """Inner middleware."""
@@ -475,7 +475,7 @@ def test_generator_composition_short_circuit() -> None:
                     tool_call_id=response.result.tool_call_id,
                     name=response.result.name,
                 )
-                return ToolCallResponse(action="continue", result=modified)
+                return ToolCallResponse(action="return", result=modified)
             return response
 
     class InnerShortCircuitMiddleware(AgentMiddleware):
@@ -489,7 +489,7 @@ def test_generator_composition_short_circuit() -> None:
             _ = yield request
             # Return custom result without using actual tool response
             return ToolCallResponse(
-                action="continue",
+                action="return",
                 result=ToolMessage(
                     content="inner_short_circuit_result",
                     tool_call_id=request.tool_call["id"],
@@ -561,7 +561,7 @@ def test_generator_composition_outer_retry_loop() -> None:
             # First two calls: request retry
             if inner_call_count <= 2:
                 return ToolCallResponse(
-                    action="continue",
+                    action="return",
                     result=ToolMessage(
                         content=f"retry_{inner_call_count}",
                         tool_call_id=request.tool_call["id"],
@@ -653,7 +653,7 @@ def test_generator_composition_nested_retries() -> None:
 
             # Inner exhausted retries
             return ToolCallResponse(
-                action="continue",
+                action="return",
                 result=ToolMessage(
                     content="inner_final_failure",
                     tool_call_id=request.tool_call["id"],
@@ -779,7 +779,7 @@ def test_generator_composition_return_value_extraction() -> None:
                     name=response.result.name,
                 )
                 final_content.append(modified.content)
-                return ToolCallResponse(action="continue", result=modified)
+                return ToolCallResponse(action="return", result=modified)
 
             return response
 
@@ -836,7 +836,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
             _ = yield request
             # Return custom result
             return ToolCallResponse(
-                action="continue",
+                action="return",
                 result=ToolMessage(
                     content="intercepted_result",
                     tool_call_id=request.tool_call["id"],

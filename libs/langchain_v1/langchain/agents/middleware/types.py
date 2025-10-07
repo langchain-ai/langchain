@@ -262,7 +262,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             ToolCallResponse from execution via .send().
 
         Returns:
-            Final ToolCallResponse determining control flow (action="continue"
+            Final ToolCallResponse determining control flow (action="return"
             with result, or action="raise" with exception).
 
         Example:
@@ -271,7 +271,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             def on_tool_call(self, request, state, runtime):
                 for attempt in range(3):
                     response = yield request
-                    if response.action == "continue":
+                    if response.action == "return":
                         return response
                     if "rate limit" in str(response.exception):
                         time.sleep(2**attempt)
