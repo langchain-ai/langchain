@@ -184,8 +184,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def on_model_call(
         self,
         request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
+        state: StateT,
+        runtime: Runtime[ContextT],
     ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
         """Intercept and control model execution via generator protocol.
 
@@ -251,6 +251,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     save_cache(request, result)
             ```
         """
+        raise NotImplementedError
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""

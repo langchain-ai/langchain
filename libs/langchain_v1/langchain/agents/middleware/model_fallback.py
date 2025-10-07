@@ -83,37 +83,25 @@ class ModelFallbackMiddleware(AgentMiddleware):
         Yields:
             ModelRequest to execute.
 
-        Receives:
-            AIMessage via .send() on success, or exception via .throw() on error.
-
         Raises:
             Exception: If all models fail, re-raises last exception.
         """
         last_exception = None
-
-        # Try primary model first
         try:
             yield request
         except Exception as e:  # noqa: BLE001
             last_exception = e
-            # Try fallbacks
         else:
-            return  # Success - generator ends, consumer uses last result
+            return
 
-        # Try each fallback model
         for fallback_model in self.models:
             request.model = fallback_model
             try:
                 yield request
             except Exception as e:  # noqa: BLE001
                 last_exception = e
-                continue  # Try next fallback
+                continue
             else:
-                return  # Success - generator ends, consumer uses last result
+                return
 
-        # All models failed - re-raise last exception
-        if last_exception:
-            raise last_exception
-        # This should never be reached, but satisfies type checker
-        msg = "No models to try"
-        raise RuntimeError(msg)
+        raise last_exception
