@@ -142,12 +142,14 @@ def _chain_model_call_handlers(
                 resp = yield req
             return resp
 
+
         def retry(req, state, runtime):
             for _ in range(3):
                 resp = yield req
                 if resp.action == "return":
                     return resp
             return resp
+
 
         handler = _chain_model_call_handlers([auth, retry])
         ```
@@ -552,9 +554,7 @@ def create_agent(  # noqa: PLR0915
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
     middleware_w_on_model_call = [
-        m
-        for m in middleware
-        if m.__class__.on_model_call is not AgentMiddleware.on_model_call
+        m for m in middleware if m.__class__.on_model_call is not AgentMiddleware.on_model_call
     ]
 
     # Compose on_model_call handlers into a single middleware stack

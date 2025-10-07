@@ -176,9 +176,7 @@ class TestResponseRewriting:
                 return response
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(
-            model=model, middleware=[PrefixMiddleware(prefix="[BOT]: ")]
-        )
+        agent = create_agent(model=model, middleware=[PrefixMiddleware(prefix="[BOT]: ")])
 
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -257,9 +255,7 @@ class TestMiddlewareComposition:
                 return response
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(
-            model=model, middleware=[OuterMiddleware(), InnerMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[OuterMiddleware(), InnerMiddleware()])
 
         agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -302,9 +298,7 @@ class TestMiddlewareComposition:
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         # Logging is outer, Retry is inner
-        agent = create_agent(
-            model=model, middleware=[LoggingMiddleware(), RetryMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[LoggingMiddleware(), RetryMiddleware()])
 
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -340,9 +334,7 @@ class TestMiddlewareComposition:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Middle")]))
         # Prefix is outer, Suffix is inner
         # Inner (Suffix) runs first, then Outer (Prefix)
-        agent = create_agent(
-            model=model, middleware=[PrefixMiddleware(), SuffixMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[PrefixMiddleware(), SuffixMiddleware()])
 
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -377,9 +369,7 @@ class TestMiddlewareComposition:
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="success")]))
         # Retry outer, Uppercase inner
-        agent = create_agent(
-            model=model, middleware=[RetryMiddleware(), UppercaseMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[RetryMiddleware(), UppercaseMiddleware()])
 
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -470,9 +460,7 @@ class TestAsyncOnModelCall:
                     response = yield request
                 return response
 
-        model = AsyncFailOnceThenSucceed(
-            messages=iter([AIMessage(content="Async success")])
-        )
+        model = AsyncFailOnceThenSucceed(messages=iter([AIMessage(content="Async success")]))
         agent = create_agent(model=model, middleware=[RetryMiddleware()])
 
         result = await agent.ainvoke({"messages": [HumanMessage("Test")]})
@@ -497,9 +485,7 @@ class TestEdgeCases:
                 return response
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
-        agent = create_agent(
-            model=model, middleware=[RequestModifyingMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[RequestModifyingMiddleware()])
 
         agent.invoke({"messages": [HumanMessage("Test")]})
 
@@ -530,9 +516,7 @@ class TestEdgeCases:
                 return super()._generate(messages, **kwargs)
 
         model = FailFirstSucceedSecond(messages=iter([AIMessage(content="Success")]))
-        agent = create_agent(
-            model=model, middleware=[MultiModelRetryMiddleware()]
-        )
+        agent = create_agent(model=model, middleware=[MultiModelRetryMiddleware()])
 
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 

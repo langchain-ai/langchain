@@ -31,12 +31,12 @@ class ModelFallbackMiddleware(AgentMiddleware):
         from langchain.agents import create_agent
 
         fallback = ModelFallbackMiddleware(
-            "openai:gpt-4o-mini",      # Try first on error
+            "openai:gpt-4o-mini",  # Try first on error
             "anthropic:claude-3-5-sonnet-20241022",  # Then this
         )
 
         agent = create_agent(
-            model="openai:gpt-4o",     # Primary model
+            model="openai:gpt-4o",  # Primary model
             middleware=[fallback],
         )
 
