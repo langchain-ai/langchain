@@ -500,6 +500,9 @@ class ChatHuggingFace(BaseChatModel):
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    stream_usage: Optional[bool] = None
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata."""
     n: Optional[int] = None
     """Number of chat completions to generate for each prompt."""
     top_p: Optional[float] = None
@@ -635,14 +638,41 @@ class ChatHuggingFace(BaseChatModel):
         )
         return self._to_chat_result(llm_result)
 
+    def _should_stream_usage(
+        self, *, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of precedence
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
     def _stream(
         self,
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = True,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if _is_huggingface_endpoint(self.llm):
+            kwargs["stream"] = True
+            stream_usage = self._should_stream_usage(
+                stream_usage=stream_usage, **kwargs
+            )
+            if stream_usage:
+                kwargs["stream_options"] = {"include_usage": stream_usage}
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {**params, **kwargs, "stream": True}
 
@@ -650,6 +680,23 @@ class ChatHuggingFace(BaseChatModel):
             for chunk in self.llm.client.chat_completion(
                 messages=message_dicts, **params
             ):
+                usage = chunk.get("usage")
+                if usage:
+                    usage_msg = AIMessageChunk(
+                        content="",
+                        additional_kwargs={},
+                        response_metadata={},
+                        usage_metadata={
+                            "input_tokens": usage.get("prompt_tokens", 0),
+                            "output_tokens": usage.get("completion_tokens", 0),
+                            "total_tokens": usage.get("total_tokens", 0),
+                            "input_token_details": {"audio": 0, "cache_read": 0},
+                            "output_token_details": {"audio": 0, "reasoning": 0},
+                        },
+                    )
+                    yield ChatGenerationChunk(message=usage_msg)
+                    continue
+
                 if len(chunk["choices"]) == 0:
                     continue
                 choice = chunk["choices"][0]
@@ -689,8 +736,16 @@ class ChatHuggingFace(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(
+            stream_usage=stream_usage, **kwargs
+        )
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -699,6 +754,23 @@ class ChatHuggingFace(BaseChatModel):
         async for chunk in await self.llm.async_client.chat_completion(
             messages=message_dicts, **params
         ):
+            usage = chunk.get("usage")
+            if usage:
+                usage_msg = AIMessageChunk(
+                    content="",
+                    additional_kwargs={},
+                    response_metadata={},
+                    usage_metadata={
+                        "input_tokens": usage.get("prompt_tokens", 0),
+                        "output_tokens": usage.get("completion_tokens", 0),
+                        "total_tokens": usage.get("total_tokens", 0),
+                        "input_token_details": {"audio": 0, "cache_read": 0},
+                        "output_token_details": {"audio": 0, "reasoning": 0},
+                    },
+                )
+                yield ChatGenerationChunk(message=usage_msg)
+                continue
+
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
