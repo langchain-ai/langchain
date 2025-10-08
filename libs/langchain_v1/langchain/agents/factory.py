@@ -966,10 +966,10 @@ def create_agent(  # noqa: PLR0915
 
         # Define base handler that executes the model
         def base_handler(req: ModelRequest) -> AIMessage:
+            nonlocal effective_response_format
             internal_response = _execute_model_sync(req)
             if internal_response.exception is not None:
                 raise internal_response.exception
-            nonlocal effective_response_format
             effective_response_format = internal_response.effective_response_format
             assert internal_response.result is not None  # noqa: S101
             return internal_response.result
@@ -1032,10 +1032,10 @@ def create_agent(  # noqa: PLR0915
 
         # Define base async handler that executes the model
         async def base_handler(req: ModelRequest) -> AIMessage:
+            nonlocal effective_response_format
             internal_response = await _execute_model_async(req)
             if internal_response.exception is not None:
                 raise internal_response.exception
-            nonlocal effective_response_format
             effective_response_format = internal_response.effective_response_format
             assert internal_response.result is not None  # noqa: S101
             return internal_response.result
