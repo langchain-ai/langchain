@@ -127,6 +127,23 @@ receives results via .send(). Returns None; the last value sent becomes the resu
 
 Exceptions propagate unless handle_tool_errors is configured on ToolNode.
 
+Type Parameters:
+    The handler signature is ``(ToolCallRequest, Any, Any) -> Generator[...]``:
+
+    - **First Any (state)**: Typed as ``Any`` because ToolNode supports multiple input
+      formats (list, dict, BaseModel, ToolCallWithContext). When used in ``create_agent``,
+      state will be the agent's StateT (dict with "messages" key). When used standalone,
+      state matches the input type passed to ToolNode.
+
+    - **Second Any (runtime)**: Typed as ``Any`` because runtime is optional and only
+      available when ToolNode runs within a LangGraph graph. Will be ``None`` in
+      standalone usage or unit tests.
+
+    Note:
+        When implementing middleware for ``create_agent``, use
+        ``AgentMiddleware.on_tool_call`` which has properly typed ``state: StateT``
+        parameter for better type safety.
+
 Example:
     Passthrough:
 
