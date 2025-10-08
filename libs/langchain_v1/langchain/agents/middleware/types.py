@@ -291,42 +291,71 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def on_tool_call(
         self,
         request: ToolCallRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
         """Intercept tool execution for retries, monitoring, or modification.
 
         Multiple middleware compose automatically (first defined = outermost).
         Exceptions propagate unless handle_tool_errors is configured on ToolNode.
 
         Args:
-            request: Tool call request with call dict and BaseTool instance.
-            state: Current agent state.
-            runtime: LangGraph runtime.
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+                Access state via request.state and runtime via request.runtime.
+            handler: Callable to execute the tool (can be called multiple times).
 
-        Yields:
-            ToolCallRequest (execute tool), ToolMessage (cached result),
-            or Command (control flow).
+        Returns:
+            ToolMessage or Command (the final result).
 
-        Receives:
-            ToolMessage or Command via .send() after execution.
+        The handler callable can be invoked multiple times for retry logic.
+        Each call to handler is independent and stateless.
 
-        Example:
-            Modify request:
+        Examples:
+            Passthrough (execute once):
 
-            def on_tool_call(self, request, state, runtime):
+            def on_tool_call(self, request, handler):
+                return handler(request)
+
+            Modify request before execution:
+
+            def on_tool_call(self, request, handler):
                 request.tool_call["args"]["value"] *= 2
-                yield request
+                return handler(request)
 
-            Retry on error:
+            Retry on error (call handler multiple times):
 
-            def on_tool_call(self, request, state, runtime):
+            def on_tool_call(self, request, handler):
                 for attempt in range(3):
-                    response = yield request
-                    if valid(response) or attempt == 2:
-                        return
+                    try:
+                        result = handler(request)
+                        if is_valid(result):
+                            return result
+                    except Exception:
+                        if attempt == 2:
+                            raise
+                return result
+
+            Conditional retry based on response:
+
+            def on_tool_call(self, request, handler):
+                for attempt in range(3):
+                    result = handler(request)
+                    if isinstance(result, ToolMessage) and result.status != "error":
+                        return result
+                    if attempt < 2:
+                        continue
+                    return result
+
+            Access state and runtime:
+
+            def on_tool_call(self, request, handler):
+                # Access state from request
+                messages = request.state.get("messages", [])
+                # Access runtime from request
+                if request.runtime:
+                    thread_id = request.runtime.config.get("configurable", {}).get("thread_id")
+                return handler(request)
         """
-        yield request
+        return handler(request)
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
