@@ -54,6 +54,7 @@ __all__ = [
     "hook_config",
     "modify_model_request",
     "on_model_call",
+    "on_tool_call",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -345,6 +346,20 @@ class _CallableReturningModelResponseGenerator(Protocol[StateT_contra, ContextT]
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> Generator[ModelRequest, AIMessage, AIMessage]:
         """Return generator to intercept model execution."""
+        ...
+
+
+class _CallableReturningToolResponseGenerator(Protocol[StateT_contra, ContextT]):
+    """Callable returning generator for tool call interception.
+
+    Returns sync generator that works with both sync and async tool execution.
+    Generator receives ToolMessage or Command via .send().
+    """
+
+    def __call__(
+        self, request: ToolCallRequest, state: StateT_contra, runtime: Runtime[ContextT]
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Return generator to intercept tool execution."""
         ...
 
 
@@ -1321,6 +1336,144 @@ def on_model_call(
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "on_model_call": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def on_tool_call(
+    func: _CallableReturningToolResponseGenerator[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def on_tool_call(
+    func: None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableReturningToolResponseGenerator[StateT, ContextT]],
+    AgentMiddleware[StateT, ContextT],
+]: ...
+
+
+def on_tool_call(
+    func: _CallableReturningToolResponseGenerator[StateT, ContextT] | None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableReturningToolResponseGenerator[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Create middleware with on_tool_call hook from a generator function.
+
+    Converts a generator function into middleware that can intercept tool calls,
+    implement retry logic, modify requests, cache results, or handle errors using
+    standard Python exception handling.
+
+    Args:
+        func: Generator function accepting (request, state, runtime) that yields
+            ToolCallRequest, ToolMessage, or Command, receives ToolMessage or Command
+            via .send() on completion, and optionally handles exceptions via .throw().
+        state_schema: Custom state schema. Defaults to AgentState.
+        tools: Additional tools to register with this middleware.
+        name: Middleware class name. Defaults to function name.
+
+    Returns:
+        AgentMiddleware instance if func provided, otherwise a decorator.
+
+    Examples:
+        Basic retry logic:
+        ```python
+        @on_tool_call
+        def retry_on_error(
+            request: ToolCallRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            max_retries = 3
+            for attempt in range(max_retries):
+                response = yield request
+                if isinstance(response, ToolMessage) and not response.status == "error":
+                    return
+                if attempt == max_retries - 1:
+                    return
+        ```
+
+        Modify tool arguments:
+        ```python
+        @on_tool_call
+        def scale_numeric_args(
+            request: ToolCallRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            # Double numeric arguments
+            for key, value in request.tool_call["args"].items():
+                if isinstance(value, (int, float)):
+                    request.tool_call["args"][key] = value * 2
+            yield request
+        ```
+
+        Cache tool results:
+        ```python
+        @on_tool_call
+        def cache_results(
+            request: ToolCallRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            cache_key = f"{request.tool_call['name']}:{request.tool_call['args']}"
+            if cached := get_cache(cache_key):
+                yield cached  # Short-circuit with cached result
+            else:
+                result = yield request
+                save_cache(cache_key, result)
+        ```
+
+        Error handling with fallback:
+        ```python
+        @on_tool_call
+        def handle_errors(
+            request: ToolCallRequest, state: AgentState, runtime: Runtime
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            try:
+                yield request
+            except Exception as e:
+                # Return error message instead of propagating
+                yield ToolMessage(
+                    content=f"Tool execution failed: {e}",
+                    tool_call_id=request.tool_call["id"],
+                    status="error",
+                )
+        ```
+    """
+
+    def decorator(
+        func: _CallableReturningToolResponseGenerator[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        def wrapped(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            request: ToolCallRequest,
+            state: StateT,
+            runtime: Runtime[ContextT],
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            return func(request, state, runtime)
+
+        middleware_name = name or cast("str", getattr(func, "__name__", "OnToolCallMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": state_schema or AgentState,
+                "tools": tools or [],
+                "on_tool_call": wrapped,
             },
         )()
 
