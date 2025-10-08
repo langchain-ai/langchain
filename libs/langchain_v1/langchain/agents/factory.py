@@ -415,7 +415,6 @@ def _chain_tool_call_handlers(
         return composed
 
     # Chain all handlers: first -> second -> ... -> last
-    # handlers[0](handlers[1](...(handlers[-1](execute))))
     result = handlers[-1]
     for handler in reversed(handlers[:-1]):
         result = compose_two(handler, result)

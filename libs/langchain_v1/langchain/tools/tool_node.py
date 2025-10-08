@@ -753,8 +753,7 @@ class ToolNode(RunnableCallable):
 
         # Call handler with request and execute callable
         try:
-            result = self._on_tool_call(tool_request, execute)
-            return result
+            return self._on_tool_call(tool_request, execute)
         except Exception as e:
             # Handler threw an exception
             if not self._handle_tool_errors:
@@ -897,11 +896,9 @@ class ToolNode(RunnableCallable):
         # Call handler with request and execute callable
         # Note: handler is sync, but execute callable is async
         try:
-            result = self._on_tool_call(tool_request, execute)
+            result = self._on_tool_call(tool_request, execute)  # type: ignore[arg-type]
             # If result is a coroutine, await it (though handler should be sync)
-            if hasattr(result, "__await__"):
-                result = await result
-            return result
+            return await result if hasattr(result, "__await__") else result
         except Exception as e:
             # Handler threw an exception
             if not self._handle_tool_errors:

@@ -184,8 +184,8 @@ def test_handler_validation_no_yield() -> None:
     """Test that handler that doesn't call execute returns None (bad behavior)."""
 
     def bad_handler(
-        request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _request: ToolCallRequest,
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that doesn't call execute - will cause type error."""
         # Don't call execute, just return None (invalid)
@@ -311,7 +311,7 @@ def test_multiple_tool_calls_with_handler() -> None:
 def test_tool_call_request_dataclass() -> None:
     """Test ToolCallRequest dataclass."""
     tool_call: ToolCall = {"name": "add", "args": {"a": 1, "b": 2}, "id": "call_1"}
-    state = {"messages": []}
+    state: dict = {"messages": []}
     runtime = None
 
     request = ToolCallRequest(tool_call=tool_call, tool=add, state=state, runtime=runtime)
@@ -371,16 +371,15 @@ def test_short_circuit_with_tool_message() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result without executing tool."""
         # Return a ToolMessage directly instead of calling execute
-        cached_result = ToolMessage(
+        return ToolMessage(
             content="cached_result",
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
         )
-        return cached_result
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -413,15 +412,14 @@ async def test_short_circuit_with_tool_message_async() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result without executing tool."""
-        cached_result = ToolMessage(
+        return ToolMessage(
             content="async_cached_result",
             tool_call_id=request.tool_call["id"],
             name=request.tool_call["name"],
         )
-        return cached_result
 
     tool_node = ToolNode([add], on_tool_call=short_circuit_handler)
 
@@ -462,12 +460,11 @@ def test_conditional_short_circuit() -> None:
 
         if a % 2 == 0:
             # Even: use cached result
-            cached = ToolMessage(
+            return ToolMessage(
                 content=f"cached_{a}",
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            return cached
         # Odd: execute normally
         return execute(request)
 
@@ -521,7 +518,7 @@ def test_direct_return_tool_message() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns ToolMessage directly."""
         # Return ToolMessage directly instead of calling execute
@@ -562,7 +559,7 @@ async def test_direct_return_tool_message_async() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns ToolMessage directly."""
         return ToolMessage(
@@ -673,7 +670,7 @@ def test_handler_can_throw_exception() -> None:
         # Check response and throw if invalid
         if isinstance(response, ToolMessage):
             msg = "Handler rejected the response"
-            raise ValueError(msg)
+            raise TypeError(msg)
         return response
 
     tool_node = ToolNode([add], on_tool_call=throwing_handler, handle_tool_errors=True)
@@ -747,7 +744,7 @@ def test_retry_middleware_with_exception() -> None:
         """Handler that can retry by calling execute multiple times."""
         max_retries = 3
 
-        for attempt in range(max_retries):
+        for _attempt in range(max_retries):
             attempt_count["count"] += 1
             response = execute(request)
 
@@ -791,8 +788,8 @@ async def test_async_handler_can_throw_exception() -> None:
     """Test that async execution also supports exception throwing."""
 
     def throwing_handler(
-        request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _request: ToolCallRequest,
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that throws an exception before calling execute."""
         # Throw exception before executing (to avoid async/await complications)
@@ -870,7 +867,7 @@ def test_handler_cannot_yield_request_after_tool_message() -> None:
 
     def single_return_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result."""
         # Return cached result (short-circuit)
@@ -905,7 +902,7 @@ def test_handler_can_short_circuit_with_command() -> None:
 
     def command_handler(
         _request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that short-circuits with Command."""
         # Short-circuit with Command instead of executing tool
@@ -944,7 +941,7 @@ def test_handler_cannot_yield_multiple_commands() -> None:
 
     def single_command_handler(
         _request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns Command once."""
         return Command(goto="step1")
@@ -981,8 +978,8 @@ def test_handler_cannot_yield_request_after_command() -> None:
     # This test is no longer relevant
 
     def command_handler(
-        request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _request: ToolCallRequest,
+        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns Command."""
         return Command(goto="somewhere")
