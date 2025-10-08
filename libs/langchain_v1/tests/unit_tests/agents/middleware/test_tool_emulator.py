@@ -8,7 +8,7 @@ from typing import Any, Literal, Union
 from pydantic import BaseModel
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import ToolEmulator
+from langchain.agents.middleware import LLMToolEmulator
 from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -104,7 +104,7 @@ class FakeEmulatorModel(BaseChatModel):
         return "fake_emulator"
 
 
-class TestToolEmulatorBasic:
+class TestLLMToolEmulatorBasic:
     """Test basic tool emulator functionality."""
 
     def test_emulates_specified_tool_by_name(self) -> None:
@@ -127,7 +127,7 @@ class TestToolEmulatorBasic:
         # Model that emulates tool responses
         emulator_model = FakeEmulatorModel(responses=["Emulated: 72°F, sunny in Paris"])
 
-        emulator = ToolEmulator(tools_to_emulate=["get_weather"], model=emulator_model)
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -158,7 +158,7 @@ class TestToolEmulatorBasic:
 
         emulator_model = FakeEmulatorModel(responses=["Emulated: Python is a programming language"])
 
-        emulator = ToolEmulator(tools_to_emulate=[search_web], model=emulator_model)
+        emulator = LLMToolEmulator(tools=[search_web], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -189,7 +189,7 @@ class TestToolEmulatorBasic:
         emulator_model = FakeEmulatorModel(responses=["Should not be used"])
 
         # Only emulate get_weather, not calculator
-        emulator = ToolEmulator(tools_to_emulate=["get_weather"], model=emulator_model)
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -222,7 +222,7 @@ class TestToolEmulatorBasic:
 
         emulator_model = FakeEmulatorModel(responses=["Should not be used"])
 
-        emulator = ToolEmulator(tools_to_emulate=[], model=emulator_model)
+        emulator = LLMToolEmulator(tools=[], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -237,15 +237,15 @@ class TestToolEmulatorBasic:
         assert len(tool_messages) > 0
         assert "Result: 25" in tool_messages[0].content
 
-    def test_none_tools_to_emulate_does_nothing(self) -> None:
-        """Test that None tools_to_emulate means no emulation occurs."""
+    def test_none_tools_emulates_all(self) -> None:
+        """Test that None tools means ALL tools are emulated (emulate_all behavior)."""
         agent_model = FakeModel(
             messages=cycle(
                 [
                     AIMessage(
                         content="",
                         tool_calls=[
-                            {"name": "calculator", "id": "1", "args": {"expression": "3+7"}}
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
                         ],
                     ),
                     AIMessage(content="Done."),
@@ -253,25 +253,25 @@ class TestToolEmulatorBasic:
             )
         )
 
-        emulator_model = FakeEmulatorModel(responses=["Should not be used"])
+        emulator_model = FakeEmulatorModel(responses=["Emulated: 65°F in NYC"])
 
-        emulator = ToolEmulator(tools_to_emulate=None, model=emulator_model)
+        # tools=None means emulate ALL tools
+        emulator = LLMToolEmulator(tools=None, model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
-            tools=[calculator],
+            tools=[get_weather],
             middleware=[emulator],
         )
 
-        result = agent.invoke({"messages": [HumanMessage("Calculate 3+7")]})
+        result = agent.invoke({"messages": [HumanMessage("What's the weather in NYC?")]})
 
-        # Calculator should execute normally
-        tool_messages = [msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"]
-        assert len(tool_messages) > 0
-        assert "Result: 10" in tool_messages[0].content
+        # Should complete without raising NotImplementedError
+        # (get_weather would normally raise NotImplementedError)
+        assert isinstance(result["messages"][-1], AIMessage)
 
 
-class TestToolEmulatorMultipleTools:
+class TestLLMToolEmulatorMultipleTools:
     """Test emulating multiple tools."""
 
     def test_emulate_multiple_tools(self) -> None:
@@ -295,8 +295,8 @@ class TestToolEmulatorMultipleTools:
             responses=["Emulated weather: 20°C", "Emulated search results for Paris"]
         )
 
-        emulator = ToolEmulator(
-            tools_to_emulate=["get_weather", "search_web"], model=emulator_model
+        emulator = LLMToolEmulator(
+            tools=["get_weather", "search_web"], model=emulator_model
         )
 
         agent = create_agent(
@@ -330,7 +330,7 @@ class TestToolEmulatorMultipleTools:
         emulator_model = FakeEmulatorModel(responses=["Emulated: 65°F in NYC"])
 
         # Only emulate get_weather
-        emulator = ToolEmulator(tools_to_emulate=["get_weather"], model=emulator_model)
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -349,15 +349,15 @@ class TestToolEmulatorMultipleTools:
         assert "Result: 20" in calc_messages[0].content
 
 
-class TestToolEmulatorModelConfiguration:
+class TestLLMToolEmulatorModelConfiguration:
     """Test custom model configuration for emulation."""
 
     def test_custom_model_string(self) -> None:
         """Test passing a model string for emulation."""
         # Just test that initialization works - don't require anthropic package
         try:
-            emulator = ToolEmulator(
-                tools_to_emulate=["get_weather"], model="anthropic:claude-3-5-sonnet-latest"
+            emulator = LLMToolEmulator(
+                tools=["get_weather"], model="anthropic:claude-3-5-sonnet-latest"
             )
             assert emulator.model is not None
             assert "get_weather" in emulator.tools_to_emulate
@@ -383,7 +383,7 @@ class TestToolEmulatorModelConfiguration:
 
         custom_emulator_model = FakeEmulatorModel(responses=["Custom emulated response"])
 
-        emulator = ToolEmulator(tools_to_emulate=["search_web"], model=custom_emulator_model)
+        emulator = LLMToolEmulator(tools=["search_web"], model=custom_emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -401,7 +401,7 @@ class TestToolEmulatorModelConfiguration:
         # Just test that initialization doesn't fail - don't require anthropic package
         # The actual default model requires langchain_anthropic which may not be installed
         try:
-            emulator = ToolEmulator(tools_to_emulate=["get_weather"], model=None)
+            emulator = LLMToolEmulator(tools=["get_weather"], model=None)
             assert emulator.model is not None
         except ImportError:
             # If anthropic isn't installed, that's fine for this unit test

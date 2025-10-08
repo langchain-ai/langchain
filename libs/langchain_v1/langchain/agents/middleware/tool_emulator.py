@@ -21,18 +21,19 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest
 
 
-class ToolEmulator(AgentMiddleware):
+class LLMToolEmulator(AgentMiddleware):
     """Middleware that emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
-    Only tools specified in tools_to_emulate will be emulated; others execute normally.
+    By default (when tools=None), all tools are emulated. You can specify which
+    tools to emulate by passing a list of tool names or BaseTool instances.
 
     Examples:
-        Emulate specific tools by name:
+        Emulate all tools (default behavior):
         ```python
-        from langchain.agents.middleware import ToolEmulator
+        from langchain.agents.middleware import LLMToolEmulator
 
-        middleware = ToolEmulator(tools_to_emulate=["get_weather", "get_user_location"])
+        middleware = LLMToolEmulator()
 
         agent = create_agent(
             model="openai:gpt-4o",
@@ -41,40 +42,50 @@ class ToolEmulator(AgentMiddleware):
         )
         ```
 
+        Emulate specific tools by name:
+        ```python
+        middleware = LLMToolEmulator(tools=["get_weather", "get_user_location"])
+        ```
+
         Use a custom model for emulation:
         ```python
-        middleware = ToolEmulator(
-            tools_to_emulate=["get_weather"],
+        middleware = LLMToolEmulator(
+            tools=["get_weather"],
             model="anthropic:claude-3-5-sonnet-latest"
         )
         ```
 
-        Emulate all tools by passing tool instances:
+        Emulate specific tools by passing tool instances:
         ```python
-        middleware = ToolEmulator(tools_to_emulate=[get_weather, get_user_location])
+        middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
         ```
     """
 
     def __init__(
         self,
         *,
-        tools_to_emulate: list[str | BaseTool] | None = None,
+        tools: list[str | BaseTool] | None = None,
         model: str | BaseChatModel | None = None,
     ) -> None:
         """Initialize the tool emulator.
 
         Args:
-            tools_to_emulate: List of tool names (str) or BaseTool instances to emulate.
-                If None or empty, no tools will be emulated (middleware does nothing).
-            model: Model to use for emulation. Defaults to "anthropic:claude-3-5-sonnet-latest".
+            tools: List of tool names (str) or BaseTool instances to emulate.
+                If None (default), ALL tools will be emulated.
+                If empty list, no tools will be emulated.
+            model: Model to use for emulation.
+                Defaults to "anthropic:claude-3-5-sonnet-latest".
                 Can be a model identifier string or BaseChatModel instance.
         """
         super().__init__()
 
-        # Extract tool names from tools_to_emulate
+        # Extract tool names from tools
+        # None means emulate all tools
+        self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
-        if tools_to_emulate:
-            for tool in tools_to_emulate:
+
+        if not self.emulate_all and tools is not None:
+            for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
                 else:
@@ -83,7 +94,9 @@ class ToolEmulator(AgentMiddleware):
 
         # Initialize emulator model
         if model is None:
-            self.model = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=1)
+            self.model = init_chat_model(
+                "anthropic:claude-3-5-sonnet-latest", temperature=1
+            )
         elif isinstance(model, BaseChatModel):
             self.model = model
         else:
@@ -95,7 +108,7 @@ class ToolEmulator(AgentMiddleware):
         state: Any,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
-        """Emulate tool execution using LLM if tool is in tools_to_emulate.
+        """Emulate tool execution using LLM if tool should be emulated.
 
         Args:
             request: Tool call request to potentially emulate.
@@ -109,7 +122,9 @@ class ToolEmulator(AgentMiddleware):
         tool_name = request.tool_call["name"]
 
         # Check if this tool should be emulated
-        if tool_name not in self.tools_to_emulate:
+        should_emulate = self.emulate_all or tool_name in self.tools_to_emulate
+
+        if not should_emulate:
             # Let it execute normally by yielding the request
             yield request
             return
