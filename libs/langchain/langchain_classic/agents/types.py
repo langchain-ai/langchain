@@ -1,5 +1,3 @@
-from typing import Union
-
 from langchain_classic.agents.agent import BaseSingleActionAgent
 from langchain_classic.agents.agent_types import AgentType
 from langchain_classic.agents.chat.base import ChatAgent
@@ -14,7 +12,7 @@ from langchain_classic.agents.react.base import ReActDocstoreAgent
 from langchain_classic.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain_classic.agents.structured_chat.base import StructuredChatAgent
 
-AGENT_TYPE = Union[type[BaseSingleActionAgent], type[OpenAIMultiFunctionsAgent]]
+AGENT_TYPE = type[BaseSingleActionAgent] | type[OpenAIMultiFunctionsAgent]
 
 AGENT_TO_CLASS: dict[AgentType, AGENT_TYPE] = {
     AgentType.ZERO_SHOT_REACT_DESCRIPTION: ZeroShotAgent,

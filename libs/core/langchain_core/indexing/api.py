@@ -6,16 +6,20 @@ import hashlib
 import json
 import uuid
 import warnings
-from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
 from itertools import islice
 from typing import (
     Any,
-    Callable,
     Literal,
-    Optional,
     TypedDict,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -107,8 +111,8 @@ async def _abatch(size: int, iterable: AsyncIterable[T]) -> AsyncIterator[list[T
 
 
 def _get_source_id_assigner(
-    source_id_key: Union[str, Callable[[Document], str], None],
-) -> Callable[[Document], Union[str, None]]:
+    source_id_key: str | Callable[[Document], str] | None,
+) -> Callable[[Document], str | None]:
     """Get the source id from the document."""
     if source_id_key is None:
         return lambda _doc: None
@@ -162,9 +166,8 @@ def _calculate_hash(
 def _get_document_with_hash(
     document: Document,
     *,
-    key_encoder: Union[
-        Callable[[Document], str], Literal["sha1", "sha256", "sha512", "blake2b"]
-    ],
+    key_encoder: Callable[[Document], str]
+    | Literal["sha1", "sha256", "sha512", "blake2b"],
 ) -> Document:
     """Calculate a hash of the document, and assign it to the uid.
 
@@ -233,7 +236,7 @@ class _HashedDocument:
 
 
 def _delete(
-    vector_store: Union[VectorStore, DocumentIndex],
+    vector_store: VectorStore | DocumentIndex,
     ids: list[str],
 ) -> None:
     if isinstance(vector_store, VectorStore):
@@ -271,19 +274,18 @@ class IndexingResult(TypedDict):
 
 
 def index(
-    docs_source: Union[BaseLoader, Iterable[Document]],
+    docs_source: BaseLoader | Iterable[Document],
     record_manager: RecordManager,
-    vector_store: Union[VectorStore, DocumentIndex],
+    vector_store: VectorStore | DocumentIndex,
     *,
     batch_size: int = 100,
-    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
-    source_id_key: Union[str, Callable[[Document], str], None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full"] | None = None,
+    source_id_key: str | Callable[[Document], str] | None = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    key_encoder: Union[
-        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
-    ] = "sha1",
-    upsert_kwargs: Optional[dict[str, Any]] = None,
+    key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
+    | Callable[[Document], str] = "sha1",
+    upsert_kwargs: dict[str, Any] | None = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
 
@@ -462,13 +464,13 @@ def index(
         # Count documents removed by within-batch deduplication
         num_skipped += original_batch_size - len(hashed_docs)
 
-        source_ids: Sequence[Optional[str]] = [
+        source_ids: Sequence[str | None] = [
             source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
         ]
 
         if cleanup in {"incremental", "scoped_full"}:
             # source ids are required.
-            for source_id, hashed_doc in zip(source_ids, hashed_docs):
+            for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
                 if source_id is None:
                     msg = (
                         f"Source ids are required when cleanup mode is "
@@ -492,7 +494,7 @@ def index(
         docs_to_index = []
         uids_to_refresh = []
         seen_docs: set[str] = set()
-        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
+        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
             hashed_id = cast("str", hashed_doc.id)
             if doc_exists:
                 if force_update:
@@ -563,7 +565,7 @@ def index(
     if cleanup == "full" or (
         cleanup == "scoped_full" and scoped_full_cleanup_source_ids
     ):
-        delete_group_ids: Optional[Sequence[str]] = None
+        delete_group_ids: Sequence[str] | None = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := record_manager.list_keys(
@@ -591,7 +593,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 
 
 async def _adelete(
-    vector_store: Union[VectorStore, DocumentIndex],
+    vector_store: VectorStore | DocumentIndex,
     ids: list[str],
 ) -> None:
     if isinstance(vector_store, VectorStore):
@@ -613,19 +615,18 @@ async def _adelete(
 
 
 async def aindex(
-    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
+    docs_source: BaseLoader | Iterable[Document] | AsyncIterator[Document],
     record_manager: RecordManager,
-    vector_store: Union[VectorStore, DocumentIndex],
+    vector_store: VectorStore | DocumentIndex,
     *,
     batch_size: int = 100,
-    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
-    source_id_key: Union[str, Callable[[Document], str], None] = None,
+    cleanup: Literal["incremental", "full", "scoped_full"] | None = None,
+    source_id_key: str | Callable[[Document], str] | None = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
-    key_encoder: Union[
-        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
-    ] = "sha1",
-    upsert_kwargs: Optional[dict[str, Any]] = None,
+    key_encoder: Literal["sha1", "sha256", "sha512", "blake2b"]
+    | Callable[[Document], str] = "sha1",
+    upsert_kwargs: dict[str, Any] | None = None,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
 
@@ -815,13 +816,13 @@ async def aindex(
         # Count documents removed by within-batch deduplication
         num_skipped += original_batch_size - len(hashed_docs)
 
-        source_ids: Sequence[Optional[str]] = [
+        source_ids: Sequence[str | None] = [
             source_id_assigner(doc) for doc in hashed_docs
         ]
 
         if cleanup in {"incremental", "scoped_full"}:
             # If the cleanup mode is incremental, source ids are required.
-            for source_id, hashed_doc in zip(source_ids, hashed_docs):
+            for source_id, hashed_doc in zip(source_ids, hashed_docs, strict=False):
                 if source_id is None:
                     msg = (
                         f"Source ids are required when cleanup mode is "
@@ -845,7 +846,7 @@ async def aindex(
         docs_to_index: list[Document] = []
         uids_to_refresh = []
         seen_docs: set[str] = set()
-        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
+        for hashed_doc, doc_exists in zip(hashed_docs, exists_batch, strict=False):
             hashed_id = cast("str", hashed_doc.id)
             if doc_exists:
                 if force_update:
@@ -917,7 +918,7 @@ async def aindex(
     if cleanup == "full" or (
         cleanup == "scoped_full" and scoped_full_cleanup_source_ids
     ):
-        delete_group_ids: Optional[Sequence[str]] = None
+        delete_group_ids: Sequence[str] | None = None
         if cleanup == "scoped_full":
             delete_group_ids = list(scoped_full_cleanup_source_ids)
         while uids_to_delete := await record_manager.alist_keys(

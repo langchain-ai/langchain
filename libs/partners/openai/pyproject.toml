@@ -1,25 +1,29 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a5,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "openai>=1.109.1,<3.0.0",
     "tiktoken>=0.7.0,<1.0.0",
 ]
 name = "langchain-openai"
-version = "1.0.0a3"
+version = "1.0.0a4"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-openai%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-openai%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_openai/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -47,7 +51,11 @@ test_integration = [
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
-typing = ["mypy>=1.17.1,<2.0.0", "types-tqdm>=4.66.0.5,<5.0.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "types-tqdm>=4.66.0.5,<5.0.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -58,9 +66,6 @@ disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

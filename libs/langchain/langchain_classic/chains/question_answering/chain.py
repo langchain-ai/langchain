@@ -1,7 +1,7 @@
 """Load question answering chains."""
 
 from collections.abc import Mapping
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
@@ -48,7 +48,7 @@ def _load_map_rerank_chain(
     document_variable_name: str = "context",
     rank_key: str = "score",
     answer_key: str = "answer",
-    callback_manager: Optional[BaseCallbackManager] = None,
+    callback_manager: BaseCallbackManager | None = None,
     callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> MapRerankDocumentsChain:
@@ -73,10 +73,10 @@ def _load_map_rerank_chain(
 def _load_stuff_chain(
     llm: BaseLanguageModel,
     *,
-    prompt: Optional[BasePromptTemplate] = None,
+    prompt: BasePromptTemplate | None = None,
     document_variable_name: str = "context",
-    verbose: Optional[bool] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    verbose: bool | None = None,
+    callback_manager: BaseCallbackManager | None = None,
     callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
@@ -102,15 +102,15 @@ def _load_stuff_chain(
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
     *,
-    question_prompt: Optional[BasePromptTemplate] = None,
-    combine_prompt: Optional[BasePromptTemplate] = None,
+    question_prompt: BasePromptTemplate | None = None,
+    combine_prompt: BasePromptTemplate | None = None,
     combine_document_variable_name: str = "summaries",
     map_reduce_document_variable_name: str = "context",
-    collapse_prompt: Optional[BasePromptTemplate] = None,
-    reduce_llm: Optional[BaseLanguageModel] = None,
-    collapse_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    collapse_prompt: BasePromptTemplate | None = None,
+    reduce_llm: BaseLanguageModel | None = None,
+    collapse_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
+    callback_manager: BaseCallbackManager | None = None,
     callbacks: Callbacks = None,
     token_max: int = 3000,
     **kwargs: Any,
@@ -186,13 +186,13 @@ def _load_map_reduce_chain(
 def _load_refine_chain(
     llm: BaseLanguageModel,
     *,
-    question_prompt: Optional[BasePromptTemplate] = None,
-    refine_prompt: Optional[BasePromptTemplate] = None,
+    question_prompt: BasePromptTemplate | None = None,
+    refine_prompt: BasePromptTemplate | None = None,
     document_variable_name: str = "context_str",
     initial_response_name: str = "existing_answer",
-    refine_llm: Optional[BaseLanguageModel] = None,
-    verbose: Optional[bool] = None,
-    callback_manager: Optional[BaseCallbackManager] = None,
+    refine_llm: BaseLanguageModel | None = None,
+    verbose: bool | None = None,
+    callback_manager: BaseCallbackManager | None = None,
     callbacks: Callbacks = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
@@ -246,8 +246,8 @@ def _load_refine_chain(
 def load_qa_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,  # noqa: FBT001
-    callback_manager: Optional[BaseCallbackManager] = None,
+    verbose: bool | None = None,  # noqa: FBT001
+    callback_manager: BaseCallbackManager | None = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load question answering chain.

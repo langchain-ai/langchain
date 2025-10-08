@@ -1,6 +1,5 @@
 import json
 from json import JSONDecodeError
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -31,7 +30,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return "openai-functions-agent"
 
     @staticmethod
-    def parse_ai_message(message: BaseMessage) -> Union[AgentAction, AgentFinish]:
+    def parse_ai_message(message: BaseMessage) -> AgentAction | AgentFinish:
         """Parse an AI message."""
         if not isinstance(message, AIMessage):
             msg = f"Expected an AI message got {type(message)}"
@@ -86,7 +85,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         result: list[Generation],
         *,
         partial: bool = False,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
             raise ValueError(msg)  # noqa: TRY004
@@ -94,6 +93,6 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
         return self.parse_ai_message(message)
 
     @override
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> AgentAction | AgentFinish:
         msg = "Can only parse messages"
         raise ValueError(msg)

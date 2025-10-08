@@ -5,7 +5,7 @@ import re
 import xml
 import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 from xml.etree.ElementTree import TreeBuilder
 
 from typing_extensions import override
@@ -75,7 +75,7 @@ class _StreamingParser:
         self.buffer = ""
         self.xml_started = False
 
-    def parse(self, chunk: Union[str, BaseMessage]) -> Iterator[AddableDict]:
+    def parse(self, chunk: str | BaseMessage) -> Iterator[AddableDict]:
         """Parse a chunk of text.
 
         Args:
@@ -149,7 +149,7 @@ class _StreamingParser:
 class XMLOutputParser(BaseTransformOutputParser):
     """Parse an output using xml format."""
 
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
     """Tags to tell the LLM to expect in the XML output.
 
     Note this may not be perfect depending on the LLM implementation.
@@ -193,7 +193,7 @@ class XMLOutputParser(BaseTransformOutputParser):
         """Return the format instructions for the XML output."""
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> dict[str, Union[str, list[Any]]]:
+    def parse(self, text: str) -> dict[str, str | list[Any]]:
         """Parse the output of an LLM call.
 
         Args:
@@ -240,9 +240,7 @@ class XMLOutputParser(BaseTransformOutputParser):
             raise OutputParserException(msg, llm_output=text) from e
 
     @override
-    def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[AddableDict]:
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         for chunk in input:
             yield from streaming_parser.parse(chunk)
@@ -250,7 +248,7 @@ class XMLOutputParser(BaseTransformOutputParser):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         async for chunk in input:
@@ -258,7 +256,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> dict[str, Union[str, list[Any]]]:
+    def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
         """Converts xml tree to python dictionary."""
         if root.text and bool(re.search(r"\S", root.text)):
             # If root text contains any non-whitespace character it

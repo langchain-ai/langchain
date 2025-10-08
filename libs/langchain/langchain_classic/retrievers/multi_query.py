@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections.abc import Sequence
-from typing import Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -67,7 +66,7 @@ class MultiQueryRetriever(BaseRetriever):
         retriever: BaseRetriever,
         llm: BaseLanguageModel,
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
-        parser_key: Optional[str] = None,  # noqa: ARG003
+        parser_key: str | None = None,  # noqa: ARG003
         include_original: bool = False,  # noqa: FBT001,FBT002
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.

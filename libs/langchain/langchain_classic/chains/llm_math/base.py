@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import re
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -153,7 +153,7 @@ class LLMMathChain(Chain):
     """  # noqa: E501
 
     llm_chain: LLMChain
-    llm: Optional[BaseLanguageModel] = None
+    llm: BaseLanguageModel | None = None
     """[Deprecated] LLM wrapper to use."""
     prompt: BasePromptTemplate = PROMPT
     """[Deprecated] Prompt to use to translate to python if necessary."""
@@ -275,7 +275,7 @@ class LLMMathChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _run_manager.on_text(inputs[self.input_key])
@@ -289,7 +289,7 @@ class LLMMathChain(Chain):
     async def _acall(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         await _run_manager.on_text(inputs[self.input_key])

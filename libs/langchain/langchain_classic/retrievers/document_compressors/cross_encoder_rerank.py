@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import operator
 from collections.abc import Sequence
-from typing import Optional
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -33,7 +32,7 @@ class CrossEncoderReranker(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Rerank documents using CrossEncoder.
 
@@ -46,6 +45,6 @@ class CrossEncoderReranker(BaseDocumentCompressor):
             A sequence of compressed documents.
         """
         scores = self.model.score([(query, doc.page_content) for doc in documents])
-        docs_with_scores = list(zip(documents, scores))
+        docs_with_scores = list(zip(documents, scores, strict=False))
         result = sorted(docs_with_scores, key=operator.itemgetter(1), reverse=True)
         return [doc for doc, _ in result[: self.top_n]]

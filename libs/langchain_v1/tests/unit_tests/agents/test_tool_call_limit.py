@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessa
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 
-from langchain.agents.middleware_agent import create_agent
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.tool_call_limit import (
     ToolCallLimitExceededError,
     ToolCallLimitMiddleware,
@@ -318,7 +318,8 @@ def test_multiple_middleware_instances():
         model=model,
         tools=[search, calculator],
         middleware=[global_limiter, search_limiter],
-    ).compile(checkpointer=InMemorySaver())
+        checkpointer=InMemorySaver(),
+    )
 
     # First invocation: 2 search calls, 2 calculator calls (4 total)
     # Should succeed - within both limits
@@ -365,8 +366,8 @@ def test_run_limit_with_multiple_human_messages():
     # Run limit of 2 tool calls per run
     middleware = ToolCallLimitMiddleware(run_limit=2)
 
-    agent = create_agent(model=model, tools=[search], middleware=[middleware]).compile(
-        checkpointer=InMemorySaver()
+    agent = create_agent(
+        model=model, tools=[search], middleware=[middleware], checkpointer=InMemorySaver()
     )
 
     thread_config = {"configurable": {"thread_id": "test_thread"}}

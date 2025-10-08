@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
@@ -12,8 +12,8 @@ from langchain_core.prompts import BasePromptTemplate
 
 
 def _get_client(
-    api_key: Optional[str] = None,
-    api_url: Optional[str] = None,
+    api_key: str | None = None,
+    api_url: str | None = None,
 ) -> Any:
     try:
         from langsmith import Client as LangSmithClient
@@ -41,13 +41,13 @@ def push(
     repo_full_name: str,
     object: Any,  # noqa: A002
     *,
-    api_url: Optional[str] = None,
-    api_key: Optional[str] = None,
-    parent_commit_hash: Optional[str] = None,
+    api_url: str | None = None,
+    api_key: str | None = None,
+    parent_commit_hash: str | None = None,
     new_repo_is_public: bool = False,
-    new_repo_description: Optional[str] = None,
-    readme: Optional[str] = None,
-    tags: Optional[Sequence[str]] = None,
+    new_repo_description: str | None = None,
+    readme: str | None = None,
+    tags: Sequence[str] | None = None,
 ) -> str:
     """Push an object to the hub and returns the URL it can be viewed at in a browser.
 
@@ -92,9 +92,9 @@ def push(
 def pull(
     owner_repo_commit: str,
     *,
-    include_model: Optional[bool] = None,
-    api_url: Optional[str] = None,
-    api_key: Optional[str] = None,
+    include_model: bool | None = None,
+    api_url: str | None = None,
+    api_key: str | None = None,
 ) -> Any:
     """Pull an object from the hub and returns it as a LangChain object.
 

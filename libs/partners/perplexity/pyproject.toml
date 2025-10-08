@@ -1,13 +1,13 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "openai>=2.0.0,<3.0.0",
 ]
 name = "langchain-perplexity"
@@ -16,9 +16,13 @@ description = "An integration package connecting Perplexity and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/perplexity"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-perplexity%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/perplexity"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/perplexity"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-perplexity%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_perplexity/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -41,7 +45,11 @@ test_integration = [
     "httpx>=0.27.0,<1.0.0",
     "pillow>=10.3.0,<11.0.0",
 ]
-typing = ["mypy>=1.10.0,<2.0.0", "types-tqdm>=4.66.0.5,<5.0.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "types-tqdm>=4.66.0.5,<5.0.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

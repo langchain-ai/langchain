@@ -1,13 +1,13 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "pytest>=7.0.0,<9.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -26,8 +26,12 @@ description = "Standard tests for LangChain implementations"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = ["langchain-core"]

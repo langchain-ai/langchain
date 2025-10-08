@@ -2,7 +2,7 @@
 
 import base64
 from collections.abc import Iterable
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -216,7 +216,7 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                         tool_call_chunk["type"] = "tool_call_chunk"
                     yield tool_call_chunk
                 else:
-                    tool_call_block: Optional[types.ToolCall] = None
+                    tool_call_block: types.ToolCall | None = None
                     # Non-streaming or gathered chunk
                     if len(message.tool_calls) == 1:
                         tool_call_block = {

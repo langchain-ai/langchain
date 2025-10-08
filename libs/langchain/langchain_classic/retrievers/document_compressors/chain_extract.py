@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, cast
+from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -69,7 +69,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents."""
         compressed_docs = []
@@ -93,7 +93,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Compress page content of raw documents asynchronously."""
         inputs = [self.get_input(query, doc) for doc in documents]
@@ -111,9 +111,9 @@ class LLMChainExtractor(BaseDocumentCompressor):
     def from_llm(
         cls,
         llm: BaseLanguageModel,
-        prompt: Optional[PromptTemplate] = None,
-        get_input: Optional[Callable[[str, Document], str]] = None,
-        llm_chain_kwargs: Optional[dict] = None,  # noqa: ARG003
+        prompt: PromptTemplate | None = None,
+        get_input: Callable[[str, Document], str] | None = None,
+        llm_chain_kwargs: dict | None = None,  # noqa: ARG003
     ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()

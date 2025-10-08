@@ -1,13 +1,13 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "exa-py>=1.0.8,<2.0.0"
 ]
 name = "langchain-exa"
@@ -16,9 +16,13 @@ description = "An integration package connecting Exa and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/exa"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-exa%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/exa_search"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/exa"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-exa%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_exa/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [

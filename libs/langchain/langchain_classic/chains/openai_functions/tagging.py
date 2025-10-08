@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -51,7 +51,7 @@ Passage:
 def create_tagging_chain(
     schema: dict,
     llm: BaseLanguageModel,
-    prompt: Optional[ChatPromptTemplate] = None,
+    prompt: ChatPromptTemplate | None = None,
     **kwargs: Any,
 ) -> Chain:
     """Create tagging chain from schema.
@@ -126,7 +126,7 @@ def create_tagging_chain(
 def create_tagging_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
-    prompt: Optional[ChatPromptTemplate] = None,
+    prompt: ChatPromptTemplate | None = None,
     **kwargs: Any,
 ) -> Chain:
     """Create tagging chain from pydantic schema.

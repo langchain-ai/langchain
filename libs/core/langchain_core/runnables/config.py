@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
-from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -13,11 +13,8 @@ from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
     ParamSpec,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -42,7 +39,7 @@ if TYPE_CHECKING:
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[list, Any]]
+    Callbacks = list | Any | None
 
 
 class EmptyDict(TypedDict, total=False):
@@ -75,7 +72,7 @@ class RunnableConfig(TypedDict, total=False):
     Name for the tracer run for this call. Defaults to the name of the class.
     """
 
-    max_concurrency: Optional[int]
+    max_concurrency: int | None
     """
     Maximum number of parallel calls to make. If not provided, defaults to
     ThreadPoolExecutor's default.
@@ -94,7 +91,7 @@ class RunnableConfig(TypedDict, total=False):
     configurable.
     """
 
-    run_id: Optional[uuid.UUID]
+    run_id: uuid.UUID | None
     """
     Unique identifier for the tracer run for this call. If not provided, a new UUID
         will be generated.
@@ -130,7 +127,7 @@ var_child_runnable_config: ContextVar[RunnableConfig | None] = ContextVar(
 # This is imported and used in langgraph, so don't break.
 def _set_config_context(
     config: RunnableConfig,
-) -> tuple[Token[Optional[RunnableConfig]], Optional[dict[str, Any]]]:
+) -> tuple[Token[RunnableConfig | None], dict[str, Any] | None]:
     """Set the child Runnable config + tracing context.
 
     Args:
@@ -192,7 +189,7 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
         )
 
 
-def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
+def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
@@ -247,7 +244,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 
 def get_config_list(
-    config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
+    config: RunnableConfig | Sequence[RunnableConfig] | None, length: int
 ) -> list[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
@@ -294,13 +291,13 @@ def get_config_list(
 
 
 def patch_config(
-    config: Optional[RunnableConfig],
+    config: RunnableConfig | None,
     *,
-    callbacks: Optional[BaseCallbackManager] = None,
-    recursion_limit: Optional[int] = None,
-    max_concurrency: Optional[int] = None,
-    run_name: Optional[str] = None,
-    configurable: Optional[dict[str, Any]] = None,
+    callbacks: BaseCallbackManager | None = None,
+    recursion_limit: int | None = None,
+    max_concurrency: int | None = None,
+    run_name: str | None = None,
+    configurable: dict[str, Any] | None = None,
 ) -> RunnableConfig:
     """Patch a config with new values.
 
@@ -339,7 +336,7 @@ def patch_config(
     return config
 
 
-def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
+def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
     Args:
@@ -406,15 +403,13 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
 
 
 def call_func_with_variable_args(
-    func: Union[
-        Callable[[Input], Output],
-        Callable[[Input, RunnableConfig], Output],
-        Callable[[Input, CallbackManagerForChainRun], Output],
-        Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
-    ],
+    func: Callable[[Input], Output]
+    | Callable[[Input, RunnableConfig], Output]
+    | Callable[[Input, CallbackManagerForChainRun], Output]
+    | Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     input: Input,
     config: RunnableConfig,
-    run_manager: Optional[CallbackManagerForChainRun] = None,
+    run_manager: CallbackManagerForChainRun | None = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config.
@@ -440,18 +435,15 @@ def call_func_with_variable_args(
 
 
 def acall_func_with_variable_args(
-    func: Union[
-        Callable[[Input], Awaitable[Output]],
-        Callable[[Input, RunnableConfig], Awaitable[Output]],
-        Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-        Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-            Awaitable[Output],
-        ],
+    func: Callable[[Input], Awaitable[Output]]
+    | Callable[[Input, RunnableConfig], Awaitable[Output]]
+    | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+    | Callable[
+        [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
     ],
     input: Input,
     config: RunnableConfig,
-    run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    run_manager: AsyncCallbackManagerForChainRun | None = None,
     **kwargs: Any,
 ) -> Awaitable[Output]:
     """Async call function that may optionally accept a run_manager and/or config.
@@ -571,7 +563,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
 
 @contextmanager
 def get_executor_for_config(
-    config: Optional[RunnableConfig],
+    config: RunnableConfig | None,
 ) -> Generator[Executor, None, None]:
     """Get an executor for a config.
 
@@ -589,7 +581,7 @@ def get_executor_for_config(
 
 
 async def run_in_executor(
-    executor_or_config: Optional[Union[Executor, RunnableConfig]],
+    executor_or_config: Executor | RunnableConfig | None,
     func: Callable[P, T],
     *args: P.args,
     **kwargs: P.kwargs,

@@ -8,13 +8,11 @@ import functools
 import inspect
 import logging
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -62,14 +60,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-MODEL_OR_CHAIN_FACTORY = Union[
-    Callable[[], Union[Chain, Runnable]],
-    BaseLanguageModel,
-    Callable[[dict], Any],
-    Runnable,
-    Chain,
-]
-MCF = Union[Callable[[], Union[Chain, Runnable]], BaseLanguageModel]
+MODEL_OR_CHAIN_FACTORY = (
+    Callable[[], Chain | Runnable]
+    | BaseLanguageModel
+    | Callable[[dict], Any]
+    | Runnable
+    | Chain
+)
+MCF = Callable[[], Chain | Runnable] | BaseLanguageModel
 
 
 class InputFormatError(Exception):
@@ -351,7 +349,7 @@ def _get_messages(inputs: dict[str, Any]) -> dict:
 ## Shared data validation utilities
 def _validate_example_inputs_for_language_model(
     first_example: Example,
-    input_mapper: Optional[Callable[[dict], Any]],
+    input_mapper: Callable[[dict], Any] | None,
 ) -> None:
     if input_mapper:
         prompt_input = input_mapper(first_example.inputs or {})
@@ -387,7 +385,7 @@ def _validate_example_inputs_for_language_model(
 def _validate_example_inputs_for_chain(
     first_example: Example,
     chain: Chain,
-    input_mapper: Optional[Callable[[dict], Any]],
+    input_mapper: Callable[[dict], Any] | None,
 ) -> None:
     """Validate that the example inputs match the chain input keys."""
     if input_mapper:
@@ -427,7 +425,7 @@ def _validate_example_inputs_for_chain(
 def _validate_example_inputs(
     example: Example,
     llm_or_chain_factory: MCF,
-    input_mapper: Optional[Callable[[dict], Any]],
+    input_mapper: Callable[[dict], Any] | None,
 ) -> None:
     """Validate that the example inputs are valid for the model."""
     if isinstance(llm_or_chain_factory, BaseLanguageModel):
@@ -447,9 +445,9 @@ def _validate_example_inputs(
 def _setup_evaluation(
     llm_or_chain_factory: MCF,
     examples: list[Example],
-    evaluation: Optional[smith_eval.RunEvalConfig],
+    evaluation: smith_eval.RunEvalConfig | None,
     data_type: DataType,
-) -> Optional[list[RunEvaluator]]:
+) -> list[RunEvaluator] | None:
     """Configure the evaluators to run on the results of the chain."""
     if evaluation:
         if isinstance(llm_or_chain_factory, BaseLanguageModel):
@@ -476,8 +474,8 @@ def _setup_evaluation(
 
 def _determine_input_key(
     config: smith_eval.RunEvalConfig,
-    run_inputs: Optional[list[str]],
-) -> Optional[str]:
+    run_inputs: list[str] | None,
+) -> str | None:
     input_key = None
     if config.input_key:
         input_key = config.input_key
@@ -503,8 +501,8 @@ def _determine_input_key(
 
 def _determine_prediction_key(
     config: smith_eval.RunEvalConfig,
-    run_outputs: Optional[list[str]],
-) -> Optional[str]:
+    run_outputs: list[str] | None,
+) -> str | None:
     prediction_key = None
     if config.prediction_key:
         prediction_key = config.prediction_key
@@ -529,8 +527,8 @@ def _determine_prediction_key(
 
 def _determine_reference_key(
     config: smith_eval.RunEvalConfig,
-    example_outputs: Optional[list[str]],
-) -> Optional[str]:
+    example_outputs: list[str] | None,
+) -> str | None:
     if config.reference_key:
         reference_key = config.reference_key
         if example_outputs and reference_key not in example_outputs:
@@ -547,17 +545,15 @@ def _determine_reference_key(
 
 
 def _construct_run_evaluator(
-    eval_config: Union[
-        smith_eval_config.SINGLE_EVAL_CONFIG_TYPE,
-        smith_eval_config.CUSTOM_EVALUATOR_TYPE,
-    ],
-    eval_llm: Optional[BaseLanguageModel],
+    eval_config: smith_eval_config.SINGLE_EVAL_CONFIG_TYPE
+    | smith_eval_config.CUSTOM_EVALUATOR_TYPE,
+    eval_llm: BaseLanguageModel | None,
     run_type: str,
     data_type: DataType,
-    example_outputs: Optional[list[str]],
-    reference_key: Optional[str],
-    input_key: Optional[str],
-    prediction_key: Optional[str],
+    example_outputs: list[str] | None,
+    reference_key: str | None,
+    input_key: str | None,
+    prediction_key: str | None,
 ) -> RunEvaluator:
     if isinstance(eval_config, RunEvaluator):
         return eval_config
@@ -617,10 +613,10 @@ def _construct_run_evaluator(
 
 def _get_keys(
     config: smith_eval.RunEvalConfig,
-    run_inputs: Optional[list[str]],
-    run_outputs: Optional[list[str]],
-    example_outputs: Optional[list[str]],
-) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    run_inputs: list[str] | None,
+    run_outputs: list[str] | None,
+    example_outputs: list[str] | None,
+) -> tuple[str | None, str | None, str | None]:
     input_key = _determine_input_key(config, run_inputs)
     prediction_key = _determine_prediction_key(config, run_outputs)
     reference_key = _determine_reference_key(config, example_outputs)
@@ -631,9 +627,9 @@ def _load_run_evaluators(
     config: smith_eval.RunEvalConfig,
     run_type: str,
     data_type: DataType,
-    example_outputs: Optional[list[str]],
-    run_inputs: Optional[list[str]],
-    run_outputs: Optional[list[str]],
+    example_outputs: list[str] | None,
+    run_inputs: list[str] | None,
+    run_outputs: list[str] | None,
 ) -> list[RunEvaluator]:
     """Load run evaluators from a configuration.
 
@@ -706,11 +702,11 @@ async def _arun_llm(
     llm: BaseLanguageModel,
     inputs: dict[str, Any],
     *,
-    tags: Optional[list[str]] = None,
+    tags: list[str] | None = None,
     callbacks: Callbacks = None,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-    metadata: Optional[dict[str, Any]] = None,
-) -> Union[str, BaseMessage]:
+    input_mapper: Callable[[dict], Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> str | BaseMessage:
     """Asynchronously run the language model.
 
     Args:
@@ -751,7 +747,7 @@ async def _arun_llm(
 
     try:
         prompt = _get_prompt(inputs)
-        llm_output: Union[str, BaseMessage] = await llm.ainvoke(
+        llm_output: str | BaseMessage = await llm.ainvoke(
             prompt,
             config=RunnableConfig(
                 callbacks=callbacks,
@@ -773,14 +769,14 @@ async def _arun_llm(
 
 
 async def _arun_chain(
-    chain: Union[Chain, Runnable],
+    chain: Chain | Runnable,
     inputs: dict[str, Any],
     callbacks: Callbacks,
     *,
-    tags: Optional[list[str]] = None,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-    metadata: Optional[dict[str, Any]] = None,
-) -> Union[dict, str]:
+    tags: list[str] | None = None,
+    input_mapper: Callable[[dict], Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict | str:
     """Run a chain asynchronously on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
     if (
@@ -813,8 +809,8 @@ async def _arun_llm_or_chain(
     config: RunnableConfig,
     *,
     llm_or_chain_factory: MCF,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-) -> Union[dict, str, LLMResult, ChatResult]:
+    input_mapper: Callable[[dict], Any] | None = None,
+) -> dict | str | LLMResult | ChatResult:
     """Asynchronously run the Chain or language model.
 
     Args:
@@ -871,10 +867,10 @@ def _run_llm(
     inputs: dict[str, Any],
     callbacks: Callbacks,
     *,
-    tags: Optional[list[str]] = None,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-    metadata: Optional[dict[str, Any]] = None,
-) -> Union[str, BaseMessage]:
+    tags: list[str] | None = None,
+    input_mapper: Callable[[dict], Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> str | BaseMessage:
     """Run the language model on the example.
 
     Args:
@@ -899,7 +895,7 @@ def _run_llm(
             isinstance(prompt_or_messages, list)
             and all(isinstance(msg, BaseMessage) for msg in prompt_or_messages)
         ):
-            llm_output: Union[str, BaseMessage] = llm.invoke(
+            llm_output: str | BaseMessage = llm.invoke(
                 prompt_or_messages,
                 config=RunnableConfig(
                     callbacks=callbacks,
@@ -935,14 +931,14 @@ def _run_llm(
 
 
 def _run_chain(
-    chain: Union[Chain, Runnable],
+    chain: Chain | Runnable,
     inputs: dict[str, Any],
     callbacks: Callbacks,
     *,
-    tags: Optional[list[str]] = None,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-    metadata: Optional[dict[str, Any]] = None,
-) -> Union[dict, str]:
+    tags: list[str] | None = None,
+    input_mapper: Callable[[dict], Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> dict | str:
     """Run a chain on inputs."""
     inputs_ = inputs if input_mapper is None else input_mapper(inputs)
     if (
@@ -975,8 +971,8 @@ def _run_llm_or_chain(
     config: RunnableConfig,
     *,
     llm_or_chain_factory: MCF,
-    input_mapper: Optional[Callable[[dict], Any]] = None,
-) -> Union[dict, str, LLMResult, ChatResult]:
+    input_mapper: Callable[[dict], Any] | None = None,
+) -> dict | str | LLMResult | ChatResult:
     """Run the Chain or language model synchronously.
 
     Args:
@@ -1033,9 +1029,9 @@ def _prepare_eval_run(
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     project_name: str,
-    project_metadata: Optional[dict[str, Any]] = None,
-    tags: Optional[list[str]] = None,
-    dataset_version: Optional[Union[str, datetime]] = None,
+    project_metadata: dict[str, Any] | None = None,
+    tags: list[str] | None = None,
+    dataset_version: str | datetime | None = None,
 ) -> tuple[MCF, TracerSession, Dataset, list[Example]]:
     wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory, dataset_name)
     dataset = client.read_dataset(dataset_name=dataset_name)
@@ -1094,9 +1090,9 @@ run_on_dataset(
 class _RowResult(TypedDict, total=False):
     """A dictionary of the results for a single example row."""
 
-    feedback: Optional[list[EvaluationResult]]
-    execution_time: Optional[float]
-    run_id: Optional[str]
+    feedback: list[EvaluationResult] | None
+    execution_time: float | None
+    run_id: str | None
 
 
 @dataclasses.dataclass
@@ -1108,7 +1104,7 @@ class _DatasetRunContainer:
     wrapped_model: MCF
     examples: list[Example]
     configs: list[RunnableConfig]
-    batch_evaluators: Optional[list[smith_eval_config.BATCH_EVALUATOR_LIKE]] = None
+    batch_evaluators: list[smith_eval_config.BATCH_EVALUATOR_LIKE] | None = None
 
     def _merge_test_outputs(
         self,
@@ -1116,7 +1112,7 @@ class _DatasetRunContainer:
         all_eval_results: dict[str, _RowResult],
     ) -> dict:
         results: dict = {}
-        for example, output in zip(self.examples, batch_results):
+        for example, output in zip(self.examples, batch_results, strict=False):
             row_result = cast("_RowResult", all_eval_results.get(str(example.id), {}))
             results[str(example.id)] = {
                 "input": example.inputs,
@@ -1188,7 +1184,7 @@ class _DatasetRunContainer:
 
     def _collect_test_results(
         self,
-        batch_results: list[Union[dict, str, LLMResult, ChatResult]],
+        batch_results: list[dict | str | LLMResult | ChatResult],
     ) -> TestResult:
         logger.info("Waiting for evaluators to complete.")
         wait_for_all_evaluators()
@@ -1232,14 +1228,14 @@ class _DatasetRunContainer:
         client: Client,
         dataset_name: str,
         llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-        project_name: Optional[str],
-        evaluation: Optional[smith_eval.RunEvalConfig] = None,
-        tags: Optional[list[str]] = None,
-        input_mapper: Optional[Callable[[dict], Any]] = None,
+        project_name: str | None,
+        evaluation: smith_eval.RunEvalConfig | None = None,
+        tags: list[str] | None = None,
+        input_mapper: Callable[[dict], Any] | None = None,
         concurrency_level: int = 5,
-        project_metadata: Optional[dict[str, Any]] = None,
-        revision_id: Optional[str] = None,
-        dataset_version: Optional[Union[datetime, str]] = None,
+        project_metadata: dict[str, Any] | None = None,
+        revision_id: str | None = None,
+        dataset_version: datetime | str | None = None,
     ) -> _DatasetRunContainer:
         project_name = project_name or name_generation.random_name()
         if revision_id:
@@ -1345,17 +1341,17 @@ _INPUT_MAPPER_DEP_WARNING = (
 
 
 async def arun_on_dataset(
-    client: Optional[Client],
+    client: Client | None,
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
-    evaluation: Optional[smith_eval.RunEvalConfig] = None,
-    dataset_version: Optional[Union[datetime, str]] = None,
+    evaluation: smith_eval.RunEvalConfig | None = None,
+    dataset_version: datetime | str | None = None,
     concurrency_level: int = 5,
-    project_name: Optional[str] = None,
-    project_metadata: Optional[dict[str, Any]] = None,
+    project_name: str | None = None,
+    project_metadata: dict[str, Any] | None = None,
     verbose: bool = False,
-    revision_id: Optional[str] = None,
+    revision_id: str | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run on dataset.
@@ -1523,17 +1519,17 @@ async def arun_on_dataset(
 
 
 def run_on_dataset(
-    client: Optional[Client],
+    client: Client | None,
     dataset_name: str,
     llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
     *,
-    evaluation: Optional[smith_eval.RunEvalConfig] = None,
-    dataset_version: Optional[Union[datetime, str]] = None,
+    evaluation: smith_eval.RunEvalConfig | None = None,
+    dataset_version: datetime | str | None = None,
     concurrency_level: int = 5,
-    project_name: Optional[str] = None,
-    project_metadata: Optional[dict[str, Any]] = None,
+    project_name: str | None = None,
+    project_metadata: dict[str, Any] | None = None,
     verbose: bool = False,
-    revision_id: Optional[str] = None,
+    revision_id: str | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Run on dataset.
@@ -1693,7 +1689,9 @@ def run_on_dataset(
                 llm_or_chain_factory=container.wrapped_model,
                 input_mapper=input_mapper,
             )
-            for example, config in zip(container.examples, container.configs)
+            for example, config in zip(
+                container.examples, container.configs, strict=False
+            )
         ]
     else:
         with runnable_config.get_executor_for_config(container.configs[0]) as executor:

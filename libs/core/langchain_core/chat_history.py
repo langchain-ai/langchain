@@ -22,7 +22,9 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import (
+    AIMessage,
     BaseMessage,
+    HumanMessage,
     get_buffer_string,
 )
 from langchain_core.runnables.config import run_in_executor
@@ -123,6 +125,40 @@ class BaseChatMessageHistory(ABC):
             The messages.
         """
         return await run_in_executor(None, lambda: self.messages)
+
+    def add_user_message(self, message: HumanMessage | str) -> None:
+        """Convenience method for adding a human message string to the store.
+
+        !!! note
+            This is a convenience method. Code should favor the bulk ``add_messages``
+            interface instead to save on round-trips to the persistence layer.
+
+        This method may be deprecated in a future release.
+
+        Args:
+            message: The human message to add to the store.
+        """
+        if isinstance(message, HumanMessage):
+            self.add_message(message)
+        else:
+            self.add_message(HumanMessage(content=message))
+
+    def add_ai_message(self, message: AIMessage | str) -> None:
+        """Convenience method for adding an AI message string to the store.
+
+        !!! note
+            This is a convenience method. Code should favor the bulk ``add_messages``
+            interface instead to save on round-trips to the persistence layer.
+
+        This method may be deprecated in a future release.
+
+        Args:
+            message: The AI message to add.
+        """
+        if isinstance(message, AIMessage):
+            self.add_message(message)
+        else:
+            self.add_message(AIMessage(content=message))
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the store.

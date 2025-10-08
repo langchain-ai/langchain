@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.utils.json import parse_json_markdown
 from typing_extensions import override
@@ -64,7 +64,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         """Returns the name of the evaluation."""
         return "json_schema_validation"
 
-    def _parse_json(self, node: Any) -> Union[dict, list, None, float, bool, int, str]:
+    def _parse_json(self, node: Any) -> dict | list | None | float | bool | int | str:
         if isinstance(node, str):
             return parse_json_markdown(node)
         if hasattr(node, "model_json_schema") and callable(node.model_json_schema):
@@ -87,9 +87,9 @@ class JsonSchemaEvaluator(StringEvaluator):
     @override
     def _evaluate_strings(
         self,
-        prediction: Union[str, Any],
-        input: Union[str, Any] = None,
-        reference: Union[str, Any] = None,
+        prediction: str | Any,
+        input: str | Any = None,
+        reference: str | Any = None,
         **kwargs: Any,
     ) -> dict:
         parsed_prediction = self._parse_json(prediction)

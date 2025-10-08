@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -80,8 +80,8 @@ class ConversationalChatAgent(Agent):
         tools: Sequence[BaseTool],
         system_message: str = PREFIX,
         human_message: str = SUFFIX,
-        input_variables: Optional[list[str]] = None,
-        output_parser: Optional[BaseOutputParser] = None,
+        input_variables: list[str] | None = None,
+        output_parser: BaseOutputParser | None = None,
     ) -> BasePromptTemplate:
         """Create a prompt for the agent.
 
@@ -138,11 +138,11 @@ class ConversationalChatAgent(Agent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        output_parser: Optional[AgentOutputParser] = None,
+        callback_manager: BaseCallbackManager | None = None,
+        output_parser: AgentOutputParser | None = None,
         system_message: str = PREFIX,
         human_message: str = SUFFIX,
-        input_variables: Optional[list[str]] = None,
+        input_variables: list[str] | None = None,
         **kwargs: Any,
     ) -> Agent:
         """Construct an agent from an LLM and tools.

@@ -1,11 +1,8 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from langchain_core._api import deprecated
@@ -43,13 +40,13 @@ __all__ = [
 
 @deprecated(since="0.1.1", removal="1.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
-    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
+    functions: Sequence[dict[str, Any] | type[BaseModel] | Callable],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
     enforce_single_function_usage: bool = True,
     output_key: str = "function",
-    output_parser: Optional[BaseLLMOutputParser] = None,
+    output_parser: BaseLLMOutputParser | None = None,
     **kwargs: Any,
 ) -> LLMChain:
     """[Legacy] Create an LLM chain that uses OpenAI functions.
@@ -150,12 +147,12 @@ def create_openai_fn_chain(
     alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(
-    output_schema: Union[dict[str, Any], type[BaseModel]],
+    output_schema: dict[str, Any] | type[BaseModel],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
     output_key: str = "function",
-    output_parser: Optional[BaseLLMOutputParser] = None,
+    output_parser: BaseLLMOutputParser | None = None,
     **kwargs: Any,
 ) -> LLMChain:
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.

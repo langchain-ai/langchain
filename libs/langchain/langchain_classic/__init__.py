@@ -2,7 +2,7 @@
 
 import warnings
 from importlib import metadata
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
@@ -14,7 +14,7 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 
-def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
+def _warn_on_import(name: str, replacement: str | None = None) -> None:
     """Warn on import of deprecated module."""
     from langchain_classic._api.interactive_env import is_interactive_env
 

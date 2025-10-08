@@ -3,7 +3,8 @@
 import pytest
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
-from langchain.agents.middleware_agent import create_agent
+from langchain.agents.factory import create_agent
+from langchain.tools import ToolNode
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
@@ -36,7 +37,7 @@ def test_model_request_tools_are_base_tools() -> None:
         tools=[search_tool, calculator],
         system_prompt="You are a helpful assistant.",
         middleware=[RequestCapturingMiddleware()],
-    ).compile()
+    )
 
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
@@ -86,7 +87,7 @@ def test_middleware_can_modify_tools() -> None:
         tools=[tool_a, tool_b, tool_c],
         system_prompt="You are a helpful assistant.",
         middleware=[ToolFilteringMiddleware()],
-    ).compile()
+    )
 
     result = agent.invoke({"messages": [HumanMessage("Use tool_a")]})
 
@@ -124,7 +125,7 @@ def test_unknown_tool_raises_error() -> None:
         tools=[known_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[BadMiddleware()],
-    ).compile()
+    )
 
     with pytest.raises(ValueError, match="Middleware returned unknown tool names"):
         agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -164,7 +165,7 @@ def test_middleware_can_add_and_remove_tools() -> None:
         tools=[search, admin_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[ConditionalToolMiddleware()],
-    ).compile()
+    )
 
     # Test non-admin user - should not have access to admin_tool
     # We can't directly inspect the bound model, but we can verify the agent runs
@@ -199,7 +200,7 @@ def test_empty_tools_list_is_valid() -> None:
         tools=[some_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[NoToolsMiddleware()],
-    ).compile()
+    )
 
     # Should run without error even with no tools
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -250,7 +251,7 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         tools=[tool_a, tool_b, tool_c],
         system_prompt="You are a helpful assistant.",
         middleware=[FirstMiddleware(), SecondMiddleware()],
-    ).compile()
+    )
 
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
@@ -291,7 +292,7 @@ def test_middleware_with_additional_tools() -> None:
         tools=[base_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[ToolProvidingMiddleware()],
-    ).compile()
+    )
 
     result = agent.invoke({"messages": [HumanMessage("Use middleware tool")]})
 
@@ -301,3 +302,21 @@ def test_middleware_with_additional_tools() -> None:
     assert len(tool_messages) == 1
     assert tool_messages[0].name == "middleware_tool"
     assert "middleware" in tool_messages[0].content.lower()
+
+
+def test_tool_node_not_accepted() -> None:
+    """Test that passing a ToolNode instance to create_agent raises an error."""
+
+    @tool
+    def some_tool(input: str) -> str:
+        """Some tool."""
+        return "result"
+
+    tool_node = ToolNode([some_tool])
+
+    with pytest.raises(TypeError, match="'ToolNode' object is not iterable"):
+        create_agent(
+            model=FakeToolCallingModel(),
+            tools=tool_node,  # type: ignore[arg-type]
+            system_prompt="You are a helpful assistant.",
+        )

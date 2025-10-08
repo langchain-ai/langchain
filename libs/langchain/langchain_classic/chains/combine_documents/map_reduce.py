@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -111,7 +111,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     @override
     def get_output_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
@@ -228,7 +228,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
@@ -262,7 +262,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:

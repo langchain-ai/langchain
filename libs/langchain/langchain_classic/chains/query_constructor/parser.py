@@ -1,7 +1,7 @@
 import datetime
 import warnings
 from collections.abc import Sequence
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
@@ -81,9 +81,9 @@ class QueryTransformer(Transformer):
     def __init__(
         self,
         *args: Any,
-        allowed_comparators: Optional[Sequence[Comparator]] = None,
-        allowed_operators: Optional[Sequence[Operator]] = None,
-        allowed_attributes: Optional[Sequence[str]] = None,
+        allowed_comparators: Sequence[Comparator] | None = None,
+        allowed_operators: Sequence[Operator] | None = None,
+        allowed_attributes: Sequence[str] | None = None,
         **kwargs: Any,
     ):
         """Initialize the QueryTransformer.
@@ -131,7 +131,7 @@ class QueryTransformer(Transformer):
             return args[0]
         return Operation(operator=func, arguments=args)
 
-    def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
+    def _match_func_name(self, func_name: str) -> Operator | Comparator:
         if func_name in set(Comparator):
             if (
                 self.allowed_comparators is not None
@@ -255,9 +255,9 @@ class QueryTransformer(Transformer):
 
 
 def get_parser(
-    allowed_comparators: Optional[Sequence[Comparator]] = None,
-    allowed_operators: Optional[Sequence[Operator]] = None,
-    allowed_attributes: Optional[Sequence[str]] = None,
+    allowed_comparators: Sequence[Comparator] | None = None,
+    allowed_operators: Sequence[Operator] | None = None,
+    allowed_attributes: Sequence[str] | None = None,
 ) -> Lark:
     """Return a parser for the query language.
 

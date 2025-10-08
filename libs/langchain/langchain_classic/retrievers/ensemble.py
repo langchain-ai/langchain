@@ -6,12 +6,10 @@ multiple retrievers by using weighted  Reciprocal Rank Fusion.
 
 import asyncio
 from collections import defaultdict
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Callable, Hashable, Iterable, Iterator
 from itertools import chain
 from typing import (
     Any,
-    Callable,
-    Optional,
     TypeVar,
     cast,
 )
@@ -71,7 +69,7 @@ class EnsembleRetriever(BaseRetriever):
     retrievers: list[RetrieverLike]
     weights: list[float]
     c: int = 60
-    id_key: Optional[str] = None
+    id_key: str | None = None
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -92,7 +90,7 @@ class EnsembleRetriever(BaseRetriever):
     def invoke(
         self,
         input: str,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import CallbackManager
@@ -129,7 +127,7 @@ class EnsembleRetriever(BaseRetriever):
     async def ainvoke(
         self,
         input: str,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import AsyncCallbackManager
@@ -207,7 +205,7 @@ class EnsembleRetriever(BaseRetriever):
         query: str,
         run_manager: CallbackManagerForRetrieverRun,
         *,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> list[Document]:
         """Rank fusion.
 
@@ -249,7 +247,7 @@ class EnsembleRetriever(BaseRetriever):
         query: str,
         run_manager: AsyncCallbackManagerForRetrieverRun,
         *,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> list[Document]:
         """Rank fusion.
 
@@ -311,7 +309,7 @@ class EnsembleRetriever(BaseRetriever):
         # Associate each doc's content with its RRF score for later sorting by it
         # Duplicated contents across retrievers are collapsed & scored cumulatively
         rrf_score: dict[str, float] = defaultdict(float)
-        for doc_list, weight in zip(doc_lists, self.weights):
+        for doc_list, weight in zip(doc_lists, self.weights, strict=False):
             for rank, doc in enumerate(doc_list, start=1):
                 rrf_score[
                     (

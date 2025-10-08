@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 from packaging import version
@@ -481,7 +481,7 @@ def test_chat_valid_infer_variables() -> None:
     ],
 )
 def test_convert_to_message(
-    args: Any, expected: Union[BaseMessage, BaseMessagePromptTemplate]
+    args: Any, expected: BaseMessage | BaseMessagePromptTemplate
 ) -> None:
     """Test convert to message."""
     assert _convert_to_message_template(args) == expected

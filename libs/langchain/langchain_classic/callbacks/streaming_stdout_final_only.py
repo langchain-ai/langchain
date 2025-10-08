@@ -1,7 +1,7 @@
 """Callback Handler streams to stdout on new llm token."""
 
 import sys
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
 from typing_extensions import override
@@ -34,7 +34,7 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[list[str]] = None,
+        answer_prefix_tokens: list[str] | None = None,
         strip_tokens: bool = True,
         stream_prefix: bool = False,
     ) -> None:
