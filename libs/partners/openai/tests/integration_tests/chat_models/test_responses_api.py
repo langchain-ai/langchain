@@ -374,9 +374,17 @@ def test_computer_calls() -> None:
     assert response.additional_kwargs["tool_outputs"]
 
 
+@pytest.mark.default_cassette("test_file_search.yaml.gz")
 @pytest.mark.vcr
-def test_file_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_file_search(
+    output_version: Literal["responses/v1", "v1"],
+) -> None:
+    llm = ChatOpenAI(
+        model=MODEL_NAME,
+        use_responses_api=True,
+        output_version=output_version,
+    )
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
@@ -386,6 +394,18 @@ def test_file_search() -> None:
     response = llm.invoke([input_message], tools=[tool])
     _check_response(response)
 
+    if output_version == "v1":
+        assert [block["type"] for block in response.content] == [  # type: ignore[index]
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
+    else:
+        assert [block["type"] for block in response.content] == [  # type: ignore[index]
+            "file_search_call",
+            "text",
+        ]
+
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message], tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
@@ -393,8 +413,24 @@ def test_file_search() -> None:
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
 
+    if output_version == "v1":
+        assert [block["type"] for block in full.content] == [  # type: ignore[index]
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
+    else:
+        assert [block["type"] for block in full.content] == ["file_search_call", "text"]  # type: ignore[index]
+
     next_message = {"role": "user", "content": "Thank you."}
     _ = llm.invoke([input_message, full, next_message])
+
+    for message in [response, full]:
+        assert [block["type"] for block in message.content_blocks] == [
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
 
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
