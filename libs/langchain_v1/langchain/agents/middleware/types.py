@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AnyMessage, ToolMessage  # noqa: TC002
+from langchain_core.messages import AIMessage, AnyMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
