@@ -8,7 +8,7 @@ PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 
 
 @pytest.mark.skipif(
-    PYDANTIC_VERSION_AT_LEAST_29,
+    not PYDANTIC_VERSION_AT_LEAST_29,
     reason=(
         "Only test with most recent version of pydantic. "
         "Pydantic introduced small fixes to generated JSONSchema on minor versions."
