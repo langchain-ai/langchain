@@ -510,7 +510,7 @@ class ToolNode(RunnableCallable):
             # Running outside of LangGraph runtime context (e.g., unit tests)
             runtime = None
 
-        tool_calls, input_type = self._parse_input(input, store)
+        tool_calls, input_type = self._parse_input(input)
         tool_calls = [self._inject_tool_args(call, input, store) for call in tool_calls]
 
         config_list = get_config_list(config, len(tool_calls))
