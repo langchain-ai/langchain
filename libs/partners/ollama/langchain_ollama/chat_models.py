@@ -257,8 +257,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
-    ??? note "Setup"
-        :open:
+    ???+ note "Setup"
 
         Install ``langchain-ollama`` and download any models you want to use from ollama.
 

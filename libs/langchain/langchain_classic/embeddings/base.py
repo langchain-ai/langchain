@@ -155,8 +155,7 @@ def init_embeddings(
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    ??? note "Example Usage"
-        :open:
+    ???+ note "Example Usage"
 
         .. code-block:: python
 

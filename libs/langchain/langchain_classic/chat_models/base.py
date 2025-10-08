@@ -168,8 +168,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    ??? note "Init non-configurable model"
-        :open:
+    ???+ note "Init non-configurable model"
 
         .. code-block:: python
 

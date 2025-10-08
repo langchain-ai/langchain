@@ -214,7 +214,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
-        None."""
+    None."""
     headers: Any = None
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
@@ -569,7 +569,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
+            chunk_size: The chunk size of embeddings. If `None`, will use the chunk size
                 specified by the class.
             kwargs: Additional keyword arguments to pass to the embedding API.
 
@@ -603,7 +603,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
+            chunk_size: The chunk size of embeddings. If `None`, will use the chunk size
                 specified by the class.
             kwargs: Additional keyword arguments to pass to the embedding API.
 
