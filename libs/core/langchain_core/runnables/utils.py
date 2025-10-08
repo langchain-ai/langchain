@@ -137,7 +137,7 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task. Defaults to False.
+        create_task: Whether to create a task. Defaults to `False`.
 
     Returns:
         The coroutine with the context.
@@ -554,13 +554,13 @@ class ConfigurableField(NamedTuple):
     id: str
     """The unique identifier of the field."""
     name: str | None = None
-    """The name of the field. Defaults to None."""
+    """The name of the field. Defaults to `None`."""
     description: str | None = None
-    """The description of the field. Defaults to None."""
+    """The description of the field. Defaults to `None`."""
     annotation: Any | None = None
-    """The annotation of the field. Defaults to None."""
+    """The annotation of the field. Defaults to `None`."""
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared. Defaults to `False`."""
 
     @override
     def __hash__(self) -> int:
@@ -577,11 +577,11 @@ class ConfigurableFieldSingleOption(NamedTuple):
     default: str
     """The default value for the field."""
     name: str | None = None
-    """The name of the field. Defaults to None."""
+    """The name of the field. Defaults to `None`."""
     description: str | None = None
-    """The description of the field. Defaults to None."""
+    """The description of the field. Defaults to `None`."""
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared. Defaults to `False`."""
 
     @override
     def __hash__(self) -> int:
@@ -598,11 +598,11 @@ class ConfigurableFieldMultiOption(NamedTuple):
     default: Sequence[str]
     """The default values for the field."""
     name: str | None = None
-    """The name of the field. Defaults to None."""
+    """The name of the field. Defaults to `None`."""
     description: str | None = None
-    """The description of the field. Defaults to None."""
+    """The description of the field. Defaults to `None`."""
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared. Defaults to `False`."""
 
     @override
     def __hash__(self) -> int:
@@ -622,15 +622,15 @@ class ConfigurableFieldSpec(NamedTuple):
     annotation: Any
     """The annotation of the field."""
     name: str | None = None
-    """The name of the field. Defaults to None."""
+    """The name of the field. Defaults to `None`."""
     description: str | None = None
-    """The description of the field. Defaults to None."""
+    """The description of the field. Defaults to `None`."""
     default: Any = None
-    """The default value for the field. Defaults to None."""
+    """The default value for the field. Defaults to `None`."""
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared. Defaults to `False`."""
     dependencies: list[str] | None = None
-    """The dependencies of the field. Defaults to None."""
+    """The dependencies of the field. Defaults to `None`."""
 
 
 def get_unique_config_specs(

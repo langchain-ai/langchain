@@ -91,9 +91,9 @@ def init_chat_model(
             above). Supported model_provider values and the corresponding integration
             package are:
 
-            - ``openai``              -> ``langchain-openai``
-            - ``anthropic``           -> ``langchain-anthropic``
-            - ``azure_openai``        -> ``langchain-openai``
+            - ``openai``              -> `langchain-openai`
+            - ``anthropic``           -> `langchain-anthropic`
+            - ``azure_openai``        -> `langchain-openai`
             - ``azure_ai``            -> ``langchain-azure-ai``
             - ``google_vertexai``     -> ``langchain-google-vertexai``
             - ``google_genai``        -> ``langchain-google-genai``
@@ -129,7 +129,7 @@ def init_chat_model(
         configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
-            - ``'any'``: All fields are configurable. **See Security Note below.**
+            - `'any'`: All fields are configurable. **See Security Note below.**
             - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
 
             Fields are assumed to have config_prefix stripped if there is a
@@ -289,7 +289,7 @@ def init_chat_model(
     !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
-        Support for ``configurable_fields`` and ``config_prefix`` added.
+        Support for `configurable_fields` and ``config_prefix`` added.
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
@@ -653,7 +653,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @property
     @override
     def InputType(self) -> TypeAlias:
-        """Get the input type for this runnable."""
+        """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import (
             ChatPromptValueConcrete,
             StringPromptValue,

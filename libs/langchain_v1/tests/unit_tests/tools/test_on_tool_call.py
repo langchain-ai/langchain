@@ -819,12 +819,12 @@ async def test_async_handler_can_throw_exception() -> None:
 
 
 def test_handler_cannot_yield_multiple_tool_messages() -> None:
-    """Test that yielding multiple ToolMessages is rejected."""
+    """Test that yielding multiple `ToolMessage` objects is rejected."""
 
     def multi_message_handler(
         request: ToolCallRequest, _state: Any, _runtime: Any
     ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
-        """Handler that incorrectly yields multiple ToolMessages."""
+        """Handler that incorrectly yields multiple `ToolMessage` objects."""
         # First short-circuit
         yield ToolMessage("first", tool_call_id=request.tool_call["id"], name="add")
         # Second short-circuit - should fail

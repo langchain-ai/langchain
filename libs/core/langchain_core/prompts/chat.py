@@ -130,13 +130,13 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Name of variable to use as messages."""
 
     optional: bool = False
-    """If True format_messages can be called with no arguments and will return an empty
-        list. If False then a named argument with name `variable_name` must be passed
-        in, even if the value is an empty list."""
+    """If `True` format_messages can be called with no arguments and will return an
+        empty list. If `False` then a named argument with name `variable_name` must be
+        passed in, even if the value is an empty list."""
 
     n_messages: PositiveInt | None = None
-    """Maximum number of messages to include. If None, then will include all.
-    Defaults to None."""
+    """Maximum number of messages to include. If `None`, then will include all.
+    Defaults to `None`."""
 
     def __init__(
         self, variable_name: str, *, optional: bool = False, **kwargs: Any
@@ -145,10 +145,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
         Args:
             variable_name: Name of variable to use as messages.
-            optional: If True format_messages can be called with no arguments and will
-                return an empty list. If False then a named argument with name
+            optional: If `True` format_messages can be called with no arguments and will
+                return an empty list. If `False` then a named argument with name
                 `variable_name` must be passed in, even if the value is an empty list.
-                Defaults to False.]
+                Defaults to `False`.]
         """
         # mypy can't detect the init which is defined in the parent class
         # b/c these are BaseModel classes.
@@ -196,7 +196,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.
@@ -242,7 +242,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
                               `"{variable1} {variable2}"`, and `partial_variables` is
                               `{"variable1": "foo"}`, then the final prompt will be
                               `"foo {variable2}"`.
-                              Defaults to None.
+                              Defaults to `None`.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -331,7 +331,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.
@@ -415,7 +415,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             template_format: format of the template.
                 Options are: 'f-string', 'mustache', 'jinja2'. Defaults to "f-string".
             partial_variables: A dictionary of variables that can be used too partially.
-                Defaults to None.
+                Defaults to `None`.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -638,7 +638,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.
@@ -751,7 +751,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.
@@ -1293,7 +1293,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.

@@ -59,10 +59,10 @@ def draw_mermaid(
         nodes (dict[str, str]): List of node ids.
         edges (list[Edge]): List of edges, object with a source,
             target and data.
-        first_node (str, optional): Id of the first node. Defaults to None.
-        last_node (str, optional): Id of the last node. Defaults to None.
+        first_node (str, optional): Id of the first node. Defaults to `None`.
+        last_node (str, optional): Id of the last node. Defaults to `None`.
         with_styles (bool, optional): Whether to include styles in the graph.
-            Defaults to True.
+            Defaults to `True`.
         curve_style (CurveStyle, optional): Curve style for the edges.
             Defaults to CurveStyle.LINEAR.
         node_styles (NodeStyles, optional): Node colors for different types.
@@ -71,7 +71,7 @@ def draw_mermaid(
             Defaults to 9.
         frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
             Can be used to customize theme and styles. Will be converted to YAML and
-            added to the beginning of the mermaid graph. Defaults to None.
+            added to the beginning of the mermaid graph. Defaults to `None`.
 
             See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -292,7 +292,7 @@ def draw_mermaid_png(
     Args:
         mermaid_syntax (str): Mermaid graph syntax.
         output_file_path (str, optional): Path to save the PNG image.
-            Defaults to None.
+            Defaults to `None`.
         draw_method (MermaidDrawMethod, optional): Method to draw the graph.
             Defaults to MermaidDrawMethod.API.
         background_color (str, optional): Background color of the image.
@@ -303,7 +303,7 @@ def draw_mermaid_png(
         retry_delay (float, optional): Delay between retries (MermaidDrawMethod.API).
             Defaults to 1.0.
         base_url (str, optional): Base URL for the Mermaid.ink API.
-            Defaults to None.
+            Defaults to `None`.
 
     Returns:
         bytes: PNG image bytes.

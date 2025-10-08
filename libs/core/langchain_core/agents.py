@@ -2,7 +2,7 @@
 
 **ATTENTION** The schema definitions are provided for backwards compatibility.
 
-!!! important
+!!! warning
     New agents should be built using the
     [langgraph library](https://github.com/langchain-ai/langgraph), which provides a
     simpler and more flexible way to define agents.

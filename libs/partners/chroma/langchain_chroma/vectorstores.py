@@ -337,13 +337,13 @@ class Chroma(VectorStore):
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             collection_configuration: Index configuration for the collection.
-                    Defaults to None.
+                    Defaults to `None`.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             relevance_score_fn: Function to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
-                    if it doesn't exist. Defaults to True.
+                    if it doesn't exist. Defaults to `True`.
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
@@ -692,7 +692,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -719,7 +719,7 @@ class Chroma(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -749,7 +749,7 @@ class Chroma(VectorStore):
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by the documents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -780,7 +780,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -822,7 +822,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -1005,7 +1005,7 @@ class Chroma(VectorStore):
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -1055,7 +1055,7 @@ class Chroma(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -1272,15 +1272,15 @@ class Chroma(VectorStore):
                     Default is 'default_tenant' for local Chroma servers.
             database: Database name. Required for Chroma Cloud connections.
                     Default is 'default_database'.
-            embedding: Embedding function. Defaults to None.
-            metadatas: List of metadatas. Defaults to None.
-            ids: List of document IDs. Defaults to None.
+            embedding: Embedding function. Defaults to `None`.
+            metadatas: List of metadatas. Defaults to `None`.
+            ids: List of document IDs. Defaults to `None`.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
-            collection_metadata: Collection configurations. Defaults to None.
+            collection_metadata: Collection configurations. Defaults to `None`.
             collection_configuration: Index configuration for the collection.
-                    Defaults to None.
+                    Defaults to `None`.
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
@@ -1371,15 +1371,15 @@ class Chroma(VectorStore):
                     Default is 'default_tenant' for local Chroma servers.
             database: Database name. Required for Chroma Cloud connections.
                     Default is 'default_database'.
-            ids : List of document IDs. Defaults to None.
+            ids : List of document IDs. Defaults to `None`.
             documents: List of documents to add to the vectorstore.
-            embedding: Embedding function. Defaults to None.
+            embedding: Embedding function. Defaults to `None`.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
-            collection_metadata: Collection configurations. Defaults to None.
+            collection_metadata: Collection configurations. Defaults to `None`.
             collection_configuration: Index configuration for the collection.
-                    Defaults to None.
+                    Defaults to `None`.
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:

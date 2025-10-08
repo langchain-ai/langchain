@@ -116,13 +116,13 @@ class OllamaLLM(BaseLLM):
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
-    - ``True``: Enables reasoning mode. The model's reasoning process will be
+    - `True`: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
       response message, under ``reasoning_content``. The main response
       content will not include the reasoning tags.
-    - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+    - `False`: Disables reasoning mode. The model will not perform any reasoning,
       and the response will not include any reasoning content.
-    - ``None`` (Default): The model will use its default reasoning behavior. If
+    - `None` (Default): The model will use its default reasoning behavior. If
       the model performs reasoning, the ``<think>`` and ``</think>`` tags will
       be present directly within the main response content."""
 
@@ -134,7 +134,7 @@ class OllamaLLM(BaseLLM):
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+    (default: `0`, `0` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
 
     mirostat_eta: Optional[float] = None
     """Influences how quickly the algorithm responds to feedback
@@ -153,7 +153,7 @@ class OllamaLLM(BaseLLM):
 
     num_gpu: Optional[int] = None
     """The number of GPUs to use. On macOS it defaults to ``1`` to
-    enable metal support, ``0`` to disable."""
+    enable metal support, `0` to disable."""
 
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
@@ -167,7 +167,7 @@ class OllamaLLM(BaseLLM):
 
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
+    repetition. (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)"""
 
     repeat_penalty: Optional[float] = None
     """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
@@ -239,17 +239,17 @@ class OllamaLLM(BaseLLM):
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the async client; for shared args use ``client_kwargs``.
+    These are clients unique to the async client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the sync client; for shared args use ``client_kwargs``.
+    These are clients unique to the sync client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """

@@ -160,17 +160,17 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the async client; for shared args use ``client_kwargs``.
+    These are clients unique to the async client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the sync client; for shared args use ``client_kwargs``.
+    These are clients unique to the sync client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
@@ -183,7 +183,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+    (default: `0`, `0` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
 
     mirostat_eta: Optional[float] = None
     """Influences how quickly the algorithm responds to feedback
@@ -202,7 +202,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     num_gpu: Optional[int] = None
     """The number of GPUs to use. On macOS it defaults to ``1`` to
-    enable metal support, ``0`` to disable."""
+    enable metal support, `0` to disable."""
 
     keep_alive: Optional[int] = None
     """Controls how long the model will stay loaded into memory
@@ -217,7 +217,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
+    repetition. (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)"""
 
     repeat_penalty: Optional[float] = None
     """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)

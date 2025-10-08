@@ -272,7 +272,7 @@ def init_chat_model(
     !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
-        Support for ``configurable_fields`` and ``config_prefix`` added.
+        Support for `configurable_fields` and ``config_prefix`` added.
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
@@ -625,7 +625,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     @property
     def InputType(self) -> TypeAlias:
-        """Get the input type for this runnable."""
+        """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import (
             ChatPromptValueConcrete,
             StringPromptValue,

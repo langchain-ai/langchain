@@ -329,7 +329,7 @@ class QdrantVectorStore(VectorStore):
         """Get the sparse embeddings instance that is being used.
 
         Raises:
-            ValueError: If sparse embeddings are ``None``.
+            ValueError: If sparse embeddings are `None`.
 
         Returns:
             SparseEmbeddings: An instance of ``SparseEmbeddings``.

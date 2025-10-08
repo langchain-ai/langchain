@@ -74,7 +74,7 @@ class CohereRerank(BaseDocumentCompressor):
             query: The query to use for reranking.
             documents: A sequence of documents to rerank.
             model: The model to use for re-ranking. Default to self.model.
-            top_n : The number of results to return. If None returns all results.
+            top_n : The number of results to return. If `None` returns all results.
                 Defaults to self.top_n.
             max_chunks_per_doc : The maximum number of chunks derived from a document.
         """  # noqa: E501

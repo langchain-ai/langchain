@@ -500,8 +500,8 @@ class PIIMiddleware(AgentMiddleware):
 
                 * If ``Callable``: Function that takes content string and returns
                   list of PIIMatch objects
-                * If ``str``: Regex pattern to match PII
-                * If ``None``: Uses built-in detector for the pii_type
+                * If `str`: Regex pattern to match PII
+                * If `None`: Uses built-in detector for the pii_type
 
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
@@ -626,7 +626,7 @@ class PIIMiddleware(AgentMiddleware):
 
         # Check tool results if enabled
         if self.apply_to_tool_results:
-            # Find the last AIMessage, then process all ToolMessages after it
+            # Find the last AIMessage, then process all `ToolMessage` objects after it
             last_ai_idx = None
             for i in range(len(messages) - 1, -1, -1):
                 if isinstance(messages[i], AIMessage):

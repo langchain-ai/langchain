@@ -49,8 +49,8 @@ if TYPE_CHECKING:
 class DynamicRunnable(RunnableSerializable[Input, Output]):
     """Serializable Runnable that can be dynamically configured.
 
-    A DynamicRunnable should be initiated using the ``configurable_fields`` or
-    ``configurable_alternatives`` method of a Runnable.
+    A DynamicRunnable should be initiated using the `configurable_fields` or
+    `configurable_alternatives` method of a Runnable.
     """
 
     default: RunnableSerializable[Input, Output]
@@ -123,7 +123,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Prepare the Runnable for invocation.
 
         Args:
-            config: The configuration to use. Defaults to None.
+            config: The configuration to use. Defaults to `None`.
 
         Returns:
             tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
@@ -541,7 +541,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to ``'default'``."""
+    """The enum value to use for the default option. Defaults to `'default'`."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace

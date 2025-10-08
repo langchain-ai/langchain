@@ -213,7 +213,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
             end_crawl_date: The end date for the crawl (in YYYY-MM-DD format).
             start_published_date: The start date for when the document was published (in YYYY-MM-DD format).
             end_published_date: The end date for when the document was published (in YYYY-MM-DD format).
-            exclude_source_domain: If True, exclude pages from the same domain as the source URL.
+            exclude_source_domain: If `True`, exclude pages from the same domain as the source URL.
             category: Filter for similar pages by category.
             livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.

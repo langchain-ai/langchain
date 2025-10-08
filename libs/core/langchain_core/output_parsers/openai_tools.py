@@ -148,7 +148,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list
+    If `False`, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
@@ -162,9 +162,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
+                If `False`, the output will be the full JSON object.
                 Default is False.
 
         Returns:
@@ -226,9 +226,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
+                If `False`, the output will be the full JSON object.
                 Default is False.
 
         Raises:
@@ -310,9 +310,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
+                If `False`, the output will be the full JSON object.
                 Default is False.
 
         Returns:

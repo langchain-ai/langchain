@@ -414,7 +414,7 @@ class ChatPerplexity(BaseChatModel):
             schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class
 
             method: The method for steering model generation, currently only support:
@@ -423,8 +423,8 @@ class ChatPerplexity(BaseChatModel):
 
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict

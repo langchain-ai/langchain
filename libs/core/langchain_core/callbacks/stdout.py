@@ -20,7 +20,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler.
 
         Args:
-            color: The color to use for the text. Defaults to None.
+            color: The color to use for the text. Defaults to `None`.
         """
         self.color = color
 
@@ -61,7 +61,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             action (AgentAction): The agent action.
-            color (Optional[str]): The color to use for the text. Defaults to None.
+            color (Optional[str]): The color to use for the text. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments.
         """
         print_text(action.log, color=color or self.color)
@@ -79,10 +79,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             output (Any): The output to print.
-            color (Optional[str]): The color to use for the text. Defaults to None.
+            color (Optional[str]): The color to use for the text. Defaults to `None`.
             observation_prefix (Optional[str]): The observation prefix.
-                Defaults to None.
-            llm_prefix (Optional[str]): The LLM prefix. Defaults to None.
+                Defaults to `None`.
+            llm_prefix (Optional[str]): The LLM prefix. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments.
         """
         output = str(output)
@@ -104,7 +104,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             text (str): The text to print.
-            color (Optional[str]): The color to use for the text. Defaults to None.
+            color (Optional[str]): The color to use for the text. Defaults to `None`.
             end (str): The end character to use. Defaults to "".
             **kwargs (Any): Additional keyword arguments.
         """
@@ -118,7 +118,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             finish (AgentFinish): The agent finish.
-            color (Optional[str]): The color to use for the text. Defaults to None.
+            color (Optional[str]): The color to use for the text. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments.
         """
         print_text(finish.log, color=color or self.color, end="\n")
