@@ -702,8 +702,11 @@ class ToolNode(RunnableCallable):
         if self._on_tool_call is None:
             return self._execute_tool_sync(tool_request, input_type, config)
 
+        # Extract state from ToolCallWithContext if present
+        state = self._extract_state(input)
+
         # Generator protocol: start generator, send messages, receive requests/messages
-        gen = self._on_tool_call(tool_request, input, runtime)
+        gen = self._on_tool_call(tool_request, state, runtime)
         last_sent_value: ToolMessage | Command | None = None
         first_yield = True
         short_circuited_immediately = False
@@ -905,8 +908,11 @@ class ToolNode(RunnableCallable):
         if self._on_tool_call is None:
             return await self._execute_tool_async(tool_request, input_type, config)
 
+        # Extract state from ToolCallWithContext if present
+        state = self._extract_state(input)
+
         # Generator protocol: handler is sync generator, tool execution is async
-        gen = self._on_tool_call(tool_request, input, runtime)
+        gen = self._on_tool_call(tool_request, state, runtime)
         last_sent_value: ToolMessage | Command | None = None
         first_yield = True
         short_circuited_immediately = False
@@ -1045,6 +1051,21 @@ class ToolNode(RunnableCallable):
                 content, name=requested_tool, tool_call_id=call["id"], status="error"
             )
         return None
+
+    def _extract_state(
+        self, input: list[AnyMessage] | dict[str, Any] | BaseModel
+    ) -> list[AnyMessage] | dict[str, Any] | BaseModel:
+        """Extract state from input, handling ToolCallWithContext if present.
+
+        Args:
+            input: The input which may be raw state or ToolCallWithContext.
+
+        Returns:
+            The actual state to pass to on_tool_call handlers.
+        """
+        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            return input["state"]
+        return input
 
     def _inject_state(
         self,

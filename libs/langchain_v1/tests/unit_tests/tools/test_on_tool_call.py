@@ -1080,3 +1080,147 @@ def test_handler_can_modify_command_from_tool() -> None:
     assert len(result) == 1
     assert isinstance(result[0], Command)
     assert result[0].goto == "modified_original"
+
+
+def test_state_extraction_with_dict_input() -> None:
+    """Test that state is correctly passed when input is a dict."""
+    state_seen = []
+
+    def state_inspector_handler(
+        request: ToolCallRequest, state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that records the state it receives."""
+        state_seen.append(state)
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
+
+    input_state = {
+        "messages": [
+            AIMessage(
+                "test",
+                tool_calls=[{"name": "add", "args": {"a": 1, "b": 2}, "id": "call_1"}],
+            )
+        ],
+        "other_field": "value",
+    }
+
+    tool_node.invoke(input_state)
+
+    # State should be the dict we passed in
+    assert len(state_seen) == 1
+    assert state_seen[0] == input_state
+    assert isinstance(state_seen[0], dict)
+    assert "messages" in state_seen[0]
+    assert "other_field" in state_seen[0]
+    assert "__type" not in state_seen[0]
+
+
+def test_state_extraction_with_list_input() -> None:
+    """Test that state is correctly passed when input is a list."""
+    state_seen = []
+
+    def state_inspector_handler(
+        request: ToolCallRequest, state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that records the state it receives."""
+        state_seen.append(state)
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
+
+    input_state = [
+        AIMessage(
+            "test",
+            tool_calls=[{"name": "add", "args": {"a": 1, "b": 2}, "id": "call_1"}],
+        )
+    ]
+
+    tool_node.invoke(input_state)
+
+    # State should be the list we passed in
+    assert len(state_seen) == 1
+    assert state_seen[0] == input_state
+    assert isinstance(state_seen[0], list)
+
+
+def test_state_extraction_with_tool_call_with_context() -> None:
+    """Test that state is correctly extracted from ToolCallWithContext.
+
+    This tests the scenario where ToolNode is invoked via the Send API in
+    create_agent, which wraps the tool call with additional context including
+    the graph state.
+    """
+    state_seen = []
+
+    def state_inspector_handler(
+        request: ToolCallRequest, state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that records the state it receives."""
+        state_seen.append(state)
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
+
+    # Simulate ToolCallWithContext as used by create_agent with Send API
+    actual_state = {
+        "messages": [AIMessage("test")],
+        "thread_model_call_count": 1,
+        "run_model_call_count": 1,
+        "custom_field": "custom_value",
+    }
+
+    tool_call_with_context = {
+        "__type": "tool_call_with_context",
+        "tool_call": {"name": "add", "args": {"a": 1, "b": 2}, "id": "call_1", "type": "tool_call"},
+        "state": actual_state,
+    }
+
+    tool_node.invoke(tool_call_with_context)
+
+    # State should be the extracted state from ToolCallWithContext, not the wrapper
+    assert len(state_seen) == 1
+    assert state_seen[0] == actual_state
+    assert isinstance(state_seen[0], dict)
+    assert "messages" in state_seen[0]
+    assert "thread_model_call_count" in state_seen[0]
+    assert "custom_field" in state_seen[0]
+    # Most importantly, __type should NOT be in the extracted state
+    assert "__type" not in state_seen[0]
+    # And tool_call should not be in the state
+    assert "tool_call" not in state_seen[0]
+
+
+async def test_state_extraction_with_tool_call_with_context_async() -> None:
+    """Test that state is correctly extracted from ToolCallWithContext in async mode."""
+    state_seen = []
+
+    def state_inspector_handler(
+        request: ToolCallRequest, state: Any, _runtime: Any
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Handler that records the state it receives."""
+        state_seen.append(state)
+        yield request
+
+    tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
+
+    # Simulate ToolCallWithContext as used by create_agent with Send API
+    actual_state = {
+        "messages": [AIMessage("test")],
+        "thread_model_call_count": 1,
+        "run_model_call_count": 1,
+    }
+
+    tool_call_with_context = {
+        "__type": "tool_call_with_context",
+        "tool_call": {"name": "add", "args": {"a": 1, "b": 2}, "id": "call_1", "type": "tool_call"},
+        "state": actual_state,
+    }
+
+    await tool_node.ainvoke(tool_call_with_context)
+
+    # State should be the extracted state from ToolCallWithContext
+    assert len(state_seen) == 1
+    assert state_seen[0] == actual_state
+    assert "__type" not in state_seen[0]
+    assert "tool_call" not in state_seen[0]
