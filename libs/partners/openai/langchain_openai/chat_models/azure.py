@@ -38,7 +38,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Head to the Azure `OpenAI quickstart guide <https://learn.microsoft.com/en-us/azure/ai-foundry/openai/chatgpt-quickstart?tabs=keyless%2Ctypescript-keyless%2Cpython-new%2Ccommand-line&pivots=programming-language-python>`__
         to create your Azure OpenAI deployment.
 
-        Then install ``langchain-openai`` and set environment variables
+        Then install `langchain-openai` and set environment variables
         ``AZURE_OPENAI_API_KEY`` and ``AZURE_OPENAI_ENDPOINT``:
 
         .. code-block:: bash
@@ -838,7 +838,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class,
                 - an OpenAI function/tool schema.
 
@@ -847,7 +847,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -867,8 +867,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -898,7 +898,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - ``include_raw=True``
 
                 If a model elects to call a
-                tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
+                tool, the resulting `AIMessage` in ``'raw'`` will include tool calls.
 
                 ??? note "Example"
 
@@ -960,7 +960,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             ``method`` default changed from "function_calling" to "json_schema".
 
         !!! warning "Behavior changed in 0.3.12"
-            Support for ``tools`` added.
+            Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.

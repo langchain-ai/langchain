@@ -2,7 +2,7 @@
 
 ``output_version`` is an attribute on ChatOpenAI.
 
-Supported values are ``None``, ``'v0'``, and ``'responses/v1'``.
+Supported values are `None`, ``'v0'``, and ``'responses/v1'``.
 
 ``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
 stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
