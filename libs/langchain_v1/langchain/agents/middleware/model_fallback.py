@@ -89,10 +89,11 @@ class ModelFallbackMiddleware(AgentMiddleware):
             Exception: If all models fail, re-raises last exception.
         """
         # Try primary model first
+        last_exception: Exception
         try:
             return handler(request)
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:  # noqa: BLE001
+            last_exception = e
 
         # Try fallback models
         for fallback_model in self.models:

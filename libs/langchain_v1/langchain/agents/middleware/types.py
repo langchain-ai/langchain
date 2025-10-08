@@ -377,20 +377,6 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _AsyncCallableReturningModelResponse(Protocol[StateT_contra, ContextT]):
-    """Async callable for model call interception with handler callback."""
-
-    def __call__(
-        self,
-        request: ModelRequest,
-        state: StateT_contra,
-        runtime: Runtime[ContextT],
-        handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-    ) -> Awaitable[AIMessage]:
-        """Intercept model execution via async handler callback."""
-        ...
-
-
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 
 
@@ -1347,7 +1333,7 @@ def on_model_call(
                 runtime: Runtime[ContextT],
                 handler: Callable[[ModelRequest], Awaitable[AIMessage]],
             ) -> AIMessage:
-                return await func(request, state, runtime, handler)  # type: ignore[misc]
+                return await func(request, state, runtime, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "OnModelCallMiddleware")
@@ -1370,7 +1356,7 @@ def on_model_call(
             runtime: Runtime[ContextT],
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            return func(request, state, runtime, handler)  # type: ignore[return-value]
+            return func(request, state, runtime, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
 

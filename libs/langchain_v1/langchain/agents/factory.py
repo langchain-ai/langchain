@@ -14,6 +14,9 @@ from typing import (
     get_type_hints,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
