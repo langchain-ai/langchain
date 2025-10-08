@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, Protocol
+from collections.abc import Callable
+from typing import Any, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -204,7 +205,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     combine_documents_chain: BaseCombineDocumentsChain
     """Final chain to call to combine documents.
     This is typically a StuffDocumentsChain."""
-    collapse_documents_chain: Optional[BaseCombineDocumentsChain] = None
+    collapse_documents_chain: BaseCombineDocumentsChain | None = None
     """Chain to use to collapse documents if needed until they can all fit.
     If None, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
@@ -212,7 +213,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """The maximum number of tokens to group documents into. For example, if
     set to 3000 then documents will be grouped into chunks of no greater than
     3000 tokens before trying to combine them into a smaller chunk."""
-    collapse_max_retries: Optional[int] = None
+    collapse_max_retries: int | None = None
     """The maximum number of retries to collapse documents to fit token_max.
     If None, it will keep trying to collapse documents to fit token_max.
     Otherwise, after it reaches the max number, it will throw an error"""
@@ -231,7 +232,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def combine_docs(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
@@ -265,7 +266,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     async def acombine_docs(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
@@ -299,7 +300,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def _collapse(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[list[Document], dict]:
@@ -338,7 +339,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     async def _acollapse(
         self,
         docs: list[Document],
-        token_max: Optional[int] = None,
+        token_max: int | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[list[Document], dict]:

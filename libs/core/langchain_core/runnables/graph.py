@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import inspect
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
-    Optional,
     Protocol,
     TypedDict,
-    Union,
     overload,
 )
 from uuid import UUID, uuid4
@@ -70,14 +68,12 @@ class Edge(NamedTuple):
     """The source node id."""
     target: str
     """The target node id."""
-    data: Optional[Stringifiable] = None
+    data: Stringifiable | None = None
     """Optional data associated with the edge. Defaults to None."""
     conditional: bool = False
     """Whether the edge is conditional. Defaults to False."""
 
-    def copy(
-        self, *, source: Optional[str] = None, target: Optional[str] = None
-    ) -> Edge:
+    def copy(self, *, source: str | None = None, target: str | None = None) -> Edge:
         """Return a copy of the edge with optional new source and target nodes.
 
         Args:
@@ -102,16 +98,16 @@ class Node(NamedTuple):
     """The unique identifier of the node."""
     name: str
     """The name of the node."""
-    data: Union[type[BaseModel], RunnableType, None]
+    data: type[BaseModel] | RunnableType | None
     """The data of the node."""
-    metadata: Optional[dict[str, Any]]
+    metadata: dict[str, Any] | None
     """Optional metadata for the node. Defaults to None."""
 
     def copy(
         self,
         *,
-        id: Optional[str] = None,
-        name: Optional[str] = None,
+        id: str | None = None,
+        name: str | None = None,
     ) -> Node:
         """Return a copy of the node with optional new id and name.
 
@@ -135,7 +131,7 @@ class Branch(NamedTuple):
 
     condition: Callable[..., str]
     """A callable that returns a string representation of the condition."""
-    ends: Optional[dict[str, str]]
+    ends: dict[str, str] | None
     """Optional dictionary of end node ids for the branches. Defaults to None."""
 
 
@@ -182,7 +178,7 @@ class MermaidDrawMethod(Enum):
 
 def node_data_str(
     id: str,
-    data: Union[type[BaseModel], RunnableType, None],
+    data: type[BaseModel] | RunnableType | None,
 ) -> str:
     """Convert the data of a node to a string.
 
@@ -201,7 +197,7 @@ def node_data_str(
 
 def node_data_json(
     node: Node, *, with_schemas: bool = False
-) -> dict[str, Union[str, dict[str, Any]]]:
+) -> dict[str, str | dict[str, Any]]:
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
@@ -316,10 +312,10 @@ class Graph:
 
     def add_node(
         self,
-        data: Union[type[BaseModel], RunnableType, None],
-        id: Optional[str] = None,
+        data: type[BaseModel] | RunnableType | None,
+        id: str | None = None,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Node:
         """Add a node to the graph and return it.
 
@@ -357,7 +353,7 @@ class Graph:
         self,
         source: Node,
         target: Node,
-        data: Optional[Stringifiable] = None,
+        data: Stringifiable | None = None,
         conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
@@ -388,7 +384,7 @@ class Graph:
 
     def extend(
         self, graph: Graph, *, prefix: str = ""
-    ) -> tuple[Optional[Node], Optional[Node]]:
+    ) -> tuple[Node | None, Node | None]:
         """Add all nodes and edges from another graph.
 
         Note this doesn't check for duplicates, nor does it connect the graphs.
@@ -459,7 +455,7 @@ class Graph:
             ],
         )
 
-    def first_node(self) -> Optional[Node]:
+    def first_node(self) -> Node | None:
         """Find the single node that is not a target of any edge.
 
         If there is no such node, or there are multiple, return None.
@@ -471,7 +467,7 @@ class Graph:
         """
         return _first_node(self)
 
-    def last_node(self) -> Optional[Node]:
+    def last_node(self) -> Node | None:
         """Find the single node that is not a source of any edge.
 
         If there is no such node, or there are multiple, return None.
@@ -531,24 +527,24 @@ class Graph:
     def draw_png(
         self,
         output_file_path: str,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
     ) -> None: ...
 
     @overload
     def draw_png(
         self,
         output_file_path: None,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
     ) -> bytes: ...
 
     def draw_png(
         self,
-        output_file_path: Optional[str] = None,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
-    ) -> Union[bytes, None]:
+        output_file_path: str | None = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
+    ) -> bytes | None:
         """Draw the graph as a PNG image.
 
         Args:
@@ -581,9 +577,9 @@ class Graph:
         *,
         with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: Optional[NodeStyles] = None,
+        node_colors: NodeStyles | None = None,
         wrap_label_n_words: int = 9,
-        frontmatter_config: Optional[dict[str, Any]] = None,
+        frontmatter_config: dict[str, Any] | None = None,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
 
@@ -636,16 +632,16 @@ class Graph:
         self,
         *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: Optional[NodeStyles] = None,
+        node_colors: NodeStyles | None = None,
         wrap_label_n_words: int = 9,
-        output_file_path: Optional[str] = None,
+        output_file_path: str | None = None,
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
         max_retries: int = 1,
         retry_delay: float = 1.0,
-        frontmatter_config: Optional[dict[str, Any]] = None,
-        base_url: Optional[str] = None,
+        frontmatter_config: dict[str, Any] | None = None,
+        base_url: str | None = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -711,7 +707,7 @@ class Graph:
         )
 
 
-def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
 
     Exclude nodes/sources with ids in the exclude list.
@@ -727,7 +723,7 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
     return found[0] if len(found) == 1 else None
 
 
-def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
 
     Exclude nodes/targets with ids in the exclude list.

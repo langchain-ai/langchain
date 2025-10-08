@@ -1,6 +1,5 @@
 import json
 from json import JSONDecodeError
-from typing import Union
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -24,7 +23,7 @@ class ToolAgentAction(AgentActionMessageLog):
 
 def parse_ai_message_to_tool_action(
     message: BaseMessage,
-) -> Union[list[AgentAction], AgentFinish]:
+) -> list[AgentAction] | AgentFinish:
     """Parse an AI message potentially containing tool_calls."""
     if not isinstance(message, AIMessage):
         msg = f"Expected an AI message got {type(message)}"
@@ -104,7 +103,7 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         result: list[Generation],
         *,
         partial: bool = False,
-    ) -> Union[list[AgentAction], AgentFinish]:
+    ) -> list[AgentAction] | AgentFinish:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
             raise ValueError(msg)  # noqa: TRY004
@@ -112,6 +111,6 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
         return parse_ai_message_to_tool_action(message)
 
     @override
-    def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
+    def parse(self, text: str) -> list[AgentAction] | AgentFinish:
         msg = "Can only parse messages"
         raise ValueError(msg)

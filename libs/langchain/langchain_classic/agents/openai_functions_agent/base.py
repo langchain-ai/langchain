@@ -1,7 +1,7 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -100,7 +100,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         callbacks: Callbacks = None,
         with_functions: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Given input, decided what to do.
 
         Args:
@@ -140,7 +140,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[AgentAction, AgentFinish]:
+    ) -> AgentAction | AgentFinish:
         """Async given input, decided what to do.
 
         Args:
@@ -214,8 +214,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
-        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
+        system_message: SystemMessage | None = _NOT_SET,  # type: ignore[assignment]
+        extra_prompt_messages: list[BaseMessagePromptTemplate] | None = None,
     ) -> ChatPromptTemplate:
         """Create prompt for this agent.
 
@@ -234,7 +234,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             if system_message is not _NOT_SET
             else SystemMessage(content="You are a helpful AI assistant.")
         )
-        messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
+        messages: list[BaseMessagePromptTemplate | BaseMessage]
         messages = [system_message_] if system_message_ else []
 
         messages.extend(
@@ -251,9 +251,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         cls,
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
-        callback_manager: Optional[BaseCallbackManager] = None,
-        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
+        callback_manager: BaseCallbackManager | None = None,
+        extra_prompt_messages: list[BaseMessagePromptTemplate] | None = None,
+        system_message: SystemMessage | None = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools.

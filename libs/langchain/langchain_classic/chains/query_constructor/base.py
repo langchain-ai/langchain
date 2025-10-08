@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union, cast
+from collections.abc import Callable, Sequence
+from typing import Any, cast
 
 from langchain_core._api import deprecated
 from langchain_core.exceptions import OutputParserException
@@ -71,9 +71,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     @classmethod
     def from_components(
         cls,
-        allowed_comparators: Optional[Sequence[Comparator]] = None,
-        allowed_operators: Optional[Sequence[Operator]] = None,
-        allowed_attributes: Optional[Sequence[str]] = None,
+        allowed_comparators: Sequence[Comparator] | None = None,
+        allowed_operators: Sequence[Operator] | None = None,
+        allowed_attributes: Sequence[str] | None = None,
         fix_invalid: bool = False,  # noqa: FBT001,FBT002
     ) -> StructuredQueryOutputParser:
         """Create a structured query output parser from components.
@@ -90,9 +90,9 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         ast_parse: Callable
         if fix_invalid:
 
-            def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
+            def ast_parse(raw_filter: str) -> FilterDirective | None:
                 filter_directive = cast(
-                    "Optional[FilterDirective]",
+                    "FilterDirective | None",
                     get_parser().parse(raw_filter),
                 )
                 return fix_filter_directive(
@@ -112,12 +112,12 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
 
 def fix_filter_directive(
-    filter: Optional[FilterDirective],  # noqa: A002
+    filter: FilterDirective | None,  # noqa: A002
     *,
-    allowed_comparators: Optional[Sequence[Comparator]] = None,
-    allowed_operators: Optional[Sequence[Operator]] = None,
-    allowed_attributes: Optional[Sequence[str]] = None,
-) -> Optional[FilterDirective]:
+    allowed_comparators: Sequence[Comparator] | None = None,
+    allowed_operators: Sequence[Operator] | None = None,
+    allowed_attributes: Sequence[str] | None = None,
+) -> FilterDirective | None:
     """Fix invalid filter directive.
 
     Args:
@@ -167,7 +167,7 @@ def fix_filter_directive(
     return filter
 
 
-def _format_attribute_info(info: Sequence[Union[AttributeInfo, dict]]) -> str:
+def _format_attribute_info(info: Sequence[AttributeInfo | dict]) -> str:
     info_dicts = {}
     for i in info:
         i_dict = dict(i)
@@ -200,13 +200,13 @@ def construct_examples(input_output_pairs: Sequence[tuple[str, dict]]) -> list[d
 
 def get_query_constructor_prompt(
     document_contents: str,
-    attribute_info: Sequence[Union[AttributeInfo, dict]],
+    attribute_info: Sequence[AttributeInfo | dict],
     *,
-    examples: Optional[Sequence] = None,
+    examples: Sequence | None = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,
-    schema_prompt: Optional[BasePromptTemplate] = None,
+    schema_prompt: BasePromptTemplate | None = None,
     **kwargs: Any,
 ) -> BasePromptTemplate:
     """Create query construction prompt.
@@ -273,12 +273,12 @@ def get_query_constructor_prompt(
 def load_query_constructor_chain(
     llm: BaseLanguageModel,
     document_contents: str,
-    attribute_info: Sequence[Union[AttributeInfo, dict]],
-    examples: Optional[list] = None,
+    attribute_info: Sequence[AttributeInfo | dict],
+    examples: list | None = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,  # noqa: FBT001,FBT002
-    schema_prompt: Optional[BasePromptTemplate] = None,
+    schema_prompt: BasePromptTemplate | None = None,
     **kwargs: Any,
 ) -> LLMChain:
     """Load a query constructor chain.
@@ -325,13 +325,13 @@ def load_query_constructor_chain(
 def load_query_constructor_runnable(
     llm: BaseLanguageModel,
     document_contents: str,
-    attribute_info: Sequence[Union[AttributeInfo, dict]],
+    attribute_info: Sequence[AttributeInfo | dict],
     *,
-    examples: Optional[Sequence] = None,
+    examples: Sequence | None = None,
     allowed_comparators: Sequence[Comparator] = tuple(Comparator),
     allowed_operators: Sequence[Operator] = tuple(Operator),
     enable_limit: bool = False,
-    schema_prompt: Optional[BasePromptTemplate] = None,
+    schema_prompt: BasePromptTemplate | None = None,
     fix_invalid: bool = False,
     **kwargs: Any,
 ) -> Runnable:

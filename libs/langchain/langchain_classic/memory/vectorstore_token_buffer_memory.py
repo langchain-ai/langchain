@@ -8,7 +8,7 @@ sessions.
 
 import warnings
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
@@ -112,7 +112,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: Optional[VectorStoreRetrieverMemory] = PrivateAttr(default=None)
+    _memory_retriever: VectorStoreRetrieverMemory | None = PrivateAttr(default=None)
     _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property

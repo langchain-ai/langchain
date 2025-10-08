@@ -7,7 +7,7 @@ then combines the results with another one.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
@@ -54,8 +54,8 @@ class MapReduceChain(Chain):
         prompt: BasePromptTemplate,
         text_splitter: TextSplitter,
         callbacks: Callbacks = None,
-        combine_chain_kwargs: Optional[Mapping[str, Any]] = None,
-        reduce_chain_kwargs: Optional[Mapping[str, Any]] = None,
+        combine_chain_kwargs: Mapping[str, Any] | None = None,
+        reduce_chain_kwargs: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> MapReduceChain:
         """Construct a map-reduce chain that uses the chain for map and reduce."""
@@ -105,7 +105,7 @@ class MapReduceChain(Chain):
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         # Split the larger text into smaller chunks.

@@ -20,7 +20,7 @@ from langchain.agents.middleware.types import (
     modify_model_request,
     hook_config,
 )
-from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
+from langchain.agents.factory import create_agent, _get_can_jump_to
 from .model import FakeToolCallingModel
 
 
@@ -137,7 +137,7 @@ def test_all_decorators_integration() -> None:
     agent = create_agent(
         model=FakeToolCallingModel(), middleware=[track_before, track_modify, track_after]
     )
-    agent = agent.compile()
+    # Agent is already compiled
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == ["before", "modify", "after"]
@@ -226,7 +226,7 @@ def test_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = agent.invoke({"messages": [HumanMessage("exit")]})
@@ -339,7 +339,7 @@ async def test_async_decorators_integration() -> None:
         model=FakeToolCallingModel(),
         middleware=[track_async_before, track_async_modify, track_async_after],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == ["async_before", "async_modify", "async_after"]
@@ -395,7 +395,7 @@ async def test_mixed_sync_async_decorators_integration() -> None:
             track_sync_after,
         ],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == [
@@ -456,7 +456,7 @@ async def test_async_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = await agent.ainvoke({"messages": [HumanMessage("exit")]})
@@ -527,7 +527,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_before_with_jump]
     )
 
-    assert agent_async_before.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_before.get_graph().draw_mermaid() == snapshot
 
     # Test 2: Async after_model with can_jump_to
     @after_model(can_jump_to=["model", "end"])
@@ -540,7 +540,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_after_with_jump]
     )
 
-    assert agent_async_after.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_after.get_graph().draw_mermaid() == snapshot
 
     # Test 3: Multiple async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -556,7 +556,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[async_before_early_exit, async_after_retry],
     )
 
-    assert agent_multiple_async.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_multiple_async.get_graph().draw_mermaid() == snapshot
 
     # Test 4: Mixed sync and async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -572,7 +572,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[sync_before_with_jump, async_after_with_jumps],
     )
 
-    assert agent_mixed.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_mixed.get_graph().draw_mermaid() == snapshot
 
 
 def test_dynamic_prompt_decorator() -> None:
@@ -637,7 +637,7 @@ def test_dynamic_prompt_integration() -> None:
         return f"you are a helpful assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
-    agent = agent.compile()
+    # Agent is already compiled
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
 
@@ -672,7 +672,7 @@ async def test_async_dynamic_prompt_integration() -> None:
         return f"Async assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
-    agent = agent.compile()
+    # Agent is already compiled
 
     result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
     assert prompt_calls == 1
@@ -691,7 +691,7 @@ def test_dynamic_prompt_overwrites_system_prompt() -> None:
         system_prompt="Original static prompt",
         middleware=[override_prompt],
     )
-    agent = agent.compile()
+    # Agent is already compiled
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["messages"][-1].content == "Overridden prompt.-Hello"
@@ -711,7 +711,7 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
     # When used together, the last middleware in the list should win
     # since they're both modify_model_request hooks executed in sequence
     agent = create_agent(model=FakeToolCallingModel(), middleware=[first_prompt, second_prompt])
-    agent = agent.compile()
+    # Agent is already compiled
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["messages"][-1].content == "Second prompt.-Hello"

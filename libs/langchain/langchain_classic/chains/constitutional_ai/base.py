@@ -1,6 +1,6 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -203,7 +203,7 @@ class ConstitutionalChain(Chain):
     @classmethod
     def get_principles(
         cls,
-        names: Optional[list[str]] = None,
+        names: list[str] | None = None,
     ) -> list[ConstitutionalPrinciple]:
         """Get constitutional principles by name.
 
@@ -249,7 +249,7 @@ class ConstitutionalChain(Chain):
     def _call(
         self,
         inputs: dict[str, Any],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(

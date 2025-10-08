@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Callable
+from collections.abc import Callable, Sequence
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel

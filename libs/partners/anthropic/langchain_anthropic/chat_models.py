@@ -6,10 +6,10 @@ import copy
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Final, Literal, Optional, Union, cast
+from typing import Any, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -21,8 +21,6 @@ from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     LangSmithParams,
-    agenerate_from_stream,
-    generate_from_stream,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -1845,14 +1843,6 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(
-                messages,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
-            )
-            return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = self._create(payload)
@@ -1867,14 +1857,6 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._astream(
-                messages,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
-            )
-            return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = await self._acreate(payload)

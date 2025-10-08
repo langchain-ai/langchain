@@ -1,7 +1,7 @@
 """Base interface for chains combining documents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -50,7 +50,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     @override
     def get_input_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsInput",
@@ -60,7 +60,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     @override
     def get_output_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         return create_model(
             "CombineDocumentsOutput",
@@ -83,7 +83,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
         """
         return [self.output_key]
 
-    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:  # noqa: ARG002
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> int | None:  # noqa: ARG002
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list
@@ -137,7 +137,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     def _call(
         self,
         inputs: dict[str, list[Document]],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         """Prepare inputs, call combine docs, prepare outputs."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
@@ -155,7 +155,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     async def _acall(
         self,
         inputs: dict[str, list[Document]],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         """Prepare inputs, call combine docs, prepare outputs."""
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
@@ -258,7 +258,7 @@ class AnalyzeDocumentChain(Chain):
     @override
     def get_input_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         return create_model(
             "AnalyzeDocumentChain",
@@ -268,14 +268,14 @@ class AnalyzeDocumentChain(Chain):
     @override
     def get_output_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         return self.combine_docs_chain.get_output_schema(config)
 
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         """Split document into chunks and pass to CombineDocumentsChain."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
@@ -116,8 +116,8 @@ class ConversationStringBufferMemory(BaseMemory):
     ai_prefix: str = "AI"
     """Prefix to use for AI generated responses."""
     buffer: str = ""
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
+    output_key: str | None = None
+    input_key: str | None = None
     memory_key: str = "history"  #: :meta private:
 
     @pre_init

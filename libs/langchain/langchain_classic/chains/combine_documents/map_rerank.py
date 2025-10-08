@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -81,7 +81,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     """Key in output of llm_chain to rank on."""
     answer_key: str
     """Key in output of llm_chain to return as answer."""
-    metadata_keys: Optional[list[str]] = None
+    metadata_keys: list[str] | None = None
     """Additional metadata from the chosen document to return."""
     return_intermediate_steps: bool = False
     """Return intermediate steps.
@@ -95,7 +95,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     @override
     def get_output_schema(
         self,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
     ) -> type[BaseModel]:
         schema: dict[str, Any] = {
             self.output_key: (str, None),
@@ -228,11 +228,11 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     def _process_results(
         self,
         docs: list[Document],
-        results: Sequence[Union[str, list[str], dict[str, str]]],
+        results: Sequence[str | list[str] | dict[str, str]],
     ) -> tuple[str, dict]:
         typed_results = cast("list[dict]", results)
         sorted_res = sorted(
-            zip(typed_results, docs),
+            zip(typed_results, docs, strict=False),
             key=lambda x: -int(x[0][self.rank_key]),
         )
         output, document = sorted_res[0]

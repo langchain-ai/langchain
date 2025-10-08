@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -80,11 +80,7 @@ class SelfAskWithSearchChain(AgentExecutor):
     def __init__(
         self,
         llm: BaseLanguageModel,
-        search_chain: Union[
-            GoogleSerperAPIWrapper,
-            SearchApiAPIWrapper,
-            SerpAPIWrapper,
-        ],
+        search_chain: GoogleSerperAPIWrapper | SearchApiAPIWrapper | SerpAPIWrapper,
         **kwargs: Any,
     ):
         """Initialize only with an LLM and a search chain."""

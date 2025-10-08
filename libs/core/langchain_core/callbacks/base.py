@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 
@@ -29,7 +29,7 @@ class RetrieverManagerMixin:
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when Retriever errors.
@@ -46,7 +46,7 @@ class RetrieverManagerMixin:
         documents: Sequence[Document],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when Retriever ends running.
@@ -66,9 +66,9 @@ class LLMManagerMixin:
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on new output token. Only available when streaming is enabled.
@@ -89,7 +89,7 @@ class LLMManagerMixin:
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM ends running.
@@ -106,7 +106,7 @@ class LLMManagerMixin:
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM errors.
@@ -127,7 +127,7 @@ class ChainManagerMixin:
         outputs: dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain ends running.
@@ -144,7 +144,7 @@ class ChainManagerMixin:
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when chain errors.
@@ -161,7 +161,7 @@ class ChainManagerMixin:
         action: AgentAction,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on agent action.
@@ -178,7 +178,7 @@ class ChainManagerMixin:
         finish: AgentFinish,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on the agent end.
@@ -199,7 +199,7 @@ class ToolManagerMixin:
         output: Any,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when the tool ends running.
@@ -216,7 +216,7 @@ class ToolManagerMixin:
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when tool errors.
@@ -238,9 +238,9 @@ class CallbackManagerMixin:
         prompts: list[str],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when LLM starts running.
@@ -266,9 +266,9 @@ class CallbackManagerMixin:
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running.
@@ -297,9 +297,9 @@ class CallbackManagerMixin:
         query: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when the Retriever starts running.
@@ -320,9 +320,9 @@ class CallbackManagerMixin:
         inputs: dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chain starts running.
@@ -343,10 +343,10 @@ class CallbackManagerMixin:
         input_str: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when the tool starts running.
@@ -371,7 +371,7 @@ class RunManagerMixin:
         text: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on an arbitrary text.
@@ -388,7 +388,7 @@ class RunManagerMixin:
         retry_state: RetryCallState,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on a retry event.
@@ -406,8 +406,8 @@ class RunManagerMixin:
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Override to define a handler for a custom event.
@@ -487,9 +487,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         prompts: list[str],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when the model starts running.
@@ -515,9 +515,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run when a chat model starts running.
@@ -544,10 +544,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         self,
         token: str,
         *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on new output token. Only available when streaming is enabled.
@@ -569,8 +569,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         response: LLMResult,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when the model ends running.
@@ -588,8 +588,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when LLM errors.
@@ -610,9 +610,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         inputs: dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when a chain starts running.
@@ -632,8 +632,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         outputs: dict[str, Any],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when a chain ends running.
@@ -651,8 +651,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when chain errors.
@@ -671,10 +671,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         input_str: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when the tool starts running.
@@ -695,8 +695,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         output: Any,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when the tool ends running.
@@ -714,8 +714,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run when tool errors.
@@ -733,8 +733,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         text: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on an arbitrary text.
@@ -752,7 +752,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         retry_state: RetryCallState,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         """Run on a retry event.
@@ -769,8 +769,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         action: AgentAction,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on agent action.
@@ -788,8 +788,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         finish: AgentFinish,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on the agent end.
@@ -808,9 +808,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         query: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on the retriever start.
@@ -830,8 +830,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         documents: Sequence[Document],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on the retriever end.
@@ -849,8 +849,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         error: BaseException,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Run on retriever error.
@@ -869,8 +869,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         data: Any,
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Override to define a handler for custom events.
@@ -895,13 +895,13 @@ class BaseCallbackManager(CallbackManagerMixin):
     def __init__(
         self,
         handlers: list[BaseCallbackHandler],
-        inheritable_handlers: Optional[list[BaseCallbackHandler]] = None,
-        parent_run_id: Optional[UUID] = None,
+        inheritable_handlers: list[BaseCallbackHandler] | None = None,
+        parent_run_id: UUID | None = None,
         *,
-        tags: Optional[list[str]] = None,
-        inheritable_tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        inheritable_metadata: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        inheritable_tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        inheritable_metadata: dict[str, Any] | None = None,
     ) -> None:
         """Initialize callback manager.
 
@@ -921,7 +921,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_handlers: list[BaseCallbackHandler] = (
             inheritable_handlers or []
         )
-        self.parent_run_id: Optional[UUID] = parent_run_id
+        self.parent_run_id: UUID | None = parent_run_id
         self.tags = tags or []
         self.inheritable_tags = inheritable_tags or []
         self.metadata = metadata or {}
@@ -1115,4 +1115,4 @@ class BaseCallbackManager(CallbackManagerMixin):
             self.inheritable_metadata.pop(key, None)
 
 
-Callbacks = Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]]
+Callbacks = list[BaseCallbackHandler] | BaseCallbackManager | None

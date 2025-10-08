@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from inspect import signature
-from typing import Optional, Union
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import (
@@ -14,7 +13,7 @@ from pydantic import ConfigDict
 class DocumentCompressorPipeline(BaseDocumentCompressor):
     """Document compressor that uses a pipeline of Transformers."""
 
-    transformers: list[Union[BaseDocumentTransformer, BaseDocumentCompressor]]
+    transformers: list[BaseDocumentTransformer | BaseDocumentCompressor]
     """List of document filters that are chained together and run in sequence."""
 
     model_config = ConfigDict(
@@ -25,7 +24,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Transform a list of documents."""
         for _transformer in self.transformers:
@@ -55,7 +54,7 @@ class DocumentCompressorPipeline(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Compress retrieved documents given the query context."""
         for _transformer in self.transformers:

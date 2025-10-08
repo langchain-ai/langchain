@@ -4,7 +4,7 @@ import copy
 import json
 import logging
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import SkipValidation, ValidationError
 
@@ -26,7 +26,7 @@ def parse_tool_call(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Parse a single tool call.
 
     Args:
@@ -75,7 +75,7 @@ def parse_tool_call(
 
 def make_invalid_tool_call(
     raw_tool_call: dict[str, Any],
-    error_msg: Optional[str],
+    error_msg: str | None,
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call.
 

@@ -1,5 +1,5 @@
 import re
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
@@ -36,7 +36,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         self,
         array: str,
         original_request_params: str,
-    ) -> tuple[list[Union[int, str]], str]:
+    ) -> tuple[list[int | str], str]:
         """Parse the array from the request parameters.
 
         Args:
@@ -49,7 +49,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         Raises:
             OutputParserException: If the array format is invalid or cannot be parsed.
         """
-        parsed_array: list[Union[int, str]] = []
+        parsed_array: list[int | str] = []
 
         # Check if the format is [1,3,5]
         if re.match(r"\[\d+(,\s*\d+)*\]", array):

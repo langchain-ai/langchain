@@ -8,13 +8,13 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	async_before_with_jump\2ebefore_model(async_before_with_jump.before_model)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> async_before_with_jump\2ebefore_model;
   	async_before_with_jump\2ebefore_model -.-> __end__;
-  	async_before_with_jump\2ebefore_model -.-> model_request;
-  	model_request --> __end__;
+  	async_before_with_jump\2ebefore_model -.-> model;
+  	model --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -30,13 +30,13 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	async_after_with_jump\2eafter_model(async_after_with_jump.after_model)
   	__end__([<p>__end__</p>]):::last
-  	__start__ --> model_request;
+  	__start__ --> model;
   	async_after_with_jump\2eafter_model -.-> __end__;
-  	async_after_with_jump\2eafter_model -.-> model_request;
-  	model_request --> async_after_with_jump\2eafter_model;
+  	async_after_with_jump\2eafter_model -.-> model;
+  	model --> async_after_with_jump\2eafter_model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -52,7 +52,7 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	async_before_early_exit\2ebefore_model(async_before_early_exit.before_model)
   	async_after_retry\2eafter_model(async_after_retry.after_model)
   	__end__([<p>__end__</p>]):::last
@@ -60,8 +60,8 @@
   	async_after_retry\2eafter_model -.-> __end__;
   	async_after_retry\2eafter_model -.-> async_before_early_exit\2ebefore_model;
   	async_before_early_exit\2ebefore_model -.-> __end__;
-  	async_before_early_exit\2ebefore_model -.-> model_request;
-  	model_request --> async_after_retry\2eafter_model;
+  	async_before_early_exit\2ebefore_model -.-> model;
+  	model --> async_after_retry\2eafter_model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -77,16 +77,16 @@
   ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
-  	model_request(model_request)
+  	model(model)
   	sync_before_with_jump\2ebefore_model(sync_before_with_jump.before_model)
   	async_after_with_jumps\2eafter_model(async_after_with_jumps.after_model)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> sync_before_with_jump\2ebefore_model;
   	async_after_with_jumps\2eafter_model -.-> __end__;
   	async_after_with_jumps\2eafter_model -.-> sync_before_with_jump\2ebefore_model;
-  	model_request --> async_after_with_jumps\2eafter_model;
+  	model --> async_after_with_jumps\2eafter_model;
   	sync_before_with_jump\2ebefore_model -.-> __end__;
-  	sync_before_with_jump\2ebefore_model -.-> model_request;
+  	sync_before_with_jump\2ebefore_model -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc

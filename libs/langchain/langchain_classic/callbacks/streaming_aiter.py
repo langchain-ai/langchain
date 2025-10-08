@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from typing import Any, Literal, Union, cast
+from typing import Any, Literal, cast
 
 from langchain_core.callbacks import AsyncCallbackHandler
 from langchain_core.outputs import LLMResult
@@ -73,7 +73,7 @@ class AsyncIteratorCallbackHandler(AsyncCallbackHandler):
                 other.pop().cancel()
 
             # Extract the value of the first completed task
-            token_or_done = cast("Union[str, Literal[True]]", done.pop().result())
+            token_or_done = cast("str | Literal[True]", done.pop().result())
 
             # If the extracted value is the boolean True, the done event was set
             if token_or_done is True:

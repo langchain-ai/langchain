@@ -82,12 +82,14 @@ location_json_schema = {
 }
 
 
+@tool
 def get_weather() -> str:
     """Get the weather."""
 
     return "The weather is sunny and 75°F."
 
 
+@tool
 def get_location() -> str:
     """Get the current location."""
 
@@ -748,7 +750,7 @@ class TestDynamicModelWithResponseFormat:
         )
 
         with patch(
-            "langchain.agents.middleware_agent._supports_provider_strategy",
+            "langchain.agents.factory._supports_provider_strategy",
             side_effect=mock_supports_provider_strategy,
         ):
             response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})

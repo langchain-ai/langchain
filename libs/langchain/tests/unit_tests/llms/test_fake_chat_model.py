@@ -1,7 +1,7 @@
 """Tests for verifying that testing utility code works as expected."""
 
 from itertools import cycle
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
@@ -161,9 +161,9 @@ async def test_callback_handlers() -> None:
             messages: list[list[BaseMessage]],
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[list[str]] = None,
-            metadata: Optional[dict[str, Any]] = None,
+            parent_run_id: UUID | None = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> Any:
             # Do nothing
@@ -175,10 +175,10 @@ async def test_callback_handlers() -> None:
             self,
             token: str,
             *,
-            chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+            chunk: GenerationChunk | ChatGenerationChunk | None = None,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[list[str]] = None,
+            parent_run_id: UUID | None = None,
+            tags: list[str] | None = None,
             **kwargs: Any,
         ) -> None:
             self.store.append(token)

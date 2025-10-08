@@ -1,6 +1,6 @@
 """Standard LangChain interface tests."""
 
-from typing import Literal
+from typing import Any, Literal
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -26,7 +26,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         return {"llm": llm}
 
     @pytest.fixture
-    def model(self) -> BaseChatModel:
+    def model(self, request: Any) -> BaseChatModel:
         return self.chat_model_class(**self.chat_model_params)  # type: ignore[call-arg]
 
     @pytest.mark.xfail(

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from langchain_core._api import deprecated
@@ -202,7 +202,7 @@ try:
         api_docs: str
         question_key: str = "question"  #: :meta private:
         output_key: str = "output"  #: :meta private:
-        limit_to_domains: Optional[Sequence[str]] = Field(default_factory=list)  # type: ignore[arg-type]
+        limit_to_domains: Sequence[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
         """Use to limit the domains that can be accessed by the API chain.
 
         * For example, to limit to just the domain `https://www.example.com`, set
@@ -278,7 +278,7 @@ try:
         def _call(
             self,
             inputs: dict[str, Any],
-            run_manager: Optional[CallbackManagerForChainRun] = None,
+            run_manager: CallbackManagerForChainRun | None = None,
         ) -> dict[str, str]:
             _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
             question = inputs[self.question_key]
@@ -316,7 +316,7 @@ try:
         async def _acall(
             self,
             inputs: dict[str, Any],
-            run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+            run_manager: AsyncCallbackManagerForChainRun | None = None,
         ) -> dict[str, str]:
             _run_manager = (
                 run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
@@ -363,10 +363,10 @@ try:
             cls,
             llm: BaseLanguageModel,
             api_docs: str,
-            headers: Optional[dict] = None,
+            headers: dict | None = None,
             api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
             api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
-            limit_to_domains: Optional[Sequence[str]] = (),
+            limit_to_domains: Sequence[str] | None = (),
             **kwargs: Any,
         ) -> APIChain:
             """Load chain from just an LLM and the api docs."""

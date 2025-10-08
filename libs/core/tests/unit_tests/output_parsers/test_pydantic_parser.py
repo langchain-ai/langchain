@@ -1,7 +1,7 @@
 """Test PydanticOutputParser."""
 
 from enum import Enum
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import pydantic
 import pytest
@@ -30,7 +30,7 @@ class ForecastV1(V1BaseModel):
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
 def test_pydantic_parser_chaining(
-    pydantic_object: Union[type[ForecastV2], type[ForecastV1]],
+    pydantic_object: type[ForecastV2] | type[ForecastV1],
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -109,9 +109,7 @@ class Actions(Enum):
 class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
-    additional_fields: Optional[str] = Field(
-        description="Additional fields", default=None
-    )
+    additional_fields: str | None = Field(description="Additional fields", default=None)
     for_new_lines: str = Field(description="To be used to test newlines")
 
 

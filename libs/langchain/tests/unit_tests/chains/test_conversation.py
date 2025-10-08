@@ -1,7 +1,7 @@
 """Test conversation chain and memory."""
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -31,8 +31,8 @@ class DummyLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         self.last_prompt = prompt

@@ -3,12 +3,15 @@
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListChatModel,
@@ -23,7 +26,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
@@ -46,7 +48,7 @@ if TYPE_CHECKING:
 
 
 def _content_blocks_equal_ignore_id(
-    actual: Union[str, list[Any]], expected: Union[str, list[Any]]
+    actual: str | list[Any], expected: str | list[Any]
 ) -> bool:
     """Compare content blocks, ignoring auto-generated `id` fields.
 
@@ -63,7 +65,7 @@ def _content_blocks_equal_ignore_id(
 
     if len(actual) != len(expected):
         return False
-    for actual_block, expected_block in zip(actual, expected):
+    for actual_block, expected_block in zip(actual, expected, strict=False):
         actual_without_id = (
             {k: v for k, v in actual_block.items() if k != "id"}
             if isinstance(actual_block, dict) and "id" in actual_block
@@ -184,8 +186,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -217,8 +219,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -228,8 +230,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _stream(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -269,8 +271,8 @@ async def test_astream_implementation_uses_astream() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -280,8 +282,8 @@ async def test_astream_implementation_uses_astream() -> None:
         async def _astream(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,  # type: ignore[override]
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -350,8 +352,8 @@ class NoStreamingModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
@@ -366,8 +368,8 @@ class StreamingModel(NoStreamingModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
@@ -376,7 +378,7 @@ class StreamingModel(NoStreamingModel):
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
@@ -401,7 +403,7 @@ def test_disable_streaming(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_async(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
     assert (await model.ainvoke([])).content == "invoke"
@@ -428,7 +430,7 @@ async def test_disable_streaming_async(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming_no_streaming_model(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
     assert model.invoke([]).content == "invoke"
@@ -443,7 +445,7 @@ def test_disable_streaming_no_streaming_model(
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_no_streaming_model_async(
     *,
-    disable_streaming: Union[bool, Literal["tool_calling"]],
+    disable_streaming: bool | Literal["tool_calling"],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
     assert (await model.ainvoke([])).content == "invoke"
@@ -907,6 +909,56 @@ async def test_output_version_ainvoke(monkeypatch: Any) -> None:
     assert response.response_metadata["output_version"] == "v1"
 
 
+class _AnotherFakeChatModel(BaseChatModel):
+    responses: Iterator[AIMessage]
+    """Responses for _generate."""
+
+    chunks: Iterator[AIMessageChunk]
+    """Responses for _stream."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "another-fake-chat-model"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=next(self.responses))])
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: CallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> Iterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],  # noqa: ARG002
+        stop: list[str] | None = None,  # noqa: ARG002
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,  # noqa: ARG002
+        **kwargs: Any,  # noqa: ARG002
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        for chunk in self.chunks:
+            yield ChatGenerationChunk(message=chunk)
+
+
 def test_output_version_stream(monkeypatch: Any) -> None:
     messages = [AIMessage("foo bar")]
 
@@ -923,7 +975,7 @@ def test_output_version_stream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full_v1: Optional[BaseMessageChunk] = None
+    full_v1: AIMessageChunk | None = None
     for chunk in llm.stream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -935,6 +987,58 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         full_v1 = chunk if full_v1 is None else full_v1 + chunk
     assert isinstance(full_v1, AIMessageChunk)
     assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    for chunk in llm_with_rich_content.stream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = llm_with_rich_content.invoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
@@ -969,7 +1073,7 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full_v1: Optional[BaseMessageChunk] = None
+    full_v1: AIMessageChunk | None = None
     async for chunk in llm.astream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -981,6 +1085,58 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         full_v1 = chunk if full_v1 is None else full_v1 + chunk
     assert isinstance(full_v1, AIMessageChunk)
     assert full_v1.response_metadata["output_version"] == "v1"
+
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test text blocks
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(
+            [
+                AIMessageChunk(content="foo "),
+                AIMessageChunk(content="bar"),
+            ]
+        ),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [{"type": "text", "text": "foo bar", "index": 0}]
+
+    # Test content blocks of different types
+    chunks = [
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "<rea"}),
+        AIMessageChunk(content="", additional_kwargs={"reasoning_content": "soning>"}),
+        AIMessageChunk(content="<some "),
+        AIMessageChunk(content="text>"),
+    ]
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    full_v1 = None
+    async for chunk in llm_with_rich_content.astream("hello"):
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
+
+    # Test invoke with stream=True
+    llm_with_rich_content = _AnotherFakeChatModel(
+        responses=iter([]),
+        chunks=iter(chunks),
+        output_version="v1",
+    )
+    response_v1 = await llm_with_rich_content.ainvoke("hello", stream=True)
+    assert response_v1.content_blocks == [
+        {"type": "reasoning", "reasoning": "<reasoning>", "index": 0},
+        {"type": "text", "text": "<some text>", "index": 1},
+    ]
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
@@ -1009,8 +1165,8 @@ def test_get_ls_params() -> None:
         def _generate(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> ChatResult:
             raise NotImplementedError
@@ -1019,8 +1175,8 @@ def test_get_ls_params() -> None:
         def _stream(
             self,
             messages: list[BaseMessage],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
             raise NotImplementedError

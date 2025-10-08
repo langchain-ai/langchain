@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Optional, Union
+from typing import Any
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import Callbacks
@@ -22,11 +22,11 @@ class CohereRerank(BaseDocumentCompressor):
 
     client: Any = None
     """Cohere client to use for compressing documents."""
-    top_n: Optional[int] = 3
+    top_n: int | None = 3
     """Number of documents to return."""
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
-    cohere_api_key: Optional[str] = None
+    cohere_api_key: str | None = None
     """Cohere API key. Must be specified directly or via environment variable
         COHERE_API_KEY."""
     user_agent: str = "langchain"
@@ -61,12 +61,12 @@ class CohereRerank(BaseDocumentCompressor):
 
     def rerank(
         self,
-        documents: Sequence[Union[str, Document, dict]],
+        documents: Sequence[str | Document | dict],
         query: str,
         *,
-        model: Optional[str] = None,
-        top_n: Optional[int] = -1,
-        max_chunks_per_doc: Optional[int] = None,
+        model: str | None = None,
+        top_n: int | None = -1,
+        max_chunks_per_doc: int | None = None,
     ) -> list[dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
@@ -104,7 +104,7 @@ class CohereRerank(BaseDocumentCompressor):
         self,
         documents: Sequence[Document],
         query: str,
-        callbacks: Optional[Callbacks] = None,
+        callbacks: Callbacks | None = None,
     ) -> Sequence[Document]:
         """Compress documents using Cohere's rerank API.
 
