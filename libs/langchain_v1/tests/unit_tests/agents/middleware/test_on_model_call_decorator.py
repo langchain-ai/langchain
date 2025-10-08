@@ -20,9 +20,8 @@ class TestOnModelCallDecorator:
         """Test basic decorator usage without parameters."""
 
         @on_model_call
-        def passthrough_middleware(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def passthrough_middleware(request, state, runtime, handler):
+            return handler(request)
 
         # Should return an AgentMiddleware instance
         assert isinstance(passthrough_middleware, AgentMiddleware)
@@ -39,9 +38,8 @@ class TestOnModelCallDecorator:
         """Test decorator with custom middleware name."""
 
         @on_model_call(name="CustomMiddleware")
-        def my_middleware(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def my_middleware(request, state, runtime, handler):
+            return handler(request)
 
         assert isinstance(my_middleware, AgentMiddleware)
         assert my_middleware.__class__.__name__ == "CustomMiddleware"
@@ -58,14 +56,12 @@ class TestOnModelCallDecorator:
                 return super()._generate(messages, **kwargs)
 
         @on_model_call
-        def retry_once(request, state, runtime):
+        def retry_once(request, state, runtime, handler):
             try:
-                result = yield request
-                # Generator ends
+                return handler(request)
             except Exception:
                 # Retry once
-                result = yield request
-                # Generator ends
+                return handler(request)
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         agent = create_agent(model=model, middleware=[retry_once])
@@ -79,10 +75,9 @@ class TestOnModelCallDecorator:
         """Test decorator for rewriting responses."""
 
         @on_model_call
-        def uppercase_responses(request, state, runtime):
-            result = yield request
-            modified = AIMessage(content=result.content.upper())
-            yield modified
+        def uppercase_responses(request, state, runtime, handler):
+            result = handler(request)
+            return AIMessage(content=result.content.upper())
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[uppercase_responses])
@@ -99,12 +94,11 @@ class TestOnModelCallDecorator:
                 raise ValueError("Model error")
 
         @on_model_call
-        def error_to_fallback(request, state, runtime):
+        def error_to_fallback(request, state, runtime, handler):
             try:
-                result = yield request
+                return handler(request)
             except Exception:
-                fallback = AIMessage(content="Fallback response")
-                yield fallback
+                return AIMessage(content="Fallback response")
 
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[error_to_fallback])
@@ -118,10 +112,9 @@ class TestOnModelCallDecorator:
         state_values = []
 
         @on_model_call
-        def log_state(request, state, runtime):
+        def log_state(request, state, runtime, handler):
             state_values.append(state.get("messages"))
-            response = yield request
-            # Generator ends
+            return handler(request)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[log_state])
@@ -138,18 +131,18 @@ class TestOnModelCallDecorator:
         execution_order = []
 
         @on_model_call
-        def outer_middleware(request, state, runtime):
+        def outer_middleware(request, state, runtime, handler):
             execution_order.append("outer-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("outer-after")
-            # Generator ends
+            return result
 
         @on_model_call
-        def inner_middleware(request, state, runtime):
+        def inner_middleware(request, state, runtime, handler):
             execution_order.append("inner-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("inner-after")
-            # Generator ends
+            return result
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[outer_middleware, inner_middleware])
@@ -172,9 +165,8 @@ class TestOnModelCallDecorator:
             custom_field: str
 
         @on_model_call(state_schema=CustomState)
-        def middleware_with_schema(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def middleware_with_schema(request, state, runtime, handler):
+            return handler(request)
 
         assert isinstance(middleware_with_schema, AgentMiddleware)
         # Custom state schema should be set
@@ -190,9 +182,8 @@ class TestOnModelCallDecorator:
             return f"Result: {query}"
 
         @on_model_call(tools=[test_tool])
-        def middleware_with_tools(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def middleware_with_tools(request, state, runtime, handler):
+            return handler(request)
 
         assert isinstance(middleware_with_tools, AgentMiddleware)
         assert len(middleware_with_tools.tools) == 1
@@ -203,15 +194,13 @@ class TestOnModelCallDecorator:
 
         # Without parentheses
         @on_model_call
-        def middleware_no_parens(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def middleware_no_parens(request, state, runtime, handler):
+            return handler(request)
 
         # With parentheses
         @on_model_call()
-        def middleware_with_parens(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def middleware_with_parens(request, state, runtime, handler):
+            return handler(request)
 
         assert isinstance(middleware_no_parens, AgentMiddleware)
         assert isinstance(middleware_with_parens, AgentMiddleware)
@@ -220,9 +209,8 @@ class TestOnModelCallDecorator:
         """Test that decorator uses function name for class name."""
 
         @on_model_call
-        def my_custom_middleware(request, state, runtime):
-            response = yield request
-            # Generator ends
+        def my_custom_middleware(request, state, runtime, handler):
+            return handler(request)
 
         assert my_custom_middleware.__class__.__name__ == "my_custom_middleware"
 
@@ -231,18 +219,18 @@ class TestOnModelCallDecorator:
         execution_order = []
 
         @on_model_call
-        def decorated_middleware(request, state, runtime):
+        def decorated_middleware(request, state, runtime, handler):
             execution_order.append("decorated-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("decorated-after")
-            # Generator ends
+            return result
 
         class ClassMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime):
+            def on_model_call(self, request, state, runtime, handler):
                 execution_order.append("class-before")
-                response = yield request
+                result = handler(request)
                 execution_order.append("class-after")
-                # Generator ends
+                return result
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(
@@ -273,14 +261,15 @@ class TestOnModelCallDecorator:
                 return super()._generate(messages, **kwargs)
 
         @on_model_call
-        def retry_with_tracking(request, state, runtime):
+        def retry_with_tracking(request, state, runtime, handler):
             max_retries = 3
+            last_exception = None
             for attempt in range(max_retries):
                 attempts.append(attempt + 1)
                 try:
-                    result = yield request
-                    # Generator ends
-                except Exception:
+                    return handler(request)
+                except Exception as e:
+                    last_exception = e
                     # On error, continue to next attempt
                     if attempt < max_retries - 1:
                         continue  # Retry
@@ -300,11 +289,11 @@ class TestOnModelCallDecorator:
         call_log = []
 
         @on_model_call
-        def logging_middleware(request, state, runtime):
+        async def logging_middleware(request, state, runtime, handler):
             call_log.append("before")
-            response = yield request
+            result = await handler(request)
             call_log.append("after")
-            # Generator ends
+            return result
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Async response")]))
         agent = create_agent(model=model, middleware=[logging_middleware])
@@ -319,7 +308,7 @@ class TestOnModelCallDecorator:
         modified_prompts = []
 
         @on_model_call
-        def add_system_prompt(request, state, runtime):
+        def add_system_prompt(request, state, runtime, handler):
             # Modify request to add system prompt
             modified_request = ModelRequest(
                 messages=request.messages,
@@ -330,8 +319,7 @@ class TestOnModelCallDecorator:
                 response_format=request.response_format,
             )
             modified_prompts.append(modified_request.system_prompt)
-            response = yield modified_request
-            # Generator ends
+            return handler(modified_request)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[add_system_prompt])
@@ -344,15 +332,14 @@ class TestOnModelCallDecorator:
         """Test decorator applying multiple transformations."""
 
         @on_model_call
-        def multi_transform(request, state, runtime):
-            result = yield request
+        def multi_transform(request, state, runtime, handler):
+            result = handler(request)
 
             # First transformation: uppercase
             content = result.content.upper()
             # Second transformation: add prefix and suffix
             content = f"[START] {content} [END]"
-            modified = AIMessage(content=content)
-            yield modified
+            return AIMessage(content=content)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello")]))
         agent = create_agent(model=model, middleware=[multi_transform])
