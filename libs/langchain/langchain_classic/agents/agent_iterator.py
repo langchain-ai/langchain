@@ -62,17 +62,17 @@ class AgentExecutorIterator:
             agent_executor (AgentExecutor): The AgentExecutor to iterate over.
             inputs (Any): The inputs to the AgentExecutor.
             callbacks (Callbacks, optional): The callbacks to use during iteration.
-                Defaults to None.
+                Defaults to `None`.
             tags (Optional[list[str]], optional): The tags to use during iteration.
-                Defaults to None.
+                Defaults to `None`.
             metadata (Optional[Dict[str, Any]], optional): The metadata to use
-                during iteration. Defaults to None.
-            run_name (Optional[str], optional): The name of the run. Defaults to None.
-            run_id (Optional[UUID], optional): The ID of the run. Defaults to None.
+                during iteration. Defaults to `None`.
+            run_name (Optional[str], optional): The name of the run. Defaults to `None`.
+            run_id (Optional[UUID], optional): The ID of the run. Defaults to `None`.
             include_run_info (bool, optional): Whether to include run info
-                in the output. Defaults to False.
+                in the output. Defaults to `False`.
             yield_actions (bool, optional): Whether to yield actions as they
-                are generated. Defaults to False.
+                are generated. Defaults to `False`.
         """
         self._agent_executor = agent_executor
         self.inputs = inputs

@@ -334,7 +334,7 @@ class ChatFireworks(BaseChatModel):
         default=None, alias="timeout"
     )
     """Timeout for requests to Fireworks completion API. Can be ``float``,
-    ``httpx.Timeout`` or ``None``."""
+    ``httpx.Timeout`` or `None`."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -635,7 +635,7 @@ class ChatFireworks(BaseChatModel):
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 ``'auto'`` to automatically determine which function to call
-                with the option to not call any function, ``'any'`` to enforce that some
+                with the option to not call any function, `'any'` to enforce that some
                 function is called, or a dict of the form:
                 ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to
@@ -681,7 +681,7 @@ class ChatFireworks(BaseChatModel):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class (support added in 0.1.7),
+                - a `TypedDict` class (support added in 0.1.7),
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -689,7 +689,7 @@ class ChatFireworks(BaseChatModel):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
                 !!! warning "Behavior changed in 0.1.7"
                     Added support for TypedDict class.
@@ -707,8 +707,8 @@ class ChatFireworks(BaseChatModel):
                     Added support for ``'json_schema'``.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict

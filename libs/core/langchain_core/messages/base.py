@@ -159,7 +159,7 @@ class BaseMessage(Serializable):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``BaseMessage``.
+        """Initialize `BaseMessage`.
 
         Specify ``content`` as positional arg or ``content_blocks`` for typing.
 
@@ -175,7 +175,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """``BaseMessage`` is serializable.
+        """`BaseMessage` is serializable.
 
         Returns:
             True
@@ -306,7 +306,7 @@ class BaseMessage(Serializable):
         """Get a pretty representation of the message.
 
         Args:
-            html: Whether to format the message as HTML. If True, the message will be
+            html: Whether to format the message as HTML. If `True`, the message will be
                 formatted with HTML tags. Default is False.
 
         Returns:
@@ -439,7 +439,7 @@ def message_to_dict(message: BaseMessage) -> dict:
         message: Message to convert.
 
     Returns:
-        Message as a dict. The dict will have a ``type`` key with the message type
+        Message as a dict. The dict will have a `type` key with the message type
         and a ``data`` key with the message data as a dict.
 
     """
@@ -450,7 +450,7 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:
-        messages: Sequence of messages (as ``BaseMessage``s) to convert.
+        messages: Sequence of messages (as `BaseMessage`s) to convert.
 
     Returns:
         List of messages as dicts.

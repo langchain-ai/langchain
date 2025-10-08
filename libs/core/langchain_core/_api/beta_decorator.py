@@ -40,15 +40,15 @@ def beta(
     """Decorator to mark a function, a class, or a property as beta.
 
     When marking a classmethod, a staticmethod, or a property, the
-    ``@beta`` decorator should go *under* ``@classmethod`` and
-    ``@staticmethod`` (i.e., `beta` should directly decorate the
-    underlying callable), but *over* ``@property``.
+    `@beta` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `beta` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When marking a class ``C`` intended to be used as a base class in a
-    multiple inheritance hierarchy, ``C`` *must* define an ``__init__`` method
-    (if ``C`` instead inherited its ``__init__`` from its own base class, then
-    ``@beta`` would mess up ``__init__`` inheritance when installing its
-    own (annotation-emitting) ``C.__init__``).
+    When marking a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@beta` would mess up `__init__` inheritance when installing its
+    own (annotation-emitting) `C.__init__`).
 
     Args:
         message : str, optional

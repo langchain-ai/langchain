@@ -81,7 +81,7 @@ class SummarizationMiddleware(AgentMiddleware):
         Args:
             model: The language model to use for generating summaries.
             max_tokens_before_summary: Token threshold to trigger summarization.
-                If None, summarization is disabled.
+                If `None`, summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.

@@ -125,7 +125,7 @@ The module defines several types of content blocks, including:
 
 Factory functions offer benefits such as:
 - Automatic ID generation (when not provided)
-- No need to manually specify the ``type`` field
+- No need to manually specify the `type` field
 
 """
 
@@ -305,7 +305,7 @@ class ToolCallChunk(TypedDict):
 
     When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
-    values of ``index`` are equal and not ``None``.
+    values of ``index`` are equal and not `None`.
 
     Example:
 
@@ -350,7 +350,7 @@ class ToolCallChunk(TypedDict):
 class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
 
-    Here we add an ``error`` key to surface errors made during generation
+    Here we add an `error` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
 
     """
@@ -641,8 +641,8 @@ class PlainTextContentBlock(TypedDict):
     !!! note
         A ``PlainTextContentBlock`` existed in ``langchain-core<1.0.0``. Although the
         name has carried over, the structure has changed significantly. The only shared
-        keys between the old and new versions are ``type`` and ``text``, though the
-        ``type`` value has changed from ``'text'`` to ``'text-plain'``.
+        keys between the old and new versions are `type` and ``text``, though the
+        `type` value has changed from ``'text'`` to ``'text-plain'``.
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
@@ -935,7 +935,7 @@ def create_text_block(
         A properly formatted ``TextContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -984,7 +984,7 @@ def create_image_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1040,7 +1040,7 @@ def create_video_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1100,7 +1100,7 @@ def create_audio_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1160,7 +1160,7 @@ def create_file_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1219,7 +1219,7 @@ def create_plaintext_block(
         A properly formatted ``PlainTextContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1271,7 +1271,7 @@ def create_tool_call(
         A properly formatted ``ToolCall``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1309,7 +1309,7 @@ def create_reasoning_block(
         A properly formatted ``ReasoningContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1353,7 +1353,7 @@ def create_citation(
         A properly formatted ``Citation``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1394,7 +1394,7 @@ def create_non_standard_block(
         A properly formatted ``NonStandardContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """

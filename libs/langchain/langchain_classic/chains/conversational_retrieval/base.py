@@ -88,8 +88,8 @@ class BaseConversationalRetrievalChain(Chain):
     """The output key to return the final answer of this chain in."""
     rephrase_question: bool = True
     """Whether or not to pass the new generated question to the combine_docs_chain.
-    If True, will pass the new generated question along.
-    If False, will only use the new generated question for retrieval and pass the
+    If `True`, will pass the new generated question along.
+    If `False`, will only use the new generated question for retrieval and pass the
     original question along to the combine_docs_chain."""
     return_source_documents: bool = False
     """Return the retrieved source documents as part of the final result."""
@@ -97,7 +97,7 @@ class BaseConversationalRetrievalChain(Chain):
     """Return the generated question as part of the final result."""
     get_chat_history: Callable[[list[CHAT_TURN_TYPE]], str] | None = None
     """An optional function to get a string of the chat history.
-    If None is provided, will use a default."""
+    If `None` is provided, will use a default."""
     response_if_no_docs_found: str | None = None
     """If specified, the chain will return a fixed response if no docs
     are found for the question. """

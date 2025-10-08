@@ -175,7 +175,7 @@ class HuggingFaceEndpoint(LLM):
         # model (`str`, `optional`):
         #     The model to run inference with. Can be a model id hosted on the Hugging
         #       Face Hub, e.g. `bigcode/starcoder`
-        #     or a URL to a deployed Inference Endpoint. Defaults to None, in which
+        #     or a URL to a deployed Inference Endpoint. Defaults to `None`, in which
         #       case a recommended model is
         #     automatically selected for the task.
 

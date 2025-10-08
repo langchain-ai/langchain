@@ -569,7 +569,7 @@ class ChatAnthropic(BaseChatModel):
     list of the latest models.
 
     Setup:
-        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+        Install `langchain-anthropic` and set environment variable ``ANTHROPIC_API_KEY``.
 
         .. code-block:: bash
 
@@ -1153,7 +1153,7 @@ class ChatAnthropic(BaseChatModel):
                 response = llm.invoke(messages)
 
             Details of cached token counts will be included on the ``InputTokenDetails``
-            of response's ``usage_metadata``:
+            of response's `usage_metadata`:
 
             .. code-block:: python
 
@@ -1486,7 +1486,7 @@ class ChatAnthropic(BaseChatModel):
     """Whether to use streaming or not."""
 
     stream_usage: bool = True
-    """Whether to include usage metadata in streaming output. If ``True``, additional
+    """Whether to include usage metadata in streaming output. If `True`, additional
     message chunks will be generated during the stream including usage metadata.
     """
 
@@ -1911,10 +1911,10 @@ class ChatAnthropic(BaseChatModel):
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
-            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
-                Defaults to ``None`` (no specification, which allows parallel tool use).
+                - ``'auto'``, ``{"type: "auto"}``, or `None`: automatically selects a tool (including no tool);
+                - `'any'` or ``{"type: "any"}``: force at least one tool to be called;
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel tool use).
 
                 !!! version-added "Added in version 0.3.2"
             kwargs: Any additional parameters are passed directly to
@@ -1954,7 +1954,7 @@ class ChatAnthropic(BaseChatModel):
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
-        Example — force tool call with tool_choice ``'any'``:
+        Example — force tool call with tool_choice `'any'`:
 
             .. code-block:: python
 
@@ -2183,7 +2183,7 @@ class ChatAnthropic(BaseChatModel):
                 - an Anthropic tool schema,
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -2191,10 +2191,10 @@ class ChatAnthropic(BaseChatModel):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
             include_raw:
-                If ``False`` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If ``True``
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -2204,10 +2204,10 @@ class ChatAnthropic(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
+            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
+            Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 

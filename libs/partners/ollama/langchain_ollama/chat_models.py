@@ -273,16 +273,16 @@ class ChatOllama(BaseChatModel):
             Controls the reasoning/thinking mode for
             `supported models <https://ollama.com/search?c=thinking>`__.
 
-            - ``True``: Enables reasoning mode. The model's reasoning process will be
+            - `True`: Enables reasoning mode. The model's reasoning process will be
               captured and returned separately in the ``additional_kwargs`` of the
               response message, under ``reasoning_content``. The main response
               content will not include the reasoning tags.
-            - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+            - `False`: Disables reasoning mode. The model will not perform any reasoning,
               and the response will not include any reasoning content.
-            - ``None`` (Default): The model will use its default reasoning behavior. Note
+            - `None` (Default): The model will use its default reasoning behavior. Note
               however, if the model's default behavior *is* to perform reasoning, think tags
               (``<think>`` and ``</think>``) will be present within the main response content
-              unless you set ``reasoning`` to ``True``.
+              unless you set ``reasoning`` to `True`.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         num_predict: Optional[int]
@@ -481,12 +481,12 @@ class ChatOllama(BaseChatModel):
 
     Thinking / Reasoning:
         You can enable reasoning mode for models that support it by setting
-        the ``reasoning`` parameter to ``True`` in either the constructor or
-        the ``invoke``/``stream`` methods. This will enable the model to think
+        the ``reasoning`` parameter to `True` in either the constructor or
+        the `invoke`/`stream` methods. This will enable the model to think
         through the problem and return the reasoning process separately in the
         ``additional_kwargs`` of the response message, under ``reasoning_content``.
 
-        If ``reasoning`` is set to ``None``, the model will use its default reasoning
+        If ``reasoning`` is set to `None`, the model will use its default reasoning
         behavior, and any reasoning content will *not* be captured under the
         ``reasoning_content`` key, but will be present within the main response content
         as think tags (``<think>`` and ``</think>``).
@@ -526,17 +526,17 @@ class ChatOllama(BaseChatModel):
     reasoning: Optional[Union[bool, str]] = None
     """Controls the reasoning/thinking mode for `supported models <https://ollama.com/search?c=thinking>`__.
 
-    - ``True``: Enables reasoning mode. The model's reasoning process will be
+    - `True`: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
       response message, under ``reasoning_content``. The main response
       content will not include the reasoning tags.
-    - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+    - `False`: Disables reasoning mode. The model will not perform any reasoning,
       and the response will not include any reasoning content.
-    - ``None`` (Default): The model will use its default reasoning behavior. Note
+    - `None` (Default): The model will use its default reasoning behavior. Note
       however, if the model's default behavior *is* to perform reasoning, think tags
       ()``<think>`` and ``</think>``) will be present within the main response content
-      unless you set ``reasoning`` to ``True``.
-    - ``str``: e.g. ``'low'``, ``'medium'``, ``'high'``. Enables reasoning with a custom
+      unless you set ``reasoning`` to `True`.
+    - `str`: e.g. ``'low'``, ``'medium'``, ``'high'``. Enables reasoning with a custom
       intensity level. Currently, this is only supported ``gpt-oss``. See the
       `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
       for more information.
@@ -551,7 +551,7 @@ class ChatOllama(BaseChatModel):
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
 
-    (Default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)
+    (Default: `0`, `0` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)
     """
 
     mirostat_eta: Optional[float] = None
@@ -580,7 +580,7 @@ class ChatOllama(BaseChatModel):
     num_gpu: Optional[int] = None
     """The number of GPUs to use.
 
-    On macOS it defaults to ``1`` to enable metal support, ``0`` to disable.
+    On macOS it defaults to ``1`` to enable metal support, `0` to disable.
     """
 
     num_thread: Optional[int] = None
@@ -600,7 +600,7 @@ class ChatOllama(BaseChatModel):
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent repetition.
 
-    (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)
+    (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)
     """
 
     repeat_penalty: Optional[float] = None
@@ -695,17 +695,17 @@ class ChatOllama(BaseChatModel):
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the async client; for shared args use ``client_kwargs``.
+    These are clients unique to the async client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the sync client; for shared args use ``client_kwargs``.
+    These are clients unique to the sync client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
@@ -1262,7 +1262,7 @@ class ChatOllama(BaseChatModel):
 
                 - a Pydantic class,
                 - a JSON schema
-                - a TypedDict class
+                - a `TypedDict` class
                 - an OpenAI function/tool schema.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -1270,7 +1270,7 @@ class ChatOllama(BaseChatModel):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1284,9 +1284,9 @@ class ChatOllama(BaseChatModel):
                     desired schema into the model call.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a ``BaseMessage``) and the parsed model
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
@@ -1300,7 +1300,7 @@ class ChatOllama(BaseChatModel):
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: ``BaseMessage``
+            - ``'raw'``: `BaseMessage`
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 

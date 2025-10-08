@@ -19,7 +19,7 @@ def is_openai_data_block(
 ) -> bool:
     """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
-    Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``)
+    Supports both data and ID-style blocks (e.g. `'file_data'` and `'file_id'`)
 
     If additional keys are present, they are ignored / will not affect outcome as long
     as the required keys are present and valid.
@@ -30,7 +30,7 @@ def is_openai_data_block(
             - "image": Only match image_url blocks
             - "audio": Only match input_audio blocks
             - "file": Only match file blocks
-            If None, match any valid OpenAI data block type. Note that this means that
+            If `None`, match any valid OpenAI data block type. Note that this means that
             if the block has a valid OpenAI data type but the filter_ is set to a
             different type, this function will return False.
 
@@ -133,8 +133,8 @@ def _normalize_messages(
     - LangChain v1 standard content blocks
 
     This function extends support to:
-    - `Audio <https://platform.openai.com/docs/api-reference/chat/create>`__ and
-        `file <https://platform.openai.com/docs/api-reference/files>`__ data in OpenAI
+    - `[Audio](https://platform.openai.com/docs/api-reference/chat/create) and
+        `[file](https://platform.openai.com/docs/api-reference/files) data in OpenAI
         Chat Completions format
         - Images are technically supported but we expect chat models to handle them
             directly; this may change in the future
@@ -148,7 +148,7 @@ def _normalize_messages(
 
     ??? note "v0 Content Block Schemas"
 
-        ``URLContentBlock``:
+        `URLContentBlock`:
 
         .. codeblock::
 
@@ -159,7 +159,7 @@ def _normalize_messages(
                 url: str,
             }
 
-        ``Base64ContentBlock``:
+        `Base64ContentBlock`:
 
         .. codeblock::
 
@@ -170,7 +170,7 @@ def _normalize_messages(
                 data: str,
             }
 
-        ``IDContentBlock``:
+        `IDContentBlock`:
 
         (In practice, this was never used)
 
@@ -182,7 +182,7 @@ def _normalize_messages(
                 id: str,
             }
 
-        ``PlainTextContentBlock``:
+        `PlainTextContentBlock`:
 
         .. codeblock::
 

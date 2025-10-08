@@ -65,7 +65,7 @@ def create_openai_fn_chain(
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
         enforce_single_function_usage: only used if a single function is passed in. If
-            True, then the model will be forced to use the given function. If False,
+            True, then the model will be forced to use the given function. If `False`,
             then the model will be given the option to use the given function or not.
         output_key: The key to use when returning the output in LLMChain.__call__.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default

@@ -385,10 +385,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
-          do not contain the ``tool_call_id`` field.
+          ``FunctionMessage`` are an older version of the `ToolMessage` schema, and
+          do not contain the `tool_call_id` field.
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
+          The `tool_call_id` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -520,7 +520,7 @@
         'description': '''
           Message from a human.
           
-          ``HumanMessage``s are messages that are passed in from a human to the model.
+          `HumanMessage`s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -714,7 +714,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an ``error`` key to surface errors made during generation
+          Here we add an `error` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -1113,10 +1113,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the ``content`` field.
           
-          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+          Example: A `ToolMessage` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -1125,7 +1125,7 @@
                   ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
-          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
+          Example: A `ToolMessage` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               !!! version-added "Added in version 0.2.17"
@@ -1147,7 +1147,7 @@
                       tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
+          The `tool_call_id` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -1337,7 +1337,7 @@
                   }
           
           !!! warning "Behavior changed in 0.3.9"
-              Added ``input_token_details`` and ``output_token_details``.
+              Added `input_token_details` and `output_token_details`.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -1811,10 +1811,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
-          do not contain the ``tool_call_id`` field.
+          ``FunctionMessage`` are an older version of the `ToolMessage` schema, and
+          do not contain the `tool_call_id` field.
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
+          The `tool_call_id` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -1946,7 +1946,7 @@
         'description': '''
           Message from a human.
           
-          ``HumanMessage``s are messages that are passed in from a human to the model.
+          `HumanMessage`s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -2140,7 +2140,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an ``error`` key to surface errors made during generation
+          Here we add an `error` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2539,10 +2539,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          `ToolMessage` objects contain the result of a tool invocation. Typically, the result
           is encoded inside the ``content`` field.
           
-          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+          Example: A `ToolMessage` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -2551,7 +2551,7 @@
                   ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
-          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
+          Example: A `ToolMessage` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               !!! version-added "Added in version 0.2.17"
@@ -2573,7 +2573,7 @@
                       tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
-          The ``tool_call_id`` field is used to associate the tool call request with the
+          The `tool_call_id` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -2763,7 +2763,7 @@
                   }
           
           !!! warning "Behavior changed in 0.3.9"
-              Added ``input_token_details`` and ``output_token_details``.
+              Added `input_token_details` and `output_token_details`.
         ''',
         'properties': dict({
           'input_token_details': dict({

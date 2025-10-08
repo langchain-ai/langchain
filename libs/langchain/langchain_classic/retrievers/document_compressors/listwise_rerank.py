@@ -45,7 +45,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     ``LLMListwiseRerank`` uses a language model to rerank a list of documents based on
     their relevance to a query.
 
-    **NOTE**: requires that underlying model implement ``with_structured_output``.
+    **NOTE**: requires that underlying model implement `with_structured_output`.
 
     Example usage:
         .. code-block:: python

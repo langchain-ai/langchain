@@ -1,13 +1,13 @@
 """Derivations of standard content blocks from provider content.
 
-``AIMessage`` will first attempt to use a provider-specific translator if
-``model_provider`` is set in ``response_metadata`` on the message. Consequently, each
+`AIMessage` will first attempt to use a provider-specific translator if
+``model_provider`` is set in `response_metadata` on the message. Consequently, each
 provider translator must handle all possible content response types from the provider,
 including text.
 
 If no provider is set, or if the provider does not have a registered translator,
-``AIMessage`` will fall back to best-effort parsing of the content into blocks using
-the implementation in ``BaseMessage``.
+`AIMessage` will fall back to best-effort parsing of the content into blocks using
+the implementation in `BaseMessage`.
 """
 
 from __future__ import annotations
@@ -25,13 +25,13 @@ PROVIDER_TRANSLATORS: dict[str, dict[str, Callable[..., list[types.ContentBlock]
 
 The dictionary maps provider names (e.g. ``'openai'``, ``'anthropic'``) to another
 dictionary with two keys:
-- ``'translate_content'``: Function to translate ``AIMessage`` content.
+- ``'translate_content'``: Function to translate `AIMessage` content.
 - ``'translate_content_chunk'``: Function to translate ``AIMessageChunk`` content.
 
-When calling `.content_blocks` on an ``AIMessage`` or ``AIMessageChunk``, if
-``model_provider`` is set in ``response_metadata``, the corresponding translator
+When calling `.content_blocks` on an `AIMessage` or ``AIMessageChunk``, if
+``model_provider`` is set in `response_metadata`, the corresponding translator
 functions will be used to parse the content into blocks. Otherwise, best-effort parsing
-in ``BaseMessage`` will be used.
+in `BaseMessage` will be used.
 """
 
 
@@ -44,7 +44,7 @@ def register_translator(
 
     Args:
         provider: The model provider name (e.g. ``'openai'``, ``'anthropic'``).
-        translate_content: Function to translate ``AIMessage`` content.
+        translate_content: Function to translate `AIMessage` content.
         translate_content_chunk: Function to translate ``AIMessageChunk`` content.
     """
     PROVIDER_TRANSLATORS[provider] = {
@@ -64,7 +64,7 @@ def get_translator(
     Returns:
         Dictionary with ``'translate_content'`` and ``'translate_content_chunk'``
         functions, or None if no translator is registered for the provider. In such
-        case, best-effort parsing in ``BaseMessage`` will be used.
+        case, best-effort parsing in `BaseMessage` will be used.
     """
     return PROVIDER_TRANSLATORS.get(provider)
 

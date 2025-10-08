@@ -43,7 +43,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         model: str
             Name of model to use.
         temperature: float
-            Sampling temperature between ``0`` and ``2``. Higher values mean more random completions,
+            Sampling temperature between `0` and ``2``. Higher values mean more random completions,
             while lower values (like ``0.2``) mean more focused and deterministic completions.
             (Default: ``1``.)
         max_tokens: Optional[int]
@@ -235,19 +235,19 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             With stream response, the tool / function call will be returned in whole in a
             single chunk, instead of being streamed across chunks.
 
-        Tool choice can be controlled by setting the ``tool_choice`` parameter in the model
+        Tool choice can be controlled by setting the `tool_choice` parameter in the model
         constructor's ``extra_body`` argument. For example, to disable tool / function calling:
         .. code-block:: python
 
             llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
 
-        To require that the model always calls a tool / function, set ``tool_choice`` to ``'required'``:
+        To require that the model always calls a tool / function, set `tool_choice` to ``'required'``:
 
         .. code-block:: python
 
             llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
 
-        To specify a tool / function to call, set ``tool_choice`` to the name of the tool / function:
+        To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
 
         .. code-block:: python
 
@@ -592,7 +592,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class (support added in 0.1.20),
+                - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -600,7 +600,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -612,21 +612,21 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     Uses xAI's JSON mode feature.
 
             include_raw:
-                If ``False`` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If ``True``
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             strict:
-                - ``True``:
+                - `True`:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
-                - ``False``:
+                - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
-                - ``None``:
+                - `None`:
                     ``strict`` argument will not be passed to the model.
 
             kwargs: Additional keyword args aren't supported.
@@ -634,9 +634,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
+            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
 
-            If ``include_raw`` is ``True``, then Runnable outputs a dict with keys:
+            If ``include_raw`` is `True`, then Runnable outputs a dict with keys:
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.

@@ -405,9 +405,9 @@ class RunnableAgent(BaseSingleActionAgent):
     stream_runnable: bool = True
     """Whether to stream from the runnable or not.
 
-    If True then underlying LLM is invoked in a streaming fashion to make it possible
+    If `True` then underlying LLM is invoked in a streaming fashion to make it possible
         to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If False then LLM is invoked in a non-streaming fashion and
+        Executor. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -513,9 +513,9 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     stream_runnable: bool = True
     """Whether to stream from the runnable or not.
 
-    If True then underlying LLM is invoked in a streaming fashion to make it possible
+    If `True` then underlying LLM is invoked in a streaming fashion to make it possible
         to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If False then LLM is invoked in a non-streaming fashion and
+        Executor. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -723,7 +723,7 @@ class Agent(BaseSingleActionAgent):
     output_parser: AgentOutputParser
     """Output parser to use for agent."""
     allowed_tools: list[str] | None = None
-    """Allowed tools for the agent. If None, all tools are allowed."""
+    """Allowed tools for the agent. If `None`, all tools are allowed."""
 
     @override
     def dict(self, **kwargs: Any) -> builtins.dict:

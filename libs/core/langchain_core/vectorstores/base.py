@@ -123,7 +123,7 @@ class VectorStore(ABC):
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
@@ -191,7 +191,7 @@ class VectorStore(ABC):
         """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
