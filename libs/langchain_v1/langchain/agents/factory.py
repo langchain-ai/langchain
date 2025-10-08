@@ -970,8 +970,10 @@ def create_agent(  # noqa: PLR0915
             internal_response = _execute_model_sync(req)
             if internal_response.exception is not None:
                 raise internal_response.exception
+            if internal_response.result is None:
+                msg = "Model execution succeeded but returned no result"
+                raise RuntimeError(msg)
             effective_response_format = internal_response.effective_response_format
-            assert internal_response.result is not None  # noqa: S101
             return internal_response.result
 
         if on_model_call_handler is None:
@@ -1036,8 +1038,10 @@ def create_agent(  # noqa: PLR0915
             internal_response = await _execute_model_async(req)
             if internal_response.exception is not None:
                 raise internal_response.exception
+            if internal_response.result is None:
+                msg = "Model execution succeeded but returned no result"
+                raise RuntimeError(msg)
             effective_response_format = internal_response.effective_response_format
-            assert internal_response.result is not None  # noqa: S101
             return internal_response.result
 
         if aon_model_call_handler is None:
