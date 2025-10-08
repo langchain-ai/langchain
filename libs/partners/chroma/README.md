@@ -2,20 +2,4 @@
 
 This package contains the LangChain integration with Chroma.
 
-## Installation
-
-```bash
-pip install -U langchain-chroma
-```
-
-## Usage
-
-The `Chroma` class exposes the connection to the Chroma vector store.
-
-```python
-from langchain_chroma import Chroma
-
-embeddings = ... # use a LangChain Embeddings class
-
-vectorstore = Chroma(embeddings=embeddings)
-```
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/chroma) for more details.
