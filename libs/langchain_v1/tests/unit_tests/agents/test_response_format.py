@@ -726,7 +726,7 @@ class TestDynamicModelWithResponseFormat:
 
         # Create middleware that swaps the model in the request
         class ModelSwappingMiddleware(AgentMiddleware):
-            def modify_model_request(self, request: ModelRequest, state, runtime) -> ModelRequest:
+            def modify_model_request(self, request: ModelRequest) -> ModelRequest:
                 # Replace the model with our custom test model
                 request.model = model
                 return request

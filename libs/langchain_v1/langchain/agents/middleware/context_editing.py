@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -22,10 +22,7 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
-
-if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -212,8 +209,6 @@ class ContextEditingMiddleware(AgentMiddleware):
     def modify_model_request(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request by applying context edits before invocation."""
         if not request.messages:

@@ -80,7 +80,7 @@ def test_no_edit_when_below_trigger() -> None:
         edits=[ClearToolUsesEdit(trigger=50)],
     )
 
-    result = middleware.modify_model_request(request, state, _fake_runtime())
+    result = middleware.modify_model_request(request)
 
     assert result.messages[0].content == ""
     assert result.messages[1].content == "12345"
@@ -108,7 +108,7 @@ def test_clear_tool_outputs_and_inputs() -> None:
     )
     middleware = ContextEditingMiddleware(edits=[edit])
 
-    result = middleware.modify_model_request(request, state, _fake_runtime())
+    result = middleware.modify_model_request(request)
 
     cleared_ai = result.messages[0]
     cleared_tool = result.messages[1]
@@ -156,7 +156,7 @@ def test_respects_keep_last_tool_results() -> None:
         token_count_method="model",
     )
 
-    result = middleware.modify_model_request(request, state, _fake_runtime())
+    result = middleware.modify_model_request(request)
 
     cleared_messages = [
         msg
@@ -200,7 +200,7 @@ def test_exclude_tools_prevents_clearing() -> None:
         ],
     )
 
-    result = middleware.modify_model_request(request, state, _fake_runtime())
+    result = middleware.modify_model_request(request)
 
     search_tool = result.messages[1]
     calc_tool = result.messages[3]

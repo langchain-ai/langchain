@@ -87,13 +87,13 @@ class _InternalModelResponse:
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+        [ModelRequest, Callable[[ModelRequest], AIMessage]],
         AIMessage,
     ]
     | None
@@ -141,31 +141,29 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ],
         inner: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ],
     ) -> Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+        [ModelRequest, Callable[[ModelRequest], AIMessage]],
         AIMessage,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            state: Any,
-            runtime: Any,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Create a wrapper that calls inner with the base handler
             def inner_handler(req: ModelRequest) -> AIMessage:
-                return inner(req, state, runtime, handler)
+                return inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
-            return outer(request, state, runtime, inner_handler)
+            return outer(request, inner_handler)
 
         return composed
 
@@ -180,13 +178,13 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
         Awaitable[AIMessage],
     ]
     | None
@@ -207,31 +205,29 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ],
         inner: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ],
     ) -> Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
         Awaitable[AIMessage],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest,
-            state: Any,
-            runtime: Any,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
             # Create a wrapper that calls inner with the base handler
             async def inner_handler(req: ModelRequest) -> AIMessage:
-                return await inner(req, state, runtime, handler)
+                return await inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
-            return await outer(request, state, runtime, inner_handler)
+            return await outer(request, inner_handler)
 
         return composed
 
@@ -946,12 +942,14 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            state=state,
+            runtime=runtime,
         )
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
             if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
-                request = m.modify_model_request(request, state, runtime)
+                request = m.modify_model_request(request)
             else:
                 msg = (
                     f"No synchronous function provided for "
@@ -981,7 +979,7 @@ def create_agent(  # noqa: PLR0915
             output = base_handler(request)
         else:
             # Call composed handler with base handler
-            output = on_model_call_handler(request, state, runtime, base_handler)
+            output = on_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
@@ -1023,11 +1021,13 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            state=state,
+            runtime=runtime,
         )
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            request = await m.amodify_model_request(request, state, runtime)
+            request = await m.amodify_model_request(request)
 
         # Execute with or without handler
         effective_response_format: Any = None
@@ -1049,7 +1049,7 @@ def create_agent(  # noqa: PLR0915
             output = await base_handler(request)
         else:
             # Call composed async handler with base handler
-            output = await aon_model_call_handler(request, state, runtime, base_handler)
+            output = await aon_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,

@@ -88,9 +88,7 @@ def test_modify_model_request_decorator() -> None:
     """Test modify_model_request decorator with all configuration options."""
 
     @modify_model_request(state_schema=CustomState, tools=[test_tool], name="CustomModifyRequest")
-    def custom_modify_request(
-        request: ModelRequest, state: CustomState, runtime: Runtime
-    ) -> ModelRequest:
+    def custom_modify_request(request: ModelRequest) -> ModelRequest:
         request.system_prompt = "Modified"
         return request
 
@@ -108,10 +106,10 @@ def test_modify_model_request_decorator() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=None,
     )
-    result = custom_modify_request.modify_model_request(
-        original_request, {"messages": [HumanMessage("Hello")]}, None
-    )
+    result = custom_modify_request.modify_model_request(original_request)
     assert result.system_prompt == "Modified"
 
 
@@ -125,7 +123,7 @@ def test_all_decorators_integration() -> None:
         return None
 
     @modify_model_request
-    def track_modify(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
+    def track_modify(request: ModelRequest) -> ModelRequest:
         call_order.append("modify")
         return request
 
@@ -151,7 +149,7 @@ def test_decorators_use_function_names_as_default() -> None:
         return None
 
     @modify_model_request
-    def my_modify_hook(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
+    def my_modify_hook(request: ModelRequest) -> ModelRequest:
         return request
 
     @after_model
@@ -273,9 +271,7 @@ def test_async_modify_model_request_decorator() -> None:
     """Test modify_model_request decorator with async function."""
 
     @modify_model_request(state_schema=CustomState, tools=[test_tool], name="AsyncModifyRequest")
-    async def async_modify_request(
-        request: ModelRequest, state: CustomState, runtime: Runtime
-    ) -> ModelRequest:
+    async def async_modify_request(request: ModelRequest) -> ModelRequest:
         request.system_prompt = "Modified async"
         return request
 
@@ -297,13 +293,11 @@ def test_mixed_sync_async_decorators() -> None:
         return None
 
     @modify_model_request(name="MixedModifyRequest")
-    def sync_modify(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
+    def sync_modify(request: ModelRequest) -> ModelRequest:
         return request
 
     @modify_model_request(name="MixedModifyRequest")
-    async def async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
+    async def async_modify(request: ModelRequest) -> ModelRequest:
         return request
 
     # Both should create valid middleware instances
@@ -324,9 +318,7 @@ async def test_async_decorators_integration() -> None:
         return None
 
     @modify_model_request
-    async def track_async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
+    async def track_async_modify(request: ModelRequest) -> ModelRequest:
         call_order.append("async_modify")
         return request
 
@@ -361,16 +353,12 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         return None
 
     @modify_model_request
-    def track_sync_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
+    def track_sync_modify(request: ModelRequest) -> ModelRequest:
         call_order.append("sync_modify")
         return request
 
     @modify_model_request
-    async def track_async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
+    async def track_async_modify(request: ModelRequest) -> ModelRequest:
         call_order.append("async_modify")
         return request
 
@@ -579,7 +567,7 @@ def test_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with basic usage."""
 
     @dynamic_prompt
-    def my_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    def my_prompt(request: ModelRequest) -> str:
         return "Dynamic test prompt"
 
     assert isinstance(my_prompt, AgentMiddleware)
@@ -595,10 +583,10 @@ def test_dynamic_prompt_decorator() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=None,
     )
-    result = my_prompt.modify_model_request(
-        original_request, {"messages": [HumanMessage("Hello")]}, None
-    )
+    result = my_prompt.modify_model_request(original_request)
     assert result.system_prompt == "Dynamic test prompt"
 
 
@@ -606,8 +594,8 @@ def test_dynamic_prompt_uses_state() -> None:
     """Test that dynamic_prompt can use state information."""
 
     @dynamic_prompt
-    def custom_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
-        msg_count = len(state["messages"])
+    def custom_prompt(request: ModelRequest) -> str:
+        msg_count = len(request.state["messages"])
         return f"Prompt with {msg_count} messages"
 
     # Verify it uses state correctly
@@ -618,10 +606,10 @@ def test_dynamic_prompt_uses_state() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello"), HumanMessage("World")]},
+        runtime=None,
     )
-    result = custom_prompt.modify_model_request(
-        original_request, {"messages": [HumanMessage("Hello"), HumanMessage("World")]}, None
-    )
+    result = custom_prompt.modify_model_request(original_request)
     assert result.system_prompt == "Prompt with 2 messages"
 
 
@@ -631,7 +619,7 @@ def test_dynamic_prompt_integration() -> None:
     prompt_calls = 0
 
     @dynamic_prompt
-    def context_aware_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    def context_aware_prompt(request: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
         return f"you are a helpful assistant."
@@ -649,7 +637,7 @@ async def test_async_dynamic_prompt_decorator() -> None:
     """Test dynamic_prompt decorator with async function."""
 
     @dynamic_prompt
-    async def async_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    async def async_prompt(request: ModelRequest) -> str:
         return "Async dynamic prompt"
 
     assert isinstance(async_prompt, AgentMiddleware)
@@ -664,9 +652,7 @@ async def test_async_dynamic_prompt_integration() -> None:
     prompt_calls = 0
 
     @dynamic_prompt
-    async def async_context_prompt(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> str:
+    async def async_context_prompt(request: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
         return f"Async assistant."
@@ -683,7 +669,7 @@ def test_dynamic_prompt_overwrites_system_prompt() -> None:
     """Test that dynamic_prompt overwrites the original system_prompt."""
 
     @dynamic_prompt
-    def override_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    def override_prompt(request: ModelRequest) -> str:
         return "Overridden prompt."
 
     agent = create_agent(
@@ -701,11 +687,11 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
     """Test multiple dynamic_prompt decorators in sequence (last wins)."""
 
     @dynamic_prompt
-    def first_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    def first_prompt(request: ModelRequest) -> str:
         return "First prompt."
 
     @dynamic_prompt
-    def second_prompt(request: ModelRequest, state: AgentState, runtime: Runtime) -> str:
+    def second_prompt(request: ModelRequest) -> str:
         return "Second prompt."
 
     # When used together, the last middleware in the list should win
