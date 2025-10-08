@@ -107,8 +107,6 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         # Print package with version
         if package_version is not None:
             print(f"> {pkg}: {package_version}")  # noqa: T201
-        else:
-            print(f"> {pkg}: Installed. No version info available.")  # noqa: T201
 
     if not_installed:
         print()  # noqa: T201
@@ -125,11 +123,8 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         print("------------------")  # noqa: T201
 
         for dep in sub_dependencies:
-            try:
-                dep_version = metadata.version(dep)
-                print(f"> {dep}: {dep_version}")  # noqa: T201
-            except Exception:
-                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
+            dep_version = metadata.version(dep)
+            print(f"> {dep}: {dep_version}")  # noqa: T201
 
 
 if __name__ == "__main__":
