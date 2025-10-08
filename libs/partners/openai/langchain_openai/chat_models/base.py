@@ -2217,7 +2217,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-        For batched calls, results in a list of `AIMessage` responses.
+        For batched calls, results in a `list[AIMessage]`.
 
     ??? note "Tool calling"
 
@@ -2306,16 +2306,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "Built-in (server-side) tools"
 
-        !!! version-added "Added in version 0.3.9"
-
-        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
-            `langchain-openai >= 0.3.26` allows users to opt-in to an updated
-            `AIMessage` format when using the Responses API. Setting
-            `ChatOpenAI(..., output_version="responses/v1")` will format output from
-            reasoning summaries, built-in tool invocations, and other response items
-            into the message's `content` field, rather than `additional_kwargs`. We
-            recommend this format for new applications.
-
         You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)
         supported by the OpenAI Responses API. See [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/openai#responses-api)
         for more detail.
@@ -2350,9 +2340,17 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ]
         ```
 
-    ??? note "Managing conversation state"
-
         !!! version-added "Added in version 0.3.9"
+
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+            [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
+            allows users to opt-in to an updated `AIMessage` format when using the
+            Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will
+            format output from reasoning summaries, built-in tool invocations, and other
+            response items into the message's `content` field, rather than
+            `additional_kwargs`. We recommend this format for new applications.
+
+    ??? note "Managing conversation state"
 
         OpenAI's Responses API supports management of [conversation state](https://platform.openai.com/docs/guides/conversation-state?api-mode=responses).
         Passing in response IDs from previous messages will continue a conversational
@@ -2370,7 +2368,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         response.text
         ```
 
-        ```python
+        ```txt
         "Hi Bob! How can I assist you today?"
         ```
 
@@ -2382,12 +2380,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         second_response.text
         ```
 
-        ```python
+        ```txt
         "Your name is Bob. How can I help you today, Bob?"
         ```
 
-        !!! version-added "Added in version 0.3.26"
+        !!! version-added "Added in version 0.3.9"
 
+        !!! version-added "Added in version 0.3.26"
             You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
@@ -2398,14 +2397,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ```
 
     ??? note "Reasoning output"
-
-        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
-            `langchain-openai >= 0.3.26` allows users to opt-in to an updated
-            `AIMessage` format when using the Responses API. Setting
-            `ChatOpenAI(..., output_version="responses/v1")` will format output from
-            reasoning summaries, built-in tool invocations, and other response items
-            into the message's `content` field, rather than `additional_kwargs`. We
-            recommend this format for new applications.
 
         OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
         that expose a summary of internal reasoning processes.
@@ -2437,6 +2428,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Output: 3³ = 27
         Reasoning: The user wants to know...
         ```
+
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+            [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
+            allows users to opt-in to an updated `AIMessage` format when using the
+            Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will
+            format output from reasoning summaries, built-in tool invocations, and other
+            response items into the message's `content` field, rather than
+            `additional_kwargs`. We recommend this format for new applications.
 
     ??? note "Structured output"
 
