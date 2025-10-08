@@ -2,32 +2,37 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelRequest,
+)
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.messages import AIMessage
     from langgraph.runtime import Runtime
+    from langgraph.typing import ContextT
 
 
 class ModelFallbackMiddleware(AgentMiddleware):
-    """Middleware that provides automatic model fallback on errors.
+    """Automatic fallback to alternative models on errors.
 
-    This middleware attempts to retry failed model calls with alternative models
-    in sequence. When a model call fails, it tries the next model in the fallback
-    list until either a call succeeds or all models have been exhausted.
+    Retries failed model calls with alternative models in sequence until
+    success or all models exhausted. Primary model specified in create_agent().
 
     Example:
         ```python
         from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
         from langchain.agents import create_agent
 
-        # Create middleware with fallback models (not including primary)
         fallback = ModelFallbackMiddleware(
-            "openai:gpt-4o-mini",  # First fallback
-            "anthropic:claude-3-5-sonnet-20241022",  # Second fallback
+            "openai:gpt-4o-mini",  # Try first on error
+            "anthropic:claude-3-5-sonnet-20241022",  # Then this
         )
 
         agent = create_agent(
@@ -35,7 +40,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
             middleware=[fallback],
         )
 
-        # If gpt-4o fails, automatically tries gpt-4o-mini, then claude
+        # If primary fails: tries gpt-4o-mini, then claude-3-5-sonnet
         result = await agent.invoke({"messages": [HumanMessage("Hello")]})
         ```
     """
@@ -45,13 +50,11 @@ class ModelFallbackMiddleware(AgentMiddleware):
         first_model: str | BaseChatModel,
         *additional_models: str | BaseChatModel,
     ) -> None:
-        """Initialize the model fallback middleware.
+        """Initialize model fallback middleware.
 
         Args:
-            first_model: The first fallback model to try when the primary model fails.
-                Can be a model name string or BaseChatModel instance.
-            *additional_models: Additional fallback models to try, in order.
-                Can be model name strings or BaseChatModel instances.
+            first_model: First fallback model (string name or instance).
+            *additional_models: Additional fallbacks in order.
         """
         super().__init__()
 
@@ -64,31 +67,41 @@ class ModelFallbackMiddleware(AgentMiddleware):
             else:
                 self.models.append(model)
 
-    def retry_model_request(
+    def on_model_call(
         self,
-        error: Exception,  # noqa: ARG002
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-        attempt: int,
-    ) -> ModelRequest | None:
-        """Retry with the next fallback model.
+        state: Any,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+    ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
+        """Try fallback models in sequence on errors.
 
         Args:
-            error: The exception that occurred during model invocation.
-            request: The original model request that failed.
-            state: The current agent state.
-            runtime: The langgraph runtime.
-            attempt: The current attempt number (1-indexed).
+            request: Initial model request.
+            state: Current agent state.
+            runtime: LangGraph runtime.
 
-        Returns:
-            ModelRequest with the next fallback model, or None if all models exhausted.
+        Yields:
+            ModelRequest to execute.
+
+        Raises:
+            Exception: If all models fail, re-raises last exception.
         """
-        # attempt 1 = primary model failed, try models[0] (first fallback)
-        fallback_index = attempt - 1
-        # All fallback models exhausted
-        if fallback_index >= len(self.models):
-            return None
-        # Try next fallback model
-        request.model = self.models[fallback_index]
-        return request
+        last_exception = None
+        try:
+            yield request
+        except Exception as e:  # noqa: BLE001
+            last_exception = e
+        else:
+            return
+
+        for fallback_model in self.models:
+            request.model = fallback_model
+            try:
+                yield request
+            except Exception as e:  # noqa: BLE001
+                last_exception = e
+                continue
+            else:
+                return
+
+        raise last_exception
