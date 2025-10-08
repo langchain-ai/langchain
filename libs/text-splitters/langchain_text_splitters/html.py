@@ -158,9 +158,9 @@ class HTMLHeaderTextSplitter:
                 boundaries. For example, [("h1", "Header 1"), ("h2", "Header 2")]
                 will split content by <h1> and <h2> tags, assigning their textual
                 content to the Document metadata.
-            return_each_element: If True, every HTML element encountered
+            return_each_element: If `True`, every HTML element encountered
                 (including headers, paragraphs, etc.) is returned as a separate
-                Document. If False, content under the same header hierarchy is
+                Document. If `False`, content under the same header hierarchy is
                 aggregated into fewer Documents.
         """
         # Sort headers by their numeric level so that h1 < h2 < h3...
