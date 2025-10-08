@@ -11,7 +11,7 @@ from langchain.agents.middleware.types import (
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable
 
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.messages import AIMessage
@@ -72,36 +72,36 @@ class ModelFallbackMiddleware(AgentMiddleware):
         request: ModelRequest,
         state: Any,  # noqa: ARG002
         runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ModelRequest | AIMessage, AIMessage, None]:
+        handler: Callable[[ModelRequest], AIMessage],
+    ) -> AIMessage:
         """Try fallback models in sequence on errors.
 
         Args:
             request: Initial model request.
             state: Current agent state.
             runtime: LangGraph runtime.
+            handler: Callback to execute the model.
 
-        Yields:
-            ModelRequest to execute.
+        Returns:
+            AIMessage from successful model call.
 
         Raises:
             Exception: If all models fail, re-raises last exception.
         """
-        last_exception = None
+        # Try primary model first
+        last_exception: Exception
         try:
-            yield request
+            return handler(request)
         except Exception as e:  # noqa: BLE001
             last_exception = e
-        else:
-            return
 
+        # Try fallback models
         for fallback_model in self.models:
             request.model = fallback_model
             try:
-                yield request
+                return handler(request)
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue
-            else:
-                return
 
         raise last_exception

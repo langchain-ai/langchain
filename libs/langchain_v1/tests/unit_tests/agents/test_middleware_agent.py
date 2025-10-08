@@ -2179,15 +2179,13 @@ def test_on_model_call_hook() -> None:
             super().__init__()
             self.retry_count = 0
 
-        def on_model_call(self, request, state, runtime):
+        def on_model_call(self, request, state, runtime, handler):
             try:
-                result = yield request
-                # Generator ends
+                return handler(request)
             except Exception:
                 # Retry on error
                 self.retry_count += 1
-                result = yield request
-                # Generator ends
+                return handler(request)
 
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
@@ -2221,14 +2219,13 @@ def test_on_model_call_retry_count() -> None:
             super().__init__()
             self.attempts = []
 
-        def on_model_call(self, request, state, runtime):
+        def on_model_call(self, request, state, runtime, handler):
             max_retries = 3
             last_exception = None
             for attempt in range(max_retries):
                 self.attempts.append(attempt + 1)
                 try:
-                    result = yield request
-                    # Generator ends
+                    return handler(request)
                 except Exception as e:
                     last_exception = e
                     if attempt < max_retries - 1:
@@ -2264,10 +2261,8 @@ def test_on_model_call_no_retry() -> None:
             return "failing"
 
     class NoRetryMiddleware(AgentMiddleware):
-        def on_model_call(self, request, state, runtime):
-            response = yield request
-            # Don't retry, just return the error response
-            # Generator ends
+        def on_model_call(self, request, state, runtime, handler):
+            return handler(request)
 
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
 
@@ -2383,13 +2378,12 @@ def test_on_model_call_max_attempts() -> None:
             self.max_retries = max_retries
             self.attempt_count = 0
 
-        def on_model_call(self, request, state, runtime):
+        def on_model_call(self, request, state, runtime, handler):
             last_exception = None
             for attempt in range(self.max_retries):
                 self.attempt_count += 1
                 try:
-                    result = yield request
-                    # Generator ends
+                    return handler(request)
                 except Exception as e:
                     last_exception = e
                     # Continue to retry
@@ -2438,15 +2432,13 @@ async def test_on_model_call_async() -> None:
             super().__init__()
             self.retry_count = 0
 
-        def on_model_call(self, request, state, runtime):
+        async def aon_model_call(self, request, state, runtime, handler):
             try:
-                result = yield request
-                # Generator ends
+                return await handler(request)
             except Exception:
                 # Retry on error
                 self.retry_count += 1
-                result = yield request
-                # Generator ends
+                return await handler(request)
 
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
@@ -2480,12 +2472,11 @@ def test_on_model_call_rewrite_response() -> None:
     class ResponseRewriteMiddleware(AgentMiddleware):
         """Middleware that rewrites the response."""
 
-        def on_model_call(self, request, state, runtime):
-            result = yield request
+        def on_model_call(self, request, state, runtime, handler):
+            result = handler(request)
 
             # Rewrite the response
-            rewritten_message = AIMessage(content=f"REWRITTEN: {result.content}")
-            yield rewritten_message
+            return AIMessage(content=f"REWRITTEN: {result.content}")
 
     model = SimpleModel()
     middleware = ResponseRewriteMiddleware()
@@ -2514,16 +2505,12 @@ def test_on_model_call_convert_error_to_response() -> None:
     class ErrorToResponseMiddleware(AgentMiddleware):
         """Middleware that converts errors to success responses."""
 
-        def on_model_call(self, request, state, runtime):
+        def on_model_call(self, request, state, runtime, handler):
             try:
-                result = yield request
-                # Generator ends
+                return handler(request)
             except Exception as e:
                 # Convert error to success response
-                fallback_message = AIMessage(
-                    content=f"Error occurred: {e}. Using fallback response."
-                )
-                yield fallback_message
+                return AIMessage(content=f"Error occurred: {e}. Using fallback response.")
 
     model = AlwaysFailingModel()
     middleware = ErrorToResponseMiddleware()
