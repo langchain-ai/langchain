@@ -6,6 +6,7 @@ debugging purposes.
 
 import pkgutil
 import platform
+import re
 import sys
 from collections.abc import Sequence
 from importlib import metadata, util
@@ -26,9 +27,12 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
             continue
 
         for req in required:
-            cleaned_req = req.split(" ")[0]
-            if cleaned_req.replace("-", "_") not in underscored_packages:
-                sub_deps.add(cleaned_req)
+            # Extract package name (e.g., "httpx<1,>=0.23.0" -> "httpx")
+            match = re.match(r"^([a-zA-Z0-9_.-]+)", req)
+            if match:
+                pkg_name = match.group(1)
+                if pkg_name.replace("-", "_") not in underscored_packages:
+                    sub_deps.add(pkg_name)
 
     return sorted(sub_deps, key=lambda x: x.lower())
 
@@ -123,8 +127,11 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         print("------------------")  # noqa: T201
 
         for dep in sub_dependencies:
-            dep_version = metadata.version(dep)
-            print(f"> {dep}: {dep_version}")  # noqa: T201
+            try:
+                dep_version = metadata.version(dep)
+                print(f"> {dep}: {dep_version}")  # noqa: T201
+            except Exception:
+                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
 
 
 if __name__ == "__main__":
