@@ -1024,10 +1024,9 @@ def _make_model_to_tools_edge(
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
-) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(
         state: dict[str, Any],
-        runtime: Runtime[ContextT],  # noqa: ARG001
     ) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
@@ -1080,10 +1079,9 @@ def _make_model_to_model_edge(
     *,
     model_destination: str,
     end_destination: str,
-) -> Callable[[dict[str, Any], Runtime[ContextT]], str | list[Send] | None]:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_model(
         state: dict[str, Any],
-        runtime: Runtime[ContextT],  # noqa: ARG001
     ) -> str | list[Send] | None:
         # 1. Priority: Check for explicit jump_to directive from middleware
         if jump_to := state.get("jump_to"):
@@ -1110,8 +1108,8 @@ def _make_tools_to_model_edge(
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
-) -> Callable[[dict[str, Any], Runtime[ContextT]], str | None]:
-    def tools_to_model(state: dict[str, Any], runtime: Runtime[ContextT]) -> str | None:  # noqa: ARG001
+) -> Callable[[dict[str, Any]], str | None]:
+    def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
