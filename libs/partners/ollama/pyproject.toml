@@ -1,24 +1,28 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "ollama>=0.5.3,<1.0.0",
-    "langchain-core>=0.3.76,<2.0.0",
+    "ollama>=0.6.0,<1.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
 ]
 name = "langchain-ollama"
-version = "0.3.8"
+version = "1.0.0a1"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-ollama%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/ollama"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-ollama%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_ollama/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -33,7 +37,10 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy>=1.17.1,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -41,9 +48,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -60,15 +64,19 @@ ignore = [
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional
-    "PLR0912",
-    "C901",
-    "PLR0915",
+    "FIX002",  # TODOs
+    "TD002",   # TODO authors
+    "TD003",   # TODO missing url
+    "TC002",   # Incorrect type-checking block
+    "TC003",   # Incorrect type-checking block
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "C901",    # Function too complex
+    "FBT001",  # Boolean function param
+    "ERA001",  # Commented-out code
 
-    # TODO:
+    # TODO
     "ANN401",
-    "TC002",
-    "TC003",
-    "TRY301",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -91,16 +99,11 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
-    "S101", # Tests need assertions
-    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "PLR2004",
-
-    # TODO
-    "ANN401",
-    "ARG001",
-    "PT011",
-    "FIX",
-    "TD",
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "ARG001",  # Unused function arguments in tests (e.g. kwargs)
+    "PLR2004", # Magic value in comparisons
+    "PT011",   # `pytest.raises()` is too broad
 ]
 "scripts/*.py" = [
     "INP001",   # Not a package

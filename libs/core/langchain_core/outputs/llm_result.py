@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ class LLMResult(BaseModel):
     """
 
     generations: list[
-        list[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+        list[Generation | ChatGeneration | GenerationChunk | ChatGenerationChunk]
     ]
     """Generated outputs.
 
@@ -36,7 +36,7 @@ class LLMResult(BaseModel):
     ChatGeneration is a subclass of Generation that has a field for a structured chat
     message.
     """
-    llm_output: Optional[dict] = None
+    llm_output: dict | None = None
     """For arbitrary LLM provider specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the
@@ -45,10 +45,10 @@ class LLMResult(BaseModel):
     Users should generally avoid relying on this field and instead rely on accessing
     relevant information from standardized fields present in AIMessage.
     """
-    run: Optional[list[RunInfo]] = None
+    run: list[RunInfo] | None = None
     """List of metadata info for model call for each input.
 
-    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    See `langchain_core.outputs.run_info.RunInfo` for details.
     """
 
     type: Literal["LLMResult"] = "LLMResult"

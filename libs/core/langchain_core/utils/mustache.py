@@ -12,18 +12,16 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
+Scopes: TypeAlias = list[Literal[False, 0] | Mapping[str, Any]]
 
 
 # Globals
@@ -433,13 +431,13 @@ EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, list[tuple[str, str]]] = "",
+    template: str | list[tuple[str, str]] = "",
     data: Mapping[str, Any] = EMPTY_DICT,
     partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
     def_ldel: str = "{{",
     def_rdel: str = "}}",
-    scopes: Optional[Scopes] = None,
+    scopes: Scopes | None = None,
     warn: bool = False,  # noqa: FBT001,FBT002
     keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:

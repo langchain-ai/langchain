@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -815,7 +815,7 @@ class ChatHuggingFace(BaseChatModel):
             Union[dict, str, Literal["auto", "none", "required"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
@@ -823,14 +823,14 @@ class ChatHuggingFace(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 ``'auto'`` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -905,11 +905,11 @@ class ChatHuggingFace(BaseChatModel):
 
             kwargs:
                 Additional parameters to pass to the underlying LLM's
-                :meth:`langchain_core.language_models.chat.BaseChatModel.bind`
+                `langchain_core.language_models.chat.BaseChatModel.bind`
                 method, such as `response_format` or `ls_structured_output_format`.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).

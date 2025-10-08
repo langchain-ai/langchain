@@ -17,7 +17,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -126,10 +126,10 @@ class BaseChatMessageHistory(ABC):
         """
         return await run_in_executor(None, lambda: self.messages)
 
-    def add_user_message(self, message: Union[HumanMessage, str]) -> None:
+    def add_user_message(self, message: HumanMessage | str) -> None:
         """Convenience method for adding a human message string to the store.
 
-        .. note::
+        !!! note
             This is a convenience method. Code should favor the bulk ``add_messages``
             interface instead to save on round-trips to the persistence layer.
 
@@ -143,10 +143,10 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(HumanMessage(content=message))
 
-    def add_ai_message(self, message: Union[AIMessage, str]) -> None:
+    def add_ai_message(self, message: AIMessage | str) -> None:
         """Convenience method for adding an AI message string to the store.
 
-        .. note::
+        !!! note
             This is a convenience method. Code should favor the bulk ``add_messages``
             interface instead to save on round-trips to the persistence layer.
 

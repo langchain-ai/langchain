@@ -413,11 +413,10 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "few_shot_with_templates",
         "FewShotPromptWithTemplates",
     ),
-    ("langchain", "prompts", "pipeline", "PipelinePromptTemplate"): (
+    ("langchain", "prompts", "pipeline"): (
         "langchain_core",
         "prompts",
         "pipeline",
-        "PipelinePromptTemplate",
     ),
     ("langchain", "prompts", "base", "StringPromptTemplate"): (
         "langchain_core",
@@ -846,11 +845,10 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "few_shot_with_templates",
         "FewShotPromptWithTemplates",
     ),
-    ("langchain_core", "prompts", "pipeline", "PipelinePromptTemplate"): (
+    ("langchain_core", "prompts", "pipeline"): (
         "langchain_core",
         "prompts",
         "pipeline",
-        "PipelinePromptTemplate",
     ),
     ("langchain_core", "prompts", "string", "StringPromptTemplate"): (
         "langchain_core",

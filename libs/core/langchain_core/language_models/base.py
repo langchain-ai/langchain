@@ -4,26 +4,24 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Optional,
+    TypeAlias,
     TypeVar,
-    Union,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict, override
+from typing_extensions import TypedDict, override
 
-from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import Callbacks
 from langchain_core.globals import get_verbose
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     BaseMessage,
     MessageLikeRepresentation,
@@ -35,7 +33,6 @@ from langchain_core.prompt_values import (
     StringPromptValue,
 )
 from langchain_core.runnables import Runnable, RunnableSerializable
-from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
@@ -57,11 +54,11 @@ class LangSmithParams(TypedDict, total=False):
     """Name of the model."""
     ls_model_type: Literal["chat", "llm"]
     """Type of the model. Should be 'chat' or 'llm'."""
-    ls_temperature: Optional[float]
+    ls_temperature: float | None
     """Temperature for generation."""
-    ls_max_tokens: Optional[int]
+    ls_max_tokens: int | None
     """Max tokens for generation."""
-    ls_stop: Optional[list[str]]
+    ls_stop: list[str] | None
     """Stop words for generation."""
 
 
@@ -98,10 +95,10 @@ def _get_token_ids_default_method(text: str) -> list[int]:
     return tokenizer.encode(text)
 
 
-LanguageModelInput = Union[PromptValue, str, Sequence[MessageLikeRepresentation]]
-LanguageModelOutput = Union[BaseMessage, str]
+LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
+LanguageModelOutput = BaseMessage | str
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
-LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
+LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
 
 
 def _get_verbosity() -> bool:
@@ -117,7 +114,7 @@ class BaseLanguageModel(
 
     """
 
-    cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
+    cache: BaseCache | bool | None = Field(default=None, exclude=True)
     """Whether to cache the response.
 
     * If true, will use the global cache.
@@ -132,11 +129,11 @@ class BaseLanguageModel(
     """Whether to print out response text."""
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
-    tags: Optional[list[str]] = Field(default=None, exclude=True)
+    tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
-    metadata: Optional[dict[str, Any]] = Field(default=None, exclude=True)
+    metadata: dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
-    custom_get_token_ids: Optional[Callable[[str], list[int]]] = Field(
+    custom_get_token_ids: Callable[[str], list[int]] | None = Field(
         default=None, exclude=True
     )
     """Optional encoder to use for counting tokens."""
@@ -146,7 +143,7 @@ class BaseLanguageModel(
     )
 
     @field_validator("verbose", mode="before")
-    def set_verbose(cls, verbose: Optional[bool]) -> bool:  # noqa: FBT001
+    def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
         """If verbose is None, set it.
 
         This allows users to pass in None as verbose to access the global setting.
@@ -169,17 +166,13 @@ class BaseLanguageModel(
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
-        return Union[
-            str,
-            Union[StringPromptValue, ChatPromptValueConcrete],
-            list[AnyMessage],
-        ]
+        return str | StringPromptValue | ChatPromptValueConcrete | list[AnyMessage]
 
     @abstractmethod
     def generate_prompt(
         self,
         prompts: list[PromptValue],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -216,7 +209,7 @@ class BaseLanguageModel(
     async def agenerate_prompt(
         self,
         prompts: list[PromptValue],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -250,108 +243,12 @@ class BaseLanguageModel(
         """
 
     def with_structured_output(
-        self, schema: Union[dict, type], **kwargs: Any
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+        self, schema: dict | type, **kwargs: Any
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Not implemented on this class."""
         # Implement this on child class if there is a way of steering the model to
         # generate responses that match a given schema.
         raise NotImplementedError
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @abstractmethod
-    def predict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        """Pass a single string input to the model and return a string.
-
-        Use this method when passing in raw text. If you want to pass in specific types
-        of chat messages, use predict_messages.
-
-        Args:
-            text: String input to pass to the model.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            Top model prediction as a string.
-
-        """
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @abstractmethod
-    def predict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        """Pass a message sequence to the model and return a message.
-
-        Use this method when passing in chat messages. If you want to pass in raw text,
-        use predict.
-
-        Args:
-            messages: A sequence of chat messages corresponding to a single model input.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            Top model prediction as a message.
-
-        """
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @abstractmethod
-    async def apredict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        """Asynchronously pass a string to the model and return a string.
-
-        Use this method when calling pure text generation models and only the top
-        candidate generation is needed.
-
-        Args:
-            text: String input to pass to the model.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            Top model prediction as a string.
-
-        """
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @abstractmethod
-    async def apredict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        """Asynchronously pass messages to the model and return a message.
-
-        Use this method when calling chat models and only the top candidate generation
-        is needed.
-
-        Args:
-            messages: A sequence of chat messages corresponding to a single model input.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            Top model prediction as a message.
-
-        """
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -390,13 +287,13 @@ class BaseLanguageModel(
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Optional[Sequence] = None,
+        tools: Sequence | None = None,
     ) -> int:
         """Get the number of tokens in the messages.
 
         Useful for checking if an input fits in a model's context window.
 
-        .. note::
+        !!! note
             The base implementation of ``get_num_tokens_from_messages`` ignores tool
             schemas.
 
@@ -415,12 +312,3 @@ class BaseLanguageModel(
                 stacklevel=2,
             )
         return sum(self.get_num_tokens(get_buffer_string([m])) for m in messages)
-
-    @classmethod
-    def _all_required_field_names(cls) -> set:
-        """DEPRECATED: Kept for backwards compatibility.
-
-        Use ``get_pydantic_field_names``.
-
-        """
-        return get_pydantic_field_names(cls)

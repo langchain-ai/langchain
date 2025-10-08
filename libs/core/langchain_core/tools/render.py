@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from inspect import signature
-from typing import Callable
 
 from langchain_core.tools.base import BaseTool
 

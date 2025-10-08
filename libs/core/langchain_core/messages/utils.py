@@ -15,16 +15,13 @@ import inspect
 import json
 import logging
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
-    Union,
     cast,
     overload,
 )
@@ -32,10 +29,15 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
-from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
+)
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content import (
+    is_data_content_block,
+)
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -71,20 +73,18 @@ def _get_type(v: Any) -> str:
 
 
 AnyMessage = Annotated[
-    Union[
-        Annotated[AIMessage, Tag(tag="ai")],
-        Annotated[HumanMessage, Tag(tag="human")],
-        Annotated[ChatMessage, Tag(tag="chat")],
-        Annotated[SystemMessage, Tag(tag="system")],
-        Annotated[FunctionMessage, Tag(tag="function")],
-        Annotated[ToolMessage, Tag(tag="tool")],
-        Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")],
-        Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")],
-        Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")],
-        Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")],
-        Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")],
-        Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
-    ],
+    Annotated[AIMessage, Tag(tag="ai")]
+    | Annotated[HumanMessage, Tag(tag="human")]
+    | Annotated[ChatMessage, Tag(tag="chat")]
+    | Annotated[SystemMessage, Tag(tag="system")]
+    | Annotated[FunctionMessage, Tag(tag="function")]
+    | Annotated[ToolMessage, Tag(tag="tool")]
+    | Annotated[AIMessageChunk, Tag(tag="AIMessageChunk")]
+    | Annotated[HumanMessageChunk, Tag(tag="HumanMessageChunk")]
+    | Annotated[ChatMessageChunk, Tag(tag="ChatMessageChunk")]
+    | Annotated[SystemMessageChunk, Tag(tag="SystemMessageChunk")]
+    | Annotated[FunctionMessageChunk, Tag(tag="FunctionMessageChunk")]
+    | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
 
@@ -137,7 +137,7 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
-        message = f"{role}: {m.text()}"
+        message = f"{role}: {m.text}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
@@ -204,24 +204,24 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.append("tool_call_chunks")
+        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
 
 
-MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any]
-]
+MessageLikeRepresentation = (
+    BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
+)
 
 
 def _create_message_from_message_type(
     message_type: str,
     content: str,
-    name: Optional[str] = None,
-    tool_call_id: Optional[str] = None,
-    tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,
+    name: str | None = None,
+    tool_call_id: str | None = None,
+    tool_calls: list[dict[str, Any]] | None = None,
+    id: str | None = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a ``Message`` type and content string.
@@ -363,7 +363,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
 
 
 def convert_to_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
 ) -> list[BaseMessage]:
     """Convert a sequence of messages to a list of messages.
 
@@ -394,12 +394,12 @@ def _runnable_support(func: Callable) -> Callable:
     ) -> list[BaseMessage]: ...
 
     def wrapped(
-        messages: Union[Sequence[MessageLikeRepresentation], None] = None,
+        messages: Sequence[MessageLikeRepresentation] | None = None,
         **kwargs: Any,
-    ) -> Union[
-        list[BaseMessage],
-        Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
-    ]:
+    ) -> (
+        list[BaseMessage]
+        | Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]
+    ):
         # Import locally to prevent circular import.
         from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
@@ -413,15 +413,15 @@ def _runnable_support(func: Callable) -> Callable:
 
 @_runnable_support
 def filter_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
-    include_names: Optional[Sequence[str]] = None,
-    exclude_names: Optional[Sequence[str]] = None,
-    include_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
-    exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
-    include_ids: Optional[Sequence[str]] = None,
-    exclude_ids: Optional[Sequence[str]] = None,
-    exclude_tool_calls: Optional[Sequence[str] | bool] = None,
+    include_names: Sequence[str] | None = None,
+    exclude_names: Sequence[str] | None = None,
+    include_types: Sequence[str | type[BaseMessage]] | None = None,
+    exclude_types: Sequence[str | type[BaseMessage]] | None = None,
+    include_ids: Sequence[str] | None = None,
+    exclude_ids: Sequence[str] | None = None,
+    exclude_tool_calls: Sequence[str] | bool | None = None,
 ) -> list[BaseMessage]:
     """Filter messages based on ``name``, ``type`` or ``id``.
 
@@ -456,7 +456,7 @@ def filter_messages(
         anything that is not explicitly excluded will be included.
 
     Raises:
-        ValueError if two incompatible arguments are provided.
+        ValueError: If two incompatible arguments are provided.
 
     Example:
         .. code-block:: python
@@ -558,20 +558,20 @@ def filter_messages(
 
 @_runnable_support
 def merge_message_runs(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    .. note::
+    !!! note
         ToolMessages are not merged, as each has a distinct tool call id that can't be
         merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-        Default is ``'\n'``.
+            Defaults to ``'\n'``.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -691,24 +691,18 @@ def merge_message_runs(
 # init not at runtime.
 @_runnable_support
 def trim_messages(
-    messages: Union[Iterable[MessageLikeRepresentation], PromptValue],
+    messages: Iterable[MessageLikeRepresentation] | PromptValue,
     *,
     max_tokens: int,
-    token_counter: Union[
-        Callable[[list[BaseMessage]], int],
-        Callable[[BaseMessage], int],
-        BaseLanguageModel,
-    ],
+    token_counter: Callable[[list[BaseMessage]], int]
+    | Callable[[BaseMessage], int]
+    | BaseLanguageModel,
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
-    start_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
     include_system: bool = False,
-    text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
+    text_splitter: Callable[[str], list[str]] | TextSplitter | None = None,
 ) -> list[BaseMessage]:
     r"""Trim messages to be below a token count.
 
@@ -734,7 +728,7 @@ def trim_messages(
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
-    .. note::
+    !!! note
         The examples below show how to configure ``trim_messages`` to achieve a behavior
         consistent with the above properties.
 
@@ -746,7 +740,7 @@ def trim_messages(
             ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
             Set to ``len`` to count the number of **messages** in the chat history.
 
-            .. note::
+            !!! note
                 Use ``count_tokens_approximately`` to get fast, approximate token
                 counts.
                 This is recommended for using ``trim_messages`` on the hot path, where
@@ -1037,10 +1031,11 @@ def trim_messages(
 
 
 def convert_to_openai_messages(
-    messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
+    messages: MessageLikeRepresentation | Sequence[MessageLikeRepresentation],
     *,
     text_format: Literal["string", "block"] = "string",
-) -> Union[dict, list[dict]]:
+    include_id: bool = False,
+) -> dict | list[dict]:
     """Convert LangChain messages into OpenAI message dicts.
 
     Args:
@@ -1057,6 +1052,8 @@ def convert_to_openai_messages(
                     If a message has a string content, this is turned into a list
                     with a single content block of type ``'text'``. If a message has
                     content blocks these are left as is.
+        include_id: Whether to include message ids in the openai messages, if they
+                    are present in the source messages.
 
     Raises:
         ValueError: if an unrecognized ``text_format`` is specified, or if a message
@@ -1066,11 +1063,11 @@ def convert_to_openai_messages(
         The return type depends on the input type:
 
         - dict:
-          If a single message-like object is passed in, a single OpenAI message
-          dict is returned.
+            If a single message-like object is passed in, a single OpenAI message
+            dict is returned.
         - list[dict]:
-          If a sequence of message-like objects are passed in, a list of OpenAI
-          message dicts is returned.
+            If a sequence of message-like objects are passed in, a list of OpenAI
+            message dicts is returned.
 
     Example:
 
@@ -1118,7 +1115,7 @@ def convert_to_openai_messages(
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
 
-    .. versionadded:: 0.3.11
+    !!! version-added "Added in version 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1135,7 +1132,7 @@ def convert_to_openai_messages(
     for i, message in enumerate(messages):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
-        content: Union[str, list[dict]]
+        content: str | list[dict]
 
         if message.name:
             oai_msg["name"] = message.name
@@ -1145,6 +1142,8 @@ def convert_to_openai_messages(
             oai_msg["refusal"] = message.additional_kwargs["refusal"]
         if isinstance(message, ToolMessage):
             oai_msg["tool_call_id"] = message.tool_call_id
+        if include_id and message.id:
+            oai_msg["id"] = message.id
 
         if not message.content:
             content = "" if text_format == "string" else []
@@ -1416,10 +1415,8 @@ def _first_max_tokens(
     max_tokens: int,
     token_counter: Callable[[list[BaseMessage]], int],
     text_splitter: Callable[[str], list[str]],
-    partial_strategy: Optional[Literal["first", "last"]] = None,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    partial_strategy: Literal["first", "last"] | None = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
     if not messages:
@@ -1536,12 +1533,8 @@ def _last_max_tokens(
     text_splitter: Callable[[str], list[str]],
     allow_partial: bool = False,
     include_system: bool = False,
-    start_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
-    end_on: Optional[
-        Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]]
-    ] = None,
+    start_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
     if len(messages) == 0:
@@ -1617,11 +1610,15 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_position"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(
+                **chunk.model_dump(
+                    exclude={"type", "tool_call_chunks", "chunk_position"}
+                )
+            )
 
     msg = (
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
@@ -1638,7 +1635,7 @@ def _default_text_splitter(text: str) -> list[str]:
 
 def _is_message_type(
     message: BaseMessage,
-    type_: Union[str, type[BaseMessage], Sequence[Union[str, type[BaseMessage]]]],
+    type_: str | type[BaseMessage] | Sequence[str | type[BaseMessage]],
 ) -> bool:
     types = [type_] if isinstance(type_, (str, type)) else type_
     types_str = [t for t in types if isinstance(t, str)]
@@ -1711,14 +1708,14 @@ def count_tokens_approximately(
     Returns:
         Approximate number of tokens in the messages.
 
-    .. note::
+    !!! note
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
-    .. versionadded:: 0.3.46
+    !!! version-added "Added in version 0.3.46"
 
     """
     token_count = 0.0

@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from typing_extensions import override
 
@@ -100,8 +100,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -128,8 +128,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Asynchronously upsert records into the database.
 
@@ -177,10 +177,10 @@ class RecordManager(ABC):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
@@ -198,10 +198,10 @@ class RecordManager(ABC):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Asynchronously list records in the database based on the provided filters.
 
@@ -233,7 +233,7 @@ class RecordManager(ABC):
 
 
 class _Record(TypedDict):
-    group_id: Optional[str]
+    group_id: str | None
     updated_at: float
 
 
@@ -270,8 +270,8 @@ class InMemoryRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -307,8 +307,8 @@ class InMemoryRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Async upsert records into the database.
 
@@ -352,10 +352,10 @@ class InMemoryRecordManager(RecordManager):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
@@ -388,10 +388,10 @@ class InMemoryRecordManager(RecordManager):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Async list records in the database based on the provided filters.
 
@@ -485,7 +485,7 @@ class DeleteResponse(TypedDict, total=False):
     failed: Sequence[str]
     """The IDs that failed to be deleted.
 
-    .. warning::
+    !!! warning
         Deleting an ID that does not exist is **NOT** considered a failure.
     """
 
@@ -509,7 +509,7 @@ class DocumentIndex(BaseRetriever):
     2. Fetching document by ID.
     3. Searching for document using a query.
 
-    .. versionadded:: 0.2.29
+    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod
@@ -564,7 +564,7 @@ class DocumentIndex(BaseRetriever):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs or other criteria.
 
         Calling delete without any input parameters should raise a ValueError!
@@ -581,7 +581,7 @@ class DocumentIndex(BaseRetriever):
         """
 
     async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
+        self, ids: list[str] | None = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
 

@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Callable, Optional
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping
+from typing import Any, Optional
 
 import anthropic
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -432,8 +431,3 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         raise NotImplementedError(
             msg,
         )
-
-
-@deprecated(since="0.1.0", removal="1.0.0", alternative="AnthropicLLM")
-class Anthropic(AnthropicLLM):
-    """Anthropic large language model."""

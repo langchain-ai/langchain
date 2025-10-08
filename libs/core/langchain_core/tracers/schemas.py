@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from langsmith import RunTree
@@ -37,8 +37,8 @@ class TracerSessionV1Base(BaseModelV1):
     """Base class for TracerSessionV1."""
 
     start_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
-    name: Optional[str] = None
-    extra: Optional[dict[str, Any]] = None
+    name: str | None = None
+    extra: dict[str, Any] | None = None
 
 
 @deprecated("0.1.0", removal="1.0")
@@ -72,15 +72,15 @@ class BaseRun(BaseModelV1):
     """Base class for Run."""
 
     uuid: str
-    parent_uuid: Optional[str] = None
+    parent_uuid: str | None = None
     start_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
     end_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
-    extra: Optional[dict[str, Any]] = None
+    extra: dict[str, Any] | None = None
     execution_order: int
     child_execution_order: int
     serialized: dict[str, Any]
     session_id: int
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @deprecated("0.1.0", alternative="Run", removal="1.0")
@@ -97,7 +97,7 @@ class ChainRun(BaseRun):
     """Class for ChainRun."""
 
     inputs: dict[str, Any]
-    outputs: Optional[dict[str, Any]] = None
+    outputs: dict[str, Any] | None = None
     child_llm_runs: list[LLMRun] = FieldV1(default_factory=list)
     child_chain_runs: list[ChainRun] = FieldV1(default_factory=list)
     child_tool_runs: list[ToolRun] = FieldV1(default_factory=list)
@@ -108,7 +108,7 @@ class ToolRun(BaseRun):
     """Class for ToolRun."""
 
     tool_input: str
-    output: Optional[str] = None
+    output: str | None = None
     action: str
     child_llm_runs: list[LLMRun] = FieldV1(default_factory=list)
     child_chain_runs: list[ChainRun] = FieldV1(default_factory=list)

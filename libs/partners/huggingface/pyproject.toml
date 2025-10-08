@@ -1,13 +1,13 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.76,<1.0.0",
+    "langchain-core>=0.3.76,<2.0.0",
     "tokenizers>=0.19.1,<1.0.0",
     "huggingface-hub>=0.33.4,<1.0.0",
 ]
@@ -17,9 +17,13 @@ description = "An integration package connecting Hugging Face and LangChain."
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-huggingface%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-huggingface%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_huggingface/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
@@ -43,9 +47,15 @@ test = [
     "langchain-community",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
-dev = ["ipykernel>=6.29.2,<7.0.0", "langchain-core"]
+dev = [
+    "ipykernel>=6.29.2,<7.0.0",
+    "langchain-core"
+]
 test_integration = []
-typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -53,9 +63,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

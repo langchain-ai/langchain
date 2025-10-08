@@ -1,7 +1,7 @@
 """Select examples based on length."""
 
 import re
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self

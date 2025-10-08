@@ -6,7 +6,7 @@ import contextlib
 import mimetypes
 from io import BufferedReader, BytesIO
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -15,7 +15,7 @@ from langchain_core.load.serializable import Serializable
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-PathLike = Union[str, PurePath]
+PathLike = str | PurePath
 
 
 class BaseMedia(Serializable):
@@ -33,13 +33,13 @@ class BaseMedia(Serializable):
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
     # it has been adopted by enough vectorstore implementations.
-    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
+    id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 
     Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
 
-    .. versionadded:: 0.2.11
+    !!! version-added "Added in version 0.2.11"
     """
 
     metadata: dict = Field(default_factory=dict)
@@ -105,16 +105,16 @@ class Blob(BaseMedia):
 
     """
 
-    data: Union[bytes, str, None] = None
+    data: bytes | str | None = None
     """Raw data associated with the blob."""
-    mimetype: Optional[str] = None
+    mimetype: str | None = None
     """MimeType not to be confused with a file extension."""
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
     Use utf-8 as default encoding, if decoding to string.
     """
-    path: Optional[PathLike] = None
+    path: PathLike | None = None
     """Location where the original content was found."""
 
     model_config = ConfigDict(
@@ -123,7 +123,7 @@ class Blob(BaseMedia):
     )
 
     @property
-    def source(self) -> Optional[str]:
+    def source(self) -> str | None:
         """The source location of the blob as string if known otherwise none.
 
         If a path is associated with the blob, it will default to the path location.
@@ -132,7 +132,7 @@ class Blob(BaseMedia):
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast("Optional[str]", self.metadata["source"])
+            return cast("str | None", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
@@ -181,7 +181,7 @@ class Blob(BaseMedia):
         raise ValueError(msg)
 
     @contextlib.contextmanager
-    def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
+    def as_bytes_io(self) -> Generator[BytesIO | BufferedReader, None, None]:
         """Read data as a byte stream.
 
         Raises:
@@ -205,9 +205,9 @@ class Blob(BaseMedia):
         path: PathLike,
         *,
         encoding: str = "utf-8",
-        mime_type: Optional[str] = None,
+        mime_type: str | None = None,
         guess_type: bool = True,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> Blob:
         """Load the blob from a path like object.
 
@@ -239,12 +239,12 @@ class Blob(BaseMedia):
     @classmethod
     def from_data(
         cls,
-        data: Union[str, bytes],
+        data: str | bytes,
         *,
         encoding: str = "utf-8",
-        mime_type: Optional[str] = None,
-        path: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        mime_type: str | None = None,
+        path: str | None = None,
+        metadata: dict | None = None,
     ) -> Blob:
         """Initialize the blob from in-memory data.
 

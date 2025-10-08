@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -52,7 +52,7 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, *, keep_separator: Union[bool, Literal["start", "end"]]
+    text: str, separator: str, *, keep_separator: bool | Literal["start", "end"]
 ) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
@@ -87,8 +87,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     def __init__(
         self,
-        separators: Optional[list[str]] = None,
-        keep_separator: Union[bool, Literal["start", "end"]] = True,  # noqa: FBT001,FBT002
+        separators: list[str] | None = None,
+        keep_separator: bool | Literal["start", "end"] = True,  # noqa: FBT001,FBT002
         is_separator_regex: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:

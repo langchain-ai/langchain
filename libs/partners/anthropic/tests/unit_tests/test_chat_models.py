@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Literal, Optional, cast
+from collections.abc import Callable
+from typing import Any, Literal, Optional, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
@@ -44,6 +45,12 @@ def test_initialization() -> None:
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
+    llm = ChatAnthropic(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_anthropic_client_caching() -> None:
@@ -111,6 +118,45 @@ def test_anthropic_proxy_from_environment() -> None:
         assert llm.anthropic_proxy == explicit_proxy
 
 
+def test_set_default_max_tokens() -> None:
+    """Test the set_default_max_tokens function."""
+    # Test claude-opus-4 models
+    llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
+    assert llm.max_tokens == 32000
+
+    # Test claude-sonnet-4 models
+    llm = ChatAnthropic(model="claude-sonnet-4-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-7-sonnet models
+    llm = ChatAnthropic(model="claude-3-7-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-5-sonnet models
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-5-haiku models
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-haiku models (should default to 4096)
+    llm = ChatAnthropic(model="claude-3-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 4096
+
+    # Test that existing max_tokens values are preserved
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test"
+    )
+    assert llm.max_tokens == 2048
+
+    # Test that explicitly set max_tokens values are preserved
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test"
+    )
+    assert llm.max_tokens == 4096
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
@@ -172,6 +218,7 @@ def test__format_output() -> None:
             "total_tokens": 3,
             "input_token_details": {},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
@@ -202,6 +249,7 @@ def test__format_output_cached() -> None:
             "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
 
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
@@ -810,7 +858,7 @@ def test__format_messages_with_cache_control() -> None:
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
-    # Test standard multi-modal format
+    # Test standard multi-modal format (v0)
     messages = [
         HumanMessage(
             [
@@ -851,6 +899,183 @@ def test__format_messages_with_cache_control() -> None:
         },
     ]
     assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
+                    "extras": {"cache_control": {"type": "ephemeral"}},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1, unpacked extras)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Also test file inputs
+    ## Images
+    for block in [
+        # v1
+        {
+            "type": "image",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "image",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
+
+    ## Documents
+    for block in [
+        # v1
+        {
+            "type": "file",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "file",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
 
 
 def test__format_messages_with_citations() -> None:
@@ -1095,7 +1320,7 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 15  # 10 + 3 + 2
     assert result["output_tokens"] == 5
     assert result["total_tokens"] == 20
-    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+    assert result.get("input_token_details") == {"cache_read": 3, "cache_creation": 2}
 
     # Null input and output tokens
     class UsageModelNulls(BaseModel):
@@ -1253,12 +1478,12 @@ def test_anthropic_model_params() -> None:
         "ls_provider": "anthropic",
         "ls_model_type": "chat",
         "ls_model_name": "claude-3-5-haiku-latest",
-        "ls_max_tokens": 1024,
+        "ls_max_tokens": 8192,
         "ls_temperature": None,
     }
 
     ls_params = llm._get_ls_params(model="claude-opus-4-1-20250805")
-    assert ls_params["ls_model_name"] == "claude-opus-4-1-20250805"
+    assert ls_params.get("ls_model_name") == "claude-opus-4-1-20250805"
 
 
 def test_streaming_cache_token_reporting() -> None:

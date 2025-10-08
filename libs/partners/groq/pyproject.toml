@@ -1,21 +1,28 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
-dependencies = ["langchain-core>=0.3.76,<1.0.0", "groq>=0.30.0,<1.0.0"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.0.0a7,<2.0.0",
+    "groq>=0.30.0,<1.0.0"
+]
 name = "langchain-groq"
-version = "0.3.8"
+version = "1.0.0a1"
 description = "An integration package connecting Groq and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-groq%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/groq"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/groq"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-groq%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_groq/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -30,7 +37,10 @@ test = [
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = ["langchain-core"]
-typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -38,9 +48,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

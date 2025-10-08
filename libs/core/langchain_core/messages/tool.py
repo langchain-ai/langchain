@@ -1,13 +1,15 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict, override
 
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages.content import InvalidToolCall
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -39,7 +41,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     Example: A ``ToolMessage`` where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
-        .. versionadded:: 0.2.17
+        !!! version-added "Added in version 0.2.17"
 
         .. code-block:: python
 
@@ -81,14 +83,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
 
-    .. versionadded:: 0.2.17
+    !!! version-added "Added in version 0.2.17"
 
     """
 
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation.
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
 
     """
 
@@ -142,18 +144,43 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             values["tool_call_id"] = str(tool_call_id)
         return values
 
+    @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
+        **kwargs: Any,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize ``ToolMessage``.
 
+        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+
         Args:
             content: The string contents of the message.
+            content_blocks: Typed standard content.
             **kwargs: Additional fields.
         """
-        super().__init__(content=content, **kwargs)
+        if content_blocks is not None:
+            super().__init__(
+                content=cast("str | list[str | dict]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):
@@ -206,7 +233,7 @@ class ToolCall(TypedDict):
     """The name of the tool to be called."""
     args: dict[str, Any]
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -220,7 +247,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],
+    id: str | None,
 ) -> ToolCall:
     """Create a tool call.
 
@@ -256,23 +283,23 @@ class ToolCallChunk(TypedDict):
 
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call."""
-    index: Optional[int]
+    index: int | None
     """The index of the tool call in a sequence."""
     type: NotRequired[Literal["tool_call_chunk"]]
 
 
 def tool_call_chunk(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[int] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    index: int | None = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
 
@@ -290,30 +317,12 @@ def tool_call_chunk(
     )
 
 
-class InvalidToolCall(TypedDict):
-    """Allowance for errors made by LLM.
-
-    Here we add an ``error`` key to surface errors made during generation
-    (e.g., invalid JSON arguments.)
-    """
-
-    name: Optional[str]
-    """The name of the tool to be called."""
-    args: Optional[str]
-    """The arguments to the tool call."""
-    id: Optional[str]
-    """An identifier associated with the tool call."""
-    error: Optional[str]
-    """An error message associated with the tool call."""
-    type: NotRequired[Literal["invalid_tool_call"]]
-
-
 def invalid_tool_call(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    error: Optional[str] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    error: str | None = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
 

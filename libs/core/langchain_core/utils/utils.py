@@ -6,9 +6,10 @@ import functools
 import importlib
 import os
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from importlib.metadata import version
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, overload
+from uuid import uuid4
 
 from packaging.version import parse
 from pydantic import SecretStr
@@ -90,7 +91,7 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
 
         @classmethod
         @override
-        def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
+        def now(cls, tz: datetime.tzinfo | None = None) -> "MockDateTime":
             # Create a copy of dt_value.
             return MockDateTime(
                 dt_value.year,
@@ -112,7 +113,7 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
 
 
 def guard_import(
-    module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
+    module_name: str, *, pip_name: str | None = None, package: str | None = None
 ) -> Any:
     """Dynamically import a module.
 
@@ -145,10 +146,10 @@ def guard_import(
 
 def check_package_version(
     package: str,
-    lt_version: Optional[str] = None,
-    lte_version: Optional[str] = None,
-    gt_version: Optional[str] = None,
-    gte_version: Optional[str] = None,
+    lt_version: str | None = None,
+    lte_version: str | None = None,
+    gt_version: str | None = None,
+    gte_version: str | None = None,
 ) -> None:
     """Check the version of a package.
 
@@ -305,7 +306,7 @@ def build_extra_kwargs(
     return extra_kwargs
 
 
-def convert_to_secret_str(value: Union[SecretStr, str]) -> SecretStr:
+def convert_to_secret_str(value: SecretStr | str) -> SecretStr:
     """Convert a string to a SecretStr if needed.
 
     Args:
@@ -344,29 +345,29 @@ def from_env(key: str, /, *, error_message: str) -> Callable[[], str]: ...
 
 @overload
 def from_env(
-    key: Union[str, Sequence[str]], /, *, default: str, error_message: Optional[str]
+    key: str | Sequence[str], /, *, default: str, error_message: str | None
 ) -> Callable[[], str]: ...
 
 
 @overload
 def from_env(
-    key: str, /, *, default: None, error_message: Optional[str]
-) -> Callable[[], Optional[str]]: ...
+    key: str, /, *, default: None, error_message: str | None
+) -> Callable[[], str | None]: ...
 
 
 @overload
 def from_env(
-    key: Union[str, Sequence[str]], /, *, default: None
-) -> Callable[[], Optional[str]]: ...
+    key: str | Sequence[str], /, *, default: None
+) -> Callable[[], str | None]: ...
 
 
 def from_env(
-    key: Union[str, Sequence[str]],
+    key: str | Sequence[str],
     /,
     *,
-    default: Union[str, _NoDefaultType, None] = _NoDefault,
-    error_message: Optional[str] = None,
-) -> Union[Callable[[], str], Callable[[], Optional[str]]]:
+    default: str | _NoDefaultType | None = _NoDefault,
+    error_message: str | None = None,
+) -> Callable[[], str] | Callable[[], str | None]:
     """Create a factory method that gets a value from an environment variable.
 
     Args:
@@ -383,7 +384,7 @@ def from_env(
         factory method that will look up the value from the environment.
     """
 
-    def get_from_env_fn() -> Optional[str]:
+    def get_from_env_fn() -> str | None:
         """Get a value from an environment variable.
 
         Raises:
@@ -415,7 +416,7 @@ def from_env(
 
 
 @overload
-def secret_from_env(key: Union[str, Sequence[str]], /) -> Callable[[], SecretStr]: ...
+def secret_from_env(key: str | Sequence[str], /) -> Callable[[], SecretStr]: ...
 
 
 @overload
@@ -424,8 +425,8 @@ def secret_from_env(key: str, /, *, default: str) -> Callable[[], SecretStr]: ..
 
 @overload
 def secret_from_env(
-    key: Union[str, Sequence[str]], /, *, default: None
-) -> Callable[[], Optional[SecretStr]]: ...
+    key: str | Sequence[str], /, *, default: None
+) -> Callable[[], SecretStr | None]: ...
 
 
 @overload
@@ -433,12 +434,12 @@ def secret_from_env(key: str, /, *, error_message: str) -> Callable[[], SecretSt
 
 
 def secret_from_env(
-    key: Union[str, Sequence[str]],
+    key: str | Sequence[str],
     /,
     *,
-    default: Union[str, _NoDefaultType, None] = _NoDefault,
-    error_message: Optional[str] = None,
-) -> Union[Callable[[], Optional[SecretStr]], Callable[[], SecretStr]]:
+    default: str | _NoDefaultType | None = _NoDefault,
+    error_message: str | None = None,
+) -> Callable[[], SecretStr | None] | Callable[[], SecretStr]:
     """Secret from env.
 
     Args:
@@ -452,7 +453,7 @@ def secret_from_env(
         factory method that will look up the secret from the environment.
     """
 
-    def get_secret_from_env() -> Optional[SecretStr]:
+    def get_secret_from_env() -> SecretStr | None:
         """Get a value from an environment variable.
 
         Raises:
@@ -482,3 +483,31 @@ def secret_from_env(
         raise ValueError(msg)
 
     return get_secret_from_env
+
+
+LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
+
+LC_ID_PREFIX = "lc_run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
+
+
+def ensure_id(id_val: str | None) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A string ID, either the validated provided value or a newly generated UUID4.
+    """
+    return id_val or f"{LC_AUTO_PREFIX}{uuid4()}"

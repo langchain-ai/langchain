@@ -463,11 +463,6 @@
                   ]),
                   'title': 'Content',
                 }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -546,6 +541,19 @@
                   'title': 'Additional Kwargs',
                   'type': 'object',
                 }),
+                'chunk_position': dict({
+                  'anyOf': list([
+                    dict({
+                      'const': 'last',
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Chunk Position',
+                }),
                 'content': dict({
                   'anyOf': list([
                     dict({
@@ -566,11 +574,6 @@
                     }),
                   ]),
                   'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -984,11 +987,6 @@
                   ]),
                   'title': 'Content',
                 }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1059,11 +1057,6 @@
                   ]),
                   'title': 'Content',
                 }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1120,7 +1113,7 @@
                             "cache_read": 100,
                         }
                 
-                .. versionadded:: 0.3.9
+                !!! version-added "Added in version 0.3.9"
                 
                 May also hold extra provider-specific keys.
               ''',
@@ -1171,6 +1164,10 @@
                   ]),
                   'title': 'Error',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1181,6 +1178,17 @@
                     }),
                   ]),
                   'title': 'Id',
+                }),
+                'index': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'integer',
+                    }),
+                    dict({
+                      'type': 'string',
+                    }),
+                  ]),
+                  'title': 'Index',
                 }),
                 'name': dict({
                   'anyOf': list([
@@ -1200,9 +1208,10 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
                 'error',
               ]),
               'title': 'InvalidToolCall',
@@ -1222,7 +1231,7 @@
                             "reasoning": 200,
                         }
                 
-                .. versionadded:: 0.3.9
+                !!! version-added "Added in version 0.3.9"
               ''',
               'properties': dict({
                 'audio': dict({
@@ -1543,7 +1552,7 @@
                 Example: A ``ToolMessage`` where only part of the tool output is sent to the model
                     and the full output is passed in to artifact.
                 
-                    .. versionadded:: 0.2.17
+                    !!! version-added "Added in version 0.2.17"
                 
                     .. code-block:: python
                 
@@ -1751,8 +1760,7 @@
                             },
                         }
                 
-                .. versionchanged:: 0.3.9
-                
+                !!! warning "Behavior changed in 0.3.9"
                     Added ``input_token_details`` and ``output_token_details``.
               ''',
               'properties': dict({
