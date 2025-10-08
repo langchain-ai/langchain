@@ -10,9 +10,11 @@ authors = []
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
+packages = [{include = "langchain_sarvam"}]
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/sarvam"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-sarvam%3D%3D0%22&expanded=true"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -28,7 +30,7 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-benchmark = "^4.0.0"
 langchain-tests = ">=0.3.2"
-langchain = ">=0.3.0"
+langchain-core = {path = "../../core", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
@@ -52,10 +54,11 @@ types-requests = "^2.31.0"
 [tool.poetry.group.dev]
 optional = true
 
+[tool.poetry.group.dev.dependencies]
+langchain-core = {path = "../../core", develop = true}
+
 [tool.ruff]
-exclude = [
-  "tests/"
-]
+extend = "../../ruff_defaults.toml"
 
 [tool.ruff.lint]
 select = [
