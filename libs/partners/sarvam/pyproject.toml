@@ -14,81 +14,58 @@ packages = [{include = "langchain_sarvam"}]
 
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/sarvam"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-sarvam%3D%3D0%22&expanded=true"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 langchain-core = ">=0.3.30,<0.4"
-requests = "^2.31.0"
-pydantic = ">=2.0,<3"
-
-[tool.poetry.group.test]
-optional = true
+requests = ">=2.31.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.3"
-pytest-asyncio = "^0.23.2"
-pytest-benchmark = "^4.0.0"
-langchain-tests = ">=0.3.2"
-langchain-core = {path = "../../core", develop = true}
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.6"
-
-[tool.poetry.group.lint]
-optional = true
+pytest = ">=7.3.0"
+pytest-asyncio = ">=0.21.0"
+pytest-mock = ">=3.11.1"
+pytest-cov = ">=4.1.0"
+langchain-core = {version = ">=0.3.30,<0.4", extras = ["test"]}
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.6.4"
-
-[tool.poetry.group.typing]
-optional = true
+ruff = ">=0.0.292"
+mypy = ">=1.6.0"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.11.2"
-types-requests = "^2.31.0"
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+mypy = ">=1.6.0"
 
 [tool.ruff]
-extend = "../../ruff_defaults.toml"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
+    "B",   # flake8-bugbear
+    "C",   # flake8-comprehensions
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # warnings
 ]
+ignore = ["E501"]  # line length
 
 [tool.mypy]
-disallow_untyped_defs = true
 ignore_missing_imports = true
-exclude = [
-    "tests/",
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = false
+strict_optional = true
+strict_equality = true
+
+[dependency-groups]
+test = [
+    "pytest>=7.3.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.11.1",
+    "pytest-cov>=4.1.0",
+    "langchain-core[test]>=0.3.30,<0.4"
 ]
-explicit_package_bases = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-
-[tool.coverage.run]
-omit = ["tests/*"]
-
-[tool.pytest.ini_options]
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
-  "scheduled: mark tests to run in scheduled testing",
-]
-asyncio_mode = "auto"
