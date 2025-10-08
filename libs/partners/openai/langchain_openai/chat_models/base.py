@@ -2032,38 +2032,28 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "Key init args — completion params"
 
-        model: str
-            Name of OpenAI model to use.
-        temperature: float
-            Sampling temperature.
-        max_tokens: int | None
-            Max number of tokens to generate.
-        logprobs: bool | None
-            Whether to return logprobs.
-        stream_options: Dict
-            Configure streaming outputs, like whether to return token usage when
-            streaming (`{"include_usage": True}`).
-        use_responses_api: bool | None
-            Whether to use the responses API.
+        | Param               | Type          | Description                                                                                                 |
+        | ------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+        | `model`             | `str`         | Name of OpenAI model to use.                                                                                |
+        | `temperature`       | `float`       | Sampling temperature.                                                                                       |
+        | `max_tokens`        | `int | None`  | Max number of tokens to generate.                                                                           |
+        | `logprobs`          | `bool | None` | Whether to return logprobs.                                                                                 |
+        | `stream_options`    | `dict`        | Configure streaming outputs, like whether to return token usage when streaming (`{"include_usage": True}`). |
+        | `use_responses_api` | `bool | None` | Whether to use the responses API.                                                                           |
 
-        See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions below.
 
     ??? note "Key init args — client params"
 
-        timeout: Union[float, Tuple[float, float], Any, None]
-            Timeout for requests.
-        max_retries: int | None
-            Max number of retries.
-        api_key: str | None
-            OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
-        base_url: str | None
-            Base URL for API requests. Only specify if using a proxy or service
-            emulator.
-        organization: str | None
-            OpenAI organization ID. If not passed in will be read from env
-            var `OPENAI_ORG_ID`.
+        | Param          | Type                                       | Description                                                                         |
+        | -------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+        | `timeout`      | `float | Tuple[float, float] | Any | None` | Timeout for requests.                                                               |
+        | `max_retries`  | `int | None`                               | Max number of retries.                                                              |
+        | `api_key`      | `str | None`                               | OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.        |
+        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator.       |
+        | `organization` | `str | None`                               | OpenAI organization ID. If not passed in will be read from env var `OPENAI_ORG_ID`. |
 
-        See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions below.
 
     ??? note "Instantiate"
 
