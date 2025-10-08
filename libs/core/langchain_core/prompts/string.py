@@ -174,9 +174,9 @@ def mustache_schema(template: str) -> type[BaseModel]:
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
 
-    for key, val in fields.items():
-        fields[key] = val and not any(
-            is_subsequence(key, k) for k in fields if k != key
+    for fkey, fval in fields.items():
+        fields[fkey] = fval and not any(
+            is_subsequence(fkey, k) for k in fields if k != fkey
         )
     defs: Defs = {}  # None means leaf node
     while fields:
