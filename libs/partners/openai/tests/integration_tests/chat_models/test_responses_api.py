@@ -34,7 +34,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
                 if annotation["type"] == "file_citation":
                     assert all(
                         key in annotation
-                        for key in ["file_id", "filename", "index", "type"]
+                        for key in ["file_id", "filename", "file_index", "type"]
                     )
                 elif annotation["type"] == "web_search":
                     assert all(
@@ -374,8 +374,8 @@ def test_computer_calls() -> None:
     assert response.additional_kwargs["tool_outputs"]
 
 
+@pytest.mark.vcr
 def test_file_search() -> None:
-    pytest.skip()  # TODO: set up infra
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     tool = {
         "type": "file_search",
