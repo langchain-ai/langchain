@@ -1791,7 +1791,7 @@ class BaseChatOpenAI(BaseChatModel):
                 If a model elects to call a tool, the resulting `AIMessage` in `'raw'`
                 will include tool calls.
 
-                ??? note "Example"
+                ??? example
 
                     ```python
                     from langchain.chat_models import init_chat_model
@@ -2015,7 +2015,7 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""Interface to OpenAI chat model APIs.
 
-    ???+ note "Setup"
+    ???+ info "Setup"
 
         Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
@@ -2030,7 +2030,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         export OPENAI_API_KEY="your-api-key"
         ```
 
-    ??? note "Key init args — completion params"
+    ??? info "Key init args — completion params"
 
         | Param               | Type          | Description                                                                                                 |
         | ------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -2043,7 +2043,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions below.
 
-    ??? note "Key init args — client params"
+    ??? info "Key init args — client params"
 
         | Param          | Type                                       | Description                                                                         |
         | -------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
@@ -2055,7 +2055,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions below.
 
-    ??? note "Instantiate"
+    ??? info "Instantiate"
 
         Create a model instance with desired params. For example:
 
@@ -2097,7 +2097,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
             ```
 
-    ??? note "Invoke"
+    ??? info "Invoke"
 
         Generate a response from the model:
 
@@ -2133,7 +2133,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    ??? note "Stream"
+    ??? info "Stream"
 
         Stream a response from the model:
 
@@ -2177,7 +2177,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    ??? note "Async"
+    ??? info "Async"
 
         Asynchronous equivalents of `invoke`, `stream`, and `batch` are also available:
 
@@ -2219,7 +2219,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         For batched calls, results in a `list[AIMessage]`.
 
-    ??? note "Tool calling"
+    ??? info "Tool calling"
 
         ```python
         from pydantic import BaseModel, Field
@@ -2304,7 +2304,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See `bind_tools` for more.
 
-    ??? note "Built-in (server-side) tools"
+    ??? info "Built-in (server-side) tools"
 
         You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)
         supported by the OpenAI Responses API. See [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/openai#responses-api)
@@ -2350,7 +2350,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
 
-    ??? note "Managing conversation state"
+    ??? info "Managing conversation state"
 
         OpenAI's Responses API supports management of [conversation state](https://platform.openai.com/docs/guides/conversation-state?api-mode=responses).
         Passing in response IDs from previous messages will continue a conversational
@@ -2396,7 +2396,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             llm = ChatOpenAI(model="...", use_previous_response_id=True)
             ```
 
-    ??? note "Reasoning output"
+    ??? info "Reasoning output"
 
         OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
         that expose a summary of internal reasoning processes.
@@ -2437,7 +2437,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response items into the message's `content` field, rather than
             `additional_kwargs`. We recommend this format for new applications.
 
-    ??? note "Structured output"
+    ??? info "Structured output"
 
         ```python
         from pydantic import BaseModel, Field
@@ -2467,7 +2467,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See `with_structured_output` for more info.
 
-    ??? note "JSON mode"
+    ??? info "JSON mode"
 
         ```python
         json_llm = llm.bind(response_format={"type": "json_object"})
@@ -2481,7 +2481,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
         ```
 
-    ??? note "Image input"
+    ??? info "Image input"
 
         ```python
         import base64
@@ -2508,7 +2508,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
         ```
 
-    ??? note "Token usage"
+    ??? info "Token usage"
 
         ```python
         ai_msg = llm.invoke(messages)
@@ -2532,7 +2532,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
         ```
 
-    ??? note "Logprobs"
+    ??? info "Logprobs"
 
         ```python
         logprobs_llm = llm.bind(logprobs=True)
@@ -2592,7 +2592,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         }
         ```
 
-    ??? note "Response metadata"
+    ??? info "Response metadata"
 
         ```python
         ai_msg = llm.invoke(messages)
@@ -2613,7 +2613,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         }
         ```
 
-    ??? note "Flex processing"
+    ??? info "Flex processing"
 
         OpenAI offers a variety of [service tiers](https://platform.openai.com/docs/guides/flex-processing?api-mode=responses).
         The "flex" tier offers cheaper pricing for requests, with the trade-off that
@@ -2633,7 +2633,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         See OpenAI [flex processing docs](https://platform.openai.com/docs/guides/flex-processing?api-mode=responses)
         for more detail.
 
-    ??? note "OpenAI-compatible APIs"
+    ??? info "OpenAI-compatible APIs"
 
         `ChatOpenAI` can be used with OpenAI-compatible APIs like
         [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
@@ -2662,7 +2662,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    ??? note "`model_kwargs` vs `extra_body`"
+    ??? info "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
 
@@ -2714,7 +2714,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Always use `extra_body` for custom parameters, **not** `model_kwargs`.
             Using `model_kwargs` for non-OpenAI parameters will cause API errors.
 
-    ??? note "Prompt caching optimization"
+    ??? info "Prompt caching optimization"
 
         For high-volume applications with repetitive prompts, use `prompt_cache_key`
         per-invocation to improve cache hit rates and reduce costs:
@@ -2738,7 +2738,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Cache keys help ensure requests with the same prompt prefix are routed to
         machines with existing cache, providing cost reduction and latency improvement on
         cached tokens.
-
     """  # noqa: E501
 
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
@@ -2896,7 +2895,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If a model elects to call a
                 tool, the resulting `AIMessage` in `'raw'` will include tool calls.
 
-                ??? note "Example"
+                ??? example
 
                     ```python
                     from langchain.chat_models import init_chat_model

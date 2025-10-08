@@ -900,7 +900,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If a model elects to call a
                 tool, the resulting `AIMessage` in ``'raw'`` will include tool calls.
 
-                ??? note "Example"
+                ??? example
 
                     .. code-block:: python
 
