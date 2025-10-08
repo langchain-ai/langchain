@@ -21,11 +21,14 @@ from langchain_core.runnables import run_in_executor
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
+    from langchain.tools.tool_node import ToolCallRequest
+
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AIMessage, AnyMessage  # noqa: TC002
+from langchain_core.messages import AIMessage, AnyMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
+from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -33,7 +36,6 @@ if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -261,6 +263,46 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
 
+    def on_tool_call(
+        self,
+        request: ToolCallRequest,
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        """Intercept tool execution for retries, monitoring, or modification.
+
+        Multiple middleware compose automatically (first defined = outermost).
+        Exceptions propagate unless handle_tool_errors is configured on ToolNode.
+
+        Args:
+            request: Tool call request with call dict and BaseTool instance.
+            state: Current agent state.
+            runtime: LangGraph runtime.
+
+        Yields:
+            ToolCallRequest (execute tool), ToolMessage (cached result),
+            or Command (control flow).
+
+        Receives:
+            ToolMessage or Command via .send() after execution.
+
+        Example:
+            Modify request:
+
+            def on_tool_call(self, request, state, runtime):
+                request.tool_call["args"]["value"] *= 2
+                yield request
+
+            Retry on error:
+
+            def on_tool_call(self, request, state, runtime):
+                for attempt in range(3):
+                    response = yield request
+                    if valid(response) or attempt == 2:
+                        return
+        """
+        yield request
+
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""
@@ -402,7 +444,7 @@ def before_model(
 
     Returns:
         Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function its wrapping.
+        that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -812,7 +854,7 @@ def before_agent(
 
     Returns:
         Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function its wrapping.
+        that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state

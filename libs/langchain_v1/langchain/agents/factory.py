@@ -21,7 +21,7 @@ from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.runtime import Runtime  # noqa: TC002
-from langgraph.types import Send
+from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -55,6 +55,8 @@ if TYPE_CHECKING:
     from langgraph.graph.state import CompiledStateGraph
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
+
+    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -410,6 +412,98 @@ def _handle_structured_output_error(
     return False, ""
 
 
+def _chain_tool_call_handlers(
+    handlers: Sequence[ToolCallHandler],
+) -> ToolCallHandler | None:
+    """Compose handlers into middleware stack (first = outermost).
+
+    Args:
+        handlers: Handlers in middleware order.
+
+    Returns:
+        Composed handler, or None if empty.
+
+    Example:
+        handler = _chain_tool_call_handlers([auth, cache, retry])
+        # Request flows: auth -> cache -> retry -> tool
+        # Response flows: tool -> retry -> cache -> auth
+    """
+    if not handlers:
+        return None
+
+    if len(handlers) == 1:
+        return handlers[0]
+
+    def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
+        """Compose two handlers where outer wraps inner."""
+
+        def composed(
+            request: ToolCallRequest, state: Any, runtime: Any
+        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+            outer_gen = outer(request, state, runtime)
+
+            # Initialize outer generator
+            try:
+                outer_request_or_result = next(outer_gen)
+            except StopIteration:
+                msg = "outer handler must yield at least once"
+                raise ValueError(msg)
+
+            # Outer retry loop
+            while True:
+                # If outer yielded a ToolMessage or Command, bypass inner and yield directly
+                if isinstance(outer_request_or_result, (ToolMessage, Command)):
+                    result = yield outer_request_or_result
+                    try:
+                        outer_request_or_result = outer_gen.send(result)
+                    except StopIteration:
+                        # Outer ended - final result is what we sent to it
+                        return
+                    continue
+
+                inner_gen = inner(outer_request_or_result, state, runtime)
+                last_sent_to_inner: ToolMessage | Command | None = None
+
+                # Initialize inner generator
+                try:
+                    inner_request_or_result = next(inner_gen)
+                except StopIteration:
+                    msg = "inner handler must yield at least once"
+                    raise ValueError(msg)
+
+                # Inner retry loop
+                while True:
+                    # Yield to actual tool execution
+                    result = yield inner_request_or_result
+                    last_sent_to_inner = result
+
+                    # Send result to inner
+                    try:
+                        inner_request_or_result = inner_gen.send(result)
+                    except StopIteration:
+                        # Inner is done - final result from inner is last_sent_to_inner
+                        break
+
+                # Send inner's final result to outer
+                if last_sent_to_inner is None:
+                    msg = "inner handler ended without receiving any result"
+                    raise ValueError(msg)
+                try:
+                    outer_request_or_result = outer_gen.send(last_sent_to_inner)
+                except StopIteration:
+                    # Outer is done - final result is what we sent to it
+                    return
+
+        return composed
+
+    # Chain all handlers: first -> second -> ... -> last
+    result = handlers[-1]
+    for handler in reversed(handlers[:-1]):
+        result = compose_two(handler, result)
+
+    return result
+
+
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -537,6 +631,17 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
+    # Collect middleware with on_tool_call hooks
+    middleware_w_on_tool_call = [
+        m for m in middleware if m.__class__.on_tool_call is not AgentMiddleware.on_tool_call
+    ]
+
+    # Chain all on_tool_call handlers into a single composed handler
+    on_tool_call_handler = None
+    if middleware_w_on_tool_call:
+        handlers = [m.on_tool_call for m in middleware_w_on_tool_call]
+        on_tool_call_handler = _chain_tool_call_handlers(handlers)
+
     # Setup tools
     tool_node: ToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
@@ -547,7 +652,11 @@ def create_agent(  # noqa: PLR0915
     available_tools = middleware_tools + regular_tools
 
     # Only create ToolNode if we have client-side tools
-    tool_node = ToolNode(tools=available_tools) if available_tools else None
+    tool_node = (
+        ToolNode(tools=available_tools, on_tool_call=on_tool_call_handler)
+        if available_tools
+        else None
+    )
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
