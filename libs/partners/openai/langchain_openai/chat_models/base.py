@@ -481,7 +481,7 @@ class BaseChatOpenAI(BaseChatModel):
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
-        `None`."""
+    `None`."""
     stream_usage: Optional[bool] = None
     """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
@@ -532,12 +532,10 @@ class BaseChatOpenAI(BaseChatModel):
     reasoning: Optional[dict[str, Any]] = None
     """Reasoning parameters for reasoning models. For use with the Responses API.
 
-    Example:
-
     ```python
     reasoning={
-        "effort": "medium",  # can be "low", "medium", or "high"
-        "summary": "auto",  # can be "auto", "concise", or "detailed"
+        "effort": "medium",  # Can be "low", "medium", or "high"
+        "summary": "auto",  # Can be "auto", "concise", or "detailed"
     }
     ```
 
@@ -548,8 +546,6 @@ class BaseChatOpenAI(BaseChatModel):
     Responses API.
 
     Currently supported values are `'low'`, `'medium'`, and `'high'`.
-
-    Controls how detailed the model's responses are.
 
     !!! version-added "Added in version 0.3.28"
     """
@@ -585,12 +581,13 @@ class BaseChatOpenAI(BaseChatModel):
     OpenAI-compatible API provider but not part of the standard OpenAI API.
 
     Examples:
-        - LM Studio TTL parameter: `extra_body={"ttl": 300}`
-        - vLLM custom parameters: `extra_body={"use_beam_search": True}`
+        - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
+        - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
+            `extra_body={"use_beam_search": True}`
         - Any other provider-specific parameters
 
-    !!! note
-        Do NOT use `model_kwargs` for custom parameters that are not part of the
+    !!! warning
+        Do not use `model_kwargs` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
         `extra_body` instead.
     """
@@ -598,7 +595,7 @@ class BaseChatOpenAI(BaseChatModel):
     include_response_headers: bool = False
     """Whether to include response headers in the output message `response_metadata`."""
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be
+    """Parameters of the OpenAI client or `chat.completions` endpoint that should be
     disabled for the given model.
 
     Should be specified as `{"param": None | ['val1', 'val2']}` where the key is the
@@ -659,7 +656,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     ```python
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="...",
         use_previous_response_id=True,
     )
     llm.invoke(
@@ -672,7 +669,7 @@ class BaseChatOpenAI(BaseChatModel):
     ```
 
     ```python
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model="...", use_responses_api=True)
     llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
     ```
 
@@ -1555,11 +1552,11 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> int:
         """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
 
-        **Requirements**: You must have the `pillow` installed if you want to count
-        image tokens if you are specifying the image as a base64 string, and you must
-        have both `pillow` and `httpx` installed if you are specifying the image
-        as a URL. If these aren't installed image inputs will be ignored in token
-        counting.
+        !!! warning
+            You must have the `pillow` installed if you want to count image tokens if
+            you are specifying the image as a base64 string, and you must have both
+            `pillow` and `httpx` installed if you are specifying the image as a URL. If
+            these aren't installed image inputs will be ignored in token counting.
 
         [OpenAI reference](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb).
 
@@ -1677,8 +1674,7 @@ class BaseChatOpenAI(BaseChatModel):
                 be validated. If `None`, `strict` argument will not be passed to the model.
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
-            kwargs: Any additional parameters are passed directly to
-                `langchain_openai.chat_models.base.ChatOpenAI.bind`.
+            kwargs: Any additional parameters are passed directly to `bind`.
 
         !!! warning "Behavior changed in 0.1.21"
             Support for `strict` argument added.
@@ -1744,7 +1740,7 @@ class BaseChatOpenAI(BaseChatModel):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
@@ -1822,8 +1818,6 @@ class BaseChatOpenAI(BaseChatModel):
                     structured_llm.invoke("What's the weather in Boston?")
                     ```
 
-                    Results in:
-
                     ```python
                     {
                         "raw": AIMessage(content="", tool_calls=[...], ...),
@@ -1846,7 +1840,7 @@ class BaseChatOpenAI(BaseChatModel):
             - `'raw'`: `BaseMessage`
             - `'parsed'`: `None` if there was a parsing error, otherwise the type depends
                 on the `schema` as described above.
-            - `'parsing_error'`: `Optional[BaseException]`
+            - `'parsing_error'`: `BaseException` or `None`
 
         !!! warning "Behavior changed in 0.3.12"
             Support for `tools` added.
@@ -2027,6 +2021,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         ```bash
         pip install -U langchain-openai
+
+        # or using uv
+        uv add langchain-openai
+        ```
+
+        ```bash
         export OPENAI_API_KEY="your-api-key"
         ```
 
@@ -2036,14 +2036,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Name of OpenAI model to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
             streaming (`{"include_usage": True}`).
-        use_responses_api: Optional[bool]
+        use_responses_api: bool | None
             Whether to use the responses API.
 
         See full list of supported init args and their descriptions in the params section.
@@ -2052,14 +2052,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries: Optional[int]
+        max_retries: int | None
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization: Optional[str]
+        organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
 
@@ -2073,7 +2073,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         from langchain_openai import ChatOpenAI
 
         llm = ChatOpenAI(
-            model="gpt-4o",
+            model="...",
             temperature=0,
             max_tokens=None,
             timeout=None,
@@ -2085,10 +2085,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-        !!! note "Preserved params"
-            Any param which is not explicitly supported will be passed directly to the
-            `openai.OpenAI.chat.completions.create(...)` API every time to the model is
-            invoked. For example:
+        See all available params below.
+
+        !!! tip "Preserved params"
+            Any param which is not explicitly supported will be passed directly to
+            [`openai.OpenAI.chat.completions.create(...)`](https://platform.openai.com/docs/api-reference/chat/create)
+            every time to the model is invoked. For example:
 
             ```python
             from langchain_openai import ChatOpenAI
@@ -2107,6 +2109,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "Invoke"
 
+        Generate a response from the model:
+
         ```python
         messages = [
             (
@@ -2117,6 +2121,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ]
         llm.invoke(messages)
         ```
+
+        Results in an `AIMessage` response:
 
         ```python
         AIMessage(
@@ -2139,10 +2145,14 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "Stream"
 
+        Stream a response from the model:
+
         ```python
         for chunk in llm.stream(messages):
             print(chunk.text, end="")
         ```
+
+        Results in a sequence of `AIMessageChunk` objects with partial content:
 
         ```python
         AIMessageChunk(content="", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
@@ -2160,16 +2170,17 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
+        To collect the full message, you can concatenate the chunks:
+
         ```python
         stream = llm.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
-        full
         ```
 
         ```python
-        AIMessageChunk(
+        full = AIMessageChunk(
             content="J'adore la programmation.",
             response_metadata={"finish_reason": "stop"},
             id="run-bf917526-7f58-4683-84f7-36a6b671d140",
@@ -2178,15 +2189,20 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "Async"
 
+        Asynchronous equivalents of `invoke`, `stream`, and `batch` are also available:
+
         ```python
+        # Invoke
         await llm.ainvoke(messages)
 
-        # stream:
-        # async for chunk in (await llm.astream(messages))
+        # Stream
+        async for chunk in (await llm.astream(messages))
 
-        # batch:
-        # await llm.abatch([messages])
+        # Batch
+        await llm.abatch([messages])
         ```
+
+        Results in an `AIMessage` response:
 
         ```python
         AIMessage(
@@ -2210,6 +2226,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             },
         )
         ```
+
+        For batched calls, results in a list of `AIMessage` responses.
 
     ??? note "Tool calling"
 
@@ -2235,7 +2253,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         llm_with_tools = llm.bind_tools(
             [GetWeather, GetPopulation]
-            # strict = True  # enforce tool args schema is respected
+            # strict = True  # Enforce tool args schema is respected
         )
         ai_msg = llm_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
@@ -2269,9 +2287,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```
 
         !!! note "Parallel tool calls"
-            `openai >= 1.32` supports a `parallel_tool_calls` parameter
-            that defaults to `True`. This parameter can be set to `False` to
-            disable parallel tool calls:
+            [`openai >= 1.32`](https://pypi.org/project/openai/) supports a
+            `parallel_tool_calls` parameter that defaults to `True`. This parameter can
+            be set to `False` to disable parallel tool calls:
 
             ```python
             ai_msg = llm_with_tools.invoke(
@@ -2294,32 +2312,28 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         using `llm.bind(parallel_tool_calls=False)` or during instantiation by
         setting `model_kwargs`.
 
-        See `ChatOpenAI.bind_tools()` for more.
+        See `bind_tools` for more.
 
-    ??? note "Built-in tools"
+    ??? note "Built-in (server-side) tools"
 
         !!! version-added "Added in version 0.3.9"
+
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+            `langchain-openai >= 0.3.26` allows users to opt-in to an updated
+            `AIMessage` format when using the Responses API. Setting
+            `ChatOpenAI(..., output_version="responses/v1")` will format output from
+            reasoning summaries, built-in tool invocations, and other response items
+            into the message's `content` field, rather than `additional_kwargs`. We
+            recommend this format for new applications.
 
         You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)
         supported by the OpenAI Responses API. See [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/openai#responses-api)
         for more detail.
 
-        !!! note
-            `langchain-openai >= 0.3.26` allows users to opt-in to an updated
-            `AIMessage` format when using the Responses API. Setting
-
-            ```python
-            llm = ChatOpenAI(model="...", output_version="responses/v1")
-            ```
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's `content` field, rather than
-            `additional_kwargs`. We recommend this format for new applications.
-
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
+        llm = ChatOpenAI(model="...", output_version="responses/v1")
 
         tool = {"type": "web_search"}
         llm_with_tools = llm.bind_tools([tool])
@@ -2327,8 +2341,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         response = llm_with_tools.invoke("What was a positive news story from today?")
         response.content
         ```
-
-        Results in:
 
         ```python
         [
@@ -2360,15 +2372,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         from langchain_openai import ChatOpenAI
 
         llm = ChatOpenAI(
-            model="gpt-4.1-mini",
+            model="...",
             use_responses_api=True,
             output_version="responses/v1",
         )
         response = llm.invoke("Hi, I'm Bob.")
         response.text
         ```
-
-        Results in:
 
         ```python
         "Hi Bob! How can I assist you today?"
@@ -2382,39 +2392,33 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         second_response.text
         ```
 
-        Results in:
-
         ```python
         "Your name is Bob. How can I help you today, Bob?"
         ```
 
         !!! version-added "Added in version 0.3.26"
 
-            You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
+            You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
             recent response.
 
             ```python
-            llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
+            llm = ChatOpenAI(model="...", use_previous_response_id=True)
             ```
 
     ??? note "Reasoning output"
 
-        OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
-        that expose a summary of internal reasoning processes.
-
-        !!! note
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
             `langchain-openai >= 0.3.26` allows users to opt-in to an updated
             `AIMessage` format when using the Responses API. Setting
+            `ChatOpenAI(..., output_version="responses/v1")` will format output from
+            reasoning summaries, built-in tool invocations, and other response items
+            into the message's `content` field, rather than `additional_kwargs`. We
+            recommend this format for new applications.
 
-            ```python
-            llm = ChatOpenAI(model="...", output_version="responses/v1")
-            ```
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's `content` field, rather than
-            `additional_kwargs`. We recommend this format for new applications.
+        OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
+        that expose a summary of internal reasoning processes.
 
         ```python
         from langchain_openai import ChatOpenAI
@@ -2425,7 +2429,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         }
 
         llm = ChatOpenAI(
-            model="o4-mini", reasoning=reasoning, output_version="responses/v1"
+            model="...", reasoning=reasoning, output_version="responses/v1"
         )
         response = llm.invoke("What is 3^3?")
 
@@ -2439,8 +2443,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     print(summary["text"])
         ```
 
-        Results in:
-
         ```txt
         Output: 3³ = 27
         Reasoning: The user wants to know...
@@ -2449,8 +2451,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     ??? note "Structured output"
 
         ```python
-        from typing import Optional
-
         from pydantic import BaseModel, Field
 
 
@@ -2459,7 +2459,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             setup: str = Field(description="The setup of the joke")
             punchline: str = Field(description="The punchline to the joke")
-            rating: Optional[int] = Field(
+            rating: int | None = Field(
                 description="How funny the joke is, from 1 to 10"
             )
 
@@ -2476,7 +2476,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-        See `ChatOpenAI.with_structured_output()` for more.
+        See `with_structured_output` for more info.
 
     ??? note "JSON mode"
 
@@ -2497,7 +2497,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         import base64
         import httpx
-        from langchain_core.messages import HumanMessage
+        from langchain.messages import HumanMessage
 
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
@@ -2510,6 +2510,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             ]
         )
+
         ai_msg = llm.invoke([message])
         ai_msg.content
         ```
@@ -2540,16 +2541,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         ```txt
         {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-        ```
-
-        Alternatively, setting `stream_usage` when instantiating the model can be
-        useful when incorporating `ChatOpenAI` into LCEL chains-- or when using
-        methods like `with_structured_output`, which generate chains under the
-        hood.
-
-        ```python
-        llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
-        structured_llm = llm.with_structured_output(...)
         ```
 
     ??? note "Logprobs"
@@ -2646,7 +2637,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+        llm = ChatOpenAI(model="...", service_tier="flex")
         ```
 
         Note that this is a beta feature that is only available for a subset of models.
@@ -2655,9 +2646,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     ??? note "OpenAI-compatible APIs"
 
-        `ChatOpenAI` can be used with OpenAI-compatible APIs like [LM Studio](https://lmstudio.ai/),
-        [vLLM](https://github.com/vllm-project/vllm),
+        `ChatOpenAI` can be used with OpenAI-compatible APIs like
+        [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
         [Ollama](https://ollama.com/), and others.
+
         To use custom parameters specific to these providers, use the `extra_body` parameter.
 
         ```python title="LM Studio example with TTL (auto-eviction)"
@@ -2694,7 +2686,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         # Standard OpenAI parameters
         llm = ChatOpenAI(
-            model="gpt-4o",
+            model="...",
             model_kwargs={
                 "stream_options": {"include_usage": True},
                 "max_completion_tokens": 300,
@@ -2706,7 +2698,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         **Use `extra_body` for:**
 
-        - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio, etc.)
+        - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio,
+            etc.)
         - Parameters that need to be nested under `extra_body` in the request
         - Any non-standard OpenAI API parameters
 
@@ -2728,7 +2721,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         - `model_kwargs`: Parameters are **merged into top-level** request payload
         - `extra_body`: Parameters are **nested under `extra_body`** key in request
 
-        !!! important
+        !!! warning
             Always use `extra_body` for custom parameters, **not** `model_kwargs`.
             Using `model_kwargs` for non-OpenAI parameters will cause API errors.
 
@@ -2738,7 +2731,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         per-invocation to improve cache hit rates and reduce costs:
 
         ```python
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        llm = ChatOpenAI(model="...")
 
         response = llm.invoke(
             messages,
@@ -2854,7 +2847,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class,
                 - an OpenAI function/tool schema.
 
@@ -2863,7 +2856,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -2941,8 +2934,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     structured_llm.invoke("What's the weather in Boston?")
                     ```
 
-                    Results in:
-
                     ```python
                     {
                         "raw": AIMessage(content="", tool_calls=[...], ...),
@@ -2963,7 +2954,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             - `'raw'`: `BaseMessage`
             - `'parsed'`: `None` if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: `Optional[BaseException]`
+            - `'parsing_error'`: `BaseException` or `None`
 
         !!! warning "Behavior changed in 0.3.0"
             `method` default changed from `"function_calling"` to `"json_schema"`.
@@ -2984,8 +2975,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             See [all constraints](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
 
             ```python
-            from typing import Optional
-
             from langchain_openai import ChatOpenAI
             from pydantic import BaseModel, Field
 
@@ -2994,20 +2983,18 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 '''An answer to the user question along with justification for the answer.'''
 
                 answer: str
-                justification: Optional[str] = Field(
+                justification: str | None = Field(
                     default=..., description="A justification for the answer."
                 )
 
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(AnswerWithJustification)
 
             structured_llm.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
-
-            Results in:
 
             ```python
             AnswerWithJustification(
@@ -3019,8 +3006,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
             ```python
-            from typing import Optional
-
             from langchain_openai import ChatOpenAI
             from pydantic import BaseModel, Field
 
@@ -3029,12 +3014,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 '''An answer to the user question along with justification for the answer.'''
 
                 answer: str
-                justification: Optional[str] = Field(
+                justification: str | None = Field(
                     default=..., description="A justification for the answer."
                 )
 
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(
                 AnswerWithJustification, method="function_calling"
             )
@@ -3043,8 +3028,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
-
-            Results in:
 
             ```python
             AnswerWithJustification(
@@ -3067,7 +3050,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 justification: str
 
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
@@ -3076,8 +3059,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
-
-            Results in:
 
             ```python
             {
@@ -3117,19 +3098,17 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 answer: str
                 justification: Annotated[
-                    Optional[str], None, "A justification for the answer."
+                    str | None, None, "A justification for the answer."
                 ]
 
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(AnswerWithJustification)
 
             structured_llm.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
-
-            Results in:
 
             ```python
             {
@@ -3159,15 +3138,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             }
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(oai_schema)
 
             structured_llm.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
-
-            Results in:
 
             ```python
             {
@@ -3188,7 +3165,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 justification: str
 
 
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = ChatOpenAI(model="...", temperature=0)
             structured_llm = llm.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
@@ -3199,8 +3176,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What's heavier a pound of bricks or a pound of feathers?"
             )
             ```
-
-            Results in:
 
             ```python
             {
@@ -3228,8 +3203,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What's heavier a pound of bricks or a pound of feathers?"
             )
             ```
-
-            Results in:
 
             ```python
             {
@@ -4066,7 +4039,7 @@ def _construct_lc_result_from_responses_api(
     #    client = OpenAI()
 
     #    client.responses.parse(
-    #        model="gpt-4o-mini",
+    #        model="...",
     #        input=[{"content": "how are ya", "role": "user"}],
     #        text_format=Foo,
     #        stream=True,  # <-- errors

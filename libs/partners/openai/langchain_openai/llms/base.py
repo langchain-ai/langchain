@@ -54,7 +54,7 @@ class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class.
 
     Setup:
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
 
@@ -214,7 +214,7 @@ class BaseOpenAI(BaseLLM):
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
-        None."""
+    None."""
     logit_bias: Optional[dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
@@ -223,7 +223,7 @@ class BaseOpenAI(BaseLLM):
     """Seed for generation"""
     logprobs: Optional[int] = None
     """Include the log probabilities on the logprobs most likely output tokens,
-     as well the chosen tokens."""
+    as well the chosen tokens."""
     streaming: bool = False
     """Whether to stream the results or not."""
     allowed_special: Union[Literal["all"], set[str]] = set()
@@ -704,7 +704,7 @@ class OpenAI(BaseOpenAI):
     """OpenAI completion model integration.
 
     Setup:
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
 
