@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from string import Formatter
 from typing import Any, Literal
 
@@ -149,9 +149,7 @@ def mustache_template_vars(
 Defs = dict[str, "Defs"]
 
 
-def mustache_schema(
-    template: str,
-) -> type[BaseModel]:
+def mustache_schema(template: str) -> type[BaseModel]:
     """Get the variables from a mustache template.
 
     Args:
@@ -175,6 +173,11 @@ def mustache_schema(
             fields[prefix] = False
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
+
+    for key, val in fields.items():
+        fields[key] = val and not any(
+            is_subsequence(key, k) for k in fields if k != key
+        )
     defs: Defs = {}  # None means leaf node
     while fields:
         field, is_leaf = fields.popitem()
@@ -327,3 +330,12 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     def pretty_print(self) -> None:
         """Print a pretty representation of the prompt."""
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
+
+def is_subsequence(child: Sequence, parent: Sequence) -> bool:
+    """Return True if child is subsequence of parent."""
+    if len(child) == 0 or len(parent) == 0:
+        return False
+    if len(parent) < len(child):
+        return False
+    return all(child[i] == parent[i] for i in range(len(child)))
