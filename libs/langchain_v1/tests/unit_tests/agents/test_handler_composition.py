@@ -1,4 +1,4 @@
-"""Unit tests for _chain_model_call_handlers generator composition."""
+"""Unit tests for _chain_model_call_handlers handler composition."""
 
 import pytest
 from langchain_core.messages import AIMessage
@@ -32,8 +32,8 @@ class TestChainModelCallHandlers:
     def test_single_handler_returns_unchanged(self) -> None:
         """Test that single handler is returned without composition."""
 
-        def handler(request, state, runtime):
-            yield request
+        def handler(request, state, runtime, base_handler):
+            return base_handler(request)
 
         result = _chain_model_call_handlers([handler])
         assert result is handler
@@ -42,30 +42,26 @@ class TestChainModelCallHandlers:
         """Test basic composition of two handlers."""
         execution_order = []
 
-        def outer(request, state, runtime):
+        def outer(request, state, runtime, handler):
             execution_order.append("outer-before")
-            yield request
+            result = handler(request)
             execution_order.append("outer-after")
+            return result
 
-        def inner(request, state, runtime):
+        def inner(request, state, runtime, handler):
             execution_order.append("inner-before")
-            yield request
+            result = handler(request)
             execution_order.append("inner-after")
+            return result
 
         composed = _chain_model_call_handlers([outer, inner])
         assert composed is not None
 
         # Execute the composed handler
-        gen = composed(create_test_request(), None, None)
-        request = next(gen)
+        def mock_base_handler(req):
+            return AIMessage(content="test")
 
-        # Simulate model response
-        model_response = AIMessage(content="test")
-
-        try:
-            gen.send(model_response)
-        except StopIteration:
-            pass  # Expected - generator ends after processing
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
         assert execution_order == [
             "outer-before",
@@ -73,41 +69,37 @@ class TestChainModelCallHandlers:
             "inner-after",
             "outer-after",
         ]
+        assert result.content == "test"
 
     def test_three_handlers_composition(self) -> None:
         """Test composition of three handlers."""
         execution_order = []
 
-        def first(request, state, runtime):
+        def first(request, state, runtime, handler):
             execution_order.append("first-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("first-after")
-            # Generator ends here
+            return result
 
-        def second(request, state, runtime):
+        def second(request, state, runtime, handler):
             execution_order.append("second-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("second-after")
-            # Generator ends here
+            return result
 
-        def third(request, state, runtime):
+        def third(request, state, runtime, handler):
             execution_order.append("third-before")
-            response = yield request
+            result = handler(request)
             execution_order.append("third-after")
-            # Generator ends here
+            return result
 
         composed = _chain_model_call_handlers([first, second, third])
         assert composed is not None
 
-        gen = composed(create_test_request(), None, None)
-        request = next(gen)
+        def mock_base_handler(req):
+            return AIMessage(content="test")
 
-        model_response = AIMessage(content="test")
-
-        try:
-            gen.send(model_response)
-        except StopIteration as e:
-            final_response = e.value
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
         # First wraps second wraps third
         assert execution_order == [
@@ -118,118 +110,102 @@ class TestChainModelCallHandlers:
             "second-after",
             "first-after",
         ]
-        # Assertion removed - no longer using ModelResponse
+        assert result.content == "test"
 
     def test_inner_handler_retry(self) -> None:
         """Test inner handler retrying before outer sees response."""
         inner_attempts = []
 
-        def outer_passthrough(request, state, runtime):
-            response = yield request
-            # Generator ends here
+        def outer_passthrough(request, state, runtime, handler):
+            return handler(request)
 
-        def inner_with_retry(request, state, runtime):
+        def inner_with_retry(request, state, runtime, handler):
             for attempt in range(3):
                 inner_attempts.append(attempt)
-                yield request
+                try:
+                    return handler(request)
+                except ValueError:
+                    if attempt == 2:
+                        raise
+            return AIMessage(content="should not reach")
 
         composed = _chain_model_call_handlers([outer_passthrough, inner_with_retry])
         assert composed is not None
 
-        gen = composed(create_test_request(), None, None)
+        call_count = {"value": 0}
 
-        # Inner will retry twice before success
-        request = next(gen)
-        error_response = ValueError("fail")
-        request = gen.send(error_response)
+        def mock_base_handler(req):
+            call_count["value"] += 1
+            if call_count["value"] < 3:
+                raise ValueError("fail")
+            return AIMessage(content="success")
 
-        request = gen.send(error_response)
-
-        success_response = AIMessage(content="success")
-
-        try:
-            gen.send(success_response)
-        except StopIteration as e:
-            final_response = e.value
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
         assert inner_attempts == [0, 1, 2]
-        # Assertion removed - no longer using ModelResponse
+        assert result.content == "success"
 
     def test_error_to_success_conversion(self) -> None:
         """Test handler converting error to success response."""
 
-        def outer_error_handler(request, state, runtime):
+        def outer_error_handler(request, state, runtime, handler):
             try:
-                yield request
+                return handler(request)
             except Exception:
-                fallback = AIMessage(content="Fallback response")
-                yield fallback
+                return AIMessage(content="Fallback response")
 
-        def inner_passthrough(request, state, runtime):
-            yield request
+        def inner_passthrough(request, state, runtime, handler):
+            return handler(request)
 
         composed = _chain_model_call_handlers([outer_error_handler, inner_passthrough])
         assert composed is not None
 
-        gen = composed(create_test_request(), None, None)
-        request = next(gen)
+        def mock_base_handler(req):
+            raise ValueError("Model failed")
 
-        # Throw error into the generator
-        try:
-            gen.throw(ValueError("Model failed"))
-        except StopIteration:
-            pass  # Generator ends after handling error
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
-        # The test needs to be restructured - error handling with composition is complex
-        # For now, just verify the composed generator doesn't crash
+        assert result.content == "Fallback response"
 
     def test_request_modification(self) -> None:
         """Test handlers modifying the request."""
         requests_seen = []
 
-        def outer_add_context(request, state, runtime):
+        def outer_add_context(request, state, runtime, handler):
             modified_request = create_test_request(
                 messages=[*request.messages], system_prompt="Added by outer"
             )
-            response = yield modified_request
-            # Generator ends here
+            return handler(modified_request)
 
-        def inner_track_request(request, state, runtime):
+        def inner_track_request(request, state, runtime, handler):
             requests_seen.append(request.system_prompt)
-            response = yield request
-            # Generator ends here
+            return handler(request)
 
         composed = _chain_model_call_handlers([outer_add_context, inner_track_request])
         assert composed is not None
 
-        gen = composed(create_test_request(), None, None)
-        request = next(gen)
+        def mock_base_handler(req):
+            return AIMessage(content="response")
 
-        model_response = AIMessage(content="response")
-
-        try:
-            gen.send(model_response)
-        except StopIteration:
-            pass
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
         assert requests_seen == ["Added by outer"]
+        assert result.content == "response"
 
     def test_composition_preserves_state_and_runtime(self) -> None:
         """Test that state and runtime are passed through composition."""
         state_values = []
         runtime_values = []
 
-        def outer(request, state, runtime):
+        def outer(request, state, runtime, handler):
             state_values.append(("outer", state))
             runtime_values.append(("outer", runtime))
-            response = yield request
-            # Generator ends here
+            return handler(request)
 
-        def inner(request, state, runtime):
+        def inner(request, state, runtime, handler):
             state_values.append(("inner", state))
             runtime_values.append(("inner", runtime))
-            response = yield request
-            # Generator ends here
+            return handler(request)
 
         composed = _chain_model_call_handlers([outer, inner])
         assert composed is not None
@@ -237,52 +213,45 @@ class TestChainModelCallHandlers:
         test_state = {"test": "state"}
         test_runtime = {"test": "runtime"}
 
-        gen = composed(create_test_request(), test_state, test_runtime)
-        request = next(gen)
+        def mock_base_handler(req):
+            return AIMessage(content="test")
 
-        model_response = AIMessage(content="test")
-
-        try:
-            gen.send(model_response)
-        except StopIteration:
-            pass
+        result = composed(create_test_request(), test_state, test_runtime, mock_base_handler)
 
         # Both handlers should see same state and runtime
         assert state_values == [("outer", test_state), ("inner", test_state)]
         assert runtime_values == [("outer", test_runtime), ("inner", test_runtime)]
+        assert result.content == "test"
 
     def test_multiple_yields_in_retry_loop(self) -> None:
-        """Test handler that yields multiple times in a loop."""
-        yield_count = {"value": 0}
+        """Test handler that retries multiple times."""
+        call_count = {"value": 0}
 
-        def outer_counts_yields(request, state, runtime):
-            response = yield request
-            yield_count["value"] += 1
-            # Generator ends here
+        def outer_counts_calls(request, state, runtime, handler):
+            call_count["value"] += 1
+            return handler(request)
 
-        def inner_retries(request, state, runtime):
-            response = yield request
-            if isinstance(response, Exception):
-                response = yield request  # Second attempt
-            # Generator ends here
+        def inner_retries(request, state, runtime, handler):
+            try:
+                return handler(request)
+            except ValueError:
+                # Retry once on error
+                return handler(request)
 
-        composed = _chain_model_call_handlers([outer_counts_yields, inner_retries])
+        composed = _chain_model_call_handlers([outer_counts_calls, inner_retries])
         assert composed is not None
 
-        gen = composed(create_test_request(), None, None)
+        attempt = {"value": 0}
 
-        # First attempt - error
-        request = next(gen)
-        error = ValueError("fail")
-        request = gen.send(error)
+        def mock_base_handler(req):
+            attempt["value"] += 1
+            if attempt["value"] == 1:
+                raise ValueError("fail")
+            return AIMessage(content="ok")
 
-        # Second attempt - success
-        success = AIMessage(content="ok")
+        result = composed(create_test_request(), None, None, mock_base_handler)
 
-        try:
-            gen.send(success)
-        except StopIteration as e:
-            final_response = e.value
-
-        assert yield_count["value"] == 1
-        # Assertion removed - no longer using ModelResponse
+        # Outer called once, inner retried so base handler called twice
+        assert call_count["value"] == 1
+        assert attempt["value"] == 2
+        assert result.content == "ok"
