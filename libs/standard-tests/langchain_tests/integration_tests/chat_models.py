@@ -2979,8 +2979,18 @@ class ChatModelIntegrationTests(ChatModelTests):
                 [
                     {
                         "type": "thinking",
-                        "thinking": "I'm thinking...",
-                        "signature": "abc123",
+                        "thinking": (
+                            "This is a simple greeting. I should respond warmly and "
+                            "professionally, and perhaps ask how I can help the person "
+                            "today."
+                        ),
+                        "signature": (
+                            "ErUBCkYICBgCIkDCTQUXPc3O7nHXd302Zercaz8WrrpddpOqHITxBih5ze"
+                            "FPoJkwKBvkvZ8ID1aAfJftji6+ZI5gBYDo7XmNBIkzEgzVDHKopedAn/sc"
+                            "G80aDFDXVZrDOWgla7lEBiIwLq5kfFjQjvF/CyuL8J5V7dRwsJN5gQIXaM"
+                            "B6xXTs6T+2Zp0VdiyiMb/hcdrHt+7aKh0z2E1UnjiOCoTlofNFHzOnKk0q"
+                            "PIoPmfGgpPgGNRgC"
+                        ),
                     },
                     {
                         "type": "text",
