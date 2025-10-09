@@ -19,7 +19,7 @@ class TestChatSarvamUnit(ChatModelUnitTests):
     def chat_model_params(self) -> dict[str, Any]:
         """Get chat model parameters."""
         return {
-            "model": "sarvam-m",
+            "model": "sarvam-1",
             "api_key": "test-api-key",
             "temperature": 0.7,
         }
@@ -27,21 +27,21 @@ class TestChatSarvamUnit(ChatModelUnitTests):
 
 def test_initialization() -> None:
     """Test ChatSarvam initialization."""
-    llm = ChatSarvam(model="sarvam-m", api_key="test-key")
-    assert llm.model == "sarvam-m"
+    llm = ChatSarvam(model="sarvam-1", api_key="test-key")
+    assert llm.model == "sarvam-1"
     assert llm.temperature == 0.7
 
 
 def test_sarvam_model_param() -> None:
     """Test model parameter."""
-    llm = ChatSarvam(model="sarvam-m", api_key="test-key")
-    assert llm.model == "sarvam-m"
+    llm = ChatSarvam(model="sarvam-2", api_key="test-key")
+    assert llm.model == "sarvam-2"
 
 
 def test_sarvam_model_kwargs() -> None:
     """Test model kwargs."""
     llm = ChatSarvam(
-        model="sarvam-m",
+        model="sarvam-1",
         api_key="test-key",
         model_kwargs={"custom_param": "value"},
     )

@@ -1,22 +1,35 @@
-.PHONY: all format lint test tests integration_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help extended_tests clean install
 
-# Default target executed when no arguments are given to make.
+# Default target
 all: help
 
-# Define a variable for the test file path.
-TEST_FILE ?= tests/unit_tests/
+######################
+# INSTALLATION
+######################
 
-test:
-	poetry run pytest $(TEST_FILE)
+install:
+	pip install -e ".[test]"
 
-tests:
-	poetry run pytest $(TEST_FILE)
+######################
+# TESTING
+######################
+
+test tests:
+	pytest tests/unit_tests -v \
+		--cov=langchain_sarvam \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--junitxml=junit/test-results.xml
 
 integration_tests:
-	poetry run pytest tests/integration_tests
+	pytest tests/integration_tests -v \
+		--cov=langchain_sarvam \
+		--cov-report=term-missing \
+		--cov-report=xml
 
 extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
+	$(MAKE) test
+	$(MAKE) integration_tests
 
 ######################
 # LINTING AND FORMATTING
@@ -32,22 +45,52 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff check .
-	poetry run ruff format . --check
-	[ "$(PYTHON_FILES)" = "" ] || poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	ruff check $(PYTHON_FILES)
+	ruff format --check $(PYTHON_FILES)
+	mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff check --select I --fix $(PYTHON_FILES)
+	ruff format $(PYTHON_FILES)
+	ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
-	poetry run codespell --toml pyproject.toml
+	codespell --toml pyproject.toml
 
 spell_fix:
-	poetry run codespell --toml pyproject.toml -w
+	codespell --toml pyproject.toml -w
 
 check_imports: $(shell find langchain_sarvam -name '*.py')
-	poetry run python -m scripts.check_imports $^
+	python -m scripts.check_imports $^
+
+######################
+# CLEANING
+######################
+
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name ".coverage" -delete
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name ".ruff_cache" -exec rm -rf {} +
+	find . -type d -name ".mypy_cache*" -exec rm -rf {} +
+	find . -type d -name "junit" -exec rm -rf {} +
+	rm -rf build/
+	rm -rf dist/
+	rm -rf .coverage*
+	rm -rf coverage.xml
+	rm -rf htmlcov/
+
+######################
+# BUILD
+######################
+
+build:
+	python -m build
+
+publish:
+	python -m twine upload dist/*
 
 ######################
 # HELP
@@ -55,12 +98,17 @@ check_imports: $(shell find langchain_sarvam -name '*.py')
 
 help:
 	@echo '----'
-	@echo 'check_imports         - check imports'
+	@echo 'install               - install package in editable mode with test dependencies'
 	@echo 'format                - run code formatters'
 	@echo 'lint                  - run linters'
 	@echo 'test                  - run unit tests'
-	@echo 'tests                 - run unit tests'
+	@echo 'tests                 - run unit tests (alias for test)'
 	@echo 'integration_tests     - run integration tests'
-	@echo 'extended_tests        - run extended tests'
+	@echo 'extended_tests        - run all tests'
+	@echo 'clean                 - clean all build and test artifacts'
+	@echo 'build                 - build package'
+	@echo 'publish               - publish package to PyPI'
 	@echo 'spell_check           - run codespell on the project'
 	@echo 'spell_fix             - run codespell on the project and fix issues'
+	@echo 'check_imports         - check imports'
+	@echo 'help                  - print this help message'
