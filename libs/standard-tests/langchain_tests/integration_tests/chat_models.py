@@ -563,7 +563,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
-        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
         as benchmarking tests.
 
         To enable these tests, follow these steps:
@@ -2287,7 +2287,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
-        """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_.
+        """Test structured output via [JSON mode.](https://python.langchain.com/docs/concepts/structured_outputs/#json-mode).
 
         This test is optional and should be skipped if the model does not support
         the JSON mode feature (see Configuration below).

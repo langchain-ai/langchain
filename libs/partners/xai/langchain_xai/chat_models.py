@@ -26,7 +26,7 @@ _DictOrPydantic: TypeAlias = dict | BaseModel
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
-    Refer to `xAI's documentation <https://docs.x.ai/docs/api-reference#chat-completions>`__
+    Refer to [xAI's documentation](https://docs.x.ai/docs/api-reference#chat-completions)
     for more nuanced details on the API's behavior and supported parameters.
 
     Setup:
@@ -46,7 +46,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             while lower values (like `0.2`) mean more focused and deterministic completions.
             (Default: `1`.)
         max_tokens: int | None
-            Max number of tokens to generate. Refer to your `model's documentation <https://docs.x.ai/docs/models#model-pricing>`__
+            Max number of tokens to generate. Refer to your [model's documentation](https://docs.x.ai/docs/models#model-pricing)
             for the maximum number of tokens it can generate.
         logprobs: bool | None
             Whether to return logprobs.
@@ -163,7 +163,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
     Reasoning:
-        `Certain xAI models <https://docs.x.ai/docs/models#model-pricing>`__ support reasoning,
+        [Certain xAI models](https://docs.x.ai/docs/models#model-pricing) support reasoning,
         which allows the model to provide reasoning content along with the response.
 
         If provided, reasoning content is returned under the ``additional_kwargs`` field of the
@@ -182,10 +182,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         !!! note
             As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
-            `Grok 3 Mini <https://docs.x.ai/docs/models/grok-3-mini>`__.
+            [Grok 3 Mini](https://docs.x.ai/docs/models/grok-3-mini).
 
         !!! note
-            Note that in `Grok 4 <https://docs.x.ai/docs/models/grok-4-0709>`__, as of 2025-07-10,
+            Note that in [Grok 4](https://docs.x.ai/docs/models/grok-4-0709), as of 2025-07-10,
             reasoning is not exposed in ``reasoning_content`` (other than initial ``'Thinking...'`` text),
             reasoning cannot be disabled, and the ``reasoning_effort`` cannot be specified.
 
@@ -323,7 +323,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
     Live Search:
-        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`__
+        xAI supports a [Live Search](https://docs.x.ai/docs/guides/live-search)
         feature that enables Grok to ground its answers using results from web searches.
 
         .. code-block:: python
@@ -344,8 +344,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             llm.invoke("Provide me a digest of world news in the last 24 hours.")
 
         !!! note
-            `Citations <https://docs.x.ai/docs/guides/live-search#returning-citations>`__
-            are only available in `Grok 3 <https://docs.x.ai/docs/models/grok-3>`__.
+            [Citations](https://docs.x.ai/docs/guides/live-search#returning-citations)
+            are only available in [Grok 3](https://docs.x.ai/docs/models/grok-3).
 
     Token usage:
         .. code-block:: python
@@ -604,9 +604,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             method: The method for steering model generation, one of:
 
                 - ``'function_calling'``:
-                    Uses xAI's `tool-calling features <https://docs.x.ai/docs/guides/function-calling>`__.
+                    Uses xAI's [tool-calling features](https://docs.x.ai/docs/guides/function-calling).
                 - ``'json_schema'``:
-                    Uses xAI's `structured output feature <https://docs.x.ai/docs/guides/structured-outputs>`__.
+                    Uses xAI's [structured output feature](https://docs.x.ai/docs/guides/structured-outputs).
                 - ``'json_mode'``:
                     Uses xAI's JSON mode feature.
 
@@ -621,7 +621,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             strict:
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
+                    The input schema will also be validated according to the [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.

@@ -146,7 +146,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
         Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
 
-        `For more, see this page. <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__
+        [For more, see this page.](https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id)
     """
     azure_ad_token_provider: Callable[[], str] | None = None
     """A function that returns an Azure Active Directory token.

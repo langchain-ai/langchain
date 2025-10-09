@@ -405,7 +405,7 @@ class ChatPerplexity(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
         Currently, Perplexity only supports "json_schema" method for structured output
-        as per their `official documentation <https://docs.perplexity.ai/guides/structured-outputs>`__.
+        as per their [official documentation](https://docs.perplexity.ai/guides/structured-outputs).
 
         Args:
             schema: The output schema. Can be passed in as:

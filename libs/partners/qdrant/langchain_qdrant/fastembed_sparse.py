@@ -23,9 +23,9 @@ class FastEmbedSparse(SparseEmbeddings):
     ) -> None:
         """Sparse encoder implementation using FastEmbed.
 
-        Uses `FastEmbed <https://qdrant.github.io/fastembed/>`__ for sparse text
+        Uses [FastEmbed](https://qdrant.github.io/fastembed/) for sparse text
         embeddings.
-        For a list of available models, see `the Qdrant docs <https://qdrant.github.io/fastembed/examples/Supported_Models/>`__.
+        For a list of available models, see [the Qdrant docs](https://qdrant.github.io/fastembed/examples/Supported_Models/).
 
         Args:
             model_name (str): The name of the model to use. Defaults to `"Qdrant/bm25"`.

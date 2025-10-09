@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 class Fireworks(LLM):
     """LLM models from `Fireworks`.
 
-    To use, you'll need an `API key <https://fireworks.ai>`__. This can be passed in as
+    To use, you'll need an [API key](https://fireworks.ai). This can be passed in as
     init param ``fireworks_api_key`` or set as environment variable
     ``FIREWORKS_API_KEY``.
 
-    `Fireworks AI API reference <https://readme.fireworks.ai/>`__
+    [Fireworks AI API reference](https://readme.fireworks.ai/)
 
     Example:
 
@@ -55,7 +55,7 @@ class Fireworks(LLM):
     Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
     model: str
-    """Model name. `(Available models) <https://readme.fireworks.ai/>`__"""
+    """Model name. [(Available models)](https://readme.fireworks.ai/)"""
     temperature: float | None = None
     """Model temperature."""
     top_p: float | None = None

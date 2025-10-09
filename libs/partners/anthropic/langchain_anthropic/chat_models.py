@@ -565,7 +565,7 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
 
-    See `Anthropic's docs <https://docs.anthropic.com/en/docs/about-claude/models/overview>`__ for a
+    See [Anthropic's docs](https://docs.anthropic.com/en/docs/about-claude/models/overview) for a
     list of the latest models.
 
     Setup:
@@ -805,7 +805,7 @@ class ChatAnthropic(BaseChatModel):
         See ``ChatAnthropic.with_structured_output()`` for more.
 
     Image input:
-        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`__
+        See [multimodal guides](https://python.langchain.com/docs/how_to/multimodal_inputs/)
         for more detail.
 
         .. code-block:: python
@@ -847,7 +847,7 @@ class ChatAnthropic(BaseChatModel):
         ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
-            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
+            [Files API](https://docs.anthropic.com/en/docs/build-with-claude/files):
 
             .. code-block:: python
 
@@ -873,7 +873,7 @@ class ChatAnthropic(BaseChatModel):
                 llm.invoke([input_message])
 
     PDF input:
-        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`__
+        See [multimodal guides](https://python.langchain.com/docs/how_to/multimodal_inputs/)
         for more detail.
 
         .. code-block:: python
@@ -910,7 +910,7 @@ class ChatAnthropic(BaseChatModel):
         ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
-            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
+            [Files API](https://docs.anthropic.com/en/docs/build-with-claude/files):
 
             .. code-block:: python
 
@@ -937,7 +937,7 @@ class ChatAnthropic(BaseChatModel):
 
     Extended thinking:
         Claude 3.7 Sonnet supports an
-        `extended thinking <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking>`__
+        [extended thinking](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking)
         feature, which will output the step-by-step reasoning process that led to its
         final answer.
 
@@ -972,10 +972,10 @@ class ChatAnthropic(BaseChatModel):
 
     Citations:
         Anthropic supports a
-        `citations <https://docs.anthropic.com/en/docs/build-with-claude/citations>`__
+        [citations](https://docs.anthropic.com/en/docs/build-with-claude/citations)
         feature that lets Claude attach context to its answers based on source
         documents supplied by the user. When
-        `document content blocks <https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types>`__
+        [document content blocks](https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types)
         with ``"citations": {"enabled": True}`` are included in a query, Claude may
         generate citations in its response.
 
@@ -1077,7 +1077,7 @@ class ChatAnthropic(BaseChatModel):
 
         !!! note
             Only certain models support prompt caching.
-            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            See the [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models)
             for a full list.
 
         .. code-block:: python
@@ -1174,7 +1174,7 @@ class ChatAnthropic(BaseChatModel):
                     },
                 }
 
-            See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
+            See [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
             for detail.
 
     Extended context windows (beta):
@@ -1208,12 +1208,12 @@ class ChatAnthropic(BaseChatModel):
 
             response = llm.invoke(messages)
 
-        See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window>`__
+        See [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window)
         for detail.
 
 
     Token-efficient tool use (beta):
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+        See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/)
         for more detail.
 
         .. code-block:: python
@@ -1253,7 +1253,7 @@ class ChatAnthropic(BaseChatModel):
         Anthropic supports a context editing feature that will automatically manage the
         model's context window (e.g., by clearing tool results).
 
-        See `Anthropic documentation <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__
+        See [Anthropic documentation](https://docs.claude.com/en/docs/build-with-claude/context-editing)
         for details and configuration options.
 
         .. code-block:: python
@@ -1269,7 +1269,7 @@ class ChatAnthropic(BaseChatModel):
             response = llm_with_tools.invoke("Search for recent developments in AI")
 
     Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
+        See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools)
         for more detail.
 
         ??? note "Web search"
@@ -1503,7 +1503,7 @@ class ChatAnthropic(BaseChatModel):
 
     context_management: dict[str, Any] | None = None
     """Configuration for
-    `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__.
+    [context management](https://docs.claude.com/en/docs/build-with-claude/context-editing).
     """
 
     @property
@@ -2397,7 +2397,7 @@ class ChatAnthropic(BaseChatModel):
                 403
 
         !!! warning "Behavior changed in 0.3.0"
-                Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
+                Uses Anthropic's [token counting API](https://docs.anthropic.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
         """  # noqa: D214,E501
         formatted_system, formatted_messages = _format_messages(messages)

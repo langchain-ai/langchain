@@ -1,6 +1,6 @@
 """This is the langchain_ollama package.
 
-Provides infrastructure for interacting with the `Ollama <https://ollama.com/>`__
+Provides infrastructure for interacting with the [Ollama](https://ollama.com/)
 service.
 
 !!! note
