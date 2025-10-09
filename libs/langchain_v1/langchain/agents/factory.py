@@ -32,7 +32,9 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,
+    ModelCall,
     ModelRequest,
+    ModelResponse,
     OmitFromSchema,
     PublicAgentState,
 )
@@ -87,14 +89,14 @@ class _InternalModelResponse:
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelCall], ModelResponse]],
+            ModelResponse,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], AIMessage]],
-        AIMessage,
+        [ModelRequest, Callable[[ModelCall], ModelResponse]],
+        ModelResponse,
     ]
     | None
 ):
@@ -141,26 +143,26 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelCall], ModelResponse]],
+            ModelResponse,
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelCall], ModelResponse]],
+            ModelResponse,
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], AIMessage]],
-        AIMessage,
+        [ModelRequest, Callable[[ModelCall], ModelResponse]],
+        ModelResponse,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler
-            def inner_handler(req: ModelRequest) -> AIMessage:
-                return inner(req, handler)
+            def inner_handler(_model_call: ModelCall) -> ModelResponse:
+                return inner(request, handler)
 
             # Call outer with the wrapped inner as its handler
             return outer(request, inner_handler)
@@ -178,14 +180,14 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelCall], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-        Awaitable[AIMessage],
+        [ModelRequest, Callable[[ModelCall], Awaitable[ModelResponse]]],
+        Awaitable[ModelResponse],
     ]
     | None
 ):
@@ -205,26 +207,26 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelCall], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelCall], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-        Awaitable[AIMessage],
+        [ModelRequest, Callable[[ModelCall], Awaitable[ModelResponse]]],
+        Awaitable[ModelResponse],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler
-            async def inner_handler(req: ModelRequest) -> AIMessage:
-                return await inner(req, handler)
+            async def inner_handler(_model_call: ModelCall) -> ModelResponse:
+                return await inner(request, handler)
 
             # Call outer with the wrapped inner as its handler
             return await outer(request, inner_handler)
@@ -744,13 +746,13 @@ def create_agent(  # noqa: PLR0915
 
         return {"messages": [output]}
 
-    def _get_bound_model(request: ModelRequest) -> tuple[Runnable, ResponseFormat | None]:
+    def _get_bound_model(model_call: ModelCall) -> tuple[Runnable, ResponseFormat | None]:
         """Get the model with appropriate tool bindings.
 
         Performs auto-detection of strategy if needed based on model capabilities.
 
         Args:
-            request: The model request containing model, tools, and response format.
+            model_call: The model call containing model, tools, and response format.
 
         Returns:
             Tuple of (bound_model, effective_response_format) where ``effective_response_format``
@@ -765,7 +767,7 @@ def create_agent(  # noqa: PLR0915
 
         # Check if any requested tools are unknown CLIENT-SIDE tools
         unknown_tool_names = []
-        for t in request.tools:
+        for t in model_call.tools:
             # Only validate BaseTool instances (skip built-in dict tools)
             if isinstance(t, dict):
                 continue
@@ -782,7 +784,7 @@ def create_agent(  # noqa: PLR0915
                 "the 'tools' parameter\n"
                 "2. If using custom middleware with tools, ensure "
                 "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
+                "3. Verify that tool names in ModelCall.tools match "
                 "the actual tool.name values\n"
                 "Note: Built-in provider tools (dict format) can be added dynamically."
             )
@@ -790,22 +792,24 @@ def create_agent(  # noqa: PLR0915
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat | None
-        if isinstance(request.response_format, AutoStrategy):
+        if isinstance(model_call.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(model_call.model):
                 # Model supports provider strategy - use it
-                effective_response_format = ProviderStrategy(schema=request.response_format.schema)
+                effective_response_format = ProviderStrategy(
+                    schema=model_call.response_format.schema
+                )
             else:
                 # Model doesn't support provider strategy - use ToolStrategy
-                effective_response_format = ToolStrategy(schema=request.response_format.schema)
+                effective_response_format = ToolStrategy(schema=model_call.response_format.schema)
         else:
             # User explicitly specified a strategy - preserve it
-            effective_response_format = request.response_format
+            effective_response_format = model_call.response_format
 
         # Build final tools list including structured output tools
-        # request.tools now only contains BaseTool instances (converted from callables)
+        # model_call.tools now only contains BaseTool instances (converted from callables)
         # and dicts (built-ins)
-        final_tools = list(request.tools)
+        final_tools = list(model_call.tools)
         if isinstance(effective_response_format, ToolStrategy):
             # Add structured output tools to final tools list
             structured_tools = [info.tool for info in structured_output_tools.values()]
@@ -816,8 +820,8 @@ def create_agent(  # noqa: PLR0915
             # Use provider-specific structured output
             kwargs = effective_response_format.to_model_kwargs()
             return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
+                model_call.model.bind_tools(
+                    final_tools, strict=True, **kwargs, **model_call.model_settings
                 ),
                 effective_response_format,
             )
@@ -839,10 +843,10 @@ def create_agent(  # noqa: PLR0915
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            tool_choice = "any" if structured_output_tools else model_call.tool_choice
             return (
-                request.model.bind_tools(
-                    final_tools, tool_choice=tool_choice, **request.model_settings
+                model_call.model.bind_tools(
+                    final_tools, tool_choice=tool_choice, **model_call.model_settings
                 ),
                 effective_response_format,
             )
@@ -850,144 +854,315 @@ def create_agent(  # noqa: PLR0915
         # No structured output - standard model binding
         if final_tools:
             return (
-                request.model.bind_tools(
-                    final_tools, tool_choice=request.tool_choice, **request.model_settings
+                model_call.model.bind_tools(
+                    final_tools, tool_choice=model_call.tool_choice, **model_call.model_settings
                 ),
                 None,
             )
-        return request.model.bind(**request.model_settings), None
+        return model_call.model.bind(**model_call.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model and return result or exception.
+    def _execute_model_sync(model_call: ModelCall) -> ModelResponse:
+        """Execute model and return ModelResponse with messages and structured output.
 
         This is the core model execution logic wrapped by wrap_model_call handlers.
-        """
-        try:
-            # Get the bound model (with auto-detection if needed)
-            model_, effective_response_format = _get_bound_model(request)
-            messages = request.messages
-            if request.system_prompt:
-                messages = [SystemMessage(request.system_prompt), *messages]
+        Handles model invocation, auto-detection of response format, and structured
+        output processing.
 
-            output = model_.invoke(messages)
-            return _InternalModelResponse(
-                result=output,
-                exception=None,
-                effective_response_format=effective_response_format,
-            )
-        except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation
-            return _InternalModelResponse(
-                result=None,
-                exception=error,
-                effective_response_format=None,
-            )
+        Args:
+            model_call: The model call parameters.
+
+        Returns:
+            ModelResponse with result (list of messages) and structured_response (if applicable).
+
+        Raises:
+            Exception: Any exception from model invocation or structured output processing.
+        """
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(model_call)
+        messages = model_call.messages
+        if model_call.system_prompt:
+            messages = [SystemMessage(model_call.system_prompt), *messages]
+
+        output: AIMessage = model_.invoke(messages)
+
+        # Handle structured output with provider strategy
+        if isinstance(effective_response_format, ProviderStrategy):
+            if not output.tool_calls:
+                provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
+                    effective_response_format.schema_spec
+                )
+                structured_response = provider_strategy_binding.parse(output)
+                return ModelResponse(result=[output], structured_response=structured_response)
+            return ModelResponse(result=[output])
+
+        # Handle structured output with tool strategy
+        if (
+            isinstance(effective_response_format, ToolStrategy)
+            and isinstance(output, AIMessage)
+            and output.tool_calls
+        ):
+            structured_tool_calls = [
+                tc for tc in output.tool_calls if tc["name"] in structured_output_tools
+            ]
+
+            if structured_tool_calls:
+                if len(structured_tool_calls) > 1:
+                    # Handle multiple structured outputs error
+                    tool_names = [tc["name"] for tc in structured_tool_calls]
+                    exception = MultipleStructuredOutputsError(tool_names)
+                    should_retry, error_message = _handle_structured_output_error(
+                        exception, effective_response_format
+                    )
+                    if not should_retry:
+                        raise exception
+
+                    # Add error messages and retry
+                    tool_messages = [
+                        ToolMessage(
+                            content=error_message,
+                            tool_call_id=tc["id"],
+                            name=tc["name"],
+                        )
+                        for tc in structured_tool_calls
+                    ]
+                    return ModelResponse(result=[output, *tool_messages])
+
+                # Handle single structured output
+                tool_call = structured_tool_calls[0]
+                try:
+                    structured_tool_binding = structured_output_tools[tool_call["name"]]
+                    structured_response = structured_tool_binding.parse(tool_call["args"])
+
+                    tool_message_content = (
+                        effective_response_format.tool_message_content
+                        if effective_response_format.tool_message_content
+                        else f"Returning structured response: {structured_response}"
+                    )
+
+                    return ModelResponse(
+                        result=[
+                            output,
+                            ToolMessage(
+                                content=tool_message_content,
+                                tool_call_id=tool_call["id"],
+                                name=tool_call["name"],
+                            ),
+                        ],
+                        structured_response=structured_response,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    should_retry, error_message = _handle_structured_output_error(
+                        exception, effective_response_format
+                    )
+                    if not should_retry:
+                        raise exception
+
+                    return ModelResponse(
+                        result=[
+                            output,
+                            ToolMessage(
+                                content=error_message,
+                                tool_call_id=tool_call["id"],
+                                name=tool_call["name"],
+                            ),
+                        ]
+                    )
+
+        return ModelResponse(result=[output])
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
-        request = ModelRequest(
+        # Create ModelCall with invocation parameters
+        model_call = ModelCall(
             model=model,
             tools=default_tools,
             system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+        )
+
+        # Create ModelRequest with model_call + state + runtime
+        request = ModelRequest(
+            model_call=model_call,
             state=state,
             runtime=runtime,
         )
 
-        # Execute with or without handler
-        effective_response_format: Any = None
-
-        # Define base handler that executes the model
-        def base_handler(req: ModelRequest) -> AIMessage:
-            nonlocal effective_response_format
-            internal_response = _execute_model_sync(req)
-            if internal_response.exception is not None:
-                raise internal_response.exception
-            if internal_response.result is None:
-                msg = "Model execution succeeded but returned no result"
-                raise RuntimeError(msg)
-            effective_response_format = internal_response.effective_response_format
-            return internal_response.result
-
+        # Execute with or without middleware handlers
+        # Handler returns ModelResponse with messages and structured_response
         if wrap_model_call_handler is None:
             # No handlers - execute directly
-            output = base_handler(request)
+            response = _execute_model_sync(model_call)
         else:
             # Call composed handler with base handler
-            output = wrap_model_call_handler(request, base_handler)
-        return {
+            response = wrap_model_call_handler(request, _execute_model_sync)
+
+        # Build result dict with model call counts and messages
+        result: dict[str, Any] = {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
+            "messages": response.result,
         }
 
-    async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model asynchronously and return result or exception.
+        # Add structured response if present
+        if response.structured_response is not None:
+            result["structured_response"] = response.structured_response
 
+        return result
+
+    async def _execute_model_async(model_call: ModelCall) -> ModelResponse:
+        """Execute model asynchronously and return ModelResponse.
+
+        Returns ModelResponse with messages and structured output.
         This is the core async model execution logic wrapped by wrap_model_call handlers.
-        """
-        try:
-            # Get the bound model (with auto-detection if needed)
-            model_, effective_response_format = _get_bound_model(request)
-            messages = request.messages
-            if request.system_prompt:
-                messages = [SystemMessage(request.system_prompt), *messages]
+        Handles model invocation, auto-detection of response format, and structured
+        output processing.
 
-            output = await model_.ainvoke(messages)
-            return _InternalModelResponse(
-                result=output,
-                exception=None,
-                effective_response_format=effective_response_format,
-            )
-        except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation
-            return _InternalModelResponse(
-                result=None,
-                exception=error,
-                effective_response_format=None,
-            )
+        Args:
+            model_call: The model call parameters.
+
+        Returns:
+            ModelResponse with result (list of messages) and structured_response (if applicable).
+
+        Raises:
+            Exception: Any exception from model invocation or structured output processing.
+        """
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(model_call)
+        messages = model_call.messages
+        if model_call.system_prompt:
+            messages = [SystemMessage(model_call.system_prompt), *messages]
+
+        output: AIMessage = await model_.ainvoke(messages)
+
+        # Handle structured output with provider strategy
+        if isinstance(effective_response_format, ProviderStrategy):
+            if not output.tool_calls:
+                provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
+                    effective_response_format.schema_spec
+                )
+                structured_response = provider_strategy_binding.parse(output)
+                return ModelResponse(result=[output], structured_response=structured_response)
+            return ModelResponse(result=[output])
+
+        # Handle structured output with tool strategy
+        if (
+            isinstance(effective_response_format, ToolStrategy)
+            and isinstance(output, AIMessage)
+            and output.tool_calls
+        ):
+            structured_tool_calls = [
+                tc for tc in output.tool_calls if tc["name"] in structured_output_tools
+            ]
+
+            if structured_tool_calls:
+                if len(structured_tool_calls) > 1:
+                    # Handle multiple structured outputs error
+                    tool_names = [tc["name"] for tc in structured_tool_calls]
+                    exception = MultipleStructuredOutputsError(tool_names)
+                    should_retry, error_message = _handle_structured_output_error(
+                        exception, effective_response_format
+                    )
+                    if not should_retry:
+                        raise exception
+
+                    # Add error messages and retry
+                    tool_messages = [
+                        ToolMessage(
+                            content=error_message,
+                            tool_call_id=tc["id"],
+                            name=tc["name"],
+                        )
+                        for tc in structured_tool_calls
+                    ]
+                    return ModelResponse(result=[output, *tool_messages])
+
+                # Handle single structured output
+                tool_call = structured_tool_calls[0]
+                try:
+                    structured_tool_binding = structured_output_tools[tool_call["name"]]
+                    structured_response = structured_tool_binding.parse(tool_call["args"])
+
+                    tool_message_content = (
+                        effective_response_format.tool_message_content
+                        if effective_response_format.tool_message_content
+                        else f"Returning structured response: {structured_response}"
+                    )
+
+                    return ModelResponse(
+                        result=[
+                            output,
+                            ToolMessage(
+                                content=tool_message_content,
+                                tool_call_id=tool_call["id"],
+                                name=tool_call["name"],
+                            ),
+                        ],
+                        structured_response=structured_response,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    should_retry, error_message = _handle_structured_output_error(
+                        exception, effective_response_format
+                    )
+                    if not should_retry:
+                        raise exception
+
+                    return ModelResponse(
+                        result=[
+                            output,
+                            ToolMessage(
+                                content=error_message,
+                                tool_call_id=tool_call["id"],
+                                name=tool_call["name"],
+                            ),
+                        ]
+                    )
+
+        return ModelResponse(result=[output])
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
-        request = ModelRequest(
+        # Create ModelCall with invocation parameters
+        model_call = ModelCall(
             model=model,
             tools=default_tools,
             system_prompt=system_prompt,
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+        )
+
+        # Create ModelRequest with model_call + state + runtime
+        request = ModelRequest(
+            model_call=model_call,
             state=state,
             runtime=runtime,
         )
 
-        # Execute with or without handler
-        effective_response_format: Any = None
-
-        # Define base async handler that executes the model
-        async def base_handler(req: ModelRequest) -> AIMessage:
-            nonlocal effective_response_format
-            internal_response = await _execute_model_async(req)
-            if internal_response.exception is not None:
-                raise internal_response.exception
-            if internal_response.result is None:
-                msg = "Model execution succeeded but returned no result"
-                raise RuntimeError(msg)
-            effective_response_format = internal_response.effective_response_format
-            return internal_response.result
-
+        # Execute with or without middleware handlers
+        # Handler returns ModelResponse with messages and structured_response
         if awrap_model_call_handler is None:
             # No async handlers - execute directly
-            output = await base_handler(request)
+            response = await _execute_model_async(model_call)
         else:
             # Call composed async handler with base handler
-            output = await awrap_model_call_handler(request, base_handler)
-        return {
+            response = await awrap_model_call_handler(request, _execute_model_async)
+
+        # Build result dict with model call counts and messages
+        result: dict[str, Any] = {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
+            "messages": response.result,
         }
+
+        # Add structured response if present
+        if response.structured_response is not None:
+            result["structured_response"] = response.structured_response
+
+        return result
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))

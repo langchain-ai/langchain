@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    ModelCall,
     ModelRequest,
+    ModelResponse,
 )
 from langchain.chat_models import init_chat_model
 
@@ -14,7 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from langchain_core.language_models.chat_models import BaseChatModel
-    from langchain_core.messages import AIMessage
 
 
 class ModelFallbackMiddleware(AgentMiddleware):
@@ -68,18 +69,16 @@ class ModelFallbackMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelCall], ModelResponse],
+    ) -> ModelResponse:
         """Try fallback models in sequence on errors.
 
         Args:
-            request: Initial model request.
-            state: Current agent state.
-            runtime: LangGraph runtime.
-            handler: Callback to execute the model.
+            request: Full model request including state and runtime.
+            handler: Callback to execute the model call.
 
         Returns:
-            AIMessage from successful model call.
+            ModelResponse from successful model call.
 
         Raises:
             Exception: If all models fail, re-raises last exception.
@@ -87,15 +86,15 @@ class ModelFallbackMiddleware(AgentMiddleware):
         # Try primary model first
         last_exception: Exception
         try:
-            return handler(request)
+            return handler(request.model_call)
         except Exception as e:  # noqa: BLE001
             last_exception = e
 
         # Try fallback models
         for fallback_model in self.models:
-            request.model = fallback_model
+            request.model_call.model = fallback_model
             try:
-                return handler(request)
+                return handler(request.model_call)
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue

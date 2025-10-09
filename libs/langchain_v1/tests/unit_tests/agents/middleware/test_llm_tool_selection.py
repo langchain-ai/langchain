@@ -115,7 +115,7 @@ class TestLLMToolSelectorBasic:
             """Middleware to select relevant tools based on state/context."""
             # Select a small, relevant subset of tools based on state/context
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         tool_selection_model = FakeModel(
             messages=cycle(
@@ -161,7 +161,9 @@ class TestLLMToolSelectorBasic:
         assert isinstance(response["messages"][-1], AIMessage)
 
         for request in model_requests:
-            selected_tool_names = [tool.name for tool in request.tools] if request.tools else []
+            selected_tool_names = (
+                [tool.name for tool in request.model_call.tools] if request.model_call.tools else []
+            )
             assert selected_tool_names == ["get_weather", "calculate"]
 
     async def test_async_basic_selection(self) -> None:
@@ -218,7 +220,7 @@ class TestMaxToolsLimiting:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector model tries to select 4 tools
         tool_selection_model = FakeModel(
@@ -261,8 +263,8 @@ class TestMaxToolsLimiting:
         # Verify only 2 tools were passed to the main model
         assert len(model_requests) > 0
         for request in model_requests:
-            assert len(request.tools) == 2
-            tool_names = [tool.name for tool in request.tools]
+            assert len(request.model_call.tools) == 2
+            tool_names = [tool.name for tool in request.model_call.tools]
             # Should be first 2 from the selection
             assert tool_names == ["get_weather", "search_web"]
 
@@ -273,7 +275,7 @@ class TestMaxToolsLimiting:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         tool_selection_model = FakeModel(
             messages=cycle(
@@ -315,8 +317,8 @@ class TestMaxToolsLimiting:
         # All 4 selected tools should be present
         assert len(model_requests) > 0
         for request in model_requests:
-            assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            assert len(request.model_call.tools) == 4
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert set(tool_names) == {
                 "get_weather",
                 "search_web",
@@ -335,7 +337,7 @@ class TestAlwaysInclude:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector picks only search_web
         tool_selection_model = FakeModel(
@@ -373,7 +375,7 @@ class TestAlwaysInclude:
         # Both selected and always_include tools should be present
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert "search_web" in tool_names
             assert "send_email" in tool_names
             assert len(tool_names) == 2
@@ -385,7 +387,7 @@ class TestAlwaysInclude:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector picks 2 tools
         tool_selection_model = FakeModel(
@@ -425,8 +427,8 @@ class TestAlwaysInclude:
         # Should have 2 selected + 2 always_include = 4 total
         assert len(model_requests) > 0
         for request in model_requests:
-            assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            assert len(request.model_call.tools) == 4
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
             assert "send_email" in tool_names
@@ -439,7 +441,7 @@ class TestAlwaysInclude:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector picks 1 tool
         tool_selection_model = FakeModel(
@@ -478,8 +480,8 @@ class TestAlwaysInclude:
         # Should have 1 selected + 3 always_include = 4 total
         assert len(model_requests) > 0
         for request in model_requests:
-            assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            assert len(request.model_call.tools) == 4
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert "get_weather" in tool_names
             assert "send_email" in tool_names
             assert "calculate" in tool_names
@@ -496,7 +498,7 @@ class TestDuplicateAndInvalidTools:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector returns duplicates
         tool_selection_model = FakeModel(
@@ -538,7 +540,7 @@ class TestDuplicateAndInvalidTools:
         # Duplicates should be removed
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert tool_names == ["get_weather", "search_web"]
             assert len(tool_names) == 2
 
@@ -549,7 +551,7 @@ class TestDuplicateAndInvalidTools:
         @wrap_model_call
         def trace_model_requests(request, handler):
             model_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
         # Selector returns duplicates but max_tools=2
         tool_selection_model = FakeModel(
@@ -592,7 +594,7 @@ class TestDuplicateAndInvalidTools:
         # Should deduplicate and respect max_tools
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = [tool.name for tool in request.model_call.tools]
             assert len(tool_names) == 2
             assert "get_weather" in tool_names
             assert "search_web" in tool_names

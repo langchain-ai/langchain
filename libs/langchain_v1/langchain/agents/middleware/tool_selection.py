@@ -12,11 +12,16 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCall,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.chat_models.base import init_chat_model
 
 logger = logging.getLogger(__name__)
@@ -142,11 +147,11 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             SelectionRequest with prepared inputs, or None if no selection is needed.
         """
         # If no tools available, return None
-        if not request.tools or len(request.tools) == 0:
+        if not request.model_call.tools or len(request.model_call.tools) == 0:
             return None
 
         # Filter to only BaseTool instances (exclude provider-specific tool dicts)
-        base_tools = [tool for tool in request.tools if not isinstance(tool, dict)]
+        base_tools = [tool for tool in request.model_call.tools if not isinstance(tool, dict)]
 
         # Validate that always_include tools exist
         if self.always_include:
@@ -180,7 +185,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
 
         # Get the last user message from the conversation history
         last_user_message: HumanMessage
-        for message in reversed(request.messages):
+        for message in reversed(request.model_call.messages):
             if isinstance(message, HumanMessage):
                 last_user_message = message
                 break
@@ -188,7 +193,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
             msg = "No user message found in request messages"
             raise AssertionError(msg)
 
-        model = self.model or request.model
+        model = self.model or request.model_call.model
         valid_tool_names = [tool.name for tool in available_tools]
 
         return _SelectionRequest(
@@ -205,8 +210,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         available_tools: list[BaseTool],
         valid_tool_names: list[str],
         request: ModelRequest,
-    ) -> ModelRequest:
-        """Process the selection response and return filtered ModelRequest."""
+    ) -> None:
+        """Process the selection response and update ModelRequest with filtered tools."""
         selected_tool_names: list[str] = []
         invalid_tool_selections = []
 
@@ -231,26 +236,25 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         ]
         always_included_tools: list[BaseTool] = [
             tool
-            for tool in request.tools
+            for tool in request.model_call.tools
             if not isinstance(tool, dict) and tool.name in self.always_include
         ]
         selected_tools.extend(always_included_tools)
 
         # Also preserve any provider-specific tool dicts from the original request
-        provider_tools = [tool for tool in request.tools if isinstance(tool, dict)]
+        provider_tools = [tool for tool in request.model_call.tools if isinstance(tool, dict)]
 
-        request.tools = [*selected_tools, *provider_tools]
-        return request
+        request.model_call.tools = [*selected_tools, *provider_tools]
 
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelCall], ModelResponse],
+    ) -> ModelResponse:
         """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
-            return handler(request)
+            return handler(request.model_call)
 
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
@@ -268,20 +272,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
             raise AssertionError(msg)
-        modified_request = self._process_selection_response(
+        self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
-        return handler(modified_request)
+        return handler(request.model_call)
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-    ) -> AIMessage:
+        handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
         """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
-            return await handler(request)
+            return await handler(request.model_call)
 
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
@@ -299,7 +303,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
             raise AssertionError(msg)
-        modified_request = self._process_selection_response(
+        self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
-        return await handler(modified_request)
+        return await handler(request.model_call)

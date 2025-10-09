@@ -50,7 +50,9 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     hook_config,
+    ModelCall,
     ModelRequest,
+    ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
@@ -118,9 +120,9 @@ def test_create_agent_diagram(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            return handler(request)
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             pass
@@ -132,9 +134,9 @@ def test_create_agent_diagram(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            return handler(request)
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             pass
@@ -260,10 +262,10 @@ def test_create_agent_invoke(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("NoopSeven.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -275,10 +277,10 @@ def test_create_agent_invoke(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("NoopEight.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -361,10 +363,10 @@ def test_create_agent_jump(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("NoopSeven.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -378,10 +380,10 @@ def test_create_agent_jump(
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("NoopEight.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -1032,46 +1034,54 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
 
-    fake_request = ModelRequest(
+    model_call = ModelCall(
         model=FakeToolCallingModel(),
         messages=[HumanMessage("Hello")],
         system_prompt=None,
         tool_choice=None,
         tools=[],
         response_format=None,
-        state={"messages": [HumanMessage("Hello")]},
-        runtime=cast(Runtime, object()),
         model_settings={},
     )
+    fake_request = ModelRequest(
+        model_call=model_call,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+    )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response", **req.model_settings)
+    def mock_handler(req: ModelCall) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response", **req.model_settings)])
 
     result = middleware.wrap_model_call(fake_request, mock_handler)
     # Check that model_settings were passed through via the request
-    assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
+    assert fake_request.model_call.model_settings == {
+        "cache_control": {"type": "ephemeral", "ttl": "5m"}
+    }
 
 
 def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
     """Test AnthropicPromptCachingMiddleware with unsupported model."""
     from typing import cast
 
-    fake_request = ModelRequest(
+    model_call = ModelCall(
         model=FakeToolCallingModel(),
         messages=[HumanMessage("Hello")],
         system_prompt=None,
         tool_choice=None,
         tools=[],
         response_format=None,
+        model_settings={},
+    )
+    fake_request = ModelRequest(
+        model_call=model_call,
         state={"messages": [HumanMessage("Hello")]},
         runtime=cast(Runtime, object()),
-        model_settings={},
     )
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    def mock_handler(req: ModelCall) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     with pytest.raises(
         ValueError,
@@ -1102,12 +1112,12 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
             "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
             in str(w[-1].message)
         )
-        assert isinstance(result, AIMessage)
+        assert isinstance(result, ModelResponse)
 
     with warnings.catch_warnings(record=True) as w:
         with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
             result = middleware.wrap_model_call(fake_request, mock_handler)
-            assert isinstance(result, AIMessage)
+            assert isinstance(result, ModelResponse)
             assert len(w) == 1
             assert (
                 "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
@@ -1117,11 +1127,11 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
     result = middleware.wrap_model_call(fake_request, mock_handler)
-    assert isinstance(result, AIMessage)
+    assert isinstance(result, ModelResponse)
 
     with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
         result = middleware.wrap_model_call(fake_request, mock_handler)
-        assert isinstance(result, AIMessage)
+        assert isinstance(result, ModelResponse)
 
 
 # Tests for SummarizationMiddleware
@@ -1346,10 +1356,10 @@ def test_on_model_call() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            request.messages.append(HumanMessage("remember to be nice!"))
-            return handler(request)
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
+            request.model_call.messages.append(HumanMessage("remember to be nice!"))
+            return handler(request.model_call)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -1482,10 +1492,10 @@ def test_runtime_injected_into_middleware() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             assert request.runtime is not None
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
@@ -1581,25 +1591,28 @@ def test_planning_middleware_on_model_call(original_prompt, expected_prompt_pref
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
 
-    request = ModelRequest(
+    model_call = ModelCall(
         model=model,
         system_prompt=original_prompt,
         messages=[HumanMessage(content="Hello")],
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=state,
-        runtime=cast(Runtime, object()),
         model_settings={},
     )
+    request = ModelRequest(
+        model_call=model_call,
+        state=state,
+        runtime=cast(Runtime, object()),
+    )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    def mock_handler(req: ModelCall) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
-    assert request.system_prompt.startswith(expected_prompt_prefix)
+    assert request.model_call.system_prompt.startswith(expected_prompt_prefix)
 
 
 @pytest.mark.parametrize(
@@ -1725,13 +1738,13 @@ def test_planning_middleware_custom_system_prompt() -> None:
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    def mock_handler(req: ModelCall) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
-    assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+    assert request.model_call.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
 
 
 def test_planning_middleware_custom_tool_description() -> None:
@@ -1757,25 +1770,28 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
     model = FakeToolCallingModel()
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
 
-    request = ModelRequest(
+    model_call = ModelCall(
         model=model,
         system_prompt=None,
         messages=[HumanMessage(content="Hello")],
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=state,
-        runtime=cast(Runtime, object()),
         model_settings={},
     )
+    request = ModelRequest(
+        model_call=model_call,
+        state=state,
+        runtime=cast(Runtime, object()),
+    )
 
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
+    def mock_handler(req: ModelCall) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     # Call wrap_model_call to trigger the middleware logic
     middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
-    assert request.system_prompt == custom_system_prompt
+    assert request.model_call.system_prompt == custom_system_prompt
 
     # Verify tool description
     assert len(middleware.tools) == 1
@@ -2047,11 +2063,11 @@ async def test_create_agent_async_invoke() -> None:
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             calls.append("AsyncMiddleware.awrap_model_call")
-            request.messages.append(HumanMessage("async middleware message"))
-            return await handler(request)
+            request.model_call.messages.append(HumanMessage("async middleware message"))
+            return await handler(request.model_call)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2108,10 +2124,10 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             calls.append("AsyncMiddlewareOne.awrap_model_call")
-            return await handler(request)
+            return await handler(request.model_call)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.aafter_model")
@@ -2123,10 +2139,10 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             calls.append("AsyncMiddlewareTwo.awrap_model_call")
-            return await handler(request)
+            return await handler(request.model_call)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.aafter_model")
@@ -2196,10 +2212,10 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("SyncMiddleware.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         def after_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.after_model")
@@ -2211,10 +2227,10 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         async def awrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             calls.append("AsyncMiddleware.awrap_model_call")
-            return await handler(request)
+            return await handler(request.model_call)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2267,11 +2283,11 @@ def test_wrap_model_call_hook() -> None:
 
         def wrap_model_call(self, request, handler):
             try:
-                return handler(request)
+                return handler(request.model_call)
             except Exception:
                 # Retry on error
                 self.retry_count += 1
-                return handler(request)
+                return handler(request.model_call)
 
     failing_model = FailingModel()
     retry_middleware = RetryMiddleware()
@@ -2311,7 +2327,7 @@ def test_wrap_model_call_retry_count() -> None:
             for attempt in range(max_retries):
                 self.attempts.append(attempt + 1)
                 try:
-                    return handler(request)
+                    return handler(request.model_call)
                 except Exception as e:
                     last_exception = e
                     if attempt < max_retries - 1:
@@ -2348,7 +2364,7 @@ def test_wrap_model_call_no_retry() -> None:
 
     class NoRetryMiddleware(AgentMiddleware):
         def wrap_model_call(self, request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
 
@@ -2469,7 +2485,7 @@ def test_wrap_model_call_max_attempts() -> None:
             for attempt in range(self.max_retries):
                 self.attempt_count += 1
                 try:
-                    return handler(request)
+                    return handler(request.model_call)
                 except Exception as e:
                     last_exception = e
                     # Continue to retry
@@ -2520,11 +2536,11 @@ async def test_wrap_model_call_async() -> None:
 
         async def awrap_model_call(self, request, handler):
             try:
-                return await handler(request)
+                return await handler(request.model_call)
             except Exception:
                 # Retry on error
                 self.retry_count += 1
-                return await handler(request)
+                return await handler(request.model_call)
 
     failing_model = AsyncFailingModel()
     retry_middleware = AsyncRetryMiddleware()
@@ -2559,10 +2575,12 @@ def test_wrap_model_call_rewrite_response() -> None:
         """Middleware that rewrites the response."""
 
         def wrap_model_call(self, request, handler):
-            result = handler(request)
+            result = handler(request.model_call)
 
             # Rewrite the response
-            return AIMessage(content=f"REWRITTEN: {result.content}")
+            return ModelResponse(
+                result=[AIMessage(content=f"REWRITTEN: {result.result[0].content}")]
+            )
 
     model = SimpleModel()
     middleware = ResponseRewriteMiddleware()
@@ -2593,10 +2611,12 @@ def test_wrap_model_call_convert_error_to_response() -> None:
 
         def wrap_model_call(self, request, handler):
             try:
-                return handler(request)
+                return handler(request.model_call)
             except Exception as e:
                 # Convert error to success response
-                return AIMessage(content=f"Error occurred: {e}. Using fallback response.")
+                return ModelResponse(
+                    result=[AIMessage(content=f"Error occurred: {e}. Using fallback response.")]
+                )
 
     model = AlwaysFailingModel()
     middleware = ErrorToResponseMiddleware()
@@ -2619,7 +2639,7 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+        ) -> ModelResponse:
             return await handler(request)
 
     agent = create_agent(
@@ -2649,16 +2669,16 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             calls.append("MixedMiddleware.wrap_model_call")
-            return handler(request)
+            return handler(request.model_call)
 
         async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+        ) -> ModelResponse:
             calls.append("MixedMiddleware.awrap_model_call")
             return await handler(request)
 

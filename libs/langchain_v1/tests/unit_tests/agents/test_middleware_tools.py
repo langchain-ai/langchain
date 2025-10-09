@@ -3,7 +3,13 @@
 import pytest
 from collections.abc import Callable
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelCall,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.agents.factory import create_agent
 from langchain.tools import ToolNode
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -30,10 +36,10 @@ def test_model_request_tools_are_base_tools() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             captured_requests.append(request)
-            return handler(request)
+            return handler(request.model_call)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -49,9 +55,9 @@ def test_model_request_tools_are_base_tools() -> None:
 
     # Check that tools in the request are BaseTool objects
     request = captured_requests[0]
-    assert isinstance(request.tools, list)
-    assert len(request.tools) == 2
-    assert {t.name for t in request.tools} == {"search_tool", "calculator"}
+    assert isinstance(request.model_call.tools, list)
+    assert len(request.model_call.tools) == 2
+    assert {t.name for t in request.model_call.tools} == {"search_tool", "calculator"}
 
 
 def test_middleware_can_modify_tools() -> None:
@@ -76,11 +82,13 @@ def test_middleware_can_modify_tools() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             # Only allow tool_a and tool_b
-            request.tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
-            return handler(request)
+            request.model_call.tools = [
+                t for t in request.model_call.tools if t.name in ["tool_a", "tool_b"]
+            ]
+            return handler(request.model_call)
 
     # Model will try to call tool_a
     model = FakeToolCallingModel(
@@ -121,11 +129,11 @@ def test_unknown_tool_raises_error() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             # Add an unknown tool
-            request.tools = request.tools + [unknown_tool]
-            return handler(request)
+            request.model_call.tools = request.model_call.tools + [unknown_tool]
+            return handler(request.model_call)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -160,12 +168,14 @@ def test_middleware_can_add_and_remove_tools() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             # Remove admin_tool if not admin
             if not request.state.get("is_admin", False):
-                request.tools = [t for t in request.tools if t.name != "admin_tool"]
-            return handler(request)
+                request.model_call.tools = [
+                    t for t in request.model_call.tools if t.name != "admin_tool"
+                ]
+            return handler(request.model_call)
 
     model = FakeToolCallingModel()
 
@@ -198,11 +208,11 @@ def test_empty_tools_list_is_valid() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
             # Remove all tools
-            request.tools = []
-            return handler(request)
+            request.model_call.tools = []
+            return handler(request.model_call)
 
     model = FakeToolCallingModel()
 
@@ -241,25 +251,25 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            modification_order.append([t.name for t in request.tools])
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
+            modification_order.append([t.name for t in request.model_call.tools])
             # Remove tool_c
-            request.tools = [t for t in request.tools if t.name != "tool_c"]
-            return handler(request)
+            request.model_call.tools = [t for t in request.model_call.tools if t.name != "tool_c"]
+            return handler(request.model_call)
 
     class SecondMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            modification_order.append([t.name for t in request.tools])
+            handler: Callable[[ModelCall], ModelResponse],
+        ) -> ModelResponse:
+            modification_order.append([t.name for t in request.model_call.tools])
             # Should not see tool_c here
-            assert all(t.name != "tool_c" for t in request.tools)
+            assert all(t.name != "tool_c" for t in request.model_call.tools)
             # Remove tool_b
-            request.tools = [t for t in request.tools if t.name != "tool_b"]
-            return handler(request)
+            request.model_call.tools = [t for t in request.model_call.tools if t.name != "tool_b"]
+            return handler(request.model_call)
 
     agent = create_agent(
         model=FakeToolCallingModel(),

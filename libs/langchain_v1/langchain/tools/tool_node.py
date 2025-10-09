@@ -121,7 +121,7 @@ class ToolCallRequest:
 
 
 ToolCallHandler = Callable[
-    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
+    [ToolCallRequest, Callable[[ToolCall], ToolMessage | Command]],
     ToolMessage | Command,
 ]
 """Handler-based tool call interceptor with multi-call support.

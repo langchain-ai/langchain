@@ -8,7 +8,9 @@ from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ModelCall,
     ModelRequest,
+    ModelResponse,
     wrap_model_call,
 )
 
@@ -21,7 +23,7 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call
         def passthrough_middleware(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         # Should return an AgentMiddleware instance
         assert isinstance(passthrough_middleware, AgentMiddleware)
@@ -39,7 +41,7 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call(name="CustomMiddleware")
         def my_middleware(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         assert isinstance(my_middleware, AgentMiddleware)
         assert my_middleware.__class__.__name__ == "CustomMiddleware"
@@ -58,10 +60,10 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def retry_once(request, handler):
             try:
-                return handler(request)
+                return handler(request.model_call)
             except Exception:
                 # Retry once
-                return handler(request)
+                return handler(request.model_call)
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         agent = create_agent(model=model, middleware=[retry_once])
@@ -76,8 +78,8 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call
         def uppercase_responses(request, handler):
-            result = handler(request)
-            return AIMessage(content=result.content.upper())
+            result = handler(request.model_call)
+            return ModelResponse(result=[AIMessage(content=result.result[0].content.upper())])
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[uppercase_responses])
@@ -96,9 +98,9 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def error_to_fallback(request, handler):
             try:
-                return handler(request)
+                return handler(request.model_call)
             except Exception:
-                return AIMessage(content="Fallback response")
+                return ModelResponse(result=[AIMessage(content="Fallback response")])
 
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[error_to_fallback])
@@ -114,7 +116,7 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def log_state(request, handler):
             state_values.append(request.state.get("messages"))
-            return handler(request)
+            return handler(request.model_call)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[log_state])
@@ -133,14 +135,14 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def outer_middleware(request, handler):
             execution_order.append("outer-before")
-            result = handler(request)
+            result = handler(request.model_call)
             execution_order.append("outer-after")
             return result
 
         @wrap_model_call
         def inner_middleware(request, handler):
             execution_order.append("inner-before")
-            result = handler(request)
+            result = handler(request.model_call)
             execution_order.append("inner-after")
             return result
 
@@ -166,7 +168,7 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call(state_schema=CustomState)
         def middleware_with_schema(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         assert isinstance(middleware_with_schema, AgentMiddleware)
         # Custom state schema should be set
@@ -183,7 +185,7 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call(tools=[test_tool])
         def middleware_with_tools(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         assert isinstance(middleware_with_tools, AgentMiddleware)
         assert len(middleware_with_tools.tools) == 1
@@ -195,12 +197,12 @@ class TestOnModelCallDecorator:
         # Without parentheses
         @wrap_model_call
         def middleware_no_parens(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         # With parentheses
         @wrap_model_call()
         def middleware_with_parens(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         assert isinstance(middleware_no_parens, AgentMiddleware)
         assert isinstance(middleware_with_parens, AgentMiddleware)
@@ -210,7 +212,7 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call
         def my_custom_middleware(request, handler):
-            return handler(request)
+            return handler(request.model_call)
 
         assert my_custom_middleware.__class__.__name__ == "my_custom_middleware"
 
@@ -221,14 +223,14 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def decorated_middleware(request, handler):
             execution_order.append("decorated-before")
-            result = handler(request)
+            result = handler(request.model_call)
             execution_order.append("decorated-after")
             return result
 
         class ClassMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 execution_order.append("class-before")
-                result = handler(request)
+                result = handler(request.model_call)
                 execution_order.append("class-after")
                 return result
 
@@ -267,7 +269,7 @@ class TestOnModelCallDecorator:
             for attempt in range(max_retries):
                 attempts.append(attempt + 1)
                 try:
-                    return handler(request)
+                    return handler(request.model_call)
                 except Exception as e:
                     last_exception = e
                     # On error, continue to next attempt
@@ -291,7 +293,7 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         async def logging_middleware(request, handler):
             call_log.append("before")
-            result = await handler(request)
+            result = await handler(request.model_call)
             call_log.append("after")
             return result
 
@@ -310,18 +312,9 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def add_system_prompt(request, handler):
             # Modify request to add system prompt
-            modified_request = ModelRequest(
-                messages=request.messages,
-                model=request.model,
-                system_prompt="You are a helpful assistant",
-                tool_choice=request.tool_choice,
-                tools=request.tools,
-                response_format=request.response_format,
-                state={},
-                runtime=None,
-            )
-            modified_prompts.append(modified_request.system_prompt)
-            return handler(modified_request)
+            request.model_call.system_prompt = "You are a helpful assistant"
+            modified_prompts.append(request.model_call.system_prompt)
+            return handler(request.model_call)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[add_system_prompt])
@@ -335,13 +328,13 @@ class TestOnModelCallDecorator:
 
         @wrap_model_call
         def multi_transform(request, handler):
-            result = handler(request)
+            result = handler(request.model_call)
 
             # First transformation: uppercase
-            content = result.content.upper()
+            content = result.result[0].content.upper()
             # Second transformation: add prefix and suffix
             content = f"[START] {content} [END]"
-            return AIMessage(content=content)
+            return ModelResponse(result=[AIMessage(content=content)])
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello")]))
         agent = create_agent(model=model, middleware=[multi_transform])

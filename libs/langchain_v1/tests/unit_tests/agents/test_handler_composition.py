@@ -4,7 +4,7 @@ import pytest
 from langchain_core.messages import AIMessage
 
 from langchain.agents.factory import _chain_model_call_handlers
-from langchain.agents.middleware.types import ModelRequest
+from langchain.agents.middleware.types import ModelCall, ModelRequest, ModelResponse
 
 from typing import cast
 from langgraph.runtime import Runtime
@@ -13,18 +13,34 @@ from langgraph.runtime import Runtime
 def create_test_request(**kwargs):
     """Helper to create a ModelRequest with sensible defaults."""
 
-    defaults = {
+    model_call_defaults = {
         "messages": [],
         "model": None,
         "system_prompt": None,
         "tool_choice": None,
         "tools": [],
         "response_format": None,
+        "model_settings": {},
+    }
+
+    # Extract model_call fields from kwargs
+    model_call_kwargs = {
+        k: kwargs.pop(k, v)
+        for k, v in model_call_defaults.items()
+        if k in kwargs or k in model_call_defaults
+    }
+
+    # Create ModelCall
+    model_call = ModelCall(**model_call_kwargs)
+
+    # Create ModelRequest with remaining kwargs
+    request_defaults = {
+        "model_call": model_call,
         "state": {},
         "runtime": cast(Runtime, object()),
     }
-    defaults.update(kwargs)
-    return ModelRequest(**defaults)
+    request_defaults.update(kwargs)
+    return ModelRequest(**request_defaults)
 
 
 class TestChainModelCallHandlers:
@@ -65,7 +81,7 @@ class TestChainModelCallHandlers:
 
         # Execute the composed handler
         def mock_base_handler(req):
-            return AIMessage(content="test")
+            return ModelResponse(result=[AIMessage(content="test")])
 
         result = composed(create_test_request(), mock_base_handler)
 
@@ -75,7 +91,7 @@ class TestChainModelCallHandlers:
             "inner-after",
             "outer-after",
         ]
-        assert result.content == "test"
+        assert result.result[0].content == "test"
 
     def test_three_handlers_composition(self) -> None:
         """Test composition of three handlers."""
@@ -103,7 +119,7 @@ class TestChainModelCallHandlers:
         assert composed is not None
 
         def mock_base_handler(req):
-            return AIMessage(content="test")
+            return ModelResponse(result=[AIMessage(content="test")])
 
         result = composed(create_test_request(), mock_base_handler)
 
@@ -116,7 +132,7 @@ class TestChainModelCallHandlers:
             "second-after",
             "first-after",
         ]
-        assert result.content == "test"
+        assert result.result[0].content == "test"
 
     def test_inner_handler_retry(self) -> None:
         """Test inner handler retrying before outer sees response."""
@@ -144,12 +160,12 @@ class TestChainModelCallHandlers:
             call_count["value"] += 1
             if call_count["value"] < 3:
                 raise ValueError("fail")
-            return AIMessage(content="success")
+            return ModelResponse(result=[AIMessage(content="success")])
 
         result = composed(create_test_request(), mock_base_handler)
 
         assert inner_attempts == [0, 1, 2]
-        assert result.content == "success"
+        assert result.result[0].content == "success"
 
     def test_error_to_success_conversion(self) -> None:
         """Test handler converting error to success response."""
@@ -158,7 +174,7 @@ class TestChainModelCallHandlers:
             try:
                 return handler(request)
             except Exception:
-                return AIMessage(content="Fallback response")
+                return ModelResponse(result=[AIMessage(content="Fallback response")])
 
         def inner_passthrough(request, handler):
             return handler(request)
@@ -171,32 +187,32 @@ class TestChainModelCallHandlers:
 
         result = composed(create_test_request(), mock_base_handler)
 
-        assert result.content == "Fallback response"
+        assert result.result[0].content == "Fallback response"
 
     def test_request_modification(self) -> None:
         """Test handlers modifying the request."""
         requests_seen = []
 
         def outer_add_context(request, handler):
-            modified_request = create_test_request(
-                messages=[*request.messages], system_prompt="Added by outer"
-            )
-            return handler(modified_request)
+            # Modify the model_call
+            request.model_call.system_prompt = "Added by outer"
+            return handler(request.model_call)
 
         def inner_track_request(request, handler):
-            requests_seen.append(request.system_prompt)
-            return handler(request)
+            # Inner handler receives ModelRequest due to composition
+            requests_seen.append(request.model_call.system_prompt)
+            return handler(request.model_call)
 
         composed = _chain_model_call_handlers([outer_add_context, inner_track_request])
         assert composed is not None
 
         def mock_base_handler(req):
-            return AIMessage(content="response")
+            return ModelResponse(result=[AIMessage(content="response")])
 
         result = composed(create_test_request(), mock_base_handler)
 
         assert requests_seen == ["Added by outer"]
-        assert result.content == "response"
+        assert result.result[0].content == "response"
 
     def test_composition_preserves_state_and_runtime(self) -> None:
         """Test that state and runtime are passed through composition."""
@@ -220,7 +236,7 @@ class TestChainModelCallHandlers:
         test_runtime = {"test": "runtime"}
 
         def mock_base_handler(req):
-            return AIMessage(content="test")
+            return ModelResponse(result=[AIMessage(content="test")])
 
         # Create request with state and runtime
         test_request = create_test_request()
@@ -231,7 +247,7 @@ class TestChainModelCallHandlers:
         # Both handlers should see same state and runtime
         assert state_values == [("outer", test_state), ("inner", test_state)]
         assert runtime_values == [("outer", test_runtime), ("inner", test_runtime)]
-        assert result.content == "test"
+        assert result.result[0].content == "test"
 
     def test_multiple_yields_in_retry_loop(self) -> None:
         """Test handler that retries multiple times."""
@@ -257,11 +273,11 @@ class TestChainModelCallHandlers:
             attempt["value"] += 1
             if attempt["value"] == 1:
                 raise ValueError("fail")
-            return AIMessage(content="ok")
+            return ModelResponse(result=[AIMessage(content="ok")])
 
         result = composed(create_test_request(), mock_base_handler)
 
         # Outer called once, inner retried so base handler called twice
         assert call_count["value"] == 1
         assert attempt["value"] == 2
-        assert result.content == "ok"
+        assert result.result[0].content == "ok"

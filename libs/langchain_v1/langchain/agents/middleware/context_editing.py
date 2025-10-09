@@ -22,7 +22,12 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCall,
+    ModelRequest,
+    ModelResponse,
+)
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -209,11 +214,11 @@ class ContextEditingMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelCall], ModelResponse],
+    ) -> ModelResponse:
         """Apply context edits before invoking the model via handler."""
-        if not request.messages:
-            return handler(request)
+        if not request.model_call.messages:
+            return handler(request.model_call)
 
         if self.token_count_method == "approximate":  # noqa: S105
 
@@ -221,18 +226,20 @@ class ContextEditingMiddleware(AgentMiddleware):
                 return count_tokens_approximately(messages)
         else:
             system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
+                [SystemMessage(content=request.model_call.system_prompt)]
+                if request.model_call.system_prompt
+                else []
             )
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(
-                    system_msg + list(messages), request.tools
+                return request.model_call.model.get_num_tokens_from_messages(
+                    system_msg + list(messages), request.model_call.tools
                 )
 
         for edit in self.edits:
-            edit.apply(request.messages, count_tokens=count_tokens)
+            edit.apply(request.model_call.messages, count_tokens=count_tokens)
 
-        return handler(request)
+        return handler(request.model_call)
 
 
 __all__ = [

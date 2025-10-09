@@ -698,7 +698,12 @@ class TestDynamicModelWithResponseFormat:
         selected based on the final model's capabilities.
         """
         from unittest.mock import patch
-        from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+        from langchain.agents.middleware.types import (
+            AgentMiddleware,
+            ModelCall,
+            ModelRequest,
+            ModelResponse,
+        )
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
         # Custom model that we'll use to test whether the tool strategy is applied
@@ -730,11 +735,11 @@ class TestDynamicModelWithResponseFormat:
             def wrap_model_call(
                 self,
                 request: ModelRequest,
-                handler: Callable[[ModelRequest], CoreAIMessage],
-            ) -> CoreAIMessage:
+                handler: Callable[[ModelCall], ModelResponse],
+            ) -> ModelResponse:
                 # Replace the model with our custom test model
-                request.model = model
-                return handler(request)
+                request.model_call.model = model
+                return handler(request.model_call)
 
         # Track which model is checked for provider strategy support
         calls = []

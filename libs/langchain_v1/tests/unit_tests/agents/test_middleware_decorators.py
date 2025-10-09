@@ -13,7 +13,9 @@ from langgraph.types import Command
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ModelCall,
     ModelRequest,
+    ModelResponse,
     before_model,
     after_model,
     dynamic_prompt,
@@ -89,8 +91,8 @@ def test_on_model_call_decorator() -> None:
 
     @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
     def custom_on_model_call(request, handler):
-        request.system_prompt = "Modified"
-        return handler(request)
+        request.model_call.system_prompt = "Modified"
+        return handler(request.model_call)
 
     # Verify all options were applied
     assert isinstance(custom_on_model_call, AgentMiddleware)
@@ -99,22 +101,27 @@ def test_on_model_call_decorator() -> None:
     assert custom_on_model_call.__class__.__name__ == "CustomOnModelCall"
 
     # Verify it works
-    original_request = ModelRequest(
+    model_call = ModelCall(
         model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
         response_format=None,
+    )
+    original_request = ModelRequest(
+        model_call=model_call,
         state={"messages": [HumanMessage("Hello")]},
         runtime=None,
     )
 
     def mock_handler(req):
-        return AIMessage(content=f"Handled with prompt: {req.system_prompt}")
+        return ModelResponse(
+            result=[AIMessage(content=f"Handled with prompt: {req.system_prompt}")]
+        )
 
     result = custom_on_model_call.wrap_model_call(original_request, mock_handler)
-    assert result.content == "Handled with prompt: Modified"
+    assert result.result[0].content == "Handled with prompt: Modified"
 
 
 def test_all_decorators_integration() -> None:
@@ -129,7 +136,7 @@ def test_all_decorators_integration() -> None:
     @wrap_model_call
     def track_on_call(request, handler):
         call_order.append("on_call")
-        return handler(request)
+        return handler(request.model_call)
 
     @after_model
     def track_after(state: AgentState, runtime: Runtime) -> None:
@@ -324,7 +331,7 @@ async def test_async_decorators_integration() -> None:
     @wrap_model_call
     async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
-        return await handler(request)
+        return await handler(request.model_call)
 
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
@@ -364,7 +371,7 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     @wrap_model_call
     async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
-        return await handler(request)
+        return await handler(request.model_call)
 
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
@@ -581,22 +588,25 @@ def test_dynamic_prompt_decorator() -> None:
     assert my_prompt.__class__.__name__ == "my_prompt"
 
     # Verify it modifies the request correctly
-    original_request = ModelRequest(
+    model_call = ModelCall(
         model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
         response_format=None,
+    )
+    original_request = ModelRequest(
+        model_call=model_call,
         state={"messages": [HumanMessage("Hello")]},
         runtime=None,
     )
 
     def mock_handler(req):
-        return AIMessage(content=req.system_prompt)
+        return ModelResponse(result=[AIMessage(content=req.system_prompt)])
 
     result = my_prompt.wrap_model_call(original_request, mock_handler)
-    assert result.content == "Dynamic test prompt"
+    assert result.result[0].content == "Dynamic test prompt"
 
 
 def test_dynamic_prompt_uses_state() -> None:
@@ -608,22 +618,25 @@ def test_dynamic_prompt_uses_state() -> None:
         return f"Prompt with {msg_count} messages"
 
     # Verify it uses state correctly
-    original_request = ModelRequest(
+    model_call = ModelCall(
         model="test-model",
         system_prompt="Original",
         messages=[HumanMessage("Hello")],
         tool_choice=None,
         tools=[],
         response_format=None,
+    )
+    original_request = ModelRequest(
+        model_call=model_call,
         state={"messages": [HumanMessage("Hello"), HumanMessage("World")]},
         runtime=None,
     )
 
     def mock_handler(req):
-        return AIMessage(content=req.system_prompt)
+        return ModelResponse(result=[AIMessage(content=req.system_prompt)])
 
     result = custom_prompt.wrap_model_call(original_request, mock_handler)
-    assert result.content == "Prompt with 2 messages"
+    assert result.result[0].content == "Prompt with 2 messages"
 
 
 def test_dynamic_prompt_integration() -> None:
