@@ -30,7 +30,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install ``langchain-deepseek`` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install `langchain-deepseek` and set environment variable ``DEEPSEEK_API_KEY``.
 
         .. code-block:: bash
 

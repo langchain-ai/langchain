@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
-    To use, you should have the ``openai`` python package installed, and the
+    To use, you should have the `openai` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed

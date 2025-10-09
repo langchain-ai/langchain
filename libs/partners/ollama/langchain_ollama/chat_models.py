@@ -259,7 +259,7 @@ class ChatOllama(BaseChatModel):
 
     ???+ note "Setup"
 
-        Install ``langchain-ollama`` and download any models you want to use from ollama.
+        Install `langchain-ollama` and download any models you want to use from ollama.
 
         .. code-block:: bash
 

@@ -316,7 +316,7 @@ class ChatHuggingFace(BaseChatModel):
     the HuggingFace Hub.
 
     Setup:
-        Install ``langchain-huggingface`` and ensure your Hugging Face token
+        Install `langchain-huggingface` and ensure your Hugging Face token
         is saved.
 
         .. code-block:: bash

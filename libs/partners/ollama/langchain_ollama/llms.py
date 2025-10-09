@@ -22,7 +22,7 @@ class OllamaLLM(BaseLLM):
     """Ollama large language models.
 
     Setup:
-        Install ``langchain-ollama`` and install/run the Ollama server locally:
+        Install `langchain-ollama` and install/run the Ollama server locally:
 
         .. code-block:: bash
 
