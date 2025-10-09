@@ -164,7 +164,7 @@ class StructuredTool(BaseTool):
             error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
                 whether to raise ValueError on invalid Google Style docstrings.
                 Defaults to `False`.
-            kwargs: Additional arguments to pass to the tool
+            **kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.

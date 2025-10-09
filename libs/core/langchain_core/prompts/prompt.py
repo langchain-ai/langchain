@@ -191,7 +191,7 @@ class PromptTemplate(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -284,7 +284,7 @@ class PromptTemplate(StringPromptTemplate):
                               `"{variable1} {variable2}"`, and `partial_variables` is
                               `{"variable1": "foo"}`, then the final prompt will be
                               `"foo {variable2}"`. Defaults to `None`.
-            kwargs: Any other arguments to pass to the prompt template.
+            **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:
             The prompt template loaded from the template.

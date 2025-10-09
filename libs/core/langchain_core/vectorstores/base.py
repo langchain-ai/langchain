@@ -127,8 +127,7 @@ class VectorStore(ABC):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            bool | None: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
@@ -195,8 +194,7 @@ class VectorStore(ABC):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            bool | None: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         return await run_in_executor(None, self.delete, ids, **kwargs)
 
@@ -255,7 +253,7 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
                 if kwargs contains ids and documents contain ids,
                 the ids in the kwargs will receive precedence.
 
@@ -287,7 +285,7 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
@@ -815,10 +813,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -845,10 +843,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -882,10 +880,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
 
     @classmethod
@@ -906,10 +904,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
         if ids is not None:
             kwargs["ids"] = ids
@@ -945,7 +943,7 @@ class VectorStore(ABC):
                         filter: Filter by document metadata
 
         Returns:
-            VectorStoreRetriever: Retriever class for VectorStore.
+            Retriever class for VectorStore.
 
         Examples:
 
@@ -1011,7 +1009,7 @@ class VectorStoreRetriever(BaseRetriever):
             values: Values to validate.
 
         Returns:
-            Values: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If search_type is not one of the allowed search types.

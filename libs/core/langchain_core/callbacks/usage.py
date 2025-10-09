@@ -99,7 +99,7 @@ def get_usage_metadata_callback(
     ``AIMessage.usage_metadata``.
 
     Args:
-        name (str): The name of the context variable. Defaults to
+        name: The name of the context variable. Defaults to
             ``'usage_metadata_callback'``.
 
     Yields:

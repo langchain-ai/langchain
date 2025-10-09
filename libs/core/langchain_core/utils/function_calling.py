@@ -72,11 +72,11 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     except when a "title" appears within a property definition under "properties".
 
     Args:
-        kv (dict): The input JSON schema as a dictionary.
-        prev_key (str): The key from the parent dictionary, used to identify context.
+        kv: The input JSON schema as a dictionary.
+        prev_key: The key from the parent dictionary, used to identify context.
 
     Returns:
-        dict: A new dictionary with appropriate "title" fields removed.
+        A new dictionary with appropriate "title" fields removed.
     """
     new_kv = {}
 

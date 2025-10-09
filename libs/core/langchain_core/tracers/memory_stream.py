@@ -130,7 +130,7 @@ class _MemoryStream(Generic[T]):
         """Get a writer for the channel.
 
         Returns:
-            _SendStream: The writer for the channel.
+            The writer for the channel.
         """
         return _SendStream[T](
             reader_loop=self._loop, queue=self._queue, done=self._done
@@ -140,6 +140,6 @@ class _MemoryStream(Generic[T]):
         """Get a reader for the channel.
 
         Returns:
-            _ReceiveStream: The reader for the channel.
+            The reader for the channel.
         """
         return _ReceiveStream[T](queue=self._queue, done=self._done)

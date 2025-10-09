@@ -71,7 +71,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             parent_run_id: The parent run ID. Defaults to `None`.
             metadata: The metadata for the run. Defaults to `None`.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -112,7 +112,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             parent_run_id: The parent run ID. Defaults to `None`.
             metadata: The metadata for the run. Defaults to `None`.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -148,7 +148,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             chunk: The chunk. Defaults to `None`.
             run_id: The run ID.
             parent_run_id: The parent run ID. Defaults to `None`.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -177,7 +177,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             retry_state: The retry state.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -194,7 +194,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             response: The response.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -221,7 +221,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -260,7 +260,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             metadata: The metadata for the run. Defaults to `None`.
             run_type: The type of the run. Defaults to `None`.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -295,7 +295,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             outputs: The outputs for the chain.
             run_id: The run ID.
             inputs: The inputs for the chain. Defaults to `None`.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -324,7 +324,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             error: The error.
             inputs: The inputs for the chain. Defaults to `None`.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -362,7 +362,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             metadata: The metadata for the run. Defaults to `None`.
             name: The name of the run.
             inputs: The inputs for the tool.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -389,7 +389,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             output: The output for the tool.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -415,7 +415,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -450,7 +450,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
             tags: The tags for the run. Defaults to `None`.
             metadata: The metadata for the run. Defaults to `None`.
             name: The name of the run.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -482,7 +482,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             error: The error.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
@@ -504,7 +504,7 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         Args:
             documents: The documents.
             run_id: The run ID.
-            kwargs: Additional arguments.
+            **kwargs: Additional arguments.
 
         Returns:
             The run.
