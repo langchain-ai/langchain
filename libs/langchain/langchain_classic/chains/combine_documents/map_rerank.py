@@ -31,45 +31,44 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     r"""Combining documents by mapping a chain over them, then reranking results.
 
     This algorithm calls an LLMChain on each input document. The LLMChain is expected
-    to have an OutputParser that parses the result into both an answer (``answer_key``)
-    and a score (``rank_key``). The answer with the highest score is then returned.
+    to have an OutputParser that parses the result into both an answer (`answer_key`)
+    and a score (`rank_key`). The answer with the highest score is then returned.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import MapRerankDocumentsChain, LLMChain
+        from langchain_core.prompts import PromptTemplate
+        from langchain_community.llms import OpenAI
+        from langchain_classic.output_parsers.regex import RegexParser
 
-            from langchain_classic.chains import MapRerankDocumentsChain, LLMChain
-            from langchain_core.prompts import PromptTemplate
-            from langchain_community.llms import OpenAI
-            from langchain_classic.output_parsers.regex import RegexParser
-
-            document_variable_name = "context"
-            llm = OpenAI()
-            # The prompt here should take as an input variable the
-            # `document_variable_name`
-            # The actual prompt will need to be a lot more complex, this is just
-            # an example.
-            prompt_template = (
-                "Use the following context to tell me the chemical formula "
-                "for water. Output both your answer and a score of how confident "
-                "you are. Context: {context}"
-            )
-            output_parser = RegexParser(
-                regex=r"(.*?)\nScore: (.*)",
-                output_keys=["answer", "score"],
-            )
-            prompt = PromptTemplate(
-                template=prompt_template,
-                input_variables=["context"],
-                output_parser=output_parser,
-            )
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            chain = MapRerankDocumentsChain(
-                llm_chain=llm_chain,
-                document_variable_name=document_variable_name,
-                rank_key="score",
-                answer_key="answer",
-            )
-
+        document_variable_name = "context"
+        llm = OpenAI()
+        # The prompt here should take as an input variable the
+        # `document_variable_name`
+        # The actual prompt will need to be a lot more complex, this is just
+        # an example.
+        prompt_template = (
+            "Use the following context to tell me the chemical formula "
+            "for water. Output both your answer and a score of how confident "
+            "you are. Context: {context}"
+        )
+        output_parser = RegexParser(
+            regex=r"(.*?)\nScore: (.*)",
+            output_keys=["answer", "score"],
+        )
+        prompt = PromptTemplate(
+            template=prompt_template,
+            input_variables=["context"],
+            output_parser=output_parser,
+        )
+        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        chain = MapRerankDocumentsChain(
+            llm_chain=llm_chain,
+            document_variable_name=document_variable_name,
+            rank_key="score",
+            answer_key="answer",
+        )
+        ```
     """
 
     llm_chain: LLMChain

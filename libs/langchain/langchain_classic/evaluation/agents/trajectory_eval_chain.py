@@ -57,14 +57,14 @@ class TrajectoryOutputParser(BaseOutputParser):
         """Parse the output text and extract the score and reasoning.
 
         Args:
-            text (str): The output text to parse.
+            text: The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the normalized score and reasoning.
+            A named tuple containing the normalized score and reasoning.
 
         Raises:
-            OutputParserException: If the score is not found in the output text or
-                if the LLM's score is not a digit in the range 1-5.
+            If the score is not found in the output text or if the LLM's score is not a
+            digit in the range 1-5.
         """
         if "Score:" not in text:
             msg = f"Could not find score in model eval output: {text}"
@@ -102,43 +102,42 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     (https://arxiv.org/abs/2210.03629)
 
     Example:
+    ```python
+    from langchain_classic.agents import AgentType, initialize_agent
+    from langchain_community.chat_models import ChatOpenAI
+    from langchain_classic.evaluation import TrajectoryEvalChain
+    from langchain_classic.tools import tool
 
-    .. code-block:: python
+    @tool
+    def geography_answers(country: str, question: str) -> str:
+        \"\"\"Very helpful answers to geography questions.\"\"\"
+        return f"{country}? IDK - We may never know {question}."
 
-        from langchain_classic.agents import AgentType, initialize_agent
-        from langchain_community.chat_models import ChatOpenAI
-        from langchain_classic.evaluation import TrajectoryEvalChain
-        from langchain_classic.tools import tool
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    agent = initialize_agent(
+        tools=[geography_answers],
+        llm=llm,
+        agent=AgentType.OPENAI_FUNCTIONS,
+        return_intermediate_steps=True,
+    )
 
-        @tool
-        def geography_answers(country: str, question: str) -> str:
-            \"\"\"Very helpful answers to geography questions.\"\"\"
-            return f"{country}? IDK - We may never know {question}."
+    question = "How many dwell in the largest minor region in Argentina?"
+    response = agent(question)
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent = initialize_agent(
-            tools=[geography_answers],
-            llm=llm,
-            agent=AgentType.OPENAI_FUNCTIONS,
-            return_intermediate_steps=True,
-        )
+    eval_chain = TrajectoryEvalChain.from_llm(
+        llm=llm, agent_tools=[geography_answers], return_reasoning=True
+    )
 
-        question = "How many dwell in the largest minor region in Argentina?"
-        response = agent(question)
+    result = eval_chain.evaluate_agent_trajectory(
+        input=question,
+        agent_trajectory=response["intermediate_steps"],
+        prediction=response["output"],
+        reference="Paris",
+    )
+    print(result["score"])  # noqa: T201
+    # 0
 
-        eval_chain = TrajectoryEvalChain.from_llm(
-            llm=llm, agent_tools=[geography_answers], return_reasoning=True
-        )
-
-        result = eval_chain.evaluate_agent_trajectory(
-            input=question,
-            agent_trajectory=response["intermediate_steps"],
-            prediction=response["output"],
-            reference="Paris",
-        )
-        print(result["score"])  # noqa: T201
-        # 0
-
+    ```
     """
 
     agent_tools: list[BaseTool] | None = None
@@ -208,10 +207,10 @@ Tool output: {output}"""
         """Format the reference text.
 
         Args:
-            reference (str): The reference text.
+            reference: The reference text.
 
         Returns:
-            str: The formatted reference text.
+            The formatted reference text.
         """
         if not reference:
             return ""

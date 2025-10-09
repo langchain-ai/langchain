@@ -99,50 +99,48 @@ class HTMLHeaderTextSplitter:
     hierarchical representation of the content.
 
     Example:
+        ```python
+        from langchain_text_splitters.html_header_text_splitter import (
+            HTMLHeaderTextSplitter,
+        )
 
-        .. code-block:: python
+        # Define headers for splitting on h1 and h2 tags.
+        headers_to_split_on = [("h1", "Main Topic"), ("h2", "Sub Topic")]
 
-            from langchain_text_splitters.html_header_text_splitter import (
-                HTMLHeaderTextSplitter,
-            )
+        splitter = HTMLHeaderTextSplitter(
+            headers_to_split_on=headers_to_split_on,
+            return_each_element=False
+        )
 
-            # Define headers for splitting on h1 and h2 tags.
-            headers_to_split_on = [("h1", "Main Topic"), ("h2", "Sub Topic")]
-
-            splitter = HTMLHeaderTextSplitter(
-                headers_to_split_on=headers_to_split_on,
-                return_each_element=False
-            )
-
-            html_content = \"\"\"
-            <html>
-              <body>
+        html_content = \"\"\"
+        <html>
+            <body>
                 <h1>Introduction</h1>
                 <p>Welcome to the introduction section.</p>
                 <h2>Background</h2>
                 <p>Some background details here.</p>
                 <h1>Conclusion</h1>
                 <p>Final thoughts.</p>
-              </body>
-            </html>
-            \"\"\"
+            </body>
+        </html>
+        \"\"\"
 
-            documents = splitter.split_text(html_content)
+        documents = splitter.split_text(html_content)
 
-            # 'documents' now contains Document objects reflecting the hierarchy:
-            # - Document with metadata={"Main Topic": "Introduction"} and
-            #   content="Introduction"
-            # - Document with metadata={"Main Topic": "Introduction"} and
-            #   content="Welcome to the introduction section."
-            # - Document with metadata={"Main Topic": "Introduction",
-            #   "Sub Topic": "Background"} and content="Background"
-            # - Document with metadata={"Main Topic": "Introduction",
-            #   "Sub Topic": "Background"} and content="Some background details here."
-            # - Document with metadata={"Main Topic": "Conclusion"} and
-            #   content="Conclusion"
-            # - Document with metadata={"Main Topic": "Conclusion"} and
-            #   content="Final thoughts."
-
+        # 'documents' now contains Document objects reflecting the hierarchy:
+        # - Document with metadata={"Main Topic": "Introduction"} and
+        #   content="Introduction"
+        # - Document with metadata={"Main Topic": "Introduction"} and
+        #   content="Welcome to the introduction section."
+        # - Document with metadata={"Main Topic": "Introduction",
+        #   "Sub Topic": "Background"} and content="Background"
+        # - Document with metadata={"Main Topic": "Introduction",
+        #   "Sub Topic": "Background"} and content="Some background details here."
+        # - Document with metadata={"Main Topic": "Conclusion"} and
+        #   content="Conclusion"
+        # - Document with metadata={"Main Topic": "Conclusion"} and
+        #   content="Final thoughts."
+        ```
     """
 
     def __init__(
@@ -534,33 +532,32 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     !!! version-added "Added in version 0.3.5"
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_text_splitters.html import HTMLSemanticPreservingSplitter
 
-            from langchain_text_splitters.html import HTMLSemanticPreservingSplitter
+        def custom_iframe_extractor(iframe_tag):
+            ```
+            Custom handler function to extract the 'src' attribute from an <iframe> tag.
+            Converts the iframe to a Markdown-like link: [iframe:<src>](src).
 
-            def custom_iframe_extractor(iframe_tag):
-                ```
-                Custom handler function to extract the 'src' attribute from an <iframe> tag.
-                Converts the iframe to a Markdown-like link: [iframe:<src>](src).
+            Args:
+                iframe_tag (bs4.element.Tag): The <iframe> tag to be processed.
 
-                Args:
-                    iframe_tag (bs4.element.Tag): The <iframe> tag to be processed.
+            Returns:
+                str: A formatted string representing the iframe in Markdown-like format.
+            ```
+            iframe_src = iframe_tag.get('src', '')
+            return f"[iframe:{iframe_src}]({iframe_src})"
 
-                Returns:
-                    str: A formatted string representing the iframe in Markdown-like format.
-                ```
-                iframe_src = iframe_tag.get('src', '')
-                return f"[iframe:{iframe_src}]({iframe_src})"
-
-            text_splitter = HTMLSemanticPreservingSplitter(
-                headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-                max_chunk_size=500,
-                preserve_links=True,
-                preserve_images=True,
-                custom_handlers={"iframe": custom_iframe_extractor}
-            )
-
-    """  # noqa: E501, D214
+        text_splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+            max_chunk_size=500,
+            preserve_links=True,
+            preserve_images=True,
+            custom_handlers={"iframe": custom_iframe_extractor}
+        )
+        ```
+    """  # noqa: D214
 
     def __init__(
         self,
@@ -616,7 +613,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             denylist_tags: These tags will be removed from the HTML.
             preserve_parent_metadata: Whether to pass through parent document
                 metadata to split documents when calling
-                ``transform_documents/atransform_documents()``.
+                `transform_documents/atransform_documents()`.
             keep_separator: Whether separators
                 should be at the beginning of a chunk, at the end, or not at all.
         """

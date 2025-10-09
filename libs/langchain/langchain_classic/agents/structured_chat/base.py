@@ -193,37 +193,36 @@ def create_structured_chat_agent(
         AgentAction or AgentFinish.
 
     Examples:
+        ```python
+        from langchain_classic import hub
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.agents import (
+            AgentExecutor,
+            create_structured_chat_agent,
+        )
 
-        .. code-block:: python
+        prompt = hub.pull("hwchase17/structured-chat-agent")
+        model = ChatOpenAI()
+        tools = ...
 
-            from langchain_classic import hub
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import (
-                AgentExecutor,
-                create_structured_chat_agent,
-            )
+        agent = create_structured_chat_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            prompt = hub.pull("hwchase17/structured-chat-agent")
-            model = ChatOpenAI()
-            tools = ...
+        agent_executor.invoke({"input": "hi"})
 
-            agent = create_structured_chat_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
+        # Using with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
 
-            agent_executor.invoke({"input": "hi"})
-
-            # Using with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    "chat_history": [
-                        HumanMessage(content="hi! my name is bob"),
-                        AIMessage(content="Hello Bob! How can I assist you today?"),
-                    ],
-                }
-            )
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                "chat_history": [
+                    HumanMessage(content="hi! my name is bob"),
+                    AIMessage(content="Hello Bob! How can I assist you today?"),
+                ],
+            }
+        )
+        ```
 
     Prompt:
 
@@ -231,65 +230,65 @@ def create_structured_chat_agent(
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
             * `agent_scratchpad`: contains previous agent actions and tool outputs as a
-              string.
+                string.
 
         Here's an example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        system = '''Respond to the human as helpfully and accurately as possible. You have access to the following tools:
 
-            system = '''Respond to the human as helpfully and accurately as possible. You have access to the following tools:
+        {tools}
 
-            {tools}
+        Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
 
-            Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
+        Valid "action" values: "Final Answer" or {tool_names}
 
-            Valid "action" values: "Final Answer" or {tool_names}
+        Provide only ONE action per $JSON_BLOB, as shown:
 
-            Provide only ONE action per $JSON_BLOB, as shown:
+        ```txt
+        {{
+            "action": $TOOL_NAME,
+            "action_input": $INPUT
+        }}
+        ```
 
-            ```
-            {{
-              "action": $TOOL_NAME,
-              "action_input": $INPUT
-            }}
-            ```
+        Follow this format:
 
-            Follow this format:
+        Question: input question to answer
+        Thought: consider previous and subsequent steps
+        Action:
+        ```
+        $JSON_BLOB
+        ```
+        Observation: action result
+        ... (repeat Thought/Action/Observation N times)
+        Thought: I know what to respond
+        Action:
+        ```txt
+        {{
+            "action": "Final Answer",
+            "action_input": "Final response to human"
+        }}
 
-            Question: input question to answer
-            Thought: consider previous and subsequent steps
-            Action:
-            ```
-            $JSON_BLOB
-            ```
-            Observation: action result
-            ... (repeat Thought/Action/Observation N times)
-            Thought: I know what to respond
-            Action:
-            ```
-            {{
-              "action": "Final Answer",
-              "action_input": "Final response to human"
-            }}
+        Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation'''
 
-            Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation'''
+        human = '''{input}
 
-            human = '''{input}
+        {agent_scratchpad}
 
-            {agent_scratchpad}
+        (reminder to respond in a JSON blob no matter what)'''
 
-            (reminder to respond in a JSON blob no matter what)'''
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system),
+                MessagesPlaceholder("chat_history", optional=True),
+                ("human", human),
+            ]
+        )
 
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", system),
-                    MessagesPlaceholder("chat_history", optional=True),
-                    ("human", human),
-                ]
-            )
-
+        ```
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

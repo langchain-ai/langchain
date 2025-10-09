@@ -140,96 +140,94 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """Run an OpenAI Assistant.
 
     Example using OpenAI tools:
-        .. code-block:: python
+        ```python
+        from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
 
-            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
-
-            interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
-                name="langchain assistant",
-                instructions="You are a personal math tutor. "
-                "Write and run code to answer math questions.",
-                tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview",
-            )
-            output = interpreter_assistant.invoke(
-                {"content": "What's 10 - 4 raised to the 2.7"}
-            )
+        interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
+            name="langchain assistant",
+            instructions="You are a personal math tutor. "
+            "Write and run code to answer math questions.",
+            tools=[{"type": "code_interpreter"}],
+            model="gpt-4-1106-preview",
+        )
+        output = interpreter_assistant.invoke(
+            {"content": "What's 10 - 4 raised to the 2.7"}
+        )
+        ```
 
     Example using custom tools and AgentExecutor:
-        .. code-block:: python
+        ```python
+        from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
+        from langchain_classic.agents import AgentExecutor
+        from langchain_classic.tools import E2BDataAnalysisTool
 
-            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
-            from langchain_classic.agents import AgentExecutor
-            from langchain_classic.tools import E2BDataAnalysisTool
 
+        tools = [E2BDataAnalysisTool(api_key="...")]
+        agent = OpenAIAssistantRunnable.create_assistant(
+            name="langchain assistant e2b tool",
+            instructions="You are a personal math tutor. "
+            "Write and run code to answer math questions.",
+            tools=tools,
+            model="gpt-4-1106-preview",
+            as_agent=True,
+        )
 
-            tools = [E2BDataAnalysisTool(api_key="...")]
-            agent = OpenAIAssistantRunnable.create_assistant(
-                name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. "
-                "Write and run code to answer math questions.",
-                tools=tools,
-                model="gpt-4-1106-preview",
-                as_agent=True,
-            )
-
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
-            agent_executor.invoke({"content": "What's 10 - 4 raised to the 2.7"})
-
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
+        agent_executor.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+        ```
 
     Example using custom tools and custom execution:
-        .. code-block:: python
-
-            from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
-            from langchain_classic.agents import AgentExecutor
-            from langchain_core.agents import AgentFinish
-            from langchain_classic.tools import E2BDataAnalysisTool
-
-
-            tools = [E2BDataAnalysisTool(api_key="...")]
-            agent = OpenAIAssistantRunnable.create_assistant(
-                name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. "
-                "Write and run code to answer math questions.",
-                tools=tools,
-                model="gpt-4-1106-preview",
-                as_agent=True,
-            )
+        ```python
+        from langchain_experimental.openai_assistant import OpenAIAssistantRunnable
+        from langchain_classic.agents import AgentExecutor
+        from langchain_core.agents import AgentFinish
+        from langchain_classic.tools import E2BDataAnalysisTool
 
 
-            def execute_agent(agent, tools, input):
-                tool_map = {tool.name: tool for tool in tools}
-                response = agent.invoke(input)
-                while not isinstance(response, AgentFinish):
-                    tool_outputs = []
-                    for action in response:
-                        tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append(
-                            {
-                                "output": tool_output,
-                                "tool_call_id": action.tool_call_id,
-                            }
-                        )
-                    response = agent.invoke(
+        tools = [E2BDataAnalysisTool(api_key="...")]
+        agent = OpenAIAssistantRunnable.create_assistant(
+            name="langchain assistant e2b tool",
+            instructions="You are a personal math tutor. "
+            "Write and run code to answer math questions.",
+            tools=tools,
+            model="gpt-4-1106-preview",
+            as_agent=True,
+        )
+
+
+        def execute_agent(agent, tools, input):
+            tool_map = {tool.name: tool for tool in tools}
+            response = agent.invoke(input)
+            while not isinstance(response, AgentFinish):
+                tool_outputs = []
+                for action in response:
+                    tool_output = tool_map[action.tool].invoke(action.tool_input)
+                    tool_outputs.append(
                         {
-                            "tool_outputs": tool_outputs,
-                            "run_id": action.run_id,
-                            "thread_id": action.thread_id,
+                            "output": tool_output,
+                            "tool_call_id": action.tool_call_id,
                         }
                     )
+                response = agent.invoke(
+                    {
+                        "tool_outputs": tool_outputs,
+                        "run_id": action.run_id,
+                        "thread_id": action.thread_id,
+                    }
+                )
 
-                return response
+            return response
 
 
-            response = execute_agent(
-                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
-            )
-            next_response = execute_agent(
-                agent,
-                tools,
-                {"content": "now add 17.241", "thread_id": response.thread_id},
-            )
-
+        response = execute_agent(
+            agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+        )
+        next_response = execute_agent(
+            agent,
+            tools,
+            {"content": "now add 17.241", "thread_id": response.thread_id},
+        )
+        ```
     """
 
     client: Any = Field(default_factory=_get_openai_client)

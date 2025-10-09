@@ -91,11 +91,11 @@ def tool(
         description: Optional description for the tool.
             Precedence for the tool description value is as follows:
 
-            - ``description`` argument
-                (used even if docstring and/or ``args_schema`` are provided)
+            - `description` argument
+                (used even if docstring and/or `args_schema` are provided)
             - tool function docstring
-                (used even if ``args_schema`` is provided)
-            - ``args_schema`` description
+                (used even if `args_schema` is provided)
+            - `args_schema` description
                 (used only if `description` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
@@ -111,10 +111,10 @@ def tool(
             "content_and_artifact" then the output is expected to be a two-tuple
             corresponding to the (content, artifact) of a ToolMessage.
             Defaults to "content".
-        parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
+        parse_docstring: if `infer_schema` and `parse_docstring`, will attempt to
             parse parameter descriptions from Google Style function docstrings.
             Defaults to `False`.
-        error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
+        error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to `True`.
 
@@ -122,11 +122,11 @@ def tool(
         ValueError: If too many positional arguments are provided.
         ValueError: If a runnable is provided without a string name.
         ValueError: If the first argument is not a string or callable with
-            a ``__name__`` attribute.
+            a `__name__` attribute.
         ValueError: If the function does not have a docstring and description
-            is not provided and ``infer_schema`` is False.
-        ValueError: If ``parse_docstring`` is True and the function has an invalid
-            Google-style docstring and ``error_on_invalid_docstring`` is True.
+            is not provided and `infer_schema` is False.
+        ValueError: If `parse_docstring` is True and the function has an invalid
+            Google-style docstring and `error_on_invalid_docstring` is True.
         ValueError: If a Runnable is provided that does not have an object schema.
 
     Returns:
@@ -137,94 +137,94 @@ def tool(
         - Function must have a docstring
 
     Examples:
-        .. code-block:: python
-
-            @tool
-            def search_api(query: str) -> str:
-                # Searches the API for the query.
-                return
-
-
-            @tool("search", return_direct=True)
-            def search_api(query: str) -> str:
-                # Searches the API for the query.
-                return
+        ```python
+        @tool
+        def search_api(query: str) -> str:
+            # Searches the API for the query.
+            return
 
 
-            @tool(response_format="content_and_artifact")
-            def search_api(query: str) -> tuple[str, dict]:
-                return "partial json of results", {"full": "object of results"}
+        @tool("search", return_direct=True)
+        def search_api(query: str) -> str:
+            # Searches the API for the query.
+            return
+
+
+        @tool(response_format="content_and_artifact")
+        def search_api(query: str) -> tuple[str, dict]:
+            return "partial json of results", {"full": "object of results"}
+        ```
 
     !!! version-added "Added in version 0.2.14"
 
         Parse Google-style docstrings:
 
-        .. code-block:: python
+        ```python
+        @tool(parse_docstring=True)
+        def foo(bar: str, baz: int) -> str:
+            \"\"\"The foo.
 
-            @tool(parse_docstring=True)
-            def foo(bar: str, baz: int) -> str:
-                \"\"\"The foo.
+            Args:
+                bar: The bar.
+                baz: The baz.
+            \"\"\"
+            return bar
 
-                Args:
-                    bar: The bar.
-                    baz: The baz.
-                \"\"\"
-                return bar
+        foo.args_schema.model_json_schema()
+        ```
 
-            foo.args_schema.model_json_schema()
-
-        .. code-block:: python
-
-            {
-                "title": "foo",
-                "description": "The foo.",
-                "type": "object",
-                "properties": {
-                    "bar": {
-                        "title": "Bar",
-                        "description": "The bar.",
-                        "type": "string",
-                    },
-                    "baz": {
-                        "title": "Baz",
-                        "description": "The baz.",
-                        "type": "integer",
-                    },
+        ```python
+        {
+            "title": "foo",
+            "description": "The foo.",
+            "type": "object",
+            "properties": {
+                "bar": {
+                    "title": "Bar",
+                    "description": "The bar.",
+                    "type": "string",
                 },
-                "required": ["bar", "baz"],
-            }
+                "baz": {
+                    "title": "Baz",
+                    "description": "The baz.",
+                    "type": "integer",
+                },
+            },
+            "required": ["bar", "baz"],
+        }
+        ```
 
-        Note that parsing by default will raise ``ValueError`` if the docstring
+        Note that parsing by default will raise `ValueError` if the docstring
         is considered invalid. A docstring is considered invalid if it contains
         arguments not in the function signature, or is unable to be parsed into
         a summary and "Args:" blocks. Examples below:
 
-        .. code-block:: python
+        ```python
+        # No args section
+        def invalid_docstring_1(bar: str, baz: int) -> str:
+            \"\"\"The foo.\"\"\"
+            return bar
 
-            # No args section
-            def invalid_docstring_1(bar: str, baz: int) -> str:
-                \"\"\"The foo.\"\"\"
-                return bar
+        # Improper whitespace between summary and args section
+        def invalid_docstring_2(bar: str, baz: int) -> str:
+            \"\"\"The foo.
+            Args:
+                bar: The bar.
+                baz: The baz.
+            \"\"\"
+            return bar
 
-            # Improper whitespace between summary and args section
-            def invalid_docstring_2(bar: str, baz: int) -> str:
-                \"\"\"The foo.
-                Args:
-                    bar: The bar.
-                    baz: The baz.
-                \"\"\"
-                return bar
+        # Documented args absent from function signature
+        def invalid_docstring_3(bar: str, baz: int) -> str:
+            \"\"\"The foo.
 
-            # Documented args absent from function signature
-            def invalid_docstring_3(bar: str, baz: int) -> str:
-                \"\"\"The foo.
+            Args:
+                banana: The bar.
+                monkey: The baz.
+            \"\"\"
+            return bar
 
-                Args:
-                    banana: The bar.
-                    monkey: The baz.
-                \"\"\"
-                return bar
-
+        ```
     """  # noqa: D214, D410, D411  # We're intentionally showing bad formatting in examples
 
     def _create_tool_factory(

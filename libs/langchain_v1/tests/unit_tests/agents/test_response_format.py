@@ -693,7 +693,7 @@ class TestDynamicModelWithResponseFormat:
     def test_middleware_model_swap_provider_to_tool_strategy(self) -> None:
         """Test that strategy resolution is deferred until after middleware modifies the model.
 
-        Verifies that when a raw schema is provided, ``_supports_provider_strategy`` is called
+        Verifies that when a raw schema is provided, `_supports_provider_strategy` is called
         on the middleware-modified model (not the original), ensuring the correct strategy is
         selected based on the final model's capabilities.
         """

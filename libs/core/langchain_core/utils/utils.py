@@ -82,11 +82,10 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         The mocked datetime class.
 
     Example:
-
-        .. code-block:: python
-
-            with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
-                assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
+        ```python
+        with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
+            assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
+        ```
     """
 
     class MockDateTime(datetime.datetime):
@@ -499,7 +498,7 @@ Used for:
 def ensure_id(id_val: str | None) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    Auto-generated UUIDs are prefixed by `'lc_'` to indicate they are
     LangChain-generated IDs.
 
     Args:

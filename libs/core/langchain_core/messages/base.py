@@ -48,13 +48,13 @@ class TextAccessor(str):
 
     Exists to maintain backward compatibility while transitioning from method-based to
     property-based text access in message objects. In LangChain <v1.0, message text was
-    accessed via ``.text()`` method calls. In v1.0=<, the preferred pattern is property
-    access via ``.text``.
+    accessed via `.text()` method calls. In v1.0=<, the preferred pattern is property
+    access via `.text`.
 
-    Rather than breaking existing code immediately, ``TextAccessor`` allows both
+    Rather than breaking existing code immediately, `TextAccessor` allows both
     patterns:
-    - Modern property access: ``message.text`` (returns string directly)
-    - Legacy method access: ``message.text()`` (callable, emits deprecation warning)
+    - Modern property access: `message.text` (returns string directly)
+    - Legacy method access: `message.text()` (callable, emits deprecation warning)
 
     """
 
@@ -67,12 +67,12 @@ class TextAccessor(str):
     def __call__(self) -> str:
         """Enable method-style text access for backward compatibility.
 
-        This method exists solely to support legacy code that calls ``.text()``
-        as a method. New code should use property access (``.text``) instead.
+        This method exists solely to support legacy code that calls `.text()`
+        as a method. New code should use property access (`.text`) instead.
 
         !!! deprecated
-            As of `langchain-core` 1.0.0, calling ``.text()`` as a method is deprecated.
-            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
+            As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
+            Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -92,7 +92,7 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of a ``ChatModel``.
+    Messages are the inputs and outputs of a `ChatModel`.
     """
 
     content: str | list[str | dict]
@@ -161,7 +161,7 @@ class BaseMessage(Serializable):
     ) -> None:
         """Initialize `BaseMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
             content: The string contents of the message.
@@ -187,7 +187,7 @@ class BaseMessage(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "messages"]``
+            `["langchain", "schema", "messages"]`
         """
         return ["langchain", "schema", "messages"]
 
@@ -259,11 +259,11 @@ class BaseMessage(Serializable):
     def text(self) -> TextAccessor:
         """Get the text content of the message as a string.
 
-        Can be used as both property (``message.text``) and method (``message.text()``).
+        Can be used as both property (`message.text`) and method (`message.text()`).
 
         !!! deprecated
-            As of langchain-core 1.0.0, calling ``.text()`` as a method is deprecated.
-            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
+            As of langchain-core 1.0.0, calling `.text()` as a method is deprecated.
+            Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
@@ -331,8 +331,8 @@ def merge_content(
     """Merge multiple message contents.
 
     Args:
-        first_content: The first ``content``. Can be a string or a list.
-        contents: The other ``content``s. Can be a string or a list.
+        first_content: The first `content`. Can be a string or a list.
+        contents: The other `content`s. Can be a string or a list.
 
     Returns:
         The merged content.
@@ -388,9 +388,9 @@ class BaseMessageChunk(BaseMessage):
 
         For example,
 
-        ``AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")``
+        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
 
-        will give ``AIMessageChunk(content="Hello World")``
+        will give `AIMessageChunk(content="Hello World")`
 
         """
         if isinstance(other, BaseMessageChunk):
@@ -440,7 +440,7 @@ def message_to_dict(message: BaseMessage) -> dict:
 
     Returns:
         Message as a dict. The dict will have a `type` key with the message type
-        and a ``data`` key with the message data as a dict.
+        and a `data` key with the message data as a dict.
 
     """
     return {"type": message.type, "data": message.model_dump()}

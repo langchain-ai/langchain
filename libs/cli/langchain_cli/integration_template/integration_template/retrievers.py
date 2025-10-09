@@ -14,13 +14,13 @@ class __ModuleName__Retriever(BaseRetriever):
 
     # TODO: Replace with relevant packages, env vars, etc.
     Setup:
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args:
@@ -31,58 +31,58 @@ class __ModuleName__Retriever(BaseRetriever):
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __package_name__ import __ModuleName__Retriever
 
-            from __package_name__ import __ModuleName__Retriever
-
-            retriever = __ModuleName__Retriever(
-                # ...
-            )
+        retriever = __ModuleName__Retriever(
+            # ...
+        )
+        ```
 
     Usage:
-        .. code-block:: python
+        ```python
+        query = "..."
 
-            query = "..."
+        retriever.invoke(query)
+        ```
 
-            retriever.invoke(query)
-
-        .. code-block::
-
-            # TODO: Example output.
+        ```txt
+        # TODO: Example output.
+        ```
 
     Use within a chain:
-        .. code-block:: python
+        ```python
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.runnables import RunnablePassthrough
+        from langchain_openai import ChatOpenAI
 
-            from langchain_core.output_parsers import StrOutputParser
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.runnables import RunnablePassthrough
-            from langchain_openai import ChatOpenAI
+        prompt = ChatPromptTemplate.from_template(
+            \"\"\"Answer the question based only on the context provided.
 
-            prompt = ChatPromptTemplate.from_template(
-                \"\"\"Answer the question based only on the context provided.
+        Context: {context}
 
-            Context: {context}
+        Question: {question}\"\"\"
+        )
 
-            Question: {question}\"\"\"
-            )
+        llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        def format_docs(docs):
+            return "\\n\\n".join(doc.page_content for doc in docs)
 
-            def format_docs(docs):
-                return "\\n\\n".join(doc.page_content for doc in docs)
+        chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
 
-            chain = (
-                {"context": retriever | format_docs, "question": RunnablePassthrough()}
-                | prompt
-                | llm
-                | StrOutputParser()
-            )
+        chain.invoke("...")
+        ```
 
-            chain.invoke("...")
-
-        .. code-block::
-
-             # TODO: Example output.
+        ```
+        # TODO: Example output.
+        ```
 
     """
 

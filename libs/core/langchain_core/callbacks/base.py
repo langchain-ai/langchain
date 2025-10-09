@@ -247,7 +247,7 @@ class CallbackManagerMixin:
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
             serialized: The serialized LLM.
@@ -274,7 +274,7 @@ class CallbackManagerMixin:
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
             serialized: The serialized chat model.
@@ -414,7 +414,7 @@ class RunManagerMixin:
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).
@@ -496,7 +496,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
             serialized: The serialized LLM.
@@ -523,7 +523,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
             serialized: The serialized chat model.
@@ -876,7 +876,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).
@@ -945,30 +945,25 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Example: Merging two callback managers.
 
-            .. code-block:: python
+            ```python
+            from langchain_core.callbacks.manager import (
+                CallbackManager,
+                trace_as_chain_group,
+            )
+            from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                from langchain_core.callbacks.manager import (
-                    CallbackManager,
-                    trace_as_chain_group,
-                )
-                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+            manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+            with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                merged_manager = group_manager.merge(manager)
+                print(merged_manager.handlers)
+                # [
+                #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
+                #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
+                # ]
 
-                manager = CallbackManager(
-                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
-                )
-                with trace_as_chain_group(
-                    "My Group Name", tags=["tag1"]
-                ) as group_manager:
-                    merged_manager = group_manager.merge(manager)
-                    print(merged_manager.handlers)
-                    # [
-                    #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
-                    #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
-                    # ]
-
-                    print(merged_manager.tags)
-                    #    ['tag2', 'tag1']
-
+                print(merged_manager.tags)
+                #    ['tag2', 'tag1']
+            ```
         """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,

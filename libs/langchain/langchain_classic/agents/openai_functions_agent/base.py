@@ -310,58 +310,57 @@ def create_openai_functions_agent(
     Example:
         Creating an agent with no memory
 
-        .. code-block:: python
+        ```python
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.agents import (
+            AgentExecutor,
+            create_openai_functions_agent,
+        )
+        from langchain_classic import hub
 
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import (
-                AgentExecutor,
-                create_openai_functions_agent,
-            )
-            from langchain_classic import hub
+        prompt = hub.pull("hwchase17/openai-functions-agent")
+        model = ChatOpenAI()
+        tools = ...
 
-            prompt = hub.pull("hwchase17/openai-functions-agent")
-            model = ChatOpenAI()
-            tools = ...
+        agent = create_openai_functions_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            agent = create_openai_functions_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
+        agent_executor.invoke({"input": "hi"})
 
-            agent_executor.invoke({"input": "hi"})
+        # Using with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
 
-            # Using with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    "chat_history": [
-                        HumanMessage(content="hi! my name is bob"),
-                        AIMessage(content="Hello Bob! How can I assist you today?"),
-                    ],
-                }
-            )
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                "chat_history": [
+                    HumanMessage(content="hi! my name is bob"),
+                    AIMessage(content="Hello Bob! How can I assist you today?"),
+                ],
+            }
+        )
+        ```
 
     Prompt:
 
         The agent prompt must have an `agent_scratchpad` key that is a
-            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
         Here's an example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", "You are a helpful assistant"),
-                    MessagesPlaceholder("chat_history", optional=True),
-                    ("human", "{input}"),
-                    MessagesPlaceholder("agent_scratchpad"),
-                ]
-            )
-
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant"),
+                MessagesPlaceholder("chat_history", optional=True),
+                ("human", "{input}"),
+                MessagesPlaceholder("agent_scratchpad"),
+            ]
+        )
+        ```
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)

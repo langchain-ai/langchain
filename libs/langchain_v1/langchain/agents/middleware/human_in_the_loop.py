@@ -118,33 +118,33 @@ class ToolConfig(TypedDict):
     Can be either:
     - A static string describing the approval request
     - A callable that dynamically generates the description based on agent state,
-      runtime, and tool call information
+        runtime, and tool call information
 
     Example:
-        .. code-block:: python
+        ```python
+        # Static string description
+        config = ToolConfig(
+            allow_accept=True,
+            description="Please review this tool execution"
+        )
 
-            # Static string description
-            config = ToolConfig(
-                allow_accept=True,
-                description="Please review this tool execution"
+        # Dynamic callable description
+        def format_tool_description(
+            tool_call: ToolCall,
+            state: AgentState,
+            runtime: Runtime
+        ) -> str:
+            import json
+            return (
+                f"Tool: {tool_call['name']}\\n"
+                f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
             )
 
-            # Dynamic callable description
-            def format_tool_description(
-                tool_call: ToolCall,
-                state: AgentState,
-                runtime: Runtime
-            ) -> str:
-                import json
-                return (
-                    f"Tool: {tool_call['name']}\\n"
-                    f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
-                )
-
-            config = ToolConfig(
-                allow_accept=True,
-                description=format_tool_description
-            )
+        config = ToolConfig(
+            allow_accept=True,
+            description=format_tool_description
+        )
+        ```
     """
 
 
@@ -165,12 +165,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
                 * `True` indicates all actions are allowed: accept, edit, and respond.
                 * `False` indicates that the tool is auto-approved.
-                * ``ToolConfig`` indicates the specific actions allowed for this tool.
-                  The ToolConfig can include a ``description`` field (str or callable) for
-                  custom formatting of the interrupt description.
+                * `ToolConfig` indicates the specific actions allowed for this tool.
+                    The ToolConfig can include a `description` field (str or callable) for
+                    custom formatting of the interrupt description.
             description_prefix: The prefix to use when constructing action requests.
                 This is used to provide context about the tool call and the action being requested.
-                Not used if a tool has a ``description`` in its ToolConfig.
+                Not used if a tool has a `description` in its ToolConfig.
         """
         super().__init__()
         resolved_tool_configs: dict[str, ToolConfig] = {}

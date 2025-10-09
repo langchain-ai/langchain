@@ -107,7 +107,7 @@ class Reviver:
             ValueError: If trying to deserialize something that cannot
                 be deserialized in the current version of langchain-core.
             NotImplementedError: If the object is not implemented and
-                ``ignore_unserializable_fields`` is False.
+                `ignore_unserializable_fields` is False.
         """
         if (
             value.get("lc") == 1

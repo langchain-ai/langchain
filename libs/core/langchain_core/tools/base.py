@@ -294,7 +294,7 @@ def create_schema_from_function(
             Defaults to FILTERED_ARGS.
         parse_docstring: Whether to parse the function's docstring for descriptions
             for each argument. Defaults to `False`.
-        error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
+        error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
@@ -492,7 +492,7 @@ class ChildTool(BaseTool):
         """Initialize the tool.
 
         Raises:
-            TypeError: If ``args_schema`` is not a subclass of pydantic `BaseModel` or
+            TypeError: If `args_schema` is not a subclass of pydantic `BaseModel` or
                 dict.
         """
         if (
@@ -616,7 +616,7 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema ``args_schema``.
+            ValueError: If string input is provided with JSON schema `args_schema`.
             ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
             TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
@@ -1217,24 +1217,24 @@ class InjectedToolCallId(InjectedToolArg):
     This annotation is used to mark a tool parameter that should receive
     the tool call ID at runtime.
 
-    .. code-block:: python
+    ```python
+    from typing import Annotated
+    from langchain_core.messages import ToolMessage
+    from langchain_core.tools import tool, InjectedToolCallId
 
-        from typing import Annotated
-        from langchain_core.messages import ToolMessage
-        from langchain_core.tools import tool, InjectedToolCallId
+    @tool
+    def foo(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        \"\"\"Return x.\"\"\"
+        return ToolMessage(
+            str(x),
+            artifact=x,
+            name="foo",
+            tool_call_id=tool_call_id
+        )
 
-        @tool
-        def foo(
-            x: int, tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> ToolMessage:
-            \"\"\"Return x.\"\"\"
-            return ToolMessage(
-                str(x),
-                artifact=x,
-                name="foo",
-                tool_call_id=tool_call_id
-            )
-
+    ```
     """
 
 

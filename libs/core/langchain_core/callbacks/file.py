@@ -27,22 +27,22 @@ class FileCallbackHandler(BaseCallbackHandler):
     Examples:
         Using as a context manager (recommended):
 
-        .. code-block:: python
-
-            with FileCallbackHandler("output.txt") as handler:
-                # Use handler with your chain/agent
-                chain.invoke(inputs, config={"callbacks": [handler]})
+        ```python
+        with FileCallbackHandler("output.txt") as handler:
+            # Use handler with your chain/agent
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        ```
 
         Direct instantiation (deprecated):
 
-        .. code-block:: python
-
-            handler = FileCallbackHandler("output.txt")
-            # File remains open until handler is garbage collected
-            try:
-                chain.invoke(inputs, config={"callbacks": [handler]})
-            finally:
-                handler.close()  # Explicit cleanup recommended
+        ```python
+        handler = FileCallbackHandler("output.txt")
+        # File remains open until handler is garbage collected
+        try:
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        finally:
+            handler.close()  # Explicit cleanup recommended
+        ```
 
     Args:
         filename: The file path to write to.

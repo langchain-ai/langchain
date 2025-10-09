@@ -120,10 +120,10 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
 
 @lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
+    """Cache the result of checking if asyncio.create_task accepts a `context` arg.
 
     Returns:
-        True if ``asyncio.create_task`` accepts a context argument, False otherwise.
+        True if `asyncio.create_task` accepts a context argument, False otherwise.
     """
     return accepts_context(asyncio.create_task)
 

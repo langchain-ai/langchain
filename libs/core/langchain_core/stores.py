@@ -47,36 +47,34 @@ class BaseStore(ABC, Generic[K, V]):
     which will usually be more efficient by saving on round trips to the store.
 
     Examples:
-
-        .. code-block:: python
-
-            from langchain.storage import BaseStore
+        ```python
+        from langchain.storage import BaseStore
 
 
-            class MyInMemoryStore(BaseStore[str, int]):
-                def __init__(self) -> None:
-                    self.store: dict[str, int] = {}
+        class MyInMemoryStore(BaseStore[str, int]):
+            def __init__(self) -> None:
+                self.store: dict[str, int] = {}
 
-                def mget(self, keys: Sequence[str]) -> list[int | None]:
-                    return [self.store.get(key) for key in keys]
+            def mget(self, keys: Sequence[str]) -> list[int | None]:
+                return [self.store.get(key) for key in keys]
 
-                def mset(self, key_value_pairs: Sequence[tuple[str, int]]) -> None:
-                    for key, value in key_value_pairs:
-                        self.store[key] = value
+            def mset(self, key_value_pairs: Sequence[tuple[str, int]]) -> None:
+                for key, value in key_value_pairs:
+                    self.store[key] = value
 
-                def mdelete(self, keys: Sequence[str]) -> None:
-                    for key in keys:
-                        if key in self.store:
-                            del self.store[key]
+            def mdelete(self, keys: Sequence[str]) -> None:
+                for key in keys:
+                    if key in self.store:
+                        del self.store[key]
 
-                def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
-                    if prefix is None:
-                        yield from self.store.keys()
-                    else:
-                        for key in self.store.keys():
-                            if key.startswith(prefix):
-                                yield key
-
+            def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
+                if prefix is None:
+                    yield from self.store.keys()
+                else:
+                    for key in self.store.keys():
+                        if key.startswith(prefix):
+                            yield key
+        ```
     """
 
     @abstractmethod
@@ -249,21 +247,19 @@ class InMemoryStore(InMemoryBaseStore[Any]):
             the key-value pairs.
 
     Examples:
+        ```python
+        from langchain.storage import InMemoryStore
 
-        .. code-block:: python
-
-            from langchain.storage import InMemoryStore
-
-            store = InMemoryStore()
-            store.mset([("key1", "value1"), ("key2", "value2")])
-            store.mget(["key1", "key2"])
-            # ['value1', 'value2']
-            store.mdelete(["key1"])
-            list(store.yield_keys())
-            # ['key2']
-            list(store.yield_keys(prefix="k"))
-            # ['key2']
-
+        store = InMemoryStore()
+        store.mset([("key1", "value1"), ("key2", "value2")])
+        store.mget(["key1", "key2"])
+        # ['value1', 'value2']
+        store.mdelete(["key1"])
+        list(store.yield_keys())
+        # ['key2']
+        list(store.yield_keys(prefix="k"))
+        # ['key2']
+        ```
     """
 
 
@@ -275,21 +271,19 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
             the key-value pairs.
 
     Examples:
+        ```python
+        from langchain.storage import InMemoryByteStore
 
-        .. code-block:: python
-
-            from langchain.storage import InMemoryByteStore
-
-            store = InMemoryByteStore()
-            store.mset([("key1", b"value1"), ("key2", b"value2")])
-            store.mget(["key1", "key2"])
-            # [b'value1', b'value2']
-            store.mdelete(["key1"])
-            list(store.yield_keys())
-            # ['key2']
-            list(store.yield_keys(prefix="k"))
-            # ['key2']
-
+        store = InMemoryByteStore()
+        store.mset([("key1", b"value1"), ("key2", b"value2")])
+        store.mget(["key1", "key2"])
+        # [b'value1', b'value2']
+        store.mdelete(["key1"])
+        list(store.yield_keys())
+        # ['key2']
+        list(store.yield_keys(prefix="k"))
+        # ['key2']
+        ```
     """
 
 
