@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run:*)",
+      "Bash(make:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.pydantic.dev)",
+      "WebFetch(domain:openai.github.io)",
+      "Bash(uv run:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "WebFetch(domain:langchain-ai.github.io)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:kirshatrov.com)",
+      "WebFetch(domain:aiengineerguide.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
