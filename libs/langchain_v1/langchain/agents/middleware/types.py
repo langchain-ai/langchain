@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Generator
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from inspect import iscoroutinefunction
 from typing import (
@@ -355,7 +355,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     thread_id = request.runtime.config.get("configurable", {}).get("thread_id")
                 return handler(request)
         """
-        return handler(request)
+        raise NotImplementedError
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):

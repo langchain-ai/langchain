@@ -51,7 +51,7 @@ from langchain.tools import ToolNode
 from langchain.tools.tool_node import ToolCallWithContext
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Sequence
+    from collections.abc import Callable, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
