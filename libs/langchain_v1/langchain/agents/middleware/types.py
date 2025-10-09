@@ -301,11 +301,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Each call to handler is independent and stateless.
 
         Examples:
-            Passthrough (execute once):
-
-            def wrap_tool_call(self, request, handler):
-                return handler(request)
-
             Modify request before execution:
 
             def wrap_tool_call(self, request, handler):
@@ -335,16 +330,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     if attempt < 2:
                         continue
                     return result
-
-            Access state and runtime:
-
-            def wrap_tool_call(self, request, handler):
-                # Access state from request
-                messages = request.state.get("messages", [])
-                # Access runtime from request
-                if request.runtime:
-                    thread_id = request.runtime.config.get("configurable", {}).get("thread_id")
-                return handler(request)
         """
         raise NotImplementedError
 
