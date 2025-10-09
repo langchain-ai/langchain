@@ -46,10 +46,10 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
     Args:
         namespace: Prefix that segregates keys from different embedding models.
         algorithm:
-           * ``'sha1'`` - fast but not collision-resistant
-           * ``'blake2b'`` - cryptographically strong, faster than SHA-1
-           * ``'sha256'`` - cryptographically strong, slower than SHA-1
-           * ``'sha512'`` - cryptographically strong, slower than SHA-1
+           * `'sha1'` - fast but not collision-resistant
+           * `'blake2b'` - cryptographically strong, faster than SHA-1
+           * `'sha256'` - cryptographically strong, slower than SHA-1
+           * `'sha512'` - cryptographically strong, slower than SHA-1
 
     Returns:
         A function that encodes a key using the specified algorithm.
@@ -242,7 +242,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to `True` when initializing the embedder.
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -265,7 +265,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to `True` when initializing the embedder.
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.

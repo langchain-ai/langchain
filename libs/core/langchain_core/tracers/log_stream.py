@@ -111,16 +111,16 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: RunLogPatch | Any) -> RunLog:
-        """Combine two ``RunLogPatch`` instances.
+        """Combine two `RunLogPatch` instances.
 
         Args:
-            other: The other ``RunLogPatch`` to combine with.
+            other: The other `RunLogPatch` to combine with.
 
         Raises:
-            TypeError: If the other object is not a ``RunLogPatch``.
+            TypeError: If the other object is not a `RunLogPatch`.
 
         Returns:
-            A new ``RunLog`` representing the combination of the two.
+            A new `RunLog` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -159,16 +159,16 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: RunLogPatch | Any) -> RunLog:
-        """Combine two ``RunLog``s.
+        """Combine two `RunLog`s.
 
         Args:
-            other: The other ``RunLog`` or ``RunLogPatch`` to combine with.
+            other: The other `RunLog` or `RunLogPatch` to combine with.
 
         Raises:
-            TypeError: If the other object is not a ``RunLog`` or ``RunLogPatch``.
+            TypeError: If the other object is not a `RunLog` or `RunLogPatch`.
 
         Returns:
-            A new ``RunLog`` representing the combination of the two.
+            A new `RunLog` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -184,13 +184,13 @@ class RunLog(RunLogPatch):
 
     @override
     def __eq__(self, other: object) -> bool:
-        """Check if two ``RunLog``s are equal.
+        """Check if two `RunLog`s are equal.
 
         Args:
-            other: The other ``RunLog`` to compare to.
+            other: The other `RunLog` to compare to.
 
         Returns:
-            True if the ``RunLog``s are equal, False otherwise.
+            True if the `RunLog`s are equal, False otherwise.
         """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
@@ -666,7 +666,7 @@ async def _astream_log_implementation(
         ValueError: If the callbacks in the config are of an unexpected type.
 
     Yields:
-        The run log patches or states, depending on the value of ``diff``.
+        The run log patches or states, depending on the value of `diff`.
     """
     # Assign the stream handler to the config
     config = ensure_config(config)

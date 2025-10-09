@@ -65,8 +65,8 @@ class StructuredPrompt(ChatPromptTemplate):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        For example, if the class is ``langchain.llms.openai.OpenAI``, then the
-        namespace is ``["langchain", "llms", "openai"]``
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace of the langchain object.
@@ -106,14 +106,14 @@ class StructuredPrompt(ChatPromptTemplate):
 
         Args:
             messages: sequence of message representations.
-                  A message can be represented using the following formats:
-                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                  (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (5) a string which is
-                  shorthand for ("human", template); e.g., "{user_input}"
+                A message can be represented using the following formats:
+                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                (message type, template); e.g., ("human", "{user_input}"),
+                (4) 2-tuple of (message class, template), (5) a string which is
+                shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
             **kwargs: Any additional kwargs to pass through to
-                ``ChatModel.with_structured_output(schema, **kwargs)``.
+                `ChatModel.with_structured_output(schema, **kwargs)`.
 
         Returns:
             a structured prompt template

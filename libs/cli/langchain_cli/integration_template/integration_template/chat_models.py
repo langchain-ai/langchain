@@ -26,8 +26,8 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
         .. code-block:: bash
 
@@ -145,9 +145,9 @@ class Chat__ModuleName__(BaseChatModel):
 
         .. code-block:: python
 
-              # TODO: Example output.
+            # TODO: Example output.
 
-        See ``Chat__ModuleName__.bind_tools()`` method for more.
+        See `Chat__ModuleName__.bind_tools()` method for more.
 
     # TODO: Delete if .with_structured_output() isn't supported.
     Structured output:
@@ -171,7 +171,7 @@ class Chat__ModuleName__(BaseChatModel):
 
             # TODO: Example output.
 
-        See ``Chat__ModuleName__.with_structured_output()`` for more.
+        See `Chat__ModuleName__.with_structured_output()` for more.
 
     # TODO: Delete if JSON mode response format isn't supported.
     JSON mode:
@@ -255,7 +255,7 @@ class Chat__ModuleName__(BaseChatModel):
 
         .. code-block:: python
 
-              # TODO: Example output.
+            # TODO: Example output.
 
     Response metadata
         .. code-block:: python
@@ -265,7 +265,7 @@ class Chat__ModuleName__(BaseChatModel):
 
         .. code-block:: python
 
-             # TODO: Example output.
+            # TODO: Example output.
 
     """  # noqa: E501
 
@@ -314,11 +314,11 @@ class Chat__ModuleName__(BaseChatModel):
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
+                If generation stops due to a stop token, the stop token itself
+                SHOULD BE INCLUDED as part of the output. This is not enforced
+                across models right now, but it's a good practice to follow since
+                it makes it much easier to parse the output of the model
+                downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
         """
         # Replace this with actual logic to generate a response from a list
@@ -362,11 +362,11 @@ class Chat__ModuleName__(BaseChatModel):
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
+                If generation stops due to a stop token, the stop token itself
+                SHOULD BE INCLUDED as part of the output. This is not enforced
+                across models right now, but it's a good practice to follow since
+                it makes it much easier to parse the output of the model
+                downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
         """
         last_message = messages[-1]

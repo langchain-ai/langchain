@@ -86,7 +86,7 @@ class AgentAction(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "agent"]``
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 
@@ -163,7 +163,7 @@ class AgentFinish(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "agent"]``
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 

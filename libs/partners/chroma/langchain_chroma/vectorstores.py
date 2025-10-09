@@ -150,7 +150,7 @@ class Chroma(VectorStore):
     """Chroma vector store integration.
 
     Setup:
-        Install ``chromadb``, ``langchain-chroma`` packages:
+        Install `chromadb`, `langchain-chroma` packages:
 
         .. code-block:: bash
 

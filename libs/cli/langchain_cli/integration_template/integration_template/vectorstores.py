@@ -28,7 +28,7 @@ class __ModuleName__VectorStore(VectorStore):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable `__MODULE_NAME___API_KEY`.
 
         .. code-block:: bash
 

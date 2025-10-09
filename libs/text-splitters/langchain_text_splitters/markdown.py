@@ -296,7 +296,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     * Splits out code blocks and includes the language in the "Code" metadata key.
     * Splits text on horizontal rules (`---`) as well.
     * Defaults to sensible splitting behavior, which can be overridden using the
-      ``headers_to_split_on`` parameter.
+        `headers_to_split_on` parameter.
 
     Example:
 

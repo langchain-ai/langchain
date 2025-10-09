@@ -84,9 +84,9 @@ def init_chat_model(
         to see what parameters are supported by the model.
 
     Args:
-        model: The name of the model, e.g. ``'o3-mini'``, ``'claude-3-5-sonnet-latest'``. You can
+        model: The name of the model, e.g. `'o3-mini'`, `'claude-3-5-sonnet-latest'`. You can
             also specify model and model provider in a single argument using
-            ``'{model_provider}:{model}'`` format, e.g. ``'openai:o1'``.
+            `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
         model_provider: The model provider if not specified as part of model arg (see
             above). Supported model_provider values and the corresponding integration
             package are:
@@ -134,19 +134,19 @@ def init_chat_model(
 
             Fields are assumed to have config_prefix stripped if there is a
             config_prefix. If model is specified, then defaults to None. If model is
-            not specified, then defaults to ``("model", "model_provider")``.
+            not specified, then defaults to `("model", "model_provider")`.
 
-            ***Security Note***: Setting ``configurable_fields="any"`` means fields like
-            ``api_key``, ``base_url``, etc. can be altered at runtime, potentially redirecting
+            ***Security Note***: Setting `configurable_fields="any"` means fields like
+            `api_key`, `base_url`, etc. can be altered at runtime, potentially redirecting
             model requests to a different service/user. Make sure that if you're
             accepting untrusted configurations that you enumerate the
-            ``configurable_fields=(...)`` explicitly.
+            `configurable_fields=(...)` explicitly.
 
-        config_prefix: If ``'config_prefix'`` is a non-empty string then model will be
+        config_prefix: If `'config_prefix'` is a non-empty string then model will be
             configurable at runtime via the
-            ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
-            ``'config_prefix'`` is an empty string then model will be configurable via
-            ``config["configurable"]["{param}"]``.
+            `config["configurable"]["{config_prefix}_{param}"]` keys. If
+            `'config_prefix'` is an empty string then model will be configurable via
+            `config["configurable"]["{param}"]`.
         temperature: Model temperature.
         max_tokens: Max output tokens.
         timeout: The maximum time (in seconds) to wait for a response from the model
@@ -154,10 +154,10 @@ def init_chat_model(
         max_retries: The maximum number of attempts the system will make to resend a
             request if it fails due to issues like network timeouts or rate limits.
         base_url: The URL of the API endpoint where requests are sent.
-        rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+        rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
             rate limits.
         kwargs: Additional model-specific keyword args to pass to
-            ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
+            `<<selected ChatModel>>.__init__(model=model_name, **kwargs)`.
 
     Returns:
         A BaseChatModel corresponding to the model_name and model_provider specified if
@@ -289,7 +289,7 @@ def init_chat_model(
     !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
-        Support for `configurable_fields` and ``config_prefix`` added.
+        Support for `configurable_fields` and `config_prefix` added.
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added

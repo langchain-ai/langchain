@@ -238,11 +238,11 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             template: a template.
             template_format: format of the template. Defaults to "f-string".
             partial_variables: A dictionary of variables that can be used to partially
-                               fill in the template. For example, if the template is
-                              `"{variable1} {variable2}"`, and `partial_variables` is
-                              `{"variable1": "foo"}`, then the final prompt will be
-                              `"foo {variable2}"`.
-                              Defaults to `None`.
+                fill in the template. For example, if the template is
+                `"{variable1} {variable2}"`, and `partial_variables` is
+                `{"variable1": "foo"}`, then the final prompt will be
+                `"foo {variable2}"`.
+                Defaults to `None`.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -685,7 +685,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
         Args:
             **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
+                in all the template messages in this chat template.
 
         Returns:
             formatted string.
@@ -697,7 +697,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
         Args:
             **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
+                in all the template messages in this chat template.
 
         Returns:
             formatted string.
@@ -781,7 +781,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Examples:
         !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
-            ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
+            `ChatPromptTemplate.from_messages()` directly to `ChatPromptTemplate()`
             init.
 
         .. code-block:: python
@@ -902,11 +902,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Args:
             messages: sequence of message representations.
-                  A message can be represented using the following formats:
-                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                  (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (5) a string which is
-                  shorthand for ("human", template); e.g., "{user_input}".
+                A message can be represented using the following formats:
+                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                (message type, template); e.g., ("human", "{user_input}"),
+                (4) 2-tuple of (message class, template), (5) a string which is
+                shorthand for ("human", template); e.g., "{user_input}".
             template_format: format of the template. Defaults to "f-string".
             input_variables: A list of the names of the variables whose values are
                 required as inputs to the prompt.
@@ -977,7 +977,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "chat"]``
+            `["langchain", "prompts", "chat"]`
         """
         return ["langchain", "prompts", "chat"]
 
@@ -1127,11 +1127,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Args:
             messages: sequence of message representations.
-                  A message can be represented using the following formats:
-                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                  (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (5) a string which is
-                  shorthand for ("human", template); e.g., "{user_input}".
+                A message can be represented using the following formats:
+                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                (message type, template); e.g., ("human", "{user_input}"),
+                (4) 2-tuple of (message class, template), (5) a string which is
+                shorthand for ("human", template); e.g., "{user_input}".
             template_format: format of the template. Defaults to "f-string".
 
         Returns:
@@ -1145,7 +1145,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Args:
             **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
+                in all the template messages in this chat template.
 
         Raises:
             ValueError: if messages are of unexpected types.
@@ -1173,7 +1173,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Args:
             **kwargs: keyword arguments to use for filling in template variables
-                      in all the template messages in this chat template.
+                in all the template messages in this chat template.
 
         Returns:
             list of formatted messages.
@@ -1262,7 +1262,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Returns:
             If index is an int, returns the message at that index.
-            If index is a slice, returns a new ``ChatPromptTemplate``
+            If index is a slice, returns a new `ChatPromptTemplate`
             containing the messages in that slice.
         """
         if isinstance(index, slice):

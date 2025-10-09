@@ -31,7 +31,7 @@ class SystemMessage(BaseMessage):
     type: Literal["system"] = "system"
     """The type of the message (used for serialization).
 
-    Defaults to ``'system'``.
+    Defaults to `'system'`.
 
     """
 
@@ -56,7 +56,7 @@ class SystemMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        """Specify `content` as positional arg or `content_blocks` for typing."""
         if content_blocks is not None:
             super().__init__(
                 content=cast("str | list[str | dict]", content_blocks),
@@ -75,6 +75,6 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for serialization).
 
-    Defaults to ``'SystemMessageChunk'``.
+    Defaults to `'SystemMessageChunk'`.
 
     """

@@ -20,7 +20,7 @@ _MIN_OPTIMUM_VERSION = "1.22"
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the `sentence_transformers` python package installed.
 
     Example:
         .. code-block:: python

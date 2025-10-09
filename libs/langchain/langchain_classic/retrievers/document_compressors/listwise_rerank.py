@@ -42,7 +42,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
 
     Adapted from: https://arxiv.org/pdf/2305.02156.pdf
 
-    ``LLMListwiseRerank`` uses a language model to rerank a list of documents based on
+    `LLMListwiseRerank` uses a language model to rerank a list of documents based on
     their relevance to a query.
 
     **NOTE**: requires that underlying model implement `with_structured_output`.

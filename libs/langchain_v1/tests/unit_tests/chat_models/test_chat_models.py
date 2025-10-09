@@ -198,8 +198,8 @@ def test_configurable_with_default() -> None:
 
     Verifies that a configurable chat model initialized with default parameters:
     - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
-    - Provides immediate access to non-configurable methods (e.g. ``get_num_tokens``)
-    - Supports model switching through runtime configuration using ``config_prefix``
+    - Provides immediate access to non-configurable methods (e.g. `get_num_tokens`)
+    - Supports model switching through runtime configuration using `config_prefix`
     - Maintains proper model identity and attributes when reconfigured
     - Can be used in chains with different model providers via configuration
 

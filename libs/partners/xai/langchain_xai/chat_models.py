@@ -166,7 +166,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         [Certain xAI models](https://docs.x.ai/docs/models#model-pricing) support reasoning,
         which allows the model to provide reasoning content along with the response.
 
-        If provided, reasoning content is returned under the ``additional_kwargs`` field of the
+        If provided, reasoning content is returned under the `additional_kwargs` field of the
         AIMessage or AIMessageChunk.
 
         If supported, reasoning effort can be specified in the model constructor's `extra_body`
@@ -181,13 +181,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
         !!! note
-            As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
+            As of 2025-07-10, `reasoning_content` is only returned in Grok 3 models, such as
             [Grok 3 Mini](https://docs.x.ai/docs/models/grok-3-mini).
 
         !!! note
             Note that in [Grok 4](https://docs.x.ai/docs/models/grok-4-0709), as of 2025-07-10,
-            reasoning is not exposed in ``reasoning_content`` (other than initial ``'Thinking...'`` text),
-            reasoning cannot be disabled, and the ``reasoning_effort`` cannot be specified.
+            reasoning is not exposed in `reasoning_content` (other than initial `'Thinking...'` text),
+            reasoning cannot be disabled, and the `reasoning_effort` cannot be specified.
 
     Tool calling / function calling:
         .. code-block:: python
@@ -240,7 +240,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
 
-        To require that the model always calls a tool / function, set `tool_choice` to ``'required'``:
+        To require that the model always calls a tool / function, set `tool_choice` to `'required'`:
 
         .. code-block:: python
 
@@ -409,7 +409,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
     search_parameters: dict[str, Any] | None = None
-    """Parameters for search requests. Example: ``{"mode": "auto"}``."""
+    """Parameters for search requests. Example: `{"mode": "auto"}`."""
 
     openai_api_key: SecretStr | None = None
     openai_api_base: str | None = None
@@ -422,7 +422,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example, ``{"xai_api_key": "XAI_API_KEY"}``
+        For example, `{"xai_api_key": "XAI_API_KEY"}`
         """
         return {"xai_api_key": "XAI_API_KEY"}
 
@@ -594,7 +594,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -603,11 +603,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses xAI's [tool-calling features](https://docs.x.ai/docs/guides/function-calling).
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses xAI's [structured output feature](https://docs.x.ai/docs/guides/structured-outputs).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses xAI's JSON mode feature.
 
             include_raw:
@@ -616,7 +616,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 - `True`:
@@ -626,20 +626,20 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     Input schema will not be validated and model output will not be
                     validated.
                 - `None`:
-                    ``strict`` argument will not be passed to the model.
+                    `strict` argument will not be passed to the model.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
+            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then Runnable outputs a dict.
 
-            If ``include_raw`` is `True`, then Runnable outputs a dict with keys:
+            If `include_raw` is `True`, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

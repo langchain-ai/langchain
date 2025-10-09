@@ -43,13 +43,13 @@ For more information on the LangSmith API, see the
 
 **Attributes**
 
-- ``arun_on_dataset``: Asynchronous function to evaluate a chain or other LangChain
-  component over a dataset.
-- ``run_on_dataset``: Function to evaluate a chain or other LangChain component over a
-  dataset.
-- ``RunEvalConfig``: Class representing the configuration for running evaluation.
-- ``StringRunEvaluatorChain``: Class representing a string run evaluator chain.
-- ``InputFormatError``: Exception raised when the input format is incorrect.
+- `arun_on_dataset`: Asynchronous function to evaluate a chain or other LangChain
+    component over a dataset.
+- `run_on_dataset`: Function to evaluate a chain or other LangChain component over a
+    dataset.
+- `RunEvalConfig`: Class representing the configuration for running evaluation.
+- `StringRunEvaluatorChain`: Class representing a string run evaluator chain.
+- `InputFormatError`: Exception raised when the input format is incorrect.
 
 """
 

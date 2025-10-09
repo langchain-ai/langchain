@@ -247,7 +247,7 @@ class CallbackManagerMixin:
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
             serialized: The serialized LLM.
@@ -274,7 +274,7 @@ class CallbackManagerMixin:
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
             serialized: The serialized chat model.
@@ -414,7 +414,7 @@ class RunManagerMixin:
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).
@@ -496,7 +496,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
             serialized: The serialized LLM.
@@ -523,7 +523,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
             serialized: The serialized chat model.
@@ -876,7 +876,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).

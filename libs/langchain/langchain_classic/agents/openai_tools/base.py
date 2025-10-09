@@ -73,7 +73,7 @@ def create_openai_tools_agent(
     Prompt:
 
         The agent prompt must have an `agent_scratchpad` key that is a
-            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
         Here's an example:

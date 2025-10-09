@@ -149,7 +149,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
     Args:
         to: The email address of the recipient.
         msg: The message body to send.
-        priority: Email priority level (`'low'`, ``'normal'``, `'high'`).
+        priority: Email priority level (`'low'`, `'normal'`, `'high'`).
 
     Returns:
         True if email was sent successfully, False otherwise.

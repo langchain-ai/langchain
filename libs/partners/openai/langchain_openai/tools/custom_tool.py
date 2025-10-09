@@ -51,7 +51,7 @@ def custom_tool(*args: Any, **kwargs: Any) -> Any:
             step["messages"][-1].pretty_print()
 
     You can also specify a format for a corresponding context-free grammar using the
-    ``format`` kwarg:
+    `format` kwarg:
 
     .. code-block:: python
 

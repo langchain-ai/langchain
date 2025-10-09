@@ -30,7 +30,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install `langchain-deepseek` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install `langchain-deepseek` and set environment variable `DEEPSEEK_API_KEY`.
 
         .. code-block:: bash
 
@@ -126,7 +126,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
             ai_msg.tool_calls
 
-        See ``ChatDeepSeek.bind_tools()`` method for more.
+        See `ChatDeepSeek.bind_tools()` method for more.
 
     Structured output:
         .. code-block:: python
@@ -147,7 +147,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
 
-        See ``ChatDeepSeek.with_structured_output()`` for more.
+        See `ChatDeepSeek.with_structured_output()` for more.
 
     Token usage:
         .. code-block:: python
@@ -385,7 +385,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -394,13 +394,13 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses DeepSeek's [tool-calling features](https://api-docs.deepseek.com/guides/function_calling).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
                 !!! warning "Behavior changed in 0.1.3"
-                    Added support for ``'json_mode'``.
+                    Added support for `'json_mode'`.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -408,7 +408,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
@@ -422,14 +422,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

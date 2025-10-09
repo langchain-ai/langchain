@@ -10,7 +10,7 @@ see the [LangSmith documentation](https://docs.smith.langchain.com/).
 LangSmith helps you evaluate Chains and other language model application components
 using a number of LangChain evaluators.
 An example of this is shown below, assuming you've created a LangSmith dataset
-called ``<my_dataset_name>``:
+called `<my_dataset_name>`:
 
 .. code-block:: python
 

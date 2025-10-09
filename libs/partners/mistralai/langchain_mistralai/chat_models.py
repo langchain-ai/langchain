@@ -406,8 +406,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: int | None = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-    probability sum is at least ``top_p``. Must be in the closed interval
-    ``[0.0, 1.0]``."""
+    probability sum is at least `top_p`. Must be in the closed interval
+    `[0.0, 1.0]`."""
     random_seed: int | None = None
     safe_mode: bool | None = None
     streaming: bool = False
@@ -710,7 +710,7 @@ class ChatMistralAI(BaseChatModel):
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                `self.bind(**kwargs)`.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -752,7 +752,7 @@ class ChatMistralAI(BaseChatModel):
                 - a `TypedDict` class (support added in 0.1.12),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -764,13 +764,13 @@ class ChatMistralAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Mistral's
                     [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Mistral's
                     [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses Mistral's
                     [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).
                     Note that if using JSON mode then you
@@ -786,10 +786,10 @@ class ChatMistralAI(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``. This is useful for passing in
+                `self.bind(**kwargs)`. This is useful for passing in
                 parameters such as `tool_choice` or `tools` to control
                 which tool the model should call, or to pass in parameters such as
                 `stop` to control when the model should stop generating output.
@@ -797,15 +797,15 @@ class ChatMistralAI(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``'raw'``: BaseMessage
-                - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``'parsing_error'``: BaseException | None
+            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `'raw'`: BaseMessage
+                - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+                - `'parsing_error'`: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python

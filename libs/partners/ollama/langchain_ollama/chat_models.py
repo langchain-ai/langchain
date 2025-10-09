@@ -120,8 +120,8 @@ def _parse_json_string(
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
-    It first tries to use the standard ``json.loads``. If that fails, it falls
-    back to ``ast.literal_eval`` to safely parse Python literals, which is more
+    It first tries to use the standard `json.loads`. If that fails, it falls
+    back to `ast.literal_eval` to safely parse Python literals, which is more
     robust against models using single quotes or containing apostrophes.
 
     Args:
@@ -133,7 +133,7 @@ def _parse_json_string(
         The parsed JSON string or Python literal.
 
     Raises:
-        OutputParserException: If the string is invalid and ``skip=False``.
+        OutputParserException: If the string is invalid and `skip=False`.
     """
     try:
         return json.loads(json_string)
@@ -274,17 +274,17 @@ class ChatOllama(BaseChatModel):
             [supported models](https://ollama.com/search?c=thinking).
 
             - `True`: Enables reasoning mode. The model's reasoning process will be
-              captured and returned separately in the ``additional_kwargs`` of the
-              response message, under ``reasoning_content``. The main response
-              content will not include the reasoning tags.
+                captured and returned separately in the `additional_kwargs` of the
+                response message, under `reasoning_content`. The main response
+                content will not include the reasoning tags.
             - `False`: Disables reasoning mode. The model will not perform any reasoning,
-              and the response will not include any reasoning content.
+                and the response will not include any reasoning content.
             - `None` (Default): The model will use its default reasoning behavior. Note
-              however, if the model's default behavior *is* to perform reasoning, think tags
-              (``<think>`` and ``</think>``) will be present within the main response content
-              unless you set ``reasoning`` to `True`.
+                however, if the model's default behavior *is* to perform reasoning, think tags
+                (`<think>` and `</think>`) will be present within the main response content
+                unless you set `reasoning` to `True`.
         temperature: float
-            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
+            Sampling temperature. Ranges from `0.0` to `1.0`.
         num_predict: int | None
             Max number of tokens to generate.
 
@@ -481,15 +481,15 @@ class ChatOllama(BaseChatModel):
 
     Thinking / Reasoning:
         You can enable reasoning mode for models that support it by setting
-        the ``reasoning`` parameter to `True` in either the constructor or
+        the `reasoning` parameter to `True` in either the constructor or
         the `invoke`/`stream` methods. This will enable the model to think
         through the problem and return the reasoning process separately in the
-        ``additional_kwargs`` of the response message, under ``reasoning_content``.
+        `additional_kwargs` of the response message, under `reasoning_content`.
 
-        If ``reasoning`` is set to `None`, the model will use its default reasoning
+        If `reasoning` is set to `None`, the model will use its default reasoning
         behavior, and any reasoning content will *not* be captured under the
-        ``reasoning_content`` key, but will be present within the main response content
-        as think tags (``<think>`` and ``</think>``).
+        `reasoning_content` key, but will be present within the main response content
+        as think tags (`<think>` and `</think>`).
 
         !!! note
             This feature is only available for [models that support reasoning](https://ollama.com/search?c=thinking).
@@ -527,19 +527,19 @@ class ChatOllama(BaseChatModel):
     """Controls the reasoning/thinking mode for [supported models](https://ollama.com/search?c=thinking).
 
     - `True`: Enables reasoning mode. The model's reasoning process will be
-      captured and returned separately in the ``additional_kwargs`` of the
-      response message, under ``reasoning_content``. The main response
-      content will not include the reasoning tags.
+        captured and returned separately in the `additional_kwargs` of the
+        response message, under `reasoning_content`. The main response
+        content will not include the reasoning tags.
     - `False`: Disables reasoning mode. The model will not perform any reasoning,
-      and the response will not include any reasoning content.
+        and the response will not include any reasoning content.
     - `None` (Default): The model will use its default reasoning behavior. Note
-      however, if the model's default behavior *is* to perform reasoning, think tags
-      ()``<think>`` and ``</think>``) will be present within the main response content
-      unless you set ``reasoning`` to `True`.
-    - `str`: e.g. `'low'`, ``'medium'``, `'high'`. Enables reasoning with a custom
-      intensity level. Currently, this is only supported ``gpt-oss``. See the
-      [Ollama docs](https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210)
-      for more information.
+        however, if the model's default behavior *is* to perform reasoning, think tags
+        (`<think>` and `</think>`) will be present within the main response content
+        unless you set `reasoning` to `True`.
+    - `str`: e.g. `'low'`, `'medium'`, `'high'`. Enables reasoning with a custom
+        intensity level. Currently, this is only supported `gpt-oss`. See the
+        [Ollama docs](https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210)
+        for more information.
     """
 
     validate_model_on_init: bool = False
@@ -560,7 +560,7 @@ class ChatOllama(BaseChatModel):
     A lower learning rate will result in slower adjustments, while a higher learning
     rate will make the algorithm more responsive.
 
-    (Default: ``0.1``)
+    (Default: `0.1`)
     """
 
     mirostat_tau: float | None = None
@@ -568,13 +568,13 @@ class ChatOllama(BaseChatModel):
 
     A lower value will result in more focused and coherent text.
 
-    (Default: ``5.0``)
+    (Default: `5.0`)
     """
 
     num_ctx: int | None = None
     """Sets the size of the context window used to generate the next token.
 
-    (Default: ``2048``)
+    (Default: `2048`)
     """
 
     num_gpu: int | None = None
@@ -594,20 +594,20 @@ class ChatOllama(BaseChatModel):
     num_predict: int | None = None
     """Maximum number of tokens to predict when generating text.
 
-    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)
+    (Default: `128`, `-1` = infinite generation, `-2` = fill context)
     """
 
     repeat_last_n: int | None = None
     """Sets how far back for the model to look back to prevent repetition.
 
-    (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)
+    (Default: `64`, `0` = disabled, `-1` = `num_ctx`)
     """
 
     repeat_penalty: float | None = None
     """Sets how strongly to penalize repetitions.
 
-    A higher value (e.g., ``1.5``) will penalize repetitions more strongly, while a
-    lower value (e.g., ``0.9``) will be more lenient. (Default: ``1.1``)
+    A higher value (e.g., `1.5`) will penalize repetitions more strongly, while a
+    lower value (e.g., `0.9`) will be more lenient. (Default: `1.1`)
     """
 
     temperature: float | None = None
@@ -615,7 +615,7 @@ class ChatOllama(BaseChatModel):
 
     Increasing the temperature will make the model answer more creatively.
 
-    (Default: ``0.8``)
+    (Default: `0.8`)
     """
 
     seed: int | None = None
@@ -633,7 +633,7 @@ class ChatOllama(BaseChatModel):
 
     Used to reduce the impact of less probable tokens from the output.
 
-    A higher value (e.g., ``2.0``) will reduce the impact more, while a value of ``1.0``
+    A higher value (e.g., `2.0`) will reduce the impact more, while a value of `1.0`
     disables this setting.
 
     (Default: `1`)
@@ -642,23 +642,23 @@ class ChatOllama(BaseChatModel):
     top_k: int | None = None
     """Reduces the probability of generating nonsense.
 
-    A higher value (e.g. ``100``) will give more diverse answers, while a lower value
-    (e.g. ``10``) will be more conservative.
+    A higher value (e.g. `100`) will give more diverse answers, while a lower value
+    (e.g. `10`) will be more conservative.
 
-    (Default: ``40``)
+    (Default: `40`)
     """
 
     top_p: float | None = None
     """Works together with top-k.
 
-    A higher value (e.g., ``0.95``) will lead to more diverse text, while a lower value
-    (e.g., ``0.5``) will generate more focused and conservative text.
+    A higher value (e.g., `0.95`) will lead to more diverse text, while a lower value
+    (e.g., `0.5`) will generate more focused and conservative text.
 
-    (Default: ``0.9``)
+    (Default: `0.9`)
     """
 
     format: Literal["", "json"] | JsonSchemaValue | None = None
-    """Specify the format of the output (options: ``'json'``, JSON schema)."""
+    """Specify the format of the output (options: `'json'`, JSON schema)."""
 
     keep_alive: int | str | None = None
     """How long the model will stay loaded into memory."""
@@ -690,7 +690,7 @@ class ChatOllama(BaseChatModel):
 
     These arguments are passed to both synchronous and async clients.
 
-    Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
+    Use `sync_client_kwargs` and `async_client_kwargs` to pass different arguments
     to synchronous and asynchronous clients.
     """
 
@@ -1242,7 +1242,7 @@ class ChatOllama(BaseChatModel):
             tool_choice: If provided, which tool for model to call. **This parameter
                 is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                `self.bind(**kwargs)`.
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
@@ -1265,7 +1265,7 @@ class ChatOllama(BaseChatModel):
                 - a `TypedDict` class
                 - an OpenAI function/tool schema.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -1274,12 +1274,12 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Ollama's [structured output API](https://ollama.com/blog/structured-outputs)
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Ollama's tool-calling API
-                - ``'json_mode'``:
-                    Specifies ``format='json'``. Note that if using JSON mode then you
+                - `'json_mode'`:
+                    Specifies `format='json'`. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
@@ -1289,26 +1289,26 @@ class ChatOllama(BaseChatModel):
                 then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: `BaseMessage`
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: `BaseMessage`
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         !!! warning "Behavior changed in 0.2.2"
-            Added support for structured output API via ``format`` parameter.
+            Added support for structured output API via `format` parameter.
 
         !!! warning "Behavior changed in 0.3.0"
-            Updated default ``method`` to ``'json_schema'``.
+            Updated default `method` to `'json_schema'`.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"
 

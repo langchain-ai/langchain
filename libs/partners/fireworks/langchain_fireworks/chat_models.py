@@ -259,7 +259,7 @@ class ChatFireworks(BaseChatModel):
     """`Fireworks` Chat large language models API.
 
     To use, you should have the
-    environment variable ``FIREWORKS_API_KEY`` set with your API key.
+    environment variable `FIREWORKS_API_KEY` set with your API key.
 
     Any parameters that are valid to be passed to the fireworks.create call
     can be passed in, even if not explicitly saved on this class.
@@ -320,7 +320,7 @@ class ChatFireworks(BaseChatModel):
     )
     """Fireworks API key.
 
-    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
     """
 
     fireworks_api_base: str | None = Field(
@@ -331,8 +331,8 @@ class ChatFireworks(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Fireworks completion API. Can be ``float``,
-    ``httpx.Timeout`` or `None`."""
+    """Timeout for requests to Fireworks completion API. Can be `float`,
+    `httpx.Timeout` or `None`."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -680,7 +680,7 @@ class ChatFireworks(BaseChatModel):
                 - a `TypedDict` class (support added in 0.1.7),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -692,15 +692,15 @@ class ChatFireworks(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Fireworks's [tool-calling features](https://docs.fireworks.ai/guides/function-calling).
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Fireworks's [structured output feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
                 !!! warning "Behavior changed in 0.2.8"
-                    Added support for ``'json_schema'``.
+                    Added support for `'json_schema'`.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -708,7 +708,7 @@ class ChatFireworks(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs:
                 Any additional parameters to pass to the
@@ -717,16 +717,16 @@ class ChatFireworks(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 

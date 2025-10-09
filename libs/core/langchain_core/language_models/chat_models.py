@@ -108,7 +108,7 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
 
 
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
-    """Format messages for tracing in ``on_chat_model_start``.
+    """Format messages for tracing in `on_chat_model_start`.
 
     - Update image content blocks to OpenAI Chat Completions format (backward
     compatibility).
@@ -342,7 +342,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     )
     """Version of `AIMessage` output format to store in message content.
 
-    `AIMessage.content_blocks` will lazily parse the contents of ``content`` into a
+    `AIMessage.content_blocks` will lazily parse the contents of `content` into a
     standard format. This flag can be used to additionally store the standard format
     in message content, e.g., for serialization purposes.
 
@@ -1533,7 +1533,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 - a `TypedDict` class,
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -1546,26 +1546,26 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
         Raises:
-            ValueError: If there are any unsupported ``kwargs``.
+            ValueError: If there are any unsupported `kwargs`.
             NotImplementedError: If the model does not implement
-                ``with_structured_output()``.
+                `with_structured_output()`.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
@@ -1693,7 +1693,7 @@ class SimpleChatModel(BaseChatModel):
 
     !!! note
         This implementation is primarily here for backwards compatibility. For new
-        implementations, please use ``BaseChatModel`` directly.
+        implementations, please use `BaseChatModel` directly.
 
     """
 
