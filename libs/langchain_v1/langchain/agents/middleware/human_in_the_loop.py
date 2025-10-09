@@ -1,6 +1,5 @@
 """Human in the loop middleware."""
 
-from collections.abc import Callable
 from typing import Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
@@ -33,7 +32,7 @@ class ReviewConfig(TypedDict):
     allowed_decisions: list[DecisionType]
     """The decisions that are allowed for this request."""
 
-    description: NotRequired[str | Callable]
+    description: NotRequired[str]
     """The description of the action to be reviewed."""
 
     arguments_schema: NotRequired[dict[str, Any]]
