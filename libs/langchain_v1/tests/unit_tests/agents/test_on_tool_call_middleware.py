@@ -1,4 +1,4 @@
-"""Unit tests for on_tool_call middleware integration."""
+"""Unit tests for wrap_tool_call middleware integration."""
 
 from collections.abc import Callable
 
@@ -40,7 +40,7 @@ def test_simple_logging_middleware() -> None:
     class LoggingMiddleware(AgentMiddleware):
         """Middleware that logs tool calls."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -81,7 +81,7 @@ def test_request_modification_middleware() -> None:
     class ModifyArgsMiddleware(AgentMiddleware):
         """Middleware that modifies tool arguments."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -123,7 +123,7 @@ def test_response_inspection_middleware() -> None:
     class ResponseInspectionMiddleware(AgentMiddleware):
         """Middleware that inspects responses."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -173,7 +173,7 @@ def test_conditional_retry_middleware() -> None:
     class ConditionalRetryMiddleware(AgentMiddleware):
         """Middleware that retries based on response content."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -232,7 +232,7 @@ def test_multiple_middleware_composition() -> None:
     class OuterMiddleware(AgentMiddleware):
         """Outer middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -245,7 +245,7 @@ def test_multiple_middleware_composition() -> None:
     class InnerMiddleware(AgentMiddleware):
         """Inner middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -287,7 +287,7 @@ def test_middleware_with_multiple_tool_calls() -> None:
     class LoggingMiddleware(AgentMiddleware):
         """Middleware that logs tool calls."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -333,7 +333,7 @@ def test_middleware_access_to_state() -> None:
     class StateInspectionMiddleware(AgentMiddleware):
         """Middleware that inspects state."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -413,7 +413,7 @@ def test_generator_composition_immediate_outer_return() -> None:
     class ImmediateReturnMiddleware(AgentMiddleware):
         """Outer middleware that intercepts and modifies response."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -433,7 +433,7 @@ def test_generator_composition_immediate_outer_return() -> None:
     class InnerMiddleware(AgentMiddleware):
         """Inner middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -477,7 +477,7 @@ def test_generator_composition_short_circuit() -> None:
     class OuterMiddleware(AgentMiddleware):
         """Outer middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -498,7 +498,7 @@ def test_generator_composition_short_circuit() -> None:
     class InnerShortCircuitMiddleware(AgentMiddleware):
         """Inner middleware that short-circuits without calling actual tool."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -545,7 +545,7 @@ def test_generator_composition_nested_retries() -> None:
     class OuterRetryMiddleware(AgentMiddleware):
         """Outer middleware with retry logic."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -563,7 +563,7 @@ def test_generator_composition_nested_retries() -> None:
     class InnerRetryMiddleware(AgentMiddleware):
         """Inner middleware with retry logic."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -622,7 +622,7 @@ def test_generator_composition_three_levels() -> None:
     class OuterMiddleware(AgentMiddleware):
         """Outermost middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -635,7 +635,7 @@ def test_generator_composition_three_levels() -> None:
     class MiddleMiddleware(AgentMiddleware):
         """Middle middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -648,7 +648,7 @@ def test_generator_composition_three_levels() -> None:
     class InnerMiddleware(AgentMiddleware):
         """Innermost middleware."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -698,7 +698,7 @@ def test_generator_composition_return_value_extraction() -> None:
     class ModifyingMiddleware(AgentMiddleware):
         """Middleware that modifies the final result."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -750,7 +750,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
     class FirstPassthroughMiddleware(AgentMiddleware):
         """First middleware that passes through."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -763,7 +763,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
     class SecondInterceptingMiddleware(AgentMiddleware):
         """Second middleware that intercepts and returns custom result."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -781,7 +781,7 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
     class ThirdPassthroughMiddleware(AgentMiddleware):
         """Third middleware that passes through."""
 
-        def on_tool_call(
+        def wrap_tool_call(
             self,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],

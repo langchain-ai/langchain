@@ -105,7 +105,7 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 
 @dataclass()
 class ToolCallRequest:
-    """Tool execution request passed to on_tool_call handlers.
+    """Tool execution request passed to tool call interceptors.
 
     Attributes:
         tool_call: Tool call dict with name, args, and id from model output.
@@ -139,7 +139,7 @@ is independent and stateless.
 
 Note:
     When implementing middleware for ``create_agent``, use
-    ``AgentMiddleware.on_tool_call`` which provides properly typed
+    ``AgentMiddleware.wrap_tool_call`` which provides properly typed
     state parameter for better type safety.
 
 Examples:

@@ -54,6 +54,7 @@ __all__ = [
     "hook_config",
     "modify_model_request",
     "on_model_call",
+    "wrap_tool_call",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -288,7 +289,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
 
-    def on_tool_call(
+    def wrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command],
@@ -312,18 +313,18 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Passthrough (execute once):
 
-            def on_tool_call(self, request, handler):
+            def wrap_tool_call(self, request, handler):
                 return handler(request)
 
             Modify request before execution:
 
-            def on_tool_call(self, request, handler):
+            def wrap_tool_call(self, request, handler):
                 request.tool_call["args"]["value"] *= 2
                 return handler(request)
 
             Retry on error (call handler multiple times):
 
-            def on_tool_call(self, request, handler):
+            def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
                         result = handler(request)
@@ -336,7 +337,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Conditional retry based on response:
 
-            def on_tool_call(self, request, handler):
+            def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     result = handler(request)
                     if isinstance(result, ToolMessage) and result.status != "error":
@@ -347,7 +348,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Access state and runtime:
 
-            def on_tool_call(self, request, handler):
+            def wrap_tool_call(self, request, handler):
                 # Access state from request
                 messages = request.state.get("messages", [])
                 # Access runtime from request
@@ -402,6 +403,21 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):
         handler: Callable[[ModelRequest], AIMessage],
     ) -> AIMessage:
         """Intercept model execution via handler callback."""
+        ...
+
+
+class _CallableReturningToolResponse(Protocol):
+    """Callable for tool call interception with handler callback.
+
+    Receives handler callback to execute tool and returns final ToolMessage or Command.
+    """
+
+    def __call__(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
+        """Intercept tool execution via handler callback."""
         ...
 
 
@@ -1395,6 +1411,118 @@ def on_model_call(
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "on_model_call": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def wrap_tool_call(
+    func: _CallableReturningToolResponse,
+) -> AgentMiddleware: ...
+
+
+@overload
+def wrap_tool_call(
+    func: None = None,
+    *,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableReturningToolResponse],
+    AgentMiddleware,
+]: ...
+
+
+def wrap_tool_call(
+    func: _CallableReturningToolResponse | None = None,
+    *,
+    tools: list[BaseTool] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableReturningToolResponse],
+        AgentMiddleware,
+    ]
+    | AgentMiddleware
+):
+    """Create middleware with wrap_tool_call hook from a function.
+
+    Converts a function with handler callback into middleware that can intercept
+    tool calls, implement retry logic, monitor execution, and modify responses.
+
+    Args:
+        func: Function accepting (request, handler) that calls
+            handler(request) to execute the tool and returns final ToolMessage or Command.
+        tools: Additional tools to register with this middleware.
+        name: Middleware class name. Defaults to function name.
+
+    Returns:
+        AgentMiddleware instance if func provided, otherwise a decorator.
+
+    Examples:
+        Basic passthrough:
+        ```python
+        @wrap_tool_call
+        def passthrough(request, handler):
+            return handler(request)
+        ```
+
+        Retry logic:
+        ```python
+        @wrap_tool_call
+        def retry_on_error(request, handler):
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    return handler(request)
+                except Exception:
+                    if attempt == max_retries - 1:
+                        raise
+        ```
+
+        Modify request:
+        ```python
+        @wrap_tool_call
+        def modify_args(request, handler):
+            request.tool_call["args"]["value"] *= 2
+            return handler(request)
+        ```
+
+        Short-circuit with cached result:
+        ```python
+        @wrap_tool_call
+        def with_cache(request, handler):
+            if cached := get_cache(request):
+                return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+            result = handler(request)
+            save_cache(request, result)
+            return result
+        ```
+    """
+
+    def decorator(
+        func: _CallableReturningToolResponse,
+    ) -> AgentMiddleware:
+        def wrapped(
+            self: AgentMiddleware,  # noqa: ARG001
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        ) -> ToolMessage | Command:
+            return func(request, handler)
+
+        middleware_name = name or cast("str", getattr(func, "__name__", "WrapToolCallMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": AgentState,
+                "tools": tools or [],
+                "wrap_tool_call": wrapped,
             },
         )()
 
