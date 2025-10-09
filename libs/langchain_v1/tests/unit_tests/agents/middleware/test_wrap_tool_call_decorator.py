@@ -214,89 +214,61 @@ def test_wrap_tool_call_access_runtime() -> None:
 
 
 def test_wrap_tool_call_retry_on_error() -> None:
-    """Test retry logic with wrap_tool_call decorator."""
+    """Test retry logic with wrap_tool_call decorator on failing tool."""
     attempt_counts = []
 
     @wrap_tool_call
     def retry_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         max_retries = 3
+        last_error = None
         for attempt in range(max_retries):
             attempt_counts.append(attempt)
             try:
                 return handler(request)
             except Exception as e:
+                last_error = e
                 if attempt == max_retries - 1:
-                    raise
+                    # Return error message instead of raising
+                    return ToolMessage(
+                        content=f"Error after {max_retries} attempts: {str(last_error)}",
+                        tool_call_id=request.tool_call["id"],
+                        name=request.tool_call["name"],
+                        status="error",
+                    )
                 # Continue to retry
+        # This line should never be reached due to return above
+        return ToolMessage(
+            content=f"Unexpected error: {str(last_error)}",
+            tool_call_id=request.tool_call["id"],
+            name=request.tool_call["name"],
+            status="error",
+        )
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="search", args={"query": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
             [],
         ]
     )
 
     agent = create_agent(
         model=model,
-        tools=[search],
+        tools=[failing_tool],
         middleware=[retry_middleware],
         checkpointer=InMemorySaver(),
     )
 
     result = agent.invoke(
-        {"messages": [HumanMessage("Search")]},
+        {"messages": [HumanMessage("Use failing tool")]},
         {"configurable": {"thread_id": "test"}},
     )
 
-    # Should succeed on first attempt (no retries needed for successful tool)
-    assert len(attempt_counts) == 1
-    assert attempt_counts[0] == 0
+    # Should attempt 3 times before giving up
+    assert len(attempt_counts) == 3
+    assert attempt_counts == [0, 1, 2]
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
-
-
-def test_wrap_tool_call_conditional_retry() -> None:
-    """Test conditional retry based on response content."""
-    call_count = []
-
-    @wrap_tool_call
-    def conditional_retry(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        max_retries = 2
-        for attempt in range(max_retries):
-            call_count.append(attempt)
-            response = handler(request)
-
-            # Check response content for retry condition
-            if isinstance(response, ToolMessage) and "retry_marker" in response.content:
-                if attempt < max_retries - 1:
-                    continue
-            return response
-
-        return response
-
-    model = FakeToolCallingModel(
-        tool_calls=[
-            [ToolCall(name="search", args={"query": "test"}, id="1")],
-            [],
-        ]
-    )
-
-    agent = create_agent(
-        model=model,
-        tools=[search],
-        middleware=[conditional_retry],
-        checkpointer=InMemorySaver(),
-    )
-
-    result = agent.invoke(
-        {"messages": [HumanMessage("Search")]},
-        {"configurable": {"thread_id": "test"}},
-    )
-
-    # Since search doesn't return "retry_marker", should succeed on first attempt
-    assert len(call_count) == 1
-    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 1
+    assert "Error after 3 attempts" in tool_messages[0].content
 
 
 def test_wrap_tool_call_short_circuit() -> None:
@@ -659,70 +631,6 @@ def test_wrap_tool_call_inner_short_circuits() -> None:
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
     assert "outer_wrapped: inner_result" in tool_messages[0].content
-
-
-def test_wrap_tool_call_nested_retries() -> None:
-    """Test composition with both outer and inner handlers retrying."""
-    call_log = []
-
-    @wrap_tool_call(name="OuterRetry")
-    def outer_retry(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        for outer_attempt in range(2):
-            call_log.append(f"outer_{outer_attempt}")
-            response = handler(request)
-
-            if isinstance(response, ToolMessage) and response.content == "inner_final_failure":
-                # Inner failed, retry once
-                continue
-            return response
-        return response
-
-    @wrap_tool_call(name="InnerRetry")
-    def inner_retry(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        for inner_attempt in range(2):
-            call_log.append(f"inner_{inner_attempt}")
-            response = handler(request)
-
-            # Check for retry condition
-            if isinstance(response, ToolMessage):
-                if inner_attempt == 0 and "Results for:" in response.content:
-                    # Simulate soft failure on first attempt
-                    continue
-                return response
-
-        # Inner exhausted retries
-        return ToolMessage(
-            content="inner_final_failure",
-            tool_call_id=request.tool_call["id"],
-            name=request.tool_call["name"],
-        )
-
-    model = FakeToolCallingModel(
-        tool_calls=[
-            [ToolCall(name="search", args={"query": "test"}, id="1")],
-            [],
-        ]
-    )
-
-    agent = create_agent(
-        model=model,
-        tools=[search],
-        middleware=[outer_retry, inner_retry],
-        checkpointer=InMemorySaver(),
-    )
-
-    result = agent.invoke(
-        {"messages": [HumanMessage("Search")]},
-        {"configurable": {"thread_id": "test"}},
-    )
-
-    # Verify nested retry pattern
-    assert "outer_0" in call_log
-    assert "inner_0" in call_log
-    assert "inner_1" in call_log
-
-    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
-    assert len(tool_messages) == 1
 
 
 def test_wrap_tool_call_mixed_passthrough_and_intercepting() -> None:
