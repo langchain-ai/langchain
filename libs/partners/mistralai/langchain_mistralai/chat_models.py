@@ -766,13 +766,13 @@ class ChatMistralAI(BaseChatModel):
 
                 - `'function_calling'`:
                     Uses Mistral's
-                    `function-calling feature <https://docs.mistral.ai/capabilities/function_calling/>`_.
+                    [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
                 - `'json_schema'`:
                     Uses Mistral's
-                    `structured output feature <https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/>`_.
+                    [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
                 - `'json_mode'`:
                     Uses Mistral's
-                    `JSON mode <https://docs.mistral.ai/capabilities/structured-output/json_mode/>`_.
+                    [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).
                     Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.

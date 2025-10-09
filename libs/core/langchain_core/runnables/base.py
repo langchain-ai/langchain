@@ -249,7 +249,7 @@ class Runnable(ABC, Generic[Input, Output]):
         chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
         ```
 
-    For a UI (and much more) checkout `LangSmith <https://docs.smith.langchain.com/>`__.
+    For a UI (and much more) checkout [LangSmith](https://docs.smith.langchain.com/).
 
     """
 
@@ -1070,7 +1070,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 for more details. Defaults to `None`.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to `False`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             A tuple of the index of the input and the output from the `Runnable`.
@@ -1121,7 +1121,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: The config to use for the `Runnable`. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the `Runnable`.
@@ -1142,7 +1142,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: The config to use for the `Runnable`. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the `Runnable`.
@@ -1220,7 +1220,7 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_names: Exclude logs with these names.
             exclude_types: Exclude logs with these types.
             exclude_tags: Exclude logs with these tags.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             A `RunLogPatch` or `RunLog` object.
@@ -1464,7 +1464,7 @@ class Runnable(ABC, Generic[Input, Output]):
             exclude_names: Exclude events from `Runnable` objects with matching names.
             exclude_types: Exclude events from `Runnable` objects with matching types.
             exclude_tags: Exclude events from `Runnable` objects with matching tags.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
                 These will be passed to `astream_log` as this implementation
                 of `astream_events` is built on top of `astream_log`.
 
@@ -1527,7 +1527,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: An iterator of inputs to the `Runnable`.
             config: The config to use for the `Runnable`. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the `Runnable`.
@@ -1572,7 +1572,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: An async iterator of inputs to the `Runnable`.
             config: The config to use for the `Runnable`. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the `Runnable`.
@@ -1609,7 +1609,7 @@ class Runnable(ABC, Generic[Input, Output]):
         in the output of the previous `Runnable` or included in the user input.
 
         Args:
-            kwargs: The arguments to bind to the `Runnable`.
+            **kwargs: The arguments to bind to the `Runnable`.
 
         Returns:
             A new `Runnable` with the arguments bound.
@@ -1646,7 +1646,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             config: The config to bind to the `Runnable`.
-            kwargs: Additional keyword arguments to pass to the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Returns:
             A new `Runnable` with the config bound.
@@ -4831,7 +4831,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this `Runnable`.
             config: The config to use. Defaults to `None`.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             The output of this `Runnable`.
@@ -4862,7 +4862,7 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             input: The input to this `Runnable`.
             config: The config to use. Defaults to `None`.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             The output of this `Runnable`.

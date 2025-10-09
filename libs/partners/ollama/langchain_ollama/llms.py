@@ -114,7 +114,7 @@ class OllamaLLM(BaseLLM):
 
     reasoning: bool | None = None
     """Controls the reasoning/thinking mode for
-    `supported models <https://ollama.com/search?c=thinking>`__.
+    [supported models](https://ollama.com/search?c=thinking).
 
     - `True`: Enables reasoning mode. The model's reasoning process will be
         captured and returned separately in the `additional_kwargs` of the
@@ -243,7 +243,7 @@ class OllamaLLM(BaseLLM):
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
     sync_client_kwargs: dict | None = {}
@@ -251,7 +251,7 @@ class OllamaLLM(BaseLLM):
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
     _client: Client | None = PrivateAttr(default=None)

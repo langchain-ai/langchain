@@ -51,10 +51,10 @@ def identity(x: Other) -> Other:
     """Identity function.
 
     Args:
-        x (Other): input.
+        x: input.
 
     Returns:
-        Other: output.
+        output.
     """
     return x
 
@@ -63,10 +63,10 @@ async def aidentity(x: Other) -> Other:
     """Async identity function.
 
     Args:
-        x (Other): input.
+        x: input.
 
     Returns:
-        Other: output.
+        output.
     """
     return x
 

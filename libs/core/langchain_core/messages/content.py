@@ -32,7 +32,7 @@ to be included without breaking the standard structure.
     is subject to deprecation in future releases as we move towards PEP 728.
 
 !!! note
-    Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we
+    Following widespread adoption of [PEP 728](https://peps.python.org/pep-0728/), we
     will add `extra_items=Any` as a param to Content Blocks. This will signify to type
     checkers that additional provider-specific fields are allowed outside of the
     `extras` field, and that will become the new standard approach to adding
@@ -525,7 +525,7 @@ class ImageContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the image. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#image>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#image)
 
     """
 
@@ -572,7 +572,7 @@ class VideoContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the video. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#video>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#video)
 
     """
 
@@ -618,7 +618,7 @@ class AudioContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the audio. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#audio)
 
     """
 
@@ -646,7 +646,7 @@ class PlainTextContentBlock(TypedDict):
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
-        Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
+        Anthropic [example](https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
 
     !!! note
         `create_plaintext_block` may also be used as a factory to create a
@@ -734,7 +734,7 @@ class FileContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the file. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml)
 
     """
 

@@ -35,7 +35,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     r"""Azure OpenAI chat model integration.
 
     Setup:
-        Head to the Azure `OpenAI quickstart guide <https://learn.microsoft.com/en-us/azure/ai-foundry/openai/chatgpt-quickstart?tabs=keyless%2Ctypescript-keyless%2Cpython-new%2Ccommand-line&pivots=programming-language-python>`__
+        Head to the Azure [OpenAI quickstart guide](https://learn.microsoft.com/en-us/azure/ai-foundry/openai/chatgpt-quickstart?tabs=keyless%2Ctypescript-keyless%2Cpython-new%2Ccommand-line&pivots=programming-language-python)
         to create your Azure OpenAI deployment.
 
         Then install `langchain-openai` and set environment variables
@@ -61,7 +61,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Key init args — client params:
         api_version: str
             Azure OpenAI REST API version to use (distinct from the version of the
-            underlying model). `See more on the different versions. <https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning>`__
+            underlying model). [See more on the different versions.](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning)
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
         max_retries: int | None
@@ -501,7 +501,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
-        For more, see `this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__.
+        For more, see [this page](https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id).
     """
     azure_ad_token_provider: Callable[[], str] | None = None
     """A function that returns an Azure Active Directory token.
@@ -852,19 +852,19 @@ class AzureChatOpenAI(BaseChatOpenAI):
             method: The method for steering model generation, one of:
 
                 - `'json_schema'`:
-                    Uses OpenAI's `Structured Output API <https://platform.openai.com/docs/guides/structured-outputs>`__.
+                    Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
                     Supported for `'gpt-4o-mini'`, `'gpt-4o-2024-08-06'`, `'o1'`, and later
                     models.
                 - `'function_calling'`:
                     Uses OpenAI's tool-calling (formerly called function calling)
-                    `API <https://platform.openai.com/docs/guides/function-calling>`__
+                    [API](https://platform.openai.com/docs/guides/function-calling)
                 - `'json_mode'`:
-                    Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
+                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs/json-mode).
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call
 
                 Learn more about the differences between the methods and which models
-                support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
+                support which methods [here](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -877,7 +877,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 - True:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
+                    The input schema will also be validated according to the [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
                 - False:
                     Input schema will not be validated and model output will not be
                     validated.
@@ -972,7 +972,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 
-            See all constraints `here <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas>`__.
+            See all constraints [here](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
 
             .. code-block:: python
 

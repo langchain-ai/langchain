@@ -33,7 +33,7 @@ def create_react_agent(
        For a more robust and feature-rich implementation, we recommend using the
        `create_react_agent` function from the LangGraph library.
        See the
-       `reference doc <https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent>`__
+       [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
        for more information.
 
     Args:

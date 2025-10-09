@@ -51,16 +51,16 @@ def beta(
     own (annotation-emitting) `C.__init__`).
 
     Args:
-        message : str, optional
+        message:
             Override the default beta message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the beta object.
-        obj_type : str, optional
+        obj_type:
             The object type being beta.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
 
     Returns:

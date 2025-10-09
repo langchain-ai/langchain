@@ -395,9 +395,9 @@ class ChatDeepSeek(BaseChatOpenAI):
             method: The method for steering model generation, one of:
 
                 - `'function_calling'`:
-                    Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
+                    Uses DeepSeek's [tool-calling features](https://api-docs.deepseek.com/guides/function_calling).
                 - `'json_mode'`:
-                    Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
+                    Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
                 !!! warning "Behavior changed in 0.1.3"
                     Added support for `'json_mode'`.

@@ -693,11 +693,11 @@ class ChatFireworks(BaseChatModel):
             method: The method for steering model generation, one of:
 
                 - `'function_calling'`:
-                    Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
+                    Uses Fireworks's [tool-calling features](https://docs.fireworks.ai/guides/function-calling).
                 - `'json_schema'`:
-                    Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                    Uses Fireworks's [structured output feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
                 - `'json_mode'`:
-                    Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                    Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
                 !!! warning "Behavior changed in 0.2.8"
                     Added support for `'json_schema'`.

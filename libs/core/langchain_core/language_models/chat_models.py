@@ -185,7 +185,7 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ValueError: If no generations are found in the stream.
 
     Returns:
-        ChatResult: Chat result.
+        Chat result.
 
     """
     generation = next(stream, None)
@@ -213,7 +213,7 @@ async def agenerate_from_stream(
         stream: Iterator of `ChatGenerationChunk`.
 
     Returns:
-        ChatResult: Chat result.
+        Chat result.
 
     """
     chunks = [chunk async for chunk in stream]

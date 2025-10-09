@@ -1,9 +1,9 @@
 """**LangSmith** utilities.
 
 This module provides utilities for connecting to
-`LangSmith <https://smith.langchain.com/>`_.
+[LangSmith](https://smith.langchain.com/).
 For more information on LangSmith,
-see the `LangSmith documentation <https://docs.smith.langchain.com/>`_.
+see the [LangSmith documentation](https://docs.smith.langchain.com/).
 
 **Evaluation**
 

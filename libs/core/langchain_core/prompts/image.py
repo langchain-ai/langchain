@@ -60,7 +60,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -71,7 +71,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -85,7 +85,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -134,7 +134,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.

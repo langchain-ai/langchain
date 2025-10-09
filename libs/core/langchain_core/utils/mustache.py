@@ -46,7 +46,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        tuple[str, str]: The literal and the template.
+        The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -76,7 +76,7 @@ def l_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
@@ -102,7 +102,7 @@ def r_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in {"variable", "no escape"}:
@@ -124,7 +124,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        tuple[tuple[str, str], str]: The tag and the template.
+        The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.

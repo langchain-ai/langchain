@@ -166,7 +166,7 @@ class BaseMessage(Serializable):
         Args:
             content: The string contents of the message.
             content_blocks: Typed standard content.
-            kwargs: Additional arguments to pass to the parent class.
+            **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
             super().__init__(content=content_blocks, **kwargs)

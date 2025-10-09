@@ -16,12 +16,12 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama embedding model integration.
 
     Set up a local Ollama instance:
-        `Install the Ollama package <https://github.com/ollama/ollama>`__ and set up a
+        [Install the Ollama package](https://github.com/ollama/ollama) and set up a
         local Ollama instance.
 
         You will need to choose a model to serve.
 
-        You can view a list of available models via `the model library <https://ollama.com/library>`__.
+        You can view a list of available models via [the model library](https://ollama.com/library).
 
         To fetch a model from the Ollama model library use `ollama pull <name-of-model>`.
 
@@ -164,7 +164,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
     sync_client_kwargs: dict | None = {}
@@ -172,7 +172,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
     _client: Client | None = PrivateAttr(default=None)

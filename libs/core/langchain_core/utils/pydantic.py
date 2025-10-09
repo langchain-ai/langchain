@@ -129,10 +129,10 @@ def pre_init(func: Callable) -> Any:
     """Decorator to run a function before model initialization.
 
     Args:
-        func (Callable): The function to run before model initialization.
+        func: The function to run before model initialization.
 
     Returns:
-        Any: The decorated function.
+        The decorated function.
     """
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
@@ -146,11 +146,11 @@ def pre_init(func: Callable) -> Any:
             """Decorator to run a function before model initialization.
 
             Args:
-                cls (Type[BaseModel]): The model class.
-                values (dict[str, Any]): The values to initialize the model with.
+                cls: The model class.
+                values: The values to initialize the model with.
 
             Returns:
-                dict[str, Any]: The values to initialize the model with.
+                The values to initialize the model with.
             """
             # Insert default values
             fields = cls.model_fields
@@ -449,7 +449,7 @@ def create_model(
         **field_definitions: The field definitions for the model.
 
     Returns:
-        Type[BaseModel]: The created model.
+        The created model.
     """
     kwargs = {}
     if "__root__" in field_definitions:
@@ -525,7 +525,7 @@ def create_model_v2(
         root: Type for a root model (RootModel)
 
     Returns:
-        Type[BaseModel]: The created model.
+        The created model.
     """
     field_definitions = field_definitions or {}
 
