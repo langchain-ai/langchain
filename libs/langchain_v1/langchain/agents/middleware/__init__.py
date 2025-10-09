@@ -5,17 +5,8 @@ from .context_editing import (
     ContextEditingMiddleware,
 )
 from .human_in_the_loop import (
-    Action,
-    ApproveDecision,
-    Decision,
-    DecisionType,
-    EditDecision,
-    HITLRequest,
-    HITLResponse,
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
-    RejectDecision,
-    ReviewConfig,
 )
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
@@ -39,19 +30,12 @@ from .types import (
 )
 
 __all__ = [
-    "Action",
     "AgentMiddleware",
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
-    "ApproveDecision",
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
-    "Decision",
-    "DecisionType",
-    "EditDecision",
-    "HITLRequest",
-    "HITLResponse",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
     "LLMToolSelectorMiddleware",
@@ -61,8 +45,6 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "PlanningMiddleware",
-    "RejectDecision",
-    "ReviewConfig",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
     "after_agent",
