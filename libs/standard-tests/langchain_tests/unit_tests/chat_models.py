@@ -684,7 +684,7 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
-        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
         as benchmarking tests.
 
         To enable these tests, follow these steps:

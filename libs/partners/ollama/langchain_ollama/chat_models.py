@@ -271,7 +271,7 @@ class ChatOllama(BaseChatModel):
             Name of Ollama model to use.
         reasoning: bool | None
             Controls the reasoning/thinking mode for
-            `supported models <https://ollama.com/search?c=thinking>`__.
+            [supported models](https://ollama.com/search?c=thinking).
 
             - `True`: Enables reasoning mode. The model's reasoning process will be
               captured and returned separately in the ``additional_kwargs`` of the
@@ -492,7 +492,7 @@ class ChatOllama(BaseChatModel):
         as think tags (``<think>`` and ``</think>``).
 
         !!! note
-            This feature is only available for `models that support reasoning <https://ollama.com/search?c=thinking>`__.
+            This feature is only available for [models that support reasoning](https://ollama.com/search?c=thinking).
 
         .. code-block:: python
 
@@ -524,7 +524,7 @@ class ChatOllama(BaseChatModel):
     """Model name to use."""
 
     reasoning: bool | str | None = None
-    """Controls the reasoning/thinking mode for `supported models <https://ollama.com/search?c=thinking>`__.
+    """Controls the reasoning/thinking mode for [supported models](https://ollama.com/search?c=thinking).
 
     - `True`: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
@@ -538,7 +538,7 @@ class ChatOllama(BaseChatModel):
       unless you set ``reasoning`` to `True`.
     - `str`: e.g. `'low'`, ``'medium'``, `'high'`. Enables reasoning with a custom
       intensity level. Currently, this is only supported ``gpt-oss``. See the
-      `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
+      [Ollama docs](https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210)
       for more information.
     """
 
@@ -699,7 +699,7 @@ class ChatOllama(BaseChatModel):
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
     sync_client_kwargs: dict | None = {}
@@ -707,7 +707,7 @@ class ChatOllama(BaseChatModel):
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
     _client: Client = PrivateAttr()
@@ -1275,7 +1275,7 @@ class ChatOllama(BaseChatModel):
             method: The method for steering model generation, one of:
 
                 - ``'json_schema'``:
-                    Uses Ollama's `structured output API <https://ollama.com/blog/structured-outputs>`__
+                    Uses Ollama's [structured output API](https://ollama.com/blog/structured-outputs)
                 - ``'function_calling'``:
                     Uses Ollama's tool-calling API
                 - ``'json_mode'``:

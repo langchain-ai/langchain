@@ -249,7 +249,7 @@ class Runnable(ABC, Generic[Input, Output]):
         chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
         ```
 
-    For a UI (and much more) checkout `LangSmith <https://docs.smith.langchain.com/>`__.
+    For a UI (and much more) checkout [LangSmith](https://docs.smith.langchain.com/).
 
     """
 

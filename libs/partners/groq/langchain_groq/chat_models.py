@@ -98,9 +98,8 @@ class ChatGroq(BaseChatModel):
               supresses reasoning content in the response; the model will still perform
               reasoning unless overridden in ``reasoning_effort``.
 
-            See the `Groq documentation
-            <https://console.groq.com/docs/reasoning#reasoning>`__ for more
-            details and a list of supported models.
+            See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
+            for more details and a list of supported models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -322,16 +321,16 @@ class ChatGroq(BaseChatModel):
       reasoning content in the response; the model will still perform reasoning unless
       overridden in ``reasoning_effort``.
 
-    See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
+    See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
     for more details and a list of supported models.
     """
     reasoning_effort: str | None = Field(default=None)
     """The level of effort the model will put into reasoning. Groq will default to
     enabling reasoning if left undefined.
 
-    See the `Groq documentation
-    <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
-    details and a list of options and models that support setting a reasoning effort.
+    See the [Groq documentation](https://console.groq.com/docs/reasoning#options-for-reasoning-effort)
+    for more details and a list of options and models that support setting a reasoning
+    effort.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -370,9 +369,8 @@ class ChatGroq(BaseChatModel):
     - `'auto'`: Uses on-demand rate limits, then falls back to ``'flex'`` if those
       limits are exceeded
 
-    See the `Groq documentation
-    <https://console.groq.com/docs/flex-processing>`__ for more details and a list of
-    service tiers and descriptions.
+    See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
+    details and a list of service tiers and descriptions.
     """
     default_headers: Mapping[str, str] | None = None
     default_query: Mapping[str, object] | None = None
@@ -851,20 +849,20 @@ class ChatGroq(BaseChatModel):
             method: The method for steering model generation, one of:
 
                 - ``'function_calling'``:
-                    Uses Groq's tool-calling `API <https://console.groq.com/docs/tool-use>`__
+                    Uses Groq's tool-calling [API](https://console.groq.com/docs/tool-use)
                 - ``'json_schema'``:
-                    Uses Groq's `Structured Output API <https://console.groq.com/docs/structured-outputs>`__.
+                    Uses Groq's [Structured Output API](https://console.groq.com/docs/structured-outputs).
                     Supported for a subset of models, including ``openai/gpt-oss``,
                     ``moonshotai/kimi-k2-instruct-0905``, and some ``meta-llama/llama-4``
-                    models. See `docs <https://console.groq.com/docs/structured-outputs>`__
+                    models. See [docs](https://console.groq.com/docs/structured-outputs)
                     for details.
                 - ``'json_mode'``:
-                    Uses Groq's `JSON mode <https://console.groq.com/docs/structured-outputs#json-object-mode>`__.
+                    Uses Groq's [JSON mode](https://console.groq.com/docs/structured-outputs#json-object-mode).
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call
 
                 Learn more about the differences between the methods and which models
-                support which methods `here <https://console.groq.com/docs/structured-outputs>`__.
+                support which methods [here](https://console.groq.com/docs/structured-outputs).
 
             method:
                 The method for steering model generation, either ``'function_calling'``

@@ -15,7 +15,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     Optimizes API usage by caching conversation prefixes for Anthropic models.
 
     Learn more about Anthropic prompt caching
-    `here <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching>`__.
+    [here](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
     """
 
     def __init__(
