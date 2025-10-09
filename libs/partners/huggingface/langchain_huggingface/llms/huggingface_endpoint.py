@@ -34,49 +34,48 @@ class HuggingFaceEndpoint(LLM):
     or given as a named parameter to the constructor.
 
     Example:
-        .. code-block:: python
+        ```python
+        # Basic Example (no streaming)
+        llm = HuggingFaceEndpoint(
+            endpoint_url="http://localhost:8010/",
+            max_new_tokens=512,
+            top_k=10,
+            top_p=0.95,
+            typical_p=0.95,
+            temperature=0.01,
+            repetition_penalty=1.03,
+            huggingfacehub_api_token="my-api-key",
+        )
+        print(llm.invoke("What is Deep Learning?"))
 
-            # Basic Example (no streaming)
-            llm = HuggingFaceEndpoint(
-                endpoint_url="http://localhost:8010/",
-                max_new_tokens=512,
-                top_k=10,
-                top_p=0.95,
-                typical_p=0.95,
-                temperature=0.01,
-                repetition_penalty=1.03,
-                huggingfacehub_api_token="my-api-key",
-            )
-            print(llm.invoke("What is Deep Learning?"))
+        # Streaming response example
+        from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-            # Streaming response example
-            from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+        callbacks = [StreamingStdOutCallbackHandler()]
+        llm = HuggingFaceEndpoint(
+            endpoint_url="http://localhost:8010/",
+            max_new_tokens=512,
+            top_k=10,
+            top_p=0.95,
+            typical_p=0.95,
+            temperature=0.01,
+            repetition_penalty=1.03,
+            callbacks=callbacks,
+            streaming=True,
+            huggingfacehub_api_token="my-api-key",
+        )
+        print(llm.invoke("What is Deep Learning?"))
 
-            callbacks = [StreamingStdOutCallbackHandler()]
-            llm = HuggingFaceEndpoint(
-                endpoint_url="http://localhost:8010/",
-                max_new_tokens=512,
-                top_k=10,
-                top_p=0.95,
-                typical_p=0.95,
-                temperature=0.01,
-                repetition_penalty=1.03,
-                callbacks=callbacks,
-                streaming=True,
-                huggingfacehub_api_token="my-api-key",
-            )
-            print(llm.invoke("What is Deep Learning?"))
-
-            # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
-            llm = HuggingFaceEndpoint(
-                repo_id="mistralai/Mistral-Nemo-Base-2407",
-                provider="novita",
-                max_new_tokens=100,
-                do_sample=False,
-                huggingfacehub_api_token="my-api-key",
-            )
-            print(llm.invoke("What is Deep Learning?"))
-
+        # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
+        llm = HuggingFaceEndpoint(
+            repo_id="mistralai/Mistral-Nemo-Base-2407",
+            provider="novita",
+            max_new_tokens=100,
+            do_sample=False,
+            huggingfacehub_api_token="my-api-key",
+        )
+        print(llm.invoke("What is Deep Learning?"))
+        ```
     """  # noqa: E501
 
     endpoint_url: str | None = None

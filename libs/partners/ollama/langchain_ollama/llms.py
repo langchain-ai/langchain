@@ -24,17 +24,17 @@ class OllamaLLM(BaseLLM):
     Setup:
         Install `langchain-ollama` and install/run the Ollama server locally:
 
-        .. code-block:: bash
-
-            pip install -U langchain-ollama
-            # Visit https://ollama.com/download to download and install Ollama
-            # (Linux users): start the server with `ollama serve`
+        ```bash
+        pip install -U langchain-ollama
+        # Visit https://ollama.com/download to download and install Ollama
+        # (Linux users): start the server with `ollama serve`
+        ```
 
         Download a model to use:
 
-        .. code-block:: bash
-
-            ollama pull llama3.1
+        ```bash
+        ollama pull llama3.1
+        ```
 
     Key init args — generation params:
         model: str
@@ -63,50 +63,47 @@ class OllamaLLM(BaseLLM):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_ollama import OllamaLLM
 
-            from langchain_ollama import OllamaLLM
-
-            llm = OllamaLLM(
-                model="llama3.1",
-                temperature=0.7,
-                num_predict=256,
-                # base_url="http://localhost:11434",
-                # other params...
-            )
+        llm = OllamaLLM(
+            model="llama3.1",
+            temperature=0.7,
+            num_predict=256,
+            # base_url="http://localhost:11434",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            input_text = "The meaning of life is "
-            response = llm.invoke(input_text)
-            print(response)
-
-        .. code-block::
-
-            "a philosophical question that has been contemplated by humans for
-            centuries..."
+        ```python
+        input_text = "The meaning of life is "
+        response = llm.invoke(input_text)
+        print(response)
+        ```
+        ```txt
+        "a philosophical question that has been contemplated by humans for
+        centuries..."
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(input_text):
-                print(chunk, end="")
-
-        .. code-block::
-
-            a philosophical question that has been contemplated by humans for
-            centuries...
+        ```python
+        for chunk in llm.stream(input_text):
+            print(chunk, end="")
+        ```
+        ```txt
+        a philosophical question that has been contemplated by humans for
+        centuries...
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        response = await llm.ainvoke(input_text)
 
-            response = await llm.ainvoke(input_text)
-
-            # stream:
-            # async for chunk in llm.astream(input_text):
-            #     print(chunk, end="")
-
+        # stream:
+        # async for chunk in llm.astream(input_text):
+        #     print(chunk, end="")
+        ```
     """
 
     model: str

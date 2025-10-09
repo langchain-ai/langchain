@@ -296,11 +296,9 @@ class BasePromptTemplate(
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
@@ -313,11 +311,9 @@ class BasePromptTemplate(
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            await prompt.aformat(variable1="foo")
-
+        ```python
+        await prompt.aformat(variable1="foo")
+        ```
         """
         return self.format(**kwargs)
 
@@ -352,10 +348,9 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
 
         Example:
-        .. code-block:: python
-
-            prompt.save(file_path="path/prompt.yaml")
-
+        ```python
+        prompt.save(file_path="path/prompt.yaml")
+        ```
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -426,16 +421,16 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
         string of the document formatted.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.documents import Document
-            from langchain_core.prompts import PromptTemplate
+        doc = Document(page_content="This is a joke", metadata={"page": "1"})
+        prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+        format_document(doc, prompt)
+        >>> "Page 1: This is a joke"
 
-            doc = Document(page_content="This is a joke", metadata={"page": "1"})
-            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
-            format_document(doc, prompt)
-            >>> "Page 1: This is a joke"
-
+        ```
     """
     return prompt.format(**_get_document_info(doc, prompt))
 

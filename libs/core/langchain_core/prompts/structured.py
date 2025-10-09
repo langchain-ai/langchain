@@ -85,25 +85,24 @@ class StructuredPrompt(ChatPromptTemplate):
         Examples:
             Instantiation from a list of message templates:
 
-            .. code-block:: python
-
-                from langchain_core.prompts import StructuredPrompt
-
-
-                class OutputSchema(BaseModel):
-                    name: str
-                    value: int
+            ```python
+            from langchain_core.prompts import StructuredPrompt
 
 
-                template = StructuredPrompt(
-                    [
-                        ("human", "Hello, how are you?"),
-                        ("ai", "I'm doing well, thanks!"),
-                        ("human", "That's good to hear."),
-                    ],
-                    OutputSchema,
-                )
+            class OutputSchema(BaseModel):
+                name: str
+                value: int
 
+
+            template = StructuredPrompt(
+                [
+                    ("human", "Hello, how are you?"),
+                    ("ai", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ],
+                OutputSchema,
+            )
+            ```
         Args:
             messages: sequence of message representations.
                 A message can be represented using the following formats:

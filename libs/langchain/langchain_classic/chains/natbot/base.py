@@ -43,12 +43,11 @@ class NatBotChain(Chain):
         See https://python.langchain.com/docs/security for more information.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import NatBotChain
 
-            from langchain_classic.chains import NatBotChain
-
-            natbot = NatBotChain.from_default("Buy me a new hat.")
-
+        natbot = NatBotChain.from_default("Buy me a new hat.")
+        ```
     """
 
     llm_chain: Runnable
@@ -149,11 +148,10 @@ class NatBotChain(Chain):
             Next browser command to run.
 
         Example:
-            .. code-block:: python
-
-                browser_content = "...."
-                llm_command = natbot.run("www.google.com", browser_content)
-
+            ```python
+            browser_content = "...."
+            llm_command = natbot.run("www.google.com", browser_content)
+            ```
         """
         _inputs = {
             self.input_url_key: url,

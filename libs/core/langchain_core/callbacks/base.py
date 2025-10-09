@@ -945,30 +945,25 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Example: Merging two callback managers.
 
-            .. code-block:: python
+            ```python
+            from langchain_core.callbacks.manager import (
+                CallbackManager,
+                trace_as_chain_group,
+            )
+            from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                from langchain_core.callbacks.manager import (
-                    CallbackManager,
-                    trace_as_chain_group,
-                )
-                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+            manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+            with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                merged_manager = group_manager.merge(manager)
+                print(merged_manager.handlers)
+                # [
+                #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
+                #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
+                # ]
 
-                manager = CallbackManager(
-                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
-                )
-                with trace_as_chain_group(
-                    "My Group Name", tags=["tag1"]
-                ) as group_manager:
-                    merged_manager = group_manager.merge(manager)
-                    print(merged_manager.handlers)
-                    # [
-                    #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
-                    #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
-                    # ]
-
-                    print(merged_manager.tags)
-                    #    ['tag2', 'tag1']
-
+                print(merged_manager.tags)
+                #    ['tag2', 'tag1']
+            ```
         """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,

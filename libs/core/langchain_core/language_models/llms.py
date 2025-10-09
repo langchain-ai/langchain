@@ -1340,11 +1340,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ValueError: If the file path is not a string or Path object.
 
         Example:
-
-            .. code-block:: python
-
-                llm.save(file_path="path/llm.yaml")
-
+            ```python
+            llm.save(file_path="path/llm.yaml")
+            ```
         """
         # Convert file to Path object.
         save_path = Path(file_path)

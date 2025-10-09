@@ -84,10 +84,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     Setup:
         Install `langchain_openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain_openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain_openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — embedding params:
         model: str
@@ -110,55 +110,51 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_openai import OpenAIEmbeddings
-
-            embed = OpenAIEmbeddings(
-                model="text-embedding-3-large"
-                # With the `text-embedding-3` class
-                # of models, you can specify the size
-                # of the embeddings you want returned.
-                # dimensions=1024
-            )
+        embed = OpenAIEmbeddings(
+            model="text-embedding-3-large"
+            # With the `text-embedding-3` class
+            # of models, you can specify the size
+            # of the embeddings you want returned.
+            # dimensions=1024
+        )
+        ```
 
     Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embeddings.embed_query("hello")
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embeddings.embed_query("hello")
+        print(vector[:3])
+        ```
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
-
-            vectors = embeddings.embed_documents(["hello", "goodbye"])
-            # Showing only the first 3 coordinates
-            print(len(vectors))
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        vectors = embeddings.embed_documents(["hello", "goodbye"])
+        # Showing only the first 3 coordinates
+        print(len(vectors))
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            await embed.aembed_query(input_text)
-            print(vector[:3])
-
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:

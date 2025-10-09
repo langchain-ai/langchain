@@ -32,10 +32,10 @@ class ChatDeepSeek(BaseChatOpenAI):
     Setup:
         Install `langchain-deepseek` and set environment variable `DEEPSEEK_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-deepseek
-            export DEEPSEEK_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-deepseek
+        export DEEPSEEK_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -56,115 +56,111 @@ class ChatDeepSeek(BaseChatOpenAI):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_deepseek import ChatDeepSeek
 
-            from langchain_deepseek import ChatDeepSeek
-
-            llm = ChatDeepSeek(
-                model="...",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
+        llm = ChatDeepSeek(
+            model="...",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user sentence to French."),
+            ("human", "I love programming."),
+        ]
+        llm.invoke(messages)
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.text, end="")
+        ```
+        ```python
+        stream = llm.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await llm.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await llm.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
+        # batch:
+        # await llm.abatch([messages])
+        ```
 
     Tool calling:
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        ```python
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
+
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
 
         See `ChatDeepSeek.bind_tools()` method for more.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+        from pydantic import BaseModel, Field
 
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
+
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+
+
+        structured_llm = llm.with_structured_output(Joke)
+        structured_llm.invoke("Tell me a joke about cats")
+        ```
 
         See `ChatDeepSeek.with_structured_output()` for more.
 
     Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.usage_metadata
+        ```
+        ```python
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
     Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.response_metadata
+        ```
     """  # noqa: E501
 
     model_name: str = Field(alias="model")

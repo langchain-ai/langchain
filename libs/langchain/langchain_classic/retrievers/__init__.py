@@ -3,19 +3,6 @@
 It is more general than a vector store. A retriever does not need to be able to
 store documents, only to return (or retrieve) it. Vector stores can be used as
 the backbone of a retriever, but there are other types of retrievers as well.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseRetriever --> <name>Retriever  # Examples: ArxivRetriever, MergerRetriever
-
-**Main helpers:**
-
-.. code-block::
-
-    Document, Serializable, Callbacks,
-    CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
 
 from typing import TYPE_CHECKING, Any

@@ -152,9 +152,9 @@ class Chroma(VectorStore):
     Setup:
         Install `chromadb`, `langchain-chroma` packages:
 
-        .. code-block:: bash
-
-            pip install -qU chromadb langchain-chroma
+        ```bash
+        pip install -qU chromadb langchain-chroma
+        ```
 
     Key init args — indexing params:
         collection_name: str
@@ -185,114 +185,110 @@ class Chroma(VectorStore):
             Database name. Required for Chroma Cloud connections. Default is 'default_database'.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_chroma import Chroma
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_chroma import Chroma
-            from langchain_openai import OpenAIEmbeddings
-
-            vector_store = Chroma(
-                collection_name="foo",
-                embedding_function=OpenAIEmbeddings(),
-                # other params...
-            )
+        vector_store = Chroma(
+            collection_name="foo",
+            embedding_function=OpenAIEmbeddings(),
+            # other params...
+        )
+        ```
 
     Add Documents:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
 
-            from langchain_core.documents import Document
+        document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+        document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+        document_3 = Document(page_content="i will be deleted :(")
 
-            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
-            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
-            document_3 = Document(page_content="i will be deleted :(")
-
-            documents = [document_1, document_2, document_3]
-            ids = ["1", "2", "3"]
-            vector_store.add_documents(documents=documents, ids=ids)
+        documents = [document_1, document_2, document_3]
+        ids = ["1", "2", "3"]
+        vector_store.add_documents(documents=documents, ids=ids)
+        ```
 
     Update Documents:
-        .. code-block:: python
+        ```python
+        updated_document = Document(
+            page_content="qux",
+            metadata={"bar": "baz"},
+        )
 
-            updated_document = Document(
-                page_content="qux",
-                metadata={"bar": "baz"},
-            )
-
-            vector_store.update_documents(ids=["1"], documents=[updated_document])
+        vector_store.update_documents(ids=["1"], documents=[updated_document])
+        ```
 
     Delete Documents:
-        .. code-block:: python
-
-            vector_store.delete(ids=["3"])
+        ```python
+        vector_store.delete(ids=["3"])
+        ```
 
     Search:
-        .. code-block:: python
-
-            results = vector_store.similarity_search(query="thud", k=1)
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            *thud[{"baz": "bar"}]
+        ```python
+        results = vector_store.similarity_search(query="thud", k=1)
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        *thud[{"baz": "bar"}]
+        ```
 
     Search with filter:
-        .. code-block:: python
-
-            results = vector_store.similarity_search(
-                query="thud", k=1, filter={"baz": "bar"}
-            )
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            *foo[{"baz": "bar"}]
+        ```python
+        results = vector_store.similarity_search(
+            query="thud", k=1, filter={"baz": "bar"}
+        )
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        *foo[{"baz": "bar"}]
+        ```
 
     Search with score:
-        .. code-block:: python
-
-            results = vector_store.similarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.000000] qux [{'bar': 'baz', 'baz': 'bar'}]
+        ```python
+        results = vector_store.similarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        * [SIM=0.000000] qux [{'bar': 'baz', 'baz': 'bar'}]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        # add documents
+        # await vector_store.aadd_documents(documents=documents, ids=ids)
 
-            # add documents
-            # await vector_store.aadd_documents(documents=documents, ids=ids)
+        # delete documents
+        # await vector_store.adelete(ids=["3"])
 
-            # delete documents
-            # await vector_store.adelete(ids=["3"])
+        # search
+        # results = vector_store.asimilarity_search(query="thud",k=1)
 
-            # search
-            # results = vector_store.asimilarity_search(query="thud",k=1)
+        # search with score
+        results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
 
-            # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.335463] foo [{'baz': 'bar'}]
+        ```python
+        * [SIM=0.335463] foo [{'baz': 'bar'}]
+        ```
 
     Use as Retriever:
-        .. code-block:: python
+        ```python
+        retriever = vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+        )
+        retriever.invoke("thud")
+        ```
 
-            retriever = vector_store.as_retriever(
-                search_type="mmr",
-                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
-            )
-            retriever.invoke("thud")
-
-        .. code-block:: python
-
-            [Document(metadata={"baz": "bar"}, page_content="thud")]
-
+        ```python
+        [Document(metadata={"baz": "bar"}, page_content="thud")]
+        ```
     """  # noqa: E501
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"

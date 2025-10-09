@@ -60,16 +60,14 @@ def sync_call_fallback(method: Callable) -> Callable:
 class Qdrant(VectorStore):
     """`Qdrant` vector store.
 
-    Example:
-        .. code-block:: python
+    ```python
+    from qdrant_client import QdrantClient
+    from langchain_qdrant import Qdrant
 
-            from qdrant_client import QdrantClient
-            from langchain_qdrant import Qdrant
-
-            client = QdrantClient()
-            collection_name = "MyCollection"
-            qdrant = Qdrant(client, collection_name, embedding_function)
-
+    client = QdrantClient()
+    collection_name = "MyCollection"
+    qdrant = Qdrant(client, collection_name, embedding_function)
+    ```
     """
 
     CONTENT_KEY: str = "page_content"
@@ -398,9 +396,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to
@@ -457,9 +455,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
@@ -516,9 +514,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to
@@ -575,9 +573,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
@@ -664,9 +662,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to
@@ -744,11 +742,9 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding to maximum diversity
+                and 1 to minimum diversity.
             filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
@@ -764,9 +760,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
@@ -810,7 +806,6 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
@@ -830,9 +825,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to
@@ -895,9 +890,9 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
@@ -941,7 +936,6 @@ class Qdrant(VectorStore):
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Defaults to 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
@@ -1337,15 +1331,13 @@ class Qdrant(VectorStore):
 
         This is intended to be a quick way to get started.
 
-        Example:
-            .. code-block:: python
+        ```python
+        from langchain_qdrant import Qdrant
+        from langchain_openai import OpenAIEmbeddings
 
-                from langchain_qdrant import Qdrant
-                from langchain_openai import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
-
+        embeddings = OpenAIEmbeddings()
+        qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
+        ```
         """
         qdrant = cls.construct_instance(
             texts,
@@ -1574,20 +1566,18 @@ class Qdrant(VectorStore):
         This is a user-friendly interface that:
         1. Creates embeddings, one for each text
         2. Initializes the Qdrant database as an in-memory docstore by default
-           (and overridable to a remote docstore)
+            (and overridable to a remote docstore)
         3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 
-        Example:
-            .. code-block:: python
+        ```python
+        from langchain_qdrant import Qdrant
+        from langchain_openai import OpenAIEmbeddings
 
-                from langchain_qdrant import Qdrant
-                from langchain_openai import OpenAIEmbeddings
-
-                embeddings = OpenAIEmbeddings()
-                qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
-
+        embeddings = OpenAIEmbeddings()
+        qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
+        ```
         """
         qdrant = await cls.aconstruct_instance(
             texts,

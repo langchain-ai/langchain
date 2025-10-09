@@ -11,10 +11,10 @@ class __ModuleName__Embeddings(Embeddings):
         Install `__package_name__` and set environment variable
         `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args — completion params:
@@ -25,50 +25,50 @@ class __ModuleName__Embeddings(Embeddings):
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __module_name__ import __ModuleName__Embeddings
 
-            from __module_name__ import __ModuleName__Embeddings
-
-            embed = __ModuleName__Embeddings(
-                model="...",
-                # api_key="...",
-                # other params...
-            )
+        embed = __ModuleName__Embeddings(
+            model="...",
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Embed single text:
-        .. code-block:: python
+        ```python
+        input_text = "The meaning of life is 42"
+        embed.embed_query(input_text)
+        ```
 
-            input_text = "The meaning of life is 42"
-            embed.embed_query(input_text)
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if token-level streaming isn't supported.
     Embed multiple text:
-        .. code-block:: python
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        embed.embed_documents(input_texts)
+        ```
 
-            input_texts = ["Document 1...", "Document 2..."]
-            embed.embed_documents(input_texts)
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if native async isn't supported.
     Async:
-        .. code-block:: python
+        ```python
+        await embed.aembed_query(input_text)
 
-            await embed.aembed_query(input_text)
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
 
-            # multiple:
-            # await embed.aembed_documents(input_texts)
+        ```python
+        # TODO: Example output.
 
-        .. code-block:: python
-
-            # TODO: Example output.
-
+        ```
     """
 
     def __init__(self, model: str):

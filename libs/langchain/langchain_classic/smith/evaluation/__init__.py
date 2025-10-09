@@ -8,38 +8,38 @@ For more information on the LangSmith API, see the
 
 **Example**
 
-.. code-block:: python
-
-    from langsmith import Client
-    from langchain_community.chat_models import ChatOpenAI
-    from langchain_classic.chains import LLMChain
-    from langchain_classic.smith import EvaluatorType, RunEvalConfig, run_on_dataset
-
-
-    def construct_chain():
-        llm = ChatOpenAI(temperature=0)
-        chain = LLMChain.from_string(llm, "What's the answer to {your_input_key}")
-        return chain
+```python
+from langsmith import Client
+from langchain_openai import ChatOpenAI
+from langchain_classic.chains import LLMChain
+from langchain_classic.smith import EvaluatorType, RunEvalConfig, run_on_dataset
 
 
-    evaluation_config = RunEvalConfig(
-        evaluators=[
-            EvaluatorType.QA,  # "Correctness" against a reference answer
-            EvaluatorType.EMBEDDING_DISTANCE,
-            RunEvalConfig.Criteria("helpfulness"),
-            RunEvalConfig.Criteria(
-                {
-                    "fifth-grader-score": "Do you have to be smarter than a fifth "
-                    "grader to answer this question?"
-                }
-            ),
-        ]
-    )
+def construct_chain():
+    llm = ChatOpenAI(temperature=0)
+    chain = LLMChain.from_string(llm, "What's the answer to {your_input_key}")
+    return chain
 
-    client = Client()
-    run_on_dataset(
-        client, "<my_dataset_name>", construct_chain, evaluation=evaluation_config
-    )
+
+evaluation_config = RunEvalConfig(
+    evaluators=[
+        EvaluatorType.QA,  # "Correctness" against a reference answer
+        EvaluatorType.EMBEDDING_DISTANCE,
+        RunEvalConfig.Criteria("helpfulness"),
+        RunEvalConfig.Criteria(
+            {
+                "fifth-grader-score": "Do you have to be smarter than a fifth "
+                "grader to answer this question?"
+            }
+        ),
+    ]
+)
+
+client = Client()
+run_on_dataset(
+    client, "<my_dataset_name>", construct_chain, evaluation=evaluation_config
+)
+```
 
 **Attributes**
 

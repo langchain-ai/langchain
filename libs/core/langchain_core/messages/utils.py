@@ -5,7 +5,6 @@ Some examples of what you can do with these functions include:
 * Convert messages to strings (serialization)
 * Convert messages from dicts to Message objects (deserialization)
 * Filter messages from a list of messages based on name, type or id etc.
-
 """
 
 from __future__ import annotations
@@ -108,17 +107,16 @@ def get_buffer_string(
         ValueError: If an unsupported message type is encountered.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core import AIMessage, HumanMessage
 
-            from langchain_core import AIMessage, HumanMessage
-
-            messages = [
-                HumanMessage(content="Hi, how are you?"),
-                AIMessage(content="Good, how are you?"),
-            ]
-            get_buffer_string(messages)
-            # -> "Human: Hi, how are you?\nAI: Good, how are you?"
-
+        messages = [
+            HumanMessage(content="Hi, how are you?"),
+            AIMessage(content="Good, how are you?"),
+        ]
+        get_buffer_string(messages)
+        # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+        ```
     """
     string_messages = []
     for m in messages:
@@ -459,43 +457,42 @@ def filter_messages(
         ValueError: If two incompatible arguments are provided.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.messages import (
+            filter_messages,
+            AIMessage,
+            HumanMessage,
+            SystemMessage,
+        )
 
-            from langchain_core.messages import (
-                filter_messages,
-                AIMessage,
-                HumanMessage,
-                SystemMessage,
-            )
+        messages = [
+            SystemMessage("you're a good assistant."),
+            HumanMessage("what's your name", id="foo", name="example_user"),
+            AIMessage("steve-o", id="bar", name="example_assistant"),
+            HumanMessage(
+                "what's your favorite color",
+                id="baz",
+            ),
+            AIMessage(
+                "silicon blue",
+                id="blah",
+            ),
+        ]
 
-            messages = [
-                SystemMessage("you're a good assistant."),
-                HumanMessage("what's your name", id="foo", name="example_user"),
-                AIMessage("steve-o", id="bar", name="example_assistant"),
-                HumanMessage(
-                    "what's your favorite color",
-                    id="baz",
-                ),
-                AIMessage(
-                    "silicon blue",
-                    id="blah",
-                ),
-            ]
+        filter_messages(
+            messages,
+            incl_names=("example_user", "example_assistant"),
+            incl_types=("system",),
+            excl_ids=("bar",),
+        )
+        ```
 
-            filter_messages(
-                messages,
-                incl_names=("example_user", "example_assistant"),
-                incl_types=("system",),
-                excl_ids=("bar",),
-            )
-
-        .. code-block:: python
-
-            [
-                SystemMessage("you're a good assistant."),
-                HumanMessage("what's your name", id="foo", name="example_user"),
-            ]
-
+        ```python
+        [
+            SystemMessage("you're a good assistant."),
+            HumanMessage("what's your name", id="foo", name="example_user"),
+        ]
+        ```
     """
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
@@ -583,83 +580,82 @@ def merge_message_runs(
         of content blocks, the merged content is a list of content blocks.
 
     Example:
+        ```python
+        from langchain_core.messages import (
+            merge_message_runs,
+            AIMessage,
+            HumanMessage,
+            SystemMessage,
+            ToolCall,
+        )
 
-        .. code-block:: python
+        messages = [
+            SystemMessage("you're a good assistant."),
+            HumanMessage(
+                "what's your favorite color",
+                id="foo",
+            ),
+            HumanMessage(
+                "wait your favorite food",
+                id="bar",
+            ),
+            AIMessage(
+                "my favorite colo",
+                tool_calls=[
+                    ToolCall(
+                        name="blah_tool", args={"x": 2}, id="123", type="tool_call"
+                    )
+                ],
+                id="baz",
+            ),
+            AIMessage(
+                [{"type": "text", "text": "my favorite dish is lasagna"}],
+                tool_calls=[
+                    ToolCall(
+                        name="blah_tool",
+                        args={"x": -10},
+                        id="456",
+                        type="tool_call",
+                    )
+                ],
+                id="blur",
+            ),
+        ]
 
-            from langchain_core.messages import (
-                merge_message_runs,
-                AIMessage,
-                HumanMessage,
-                SystemMessage,
-                ToolCall,
-            )
+        merge_message_runs(messages)
+        ```
 
-            messages = [
-                SystemMessage("you're a good assistant."),
-                HumanMessage(
-                    "what's your favorite color",
-                    id="foo",
-                ),
-                HumanMessage(
-                    "wait your favorite food",
-                    id="bar",
-                ),
-                AIMessage(
+        ```python
+        [
+            SystemMessage("you're a good assistant."),
+            HumanMessage(
+                "what's your favorite color\\n"
+                "wait your favorite food", id="foo",
+            ),
+            AIMessage(
+                [
                     "my favorite colo",
-                    tool_calls=[
-                        ToolCall(
-                            name="blah_tool", args={"x": 2}, id="123", type="tool_call"
-                        )
-                    ],
-                    id="baz",
-                ),
-                AIMessage(
-                    [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[
-                        ToolCall(
-                            name="blah_tool",
-                            args={"x": -10},
-                            id="456",
-                            type="tool_call",
-                        )
-                    ],
-                    id="blur",
-                ),
-            ]
+                    {"type": "text", "text": "my favorite dish is lasagna"}
+                ],
+                tool_calls=[
+                    ToolCall({
+                        "name": "blah_tool",
+                        "args": {"x": 2},
+                        "id": "123",
+                        "type": "tool_call"
+                    }),
+                    ToolCall({
+                        "name": "blah_tool",
+                        "args": {"x": -10},
+                        "id": "456",
+                        "type": "tool_call"
+                    })
+                ]
+                id="baz"
+            ),
+        ]
 
-            merge_message_runs(messages)
-
-        .. code-block:: python
-
-            [
-                SystemMessage("you're a good assistant."),
-                HumanMessage(
-                    "what's your favorite color\\n"
-                    "wait your favorite food", id="foo",
-                ),
-                AIMessage(
-                    [
-                        "my favorite colo",
-                        {"type": "text", "text": "my favorite dish is lasagna"}
-                    ],
-                    tool_calls=[
-                        ToolCall({
-                            "name": "blah_tool",
-                            "args": {"x": 2},
-                            "id": "123",
-                            "type": "tool_call"
-                        }),
-                        ToolCall({
-                            "name": "blah_tool",
-                            "args": {"x": -10},
-                            "id": "456",
-                            "type": "tool_call"
-                        })
-                    ]
-                    id="baz"
-                ),
-            ]
-
+        ```
     """
     if not messages:
         return []
@@ -797,58 +793,56 @@ def trim_messages(
         present, and ensuring that the chat history starts with a `HumanMessage` (
         or a `SystemMessage` followed by a `HumanMessage`).
 
-        .. code-block:: python
+        ```python
+        from langchain_core.messages import (
+            AIMessage,
+            HumanMessage,
+            BaseMessage,
+            SystemMessage,
+            trim_messages,
+        )
 
-            from langchain_core.messages import (
-                AIMessage,
-                HumanMessage,
-                BaseMessage,
-                SystemMessage,
-                trim_messages,
-            )
-
-            messages = [
-                SystemMessage(
-                    "you're a good assistant, you always respond with a joke."
-                ),
-                HumanMessage("i wonder why it's called langchain"),
-                AIMessage(
-                    'Well, I guess they thought "WordRope" and "SentenceString" just '
-                    "didn't have the same ring to it!"
-                ),
-                HumanMessage("and who is harrison chasing anyways"),
-                AIMessage(
-                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last "
-                    "cup of coffee in the office!"
-                ),
-                HumanMessage("what do you call a speechless parrot"),
-            ]
+        messages = [
+            SystemMessage("you're a good assistant, you always respond with a joke."),
+            HumanMessage("i wonder why it's called langchain"),
+            AIMessage(
+                'Well, I guess they thought "WordRope" and "SentenceString" just '
+                "didn't have the same ring to it!"
+            ),
+            HumanMessage("and who is harrison chasing anyways"),
+            AIMessage(
+                "Hmmm let me think.\n\nWhy, he's probably chasing after the last "
+                "cup of coffee in the office!"
+            ),
+            HumanMessage("what do you call a speechless parrot"),
+        ]
 
 
-            trim_messages(
-                messages,
-                max_tokens=45,
-                strategy="last",
-                token_counter=ChatOpenAI(model="gpt-4o"),
-                # Most chat models expect that chat history starts with either:
-                # (1) a HumanMessage or
-                # (2) a SystemMessage followed by a HumanMessage
-                start_on="human",
-                # Usually, we want to keep the SystemMessage
-                # if it's present in the original history.
-                # The SystemMessage has special instructions for the model.
-                include_system=True,
-                allow_partial=False,
-            )
+        trim_messages(
+            messages,
+            max_tokens=45,
+            strategy="last",
+            token_counter=ChatOpenAI(model="gpt-4o"),
+            # Most chat models expect that chat history starts with either:
+            # (1) a HumanMessage or
+            # (2) a SystemMessage followed by a HumanMessage
+            start_on="human",
+            # Usually, we want to keep the SystemMessage
+            # if it's present in the original history.
+            # The SystemMessage has special instructions for the model.
+            include_system=True,
+            allow_partial=False,
+        )
+        ```
 
-        .. code-block:: python
-
-            [
-                SystemMessage(
-                    content="you're a good assistant, you always respond with a joke."
-                ),
-                HumanMessage(content="what do you call a speechless parrot"),
-            ]
+        ```python
+        [
+            SystemMessage(
+                content="you're a good assistant, you always respond with a joke."
+            ),
+            HumanMessage(content="what do you call a speechless parrot"),
+        ]
+        ```
 
         Trim chat history based on the message count, keeping the `SystemMessage` if
         present, and ensuring that the chat history starts with a `HumanMessage` (
@@ -874,100 +868,95 @@ def trim_messages(
                 allow_partial=False,
             )
 
-        .. code-block:: python
-
-            [
-                SystemMessage(
-                    content="you're a good assistant, you always respond with a joke."
-                ),
-                HumanMessage(content="and who is harrison chasing anyways"),
-                AIMessage(
-                    content="Hmmm let me think.\n\nWhy, he's probably chasing after "
-                    "the last cup of coffee in the office!"
-                ),
-                HumanMessage(content="what do you call a speechless parrot"),
-            ]
-
-
+        ```python
+        [
+            SystemMessage(
+                content="you're a good assistant, you always respond with a joke."
+            ),
+            HumanMessage(content="and who is harrison chasing anyways"),
+            AIMessage(
+                content="Hmmm let me think.\n\nWhy, he's probably chasing after "
+                "the last cup of coffee in the office!"
+            ),
+            HumanMessage(content="what do you call a speechless parrot"),
+        ]
+        ```
         Trim chat history using a custom token counter function that counts the
         number of tokens in each message.
 
-        .. code-block:: python
+        ```python
+        messages = [
+            SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+            HumanMessage(
+                "This is a 4 token text. The full message is 10 tokens.", id="first"
+            ),
+            AIMessage(
+                [
+                    {"type": "text", "text": "This is the FIRST 4 token block."},
+                    {"type": "text", "text": "This is the SECOND 4 token block."},
+                ],
+                id="second",
+            ),
+            HumanMessage(
+                "This is a 4 token text. The full message is 10 tokens.", id="third"
+            ),
+            AIMessage(
+                "This is a 4 token text. The full message is 10 tokens.",
+                id="fourth",
+            ),
+        ]
 
-            messages = [
-                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                HumanMessage(
-                    "This is a 4 token text. The full message is 10 tokens.", id="first"
-                ),
-                AIMessage(
-                    [
-                        {"type": "text", "text": "This is the FIRST 4 token block."},
-                        {"type": "text", "text": "This is the SECOND 4 token block."},
-                    ],
-                    id="second",
-                ),
-                HumanMessage(
-                    "This is a 4 token text. The full message is 10 tokens.", id="third"
-                ),
-                AIMessage(
-                    "This is a 4 token text. The full message is 10 tokens.",
-                    id="fourth",
-                ),
-            ]
 
+        def dummy_token_counter(messages: list[BaseMessage]) -> int:
+            # treat each message like it adds 3 default tokens at the beginning
+            # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
+            # per message.
 
-            def dummy_token_counter(messages: list[BaseMessage]) -> int:
-                # treat each message like it adds 3 default tokens at the beginning
-                # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
-                # per message.
+            default_content_len = 4
+            default_msg_prefix_len = 3
+            default_msg_suffix_len = 3
 
-                default_content_len = 4
-                default_msg_prefix_len = 3
-                default_msg_suffix_len = 3
-
-                count = 0
-                for msg in messages:
-                    if isinstance(msg.content, str):
-                        count += (
-                            default_msg_prefix_len
-                            + default_content_len
-                            + default_msg_suffix_len
-                        )
-                    if isinstance(msg.content, list):
-                        count += (
-                            default_msg_prefix_len
-                            + len(msg.content) * default_content_len
-                            + default_msg_suffix_len
-                        )
-                return count
+            count = 0
+            for msg in messages:
+                if isinstance(msg.content, str):
+                    count += (
+                        default_msg_prefix_len
+                        + default_content_len
+                        + default_msg_suffix_len
+                    )
+                if isinstance(msg.content, list):
+                    count += (
+                        default_msg_prefix_len
+                        + len(msg.content) * default_content_len
+                        + default_msg_suffix_len
+                    )
+            return count
+        ```
 
         First 30 tokens, allowing partial messages:
-            .. code-block:: python
+        ```python
+        trim_messages(
+            messages,
+            max_tokens=30,
+            token_counter=dummy_token_counter,
+            strategy="first",
+            allow_partial=True,
+        )
+        ```
 
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="first",
-                    allow_partial=True,
-                )
-
-            .. code-block:: python
-
-                [
-                    SystemMessage(
-                        "This is a 4 token text. The full message is 10 tokens."
-                    ),
-                    HumanMessage(
-                        "This is a 4 token text. The full message is 10 tokens.",
-                        id="first",
-                    ),
-                    AIMessage(
-                        [{"type": "text", "text": "This is the FIRST 4 token block."}],
-                        id="second",
-                    ),
-                ]
-
+        ```python
+        [
+            SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+            HumanMessage(
+                "This is a 4 token text. The full message is 10 tokens.",
+                id="first",
+            ),
+            AIMessage(
+                [{"type": "text", "text": "This is the FIRST 4 token block."}],
+                id="second",
+            ),
+        ]
+        ```
     """
     # Validate arguments
     if start_on and strategy == "first":
@@ -1070,50 +1059,49 @@ def convert_to_openai_messages(
             message dicts is returned.
 
     Example:
+        ```python
+        from langchain_core.messages import (
+            convert_to_openai_messages,
+            AIMessage,
+            SystemMessage,
+            ToolMessage,
+        )
 
-        .. code-block:: python
-
-            from langchain_core.messages import (
-                convert_to_openai_messages,
-                AIMessage,
-                SystemMessage,
-                ToolMessage,
-            )
-
-            messages = [
-                SystemMessage([{"type": "text", "text": "foo"}]),
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "whats in this"},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
-                        },
-                    ],
-                },
-                AIMessage(
-                    "",
-                    tool_calls=[
-                        {
-                            "name": "analyze",
-                            "args": {"baz": "buz"},
-                            "id": "1",
-                            "type": "tool_call",
-                        }
-                    ],
-                ),
-                ToolMessage("foobar", tool_call_id="1", name="bar"),
-                {"role": "assistant", "content": "thats nice"},
-            ]
-            oai_messages = convert_to_openai_messages(messages)
-            # -> [
-            #   {'role': 'system', 'content': 'foo'},
-            #   {'role': 'user', 'content': [{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
-            #   {'role': 'assistant', 'tool_calls': [{'type': 'function', 'id': '1','function': {'name': 'analyze', 'arguments': '{"baz": "buz"}'}}], 'content': ''},
-            #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
-            #   {'role': 'assistant', 'content': 'thats nice'}
-            # ]
+        messages = [
+            SystemMessage([{"type": "text", "text": "foo"}]),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "whats in this"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
+                    },
+                ],
+            },
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "analyze",
+                        "args": {"baz": "buz"},
+                        "id": "1",
+                        "type": "tool_call",
+                    }
+                ],
+            ),
+            ToolMessage("foobar", tool_call_id="1", name="bar"),
+            {"role": "assistant", "content": "thats nice"},
+        ]
+        oai_messages = convert_to_openai_messages(messages)
+        # -> [
+        #   {'role': 'system', 'content': 'foo'},
+        #   {'role': 'user', 'content': [{'type': 'text', 'text': 'whats in this'}, {'type': 'image_url', 'image_url': {'url': "data:image/png;base64,'/9j/4AAQSk'"}}]},
+        #   {'role': 'assistant', 'tool_calls': [{'type': 'function', 'id': '1','function': {'name': 'analyze', 'arguments': '{"baz": "buz"}'}}], 'content': ''},
+        #   {'role': 'tool', 'name': 'bar', 'content': 'foobar'},
+        #   {'role': 'assistant', 'content': 'thats nice'}
+        # ]
+        ```
 
     !!! version-added "Added in version 0.3.11"
 

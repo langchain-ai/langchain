@@ -42,35 +42,35 @@ to be included without breaking the standard structure.
 
         **Example with PEP 728 provider-specific fields:**
 
-        .. code-block:: python
+        ```python
+        # Content block definition
+        # NOTE: `extra_items=Any`
+        class TextContentBlock(TypedDict, extra_items=Any):
+            type: Literal["text"]
+            id: NotRequired[str]
+            text: str
+            annotations: NotRequired[list[Annotation]]
+            index: NotRequired[int]
+        ```
 
-            # Content block definition
-            # NOTE: `extra_items=Any`
-            class TextContentBlock(TypedDict, extra_items=Any):
-                type: Literal["text"]
-                id: NotRequired[str]
-                text: str
-                annotations: NotRequired[list[Annotation]]
-                index: NotRequired[int]
+        ```python
+        from langchain_core.messages.content import TextContentBlock
 
-        .. code-block:: python
+        # Create a text content block with provider-specific fields
+        my_block: TextContentBlock = {
+            # Add required fields
+            "type": "text",
+            "text": "Hello, world!",
+            # Additional fields not specified in the TypedDict
+            # These are valid with PEP 728 and are typed as Any
+            "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
+            "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
+            "custom_field": "any value",
+        }
 
-            from langchain_core.messages.content import TextContentBlock
-
-            # Create a text content block with provider-specific fields
-            my_block: TextContentBlock = {
-                # Add required fields
-                "type": "text",
-                "text": "Hello, world!",
-                # Additional fields not specified in the TypedDict
-                # These are valid with PEP 728 and are typed as Any
-                "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
-                "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
-                "custom_field": "any value",
-            }
-
-            # Mutating an existing block to add provider-specific fields
-            openai_data = my_block["openai_metadata"]  # Type: Any
+        # Mutating an existing block to add provider-specific fields
+        openai_data = my_block["openai_metadata"]  # Type: Any
+        ```
 
         PEP 728 is enabled with `# type: ignore[call-arg]` comments to suppress
         warnings from type checkers that don't yet support it. The functionality works
@@ -94,39 +94,38 @@ The module defines several types of content blocks, including:
 
 **Example Usage**
 
-.. code-block:: python
+```python
+# Direct construction:
+from langchain_core.messages.content import TextContentBlock, ImageContentBlock
 
-    # Direct construction:
-    from langchain_core.messages.content import TextContentBlock, ImageContentBlock
+multimodal_message: AIMessage(
+    content_blocks=[
+        TextContentBlock(type="text", text="What is shown in this image?"),
+        ImageContentBlock(
+            type="image",
+            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+            mime_type="image/png",
+        ),
+    ]
+)
 
-    multimodal_message: AIMessage(
-        content_blocks=[
-            TextContentBlock(type="text", text="What is shown in this image?"),
-            ImageContentBlock(
-                type="image",
-                url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
-                mime_type="image/png",
-            ),
-        ]
-    )
+# Using factories:
+from langchain_core.messages.content import create_text_block, create_image_block
 
-    # Using factories:
-    from langchain_core.messages.content import create_text_block, create_image_block
-
-    multimodal_message: AIMessage(
-        content=[
-            create_text_block("What is shown in this image?"),
-            create_image_block(
-                url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
-                mime_type="image/png",
-            ),
-        ]
-    )
+multimodal_message: AIMessage(
+    content=[
+        create_text_block("What is shown in this image?"),
+        create_image_block(
+            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+            mime_type="image/png",
+        ),
+    ]
+)
+```
 
 Factory functions offer benefits such as:
 - Automatic ID generation (when not provided)
 - No need to manually specify the `type` field
-
 """
 
 from typing import Any, Literal, get_args, get_type_hints
@@ -258,10 +257,9 @@ class ToolCall(TypedDict):
     """Represents a request to call a tool.
 
     Example:
-
-        .. code-block:: python
-
-            {"name": "foo", "args": {"a": 1}, "id": "123"}
+        ```python
+        {"name": "foo", "args": {"a": 1}, "id": "123"}
+        ```
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
@@ -308,17 +306,15 @@ class ToolCallChunk(TypedDict):
     values of `index` are equal and not `None`.
 
     Example:
+    ```python
+    left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+    right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
-    .. code-block:: python
-
-        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
-
-        (
-            AIMessageChunk(content="", tool_call_chunks=left_chunks)
-            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
-
+    (
+        AIMessageChunk(content="", tool_call_chunks=left_chunks)
+        + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+    ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+    ```
     """
 
     # TODO: Consider making fields NotRequired[str] in the future.

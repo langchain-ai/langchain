@@ -12,20 +12,18 @@ class HumanMessage(BaseMessage):
     `HumanMessage`s are messages that are passed in from a human to the model.
 
     Example:
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
 
-        .. code-block:: python
+        messages = [
+            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+            HumanMessage(content="What is your name?"),
+        ]
 
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                HumanMessage(content="What is your name?"),
-            ]
-
-            # Instantiate a chat model and invoke it with the messages
-            model = ...
-            print(model.invoke(messages))
-
+        # Instantiate a chat model and invoke it with the messages
+        model = ...
+        print(model.invoke(messages))
+        ```
     """
 
     type: Literal["human"] = "human"

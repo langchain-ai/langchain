@@ -23,12 +23,11 @@ class OpenAIModerationChain(Chain):
     in, even if not explicitly saved on this class.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import OpenAIModerationChain
 
-            from langchain_classic.chains import OpenAIModerationChain
-
-            moderation = OpenAIModerationChain()
-
+        moderation = OpenAIModerationChain()
+        ```
     """
 
     client: Any = None  #: :meta private:

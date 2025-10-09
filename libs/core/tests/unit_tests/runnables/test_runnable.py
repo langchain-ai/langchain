@@ -314,15 +314,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "Example:\n"
+                "    ```python\n"
+                "    from langchain_core.documents import Document\n"
                 "\n"
-                "    .. code-block:: python\n"
-                "\n"
-                "        from langchain_core.documents import Document\n"
-                "\n"
-                "        document = Document(\n"
-                '            page_content="Hello, world!", '
+                "    document = Document(\n"
+                '        page_content="Hello, world!", '
                 'metadata={"source": "https://example.com"}\n'
-                "        )",
+                "    )\n"
+                "    ```",
                 "properties": {
                     "id": {
                         "anyOf": [{"type": "string"}, {"type": "null"}],
