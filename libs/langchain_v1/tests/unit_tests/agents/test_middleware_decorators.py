@@ -1,26 +1,26 @@
 """Consolidated tests for middleware decorators: before_model, after_model, and wrap_model_call."""
 
-import pytest
 from typing import Any
-from typing_extensions import NotRequired
-from syrupy.assertion import SnapshotAssertion
 
-from langchain_core.messages import HumanMessage, AIMessage
+import pytest
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
-from langgraph.types import Command
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import NotRequired
 
+from langchain.agents.factory import _get_can_jump_to, create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
-    before_model,
     after_model,
+    before_model,
     dynamic_prompt,
-    wrap_model_call,
     hook_config,
+    wrap_model_call,
 )
-from langchain.agents.factory import create_agent, _get_can_jump_to
+
 from .model import FakeToolCallingModel
 
 
@@ -31,9 +31,9 @@ class CustomState(AgentState):
 
 
 @tool
-def test_tool(input: str) -> str:
+def test_tool(value: str) -> str:
     """A test tool for middleware testing."""
-    return f"Tool result: {input}"
+    return f"Tool result: {value}"
 
 
 def test_before_model_decorator() -> None:
@@ -124,7 +124,6 @@ def test_all_decorators_integration() -> None:
     @before_model
     def track_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("before")
-        return None
 
     @wrap_model_call
     def track_on_call(request, handler):
@@ -134,7 +133,6 @@ def test_all_decorators_integration() -> None:
     @after_model
     def track_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(), middleware=[track_before, track_on_call, track_after]
@@ -319,7 +317,6 @@ async def test_async_decorators_integration() -> None:
     @before_model
     async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
-        return None
 
     @wrap_model_call
     async def track_async_on_call(request, handler):
@@ -329,7 +326,6 @@ async def test_async_decorators_integration() -> None:
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -349,12 +345,10 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     @before_model
     def track_sync_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_before")
-        return None
 
     @before_model
     async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
-        return None
 
     @wrap_model_call
     def track_sync_on_call(request, handler):
@@ -369,12 +363,10 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
-        return None
 
     @after_model
     def track_sync_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -507,7 +499,11 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
 
 
 def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAssertion) -> None:
-    """Test that async middleware with can_jump_to creates correct graph structure with conditional edges."""
+    """Test async middleware with can_jump_to graph snapshot.
+
+    Test that async middleware with can_jump_to creates correct graph structure with
+    conditional edges.
+    """
 
     # Test 1: Async before_model with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -628,14 +624,13 @@ def test_dynamic_prompt_uses_state() -> None:
 
 def test_dynamic_prompt_integration() -> None:
     """Test dynamic_prompt decorator in a full agent."""
-
     prompt_calls = 0
 
     @dynamic_prompt
     def context_aware_prompt(request: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
-        return f"you are a helpful assistant."
+        return "you are a helpful assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
     # Agent is already compiled
@@ -661,14 +656,13 @@ async def test_async_dynamic_prompt_decorator() -> None:
 
 async def test_async_dynamic_prompt_integration() -> None:
     """Test async dynamic_prompt decorator in a full agent."""
-
     prompt_calls = 0
 
     @dynamic_prompt
     async def async_context_prompt(request: ModelRequest) -> str:
         nonlocal prompt_calls
         prompt_calls += 1
-        return f"Async assistant."
+        return "Async assistant."
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
     # Agent is already compiled

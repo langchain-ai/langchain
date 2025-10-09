@@ -7,7 +7,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    AgentState,
     ModelRequest,
 )
 
@@ -81,7 +80,8 @@ class TestRetryMiddleware:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class RetryOnceMiddleware(AgentMiddleware):
@@ -91,12 +91,10 @@ class TestRetryMiddleware:
 
             def wrap_model_call(self, request, handler):
                 try:
-                    result = handler(request)
-                    return result
+                    return handler(request)
                 except Exception:
                     self.retry_count += 1
-                    result = handler(request)
-                    return result
+                    return handler(request)
 
         retry_middleware = RetryOnceMiddleware()
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
@@ -112,7 +110,8 @@ class TestRetryMiddleware:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Always fails")
+                msg = "Always fails"
+                raise ValueError(msg)
 
         class MaxRetriesMiddleware(AgentMiddleware):
             def __init__(self, max_retries=3):
@@ -125,14 +124,14 @@ class TestRetryMiddleware:
                 for attempt in range(self.max_retries):
                     self.attempts.append(attempt + 1)
                     try:
-                        result = handler(request)
-                        return result
+                        return handler(request)
                     except Exception as e:
                         last_exception = e
                         continue
                 # Re-raise the last exception
                 if last_exception:
                     raise last_exception
+                return None
 
         retry_middleware = MaxRetriesMiddleware(max_retries=3)
         model = AlwaysFailModel(messages=iter([]))
@@ -190,15 +189,15 @@ class TestErrorHandling:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         class ErrorToSuccessMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except Exception:
-                    fallback = AIMessage(content="Error handled gracefully")
-                    return fallback
+                    return AIMessage(content="Error handled gracefully")
 
         model = AlwaysFailModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[ErrorToSuccessMiddleware()])
@@ -213,15 +212,15 @@ class TestErrorHandling:
 
         class SpecificErrorModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ConnectionError("Network error")
+                msg = "Network error"
+                raise ConnectionError(msg)
 
         class SelectiveErrorMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except ConnectionError:
-                    fallback = AIMessage(content="Network issue, try again later")
-                    return fallback
+                    return AIMessage(content="Network issue, try again later")
 
         model = SpecificErrorModel(messages=iter([]))
         agent = create_agent(model=model, middleware=[SelectiveErrorMiddleware()])
@@ -240,11 +239,11 @@ class TestErrorHandling:
                     call_log.append("before-yield")
                     result = handler(request)
                     call_log.append("after-yield-success")
-                    return result
                 except Exception:
                     call_log.append("caught-error")
-                    fallback = AIMessage(content="Recovered from error")
-                    return fallback
+                    return AIMessage(content="Recovered from error")
+
+                return result
 
         # Test 1: Success path
         call_log.clear()
@@ -260,7 +259,8 @@ class TestErrorHandling:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         model2 = AlwaysFailModel(messages=iter([]))
         agent2 = create_agent(model=model2, middleware=[ErrorRecoveryMiddleware()])
@@ -286,11 +286,10 @@ class TestShortCircuit:
                 if cache_key in cache:
                     # Short-circuit with cached result
                     return cache[cache_key]
-                else:
-                    # Execute and cache
-                    result = handler(request)
-                    cache[cache_key] = result
-                    return result
+                # Execute and cache
+                result = handler(request)
+                cache[cache_key] = result
+                return result
 
         class TrackingModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
@@ -404,6 +403,7 @@ class TestStateAndRuntime:
                     except Exception:
                         if attempt == max_retries - 1:
                             raise
+                return None
 
         call_count = {"value": 0}
 
@@ -411,7 +411,8 @@ class TestStateAndRuntime:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First fails")
+                    msg = "First fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
@@ -466,7 +467,8 @@ class TestMiddlewareComposition:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class LoggingMiddleware(AgentMiddleware):
@@ -482,12 +484,12 @@ class TestMiddlewareComposition:
                 try:
                     result = handler(request)
                     log.append("retry-after")
-                    return result
                 except Exception:
                     log.append("retry-retrying")
                     result = handler(request)
                     log.append("retry-after")
-                    return result
+
+                return result
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="Success")]))
         # Logging is outer, Retry is inner
@@ -536,17 +538,16 @@ class TestMiddlewareComposition:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 try:
-                    result = handler(request)
-                    return result
+                    return handler(request)
                 except Exception:
-                    result = handler(request)
-                    return result
+                    return handler(request)
 
         class UppercaseMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
@@ -595,7 +596,8 @@ class TestMiddlewareComposition:
 
         agent.invoke({"messages": [HumanMessage("Test")]})
 
-        # First wraps Second wraps Third: 1-before, 2-before, 3-before, model, 3-after, 2-after, 1-after
+        # First wraps Second wraps Third:
+        # 1-before, 2-before, 3-before, model, 3-after, 2-after, 1-after
         assert execution_order == [
             "first-before",
             "second-before",
@@ -696,7 +698,8 @@ class TestAsyncOnModelCall:
             async def _agenerate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First async call fails")
+                    msg = "First async call fails"
+                    raise ValueError(msg)
                 return await super()._agenerate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
@@ -744,12 +747,10 @@ class TestEdgeCases:
             def wrap_model_call(self, request, handler):
                 attempts.append("first-attempt")
                 try:
-                    result = handler(request)
-                    return result
+                    return handler(request)
                 except Exception:
                     attempts.append("retry-attempt")
-                    result = handler(request)
-                    return result
+                    return handler(request)
 
         call_count = {"value": 0}
 
@@ -757,7 +758,8 @@ class TestEdgeCases:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First fails")
+                    msg = "First fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         model = FailFirstSucceedSecond(messages=iter([AIMessage(content="Success")]))

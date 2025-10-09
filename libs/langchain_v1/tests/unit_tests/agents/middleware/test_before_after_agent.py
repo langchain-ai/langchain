@@ -3,21 +3,21 @@
 from typing import Any
 
 import pytest
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.tools import tool
+from langgraph.runtime import Runtime
+
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     AgentMiddleware,
     AgentState,
     after_agent,
     after_model,
-    before_model,
     before_agent,
+    before_model,
 )
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.tools import tool
-from langgraph.runtime import Runtime
-
-from ..model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool
@@ -31,7 +31,7 @@ class TestAgentMiddlewareHooks:
 
     @pytest.mark.parametrize("is_async", [False, True])
     @pytest.mark.parametrize("hook_type", ["before", "after"])
-    async def test_hook_execution(self, is_async: bool, hook_type: str) -> None:
+    async def test_hook_execution(self, *, is_async: bool, hook_type: str) -> None:
         """Test that agent hooks are called in both sync and async modes."""
         execution_log: list[str] = []
 
@@ -43,6 +43,7 @@ class TestAgentMiddlewareHooks:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
+
             else:
 
                 @after_agent
@@ -50,21 +51,22 @@ class TestAgentMiddlewareHooks:
                     execution_log.append(f"{hook_type}_agent_called")
                     execution_log.append(f"message_count: {len(state['messages'])}")
                     return None
+
+        elif hook_type == "before":
+
+            @before_agent
+            def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                execution_log.append(f"{hook_type}_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
+
         else:
-            if hook_type == "before":
 
-                @before_agent
-                def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                    execution_log.append(f"{hook_type}_agent_called")
-                    execution_log.append(f"message_count: {len(state['messages'])}")
-                    return None
-            else:
-
-                @after_agent
-                def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-                    execution_log.append(f"{hook_type}_agent_called")
-                    execution_log.append(f"message_count: {len(state['messages'])}")
-                    return None
+            @after_agent
+            def log_hook(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+                execution_log.append(f"{hook_type}_agent_called")
+                execution_log.append(f"message_count: {len(state['messages'])}")
+                return None
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, tools=[], middleware=[log_hook])
@@ -79,7 +81,7 @@ class TestAgentMiddlewareHooks:
 
     @pytest.mark.parametrize("is_async", [False, True])
     @pytest.mark.parametrize("hook_type", ["before", "after"])
-    async def test_hook_with_class_inheritance(self, is_async: bool, hook_type: str) -> None:
+    async def test_hook_with_class_inheritance(self, *, is_async: bool, hook_type: str) -> None:
         """Test agent hooks using class inheritance in both sync and async modes."""
         execution_log: list[str] = []
 
@@ -99,6 +101,7 @@ class TestAgentMiddlewareHooks:
                     if hook_type == "after":
                         execution_log.append("hook_called")
                     return None
+
         else:
 
             class CustomMiddleware(AgentMiddleware):
@@ -130,7 +133,7 @@ class TestAgentHooksCombined:
     """Test before_agent and after_agent hooks working together."""
 
     @pytest.mark.parametrize("is_async", [False, True])
-    async def test_execution_order(self, is_async: bool) -> None:
+    async def test_execution_order(self, *, is_async: bool) -> None:
         """Test that before_agent executes before after_agent in both sync and async modes."""
         execution_log: list[str] = []
 
@@ -143,6 +146,7 @@ class TestAgentHooksCombined:
             @after_agent
             async def log_after(state: AgentState, runtime: Runtime) -> None:
                 execution_log.append("after")
+
         else:
 
             @before_agent
