@@ -265,29 +265,27 @@ class ChatModelUnitTests(ChatModelTests):
     `chat_model_params` properties to specify what model to test and its
     initialization parameters.
 
-    Example:
+    ```python
+    from typing import Type
 
-    .. code-block:: python
-
-        from typing import Type
-
-        from langchain_tests.unit_tests import ChatModelUnitTests
-        from my_package.chat_models import MyChatModel
+    from langchain_tests.unit_tests import ChatModelUnitTests
+    from my_package.chat_models import MyChatModel
 
 
-        class TestMyChatModelUnit(ChatModelUnitTests):
-            @property
-            def chat_model_class(self) -> Type[MyChatModel]:
-                # Return the chat model class to test here
-                return MyChatModel
+    class TestMyChatModelUnit(ChatModelUnitTests):
+        @property
+        def chat_model_class(self) -> Type[MyChatModel]:
+            # Return the chat model class to test here
+            return MyChatModel
 
-            @property
-            def chat_model_params(self) -> dict:
-                # Return initialization parameters for the model.
-                return {"model": "model-001", "temperature": 0}
+        @property
+        def chat_model_params(self) -> dict:
+            # Return initialization parameters for the model.
+            return {"model": "model-001", "temperature": 0}
+    ```
 
     !!! note
-          API references for individual test methods include troubleshooting tips.
+        API references for individual test methods include troubleshooting tips.
 
 
     Test subclasses **must** implement the following two properties:
@@ -295,24 +293,19 @@ class ChatModelUnitTests(ChatModelTests):
     chat_model_class
         The chat model class to test, e.g., `ChatParrotLink`.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def chat_model_class(self) -> Type[ChatParrotLink]:
-                return ChatParrotLink
-
+        ```python
+        @property
+        def chat_model_class(self) -> Type[ChatParrotLink]:
+            return ChatParrotLink
+        ```
     chat_model_params
         Initialization parameters for the chat model.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
+        ```python
+        @property
+        def chat_model_params(self) -> dict:
+            return {"model": "bird-brain-001", "temperature": 0}
+        ```
 
     In addition, test subclasses can control what features are tested (such as tool
     calling or multi-modality) by selectively overriding the following properties.
@@ -327,11 +320,11 @@ class ChatModelUnitTests(ChatModelTests):
 
         Example override:
 
-        .. code-block:: python
-
-            @property
-            def has_tool_calling(self) -> bool:
-                return True
+        ```python
+        @property
+        def has_tool_calling(self) -> bool:
+            return True
+        ```
 
     ??? note "`tool_choice_value`"
 
@@ -344,13 +337,11 @@ class ChatModelUnitTests(ChatModelTests):
             return `False`. Otherwise, models should accept values of `'any'` or
             the name of a tool in `tool_choice`.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def tool_choice_value(self) -> str | None:
-                return "any"
+        ```python
+        @property
+        def tool_choice_value(self) -> str | None:
+            return "any"
+        ```
 
     ??? note "`has_tool_choice`"
 
@@ -366,11 +357,11 @@ class ChatModelUnitTests(ChatModelTests):
 
         Example override:
 
-        .. code-block:: python
-
-            @property
-            def has_tool_choice(self) -> bool:
-                return False
+        ```python
+        @property
+        def has_tool_choice(self) -> bool:
+            return False
+        ```
 
     ??? note "`has_structured_output`"
 
@@ -383,26 +374,22 @@ class ChatModelUnitTests(ChatModelTests):
 
         See: https://python.langchain.com/docs/concepts/structured_outputs/
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def has_structured_output(self) -> bool:
-                return True
+        ```python
+        @property
+        def has_structured_output(self) -> bool:
+            return True
+        ```
 
     ??? note "`structured_output_kwargs`"
 
         Dict property that can be used to specify additional kwargs for
         `with_structured_output`. Useful for testing different models.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def structured_output_kwargs(self) -> dict:
-                return {"method": "function_calling"}
+        ```python
+        @property
+        def structured_output_kwargs(self) -> dict:
+            return {"method": "function_calling"}
+        ```
 
     ??? note "`supports_json_mode`"
 
@@ -411,13 +398,11 @@ class ChatModelUnitTests(ChatModelTests):
 
         See: https://python.langchain.com/docs/concepts/structured_outputs/#json-mode
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_json_mode(self) -> bool:
-                return True
+        ```python
+        @property
+        def supports_json_mode(self) -> bool:
+            return True
+        ```
 
     ??? note "`supports_image_inputs`"
 
@@ -427,32 +412,31 @@ class ChatModelUnitTests(ChatModelTests):
         If set to `True`, the chat model will be tested using the LangChain
         `ImageContentBlock` format:
 
-        .. code-block:: python
-
-            {
-                "type": "image",
-                "base64": "<base64 image data>",
-                "mime_type": "image/jpeg",  # or appropriate mime-type
-            }
+        ```python
+        {
+            "type": "image",
+            "base64": "<base64 image data>",
+            "mime_type": "image/jpeg",  # or appropriate mime-type
+        }
+        ```
 
         In addition to OpenAI Chat Completions `image_url` blocks:
 
-        .. code-block:: python
-
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-            }
+        ```python
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+        }
+        ```
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
-        Example:
 
-        .. code-block:: python
-
-            @property
-            def supports_image_inputs(self) -> bool:
-                return True
+        ```python
+        @property
+        def supports_image_inputs(self) -> bool:
+            return True
+        ```
 
     ??? note "`supports_image_urls`"
 
@@ -462,22 +446,21 @@ class ChatModelUnitTests(ChatModelTests):
         If set to `True`, the chat model will be tested using content blocks of the
         form.
 
-        .. code-block:: python
-
-            {
-                "type": "image",
-                "url": "https://...",
-            }
+        ```python
+        {
+            "type": "image",
+            "url": "https://...",
+        }
+        ```
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
-        Example:
 
-        .. code-block:: python
-
-            @property
-            def supports_image_urls(self) -> bool:
-                return True
+        ```python
+        @property
+        def supports_image_urls(self) -> bool:
+            return True
+        ```
 
     ??? note "`supports_pdf_inputs`"
 
@@ -487,23 +470,22 @@ class ChatModelUnitTests(ChatModelTests):
         If set to `True`, the chat model will be tested using the LangChain
         `FileContentBlock` format:
 
-        .. code-block:: python
-
-            {
-                "type": "file",
-                "base64": "<base64 file data>",
-                "mime_type": "application/pdf",
-            }
+        ```python
+        {
+            "type": "file",
+            "base64": "<base64 file data>",
+            "mime_type": "application/pdf",
+        }
+        ```
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
-        Example:
 
-        .. code-block:: python
-
-            @property
-            def supports_pdf_inputs(self) -> bool:
-                return True
+        ```python
+        @property
+        def supports_pdf_inputs(self) -> bool:
+            return True
+        ```
 
     ??? note "`supports_audio_inputs`"
 
@@ -513,23 +495,21 @@ class ChatModelUnitTests(ChatModelTests):
         If set to `True`, the chat model will be tested using the LangChain
         `AudioContentBlock` format:
 
-        .. code-block:: python
-
-            {
-                "type": "audio",
-                "base64": "<base64 audio data>",
-                "mime_type": "audio/wav",  # or appropriate mime-type
-            }
+        ```python
+        {
+            "type": "audio",
+            "base64": "<base64 audio data>",
+            "mime_type": "audio/wav",  # or appropriate mime-type
+        }
+        ```
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_audio_inputs(self) -> bool:
-                return True
+        ```python
+        @property
+        def supports_audio_inputs(self) -> bool:
+            return True
+        ```
 
     ??? note "`supports_video_inputs`"
 
@@ -545,13 +525,11 @@ class ChatModelUnitTests(ChatModelTests):
         input and output tokens.
         [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def returns_usage_metadata(self) -> bool:
-                return False
+        ```python
+        @property
+        def returns_usage_metadata(self) -> bool:
+            return False
+        ```
 
         Models supporting `usage_metadata` should also return the name of the
         underlying model in the `response_metadata` of the `AIMessage`.
@@ -563,108 +541,102 @@ class ChatModelUnitTests(ChatModelTests):
 
         These inputs might feature "tool use" and "tool result" content blocks, e.g.,
 
-        .. code-block:: python
-
-            [
-                {"type": "text", "text": "Hmm let me think about that"},
-                {
-                    "type": "tool_use",
-                    "input": {"fav_color": "green"},
-                    "id": "foo",
-                    "name": "color_picker",
-                },
-            ]
+        ```python
+        [
+            {"type": "text", "text": "Hmm let me think about that"},
+            {
+                "type": "tool_use",
+                "input": {"fav_color": "green"},
+                "id": "foo",
+                "name": "color_picker",
+            },
+        ]
+        ```
 
         If set to `True`, the chat model will be tested using content blocks of this
         form.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_anthropic_inputs(self) -> bool:
-                return False
+        ```python
+        @property
+        def supports_anthropic_inputs(self) -> bool:
+            return False
+        ```
 
     ??? note "`supports_image_tool_message`"
 
         Boolean property indicating whether the chat model supports `ToolMessage`
         objects that include image content, e.g.,
 
-        .. code-block:: python
-
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
 
         (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
         format:
 
-        .. code-block:: python
-
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "base64": image_data,
-                        "mime_type": "image/jpeg",
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
 
         (standard format).
 
         If set to `True`, the chat model will be tested with message sequences that
         include `ToolMessage` objects of this form.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_image_tool_message(self) -> bool:
-                return False
+        ```python
+        @property
+        def supports_image_tool_message(self) -> bool:
+            return False
+        ```
 
     ??? note "`supports_pdf_tool_message`"
 
         Boolean property indicating whether the chat model supports `ToolMessage`
         objects that include PDF content, i.e.,
 
-        .. code-block:: python
-
-            ToolMessage(
-                content=[
-                    {
-                        "type": "file",
-                        "base64": pdf_data,
-                        "mime_type": "application/pdf",
-                    },
-                ],
-                tool_call_id="1",
-                name="random_pdf",
-            )
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
 
         using LangChain's `FileContentBlock` format.
 
         If set to `True`, the chat model will be tested with message sequences that
         include `ToolMessage` objects of this form.
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_pdf_tool_message(self) -> bool:
-                return False
+        ```python
+        @property
+        def supports_pdf_tool_message(self) -> bool:
+            return False
+        ```
 
     ??? note "`supported_usage_metadata_details`"
 
@@ -684,21 +656,21 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
-        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
         as benchmarking tests.
 
         To enable these tests, follow these steps:
 
         1. Override the `enable_vcr_tests` property to return `True`:
 
-            .. code-block:: python
-
-                @property
-                def enable_vcr_tests(self) -> bool:
-                    return True
+            ```python
+            @property
+            def enable_vcr_tests(self) -> bool:
+                return True
+            ```
 
         2. Configure VCR to exclude sensitive headers and other information from
-           cassettes.
+            cassettes.
 
             !!! warning
                 VCR will by default record authentication headers and other sensitive
@@ -714,13 +686,55 @@ class ChatModelUnitTests(ChatModelTests):
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
 
-            .. code-block:: python
+            ```python
+            :caption: tests/conftest.py
+
+            import pytest
+            from langchain_tests.conftest import (
+                _base_vcr_config as _base_vcr_config,
+            )
+
+            _EXTRA_HEADERS = [
+                # Specify additional headers to redact
+                ("user-agent", "PLACEHOLDER"),
+            ]
+
+
+            def remove_response_headers(response: dict) -> dict:
+                # If desired, remove or modify headers in the response.
+                response["headers"] = {}
+                return response
+
+
+            @pytest.fixture(scope="session")
+            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                """Extend the default configuration from langchain_tests."""
+                config = _base_vcr_config.copy()
+                config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                config["before_record_response"] = remove_response_headers
+
+                return config
+            ```
+
+            ??? note "Compressing cassettes"
+
+                `langchain-tests` includes a custom VCR serializer that compresses
+                cassettes using gzip. To use it, register the `yaml.gz` serializer
+                to your VCR fixture and enable this serializer in the config. See
+                example below:
+
+                ```python
                 :caption: tests/conftest.py
 
                 import pytest
                 from langchain_tests.conftest import (
+                    CustomPersister,
+                    CustomSerializer,
+                )
+                from langchain_tests.conftest import (
                     _base_vcr_config as _base_vcr_config,
                 )
+                from vcr import VCR
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -740,87 +754,45 @@ class ChatModelUnitTests(ChatModelTests):
                     config = _base_vcr_config.copy()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
+                    # New: enable serializer and set file extension
+                    config["serializer"] = "yaml.gz"
+                    config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
 
                     return config
 
-            ??? note "Compressing cassettes"
 
-                `langchain-tests` includes a custom VCR serializer that compresses
-                cassettes using gzip. To use it, register the `yaml.gz` serializer
-                to your VCR fixture and enable this serializer in the config. See
-                example below:
-
-                .. code-block:: python
-                    :caption: tests/conftest.py
-
-                    import pytest
-                    from langchain_tests.conftest import (
-                        CustomPersister,
-                        CustomSerializer,
-                    )
-                    from langchain_tests.conftest import (
-                        _base_vcr_config as _base_vcr_config,
-                    )
-                    from vcr import VCR
-
-                    _EXTRA_HEADERS = [
-                        # Specify additional headers to redact
-                        ("user-agent", "PLACEHOLDER"),
-                    ]
-
-
-                    def remove_response_headers(response: dict) -> dict:
-                        # If desired, remove or modify headers in the response.
-                        response["headers"] = {}
-                        return response
-
-
-                    @pytest.fixture(scope="session")
-                    def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
-                        """Extend the default configuration from langchain_tests."""
-                        config = _base_vcr_config.copy()
-                        config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
-                        config["before_record_response"] = remove_response_headers
-                        # New: enable serializer and set file extension
-                        config["serializer"] = "yaml.gz"
-                        config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
-
-                        return config
-
-
-                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
-                        vcr.register_persister(CustomPersister())
-                        vcr.register_serializer("yaml.gz", CustomSerializer())
-
+                def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                    vcr.register_persister(CustomPersister())
+                    vcr.register_serializer("yaml.gz", CustomSerializer())
+                ```
 
                 You can inspect the contents of the compressed cassettes (e.g., to
                 ensure no sensitive information is recorded) using
 
-                .. code-block:: bash
-
-                    gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+                ```bash
+                gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+                ```
 
                 or by using the serializer:
 
-                .. code-block:: python
+                ```python
+                from langchain_tests.conftest import (
+                    CustomPersister,
+                    CustomSerializer,
+                )
 
-                    from langchain_tests.conftest import (
-                        CustomPersister,
-                        CustomSerializer,
-                    )
-
-                    cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(
-                        path, CustomSerializer()
-                    )
+                cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
+                requests, responses = CustomPersister().load_cassette(
+                    path, CustomSerializer()
+                )
+                ```
 
         3. Run tests to generate VCR cassettes.
 
             Example:
-
-            .. code-block:: bash
-
-                uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+            ```bash
+            uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+            ```
 
             This will generate a VCR cassette for the test in
             `tests/integration_tests/cassettes/`.
@@ -849,22 +821,21 @@ class ChatModelUnitTests(ChatModelTests):
             Defaults to empty dicts. If not overridden, the test is skipped.
 
             Example:
-
-            .. code-block:: python
-
-                @property
-                def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-                    return (
-                        {
-                            "MY_API_KEY": "api_key",
-                        },
-                        {
-                            "model": "bird-brain-001",
-                        },
-                        {
-                            "my_api_key": "api_key",
-                        },
-                    )
+            ```python
+            @property
+            def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+                return (
+                    {
+                        "MY_API_KEY": "api_key",
+                    },
+                    {
+                        "model": "bird-brain-001",
+                    },
+                    {
+                        "my_api_key": "api_key",
+                    },
+                )
+            ```
 
     '''  # noqa: E501,D214
 
@@ -893,9 +864,9 @@ class ChatModelUnitTests(ChatModelTests):
             If this test fails, ensure that:
 
             1. `chat_model_params` is specified and the model can be initialized
-               from those params;
+                from those params;
             2. The model accommodates
-               [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
+                [standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
 
         """
         model = self.chat_model_class(

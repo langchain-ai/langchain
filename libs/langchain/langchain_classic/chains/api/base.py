@@ -25,10 +25,10 @@ def _extract_scheme_and_domain(url: str) -> tuple[str, str]:
     """Extract the scheme + domain from a given URL.
 
     Args:
-        url (str): The input URL.
+        url: The input URL.
 
     Returns:
-        return a 2-tuple of scheme and domain
+        A 2-tuple of scheme and domain
     """
     parsed_uri = urlparse(url)
     return parsed_uri.scheme, parsed_uri.netloc
@@ -38,11 +38,11 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     """Check if a URL is in the allowed domains.
 
     Args:
-        url (str): The input URL.
-        limit_to_domains (Sequence[str]): The allowed domains.
+        url: The input URL.
+        limit_to_domains: The allowed domains.
 
     Returns:
-        bool: True if the URL is in the allowed domains, False otherwise.
+        True if the URL is in the allowed domains, False otherwise.
     """
     scheme, domain = _extract_scheme_and_domain(url)
 
@@ -94,107 +94,106 @@ try:
 
         Install LangGraph with:
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langgraph
+        ```
 
-            pip install -U langgraph
+        ```python
+        from typing import Annotated, Sequence
+        from typing_extensions import TypedDict
 
-        .. code-block:: python
+        from langchain_classic.chains.api.prompt import API_URL_PROMPT
+        from langchain_community.agent_toolkits.openapi.toolkit import RequestsToolkit
+        from langchain_community.utilities.requests import TextRequestsWrapper
+        from langchain_core.messages import BaseMessage
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_openai import ChatOpenAI
+        from langchain_core.runnables import RunnableConfig
+        from langgraph.graph import END, StateGraph
+        from langgraph.graph.message import add_messages
+        from langgraph.prebuilt.tool_node import ToolNode
 
-            from typing import Annotated, Sequence
-            from typing_extensions import TypedDict
+        # NOTE: There are inherent risks in giving models discretion
+        # to execute real-world actions. We must "opt-in" to these
+        # risks by setting allow_dangerous_request=True to use these tools.
+        # This can be dangerous for calling unwanted requests. Please make
+        # sure your custom OpenAPI spec (yaml) is safe and that permissions
+        # associated with the tools are narrowly-scoped.
+        ALLOW_DANGEROUS_REQUESTS = True
 
-            from langchain_classic.chains.api.prompt import API_URL_PROMPT
-            from langchain_community.agent_toolkits.openapi.toolkit import RequestsToolkit
-            from langchain_community.utilities.requests import TextRequestsWrapper
-            from langchain_core.messages import BaseMessage
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_openai import ChatOpenAI
-            from langchain_core.runnables import RunnableConfig
-            from langgraph.graph import END, StateGraph
-            from langgraph.graph.message import add_messages
-            from langgraph.prebuilt.tool_node import ToolNode
+        # Subset of spec for https://jsonplaceholder.typicode.com
+        api_spec = \"\"\"
+        openapi: 3.0.0
+        info:
+          title: JSONPlaceholder API
+          version: 1.0.0
+        servers:
+          - url: https://jsonplaceholder.typicode.com
+        paths:
+          /posts:
+            get:
+              summary: Get posts
+              parameters: &id001
+                - name: _limit
+                  in: query
+                  required: false
+                  schema:
+                    type: integer
+                  example: 2
+                  description: Limit the number of results
+        \"\"\"
 
-            # NOTE: There are inherent risks in giving models discretion
-            # to execute real-world actions. We must "opt-in" to these
-            # risks by setting allow_dangerous_request=True to use these tools.
-            # This can be dangerous for calling unwanted requests. Please make
-            # sure your custom OpenAPI spec (yaml) is safe and that permissions
-            # associated with the tools are narrowly-scoped.
-            ALLOW_DANGEROUS_REQUESTS = True
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        toolkit = RequestsToolkit(
+            requests_wrapper=TextRequestsWrapper(headers={}),  # no auth required
+            allow_dangerous_requests=ALLOW_DANGEROUS_REQUESTS,
+        )
+        tools = toolkit.get_tools()
 
-            # Subset of spec for https://jsonplaceholder.typicode.com
-            api_spec = \"\"\"
-            openapi: 3.0.0
-            info:
-              title: JSONPlaceholder API
-              version: 1.0.0
-            servers:
-              - url: https://jsonplaceholder.typicode.com
-            paths:
-              /posts:
-                get:
-                  summary: Get posts
-                  parameters: &id001
-                    - name: _limit
-                      in: query
-                      required: false
-                      schema:
-                        type: integer
-                      example: 2
-                      description: Limit the number of results
-            \"\"\"
+        api_request_chain = (
+            API_URL_PROMPT.partial(api_docs=api_spec)
+            | llm.bind_tools(tools, tool_choice="any")
+        )
 
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-            toolkit = RequestsToolkit(
-                requests_wrapper=TextRequestsWrapper(headers={}),  # no auth required
-                allow_dangerous_requests=ALLOW_DANGEROUS_REQUESTS,
+        class ChainState(TypedDict):
+            \"\"\"LangGraph state.\"\"\"
+
+            messages: Annotated[Sequence[BaseMessage], add_messages]
+
+
+        async def acall_request_chain(state: ChainState, config: RunnableConfig):
+            last_message = state["messages"][-1]
+            response = await api_request_chain.ainvoke(
+                {"question": last_message.content}, config
             )
-            tools = toolkit.get_tools()
+            return {"messages": [response]}
 
-            api_request_chain = (
-                API_URL_PROMPT.partial(api_docs=api_spec)
-                | llm.bind_tools(tools, tool_choice="any")
-            )
+        async def acall_model(state: ChainState, config: RunnableConfig):
+            response = await llm.ainvoke(state["messages"], config)
+            return {"messages": [response]}
 
-            class ChainState(TypedDict):
-                \"\"\"LangGraph state.\"\"\"
+        graph_builder = StateGraph(ChainState)
+        graph_builder.add_node("call_tool", acall_request_chain)
+        graph_builder.add_node("execute_tool", ToolNode(tools))
+        graph_builder.add_node("call_model", acall_model)
+        graph_builder.set_entry_point("call_tool")
+        graph_builder.add_edge("call_tool", "execute_tool")
+        graph_builder.add_edge("execute_tool", "call_model")
+        graph_builder.add_edge("call_model", END)
+        chain = graph_builder.compile()
+        ```
 
-                messages: Annotated[Sequence[BaseMessage], add_messages]
+        ```python
+        example_query = "Fetch the top two posts. What are their titles?"
 
-
-            async def acall_request_chain(state: ChainState, config: RunnableConfig):
-                last_message = state["messages"][-1]
-                response = await api_request_chain.ainvoke(
-                    {"question": last_message.content}, config
-                )
-                return {"messages": [response]}
-
-            async def acall_model(state: ChainState, config: RunnableConfig):
-                response = await llm.ainvoke(state["messages"], config)
-                return {"messages": [response]}
-
-            graph_builder = StateGraph(ChainState)
-            graph_builder.add_node("call_tool", acall_request_chain)
-            graph_builder.add_node("execute_tool", ToolNode(tools))
-            graph_builder.add_node("call_model", acall_model)
-            graph_builder.set_entry_point("call_tool")
-            graph_builder.add_edge("call_tool", "execute_tool")
-            graph_builder.add_edge("execute_tool", "call_model")
-            graph_builder.add_edge("call_model", END)
-            chain = graph_builder.compile()
-
-        .. code-block:: python
-
-            example_query = "Fetch the top two posts. What are their titles?"
-
-            events = chain.astream(
-                {"messages": [("user", example_query)]},
-                stream_mode="values",
-            )
-            async for event in events:
-                event["messages"][-1].pretty_print()
-
-        """  # noqa: E501
+        events = chain.astream(
+            {"messages": [("user", example_query)]},
+            stream_mode="values",
+        )
+        async for event in events:
+            event["messages"][-1].pretty_print()
+        ```
+        """
 
         api_request_chain: LLMChain
         api_answer_chain: LLMChain
@@ -202,18 +201,18 @@ try:
         api_docs: str
         question_key: str = "question"  #: :meta private:
         output_key: str = "output"  #: :meta private:
-        limit_to_domains: Sequence[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+        limit_to_domains: Sequence[str] | None = Field(default_factory=list)
         """Use to limit the domains that can be accessed by the API chain.
 
         * For example, to limit to just the domain `https://www.example.com`, set
             `limit_to_domains=["https://www.example.com"]`.
 
         * The default value is an empty tuple, which means that no domains are
-          allowed by default. By design this will raise an error on instantiation.
+            allowed by default. By design this will raise an error on instantiation.
         * Use a None if you want to allow all domains by default -- this is not
-          recommended for security reasons, as it would allow malicious users to
-          make requests to arbitrary URLS including internal APIs accessible from
-          the server.
+            recommended for security reasons, as it would allow malicious users to
+            make requests to arbitrary URLS including internal APIs accessible from
+            the server.
         """
 
         @property

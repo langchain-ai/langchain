@@ -277,76 +277,76 @@ def get_openapi_chain(
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Includes async support.
 
-        .. code-block:: python
+        ```python
+        from typing import Any
 
-            from typing import Any
+        from langchain_classic.chains.openai_functions.openapi import openapi_spec_to_openai_fn
+        from langchain_community.utilities.openapi import OpenAPISpec
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_openai import ChatOpenAI
 
-            from langchain_classic.chains.openai_functions.openapi import openapi_spec_to_openai_fn
-            from langchain_community.utilities.openapi import OpenAPISpec
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_openai import ChatOpenAI
-
-            # Define API spec. Can be JSON or YAML
-            api_spec = \"\"\"
+        # Define API spec. Can be JSON or YAML
+        api_spec = \"\"\"
+        {
+        "openapi": "3.1.0",
+        "info": {
+            "title": "JSONPlaceholder API",
+            "version": "1.0.0"
+        },
+        "servers": [
             {
-            "openapi": "3.1.0",
-            "info": {
-                "title": "JSONPlaceholder API",
-                "version": "1.0.0"
-            },
-            "servers": [
+            "url": "https://jsonplaceholder.typicode.com"
+            }
+        ],
+        "paths": {
+            "/posts": {
+            "get": {
+                "summary": "Get posts",
+                "parameters": [
                 {
-                "url": "https://jsonplaceholder.typicode.com"
+                    "name": "_limit",
+                    "in": "query",
+                    "required": false,
+                    "schema": {
+                    "type": "integer",
+                    "example": 2
+                    },
+                    "description": "Limit the number of results"
                 }
-            ],
-            "paths": {
-                "/posts": {
-                "get": {
-                    "summary": "Get posts",
-                    "parameters": [
-                    {
-                        "name": "_limit",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                        "type": "integer",
-                        "example": 2
-                        },
-                        "description": "Limit the number of results"
-                    }
-                    ]
-                }
-                }
+                ]
             }
             }
-            \"\"\"
+        }
+        }
+        \"\"\"
 
-            parsed_spec = OpenAPISpec.from_text(api_spec)
-            openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
-            tools = [
-                {"type": "function", "function": fn}
-                for fn in openai_fns
-            ]
+        parsed_spec = OpenAPISpec.from_text(api_spec)
+        openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
+        tools = [
+            {"type": "function", "function": fn}
+            for fn in openai_fns
+        ]
 
-            prompt = ChatPromptTemplate.from_template(
-                "Use the provided APIs to respond to this user query:\\n\\n{query}"
-            )
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
+        prompt = ChatPromptTemplate.from_template(
+            "Use the provided APIs to respond to this user query:\\n\\n{query}"
+        )
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
 
-            def _execute_tool(message) -> Any:
-                if tool_calls := message.tool_calls:
-                    tool_call = message.tool_calls[0]
-                    response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
-                    response.raise_for_status()
-                    return response.json()
-                else:
-                    return message.content
+        def _execute_tool(message) -> Any:
+            if tool_calls := message.tool_calls:
+                tool_call = message.tool_calls[0]
+                response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
+                response.raise_for_status()
+                return response.json()
+            else:
+                return message.content
 
-            chain = prompt | llm | _execute_tool
+        chain = prompt | llm | _execute_tool
+        ```
 
-        .. code-block:: python
-
-            response = chain.invoke({"query": "Get me top two posts."})
+        ```python
+        response = chain.invoke({"query": "Get me top two posts."})
+        ```
 
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.

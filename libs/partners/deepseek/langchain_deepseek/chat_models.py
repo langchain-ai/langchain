@@ -30,12 +30,12 @@ class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install `langchain-deepseek` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install `langchain-deepseek` and set environment variable `DEEPSEEK_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-deepseek
-            export DEEPSEEK_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-deepseek
+        export DEEPSEEK_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -56,115 +56,111 @@ class ChatDeepSeek(BaseChatOpenAI):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_deepseek import ChatDeepSeek
 
-            from langchain_deepseek import ChatDeepSeek
-
-            llm = ChatDeepSeek(
-                model="...",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
+        llm = ChatDeepSeek(
+            model="...",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user sentence to French."),
+            ("human", "I love programming."),
+        ]
+        llm.invoke(messages)
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.text, end="")
+        ```
+        ```python
+        stream = llm.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await llm.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await llm.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
+        # batch:
+        # await llm.abatch([messages])
+        ```
 
     Tool calling:
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        ```python
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-        See ``ChatDeepSeek.bind_tools()`` method for more.
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
+
+        See `ChatDeepSeek.bind_tools()` method for more.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+        from pydantic import BaseModel, Field
 
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-        See ``ChatDeepSeek.with_structured_output()`` for more.
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+
+
+        structured_llm = llm.with_structured_output(Joke)
+        structured_llm.invoke("Tell me a joke about cats")
+        ```
+
+        See `ChatDeepSeek.with_structured_output()` for more.
 
     Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.usage_metadata
+        ```
+        ```python
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
     Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.response_metadata
+        ```
     """  # noqa: E501
 
     model_name: str = Field(alias="model")
@@ -385,7 +381,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -394,13 +390,13 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
-                    Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
-                - ``'json_mode'``:
-                    Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
+                - `'function_calling'`:
+                    Uses DeepSeek's [tool-calling features](https://api-docs.deepseek.com/guides/function_calling).
+                - `'json_mode'`:
+                    Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
                 !!! warning "Behavior changed in 0.1.3"
-                    Added support for ``'json_mode'``.
+                    Added support for `'json_mode'`.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -408,7 +404,7 @@ class ChatDeepSeek(BaseChatOpenAI):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
@@ -422,14 +418,14 @@ class ChatDeepSeek(BaseChatOpenAI):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

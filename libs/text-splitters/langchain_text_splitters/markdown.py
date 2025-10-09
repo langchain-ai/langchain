@@ -296,22 +296,21 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     * Splits out code blocks and includes the language in the "Code" metadata key.
     * Splits text on horizontal rules (`---`) as well.
     * Defaults to sensible splitting behavior, which can be overridden using the
-      ``headers_to_split_on`` parameter.
+        `headers_to_split_on` parameter.
 
     Example:
-
-        .. code-block:: python
-
-            headers_to_split_on = [
-                ("#", "Header 1"),
-                ("##", "Header 2"),
-            ]
-            splitter = ExperimentalMarkdownSyntaxTextSplitter(
-                headers_to_split_on=headers_to_split_on
-            )
-            chunks = splitter.split(text)
-            for chunk in chunks:
-                print(chunk)
+    ```python
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    chunks = splitter.split(text)
+    for chunk in chunks:
+        print(chunk)
+    ```
 
     This class is currently experimental and subject to change based on feedback and
     further development.

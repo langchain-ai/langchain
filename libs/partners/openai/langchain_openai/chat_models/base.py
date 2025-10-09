@@ -3589,6 +3589,24 @@ def _construct_responses_api_payload(
     return payload
 
 
+def _format_annotation_to_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    # langchain-core reserves the `"index"` key for streaming aggregation.
+    # Here we re-name.
+    if annotation.get("type") == "file_citation" and "index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["file_index"] = new_annotation.pop("index")
+        return new_annotation
+    return annotation
+
+
+def _format_annotation_from_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    if annotation.get("type") == "file_citation" and "file_index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["index"] = new_annotation.pop("file_index")
+        return new_annotation
+    return annotation
+
+
 def _convert_chat_completions_blocks_to_responses(
     block: dict[str, Any],
 ) -> dict[str, Any]:
@@ -3775,7 +3793,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 new_block = {
                                     "type": "output_text",
                                     "text": block["text"],
-                                    "annotations": block.get("annotations") or [],
+                                    "annotations": [
+                                        _format_annotation_from_lc(annotation)
+                                        for annotation in block.get("annotations") or []
+                                    ],
                                 }
                             elif block_type == "refusal":
                                 new_block = {
@@ -3951,7 +3972,7 @@ def _construct_lc_result_from_responses_api(
                         "type": "text",
                         "text": content.text,
                         "annotations": [
-                            annotation.model_dump()
+                            _format_annotation_to_lc(annotation.model_dump())
                             for annotation in content.annotations
                         ]
                         if isinstance(content.annotations, list)
@@ -4142,7 +4163,11 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
 
         content.append(
-            {"type": "text", "annotations": [annotation], "index": current_index}
+            {
+                "type": "text",
+                "annotations": [_format_annotation_to_lc(annotation)],
+                "index": current_index,
+            }
         )
     elif chunk.type == "response.output_text.done":
         content.append({"type": "text", "id": chunk.item_id, "index": current_index})

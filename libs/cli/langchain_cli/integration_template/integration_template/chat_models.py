@@ -26,13 +26,13 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args — completion params:
@@ -57,216 +57,214 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __module_name__ import Chat__ModuleName__
 
-            from __module_name__ import Chat__ModuleName__
-
-            llm = Chat__ModuleName__(
-                model="...",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
+        llm = Chat__ModuleName__(
+            model="...",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user sentence to French."),
+            ("human", "I love programming."),
+        ]
+        llm.invoke(messages)
+        ```
 
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if token-level streaming isn't supported.
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.text, end="")
+        ```
 
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
+        ```python
+        # TODO: Example output.
+        ```
 
-        .. code-block:: python
+        ```python
+        stream = llm.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
-            # TODO: Example output.
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if native async isn't supported.
     Async:
-        .. code-block:: python
+        ```python
+        await llm.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await llm.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
+        # batch:
+        # await llm.abatch([messages])
+        ```
 
-            # batch:
-            # await llm.abatch([messages])
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
+        ```python
+        # TODO: Example output.
+        ```
     # TODO: Delete if .bind_tools() isn't supported.
     Tool calling:
-        .. code-block:: python
+        ```python
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
+        ```python
+        # TODO: Example output.
+        ```
 
-        .. code-block:: python
-
-              # TODO: Example output.
-
-        See ``Chat__ModuleName__.bind_tools()`` method for more.
+        See `Chat__ModuleName__.bind_tools()` method for more.
 
     # TODO: Delete if .with_structured_output() isn't supported.
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+        structured_llm = llm.with_structured_output(Joke)
+        structured_llm.invoke("Tell me a joke about cats")
+        ```
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
+        ```python
+        # TODO: Example output.
+        ```
 
-        .. code-block:: python
-
-            # TODO: Example output.
-
-        See ``Chat__ModuleName__.with_structured_output()`` for more.
+        See `Chat__ModuleName__.with_structured_output()` for more.
 
     # TODO: Delete if JSON mode response format isn't supported.
     JSON mode:
-        .. code-block:: python
+        ```python
+        # TODO: Replace with appropriate bind arg.
+        json_llm = llm.bind(response_format={"type": "json_object"})
+        ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
+        ai_msg.content
+        ```
 
-            # TODO: Replace with appropriate bind arg.
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
-            ai_msg.content
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if image inputs aren't supported.
     Image input:
-        .. code-block:: python
+        ```python
+        import base64
+        import httpx
+        from langchain_core.messages import HumanMessage
 
-            import base64
-            import httpx
-            from langchain_core.messages import HumanMessage
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        # TODO: Replace with appropriate message content format.
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+        )
+        ai_msg = llm.invoke([message])
+        ai_msg.content
+        ```
 
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-            # TODO: Replace with appropriate message content format.
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": "describe the weather in this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
-
-        .. code-block:: python
-
-            # TODO: Example output.
+        ```python
+        # TODO: Example output.
+        ```
 
     # TODO: Delete if audio inputs aren't supported.
     Audio input:
-        .. code-block:: python
+        ```python
+        # TODO: Example input
+        ```
 
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Delete if video inputs aren't supported.
     Video input:
-        .. code-block:: python
+        ```python
+        # TODO: Example input
+        ```
 
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Delete if token usage metadata isn't supported.
     Token usage:
-        .. code-block:: python
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.usage_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+        ```python
+        {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+        ```
 
     # TODO: Delete if logprobs aren't supported.
     Logprobs:
-        .. code-block:: python
+        ```python
+        # TODO: Replace with appropriate bind arg.
+        logprobs_llm = llm.bind(logprobs=True)
+        ai_msg = logprobs_llm.invoke(messages)
+        ai_msg.response_metadata["logprobs"]
+        ```
 
-            # TODO: Replace with appropriate bind arg.
-            logprobs_llm = llm.bind(logprobs=True)
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-              # TODO: Example output.
-
+        ```python
+        # TODO: Example output.
+        ```
     Response metadata
-        .. code-block:: python
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.response_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
+        ```python
+        # TODO: Example output.
 
-        .. code-block:: python
-
-             # TODO: Example output.
-
+        ```
     """  # noqa: E501
 
     model_name: str = Field(alias="model")
@@ -314,11 +312,11 @@ class Chat__ModuleName__(BaseChatModel):
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
+                If generation stops due to a stop token, the stop token itself
+                SHOULD BE INCLUDED as part of the output. This is not enforced
+                across models right now, but it's a good practice to follow since
+                it makes it much easier to parse the output of the model
+                downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
         """
         # Replace this with actual logic to generate a response from a list
@@ -362,11 +360,11 @@ class Chat__ModuleName__(BaseChatModel):
         Args:
             messages: the prompt composed of a list of messages.
             stop: a list of strings on which the model should stop generating.
-                  If generation stops due to a stop token, the stop token itself
-                  SHOULD BE INCLUDED as part of the output. This is not enforced
-                  across models right now, but it's a good practice to follow since
-                  it makes it much easier to parse the output of the model
-                  downstream and understand why generation stopped.
+                If generation stops due to a stop token, the stop token itself
+                SHOULD BE INCLUDED as part of the output. This is not enforced
+                across models right now, but it's a good practice to follow since
+                it makes it much easier to parse the output of the model
+                downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
         """
         last_message = messages[-1]

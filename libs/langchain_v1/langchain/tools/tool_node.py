@@ -138,8 +138,8 @@ with potentially modified requests each time. Each call to execute
 is independent and stateless.
 
 Note:
-    When implementing middleware for ``create_agent``, use
-    ``AgentMiddleware.wrap_tool_call`` which provides properly typed
+    When implementing middleware for `create_agent`, use
+    `AgentMiddleware.wrap_tool_call` which provides properly typed
     state parameter for better type safety.
 
 Examples:
@@ -391,25 +391,25 @@ class ToolNode(RunnableCallable):
 
     Input Formats:
         1. Graph state with `messages` key that has a list of messages:
-           - Common representation for agentic workflows
-           - Supports custom messages key via ``messages_key`` parameter
+            - Common representation for agentic workflows
+            - Supports custom messages key via `messages_key` parameter
 
-        2. **Message List**: ``[AIMessage(..., tool_calls=[...])]``
-           - List of messages with tool calls in the last AIMessage
+        2. **Message List**: `[AIMessage(..., tool_calls=[...])]`
+            - List of messages with tool calls in the last AIMessage
 
-        3. **Direct Tool Calls**: ``[{"name": "tool", "args": {...}, "id": "1", "type": "tool_call"}]``
-           - Bypasses message parsing for direct tool execution
-           - For programmatic tool invocation and testing
+        3. **Direct Tool Calls**: `[{"name": "tool", "args": {...}, "id": "1", "type": "tool_call"}]`
+            - Bypasses message parsing for direct tool execution
+            - For programmatic tool invocation and testing
 
     Output Formats:
         Output format depends on input type and tool behavior:
 
         **For Regular tools**:
-        - Dict input → ``{"messages": [ToolMessage(...)]}``
-        - List input → ``[ToolMessage(...)]``
+        - Dict input → `{"messages": [ToolMessage(...)]}`
+        - List input → `[ToolMessage(...)]`
 
         **For Command tools**:
-        - Returns ``[Command(...)]`` or mixed list with regular tool outputs
+        - Returns `[Command(...)]` or mixed list with regular tool outputs
         - Commands can update state, trigger navigation, or send messages
 
     Args:
@@ -424,17 +424,17 @@ class ToolNode(RunnableCallable):
             Supports multiple strategies:
 
             - **True**: Catch all errors and return a ToolMessage with the default
-              error template containing the exception details.
+                error template containing the exception details.
             - **str**: Catch all errors and return a ToolMessage with this custom
-              error message string.
+                error message string.
             - **type[Exception]**: Only catch exceptions with the specified type and
-              return the default error message for it.
+                return the default error message for it.
             - **tuple[type[Exception], ...]**: Only catch exceptions with the specified
-              types and return default error messages for them.
+                types and return default error messages for them.
             - **Callable[..., str]**: Catch exceptions matching the callable's signature
-              and return the string result of calling it with the exception.
+                and return the string result of calling it with the exception.
             - **False**: Disable error handling entirely, allowing exceptions to
-              propagate.
+                propagate.
 
             Defaults to a callable that:
                 - catches tool invocation errors (due to invalid arguments provided by the model) and returns a descriptive error message
@@ -1294,7 +1294,7 @@ class InjectedState(InjectedToolArg):
         node.invoke(state)
         ```
 
-        ```pycon
+        ```python
         [
             ToolMessage(content="not enough messages", name="state_tool", tool_call_id="1"),
             ToolMessage(content="bar2", name="foo_tool", tool_call_id="2"),
@@ -1303,12 +1303,12 @@ class InjectedState(InjectedToolArg):
 
     Note:
         - InjectedState arguments are automatically excluded from tool schemas
-          presented to language models
+            presented to language models
         - ToolNode handles the injection process during execution
         - Tools can mix regular arguments (controlled by the model) with injected
-          arguments (controlled by the system)
+            arguments (controlled by the system)
         - State injection occurs after the model generates tool calls but before
-          tool execution
+            tool execution
     """
 
     def __init__(self, field: str | None = None) -> None:
@@ -1383,7 +1383,7 @@ class InjectedStore(InjectedToolArg):
 
     Note:
         - InjectedStore arguments are automatically excluded from tool schemas
-          presented to language models
+            presented to language models
         - The store instance is automatically injected by ToolNode during execution
         - Tools can access namespaced storage using the store's get/put methods
         - Store injection requires the graph to be compiled with a store instance

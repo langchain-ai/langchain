@@ -79,18 +79,18 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
 
     Example usage:
 
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import create_citation_fuzzy_match_runnable
+        from langchain_openai import ChatOpenAI
 
-            from langchain_classic.chains import create_citation_fuzzy_match_runnable
-            from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(model="gpt-4o-mini")
 
-            llm = ChatOpenAI(model="gpt-4o-mini")
+        context = "Alice has blue eyes. Bob has brown eyes. Charlie has green eyes."
+        question = "What color are Bob's eyes?"
 
-            context = "Alice has blue eyes. Bob has brown eyes. Charlie has green eyes."
-            question = "What color are Bob's eyes?"
-
-            chain = create_citation_fuzzy_match_runnable(llm)
-            chain.invoke({"question": question, "context": context})
+        chain = create_citation_fuzzy_match_runnable(llm)
+        chain.invoke({"question": question, "context": context})
+        ```
 
     Args:
         llm: Language model to use for the chain. Must implement bind_tools.
@@ -99,7 +99,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
         Runnable that can be used to answer questions with citations.
 
     """
-    if llm.bind_tools is BaseChatModel.bind_tools:
+    if type(llm).bind_tools is BaseChatModel.bind_tools:
         msg = "Language model must implement bind_tools to use this function."
         raise ValueError(msg)
     prompt = ChatPromptTemplate(

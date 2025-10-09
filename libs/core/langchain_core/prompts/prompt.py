@@ -44,18 +44,16 @@ class PromptTemplate(StringPromptTemplate):
         from untrusted sources.
 
     Example:
+        ```python
+        from langchain_core.prompts import PromptTemplate
 
-        .. code-block:: python
+        # Instantiation using from_template (recommended)
+        prompt = PromptTemplate.from_template("Say {foo}")
+        prompt.format(foo="bar")
 
-            from langchain_core.prompts import PromptTemplate
-
-            # Instantiation using from_template (recommended)
-            prompt = PromptTemplate.from_template("Say {foo}")
-            prompt.format(foo="bar")
-
-            # Instantiation using initializer
-            prompt = PromptTemplate(template="Say {foo}")
-
+        # Instantiation using initializer
+        prompt = PromptTemplate(template="Say {foo}")
+        ```
     """
 
     @property
@@ -71,7 +69,7 @@ class PromptTemplate(StringPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "prompt"]``
+            `["langchain", "prompts", "prompt"]`
         """
         return ["langchain", "prompts", "prompt"]
 
@@ -144,10 +142,10 @@ class PromptTemplate(StringPromptTemplate):
         Raises:
             ValueError: If the template formats are not f-string or if there are
                 conflicting partial variables.
-            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+            NotImplementedError: If the other object is not a `PromptTemplate` or str.
 
         Returns:
-            A new ``PromptTemplate`` that is the combination of the two.
+            A new `PromptTemplate` that is the combination of the two.
         """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
@@ -191,7 +189,7 @@ class PromptTemplate(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -284,7 +282,7 @@ class PromptTemplate(StringPromptTemplate):
                               `"{variable1} {variable2}"`, and `partial_variables` is
                               `{"variable1": "foo"}`, then the final prompt will be
                               `"foo {variable2}"`. Defaults to `None`.
-            kwargs: Any other arguments to pass to the prompt template.
+            **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:
             The prompt template loaded from the template.
