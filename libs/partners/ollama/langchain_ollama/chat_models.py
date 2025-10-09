@@ -269,7 +269,7 @@ class ChatOllama(BaseChatModel):
     Key init args — completion params:
         model: str
             Name of Ollama model to use.
-        reasoning: Optional[bool]
+        reasoning: bool | None
             Controls the reasoning/thinking mode for
             `supported models <https://ollama.com/search?c=thinking>`__.
 
@@ -285,7 +285,7 @@ class ChatOllama(BaseChatModel):
               unless you set ``reasoning`` to `True`.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
-        num_predict: Optional[int]
+        num_predict: int | None
             Max number of tokens to generate.
 
     See full list of supported init args and their descriptions in the params section.
@@ -1302,7 +1302,7 @@ class ChatOllama(BaseChatModel):
 
             - ``'raw'``: `BaseMessage`
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         !!! warning "Behavior changed in 0.2.2"
             Added support for structured output API via ``format`` parameter.
@@ -1324,7 +1324,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=...,
                         description="A justification for the answer.",
                     )
@@ -1382,7 +1382,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=...,
                         description="A justification for the answer.",
                     )
@@ -1416,7 +1416,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Annotated[Optional[str], None, "A justification for the answer."]
+                    justification: Annotated[str | None, None, "A justification for the answer."]
 
 
                 llm = ChatOllama(model="llama3.1", temperature=0)

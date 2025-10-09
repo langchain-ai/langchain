@@ -92,19 +92,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     Key init args — embedding params:
         model: str
             Name of OpenAI model to use.
-        dimensions: Optional[int] = None
+        dimensions: int | None = None
             The number of dimensions the resulting output embeddings should have.
             Only supported in ``'text-embedding-3'`` and later models.
 
     Key init args — client params:
-        api_key: Optional[SecretStr] = None
+        api_key: SecretStr | None = None
             OpenAI API key.
-        organization: Optional[str] = None
+        organization: str | None = None
             OpenAI organization ID. If not passed in will be read
             from env var ``OPENAI_ORG_ID``.
         max_retries: int = 2
             Maximum number of retries to make when generating.
-        request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
+        request_timeout: float | Tuple[float, float] | Any | None = None
             Timeout for requests to OpenAI completion API
 
     See full list of supported init args and their descriptions in the params section.
@@ -472,7 +472,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Args:
             texts (List[str]): A list of texts to embed.
             engine (str): The engine or model to use for embeddings.
-            chunk_size (Optional[int]): The size of chunks for processing embeddings.
+            chunk_size (int | None): The size of chunks for processing embeddings.
 
         Returns:
             List[List[float]]: A list of embeddings for each input text.
@@ -524,7 +524,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Args:
             texts (List[str]): A list of texts to embed.
             engine (str): The engine or model to use for embeddings.
-            chunk_size (Optional[int]): The size of chunks for processing embeddings.
+            chunk_size (int | None): The size of chunks for processing embeddings.
 
         Returns:
             List[List[float]]: A list of embeddings for each input text.

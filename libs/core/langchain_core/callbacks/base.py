@@ -255,8 +255,8 @@ class CallbackManagerMixin:
             prompts (list[str]): The prompts.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -282,8 +282,8 @@ class CallbackManagerMixin:
             messages (list[list[BaseMessage]]): The messages.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
@@ -309,8 +309,8 @@ class CallbackManagerMixin:
             query (str): The query.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -332,8 +332,8 @@ class CallbackManagerMixin:
             inputs (dict[str, Any]): The inputs.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -356,9 +356,9 @@ class CallbackManagerMixin:
             input_str (str): The input string.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
-            inputs (Optional[dict[str, Any]]): The inputs.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
+            inputs (dict[str, Any] | None): The inputs.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -504,8 +504,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             prompts (list[str]): The prompts.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -531,8 +531,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             messages (list[list[BaseMessage]]): The messages.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
@@ -560,7 +560,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
               containing content and other information.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -579,7 +579,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             response (LLMResult): The response which was generated.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -622,8 +622,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             inputs (dict[str, Any]): The inputs.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -642,7 +642,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             outputs (dict[str, Any]): The outputs of the chain.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -661,7 +661,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -684,9 +684,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             input_str (str): The input string.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
-            inputs (Optional[dict[str, Any]]): The inputs.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
+            inputs (dict[str, Any] | None): The inputs.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -705,7 +705,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             output (Any): The output of the tool.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -724,7 +724,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -743,7 +743,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             text (str): The text.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -779,7 +779,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             action (AgentAction): The agent action.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -798,7 +798,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             finish (AgentFinish): The agent finish.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -820,8 +820,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             query (str): The query.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            tags (list[str] | None): The tags.
+            metadata (dict[str, Any] | None): The metadata.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -840,7 +840,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             documents (Sequence[Document]): The documents retrieved.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -859,7 +859,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             error (BaseException): The error that occurred.
             run_id (UUID): The run ID. This is the ID of the current run.
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (Optional[list[str]]): The tags.
+            tags (list[str] | None): The tags.
             kwargs (Any): Additional keyword arguments.
         """
 
@@ -906,16 +906,13 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Initialize callback manager.
 
         Args:
-            handlers (list[BaseCallbackHandler]): The handlers.
-            inheritable_handlers (Optional[list[BaseCallbackHandler]]):
-              The inheritable handlers. Default is None.
-            parent_run_id (Optional[UUID]): The parent run ID. Default is None.
-            tags (Optional[list[str]]): The tags. Default is None.
-            inheritable_tags (Optional[list[str]]): The inheritable tags.
-                Default is None.
-            metadata (Optional[dict[str, Any]]): The metadata. Default is None.
-            inheritable_metadata (Optional[dict[str, Any]]): The inheritable metadata.
-                Default is None.
+            handlers: The handlers.
+            inheritable_handlers: The inheritable handlers.
+            parent_run_id: The parent run ID.
+            tags: The tags.
+            inheritable_tags: The inheritable tags.
+            metadata: The metadata.
+            inheritable_metadata: The inheritable metadata.
         """
         self.handlers: list[BaseCallbackHandler] = handlers
         self.inheritable_handlers: list[BaseCallbackHandler] = (

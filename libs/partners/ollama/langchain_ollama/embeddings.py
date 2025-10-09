@@ -66,7 +66,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     Key init args — completion params:
         model: str
             Name of Ollama model to use.
-        base_url: Optional[str]
+        base_url: str | None
             Base url the model is hosted under.
 
     See full list of supported init args and their descriptions in the params section.

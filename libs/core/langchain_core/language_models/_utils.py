@@ -222,7 +222,7 @@ def _normalize_messages(
         "type": Literal['file'],
         "file": Union[
             {
-                "filename": Optional[str] = "$FILENAME",
+                "filename": str | None = "$FILENAME",
                 "file_data": str = "$BASE64_ENCODED_FILE",
             },
             {

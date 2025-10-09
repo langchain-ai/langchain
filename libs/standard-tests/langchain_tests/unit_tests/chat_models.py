@@ -349,7 +349,7 @@ class ChatModelUnitTests(ChatModelTests):
         .. code-block:: python
 
             @property
-            def tool_choice_value(self) -> Optional[str]:
+            def tool_choice_value(self) -> str | None:
                 return "any"
 
     ??? note "`has_tool_choice`"

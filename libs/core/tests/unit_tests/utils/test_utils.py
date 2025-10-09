@@ -362,7 +362,7 @@ def test_using_secret_from_env_as_default_factory(
             default_factory=secret_from_env("TEST_KEY_2", default="hello")
         )
 
-    # We know it will be SecretStr rather than Optional[SecretStr]
+    # We know it will be SecretStr rather than SecretStr | None
     assert Buzz().secret.get_secret_value() == "hello"  # type: ignore[union-attr]
 
     class OhMy(BaseModel):

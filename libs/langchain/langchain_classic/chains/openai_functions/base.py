@@ -97,7 +97,7 @@ def create_openai_fn_chain(
 
                     name: str = Field(..., description="The person's name")
                     age: int = Field(..., description="The person's age")
-                    fav_food: Optional[str] = Field(None, description="The person's favorite food")
+                    fav_food: str | None = Field(None, description="The person's favorite food")
 
 
                 class RecordDog(BaseModel):
@@ -105,7 +105,7 @@ def create_openai_fn_chain(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
 
                 llm = ChatOpenAI(model="gpt-4", temperature=0)
@@ -190,7 +190,7 @@ def create_structured_output_chain(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
                 prompt = ChatPromptTemplate.from_messages(

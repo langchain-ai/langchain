@@ -1563,7 +1563,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python

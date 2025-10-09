@@ -683,11 +683,11 @@ def tool_example_to_messages(
             class Person(BaseModel):
                 '''Information about a person.'''
 
-                name: Optional[str] = Field(..., description="The name of the person")
-                hair_color: Optional[str] = Field(
+                name: str | None = Field(..., description="The name of the person")
+                hair_color: str | None = Field(
                     ..., description="The color of the person's hair if known"
                 )
-                height_in_meters: Optional[str] = Field(
+                height_in_meters: str | None = Field(
                     ..., description="Height in METERS"
                 )
 

@@ -389,9 +389,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Compute the score for a prediction and reference.
 
         Args:
-            inputs (Dict[str, Any]): The input data.
-            run_manager (Optional[CallbackManagerForChainRun], optional):
-                The callback manager.
+            inputs: The input data.
+            run_manager: The callback manager.
 
         Returns:
             Dict[str, Any]: The computed score.

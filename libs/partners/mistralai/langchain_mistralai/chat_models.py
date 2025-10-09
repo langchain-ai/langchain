@@ -805,7 +805,7 @@ class ChatMistralAI(BaseChatModel):
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
                 - ``'raw'``: BaseMessage
                 - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``'parsing_error'``: Optional[BaseException]
+                - ``'parsing_error'``: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
@@ -823,7 +823,7 @@ class ChatMistralAI(BaseChatModel):
                     # If we provide default values and/or descriptions for fields, these will be passed
                     # to the model. This is an important part of improving a model's ability to
                     # correctly return structured outputs.
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=None, description="A justification for the answer."
                     )
 
@@ -883,7 +883,7 @@ class ChatMistralAI(BaseChatModel):
 
                     answer: str
                     justification: Annotated[
-                        Optional[str], None, "A justification for the answer."
+                        str | None, None, "A justification for the answer."
                     ]
 
 

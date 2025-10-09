@@ -585,17 +585,17 @@ class ChatAnthropic(BaseChatModel):
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: Optional[float]
+        timeout: float | None
             Timeout for requests.
-        anthropic_proxy: Optional[str]
+        anthropic_proxy: str | None
             Proxy to use for the Anthropic clients, will be used for every API call.
             If not passed in will be read from env var ``ANTHROPIC_PROXY``.
         max_retries: int
             Max number of retries if a request fails.
-        api_key: Optional[str]
+        api_key: str | None
             Anthropic API key. If not passed in will be read from env var
             ``ANTHROPIC_API_KEY``.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
 
@@ -788,7 +788,7 @@ class ChatAnthropic(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -2210,7 +2210,7 @@ class ChatAnthropic(BaseChatModel):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
 

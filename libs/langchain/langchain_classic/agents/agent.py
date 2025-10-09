@@ -234,7 +234,7 @@ class BaseMultiActionAgent(BaseModel):
         """Get allowed tools.
 
         Returns:
-            Optional[List[str]]: Allowed tools.
+            list[str] | None: Allowed tools.
         """
         return None
 

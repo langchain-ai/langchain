@@ -83,9 +83,9 @@ class ChatGroq(BaseChatModel):
             Name of Groq model to use, e.g. ``llama-3.1-8b-instant``.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
-        reasoning_format: Optional[Literal["parsed", "raw", "hidden]]
+        reasoning_format: Literal["parsed", "raw", "hidden] | None
             The format for reasoning output. Groq will default to ``raw`` if left
             undefined.
 
@@ -110,12 +110,12 @@ class ChatGroq(BaseChatModel):
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             Groq API key. If not passed in will be read from env var ``GROQ_API_KEY``.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
-        custom_get_token_ids: Optional[Callable[[str], List[int]]]
+        custom_get_token_ids: Callable[[str], list[int]] | None
             Optional encoder to use for counting tokens.
 
     See full list of supported init args and their descriptions in the params
@@ -260,7 +260,7 @@ class ChatGroq(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_model = llm.with_structured_output(Joke)
@@ -904,7 +904,7 @@ class ChatGroq(BaseChatModel):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 
@@ -923,9 +923,7 @@ class ChatGroq(BaseChatModel):
                     # If we provide default values and/or descriptions for fields, these will be passed
                     # to the model. This is an important part of improving a model's ability to
                     # correctly return structured outputs.
-                    justification: Optional[str] = Field(
-                        default=None, description="A justification for the answer."
-                    )
+                    justification: str | None = Field(default=None, description="A justification for the answer.")
 
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
@@ -979,7 +977,7 @@ class ChatGroq(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Annotated[Optional[str], None, "A justification for the answer."]
+                    justification: Annotated[str | None, None, "A justification for the answer."]
 
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
@@ -1036,9 +1034,7 @@ class ChatGroq(BaseChatModel):
                     # If we provide default values and/or descriptions for fields, these will be passed
                     # to the model. This is an important part of improving a model's ability to
                     # correctly return structured outputs.
-                    justification: Optional[str] = Field(
-                        default=None, description="A justification for the answer."
-                    )
+                    justification: str | None = Field(default=None, description="A justification for the answer.")
 
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)

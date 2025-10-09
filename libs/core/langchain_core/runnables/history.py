@@ -279,7 +279,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 chat message history instance.
                 ```python
                 def get_session_history(
-                    session_id: str, *, user_id: Optional[str] = None
+                    session_id: str, *, user_id: str | None = None
                 ) -> BaseChatMessageHistory: ...
                 ```
 

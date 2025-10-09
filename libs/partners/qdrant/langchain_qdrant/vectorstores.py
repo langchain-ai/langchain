@@ -1253,8 +1253,8 @@ class Qdrant(VectorStore):
                 If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
-            url: either host or str of "Optional[scheme], host, Optional[port],
-                Optional[prefix]". Default: `None`
+            url: either host or str of "scheme | None, host, port | None,
+                prefix | None".
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:
@@ -1491,8 +1491,8 @@ class Qdrant(VectorStore):
                 If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
-            url: either host or str of "Optional[scheme], host, Optional[port],
-                Optional[prefix]". Default: `None`
+            url: either host or str of "scheme | None, host, port | None,
+                prefix | None".
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:

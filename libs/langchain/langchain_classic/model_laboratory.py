@@ -21,7 +21,7 @@ class ModelLaboratory:
         Args:
             chains: A sequence of chains to experiment with.
                 Each chain must have exactly one input and one output variable.
-            names (Optional[List[str]]): Optional list of names corresponding to each
+            names (list[str] | None): Optional list of names corresponding to each
                 chain. If provided, its length must match the number of chains.
 
 
@@ -67,8 +67,8 @@ class ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 
         Args:
-            llms (List[BaseLLM]): A list of LLMs to experiment with.
-            prompt (Optional[PromptTemplate]): An optional prompt to use with the LLMs.
+            llms: A list of LLMs to experiment with.
+            prompt: An optional prompt to use with the LLMs.
                 If provided, the prompt must contain exactly one input variable.
 
         Returns:

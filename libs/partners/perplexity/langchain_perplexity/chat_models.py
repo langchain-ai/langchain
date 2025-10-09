@@ -76,15 +76,15 @@ class ChatPerplexity(BaseChatModel):
                 Name of the model to use. e.g. "sonar"
             temperature: float
                 Sampling temperature to use. Default is 0.7
-            max_tokens: Optional[int]
+            max_tokens: int | None
                 Maximum number of tokens to generate.
             streaming: bool
                 Whether to stream the results or not.
 
         Key init args - client params:
-            pplx_api_key: Optional[str]
+            pplx_api_key: str | None
                 API key for PerplexityChat API. Default is None.
-            request_timeout: Optional[Union[float, Tuple[float, float]]]
+            request_timeout: float | Tuple[float, float] | None
                 Timeout for requests to PerplexityChat completion API. Default is None.
             max_retries: int
                 Maximum number of retries to make when generating.
@@ -444,7 +444,7 @@ class ChatPerplexity(BaseChatModel):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):

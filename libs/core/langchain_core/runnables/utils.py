@@ -363,7 +363,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
         func: The function to check.
 
     Returns:
-        Optional[list[str]]: The keys of the first argument if it is a dict,
+        list[str] | None: The keys of the first argument if it is a dict,
             None otherwise.
     """
     try:
@@ -525,7 +525,7 @@ def add(addables: Iterable[Addable]) -> Addable | None:
         addables: The addable objects to add.
 
     Returns:
-        Optional[Addable]: The result of adding the addable objects.
+        The result of adding the addable objects.
     """
     final: Addable | None = None
     for chunk in addables:
@@ -540,7 +540,7 @@ async def aadd(addables: AsyncIterable[Addable]) -> Addable | None:
         addables: The addable objects to add.
 
     Returns:
-        Optional[Addable]: The result of adding the addable objects.
+        The result of adding the addable objects.
     """
     final: Addable | None = None
     async for chunk in addables:

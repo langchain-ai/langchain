@@ -163,25 +163,25 @@ class Chroma(VectorStore):
             Embedding function to use.
 
     Key init args — client params:
-        client: Optional[Client]
+        client: Client | None
             Chroma client to use.
-        client_settings: Optional[chromadb.config.Settings]
+        client_settings: chromadb.config.Settings | None
             Chroma client settings.
-        persist_directory: Optional[str]
+        persist_directory: str | None
             Directory to persist the collection.
-        host: Optional[str]
+        host: str | None
             Hostname of a deployed Chroma server.
-        port: Optional[int]
+        port: int | None
             Connection port for a deployed Chroma server. Default is 8000.
-        ssl: Optional[bool]
+        ssl: bool | None
             Whether to establish an SSL connection with a deployed Chroma server. Default is False.
-        headers: Optional[dict[str, str]]
+        headers: dict[str, str] | None
             HTTP headers to send to a deployed Chroma server.
-        chroma_cloud_api_key: Optional[str]
+        chroma_cloud_api_key: str | None
             Chroma Cloud API key.
-        tenant: Optional[str]
+        tenant: str | None
             Tenant ID. Required for Chroma Cloud connections. Default is 'default_tenant' for local Chroma servers.
-        database: Optional[str]
+        database: str | None
             Database name. Required for Chroma Cloud connections. Default is 'default_database'.
 
     Instantiate:
@@ -904,17 +904,16 @@ class Chroma(VectorStore):
         """Search for similar images based on the given image URI.
 
         Args:
-            uri (str): URI of the image to search for.
-            k (int, optional): Number of results to return. Defaults to ``DEFAULT_K``.
-            filter (Optional[Dict[str, str]], optional): Filter by metadata.
-            **kwargs (Any): Additional arguments to pass to function.
+            uri: URI of the image to search for.
+            k: Number of results to return.
+            filter: Filter by metadata.
+            **kwargs: Additional arguments to pass to function.
 
 
         Returns:
-            List of Images most similar to the provided image.
-            Each element in list is a LangChain Document Object.
-            The page content is b64 encoded image, metadata is default or
-            as defined by user.
+            List of Images most similar to the provided image. Each element in list is a
+            LangChain Document Object. The page content is b64 encoded image, metadata
+            is default or as defined by user.
 
         Raises:
             ValueError: If the embedding function does not support image embeddings.
@@ -946,16 +945,14 @@ class Chroma(VectorStore):
         """Search for similar images based on the given image URI.
 
         Args:
-            uri (str): URI of the image to search for.
-            k (int, optional): Number of results to return.
-            Defaults to DEFAULT_K.
-            filter (Optional[Dict[str, str]], optional): Filter by metadata.
-            **kwargs (Any): Additional arguments to pass to function.
+            uri: URI of the image to search for.
+            k: Number of results to return.
+            filter: Filter by metadata.
+            **kwargs: Additional arguments to pass to function.
 
         Returns:
-            List[Tuple[Document, float]]: List of tuples containing documents similar
-            to the query image and their similarity scores.
-            0th element in each tuple is a LangChain Document Object.
+            List of tuples containing documents similar to the query image and their
+            similarity scores. 0th element in each tuple is a LangChain Document Object.
             The page content is b64 encoded img, metadata is default or defined by user.
 
         Raises:
