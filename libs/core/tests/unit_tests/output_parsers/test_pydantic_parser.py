@@ -13,7 +13,7 @@ from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils.pydantic import PydanticBaseModel, TBaseModel
+from langchain_core.utils.pydantic import PydanticBaseModel, TypeBaseModel
 
 
 class ForecastV2(pydantic.BaseModel):
@@ -54,7 +54,7 @@ def test_pydantic_parser_chaining(
 
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
-def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
+def test_pydantic_parser_validation(pydantic_object: TypeBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{
         "temperature": "oof",
@@ -66,9 +66,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
     model = ParrotFakeChatModel()
 
-    parser: PydanticOutputParser[PydanticBaseModel] = PydanticOutputParser(
-        pydantic_object=pydantic_object
-    )
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
@@ -76,9 +74,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
 # JSON output parser tests
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
-def test_json_parser_chaining(
-    pydantic_object: TBaseModel,
-) -> None:
+def test_json_parser_chaining(pydantic_object: TypeBaseModel) -> None:
     prompt = PromptTemplate(
         template="""{{
         "temperature": 20,
@@ -183,6 +179,14 @@ def test_pydantic_output_parser_type_inference() -> None:
         "title": "SampleModel",
         "type": "object",
     }
+
+
+@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+def test_format_instructions(pydantic_object: TypeBaseModel) -> None:
+    """Test format instructions."""
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
+    instructions = parser.get_format_instructions()
+    assert "temperature" in instructions
 
 
 def test_format_instructions_preserves_language() -> None:
