@@ -4,19 +4,23 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 
+
 @tool
 def get_weather(city: str) -> str:
     """Get the weather in a city."""
     return f"The weather in {city} is sunny."
 
+
 class WeatherMiddleware(AgentMiddleware):
     tools = [get_weather]
+
 
 custom_subagent = create_agent(
     model="gpt-4.1-2025-04-14",
     system_prompt="Use the get_weather tool to get the weather in a city.",
     tools=[get_weather],
 )
+
 
 def assert_expected_subgraph_actions(expected_tool_calls, agent, inputs):
     current_idx = 0
@@ -31,10 +35,15 @@ def assert_expected_subgraph_actions(expected_tool_calls, agent, inputs):
             for tool_call in tool_calls:
                 if tool_call["name"] == expected_tool_calls[current_idx]["name"]:
                     if "model" in expected_tool_calls[current_idx]:
-                        assert ai_message.response_metadata["model_name"] == expected_tool_calls[current_idx]["model"]
+                        assert (
+                            ai_message.response_metadata["model_name"]
+                            == expected_tool_calls[current_idx]["model"]
+                        )
                     for arg in expected_tool_calls[current_idx]["args"]:
                         assert arg in tool_call["args"]
-                        assert tool_call["args"][arg] == expected_tool_calls[current_idx]["args"][arg]
+                        assert (
+                            tool_call["args"][arg] == expected_tool_calls[current_idx]["args"][arg]
+                        )
                     current_idx += 1
     assert current_idx == len(expected_tool_calls)
 
@@ -54,7 +63,9 @@ class TestSubagentMiddleware:
             ],
         )
         assert "task" in agent.nodes["tools"].bound._tools_by_name.keys()
-        response = agent.invoke({"messages": [HumanMessage(content="What is the weather in Tokyo?")]})
+        response = agent.invoke(
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+        )
         assert response["messages"][1].tool_calls[0]["name"] == "task"
         assert response["messages"][1].tool_calls[0]["args"]["subagent_type"] == "general-purpose"
 
@@ -73,12 +84,14 @@ class TestSubagentMiddleware:
                             "prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
                         }
-                    ]
+                    ],
                 )
             ],
         )
         assert "task" in agent.nodes["tools"].bound._tools_by_name.keys()
-        response = agent.invoke({"messages": [HumanMessage(content="What is the weather in Tokyo?")]})
+        response = agent.invoke(
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+        )
         assert response["messages"][1].tool_calls[0]["name"] == "task"
         assert response["messages"][1].tool_calls[0]["args"]["subagent_type"] == "weather"
 
@@ -97,7 +110,7 @@ class TestSubagentMiddleware:
                             "prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
                         }
-                    ]
+                    ],
                 )
             ],
         )
@@ -108,7 +121,7 @@ class TestSubagentMiddleware:
         assert_expected_subgraph_actions(
             expected_tool_calls,
             agent,
-            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]},
         )
 
     def test_defined_subagent_custom_model(self):
@@ -125,20 +138,24 @@ class TestSubagentMiddleware:
                             "description": "This subagent can get weather in cities.",
                             "prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
-                            "model": "gpt-4.1"
+                            "model": "gpt-4.1",
                         }
-                    ]
+                    ],
                 )
             ],
         )
         expected_tool_calls = [
-            {"name": "task", "args": {"subagent_type": "weather"}, "model": "claude-sonnet-4-20250514"},
+            {
+                "name": "task",
+                "args": {"subagent_type": "weather"},
+                "model": "claude-sonnet-4-20250514",
+            },
             {"name": "get_weather", "args": {}, "model": "gpt-4.1-2025-04-14"},
         ]
         assert_expected_subgraph_actions(
             expected_tool_calls,
             agent,
-            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]},
         )
 
     def test_defined_subagent_custom_middleware(self):
@@ -154,22 +171,26 @@ class TestSubagentMiddleware:
                             "name": "weather",
                             "description": "This subagent can get weather in cities.",
                             "prompt": "Use the get_weather tool to get the weather in a city.",
-                            "tools": [],    # No tools, only in middleware
+                            "tools": [],  # No tools, only in middleware
                             "model": "gpt-4.1",
-                            "middleware": [WeatherMiddleware()]
+                            "middleware": [WeatherMiddleware()],
                         }
-                    ]
+                    ],
                 )
             ],
         )
         expected_tool_calls = [
-            {"name": "task", "args": {"subagent_type": "weather"}, "model": "claude-sonnet-4-20250514"},
+            {
+                "name": "task",
+                "args": {"subagent_type": "weather"},
+                "model": "claude-sonnet-4-20250514",
+            },
             {"name": "get_weather", "args": {}, "model": "gpt-4.1-2025-04-14"},
         ]
         assert_expected_subgraph_actions(
             expected_tool_calls,
             agent,
-            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]},
         )
 
     def test_defined_subagent_custom_runnable(self):
@@ -186,16 +207,20 @@ class TestSubagentMiddleware:
                             "description": "This subagent can get weather in cities.",
                             "runnable": custom_subagent,
                         }
-                    ]
+                    ],
                 )
             ],
         )
         expected_tool_calls = [
-            {"name": "task", "args": {"subagent_type": "weather"}, "model": "claude-sonnet-4-20250514"},
+            {
+                "name": "task",
+                "args": {"subagent_type": "weather"},
+                "model": "claude-sonnet-4-20250514",
+            },
             {"name": "get_weather", "args": {}, "model": "gpt-4.1-2025-04-14"},
         ]
         assert_expected_subgraph_actions(
             expected_tool_calls,
             agent,
-            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]}
+            {"messages": [HumanMessage(content="What is the weather in Tokyo?")]},
         )

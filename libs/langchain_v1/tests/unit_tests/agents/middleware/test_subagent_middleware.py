@@ -1,5 +1,6 @@
 from langchain.agents.middleware.subagents import TASK_TOOL_DESCRIPTION, SubAgentMiddleware
 
+
 class TestSubagentMiddleware:
     """Test the SubagentMiddleware class."""
 

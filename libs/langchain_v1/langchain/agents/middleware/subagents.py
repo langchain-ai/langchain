@@ -1,23 +1,28 @@
 """Middleware for providing subagents to an agent via a `task` tool."""
-
-from typing import TYPE_CHECKING, Annotated, Any, NotRequired, TypedDict
+# ruff: noqa: E501
 
 from collections.abc import Callable
+from typing import Annotated, Any, NotRequired, TypedDict, cast
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain.agents import create_agent
-from langchain.agents.middleware import PlanningMiddleware, SummarizationMiddleware, AnthropicPromptCachingMiddleware
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
-from langchain.chat_models import init_chat_model
-from langchain.tools import InjectedToolCallId, InjectedState
 from langchain_core.language_models import BaseChatModel, LanguageModelLike
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from langgraph.types import Command
 
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AnthropicPromptCachingMiddleware,
+    PlanningMiddleware,
+    SummarizationMiddleware,
+)
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.chat_models import init_chat_model
+from langchain.tools import InjectedState, InjectedToolCallId
+
 
 class DefinedSubAgent(TypedDict):
-    """A subagent constructed with user-defined parameters"""
+    """A subagent constructed with user-defined parameters."""
 
     name: str
     """The name of the subagent."""
@@ -31,7 +36,7 @@ class DefinedSubAgent(TypedDict):
     tools: NotRequired[list[BaseTool]]
     """The tools to use for the subagent."""
 
-    model: NotRequired[str | BaseChatModel]
+    model: NotRequired[LanguageModelLike | dict[str, Any]]
     """The model for the subagent."""
 
     middleware: NotRequired[list[AgentMiddleware]]
@@ -39,7 +44,7 @@ class DefinedSubAgent(TypedDict):
 
 
 class CustomSubAgent(TypedDict):
-    """A Runnable passed in as a subagent"""
+    """A Runnable passed in as a subagent."""
 
     name: str
     """The name of the subagent."""
@@ -50,8 +55,29 @@ class CustomSubAgent(TypedDict):
     runnable: Runnable
     """The Runnable to use for the subagent."""
 
+
 DEFAULT_SUBAGENT_PROMPT = """In order to complete the objective that the user asks of you, you have access to a number of standard tools.
 """
+
+
+def _normalize_model(model: LanguageModelLike | dict[str, Any]) -> BaseChatModel:
+    """Normalize a model specification to a BaseChatModel instance.
+
+    Args:
+        model: The model specification (can be LanguageModelLike or dict).
+
+    Returns:
+        A BaseChatModel instance.
+    """
+    if isinstance(model, BaseChatModel):
+        return model
+    if isinstance(model, dict):
+        return init_chat_model(**model)
+    if isinstance(model, str):
+        return init_chat_model(model)
+    # For any other LanguageModelLike, try to convert to string and init
+    return init_chat_model(str(model))
+
 
 TASK_TOOL_DESCRIPTION = """Launch an ephemeral subagent to handle complex, multi-step independent tasks with isolated context windows.
 
@@ -164,16 +190,18 @@ Since the user is greeting, use the greeting-responder agent to respond with a f
 assistant: "I'm going to use the Task tool to launch with the greeting-responder agent"
 </example>"""
 
+
 def _get_subagents(
-    default_subagent_model: str | BaseChatModel,
+    default_subagent_model: LanguageModelLike | dict[str, Any],
     default_subagent_tools: list[BaseTool],
     subagents: list[DefinedSubAgent | CustomSubAgent],
-):
+) -> tuple[dict[str, Any], list[str]]:
+    normalized_model = _normalize_model(default_subagent_model)
+
     default_subagent_middleware = [
         PlanningMiddleware(),
-        # TODO: Add FilesystemMiddleware when ready
         SummarizationMiddleware(
-            model=default_subagent_model,
+            model=normalized_model,
             max_tokens_before_summary=120000,
             messages_to_keep=20,
         ),
@@ -182,36 +210,25 @@ def _get_subagents(
 
     # Create the general-purpose subagent
     general_purpose_subagent = create_agent(
-        model=default_subagent_model,
+        model=normalized_model,
         system_prompt=DEFAULT_SUBAGENT_PROMPT,
         tools=default_subagent_tools,
-        middleware=default_subagent_middleware
+        middleware=default_subagent_middleware,
     )
-    agents = {
-        "general-purpose": general_purpose_subagent
-    }
+    agents: dict[str, Any] = {"general-purpose": general_purpose_subagent}
     subagent_descriptions = []
     for _agent in subagents:
         subagent_descriptions.append(f"- {_agent['name']}: {_agent['description']}")
         if "runnable" in _agent:
-            agents[_agent["name"]] = _agent["runnable"]
+            # Type narrowing: _agent is CustomSubAgent here
+            custom_agent = cast("CustomSubAgent", _agent)
+            agents[custom_agent["name"]] = custom_agent["runnable"]
             continue
-        if "tools" in _agent:
-            _tools = _agent["tools"]
-        else:
-            _tools = default_subagent_tools.copy()
+        _tools = _agent["tools"] if "tools" in _agent else default_subagent_tools.copy()
 
-        subagent_model = default_subagent_model
-        if "model" in _agent:
-            agent_model = _agent["model"]
-            if isinstance(agent_model, dict):
-                subagent_model = init_chat_model(**agent_model)
-            elif isinstance(agent_model, str):
-                subagent_model = init_chat_model(agent_model)
-            elif isinstance(agent_model, BaseChatModel):
-                subagent_model = agent_model
-            else:
-                raise ValueError(f"Invalid model type: {type(agent_model)}")
+        subagent_model = (
+            _normalize_model(_agent["model"]) if "model" in _agent else normalized_model
+        )
 
         if "middleware" in _agent:
             _middleware = [*default_subagent_middleware, *_agent["middleware"]]
@@ -232,40 +249,35 @@ def _create_task_tool(
     default_subagent_model: LanguageModelLike | dict[str, Any],
     default_subagent_tools: list[BaseTool],
     subagents: list[DefinedSubAgent | CustomSubAgent],
+    *,
     is_async: bool = False,
-):
+) -> BaseTool:
     subagent_graphs, subagent_descriptions = _get_subagents(
-        default_subagent_model,
-        default_subagent_tools,
-        subagents
+        default_subagent_model, default_subagent_tools, subagents
     )
     subagent_description_str = "\n".join(subagent_descriptions)
 
-    def _return_command_with_state_update(result: dict, tool_call_id: str):
-        state_update = {}
-        for k, v in result.items():
-            if k not in ["todos", "messages"]:
-                state_update[k] = v
+    def _return_command_with_state_update(result: dict, tool_call_id: str) -> Command:
+        state_update = {k: v for k, v in result.items() if k not in ["todos", "messages"]}
         return Command(
-                update={
-                    **state_update,
-                    "messages": [
-                        ToolMessage(
-                            result["messages"][-1].content, tool_call_id=tool_call_id
-                        )
-                    ],
-                }
-            )
+            update={
+                **state_update,
+                "messages": [
+                    ToolMessage(result["messages"][-1].content, tool_call_id=tool_call_id)
+                ],
+            }
+        )
 
     task_tool_description = TASK_TOOL_DESCRIPTION.format(other_agents=subagent_description_str)
     if is_async:
+
         @tool(description=task_tool_description)
         async def task(
             description: str,
             subagent_type: str,
             state: Annotated[dict, InjectedState],
             tool_call_id: Annotated[str, InjectedToolCallId],
-        ):
+        ) -> str | Command:
             if subagent_type not in subagent_graphs:
                 return f"Error: invoked agent of type {subagent_type}, the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
             subagent = subagent_graphs[subagent_type]
@@ -273,21 +285,22 @@ def _create_task_tool(
             result = await subagent.ainvoke(state)
             return _return_command_with_state_update(result, tool_call_id)
     else:
+
         @tool(description=task_tool_description)
         def task(
             description: str,
             subagent_type: str,
             state: Annotated[dict, InjectedState],
             tool_call_id: Annotated[str, InjectedToolCallId],
-        ):
+        ) -> str | Command:
             if subagent_type not in subagent_graphs:
                 return f"Error: invoked agent of type {subagent_type}, the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
             subagent = subagent_graphs[subagent_type]
             state["messages"] = [HumanMessage(content=description)]
             result = subagent.invoke(state)
             return _return_command_with_state_update(result, tool_call_id)
-    return task
 
+    return task
 
 
 class SubAgentMiddleware(AgentMiddleware):
@@ -308,8 +321,9 @@ class SubAgentMiddleware(AgentMiddleware):
 
     Args:
         default_subagent_model: The model to use for the general-purpose subagent.
+            Can be a LanguageModelLike or a dict for init_chat_model.
         default_subagent_tools: The tools to use for the general-purpose subagent.
-        subagents: A list of additional subagents to provide to the agent..
+        subagents: A list of additional subagents to provide to the agent.
         system_prompt_extension: Additional instructions on how the main agent should use subagents.
         is_async: Whether the `task` tool should be asynchronous.
 
@@ -318,23 +332,20 @@ class SubAgentMiddleware(AgentMiddleware):
         from langchain.agents.middleware.subagents import SubAgentMiddleware
         from langchain.agents import create_agent
 
-        agent = create_agent("openai:gpt-4o", middleware=[SubAgentMiddleware(
-            subagents=[
-
-            ]
-        )])
+        agent = create_agent("openai:gpt-4o", middleware=[SubAgentMiddleware(subagents=[])])
 
         # Agent now has access to the `task` tool
         result = await agent.invoke({"messages": [HumanMessage("Help me refactor my codebase")]})
+        ```
     """
 
     def __init__(
         self,
         *,
-        default_subagent_model: str | BaseChatModel,
-        default_subagent_tools: list[BaseTool] = [],
-        subagents: list[DefinedSubAgent | CustomSubAgent] = [],
-        system_prompt_extension: str = None,
+        default_subagent_model: LanguageModelLike | dict[str, Any],
+        default_subagent_tools: list[BaseTool] | None = None,
+        subagents: list[DefinedSubAgent | CustomSubAgent] | None = None,
+        system_prompt_extension: str | None = None,
         is_async: bool = False,
     ) -> None:
         """Initialize the SubAgentMiddleware."""
@@ -342,9 +353,9 @@ class SubAgentMiddleware(AgentMiddleware):
         self.system_prompt_extension = system_prompt_extension
         task_tool = _create_task_tool(
             default_subagent_model,
-            default_subagent_tools,
-            subagents,
-            is_async,
+            default_subagent_tools or [],
+            subagents or [],
+            is_async=is_async,
         )
         self.tools = [task_tool]
 
