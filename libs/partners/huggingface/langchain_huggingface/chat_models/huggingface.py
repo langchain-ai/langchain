@@ -334,11 +334,11 @@ class ChatHuggingFace(BaseChatModel):
             'HuggingFacePipeline' LLM to be used.
 
     Key init args — client params:
-        custom_get_token_ids: Optional[Callable[[str], list[int]]]
+        custom_get_token_ids: Callable[[str], list[int]] | None
             Optional encoder to use for counting tokens.
-        metadata: Optional[dict[str, Any]]
+        metadata: dict[str, Any] | None
             Metadata to add to the run trace.
-        tags: Optional[list[str]]
+        tags: list[str] | None
             Tags to add to the run trace.
         tokenizer: Any
         verbose: bool
@@ -918,7 +918,7 @@ class ChatHuggingFace(BaseChatModel):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

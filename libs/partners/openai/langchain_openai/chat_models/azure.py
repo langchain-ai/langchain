@@ -53,9 +53,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
             Name of Azure OpenAI deployment to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
 
     Key init args — client params:
@@ -64,15 +64,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             underlying model). `See more on the different versions. <https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning>`__
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries: Optional[int]
+        max_retries: int | None
             Max number of retries.
-        organization: Optional[str]
+        organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var ``OPENAI_ORG_ID``.
-        model: Optional[str]
+        model: str | None
             The name of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g. ``'gpt-4'``, ``'gpt-35-turbo'``, etc.
-        model_version: Optional[str]
+        model_version: str | None
             The version of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g., ``'0125'``, ``'0125-preview'``, etc.
 
@@ -298,7 +298,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(
+                rating: int | None = Field(
                     description="How funny the joke is, from 1 to 10"
                 )
 
@@ -947,7 +947,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
@@ -986,7 +986,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=..., description="A justification for the answer."
                     )
 
@@ -1019,7 +1019,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=..., description="A justification for the answer."
                     )
 
@@ -1085,7 +1085,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                     answer: str
                     justification: Annotated[
-                        Optional[str], None, "A justification for the answer."
+                        str | None, None, "A justification for the answer."
                     ]
 
 

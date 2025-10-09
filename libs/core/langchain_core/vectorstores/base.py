@@ -127,7 +127,7 @@ class VectorStore(ABC):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
+            bool | None: True if deletion is successful,
             False otherwise, None if not implemented.
         """
         msg = "delete method must be implemented by subclass."
@@ -195,7 +195,7 @@ class VectorStore(ABC):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
+            bool | None: True if deletion is successful,
             False otherwise, None if not implemented.
         """
         return await run_in_executor(None, self.delete, ids, **kwargs)
@@ -930,12 +930,11 @@ class VectorStore(ABC):
         Args:
             **kwargs: Keyword arguments to pass to the search function.
                 Can include:
-                search_type (Optional[str]): Defines the type of search that
-                    the Retriever should perform.
-                    Can be "similarity" (default), "mmr", or
+                search_type: Defines the type of search that the Retriever should
+                    perform. Can be "similarity" (default), "mmr", or
                     "similarity_score_threshold".
-                search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                    search function. Can include things like:
+                search_kwargs: Keyword arguments to pass to the search function. Can
+                    include things like:
                         k: Amount of documents to return (Default: 4)
                         score_threshold: Minimum relevance threshold
                             for similarity_score_threshold

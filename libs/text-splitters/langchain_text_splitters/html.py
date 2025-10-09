@@ -413,9 +413,7 @@ class HTMLSectionSplitter:
             html_doc (str): The HTML document to be split into sections.
 
         Returns:
-            List[Dict[str, Optional[str]]]: A list of dictionaries representing
-            sections.
-            Each dictionary contains:
+            A list of dictionaries representing sections. Each dictionary contains:
 
             * 'header': The header text or a default title for the first section.
             * 'content': The content under the header.

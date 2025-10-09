@@ -481,12 +481,12 @@ class BaseRunManager(RunManagerMixin):
                 The list of inheritable handlers.
             parent_run_id (UUID, optional): The ID of the parent run.
                 Defaults to `None`.
-            tags (Optional[list[str]]): The list of tags. Defaults to `None`.
-            inheritable_tags (Optional[list[str]]): The list of inheritable tags.
+            tags (list[str] | None): The list of tags. Defaults to `None`.
+            inheritable_tags (list[str] | None): The list of inheritable tags.
                 Defaults to `None`.
-            metadata (Optional[dict[str, Any]]): The metadata.
+            metadata (dict[str, Any] | None): The metadata.
                 Defaults to `None`.
-            inheritable_metadata (Optional[dict[str, Any]]): The inheritable metadata.
+            inheritable_metadata (dict[str, Any] | None): The inheritable metadata.
                 Defaults to `None`.
 
         """
@@ -692,10 +692,9 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token (str): The new token.
-            chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
-                The chunk. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments.
+            token: The new token.
+            chunk: The chunk.
+            **kwargs: Additional keyword arguments.
 
         """
         if not self.handlers:
@@ -791,10 +790,9 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         """Run when LLM generates a new token.
 
         Args:
-            token (str): The new token.
-            chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
-                The chunk. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments.
+            token: The new token.
+            chunk: The chunk.
+            **kwargs: Additional keyword arguments.
 
         """
         if not self.handlers:
@@ -1433,7 +1431,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when chain starts running.
 
         Args:
-            serialized (Optional[dict[str, Any]]): The serialized chain.
+            serialized (dict[str, Any] | None): The serialized chain.
             inputs (Union[dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments.
@@ -1537,7 +1535,7 @@ class CallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Optional[dict[str, Any]]): The serialized retriever.
+            serialized (dict[str, Any] | None): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to `None`.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to
@@ -1635,24 +1633,16 @@ class CallbackManager(BaseCallbackManager):
         """Configure the callback manager.
 
         Args:
-            inheritable_callbacks (Optional[Callbacks], optional): The inheritable
-                callbacks. Defaults to `None`.
-            local_callbacks (Optional[Callbacks], optional): The local callbacks.
-                Defaults to `None`.
-            verbose (bool, optional): Whether to enable verbose mode. Defaults to
-                `False`.
-            inheritable_tags (Optional[list[str]], optional): The inheritable tags.
-                Defaults to `None`.
-            local_tags (Optional[list[str]], optional): The local tags.
-                Defaults to `None`.
-            inheritable_metadata (Optional[dict[str, Any]], optional): The inheritable
-                metadata. Defaults to `None`.
-            local_metadata (Optional[dict[str, Any]], optional): The local metadata.
-                Defaults to `None`.
+            inheritable_callbacks: The inheritable callbacks.
+            local_callbacks: The local callbacks.
+            verbose: Whether to enable verbose mode.
+            inheritable_tags: The inheritable tags.
+            local_tags: The local tags.
+            inheritable_metadata: The inheritable metadata.
+            local_metadata: The local metadata.
 
         Returns:
             CallbackManager: The configured callback manager.
-
         """
         return _configure(
             cls,
@@ -1681,13 +1671,11 @@ class CallbackManagerForChainGroup(CallbackManager):
         """Initialize the callback manager.
 
         Args:
-            handlers (list[BaseCallbackHandler]): The list of handlers.
-            inheritable_handlers (Optional[list[BaseCallbackHandler]]): The list of
-                inheritable handlers. Defaults to `None`.
-            parent_run_id (Optional[UUID]): The ID of the parent run. Defaults to
-                `None`.
-            parent_run_manager (CallbackManagerForChainRun): The parent run manager.
-            **kwargs (Any): Additional keyword arguments.
+            handlers: The list of handlers.
+            inheritable_handlers: The list of inheritable handlers.
+            parent_run_id: The ID of the parent run.
+            parent_run_manager: The parent run manager.
+            **kwargs: Additional keyword arguments.
 
         """
         super().__init__(
@@ -1984,7 +1972,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Async run when chain starts running.
 
         Args:
-            serialized (Optional[dict[str, Any]]): The serialized chain.
+            serialized (dict[str, Any] | None): The serialized chain.
             inputs (Union[dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to `None`.
             **kwargs (Any): Additional keyword arguments.
@@ -2032,7 +2020,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the tool starts running.
 
         Args:
-            serialized (Optional[dict[str, Any]]): The serialized tool.
+            serialized (dict[str, Any] | None): The serialized tool.
             input_str (str): The input to the tool.
             run_id (UUID, optional): The ID of the run. Defaults to `None`.
             parent_run_id (UUID, optional): The ID of the parent run.
@@ -2128,7 +2116,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Run when the retriever starts running.
 
         Args:
-            serialized (Optional[dict[str, Any]]): The serialized retriever.
+            serialized (dict[str, Any] | None): The serialized retriever.
             query (str): The query.
             run_id (UUID, optional): The ID of the run. Defaults to `None`.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to
@@ -2180,20 +2168,13 @@ class AsyncCallbackManager(BaseCallbackManager):
         """Configure the async callback manager.
 
         Args:
-            inheritable_callbacks (Optional[Callbacks], optional): The inheritable
-                callbacks. Defaults to `None`.
-            local_callbacks (Optional[Callbacks], optional): The local callbacks.
-                Defaults to `None`.
-            verbose (bool, optional): Whether to enable verbose mode. Defaults to
-                `False`.
-            inheritable_tags (Optional[list[str]], optional): The inheritable tags.
-                Defaults to `None`.
-            local_tags (Optional[list[str]], optional): The local tags.
-                Defaults to `None`.
-            inheritable_metadata (Optional[dict[str, Any]], optional): The inheritable
-                metadata. Defaults to `None`.
-            local_metadata (Optional[dict[str, Any]], optional): The local metadata.
-                Defaults to `None`.
+            inheritable_callbacks: The inheritable callbacks.
+            local_callbacks: The local callbacks.
+            verbose: Whether to enable verbose mode.
+            inheritable_tags: The inheritable tags.
+            local_tags: The local tags.
+            inheritable_metadata: The inheritable metadata.
+            local_metadata: The local metadata.
 
         Returns:
             AsyncCallbackManager: The configured async callback manager.
@@ -2225,14 +2206,11 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         """Initialize the async callback manager.
 
         Args:
-            handlers (list[BaseCallbackHandler]): The list of handlers.
-            inheritable_handlers (Optional[list[BaseCallbackHandler]]): The list of
-                inheritable handlers. Defaults to `None`.
-            parent_run_id (Optional[UUID]): The ID of the parent run. Defaults to
-                `None`.
-            parent_run_manager (AsyncCallbackManagerForChainRun):
-                The parent run manager.
-            **kwargs (Any): Additional keyword arguments.
+            handlers: The list of handlers.
+            inheritable_handlers: The list of inheritable handlers.
+            parent_run_id: The ID of the parent run.
+            parent_run_manager: The parent run manager.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(
             handlers,
@@ -2364,19 +2342,14 @@ def _configure(
     """Configure the callback manager.
 
     Args:
-        callback_manager_cls (Type[T]): The callback manager class.
-        inheritable_callbacks (Optional[Callbacks], optional): The inheritable
-            callbacks. Defaults to `None`.
-        local_callbacks (Optional[Callbacks], optional): The local callbacks.
-            Defaults to `None`.
-        verbose (bool, optional): Whether to enable verbose mode. Defaults to `False`.
-        inheritable_tags (Optional[list[str]], optional): The inheritable tags.
-            Defaults to `None`.
-        local_tags (Optional[list[str]], optional): The local tags. Defaults to `None`.
-        inheritable_metadata (Optional[dict[str, Any]], optional): The inheritable
-            metadata. Defaults to `None`.
-        local_metadata (Optional[dict[str, Any]], optional): The local metadata.
-            Defaults to `None`.
+        callback_manager_cls: The callback manager class.
+        inheritable_callbacks: The inheritable callbacks.
+        local_callbacks: The local callbacks.
+        inheritable_tags: The inheritable tags.
+        local_tags: The local tags.
+        inheritable_metadata: The inheritable metadata.
+        local_metadata: The local metadata.
+        verbose: Whether to enable verbose mode.
 
     Raises:
         RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
@@ -2564,8 +2537,8 @@ async def adispatch_custom_event(
                     data: Any,
                     *,
                     run_id: UUID,
-                    tags: Optional[list[str]] = None,
-                    metadata: Optional[dict[str, Any]] = None,
+                    tags: list[str] | None = None,
+                    metadata: dict[str, Any] | None = None,
                     **kwargs: Any,
                 ) -> None:
                     print(f"Received custom event: {name} with data: {data}")
@@ -2596,8 +2569,8 @@ async def adispatch_custom_event(
                     data: Any,
                     *,
                     run_id: UUID,
-                    tags: Optional[list[str]] = None,
-                    metadata: Optional[dict[str, Any]] = None,
+                    tags: list[str] | None = None,
+                    metadata: dict[str, Any] | None = None,
                     **kwargs: Any,
                 ) -> None:
                     print(f"Received custom event: {name} with data: {data}")
@@ -2688,8 +2661,8 @@ def dispatch_custom_event(
                     data: Any,
                     *,
                     run_id: UUID,
-                    tags: Optional[list[str]] = None,
-                    metadata: Optional[dict[str, Any]] = None,
+                    tags: list[str] | None = None,
+                    metadata: dict[str, Any] | None = None,
                     **kwargs: Any,
                 ) -> None:
                     print(f"Received custom event: {name} with data: {data}")

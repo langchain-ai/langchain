@@ -39,23 +39,23 @@ class OllamaLLM(BaseLLM):
     Key init args — generation params:
         model: str
             Name of the Ollama model to use (e.g. ``'llama4'``).
-        temperature: Optional[float]
+        temperature: float | None
             Sampling temperature. Higher values make output more creative.
-        num_predict: Optional[int]
+        num_predict: int | None
             Maximum number of tokens to predict.
-        top_k: Optional[int]
+        top_k: int | None
             Limits the next token selection to the K most probable tokens.
-        top_p: Optional[float]
+        top_p: float | None
             Nucleus sampling parameter. Higher values lead to more diverse text.
-        mirostat: Optional[int]
+        mirostat: int | None
             Enable Mirostat sampling for controlling perplexity.
-        seed: Optional[int]
+        seed: int | None
             Random number seed for generation reproducibility.
 
     Key init args — client params:
-        base_url: Optional[str]
+        base_url: str | None
             Base URL where Ollama server is hosted.
-        keep_alive: Optional[Union[int, str]]
+        keep_alive: int | str | None
             How long the model stays loaded into memory.
         format: Literal["", "json"]
             Specify the format of the output.

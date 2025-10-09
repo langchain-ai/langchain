@@ -78,23 +78,23 @@ class BaseOpenAI(BaseLLM):
             How many completions to generate for each prompt.
         best_of: int
             Generates best_of completions server-side and returns the "best".
-        logit_bias: Optional[dict[str, float]]
+        logit_bias: dict[str, float] | None
             Adjust the probability of specific tokens being generated.
-        seed: Optional[int]
+        seed: int | None
             Seed for generation.
-        logprobs: Optional[int]
+        logprobs: int | None
             Include the log probabilities on the logprobs most likely output tokens.
         streaming: bool
             Whether to stream the results or not.
 
     Key init args — client params:
-        openai_api_key: Optional[SecretStr]
+        openai_api_key: SecretStr | None
             OpenAI API key. If not passed in will be read from env var
             ``OPENAI_API_KEY``.
-        openai_api_base: Optional[str]
+        openai_api_base: str | None
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
-        openai_organization: Optional[str]
+        openai_organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var ``OPENAI_ORG_ID``.
         request_timeout: Union[float, tuple[float, float], Any, None]
@@ -716,9 +716,9 @@ class OpenAI(BaseOpenAI):
             Name of OpenAI model to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
@@ -729,12 +729,12 @@ class OpenAI(BaseOpenAI):
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization: Optional[str]
+        organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var ``OPENAI_ORG_ID``.
 

@@ -1284,9 +1284,9 @@ class Runnable(ABC, Generic[Input, Output]):
           the event. The root `Runnable` will have an empty list. The order of the parent
           IDs is from the root to the immediate parent. Only available for v2 version of
           the API. The v1 version of the API will return an empty list.
-        - ``tags``: **Optional[list[str]]** - The tags of the `Runnable` that generated
+        - ``tags``: **list[str] | None** - The tags of the `Runnable` that generated
           the event.
-        - ``metadata``: **Optional[dict[str, Any]]** - The metadata of the `Runnable` that
+        - ``metadata``: **dict[str, Any] | None** - The metadata of the `Runnable` that
           generated the event.
         - ``data``: **dict[str, Any]**
 

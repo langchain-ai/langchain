@@ -686,8 +686,8 @@ class ChildTool(BaseTool):
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
-        Add run_manager: Optional[CallbackManagerForToolRun] = None
-        to child implementations to enable tracing.
+        Add `run_manager: CallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
 
         Returns:
             The result of the tool execution.
@@ -696,8 +696,8 @@ class ChildTool(BaseTool):
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
-        Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-        to child implementations to enable tracing.
+        Add `run_manager: AsyncCallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
 
         Returns:
             The result of the tool execution.

@@ -45,10 +45,10 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             Sampling temperature between `0` and `2`. Higher values mean more random completions,
             while lower values (like `0.2`) mean more focused and deterministic completions.
             (Default: `1`.)
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate. Refer to your `model's documentation <https://docs.x.ai/docs/models#model-pricing>`__
             for the maximum number of tokens it can generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
 
     Key init args — client params:
@@ -56,7 +56,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             xAI API key. If not passed in will be read from env var `XAI_API_KEY`.
 
     Instantiate:
@@ -308,7 +308,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -639,7 +639,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

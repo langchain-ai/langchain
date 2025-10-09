@@ -42,15 +42,15 @@ class ChatDeepSeek(BaseChatOpenAI):
             Name of DeepSeek model to use, e.g. "deepseek-chat".
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: Optional[float]
+        timeout: float | None
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             DeepSeek API key. If not passed in will be read from env var DEEPSEEK_API_KEY.
 
     See full list of supported init args and their descriptions in the params section.
@@ -141,7 +141,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -429,7 +429,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

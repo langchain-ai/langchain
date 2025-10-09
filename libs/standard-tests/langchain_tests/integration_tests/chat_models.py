@@ -232,7 +232,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. code-block:: python
 
             @property
-            def tool_choice_value(self) -> Optional[str]:
+            def tool_choice_value(self) -> str | None:
                 return "any"
 
     ??? note "`has_tool_choice`"
@@ -1344,8 +1344,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def _generate(
                     self,
                     messages: List[BaseMessage],
-                    stop: Optional[List[str]] = None,
-                    run_manager: Optional[CallbackManagerForLLMRun] = None,
+                    stop: list[str] | None = None,
+                    run_manager: CallbackManagerForLLMRun | None = None,
                     **kwargs: Any,
                 ) -> ChatResult:
 

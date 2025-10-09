@@ -88,8 +88,6 @@ class LLMRun(BaseRun):
     """Class for LLMRun."""
 
     prompts: list[str]
-    # Temporarily, remove but we will completely remove LLMRun
-    # response: Optional[LLMResult] = None
 
 
 @deprecated("0.1.0", alternative="Run", removal="1.0")
