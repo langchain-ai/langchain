@@ -6,7 +6,6 @@ import json
 from collections.abc import Callable, Sequence
 from typing import Any, cast
 
-from langchain_core._api import deprecated
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
@@ -24,7 +23,6 @@ from langchain_core.structured_query import (
 )
 from typing_extensions import override
 
-from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.query_constructor.parser import get_parser
 from langchain_classic.chains.query_constructor.prompt import (
     DEFAULT_EXAMPLES,
@@ -263,63 +261,6 @@ def get_query_constructor_prompt(
         prefix=prefix,
         **kwargs,
     )
-
-
-@deprecated(
-    since="0.2.13",
-    alternative="load_query_constructor_runnable",
-    removal="1.0",
-)
-def load_query_constructor_chain(
-    llm: BaseLanguageModel,
-    document_contents: str,
-    attribute_info: Sequence[AttributeInfo | dict],
-    examples: list | None = None,
-    allowed_comparators: Sequence[Comparator] = tuple(Comparator),
-    allowed_operators: Sequence[Operator] = tuple(Operator),
-    enable_limit: bool = False,  # noqa: FBT001,FBT002
-    schema_prompt: BasePromptTemplate | None = None,
-    **kwargs: Any,
-) -> LLMChain:
-    """Load a query constructor chain.
-
-    Args:
-        llm: BaseLanguageModel to use for the chain.
-        document_contents: The contents of the document to be queried.
-        attribute_info: Sequence of attributes in the document.
-        examples: Optional list of examples to use for the chain.
-        allowed_comparators: Sequence of allowed comparators. Defaults to all
-            Comparators.
-        allowed_operators: Sequence of allowed operators. Defaults to all Operators.
-        enable_limit: Whether to enable the limit operator. Defaults to `False`.
-        schema_prompt: Prompt for describing query schema. Should have string input
-            variables allowed_comparators and allowed_operators.
-        **kwargs: Arbitrary named params to pass to LLMChain.
-
-    Returns:
-        A LLMChain that can be used to construct queries.
-    """
-    prompt = get_query_constructor_prompt(
-        document_contents,
-        attribute_info,
-        examples=examples,
-        allowed_comparators=allowed_comparators,
-        allowed_operators=allowed_operators,
-        enable_limit=enable_limit,
-        schema_prompt=schema_prompt,
-    )
-    allowed_attributes = [
-        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
-        for ainfo in attribute_info
-    ]
-    output_parser = StructuredQueryOutputParser.from_components(
-        allowed_comparators=allowed_comparators,
-        allowed_operators=allowed_operators,
-        allowed_attributes=allowed_attributes,
-    )
-    # For backwards compatibility.
-    prompt.output_parser = output_parser
-    return LLMChain(llm=llm, prompt=prompt, output_parser=output_parser, **kwargs)
 
 
 def load_query_constructor_runnable(
