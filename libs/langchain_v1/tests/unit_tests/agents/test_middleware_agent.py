@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Awaitable, Callable
 from types import ModuleType
 from typing import Any
 from unittest.mock import patch
@@ -114,8 +115,12 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def modify_model_request(self, request):
-            pass
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            return handler(request)
 
         def after_model(self, state, runtime):
             pass
@@ -124,8 +129,12 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def modify_model_request(self, request):
-            pass
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            return handler(request)
 
         def after_model(self, state, runtime):
             pass
@@ -248,9 +257,13 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopSeven.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopSeven.on_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -259,9 +272,13 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopEight.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopEight.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopEight.on_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -317,15 +334,15 @@ def test_create_agent_invoke(
     assert calls == [
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.modify_model_request",
-        "NoopEight.modify_model_request",
+        "NoopSeven.on_model_call",
+        "NoopEight.on_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
         "my_tool",
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.modify_model_request",
-        "NoopEight.modify_model_request",
+        "NoopSeven.on_model_call",
+        "NoopEight.on_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
     ]
@@ -341,9 +358,13 @@ def test_create_agent_jump(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopSeven.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopSeven.on_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -354,9 +375,13 @@ def test_create_agent_jump(
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("NoopEight.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopEight.on_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -1019,9 +1044,12 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         model_settings={},
     )
 
-    assert middleware.modify_model_request(fake_request).model_settings == {
-        "cache_control": {"type": "ephemeral", "ttl": "5m"}
-    }
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response", **req.model_settings)
+
+    result = middleware.on_model_call(fake_request, mock_handler)
+    # Check that model_settings were passed through via the request
+    assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
 
 
 def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
@@ -1042,11 +1070,14 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
 
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
     with pytest.raises(
         ValueError,
         match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
     ):
-        middleware.modify_model_request(fake_request)
+        middleware.on_model_call(fake_request, mock_handler)
 
     langchain_anthropic = ModuleType("langchain_anthropic")
 
@@ -1060,23 +1091,23 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
             ValueError,
             match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
         ):
-            middleware.modify_model_request(fake_request)
+            middleware.on_model_call(fake_request, mock_handler)
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
 
     with warnings.catch_warnings(record=True) as w:
-        result = middleware.modify_model_request(fake_request)
+        result = middleware.on_model_call(fake_request, mock_handler)
         assert len(w) == 1
         assert (
             "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
             in str(w[-1].message)
         )
-        assert result == fake_request
+        assert isinstance(result, AIMessage)
 
     with warnings.catch_warnings(record=True) as w:
         with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.modify_model_request(fake_request)
-            assert result is fake_request
+            result = middleware.on_model_call(fake_request, mock_handler)
+            assert isinstance(result, AIMessage)
             assert len(w) == 1
             assert (
                 "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
@@ -1085,12 +1116,12 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
-    result = middleware.modify_model_request(fake_request)
-    assert result is fake_request
+    result = middleware.on_model_call(fake_request, mock_handler)
+    assert isinstance(result, AIMessage)
 
     with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.modify_model_request(fake_request)
-        assert result is fake_request
+        result = middleware.on_model_call(fake_request, mock_handler)
+        assert isinstance(result, AIMessage)
 
 
 # Tests for SummarizationMiddleware
@@ -1310,11 +1341,15 @@ def test_summarization_middleware_full_workflow() -> None:
     assert "Generated summary" in summary_message.content
 
 
-def test_modify_model_request() -> None:
+def test_on_model_call() -> None:
     class ModifyMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             request.messages.append(HumanMessage("remember to be nice!"))
-            return request
+            return handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -1444,9 +1479,13 @@ def test_runtime_injected_into_middleware() -> None:
             assert runtime is not None
             return None
 
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             assert request.runtime is not None
-            return request
+            return handler(request)
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
@@ -1535,8 +1574,8 @@ def test_planning_middleware_initialization() -> None:
         (None, "## `write_todos`"),
     ],
 )
-def test_planning_middleware_modify_model_request(original_prompt, expected_prompt_prefix) -> None:
-    """Test that modify_model_request handles system prompts correctly."""
+def test_planning_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
+    """Test that on_model_call handles system prompts correctly."""
     middleware = PlanningMiddleware()
     model = FakeToolCallingModel()
 
@@ -1554,8 +1593,13 @@ def test_planning_middleware_modify_model_request(original_prompt, expected_prom
         model_settings={},
     )
 
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt.startswith(expected_prompt_prefix)
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call on_model_call to trigger the middleware logic
+    middleware.on_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt.startswith(expected_prompt_prefix)
 
 
 @pytest.mark.parametrize(
@@ -1680,8 +1724,14 @@ def test_planning_middleware_custom_system_prompt() -> None:
     )
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call on_model_call to trigger the middleware logic
+    middleware.on_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
 
 
 def test_planning_middleware_custom_tool_description() -> None:
@@ -1719,8 +1769,13 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
         model_settings={},
     )
 
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt == custom_system_prompt
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call on_model_call to trigger the middleware logic
+    middleware.on_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt == custom_system_prompt
 
     # Verify tool description
     assert len(middleware.tools) == 1
@@ -1989,10 +2044,14 @@ async def test_create_agent_async_invoke() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddleware.amodify_model_request")
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddleware.aon_model_call")
             request.messages.append(HumanMessage("async middleware message"))
-            return request
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2029,11 +2088,11 @@ async def test_create_agent_async_invoke() -> None:
     assert result["messages"][1].content == "async middleware message"
     assert calls == [
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aon_model_call",
         "AsyncMiddleware.aafter_model",
         "my_tool",
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aon_model_call",
         "AsyncMiddleware.aafter_model",
     ]
 
@@ -2046,9 +2105,13 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddlewareOne.amodify_model_request")
-            return request
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddlewareOne.aon_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.aafter_model")
@@ -2057,9 +2120,13 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddlewareTwo.amodify_model_request")
-            return request
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddlewareTwo.aon_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.aafter_model")
@@ -2076,8 +2143,8 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
     assert calls == [
         "AsyncMiddlewareOne.abefore_model",
         "AsyncMiddlewareTwo.abefore_model",
-        "AsyncMiddlewareOne.amodify_model_request",
-        "AsyncMiddlewareTwo.amodify_model_request",
+        "AsyncMiddlewareOne.aon_model_call",
+        "AsyncMiddlewareTwo.aon_model_call",
         "AsyncMiddlewareTwo.aafter_model",
         "AsyncMiddlewareOne.aafter_model",
     ]
@@ -2126,9 +2193,13 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         def before_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.before_model")
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("SyncMiddleware.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("SyncMiddleware.on_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.after_model")
@@ -2137,9 +2208,13 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddleware.amodify_model_request")
-            return request
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddleware.aon_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2154,11 +2229,12 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     # In async mode, both sync and async middleware should work
+    # Note: Sync on_model_call is not called when running in async mode,
+    # as the async version is preferred
     assert calls == [
         "SyncMiddleware.before_model",
         "AsyncMiddleware.abefore_model",
-        "SyncMiddleware.modify_model_request",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aon_model_call",
         "AsyncMiddleware.aafter_model",
         "SyncMiddleware.after_model",
     ]
@@ -2539,8 +2615,12 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
     """Test that sync invoke with only async middleware works via run_in_executor."""
 
     class AsyncOnlyMiddleware(AgentMiddleware):
-        async def amodify_model_request(self, request) -> ModelRequest:
-            return request
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            return await handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -2549,11 +2629,10 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         middleware=[AsyncOnlyMiddleware()],
     )
 
-    with pytest.raises(
-        TypeError,
-        match="No synchronous function provided for AsyncOnlyMiddleware.amodify_model_request",
-    ):
-        agent.invoke({"messages": [HumanMessage("hello")]})
+    # This should work now via run_in_executor
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    assert result is not None
+    assert "messages" in result
 
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
@@ -2567,13 +2646,21 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("MixedMiddleware.abefore_model")
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("MixedMiddleware.modify_model_request")
-            return request
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("MixedMiddleware.on_model_call")
+            return handler(request)
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("MixedMiddleware.amodify_model_request")
-            return request
+        async def aon_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("MixedMiddleware.aon_model_call")
+            return await handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -2587,5 +2674,5 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     # In sync mode, only sync methods should be called
     assert calls == [
         "MixedMiddleware.before_model",
-        "MixedMiddleware.modify_model_request",
+        "MixedMiddleware.on_model_call",
     ]
