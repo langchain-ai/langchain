@@ -76,32 +76,10 @@ if TYPE_CHECKING:
         XinferenceEmbeddings,
     )
 
+    from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder
+
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: this is in here to maintain backwards compatibility
-class HypotheticalDocumentEmbedder:
-    def __init__(self, *args: Any, **kwargs: Any):
-        logger.warning(
-            "Using a deprecated class. Please use "
-            "`from langchain_classic.chains import "
-            "HypotheticalDocumentEmbedder` instead",
-        )
-        from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder as H
-
-        return H(*args, **kwargs)  # type: ignore[return-value] # noqa: PLE0101
-
-    @classmethod
-    def from_llm(cls, *args: Any, **kwargs: Any) -> Any:
-        logger.warning(
-            "Using a deprecated class. Please use "
-            "`from langchain_classic.chains import "
-            "HypotheticalDocumentEmbedder` instead",
-        )
-        from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder as H
-
-        return H.from_llm(*args, **kwargs)
 
 
 # Create a way to dynamically look up deprecated imports.
@@ -134,6 +112,7 @@ DEPRECATED_LOOKUP = {
     "HuggingFaceHubEmbeddings": "langchain_community.embeddings",
     "HuggingFaceInferenceAPIEmbeddings": "langchain_community.embeddings",
     "HuggingFaceInstructEmbeddings": "langchain_community.embeddings",
+    "HypotheticalDocumentEmbedder": "langchain_classic.chains.hyde.base",
     "InfinityEmbeddings": "langchain_community.embeddings",
     "JavelinAIGatewayEmbeddings": "langchain_community.embeddings",
     "JinaEmbeddings": "langchain_community.embeddings",
@@ -199,6 +178,7 @@ __all__ = [
     "HuggingFaceHubEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
     "HuggingFaceInstructEmbeddings",
+    "HypotheticalDocumentEmbedder",
     "InfinityEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "JinaEmbeddings",
