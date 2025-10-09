@@ -51,7 +51,7 @@ from langchain.tools import ToolNode
 from langchain.tools.tool_node import ToolCallWithContext
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Sequence
+    from collections.abc import Callable, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -402,61 +402,15 @@ def _chain_tool_call_handlers(
         """Compose two handlers where outer wraps inner."""
 
         def composed(
-            request: ToolCallRequest, state: Any, runtime: Any
-        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
-            outer_gen = outer(request, state, runtime)
+            request: ToolCallRequest,
+            execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        ) -> ToolMessage | Command:
+            # Create a callable that invokes inner with the original execute
+            def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+                return inner(req, execute)
 
-            # Initialize outer generator
-            try:
-                outer_request_or_result = next(outer_gen)
-            except StopIteration:
-                msg = "outer handler must yield at least once"
-                raise ValueError(msg)
-
-            # Outer retry loop
-            while True:
-                # If outer yielded a ToolMessage or Command, bypass inner and yield directly
-                if isinstance(outer_request_or_result, (ToolMessage, Command)):
-                    result = yield outer_request_or_result
-                    try:
-                        outer_request_or_result = outer_gen.send(result)
-                    except StopIteration:
-                        # Outer ended - final result is what we sent to it
-                        return
-                    continue
-
-                inner_gen = inner(outer_request_or_result, state, runtime)
-                last_sent_to_inner: ToolMessage | Command | None = None
-
-                # Initialize inner generator
-                try:
-                    inner_request_or_result = next(inner_gen)
-                except StopIteration:
-                    msg = "inner handler must yield at least once"
-                    raise ValueError(msg)
-
-                # Inner retry loop
-                while True:
-                    # Yield to actual tool execution
-                    result = yield inner_request_or_result
-                    last_sent_to_inner = result
-
-                    # Send result to inner
-                    try:
-                        inner_request_or_result = inner_gen.send(result)
-                    except StopIteration:
-                        # Inner is done - final result from inner is last_sent_to_inner
-                        break
-
-                # Send inner's final result to outer
-                if last_sent_to_inner is None:
-                    msg = "inner handler ended without receiving any result"
-                    raise ValueError(msg)
-                try:
-                    outer_request_or_result = outer_gen.send(last_sent_to_inner)
-                except StopIteration:
-                    # Outer is done - final result is what we sent to it
-                    return
+            # Outer can call call_inner multiple times
+            return outer(request, call_inner)
 
         return composed
 
