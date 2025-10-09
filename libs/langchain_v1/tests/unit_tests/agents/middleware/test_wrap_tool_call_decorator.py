@@ -44,7 +44,7 @@ def test_wrap_tool_call_basic_passthrough() -> None:
     @wrap_tool_call
     def passthrough(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("called")
-        return handler(request)
+        return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -79,7 +79,7 @@ def test_wrap_tool_call_logging() -> None:
     @wrap_tool_call
     def logging_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append(f"before_{request.tool.name}")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append(f"after_{request.tool.name}")
         return response
 
@@ -115,7 +115,7 @@ def test_wrap_tool_call_modify_args() -> None:
         # Modify the query argument before execution
         if request.tool.name == "search":
             request.tool_call["args"]["query"] = "modified query"
-        return handler(request)
+        return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -151,7 +151,7 @@ def test_wrap_tool_call_access_state() -> None:
         if request.state is not None:
             messages = request.state.get("messages", [])
             state_data.append(len(messages))
-        return handler(request)
+        return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -187,7 +187,7 @@ def test_wrap_tool_call_access_runtime() -> None:
         if request.runtime is not None:
             # Runtime object is available (has context, store, stream_writer, previous)
             runtime_data.append(type(request.runtime).__name__)
-        return handler(request)
+        return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -224,7 +224,7 @@ def test_wrap_tool_call_retry_on_error() -> None:
         for attempt in range(max_retries):
             attempt_counts.append(attempt)
             try:
-                return handler(request)
+                return handler(request.tool_call)
             except Exception as e:
                 last_error = e
                 if attempt == max_retries - 1:
@@ -316,7 +316,7 @@ def test_wrap_tool_call_response_modification() -> None:
 
     @wrap_tool_call
     def modify_response(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        response = handler(request)
+        response = handler(request.tool_call)
 
         # Modify the response
         if isinstance(response, ToolMessage):
@@ -359,14 +359,14 @@ def test_wrap_tool_call_multiple_middleware_composition() -> None:
     @wrap_tool_call
     def outer_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("outer_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("outer_after")
         return response
 
     @wrap_tool_call
     def inner_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("inner_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("inner_after")
         return response
 
@@ -403,7 +403,7 @@ def test_wrap_tool_call_multiple_tools() -> None:
     @wrap_tool_call
     def log_tool_calls(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append(request.tool.name)
-        return handler(request)
+        return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -441,7 +441,7 @@ def test_wrap_tool_call_with_custom_name() -> None:
 
     @wrap_tool_call(name="CustomToolWrapper")
     def my_wrapper(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        return handler(request)
+        return handler(request.tool_call)
 
     # Verify custom name was applied
     assert my_wrapper.__class__.__name__ == "CustomToolWrapper"
@@ -457,7 +457,7 @@ def test_wrap_tool_call_with_tools_parameter() -> None:
 
     @wrap_tool_call(tools=[extra_tool])
     def wrapper_with_tools(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        return handler(request)
+        return handler(request.tool_call)
 
     # Verify tools were registered
     assert wrapper_with_tools.tools == [extra_tool]
@@ -470,21 +470,21 @@ def test_wrap_tool_call_three_levels_composition() -> None:
     @wrap_tool_call(name="OuterWrapper")
     def outer(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("outer_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("outer_after")
         return response
 
     @wrap_tool_call(name="MiddleWrapper")
     def middle(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("middle_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("middle_after")
         return response
 
     @wrap_tool_call(name="InnerWrapper")
     def inner(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("inner_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("inner_after")
         return response
 
@@ -528,7 +528,7 @@ def test_wrap_tool_call_outer_intercepts_inner() -> None:
     @wrap_tool_call(name="InterceptingOuter")
     def intercepting_outer(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("outer_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("outer_after")
 
         # Return modified message
@@ -541,7 +541,7 @@ def test_wrap_tool_call_outer_intercepts_inner() -> None:
     @wrap_tool_call(name="InnerWrapper")
     def inner(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("inner_called")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("inner_got_response")
         return response
 
@@ -584,7 +584,7 @@ def test_wrap_tool_call_inner_short_circuits() -> None:
     @wrap_tool_call(name="OuterWrapper")
     def outer(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("outer_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("outer_after")
 
         # Wrap inner's response
@@ -640,7 +640,7 @@ def test_wrap_tool_call_mixed_passthrough_and_intercepting() -> None:
     @wrap_tool_call(name="FirstPassthrough")
     def first_passthrough(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("first_before")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("first_after")
         return response
 
@@ -648,7 +648,7 @@ def test_wrap_tool_call_mixed_passthrough_and_intercepting() -> None:
     def second_intercepting(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("second_intercept")
         # Call handler but ignore result
-        _ = handler(request)
+        _ = handler(request.tool_call)
         # Return custom result
         return ToolMessage(
             content="intercepted_result",
@@ -659,7 +659,7 @@ def test_wrap_tool_call_mixed_passthrough_and_intercepting() -> None:
     @wrap_tool_call(name="ThirdPassthrough")
     def third_passthrough(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append("third_called")
-        response = handler(request)
+        response = handler(request.tool_call)
         call_log.append("third_after")
         return response
 
@@ -701,7 +701,7 @@ def test_wrap_tool_call_uses_function_name_as_default() -> None:
 
     @wrap_tool_call
     def my_custom_wrapper(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
-        return handler(request)
+        return handler(request.tool_call)
 
     # Verify that function name is used as middleware class name
     assert my_custom_wrapper.__class__.__name__ == "my_custom_wrapper"
@@ -727,7 +727,7 @@ def test_wrap_tool_call_caching_pattern() -> None:
 
         # Execute tool and cache result
         handler_calls.append("executed")
-        response = handler(request)
+        response = handler(request.tool_call)
 
         if isinstance(response, ToolMessage):
             cache[cache_key] = response.content
@@ -771,7 +771,7 @@ def test_wrap_tool_call_monitoring_pattern() -> None:
         import time
 
         start_time = time.time()
-        response = handler(request)
+        response = handler(request.tool_call)
         execution_time = time.time() - start_time
 
         metrics.append(

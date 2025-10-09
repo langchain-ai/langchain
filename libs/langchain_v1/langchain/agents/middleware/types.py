@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AIMessage, AnyMessage, ToolMessage  # noqa: TC002
+from langchain_core.messages import AIMessage, AnyMessage, ToolCall, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
@@ -264,7 +264,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        handler: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Intercept tool execution for retries, monitoring, or modification.
 
@@ -279,22 +279,24 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Returns:
             ToolMessage or Command (the final result).
 
-        The handler callable can be invoked multiple times for retry logic.
-        Each call to handler is independent and stateless.
+        The handler callable can be invoked multiple times for retry logic
+        with potentially modified tool calls. Each call to handler is independent
+        and stateless.
 
         Examples:
             Modify request before execution:
 
             def wrap_tool_call(self, request, handler):
-                request.tool_call["args"]["value"] *= 2
-                return handler(request)
+                modified_call = request.tool_call.copy()
+                modified_call["args"]["value"] *= 2
+                return handler(modified_call)
 
             Retry on error (call handler multiple times):
 
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
-                        result = handler(request)
+                        result = handler(request.tool_call)
                         if is_valid(result):
                             return result
                     except Exception:
@@ -306,7 +308,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
-                    result = handler(request)
+                    result = handler(request.tool_call)
                     if isinstance(result, ToolMessage) and result.status != "error":
                         return result
                     if attempt < 2:
@@ -353,12 +355,13 @@ class _CallableReturningToolResponse(Protocol):
     """Callable for tool call interception with handler callback.
 
     Receives handler callback to execute tool and returns final ToolMessage or Command.
+    Handler takes ToolCall dict and returns ToolMessage or Command.
     """
 
     def __call__(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+        handler: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Intercept tool execution via handler callback."""
         ...
@@ -1267,7 +1270,7 @@ def wrap_tool_call(
         ```python
         @wrap_tool_call
         def passthrough(request, handler):
-            return handler(request)
+            return handler(request.tool_call)
         ```
 
         Retry logic:
@@ -1277,7 +1280,7 @@ def wrap_tool_call(
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    return handler(request)
+                    return handler(request.tool_call)
                 except Exception:
                     if attempt == max_retries - 1:
                         raise
@@ -1287,8 +1290,9 @@ def wrap_tool_call(
         ```python
         @wrap_tool_call
         def modify_args(request, handler):
-            request.tool_call["args"]["value"] *= 2
-            return handler(request)
+            modified_call = request.tool_call.copy()
+            modified_call["args"]["value"] *= 2
+            return handler(modified_call)
         ```
 
         Short-circuit with cached result:
@@ -1297,7 +1301,7 @@ def wrap_tool_call(
         def with_cache(request, handler):
             if cached := get_cache(request):
                 return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-            result = handler(request)
+            result = handler(request.tool_call)
             save_cache(request, result)
             return result
         ```
@@ -1309,7 +1313,7 @@ def wrap_tool_call(
         def wrapped(
             self: AgentMiddleware,  # noqa: ARG001
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             return func(request, handler)
 

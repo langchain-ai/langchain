@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
@@ -399,14 +399,18 @@ def _chain_tool_call_handlers(
 
         def composed(
             request: ToolCallRequest,
-            execute: Callable[[ToolCallRequest], ToolMessage | Command],
+            execute: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
-            # Create a callable that invokes inner with the original execute
-            def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
-                return inner(req, execute)
+            # Create a wrapper that calls inner when outer calls its execute callable
+            # When outer calls this wrapper with a ToolCall, we invoke inner
+            # which receives the request and the base execute callable
+            def call_inner_wrapper(_tool_call: ToolCall) -> ToolMessage | Command:
+                # Outer may have modified the tool_call, but we ignore it here
+                # Inner receives the original request and base execute
+                return inner(request, execute)
 
-            # Outer can call call_inner multiple times
-            return outer(request, call_inner)
+            # Call outer handler with request and the wrapper that invokes inner
+            return outer(request, call_inner_wrapper)
 
         return composed
 

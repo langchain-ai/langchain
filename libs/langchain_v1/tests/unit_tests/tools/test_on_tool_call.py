@@ -39,10 +39,10 @@ def test_passthrough_handler() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Simple passthrough handler."""
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -75,10 +75,10 @@ async def test_passthrough_handler_async() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Simple passthrough handler."""
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=passthrough_handler)
 
@@ -110,14 +110,16 @@ def test_modify_arguments() -> None:
 
     def modify_args_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that doubles the input arguments."""
-        # Modify the arguments
-        request.tool_call["args"]["a"] *= 2
-        request.tool_call["args"]["b"] *= 2
+        # Modify the arguments by creating a modified tool call
+        modified_call = request.tool_call.copy()
+        modified_call["args"] = modified_call["args"].copy()
+        modified_call["args"]["a"] *= 2
+        modified_call["args"]["b"] *= 2
 
-        return execute(request)
+        return execute(modified_call)
 
     tool_node = ToolNode([add], on_tool_call=modify_args_handler)
 
@@ -149,10 +151,10 @@ def test_handler_validation_no_return() -> None:
 
     def handler_with_explicit_none(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that executes and returns result."""
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=handler_with_explicit_none)
 
@@ -185,7 +187,7 @@ def test_handler_validation_no_yield() -> None:
 
     def bad_handler(
         _request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that doesn't call execute - will cause type error."""
         # Don't call execute, just return None (invalid)
@@ -221,10 +223,10 @@ def test_handler_with_handle_tool_errors_true() -> None:
 
     def passthrough_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Simple passthrough handler."""
-        message = execute(request)
+        message = execute(request.tool_call)
         # When handle_tool_errors=True, errors should be converted to error messages
         assert isinstance(message, ToolMessage)
         assert message.status == "error"
@@ -260,12 +262,12 @@ def test_multiple_tool_calls_with_handler() -> None:
 
     def counting_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that counts calls."""
         nonlocal call_count
         call_count += 1
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=counting_handler)
 
@@ -333,13 +335,15 @@ async def test_handler_with_async_execution() -> None:
 
     def modifying_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that modifies arguments."""
-        # Add 10 to both arguments
-        request.tool_call["args"]["a"] += 10
-        request.tool_call["args"]["b"] += 10
-        return execute(request)
+        # Add 10 to both arguments by creating a modified tool call
+        modified_call = request.tool_call.copy()
+        modified_call["args"] = modified_call["args"].copy()
+        modified_call["args"]["a"] += 10
+        modified_call["args"]["b"] += 10
+        return execute(modified_call)
 
     tool_node = ToolNode([async_add], on_tool_call=modifying_handler)
 
@@ -371,7 +375,7 @@ def test_short_circuit_with_tool_message() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result without executing tool."""
         # Return a ToolMessage directly instead of calling execute
@@ -412,7 +416,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
 
     def short_circuit_handler(
         request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result without executing tool."""
         return ToolMessage(
@@ -452,7 +456,7 @@ def test_conditional_short_circuit() -> None:
 
     def conditional_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that caches even numbers, executes odd."""
         call_count["count"] += 1
@@ -466,7 +470,7 @@ def test_conditional_short_circuit() -> None:
                 name=request.tool_call["name"],
             )
         # Odd: execute normally
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -518,7 +522,7 @@ def test_direct_return_tool_message() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns ToolMessage directly."""
         # Return ToolMessage directly instead of calling execute
@@ -559,7 +563,7 @@ async def test_direct_return_tool_message_async() -> None:
 
     def direct_return_handler(
         request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns ToolMessage directly."""
         return ToolMessage(
@@ -598,7 +602,7 @@ def test_conditional_direct_return() -> None:
 
     def conditional_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached or executes based on condition."""
         a = request.tool_call["args"]["a"]
@@ -611,7 +615,7 @@ def test_conditional_direct_return() -> None:
                 name=request.tool_call["name"],
             )
         # Execute tool normally
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=conditional_handler)
 
@@ -663,10 +667,10 @@ def test_handler_can_throw_exception() -> None:
 
     def throwing_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that throws an exception after receiving response."""
-        response = execute(request)
+        response = execute(request.tool_call)
         # Check response and throw if invalid
         if isinstance(response, ToolMessage):
             msg = "Handler rejected the response"
@@ -705,10 +709,10 @@ def test_handler_throw_without_handle_errors() -> None:
 
     def throwing_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that throws an exception."""
-        execute(request)
+        execute(request.tool_call)
         msg = "Handler error"
         raise ValueError(msg)
 
@@ -739,14 +743,14 @@ def test_retry_middleware_with_exception() -> None:
 
     def retry_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that can retry by calling execute multiple times."""
         max_retries = 3
 
         for _attempt in range(max_retries):
             attempt_count["count"] += 1
-            response = execute(request)
+            response = execute(request.tool_call)
 
             # Simulate checking for retriable errors
             # In real use case, would check response.status or content
@@ -789,7 +793,7 @@ async def test_async_handler_can_throw_exception() -> None:
 
     def throwing_handler(
         _request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that throws an exception before calling execute."""
         # Throw exception before executing (to avoid async/await complications)
@@ -831,10 +835,10 @@ def test_handler_cannot_yield_multiple_tool_messages() -> None:
 
     def single_return_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns once (as all handlers do)."""
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=single_return_handler)
 
@@ -867,7 +871,7 @@ def test_handler_cannot_yield_request_after_tool_message() -> None:
 
     def single_return_handler(
         request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns cached result."""
         # Return cached result (short-circuit)
@@ -902,7 +906,7 @@ def test_handler_can_short_circuit_with_command() -> None:
 
     def command_handler(
         _request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that short-circuits with Command."""
         # Short-circuit with Command instead of executing tool
@@ -941,7 +945,7 @@ def test_handler_cannot_yield_multiple_commands() -> None:
 
     def single_command_handler(
         _request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns Command once."""
         return Command(goto="step1")
@@ -979,7 +983,7 @@ def test_handler_cannot_yield_request_after_command() -> None:
 
     def command_handler(
         _request: ToolCallRequest,
-        _execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        _execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that returns Command."""
         return Command(goto="somewhere")
@@ -1016,10 +1020,10 @@ def test_tool_returning_command_sent_to_handler() -> None:
 
     def command_inspector_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that inspects Command returned by tool."""
-        result = execute(request)
+        result = execute(request.tool_call)
         # Should receive Command from tool
         if isinstance(result, Command):
             received_commands.append(result)
@@ -1060,10 +1064,10 @@ def test_handler_can_modify_command_from_tool() -> None:
 
     def command_modifier_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that modifies Command returned by tool."""
-        result = execute(request)
+        result = execute(request.tool_call)
         # Modify the Command
         if isinstance(result, Command):
             return Command(goto=f"modified_{result.goto}")
@@ -1101,11 +1105,11 @@ def test_state_extraction_with_dict_input() -> None:
 
     def state_inspector_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that records the state it receives."""
         state_seen.append(request.state)
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
 
@@ -1136,11 +1140,11 @@ def test_state_extraction_with_list_input() -> None:
 
     def state_inspector_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that records the state it receives."""
         state_seen.append(request.state)
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
 
@@ -1170,11 +1174,11 @@ def test_state_extraction_with_tool_call_with_context() -> None:
 
     def state_inspector_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that records the state it receives."""
         state_seen.append(request.state)
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
 
@@ -1213,11 +1217,11 @@ async def test_state_extraction_with_tool_call_with_context_async() -> None:
 
     def state_inspector_handler(
         request: ToolCallRequest,
-        execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        execute: Callable[[ToolCall], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Handler that records the state it receives."""
         state_seen.append(request.state)
-        return execute(request)
+        return execute(request.tool_call)
 
     tool_node = ToolNode([add], on_tool_call=state_inspector_handler)
 

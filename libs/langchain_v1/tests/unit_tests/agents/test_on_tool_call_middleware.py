@@ -43,10 +43,10 @@ def test_simple_logging_middleware() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append(f"before_{request.tool.name}")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append(f"after_{request.tool.name}")
             return response
 
@@ -84,13 +84,13 @@ def test_request_modification_middleware() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             # Add prefix to query
             if request.tool.name == "search":
                 original_query = request.tool_call["args"]["query"]
                 request.tool_call["args"]["query"] = f"modified: {original_query}"
-            return handler(request)
+            return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -126,9 +126,9 @@ def test_response_inspection_middleware() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
-            response = handler(request)
+            response = handler(request.tool_call)
 
             # Record response details
             if isinstance(response, ToolMessage):
@@ -176,13 +176,13 @@ def test_conditional_retry_middleware() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             nonlocal call_count
             max_retries = 2
 
             for attempt in range(max_retries):
-                response = handler(request)
+                response = handler(request.tool_call)
                 call_count += 1
 
                 # Check if we should retry based on content
@@ -235,10 +235,10 @@ def test_multiple_middleware_composition() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("outer_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("outer_after")
             return response
 
@@ -248,10 +248,10 @@ def test_multiple_middleware_composition() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("inner_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("inner_after")
             return response
 
@@ -290,10 +290,10 @@ def test_middleware_with_multiple_tool_calls() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append(request.tool.name)
-            return handler(request)
+            return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -336,7 +336,7 @@ def test_middleware_access_to_state() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             # Record state - state is now in request.state
             state = request.state
@@ -347,7 +347,7 @@ def test_middleware_access_to_state() -> None:
                     state_seen.append(("list", len(state)))
                 else:
                     state_seen.append(("other", type(state).__name__))
-            return handler(request)
+            return handler(request.tool_call)
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -416,11 +416,11 @@ def test_generator_composition_immediate_outer_return() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("outer_yield")
             # Call handler, receive response from inner
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("outer_got_response")
             # Return modified message
             modified = ToolMessage(
@@ -436,10 +436,10 @@ def test_generator_composition_immediate_outer_return() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("inner_called")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("inner_got_response")
             return response
 
@@ -480,10 +480,10 @@ def test_generator_composition_short_circuit() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("outer_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("outer_after")
             # Modify response from inner
             if isinstance(response, ToolMessage):
@@ -501,7 +501,7 @@ def test_generator_composition_short_circuit() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("inner_short_circuit")
             # Don't call handler, return custom response directly
@@ -548,11 +548,11 @@ def test_generator_composition_nested_retries() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             for outer_attempt in range(2):
                 call_log.append(f"outer_{outer_attempt}")
-                response = handler(request)
+                response = handler(request.tool_call)
 
                 if isinstance(response, ToolMessage) and response.content == "inner_final_failure":
                     # Inner failed, retry once
@@ -566,11 +566,11 @@ def test_generator_composition_nested_retries() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             for inner_attempt in range(2):
                 call_log.append(f"inner_{inner_attempt}")
-                response = handler(request)
+                response = handler(request.tool_call)
 
                 # Check for error in tool result
                 if isinstance(response, ToolMessage):
@@ -625,10 +625,10 @@ def test_generator_composition_three_levels() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("outer_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("outer_after")
             return response
 
@@ -638,10 +638,10 @@ def test_generator_composition_three_levels() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("middle_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("middle_after")
             return response
 
@@ -651,10 +651,10 @@ def test_generator_composition_three_levels() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("inner_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("inner_after")
             return response
 
@@ -701,9 +701,9 @@ def test_generator_composition_return_value_extraction() -> None:
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
-            response = handler(request)
+            response = handler(request.tool_call)
 
             # Return a modified response
             if isinstance(response, ToolMessage):
@@ -753,10 +753,10 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("first_before")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("first_after")
             return response
 
@@ -766,11 +766,11 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("second_intercept")
             # Call handler but ignore the result
-            _ = handler(request)
+            _ = handler(request.tool_call)
             # Return custom result
             return ToolMessage(
                 content="intercepted_result",
@@ -784,10 +784,10 @@ def test_generator_composition_with_mixed_passthrough_and_intercepting() -> None
         def wrap_tool_call(
             self,
             request: ToolCallRequest,
-            handler: Callable[[ToolCallRequest], ToolMessage | Command],
+            handler: Callable[[ToolCall], ToolMessage | Command],
         ) -> ToolMessage | Command:
             call_log.append("third_called")
-            response = handler(request)
+            response = handler(request.tool_call)
             call_log.append("third_after")
             return response
 

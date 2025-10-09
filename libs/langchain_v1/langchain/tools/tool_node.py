@@ -121,7 +121,7 @@ class ToolCallRequest:
 
 
 ToolCallHandler = Callable[
-    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
+    [ToolCallRequest, Callable[[ToolCall], ToolMessage | Command]],
     ToolMessage | Command,
 ]
 """Handler-based tool call interceptor with multi-call support.
@@ -129,12 +129,13 @@ ToolCallHandler = Callable[
 Handler receives:
     request: ToolCallRequest with tool_call, tool, state, and runtime.
     execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
+        Takes a ToolCall dict and returns ToolMessage or Command.
 
 Returns:
     ToolMessage or Command (the final result).
 
 The execute callable can be invoked multiple times for retry logic,
-with potentially modified requests each time. Each call to execute
+with potentially modified tool calls each time. Each call to execute
 is independent and stateless.
 
 Note:
@@ -146,20 +147,21 @@ Examples:
     Passthrough (execute once):
 
     def handler(request, execute):
-        return execute(request)
+        return execute(request.tool_call)
 
     Modify request before execution:
 
     def handler(request, execute):
-        request.tool_call["args"]["value"] *= 2
-        return execute(request)
+        modified_call = request.tool_call.copy()
+        modified_call["args"]["value"] *= 2
+        return execute(modified_call)
 
     Retry on error (execute multiple times):
 
     def handler(request, execute):
         for attempt in range(3):
             try:
-                result = execute(request)
+                result = execute(request.tool_call)
                 if is_valid(result):
                     return result
             except Exception:
@@ -171,7 +173,7 @@ Examples:
 
     def handler(request, execute):
         for attempt in range(3):
-            result = execute(request)
+            result = execute(request.tool_call)
             if isinstance(result, ToolMessage) and result.status != "error":
                 return result
             if attempt < 2:
@@ -183,7 +185,7 @@ Examples:
     def handler(request, execute):
         if cached := get_cache(request):
             return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-        result = execute(request)
+        result = execute(request.tool_call)
         save_cache(request, result)
         return result
 """
@@ -509,10 +511,10 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            on_tool_call: Generator handler to intercept tool execution. Receives
-                ToolCallRequest, yields requests, messages, or Commands; receives
-                ToolMessage or Command via .send(). Final result is last value sent to
-                handler. Enables retries, caching, request modification, and control flow.
+            on_tool_call: Handler to intercept tool execution. Receives ToolCallRequest
+                and execute callable. Execute callable takes ToolCall dict and returns
+                ToolMessage or Command. Enables retries, caching, request modification,
+                and control flow by calling execute multiple times with modified tool calls.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -627,14 +629,16 @@ class ToolNode(RunnableCallable):
 
     def _execute_tool_sync(
         self,
-        request: ToolCallRequest,
+        call: ToolCall,
+        tool: BaseTool,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolMessage | Command:
         """Execute tool call with configured error handling.
 
         Args:
-            request: Tool execution request.
+            call: Tool call dict with name, args, and id.
+            tool: BaseTool instance to invoke.
             input_type: Input format.
             config: Runnable configuration.
 
@@ -644,8 +648,6 @@ class ToolNode(RunnableCallable):
         Raises:
             Exception: If tool fails and handle_tool_errors is False.
         """
-        call = request.tool_call
-        tool = request.tool
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -698,7 +700,7 @@ class ToolNode(RunnableCallable):
         # Process successful response
         if isinstance(response, Command):
             # Validate Command before returning to handler
-            return self._validate_tool_command(response, request.tool_call, input_type)
+            return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
             return response
@@ -744,12 +746,12 @@ class ToolNode(RunnableCallable):
 
         if self._on_tool_call is None:
             # No handler - execute directly
-            return self._execute_tool_sync(tool_request, input_type, config)
+            return self._execute_tool_sync(call, tool, input_type, config)
 
         # Define execute callable that can be called multiple times
-        def execute(req: ToolCallRequest) -> ToolMessage | Command:
-            """Execute tool with given request. Can be called multiple times."""
-            return self._execute_tool_sync(req, input_type, config)
+        def execute(tool_call: ToolCall) -> ToolMessage | Command:
+            """Execute tool with given tool call. Can be called multiple times."""
+            return self._execute_tool_sync(tool_call, tool, input_type, config)
 
         # Call handler with request and execute callable
         try:
@@ -769,14 +771,16 @@ class ToolNode(RunnableCallable):
 
     async def _execute_tool_async(
         self,
-        request: ToolCallRequest,
+        call: ToolCall,
+        tool: BaseTool,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolMessage | Command:
         """Execute tool call asynchronously with configured error handling.
 
         Args:
-            request: Tool execution request.
+            call: Tool call dict with name, args, and id.
+            tool: BaseTool instance to invoke.
             input_type: Input format.
             config: Runnable configuration.
 
@@ -786,8 +790,6 @@ class ToolNode(RunnableCallable):
         Raises:
             Exception: If tool fails and handle_tool_errors is False.
         """
-        call = request.tool_call
-        tool = request.tool
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -840,7 +842,7 @@ class ToolNode(RunnableCallable):
         # Process successful response
         if isinstance(response, Command):
             # Validate Command before returning to handler
-            return self._validate_tool_command(response, request.tool_call, input_type)
+            return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
             return response
@@ -886,12 +888,12 @@ class ToolNode(RunnableCallable):
 
         if self._on_tool_call is None:
             # No handler - execute directly
-            return await self._execute_tool_async(tool_request, input_type, config)
+            return await self._execute_tool_async(call, tool, input_type, config)
 
         # Define async execute callable that can be called multiple times
-        async def execute(req: ToolCallRequest) -> ToolMessage | Command:
-            """Execute tool with given request. Can be called multiple times."""
-            return await self._execute_tool_async(req, input_type, config)
+        async def execute(tool_call: ToolCall) -> ToolMessage | Command:
+            """Execute tool with given tool call. Can be called multiple times."""
+            return await self._execute_tool_async(tool_call, tool, input_type, config)
 
         # Call handler with request and execute callable
         # Note: handler is sync, but execute callable is async
