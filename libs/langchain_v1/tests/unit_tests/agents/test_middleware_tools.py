@@ -26,9 +26,7 @@ def test_model_request_tools_are_base_tools() -> None:
         return f"Result: {expression}"
 
     class RequestCapturingMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             captured_requests.append(request)
             return request
 
@@ -70,9 +68,7 @@ def test_middleware_can_modify_tools() -> None:
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             # Only allow tool_a and tool_b
             request.tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
             return request
@@ -113,9 +109,7 @@ def test_unknown_tool_raises_error() -> None:
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             # Add an unknown tool
             request.tools = request.tools + [unknown_tool]
             return request
@@ -150,11 +144,9 @@ def test_middleware_can_add_and_remove_tools() -> None:
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
         state_schema = AdminState
 
-        def modify_model_request(
-            self, request: ModelRequest, state: AdminState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             # Remove admin_tool if not admin
-            if not state.get("is_admin", False):
+            if not request.state.get("is_admin", False):
                 request.tools = [t for t in request.tools if t.name != "admin_tool"]
             return request
 
@@ -186,9 +178,7 @@ def test_empty_tools_list_is_valid() -> None:
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             # Remove all tools
             request.tools = []
             return request
@@ -227,18 +217,14 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             modification_order.append([t.name for t in request.tools])
             # Remove tool_c
             request.tools = [t for t in request.tools if t.name != "tool_c"]
             return request
 
     class SecondMiddleware(AgentMiddleware):
-        def modify_model_request(
-            self, request: ModelRequest, state: AgentState, runtime: Runtime
-        ) -> ModelRequest:
+        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
             modification_order.append([t.name for t in request.tools])
             # Should not see tool_c here
             assert all(t.name != "tool_c" for t in request.tools)

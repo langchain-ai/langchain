@@ -111,7 +111,7 @@ class TestLLMToolSelectorBasic:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             """Middleware to select relevant tools based on state/context."""
             # Select a small, relevant subset of tools based on state/context
             model_requests.append(request)
@@ -216,7 +216,7 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -271,7 +271,7 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -333,7 +333,7 @@ class TestAlwaysInclude:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -383,7 +383,7 @@ class TestAlwaysInclude:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -437,7 +437,7 @@ class TestAlwaysInclude:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -494,7 +494,7 @@ class TestDuplicateAndInvalidTools:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 
@@ -547,7 +547,7 @@ class TestDuplicateAndInvalidTools:
         model_requests = []
 
         @modify_model_request
-        def trace_model_requests(request: ModelRequest, state: AgentState, runtime) -> ModelRequest:
+        def trace_model_requests(request: ModelRequest) -> ModelRequest:
             model_requests.append(request)
             return request
 

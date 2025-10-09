@@ -3,9 +3,7 @@
 from typing import Literal
 from warnings import warn
 
-from langgraph.runtime import Runtime
-
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
@@ -44,8 +42,6 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     def modify_model_request(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
         try:

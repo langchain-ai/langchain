@@ -11,13 +11,10 @@ from langchain_core.messages import HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest, StateT
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
-    from langgraph.typing import ContextT
-
     from langchain.tools import BaseTool
 
 logger = logging.getLogger(__name__)
@@ -246,8 +243,6 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     def modify_model_request(
         self,
         request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request to filter tools based on LLM selection."""
         selection_request = self._prepare_selection_request(request)
@@ -277,8 +272,6 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     async def amodify_model_request(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request to filter tools based on LLM selection."""
         selection_request = self._prepare_selection_request(request)

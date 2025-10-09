@@ -19,7 +19,7 @@ class TestBasicOnModelCall:
         """Test middleware that simply passes through without modification."""
 
         class PassthroughMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 return handler(request)
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
@@ -35,7 +35,7 @@ class TestBasicOnModelCall:
         call_log = []
 
         class LoggingMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 call_log.append("before")
                 result = handler(request)
                 call_log.append("after")
@@ -57,7 +57,7 @@ class TestBasicOnModelCall:
                 super().__init__()
                 self.call_count = 0
 
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 self.call_count += 1
                 return handler(request)
 
@@ -89,7 +89,7 @@ class TestRetryMiddleware:
                 super().__init__()
                 self.retry_count = 0
 
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 try:
                     result = handler(request)
                     return result
@@ -120,7 +120,7 @@ class TestRetryMiddleware:
                 self.max_retries = max_retries
                 self.attempts = []
 
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 last_exception = None
                 for attempt in range(self.max_retries):
                     self.attempts.append(attempt + 1)
@@ -151,7 +151,7 @@ class TestResponseRewriting:
         """Test middleware that transforms response to uppercase."""
 
         class UppercaseMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=result.content.upper())
 
@@ -170,7 +170,7 @@ class TestResponseRewriting:
                 super().__init__()
                 self.prefix = prefix
 
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=f"{self.prefix}{result.content}")
 
@@ -193,7 +193,7 @@ class TestErrorHandling:
                 raise ValueError("Model error")
 
         class ErrorToSuccessMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except Exception:
@@ -216,7 +216,7 @@ class TestErrorHandling:
                 raise ConnectionError("Network error")
 
         class SelectiveErrorMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except ConnectionError:
@@ -235,7 +235,7 @@ class TestErrorHandling:
         call_log = []
 
         class ErrorRecoveryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 try:
                     call_log.append("before-yield")
                     result = handler(request)
@@ -279,7 +279,7 @@ class TestShortCircuit:
         model_calls = []
 
         class CachingMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 # Simple cache key based on last message
                 cache_key = str(request.messages[-1].content) if request.messages else ""
 
@@ -335,7 +335,7 @@ class TestRequestModification:
                 super().__init__()
                 self.system_prompt = system_prompt
 
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 # Modify request to add system prompt
                 modified_request = ModelRequest(
                     model=request.model,
@@ -345,6 +345,8 @@ class TestRequestModification:
                     tool_choice=request.tool_choice,
                     response_format=request.response_format,
                     model_settings=request.model_settings,
+                    state=request.state,
+                    runtime=request.runtime,
                 )
                 received_requests.append(modified_request)
                 return handler(modified_request)
@@ -370,12 +372,12 @@ class TestStateAndRuntime:
         state_values = []
 
         class StateAwareMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
-                # Access state
+            def on_model_call(self, request, handler):
+                # Access state from request
                 state_values.append(
                     {
-                        "thread_model_call_count": state.get("thread_model_call_count", 0),
-                        "messages_count": len(state.get("messages", [])),
+                        "thread_model_call_count": request.state.get("thread_model_call_count", 0),
+                        "messages_count": len(request.state.get("messages", [])),
                     }
                 )
                 return handler(request)
@@ -393,7 +395,7 @@ class TestStateAndRuntime:
         """Test middleware that tracks retry count in state."""
 
         class StateTrackingRetryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 max_retries = 2
                 for attempt in range(max_retries):
                     try:
@@ -429,14 +431,14 @@ class TestMiddlewareComposition:
         execution_order = []
 
         class OuterMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("outer-before")
                 response = handler(request)
                 execution_order.append("outer-after")
                 return response
 
         class InnerMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("inner-before")
                 response = handler(request)
                 execution_order.append("inner-after")
@@ -468,14 +470,14 @@ class TestMiddlewareComposition:
                 return super()._generate(messages, **kwargs)
 
         class LoggingMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 log.append("logging-before")
                 result = handler(request)
                 log.append("logging-after")
                 return result
 
         class RetryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 log.append("retry-before")
                 try:
                     result = handler(request)
@@ -507,12 +509,12 @@ class TestMiddlewareComposition:
         """Test multiple middleware that each transform the response."""
 
         class PrefixMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=f"[PREFIX] {result.content}")
 
         class SuffixMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=f"{result.content} [SUFFIX]")
 
@@ -538,7 +540,7 @@ class TestMiddlewareComposition:
                 return super()._generate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 try:
                     result = handler(request)
                     return result
@@ -547,7 +549,7 @@ class TestMiddlewareComposition:
                     return result
 
         class UppercaseMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=result.content.upper())
 
@@ -565,21 +567,21 @@ class TestMiddlewareComposition:
         execution_order = []
 
         class FirstMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("first-before")
                 response = handler(request)
                 execution_order.append("first-after")
                 return response
 
         class SecondMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("second-before")
                 response = handler(request)
                 execution_order.append("second-after")
                 return response
 
         class ThirdMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("third-before")
                 response = handler(request)
                 execution_order.append("third-after")
@@ -609,14 +611,14 @@ class TestMiddlewareComposition:
         model_calls = []
 
         class OuterMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("outer-before")
                 result = handler(request)
                 execution_order.append("outer-after")
                 return result
 
         class MiddleRetryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("middle-before")
                 # Always retry once (call handler twice)
                 result = handler(request)
@@ -626,7 +628,7 @@ class TestMiddlewareComposition:
                 return result
 
         class InnerMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 execution_order.append("inner-before")
                 result = handler(request)
                 execution_order.append("inner-after")
@@ -671,7 +673,7 @@ class TestAsyncOnModelCall:
         log = []
 
         class LoggingMiddleware(AgentMiddleware):
-            async def aon_model_call(self, request, state, runtime, handler):
+            async def aon_model_call(self, request, handler):
                 log.append("before")
                 result = await handler(request)
                 log.append("after")
@@ -698,7 +700,7 @@ class TestAsyncOnModelCall:
                 return await super()._agenerate(messages, **kwargs)
 
         class RetryMiddleware(AgentMiddleware):
-            async def aon_model_call(self, request, state, runtime, handler):
+            async def aon_model_call(self, request, handler):
                 try:
                     return await handler(request)
                 except Exception:
@@ -721,7 +723,7 @@ class TestEdgeCases:
         modified_messages = []
 
         class RequestModifyingMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 # Add a system message to the request
                 modified_request = request
                 modified_messages.append(len(modified_request.messages))
@@ -739,7 +741,7 @@ class TestEdgeCases:
         attempts = []
 
         class MultiModelRetryMiddleware(AgentMiddleware):
-            def on_model_call(self, request, state, runtime, handler):
+            def on_model_call(self, request, handler):
                 attempts.append("first-attempt")
                 try:
                     result = handler(request)

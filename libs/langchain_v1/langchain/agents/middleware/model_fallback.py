@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.messages import AIMessage
-    from langgraph.runtime import Runtime
-    from langgraph.typing import ContextT
 
 
 class ModelFallbackMiddleware(AgentMiddleware):
@@ -70,8 +68,6 @@ class ModelFallbackMiddleware(AgentMiddleware):
     def on_model_call(
         self,
         request: ModelRequest,
-        state: Any,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
         handler: Callable[[ModelRequest], AIMessage],
     ) -> AIMessage:
         """Try fallback models in sequence on errors.
