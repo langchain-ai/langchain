@@ -594,6 +594,38 @@ def test__format_messages_with_tool_calls() -> None:
     actual = _format_messages(messages)
     assert expected == actual
 
+    # Check handling of empty AIMessage
+    empty_contents: list[str | list[str | dict]] = ["", []]
+    for empty_content in empty_contents:
+        ## Permit message in final position
+        _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
+        expected_messages = [
+            {"role": "user", "content": "foo"},
+            {"role": "assistant", "content": empty_content},
+        ]
+        assert expected_messages == anthropic_messages
+
+        ## Remove message otherwise
+        _, anthropic_messages = _format_messages(
+            [human, AIMessage(empty_content), human]
+        )
+        expected_messages = [
+            {"role": "user", "content": "foo"},
+            {"role": "user", "content": "foo"},
+        ]
+        assert expected_messages == anthropic_messages
+
+        actual = _format_messages(
+            [system, human, ai, tool, AIMessage(empty_content), human]
+        )
+        assert actual[0] == "fuzz"
+        assert [message["role"] for message in actual[1]] == [
+            "user",
+            "assistant",
+            "user",
+            "user",
+        ]
+
 
 def test__format_tool_use_block() -> None:
     # Test we correctly format tool_use blocks when there is no corresponding tool_call.
