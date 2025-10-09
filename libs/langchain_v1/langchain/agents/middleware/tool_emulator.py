@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
@@ -11,11 +11,9 @@ from langchain.agents.middleware.types import AgentMiddleware
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable
 
-    from langgraph.runtime import Runtime
     from langgraph.types import Command
-    from langgraph.typing import ContextT
 
     from langchain.tools import BaseTool
     from langchain.tools.tool_node import ToolCallRequest
@@ -50,8 +48,7 @@ class LLMToolEmulator(AgentMiddleware):
         Use a custom model for emulation:
         ```python
         middleware = LLMToolEmulator(
-            tools=["get_weather"],
-            model="anthropic:claude-3-5-sonnet-latest"
+            tools=["get_weather"], model="anthropic:claude-3-5-sonnet-latest"
         )
         ```
 
@@ -94,30 +91,26 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Initialize emulator model
         if model is None:
-            self.model = init_chat_model(
-                "anthropic:claude-3-5-sonnet-latest", temperature=1
-            )
+            self.model = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=1)
         elif isinstance(model, BaseChatModel):
             self.model = model
         else:
             self.model = init_chat_model(model, temperature=1)
 
-    def on_tool_call(
+    def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        state: Any,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
+    ) -> ToolMessage | Command:
         """Emulate tool execution using LLM if tool should be emulated.
 
         Args:
             request: Tool call request to potentially emulate.
-            state: Current agent state.
-            runtime: LangGraph runtime.
+            handler: Callback to execute the tool (can be called multiple times).
 
-        Yields:
+        Returns:
             ToolMessage with emulated response if tool should be emulated,
-            otherwise yields the original request for normal execution.
+            otherwise calls handler for normal execution.
         """
         tool_name = request.tool_call["name"]
 
@@ -125,9 +118,8 @@ class LLMToolEmulator(AgentMiddleware):
         should_emulate = self.emulate_all or tool_name in self.tools_to_emulate
 
         if not should_emulate:
-            # Let it execute normally by yielding the request
-            yield request
-            return
+            # Let it execute normally by calling the handler
+            return handler(request)
 
         # Extract tool information for emulation
         tool_args = request.tool_call["args"]
@@ -149,7 +141,7 @@ class LLMToolEmulator(AgentMiddleware):
         response = self.model.invoke([HumanMessage(prompt)])
 
         # Short-circuit: return emulated result without executing real tool
-        yield ToolMessage(
+        return ToolMessage(
             content=response.content,
             tool_call_id=request.tool_call["id"],
             name=tool_name,

@@ -147,9 +147,7 @@ class TestLLMToolEmulatorBasic:
                 [
                     AIMessage(
                         content="",
-                        tool_calls=[
-                            {"name": "search_web", "id": "1", "args": {"query": "Python"}}
-                        ],
+                        tool_calls=[{"name": "search_web", "id": "1", "args": {"query": "Python"}}],
                     ),
                     AIMessage(content="Search results retrieved."),
                 ]
@@ -200,7 +198,9 @@ class TestLLMToolEmulatorBasic:
         result = agent.invoke({"messages": [HumanMessage("Calculate 2+2")]})
 
         # Calculator should execute normally and return Result: 4
-        tool_messages = [msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"]
+        tool_messages = [
+            msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"
+        ]
         assert len(tool_messages) > 0
         assert "Result: 4" in tool_messages[0].content
 
@@ -233,7 +233,9 @@ class TestLLMToolEmulatorBasic:
         result = agent.invoke({"messages": [HumanMessage("Calculate 5*5")]})
 
         # Calculator should execute normally
-        tool_messages = [msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"]
+        tool_messages = [
+            msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"
+        ]
         assert len(tool_messages) > 0
         assert "Result: 25" in tool_messages[0].content
 
@@ -295,9 +297,7 @@ class TestLLMToolEmulatorMultipleTools:
             responses=["Emulated weather: 20°C", "Emulated search results for Paris"]
         )
 
-        emulator = LLMToolEmulator(
-            tools=["get_weather", "search_web"], model=emulator_model
-        )
+        emulator = LLMToolEmulator(tools=["get_weather", "search_web"], model=emulator_model)
 
         agent = create_agent(
             model=agent_model,
@@ -372,9 +372,7 @@ class TestLLMToolEmulatorModelConfiguration:
                 [
                     AIMessage(
                         content="",
-                        tool_calls=[
-                            {"name": "search_web", "id": "1", "args": {"query": "test"}}
-                        ],
+                        tool_calls=[{"name": "search_web", "id": "1", "args": {"query": "test"}}],
                     ),
                     AIMessage(content="Done."),
                 ]
