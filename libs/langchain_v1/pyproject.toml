@@ -57,7 +57,8 @@ test = [
     "toml>=0.10.2,<1.0.0",
     "langchain-tests",
     "langchain-text-splitters",
-    "langchain-openai"
+    "langchain-openai",
+    "langchain-anthropic",
 ]
 lint = [
     "ruff>=0.12.2,<0.13.0",
