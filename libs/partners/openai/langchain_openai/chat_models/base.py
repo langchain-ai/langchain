@@ -20,9 +20,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 from urllib.parse import urlparse
@@ -207,7 +206,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
-    role: Optional[str] = None,
+    role: str | None = None,
 ) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
@@ -301,7 +300,7 @@ def _convert_message_to_dict(
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
 
-        audio: Optional[dict[str, Any]] = None
+        audio: dict[str, Any] | None = None
         for block in message.content:
             if (
                 isinstance(block, dict)
@@ -396,8 +395,8 @@ def _convert_delta_to_message_chunk(
 
 
 def _update_token_usage(
-    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
-) -> Union[int, dict]:
+    overall_token_usage: int | dict, new_usage: int | dict
+) -> int | dict:
     # Token usage is either ints or dictionaries
     # `reasoning_tokens` is nested inside `completion_tokens_details`
     if isinstance(new_usage, int):
@@ -449,8 +448,8 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
+_DictOrPydantic: TypeAlias = dict | _BM
 
 
 class BaseChatOpenAI(BaseChatModel):
@@ -462,27 +461,27 @@ class BaseChatOpenAI(BaseChatModel):
     root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
+    openai_organization: str | None = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = Field(
+    openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
-    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
+    request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     `None`."""
-    stream_usage: Optional[bool] = None
+    stream_usage: bool | None = None
     """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
 
@@ -495,31 +494,31 @@ class BaseChatOpenAI(BaseChatModel):
     !!! warning "Behavior changed in 0.3.35"
         Enabled for default base URL and client.
     """
-    max_retries: Optional[int] = None
+    max_retries: int | None = None
     """Maximum number of retries to make when generating."""
-    presence_penalty: Optional[float] = None
+    presence_penalty: float | None = None
     """Penalizes repeated tokens."""
-    frequency_penalty: Optional[float] = None
+    frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
-    seed: Optional[int] = None
+    seed: int | None = None
     """Seed for generation"""
-    logprobs: Optional[bool] = None
+    logprobs: bool | None = None
     """Whether to return logprobs."""
-    top_logprobs: Optional[int] = None
+    top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with an
     associated log probability. `logprobs` must be set to true if this parameter is
     used."""
-    logit_bias: Optional[dict[int, int]] = None
+    logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: Optional[int] = None
+    n: int | None = None
     """Number of chat completions to generate for each prompt."""
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = Field(default=None)
+    max_tokens: int | None = Field(default=None)
     """Maximum number of tokens to generate."""
-    reasoning_effort: Optional[str] = None
+    reasoning_effort: str | None = None
     """Constrains effort on reasoning for reasoning models. For use with the Chat
     Completions API.
 
@@ -529,7 +528,7 @@ class BaseChatOpenAI(BaseChatModel):
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
     """
-    reasoning: Optional[dict[str, Any]] = None
+    reasoning: dict[str, Any] | None = None
     """Reasoning parameters for reasoning models. For use with the Responses API.
 
     ```python
@@ -541,7 +540,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     !!! version-added "Added in version 0.3.24"
     """
-    verbosity: Optional[str] = None
+    verbosity: str | None = None
     """Controls the verbosity level of responses for reasoning models. For use with the
     Responses API.
 
@@ -549,7 +548,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     !!! version-added "Added in version 0.3.28"
     """
-    tiktoken_model_name: Optional[str] = None
+    tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
     them to be under a certain limit. By default, when set to None, this will
@@ -559,20 +558,20 @@ class BaseChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
-    default_headers: Union[Mapping[str, str], None] = None
-    default_query: Union[Mapping[str, object], None] = None
+    default_headers: Mapping[str, str] | None = None
+    default_query: Mapping[str, object] | None = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = Field(default=None, exclude=True)
+    http_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.Client`. Only used for sync invocations. Must specify
     `http_async_client` as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
+    http_async_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
     `http_client` as well if you'd like a custom client for sync invocations."""
-    stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
+    stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    extra_body: Optional[Mapping[str, Any]] = None
+    extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
     providers.
@@ -594,7 +593,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     include_response_headers: bool = False
     """Whether to include response headers in the output message `response_metadata`."""
-    disabled_params: Optional[dict[str, Any]] = Field(default=None)
+    disabled_params: dict[str, Any] | None = Field(default=None)
     """Parameters of the OpenAI client or `chat.completions` endpoint that should be
     disabled for the given model.
 
@@ -611,7 +610,7 @@ class BaseChatOpenAI(BaseChatModel):
     passed in the parameter during invocation.
     """
 
-    include: Optional[list[str]] = None
+    include: list[str] | None = None
     """Additional fields to include in generations from Responses API.
 
     Supported values:
@@ -625,19 +624,19 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in version 0.3.24"
     """
 
-    service_tier: Optional[str] = None
+    service_tier: str | None = None
     """Latency tier for request. Options are `'auto'`, `'default'`, or `'flex'`.
     Relevant for users of OpenAI's scale tier service.
     """
 
-    store: Optional[bool] = None
+    store: bool | None = None
     """If `True`, OpenAI may store response data for future use. Defaults to `True`
     for the Responses API and `False` for the Chat Completions API.
 
     !!! version-added "Added in version 0.3.24"
     """
 
-    truncation: Optional[str] = None
+    truncation: str | None = None
     """Truncation strategy (Responses API). Can be `'auto'` or `'disabled'` (default).
     If `'auto'`, model may drop input items from the middle of the message sequence to
     fit the context window.
@@ -676,7 +675,7 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in version 0.3.26"
     """
 
-    use_responses_api: Optional[bool] = None
+    use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
     If not specified then will be inferred based on invocation params.
@@ -684,7 +683,7 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in version 0.3.9"
     """
 
-    output_version: Optional[str] = Field(
+    output_version: str | None = Field(
         default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
     """Version of `AIMessage` output format to use.
@@ -876,7 +875,7 @@ class BaseChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
         for output in llm_outputs:
@@ -905,8 +904,8 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         chunk: dict,
         default_chunk_class: type,
-        base_generation_info: Optional[dict],
-    ) -> Optional[ChatGenerationChunk]:
+        base_generation_info: dict | None,
+    ) -> ChatGenerationChunk | None:
         if chunk.get("type") == "content.delta":  # From beta.chat.completions.stream
             return None
         token_usage = chunk.get("usage")
@@ -916,7 +915,7 @@ class BaseChatOpenAI(BaseChatModel):
             or chunk.get("chunk", {}).get("choices", [])
         )
 
-        usage_metadata: Optional[UsageMetadata] = (
+        usage_metadata: UsageMetadata | None = (
             _create_usage_metadata(token_usage) if token_usage else None
         )
         if len(choices) == 0:
@@ -966,8 +965,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _stream_responses(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1019,8 +1018,8 @@ class BaseChatOpenAI(BaseChatModel):
     async def _astream_responses(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1072,7 +1071,7 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
 
     def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
+        self, stream_usage: bool | None = None, **kwargs: Any
     ) -> bool:
         """Determine whether to include usage metadata in streaming output.
 
@@ -1093,10 +1092,10 @@ class BaseChatOpenAI(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1163,8 +1162,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1233,7 +1232,7 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
@@ -1262,8 +1261,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[dict] = None,
+        response: dict | openai.BaseModel,
+        generation_info: dict | None = None,
     ) -> ChatResult:
         generations = []
 
@@ -1329,10 +1328,10 @@ class BaseChatOpenAI(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1403,8 +1402,8 @@ class BaseChatOpenAI(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1468,7 +1467,7 @@ class BaseChatOpenAI(BaseChatModel):
         return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> dict[str, Any]:
         """Get the parameters used to invoke the model."""
         params = {
@@ -1489,7 +1488,7 @@ class BaseChatOpenAI(BaseChatModel):
         return params
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1546,9 +1545,7 @@ class BaseChatOpenAI(BaseChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: Sequence[BaseMessage],
-        tools: Optional[
-            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
     ) -> int:
         """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
 
@@ -1642,13 +1639,11 @@ class BaseChatOpenAI(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]  # noqa: PYI051
-        ] = None,
-        strict: Optional[bool] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1723,14 +1718,14 @@ class BaseChatOpenAI(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
-        tools: Optional[list] = None,
+        strict: bool | None = None,
+        tools: list | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -2740,7 +2735,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         cached tokens.
     """  # noqa: E501
 
-    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
     @property
@@ -2787,7 +2782,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
@@ -2822,11 +2817,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -3239,7 +3234,7 @@ def _lc_invalid_tool_call_to_openai_tool_call(
     }
 
 
-def _url_to_size(image_source: str) -> Optional[tuple[int, int]]:
+def _url_to_size(image_source: str) -> tuple[int, int] | None:
     try:
         from PIL import Image  # type: ignore[import]
     except ImportError:
@@ -3311,8 +3306,8 @@ def _resize(width: int, height: int) -> tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[dict[str, Any], type], *, strict: Optional[bool] = None
-) -> Union[dict, TypeBaseModel]:
+    schema: dict[str, Any] | type, *, strict: bool | None = None
+) -> dict | TypeBaseModel:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
 
@@ -3351,7 +3346,7 @@ def _convert_to_openai_response_format(
 
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: type[_BM]
-) -> Optional[PydanticBaseModel]:
+) -> PydanticBaseModel | None:
     if parsed := ai_msg.additional_kwargs.get("parsed"):
         if isinstance(parsed, dict):
             return schema(**parsed)
@@ -3471,7 +3466,7 @@ def _use_responses_api(payload: dict) -> bool:
 
 def _get_last_messages(
     messages: Sequence[BaseMessage],
-) -> tuple[Sequence[BaseMessage], Optional[str]]:
+) -> tuple[Sequence[BaseMessage], str | None]:
     """Get the last part of the conversation after the last `AIMessage` with an `id`.
 
     Return:
@@ -3620,7 +3615,7 @@ def _convert_chat_completions_blocks_to_responses(
     return block
 
 
-def _ensure_valid_tool_message_content(tool_output: Any) -> Union[str, list[dict]]:
+def _ensure_valid_tool_message_content(tool_output: Any) -> str | list[dict]:
     if isinstance(tool_output, str):
         return tool_output
     if isinstance(tool_output, list) and all(
@@ -3645,8 +3640,8 @@ def _ensure_valid_tool_message_content(tool_output: Any) -> Union[str, list[dict
 
 def _make_computer_call_output_from_message(
     message: ToolMessage,
-) -> Optional[dict[str, Any]]:
-    computer_call_output: Optional[dict[str, Any]] = None
+) -> dict[str, Any] | None:
+    computer_call_output: dict[str, Any] | None = None
     if isinstance(message.content, list):
         for block in message.content:
             if (
@@ -3685,7 +3680,7 @@ def _make_computer_call_output_from_message(
     return computer_call_output
 
 
-def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict]:
+def _make_custom_tool_output_from_message(message: ToolMessage) -> dict | None:
     custom_tool_output = None
     for block in message.content:
         if isinstance(block, dict) and block.get("type") == "custom_tool_call_output":
@@ -3902,9 +3897,9 @@ def _get_output_text(response: Response) -> str:
 
 def _construct_lc_result_from_responses_api(
     response: Response,
-    schema: Optional[type[_BM]] = None,
-    metadata: Optional[dict] = None,
-    output_version: Optional[str] = None,
+    schema: type[_BM] | None = None,
+    metadata: dict | None = None,
+    output_version: str | None = None,
 ) -> ChatResult:
     """Construct `ChatResponse` from OpenAI Response API response."""
     if response.error:
@@ -4072,12 +4067,12 @@ def _convert_responses_chunk_to_generation_chunk(
     current_index: int,  # index in content
     current_output_index: int,  # index in Response output
     current_sub_index: int,  # index of content block in output item
-    schema: Optional[type[_BM]] = None,
-    metadata: Optional[dict] = None,
+    schema: type[_BM] | None = None,
+    metadata: dict | None = None,
     has_reasoning: bool = False,
-    output_version: Optional[str] = None,
-) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
-    def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
+    output_version: str | None = None,
+) -> tuple[int, int, int, ChatGenerationChunk | None]:
+    def _advance(output_idx: int, sub_idx: int | None = None) -> None:
         """Advance indexes tracked during streaming.
 
         Example: we stream a response item of the form:
@@ -4133,7 +4128,7 @@ def _convert_responses_chunk_to_generation_chunk(
     response_metadata = metadata or {}
     response_metadata["model_provider"] = "openai"
     usage_metadata = None
-    chunk_position: Optional[Literal["last"]] = None
+    chunk_position: Literal["last"] | None = None
     id = None
     if chunk.type == "response.output_text.delta":
         _advance(chunk.output_index, chunk.content_index)
