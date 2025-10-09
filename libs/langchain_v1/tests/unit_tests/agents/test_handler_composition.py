@@ -1,18 +1,16 @@
 """Unit tests for _chain_model_call_handlers handler composition."""
 
-import pytest
+from typing import cast
+
 from langchain_core.messages import AIMessage
+from langgraph.runtime import Runtime
 
 from langchain.agents.factory import _chain_model_call_handlers
 from langchain.agents.middleware.types import ModelRequest
 
-from typing import cast
-from langgraph.runtime import Runtime
-
 
 def create_test_request(**kwargs):
     """Helper to create a ModelRequest with sensible defaults."""
-
     defaults = {
         "messages": [],
         "model": None,
@@ -21,7 +19,7 @@ def create_test_request(**kwargs):
         "tools": [],
         "response_format": None,
         "state": {},
-        "runtime": cast(Runtime, object()),
+        "runtime": cast("Runtime", object()),
     }
     defaults.update(kwargs)
     return ModelRequest(**defaults)
@@ -143,7 +141,8 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             call_count["value"] += 1
             if call_count["value"] < 3:
-                raise ValueError("fail")
+                msg = "fail"
+                raise ValueError(msg)
             return AIMessage(content="success")
 
         result = composed(create_test_request(), mock_base_handler)
@@ -167,7 +166,8 @@ class TestChainModelCallHandlers:
         assert composed is not None
 
         def mock_base_handler(req):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
         result = composed(create_test_request(), mock_base_handler)
 
@@ -256,7 +256,8 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             attempt["value"] += 1
             if attempt["value"] == 1:
-                raise ValueError("fail")
+                msg = "fail"
+                raise ValueError(msg)
             return AIMessage(content="ok")
 
         result = composed(create_test_request(), mock_base_handler)

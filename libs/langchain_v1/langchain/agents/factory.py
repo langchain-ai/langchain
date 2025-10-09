@@ -23,9 +23,9 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
-from langgraph.runtime import Runtime  # noqa: TC002
+from langgraph.runtime import Runtime
 from langgraph.types import Command, Send
-from langgraph.typing import ContextT  # noqa: TC002
+from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
@@ -418,7 +418,7 @@ def _chain_tool_call_handlers(
     return result
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
@@ -723,13 +723,13 @@ def create_agent(  # noqa: PLR0915
                         ],
                         "structured_response": structured_response,
                     }
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise exception from exc
 
                     return {
                         "messages": [
@@ -875,7 +875,7 @@ def create_agent(  # noqa: PLR0915
                 exception=None,
                 effective_response_format=effective_response_format,
             )
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:
             # Catch all exceptions from model invocation
             return _InternalModelResponse(
                 result=None,
@@ -941,7 +941,7 @@ def create_agent(  # noqa: PLR0915
                 exception=None,
                 effective_response_format=effective_response_format,
             )
-        except Exception as error:  # noqa: BLE001
+        except Exception as error:
             # Catch all exceptions from model invocation
             return _InternalModelResponse(
                 result=None,

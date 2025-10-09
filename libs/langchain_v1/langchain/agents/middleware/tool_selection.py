@@ -267,7 +267,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)
+            raise TypeError(msg)
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
@@ -298,7 +298,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         # Response should be a dict since we're passing a schema (not a Pydantic model class)
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
-            raise AssertionError(msg)
+            raise TypeError(msg)
         modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )

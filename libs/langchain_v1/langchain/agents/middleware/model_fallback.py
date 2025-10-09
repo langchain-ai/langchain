@@ -88,7 +88,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
         last_exception: Exception
         try:
             return handler(request)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             last_exception = e
 
         # Try fallback models
@@ -96,7 +96,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
             request.model = fallback_model
             try:
                 return handler(request)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 last_exception = e
                 continue
 

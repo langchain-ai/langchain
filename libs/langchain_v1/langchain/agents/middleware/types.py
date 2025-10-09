@@ -22,11 +22,11 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AIMessage, AnyMessage, ToolMessage  # noqa: TC002
+from langchain_core.messages import AIMessage, AnyMessage, ToolMessage
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
-from langgraph.types import Command  # noqa: TC002
+from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -504,7 +504,7 @@ def before_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -529,7 +529,7 @@ def before_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -637,7 +637,7 @@ def after_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -660,7 +660,7 @@ def after_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:

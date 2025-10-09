@@ -53,6 +53,9 @@ class PIIDetectionError(Exception):
 # PII Detection Functions
 # ============================================================================
 
+_CARD_NUMBER_MIN_DIGITS = 13
+_CARD_NUMBER_MAX_DIGITS = 19
+
 
 def _luhn_checksum(card_number: str) -> bool:
     """Validate credit card number using Luhn algorithm.
@@ -65,7 +68,7 @@ def _luhn_checksum(card_number: str) -> bool:
     """
     digits = [int(d) for d in card_number if d.isdigit()]
 
-    if len(digits) < 13 or len(digits) > 19:
+    if len(digits) < _CARD_NUMBER_MIN_DIGITS or len(digits) > _CARD_NUMBER_MAX_DIGITS:
         return False
 
     checksum = 0
@@ -73,7 +76,7 @@ def _luhn_checksum(card_number: str) -> bool:
         d = digit
         if i % 2 == 1:
             d *= 2
-            if d > 9:
+            if d > 9:  # noqa: PLR2004
                 d -= 9
         checksum += d
 
@@ -229,7 +232,7 @@ def detect_url(content: str) -> list[PIIMatch]:
                         end=match.end(),
                     )
                 )
-        except Exception:  # noqa: S110, BLE001
+        except Exception:  # noqa: S110
             # Invalid URL, skip
             pass
 
@@ -262,7 +265,7 @@ def detect_url(content: str) -> list[PIIMatch]:
                             end=match.end(),
                         )
                     )
-            except Exception:  # noqa: S110, BLE001
+            except Exception:  # noqa: S110
                 # Invalid URL, skip
                 pass
 
@@ -308,6 +311,11 @@ def _apply_redact_strategy(content: str, matches: list[PIIMatch]) -> str:
     return result
 
 
+_UNMASKED_CHAR_NUMBER = 4
+_UNMASKED_CREDIT_CARD_NUMBER = 4
+_IPV4_PARTS_NUMBER = 4
+
+
 def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
     """Partially mask PII, showing only last few characters.
 
@@ -333,9 +341,9 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
         if pii_type == "email":
             # Show only domain: user@****.com
             parts = value.split("@")
-            if len(parts) == 2:
+            if len(parts) == 2:  # noqa: PLR2004
                 domain_parts = parts[1].split(".")
-                if len(domain_parts) >= 2:
+                if len(domain_parts) > 1:
                     masked = f"{parts[0]}@****.{domain_parts[-1]}"
                 else:
                     masked = f"{parts[0]}@****"
@@ -347,14 +355,17 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
             digits_only = "".join(c for c in value if c.isdigit())
             separator = "-" if "-" in value else " " if " " in value else ""
             if separator:
-                masked = f"****{separator}****{separator}****{separator}{digits_only[-4:]}"
+                masked = (
+                    f"****{separator}****{separator}****{separator}"
+                    f"{digits_only[-_UNMASKED_CREDIT_CARD_NUMBER:]}"
+                )
             else:
-                masked = f"************{digits_only[-4:]}"
+                masked = f"************{digits_only[-_UNMASKED_CREDIT_CARD_NUMBER:]}"
 
         elif pii_type == "ip":
             # Show last octet: *.*.*. 123
             parts = value.split(".")
-            masked = f"*.*.*.{parts[-1]}" if len(parts) == 4 else "****"
+            masked = f"*.*.*.{parts[-1]}" if len(parts) == _IPV4_PARTS_NUMBER else "****"
 
         elif pii_type == "mac_address":
             # Show last byte: **:**:**:**:**:5E
@@ -369,7 +380,11 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
 
         else:
             # Default: show last 4 chars
-            masked = f"****{value[-4:]}" if len(value) > 4 else "****"
+            masked = (
+                f"****{value[-_UNMASKED_CHAR_NUMBER:]}"
+                if len(value) > _UNMASKED_CHAR_NUMBER
+                else "****"
+            )
 
         result = result[: match["start"]] + masked + result[match["end"] :]
 
@@ -555,7 +570,7 @@ class PIIMiddleware(AgentMiddleware):
         return f"{self.__class__.__name__}[{self.pii_type}]"
 
     @hook_config(can_jump_to=["end"])
-    def before_model(  # noqa: PLR0915
+    def before_model(
         self,
         state: AgentState,
         runtime: Runtime,  # noqa: ARG002
