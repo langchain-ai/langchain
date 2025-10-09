@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import sys
 from collections.abc import AsyncIterator, Collection, Iterator, Mapping
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import openai
 import tiktoken
@@ -54,7 +54,7 @@ class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class.
 
     Setup:
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
 
@@ -78,23 +78,23 @@ class BaseOpenAI(BaseLLM):
             How many completions to generate for each prompt.
         best_of: int
             Generates best_of completions server-side and returns the "best".
-        logit_bias: Optional[dict[str, float]]
+        logit_bias: dict[str, float] | None
             Adjust the probability of specific tokens being generated.
-        seed: Optional[int]
+        seed: int | None
             Seed for generation.
-        logprobs: Optional[int]
+        logprobs: int | None
             Include the log probabilities on the logprobs most likely output tokens.
         streaming: bool
             Whether to stream the results or not.
 
     Key init args — client params:
-        openai_api_key: Optional[SecretStr]
+        openai_api_key: SecretStr | None
             OpenAI API key. If not passed in will be read from env var
             ``OPENAI_API_KEY``.
-        openai_api_base: Optional[str]
+        openai_api_base: str | None
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
-        openai_organization: Optional[str]
+        openai_organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var ``OPENAI_ORG_ID``.
         request_timeout: Union[float, tuple[float, float], Any, None]
@@ -188,16 +188,16 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
-    openai_api_base: Optional[str] = Field(
+    openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
-    openai_organization: Optional[str] = Field(
+    openai_organization: str | None = Field(
         alias="organization",
         default_factory=from_env(
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
@@ -205,32 +205,32 @@ class BaseOpenAI(BaseLLM):
     )
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = Field(
+    openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
     batch_size: int = 20
     """Batch size to use when passing multiple documents to generate."""
-    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
+    request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
-        None."""
-    logit_bias: Optional[dict[str, float]] = None
+    None."""
+    logit_bias: dict[str, float] | None = None
     """Adjust the probability of specific tokens being generated."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    seed: Optional[int] = None
+    seed: int | None = None
     """Seed for generation"""
-    logprobs: Optional[int] = None
+    logprobs: int | None = None
     """Include the log probabilities on the logprobs most likely output tokens,
-     as well the chosen tokens."""
+    as well the chosen tokens."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    allowed_special: Union[Literal["all"], set[str]] = set()
+    allowed_special: Literal["all"] | set[str] = set()
     """Set of special tokens that are allowed。"""
-    disallowed_special: Union[Literal["all"], Collection[str]] = "all"
+    disallowed_special: Literal["all"] | Collection[str] = "all"
     """Set of special tokens that are not allowed。"""
-    tiktoken_model_name: Optional[str] = None
+    tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
     them to be under a certain limit. By default, when set to None, this will
@@ -240,19 +240,19 @@ class BaseOpenAI(BaseLLM):
     when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
-    default_headers: Union[Mapping[str, str], None] = None
-    default_query: Union[Mapping[str, object], None] = None
+    default_headers: Mapping[str, str] | None = None
+    default_query: Mapping[str, object] | None = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = None
+    http_client: Any | None = None
     """Optional ``httpx.Client``. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
     """
-    http_async_client: Union[Any, None] = None
+    http_async_client: Any | None = None
     """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
-    extra_body: Optional[Mapping[str, Any]] = None
+    extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
 
@@ -333,8 +333,8 @@ class BaseOpenAI(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
@@ -360,8 +360,8 @@ class BaseOpenAI(BaseLLM):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = {**self._invocation_params, **kwargs, "stream": True}
@@ -389,8 +389,8 @@ class BaseOpenAI(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint with k unique prompts.
@@ -418,14 +418,14 @@ class BaseOpenAI(BaseLLM):
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-        system_fingerprint: Optional[str] = None
+        system_fingerprint: str | None = None
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
                     msg = "Cannot stream results with multiple prompts."
                     raise ValueError(msg)
 
-                generation: Optional[GenerationChunk] = None
+                generation: GenerationChunk | None = None
                 for chunk in self._stream(_prompts[0], stop, run_manager, **kwargs):
                     if generation is None:
                         generation = chunk
@@ -474,8 +474,8 @@ class BaseOpenAI(BaseLLM):
     async def _agenerate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to OpenAI's endpoint async with k unique prompts."""
@@ -487,14 +487,14 @@ class BaseOpenAI(BaseLLM):
         # Get the token usage from the response.
         # Includes prompt, completion, and total tokens used.
         _keys = {"completion_tokens", "prompt_tokens", "total_tokens"}
-        system_fingerprint: Optional[str] = None
+        system_fingerprint: str | None = None
         for _prompts in sub_prompts:
             if self.streaming:
                 if len(_prompts) > 1:
                     msg = "Cannot stream results with multiple prompts."
                     raise ValueError(msg)
 
-                generation: Optional[GenerationChunk] = None
+                generation: GenerationChunk | None = None
                 async for chunk in self._astream(
                     _prompts[0], stop, run_manager, **kwargs
                 ):
@@ -534,7 +534,7 @@ class BaseOpenAI(BaseLLM):
         self,
         params: dict[str, Any],
         prompts: list[str],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> list[list[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
@@ -556,7 +556,7 @@ class BaseOpenAI(BaseLLM):
         params: dict[str, Any],
         token_usage: dict[str, int],
         *,
-        system_fingerprint: Optional[str] = None,
+        system_fingerprint: str | None = None,
     ) -> LLMResult:
         """Create the LLMResult from the choices and prompts."""
         generations = []
@@ -704,7 +704,7 @@ class OpenAI(BaseOpenAI):
     """OpenAI completion model integration.
 
     Setup:
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
 
         .. code-block:: bash
 
@@ -716,9 +716,9 @@ class OpenAI(BaseOpenAI):
             Name of OpenAI model to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
@@ -729,12 +729,12 @@ class OpenAI(BaseOpenAI):
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization: Optional[str]
+        organization: str | None
             OpenAI organization ID. If not passed in will be read from env
             var ``OPENAI_ORG_ID``.
 

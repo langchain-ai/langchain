@@ -82,15 +82,15 @@ def deprecated(
     """Decorator to mark a function, a class, or a property as deprecated.
 
     When deprecating a classmethod, a staticmethod, or a property, the
-    ``@deprecated`` decorator should go *under* ``@classmethod`` and
-    ``@staticmethod`` (i.e., `deprecated` should directly decorate the
-    underlying callable), but *over* ``@property``.
+    `@deprecated` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `deprecated` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When deprecating a class ``C`` intended to be used as a base class in a
-    multiple inheritance hierarchy, ``C`` *must* define an ``__init__`` method
-    (if ``C`` instead inherited its ``__init__`` from its own base class, then
-    ``@deprecated`` would mess up ``__init__`` inheritance when installing its
-    own (deprecation-emitting) ``C.__init__``).
+    When deprecating a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@deprecated` would mess up `__init__` inheritance when installing its
+    own (deprecation-emitting) `C.__init__`).
 
     Parameters are the same as for `warn_deprecated`, except that *obj_type*
     defaults to 'class' if decorating a class, 'attribute' if decorating a
@@ -113,7 +113,7 @@ def deprecated(
         alternative_import: str, optional
             An alternative import that the user may use instead.
         pending : bool, optional
-            If True, uses a PendingDeprecationWarning instead of a
+            If `True`, uses a `PendingDeprecationWarning` instead of a
             DeprecationWarning. Cannot be used together with removal.
         obj_type : str, optional
             The object type being deprecated.
@@ -372,7 +372,7 @@ def deprecated(
         components = [
             _message,
             f"Use {_alternative} instead." if _alternative else "",
-            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            f"Use `{_alternative_import}` instead." if _alternative_import else "",
             _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
@@ -440,7 +440,7 @@ def warn_deprecated(
         alternative_import:
             An alternative import that the user may use instead.
         pending:
-            If True, uses a PendingDeprecationWarning instead of a
+            If `True`, uses a `PendingDeprecationWarning` instead of a
             DeprecationWarning. Cannot be used together with removal.
         obj_type:
             The object type being deprecated.

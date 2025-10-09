@@ -98,7 +98,7 @@ class ZeroShotAgent(Agent):
             format_instructions: Instructions on how to use the tools.
                 Defaults to FORMAT_INSTRUCTIONS
             input_variables: List of input variables the final prompt will expect.
-                Defaults to None.
+                Defaults to `None`.
 
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
@@ -129,13 +129,13 @@ class ZeroShotAgent(Agent):
         Args:
             llm: The LLM to use as the agent LLM.
             tools: The tools to use.
-            callback_manager: The callback manager to use. Defaults to None.
-            output_parser: The output parser to use. Defaults to None.
+            callback_manager: The callback manager to use. Defaults to `None`.
+            output_parser: The output parser to use. Defaults to `None`.
             prefix: The prefix to use. Defaults to PREFIX.
             suffix: The suffix to use. Defaults to SUFFIX.
             format_instructions: The format instructions to use.
                 Defaults to FORMAT_INSTRUCTIONS.
-            input_variables: The input variables to use. Defaults to None.
+            input_variables: The input variables to use. Defaults to `None`.
             kwargs: Additional parameters to pass to the agent.
         """
         cls._validate_tools(tools)

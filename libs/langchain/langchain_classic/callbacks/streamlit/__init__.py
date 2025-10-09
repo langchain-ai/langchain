@@ -34,13 +34,13 @@ def StreamlitCallbackHandler(  # noqa: N802
         collapsed into a "History" expander. Defaults to 4.
     expand_new_thoughts
         Each LLM "thought" gets its own `st.expander`. This param controls whether that
-        expander is expanded by default. Defaults to True.
+        expander is expanded by default. Defaults to `True`.
     collapse_completed_thoughts
-        If True, LLM thought expanders will be collapsed when completed.
-        Defaults to True.
+        If `True`, LLM thought expanders will be collapsed when completed.
+        Defaults to `True`.
     thought_labeler
         An optional custom LLMThoughtLabeler instance. If unspecified, the handler
-        will use the default thought labeling logic. Defaults to None.
+        will use the default thought labeling logic. Defaults to `None`.
 
     Returns:
     -------

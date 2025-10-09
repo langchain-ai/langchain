@@ -6,7 +6,7 @@ You will need FIREWORKS_API_KEY set in your environment to run these tests.
 from __future__ import annotations
 
 import json
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
@@ -48,7 +48,7 @@ async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
     llm = ChatFireworks(model=_MODEL)
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     async for token in llm.astream("I'm Pickle Rick"):

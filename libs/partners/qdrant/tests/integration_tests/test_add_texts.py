@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
@@ -16,7 +15,7 @@ from tests.integration_tests.common import (
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_add_documents_extends_existing_collection(
-    batch_size: int, vector_name: Optional[str]
+    batch_size: int, vector_name: str | None
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -55,7 +54,7 @@ def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
-def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) -> None:
+def test_qdrant_add_texts_stores_duplicated_texts(vector_name: str | None) -> None:
     """Test end to end Qdrant.add_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as rest

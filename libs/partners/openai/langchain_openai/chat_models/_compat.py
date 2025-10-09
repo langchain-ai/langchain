@@ -2,7 +2,7 @@
 
 ``output_version`` is an attribute on ChatOpenAI.
 
-Supported values are ``None``, ``'v0'``, and ``'responses/v1'``.
+Supported values are `None`, ``'v0'``, and ``'responses/v1'``.
 
 ``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
 stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
@@ -69,7 +69,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Iterator
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
@@ -83,7 +83,7 @@ def _convert_to_v03_ai_message(
 ) -> AIMessage:
     """Mutate an `AIMessage` to the old-style v0.3 format."""
     if isinstance(message.content, list):
-        new_content: list[Union[dict, str]] = []
+        new_content: list[dict | str] = []
         for block in message.content:
             if isinstance(block, dict):
                 if block.get("type") == "reasoning":

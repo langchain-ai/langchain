@@ -299,9 +299,9 @@ def index(
     are not able to specify the uid of the document.
 
     !!! warning "Behavior changed in 0.3.25"
-        Added ``scoped_full`` cleanup mode.
+        Added `scoped_full` cleanup mode.
 
-    !!! important
+    !!! warning
 
         * In full mode, the loader should be returning
           the entire dataset, and not just a subset of the dataset.
@@ -315,7 +315,7 @@ def index(
           chunks, and we index them using a batch size of 5, we'll have 3 batches
           all with the same source id. In general, to avoid doing too much
           redundant work select as big a batch size as possible.
-        * The ``scoped_full`` mode is suitable if determining an appropriate batch size
+        * The `scoped_full` mode is suitable if determining an appropriate batch size
           is challenging or if your data loader cannot return the entire dataset at
           once. This mode keeps track of source IDs in memory, which should be fine
           for most use cases. If your dataset is large (10M+ docs), you will likely
@@ -381,8 +381,8 @@ def index(
         ValueError: If vectorstore does not have
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-        TypeError: If ``vectorstore`` is not a VectorStore or a DocumentIndex.
-        AssertionError: If ``source_id`` is None when cleanup mode is incremental.
+        TypeError: If `vectorstore` is not a VectorStore or a DocumentIndex.
+        AssertionError: If `source_id` is None when cleanup mode is incremental.
             (should be unreachable code).
     """
     # Behavior is deprecated, but we keep it for backwards compatibility.
@@ -640,9 +640,9 @@ async def aindex(
     are not able to specify the uid of the document.
 
     !!! warning "Behavior changed in 0.3.25"
-        Added ``scoped_full`` cleanup mode.
+        Added `scoped_full` cleanup mode.
 
-    !!! important
+    !!! warning
 
         * In full mode, the loader should be returning
           the entire dataset, and not just a subset of the dataset.
@@ -656,7 +656,7 @@ async def aindex(
           chunks, and we index them using a batch size of 5, we'll have 3 batches
           all with the same source id. In general, to avoid doing too much
           redundant work select as big a batch size as possible.
-        * The ``scoped_full`` mode is suitable if determining an appropriate batch size
+        * The `scoped_full` mode is suitable if determining an appropriate batch size
           is challenging or if your data loader cannot return the entire dataset at
           once. This mode keeps track of source IDs in memory, which should be fine
           for most use cases. If your dataset is large (10M+ docs), you will likely
@@ -722,9 +722,9 @@ async def aindex(
         ValueError: If vectorstore does not have
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-        TypeError: If ``vector_store`` is not a VectorStore or DocumentIndex.
-        AssertionError: If ``source_id_key`` is None when cleanup mode is
-            incremental or ``scoped_full`` (should be unreachable).
+        TypeError: If `vector_store` is not a VectorStore or DocumentIndex.
+        AssertionError: If `source_id_key` is None when cleanup mode is
+            incremental or `scoped_full` (should be unreachable).
     """
     # Behavior is deprecated, but we keep it for backwards compatibility.
     # # Warn only once per process.

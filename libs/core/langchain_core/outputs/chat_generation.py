@@ -19,10 +19,10 @@ class ChatGeneration(Generation):
     that generates chat messages.
 
     The ``message`` attribute is a structured representation of the chat message.
-    Most of the time, the message will be of type ``AIMessage``.
+    Most of the time, the message will be of type `AIMessage`.
 
     Users working with chat models will usually access information via either
-    ``AIMessage`` (returned from runnable interfaces) or ``LLMResult`` (available
+    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
     via callbacks).
     """
 
@@ -84,18 +84,18 @@ class ChatGenerationChunk(ChatGeneration):
     def __add__(
         self, other: ChatGenerationChunk | list[ChatGenerationChunk]
     ) -> ChatGenerationChunk:
-        """Concatenate two ``ChatGenerationChunk``s.
+        """Concatenate two `ChatGenerationChunk`s.
 
         Args:
-            other: The other ``ChatGenerationChunk`` or list of ``ChatGenerationChunk``
+            other: The other `ChatGenerationChunk` or list of `ChatGenerationChunk`
                 to concatenate.
 
         Raises:
-            TypeError: If other is not a ``ChatGenerationChunk`` or list of
-                ``ChatGenerationChunk``.
+            TypeError: If other is not a `ChatGenerationChunk` or list of
+                `ChatGenerationChunk`.
 
         Returns:
-            A new ``ChatGenerationChunk`` concatenated from self and other.
+            A new `ChatGenerationChunk` concatenated from self and other.
         """
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
@@ -124,13 +124,13 @@ class ChatGenerationChunk(ChatGeneration):
 def merge_chat_generation_chunks(
     chunks: list[ChatGenerationChunk],
 ) -> ChatGenerationChunk | None:
-    """Merge a list of ``ChatGenerationChunk``s into a single ``ChatGenerationChunk``.
+    """Merge a list of `ChatGenerationChunk`s into a single `ChatGenerationChunk`.
 
     Args:
-        chunks: A list of ``ChatGenerationChunk`` to merge.
+        chunks: A list of `ChatGenerationChunk` to merge.
 
     Returns:
-        A merged ``ChatGenerationChunk``, or None if the input list is empty.
+        A merged `ChatGenerationChunk`, or None if the input list is empty.
     """
     if not chunks:
         return None

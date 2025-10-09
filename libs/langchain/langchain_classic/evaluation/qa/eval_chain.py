@@ -178,9 +178,9 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
 
         Args:
             prediction (str): the LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): the reference label
+            reference (str | None, optional): the reference label
                 to evaluate against.
-            input (Optional[str], optional): the input to consider during evaluation
+            input (str | None, optional): the input to consider during evaluation
             callbacks (Callbacks, optional): the callbacks to use for tracing.
             include_run_info (bool, optional): whether to include run info in the
                 returned results.

@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Iterator,
     List,
-    Optional,
     Sequence,
     Tuple,
     Type,
@@ -45,9 +44,9 @@ class __ModuleName__VectorStore(VectorStore):
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        client: Optional[Client]
+        client: Client | None
             Client to use.
-        connection_args: Optional[dict]
+        connection_args: dict | None
             Connection arguments.
 
     # TODO: Replace with relevant init params.
@@ -172,7 +171,7 @@ class __ModuleName__VectorStore(VectorStore):
         cls: Type[__ModuleName__VectorStore],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> __ModuleName__VectorStore:
         store = cls(
@@ -187,7 +186,7 @@ class __ModuleName__VectorStore(VectorStore):
     #     cls: Type[VST],
     #     texts: List[str],
     #     embedding: Embeddings,
-    #     metadatas: Optional[List[dict]] = None,
+    #     metadatas: list[dict] | None = None,
     #     **kwargs: Any,
     # ) -> VST:
     #     return await asyncio.get_running_loop().run_in_executor(
@@ -201,7 +200,7 @@ class __ModuleName__VectorStore(VectorStore):
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add documents to the store."""
@@ -215,7 +214,7 @@ class __ModuleName__VectorStore(VectorStore):
             )
             raise ValueError(msg)
 
-        id_iterator: Iterator[Optional[str]] = (
+        id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
 
@@ -238,19 +237,19 @@ class __ModuleName__VectorStore(VectorStore):
     # async def aadd_documents(
     #     self,
     #     documents: List[Document],
-    #     ids: Optional[List[str]] = None,
+    #     ids: list[str] | None = None,
     #     **kwargs: Any,
     # ) -> List[str]:
     #     raise NotImplementedError
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> None:
         if ids:
             for _id in ids:
                 self._database.pop(_id, None)
 
     # optional: add custom async implementations
     # async def adelete(
-    #     self, ids: Optional[List[str]] = None, **kwargs: Any
+    #     self, ids: list[str] | None = None, **kwargs: Any
     # ) -> None:
     #     raise NotImplementedError
 
@@ -287,7 +286,7 @@ class __ModuleName__VectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
+        filter: Callable[[Document], bool] | None = None,
         **kwargs: Any,
     ) -> List[tuple[Document, float, List[float]]]:
         # get all docs with fixed order in list

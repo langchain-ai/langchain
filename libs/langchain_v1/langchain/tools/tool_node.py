@@ -5,7 +5,7 @@ This module provides prebuilt functionality for executing tools in LangGraph.
 Tools are functions that models can call to interact with external systems,
 APIs, databases, or perform computations.
 
-The module implements several key design patterns:
+The module implements design patterns for:
 - Parallel execution of multiple tool calls for efficiency
 - Robust error handling with customizable error messages
 - State injection for tools that need access to graph state
@@ -38,8 +38,9 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+from collections.abc import Callable
 from copy import copy, deepcopy
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
@@ -47,6 +48,7 @@ from typing import (
     Any,
     Literal,
     Optional,
+    TypedDict,
     Union,
     cast,
     get_args,
@@ -75,11 +77,12 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import get_runtime
 from langgraph.types import Command, Send
 from pydantic import BaseModel, ValidationError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from langchain_core.runnables import RunnableConfig
     from langgraph.store.base import BaseStore
@@ -100,24 +103,126 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 )
 
 
-def msg_content_output(output: Any) -> str | list[dict]:
-    """Convert tool output to valid message content format.
+@dataclass()
+class ToolCallRequest:
+    """Tool execution request passed to tool call interceptors.
 
-    LangChain ToolMessages accept either string content or a list of content blocks.
-    This function ensures tool outputs are properly formatted for message consumption
-    by attempting to preserve structured data when possible, falling back to JSON
-    serialization or string conversion.
+    Attributes:
+        tool_call: Tool call dict with name, args, and id from model output.
+        tool: BaseTool instance to be invoked.
+        state: Agent state (dict, list, or BaseModel).
+        runtime: LangGraph runtime context (optional, None if outside graph).
+    """
+
+    tool_call: ToolCall
+    tool: BaseTool
+    state: Any
+    runtime: Any
+
+
+ToolCallHandler = Callable[
+    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
+    ToolMessage | Command,
+]
+"""Handler-based tool call interceptor with multi-call support.
+
+Handler receives:
+    request: ToolCallRequest with tool_call, tool, state, and runtime.
+    execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
+
+Returns:
+    ToolMessage or Command (the final result).
+
+The execute callable can be invoked multiple times for retry logic,
+with potentially modified requests each time. Each call to execute
+is independent and stateless.
+
+Note:
+    When implementing middleware for ``create_agent``, use
+    ``AgentMiddleware.wrap_tool_call`` which provides properly typed
+    state parameter for better type safety.
+
+Examples:
+    Passthrough (execute once):
+
+    def handler(request, execute):
+        return execute(request)
+
+    Modify request before execution:
+
+    def handler(request, execute):
+        request.tool_call["args"]["value"] *= 2
+        return execute(request)
+
+    Retry on error (execute multiple times):
+
+    def handler(request, execute):
+        for attempt in range(3):
+            try:
+                result = execute(request)
+                if is_valid(result):
+                    return result
+            except Exception:
+                if attempt == 2:
+                    raise
+        return result
+
+    Conditional retry based on response:
+
+    def handler(request, execute):
+        for attempt in range(3):
+            result = execute(request)
+            if isinstance(result, ToolMessage) and result.status != "error":
+                return result
+            if attempt < 2:
+                continue
+            return result
+
+    Cache/short-circuit without calling execute:
+
+    def handler(request, execute):
+        if cached := get_cache(request):
+            return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+        result = execute(request)
+        save_cache(request, result)
+        return result
+"""
+
+
+class ToolCallWithContext(TypedDict):
+    """ToolCall with additional context for graph state.
+
+    This is an internal data structure meant to help the ToolNode accept
+    tool calls with additional context (e.g. state) when dispatched using the
+    Send API.
+
+    The Send API is used in create_agent to distribute tool calls in parallel
+    and support human-in-the-loop workflows where graph execution may be paused
+    for an indefinite time.
+    """
+
+    tool_call: ToolCall
+    __type: Literal["tool_call_with_context"]
+    """Type to parameterize the payload.
+
+    Using "__" as a prefix to be defensive against potential name collisions with
+    regular user state.
+    """
+    state: Any
+    """The state is provided as additional context."""
+
+
+def msg_content_output(output: Any) -> str | list[dict]:
+    """Convert tool output to ToolMessage content format.
+
+    Handles str, list[dict] (content blocks), and arbitrary objects by attempting
+    JSON serialization with fallback to str().
 
     Args:
-        output: The raw output from a tool execution. Can be any type.
+        output: Tool execution output of any type.
 
     Returns:
-        Either a string representation of the output or a list of content blocks
-        if the output is already in the correct format for structured content.
-
-    Note:
-        This function prioritizes backward compatibility by defaulting to JSON
-        serialization rather than supporting all possible message content formats.
+        String or list of content blocks suitable for ToolMessage.content.
     """
     if isinstance(output, str) or (
         isinstance(output, list)
@@ -181,7 +286,7 @@ def _handle_tool_error(
     Args:
         e: The exception that occurred during tool execution.
         flag: Configuration for how to handle the error. Can be:
-            - bool: If True, use default error template
+            - bool: If `True`, use default error template
             - str: Use this string as the error message
             - Callable: Call this function with the exception to get error message
             - tuple: Not used in this context (handled by caller)
@@ -314,7 +419,7 @@ class ToolNode(RunnableCallable):
         name: The name identifier for this node in the graph. Used for debugging
             and visualization. Defaults to "tools".
         tags: Optional metadata tags to associate with the node for filtering
-            and organization. Defaults to None.
+            and organization. Defaults to `None`.
         handle_tool_errors: Configuration for error handling during tool execution.
             Supports multiple strategies:
 
@@ -336,7 +441,7 @@ class ToolNode(RunnableCallable):
                 - ignores tool execution errors (they will be re-raised)
 
         messages_key: The key in the state dictionary that contains the message list.
-            This same key will be used for the output ToolMessages.
+            This same key will be used for the output `ToolMessage` objects.
             Defaults to "messages".
             Allows custom state schemas with different message field names.
 
@@ -394,8 +499,9 @@ class ToolNode(RunnableCallable):
         | type[Exception]
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
+        on_tool_call: ToolCallHandler | None = None,
     ) -> None:
-        """Initialize the ToolNode with the provided tools and configuration.
+        """Initialize ToolNode with tools and configuration.
 
         Args:
             tools: Sequence of tools to make available for execution.
@@ -403,6 +509,10 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
+            on_tool_call: Generator handler to intercept tool execution. Receives
+                ToolCallRequest, yields requests, messages, or Commands; receives
+                ToolMessage or Command via .send(). Final result is last value sent to
+                handler. Enables retries, caching, request modification, and control flow.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -410,6 +520,7 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
+        self._on_tool_call = on_tool_call
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -431,11 +542,23 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of LangGraph runtime context (e.g., unit tests)
+            runtime = None
+
+        tool_calls, input_type = self._parse_input(input)
+        tool_calls = [self._inject_tool_args(call, input, store) for call in tool_calls]
+
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
+        inputs = [input] * len(tool_calls)
+        runtimes = [runtime] * len(tool_calls)
         with get_executor_for_config(config) as executor:
-            outputs = [*executor.map(self._run_one, tool_calls, input_types, config_list)]
+            outputs = [
+                *executor.map(self._run_one, tool_calls, input_types, config_list, inputs, runtimes)
+            ]
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -446,9 +569,16 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        try:
+            runtime = get_runtime()
+        except RuntimeError:
+            # Running outside of LangGraph runtime context (e.g., unit tests)
+            runtime = None
+
+        tool_calls, input_type = self._parse_input(input)
+        tool_calls = [self._inject_tool_args(call, input, store) for call in tool_calls]
         outputs = await asyncio.gather(
-            *(self._arun_one(call, input_type, config) for call in tool_calls)
+            *(self._arun_one(call, input_type, config, input, runtime) for call in tool_calls)
         )
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -495,20 +625,30 @@ class ToolNode(RunnableCallable):
             combined_outputs.append(parent_command)
         return combined_outputs
 
-    def _run_one(
+    def _execute_tool_sync(
         self,
-        call: ToolCall,
+        request: ToolCallRequest,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
     ) -> ToolMessage | Command:
-        """Run a single tool call synchronously."""
-        if invalid_tool_message := self._validate_tool_call(call):
-            return invalid_tool_message
+        """Execute tool call with configured error handling.
+
+        Args:
+            request: Tool execution request.
+            input_type: Input format.
+            config: Runnable configuration.
+
+        Returns:
+            ToolMessage or Command.
+
+        Raises:
+            Exception: If tool fails and handle_tool_errors is False.
+        """
+        call = request.tool_call
+        tool = request.tool
+        call_args = {**call, "type": "tool_call"}
 
         try:
-            call_args = {**call, "type": "tool_call"}
-            tool = self.tools_by_name[call["name"]]
-
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
@@ -526,6 +666,7 @@ class ToolNode(RunnableCallable):
         except GraphBubbleUp:
             raise
         except Exception as e:
+            # Determine which exception types are handled
             handled_types: tuple[type[Exception], ...]
             if isinstance(self._handle_tool_errors, type) and issubclass(
                 self._handle_tool_errors, Exception
@@ -541,10 +682,11 @@ class ToolNode(RunnableCallable):
                 # default behavior is catching all exceptions
                 handled_types = (Exception,)
 
-            # Unhandled
+            # Check if this error should be handled
             if not self._handle_tool_errors or not isinstance(e, handled_types):
                 raise
-            # Handled
+
+            # Error is handled - create error ToolMessage
             content = _handle_tool_error(e, flag=self._handle_tool_errors)
             return ToolMessage(
                 content=content,
@@ -553,28 +695,102 @@ class ToolNode(RunnableCallable):
                 status="error",
             )
 
+        # Process successful response
         if isinstance(response, Command):
-            return self._validate_tool_command(response, call, input_type)
+            # Validate Command before returning to handler
+            return self._validate_tool_command(response, request.tool_call, input_type)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
             return response
+
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    async def _arun_one(
+    def _run_one(
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
     ) -> ToolMessage | Command:
-        """Run a single tool call asynchronously."""
+        """Execute single tool call with on_tool_call handler if configured.
+
+        Args:
+            call: Tool call dict.
+            input_type: Input format.
+            config: Runnable configuration.
+            input: Agent state.
+            runtime: LangGraph runtime or None.
+
+        Returns:
+            ToolMessage or Command.
+        """
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
 
-        try:
-            call_args = {**call, "type": "tool_call"}
-            tool = self.tools_by_name[call["name"]]
+        tool = self.tools_by_name[call["name"]]
 
+        # Extract state from ToolCallWithContext if present
+        state = self._extract_state(input)
+
+        # Create the tool request with state and runtime
+        tool_request = ToolCallRequest(
+            tool_call=call,
+            tool=tool,
+            state=state,
+            runtime=runtime,
+        )
+
+        if self._on_tool_call is None:
+            # No handler - execute directly
+            return self._execute_tool_sync(tool_request, input_type, config)
+
+        # Define execute callable that can be called multiple times
+        def execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Execute tool with given request. Can be called multiple times."""
+            return self._execute_tool_sync(req, input_type, config)
+
+        # Call handler with request and execute callable
+        try:
+            return self._on_tool_call(tool_request, execute)
+        except Exception as e:
+            # Handler threw an exception
+            if not self._handle_tool_errors:
+                raise
+            # Convert to error message
+            content = _handle_tool_error(e, flag=self._handle_tool_errors)
+            return ToolMessage(
+                content=content,
+                name=tool_request.tool_call["name"],
+                tool_call_id=tool_request.tool_call["id"],
+                status="error",
+            )
+
+    async def _execute_tool_async(
+        self,
+        request: ToolCallRequest,
+        input_type: Literal["list", "dict", "tool_calls"],
+        config: RunnableConfig,
+    ) -> ToolMessage | Command:
+        """Execute tool call asynchronously with configured error handling.
+
+        Args:
+            request: Tool execution request.
+            input_type: Input format.
+            config: Runnable configuration.
+
+        Returns:
+            ToolMessage or Command.
+
+        Raises:
+            Exception: If tool fails and handle_tool_errors is False.
+        """
+        call = request.tool_call
+        tool = request.tool
+        call_args = {**call, "type": "tool_call"}
+
+        try:
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
@@ -592,6 +808,7 @@ class ToolNode(RunnableCallable):
         except GraphBubbleUp:
             raise
         except Exception as e:
+            # Determine which exception types are handled
             handled_types: tuple[type[Exception], ...]
             if isinstance(self._handle_tool_errors, type) and issubclass(
                 self._handle_tool_errors, Exception
@@ -607,12 +824,12 @@ class ToolNode(RunnableCallable):
                 # default behavior is catching all exceptions
                 handled_types = (Exception,)
 
-            # Unhandled
+            # Check if this error should be handled
             if not self._handle_tool_errors or not isinstance(e, handled_types):
                 raise
-            # Handled
-            content = _handle_tool_error(e, flag=self._handle_tool_errors)
 
+            # Error is handled - create error ToolMessage
+            content = _handle_tool_error(e, flag=self._handle_tool_errors)
             return ToolMessage(
                 content=content,
                 name=call["name"],
@@ -620,18 +837,84 @@ class ToolNode(RunnableCallable):
                 status="error",
             )
 
+        # Process successful response
         if isinstance(response, Command):
-            return self._validate_tool_command(response, call, input_type)
+            # Validate Command before returning to handler
+            return self._validate_tool_command(response, request.tool_call, input_type)
         if isinstance(response, ToolMessage):
             response.content = cast("str | list", msg_content_output(response.content))
             return response
+
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
+
+    async def _arun_one(
+        self,
+        call: ToolCall,
+        input_type: Literal["list", "dict", "tool_calls"],
+        config: RunnableConfig,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        runtime: Any,
+    ) -> ToolMessage | Command:
+        """Execute single tool call asynchronously with on_tool_call handler if configured.
+
+        Args:
+            call: Tool call dict.
+            input_type: Input format.
+            config: Runnable configuration.
+            input: Agent state.
+            runtime: LangGraph runtime or None.
+
+        Returns:
+            ToolMessage or Command.
+        """
+        if invalid_tool_message := self._validate_tool_call(call):
+            return invalid_tool_message
+
+        tool = self.tools_by_name[call["name"]]
+
+        # Extract state from ToolCallWithContext if present
+        state = self._extract_state(input)
+
+        # Create the tool request with state and runtime
+        tool_request = ToolCallRequest(
+            tool_call=call,
+            tool=tool,
+            state=state,
+            runtime=runtime,
+        )
+
+        if self._on_tool_call is None:
+            # No handler - execute directly
+            return await self._execute_tool_async(tool_request, input_type, config)
+
+        # Define async execute callable that can be called multiple times
+        async def execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Execute tool with given request. Can be called multiple times."""
+            return await self._execute_tool_async(req, input_type, config)
+
+        # Call handler with request and execute callable
+        # Note: handler is sync, but execute callable is async
+        try:
+            result = self._on_tool_call(tool_request, execute)  # type: ignore[arg-type]
+            # If result is a coroutine, await it (though handler should be sync)
+            return await result if hasattr(result, "__await__") else result
+        except Exception as e:
+            # Handler threw an exception
+            if not self._handle_tool_errors:
+                raise
+            # Convert to error message
+            content = _handle_tool_error(e, flag=self._handle_tool_errors)
+            return ToolMessage(
+                content=content,
+                name=tool_request.tool_call["name"],
+                tool_call_id=tool_request.tool_call["id"],
+                status="error",
+            )
 
     def _parse_input(
         self,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
-        store: BaseStore | None,
     ) -> tuple[list[ToolCall], Literal["list", "dict", "tool_calls"]]:
         input_type: Literal["list", "dict", "tool_calls"]
         if isinstance(input, list):
@@ -641,6 +924,14 @@ class ToolNode(RunnableCallable):
                 return tool_calls, input_type
             input_type = "list"
             messages = input
+        elif isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            # Handle ToolCallWithContext from Send API
+            # mypy will not be able to type narrow correctly since the signature
+            # for input contains dict[str, Any]. We'd need to narrow dict[str, Any]
+            # before we can apply correct typing.
+            input_with_ctx = cast("ToolCallWithContext", input)
+            input_type = "tool_calls"
+            return [input_with_ctx["tool_call"]], input_type
         elif isinstance(input, dict) and (messages := input.get(self._messages_key, [])):
             input_type = "dict"
         elif messages := getattr(input, self._messages_key, []):
@@ -656,9 +947,7 @@ class ToolNode(RunnableCallable):
             msg = "No AIMessage found in input"
             raise ValueError(msg)
 
-        tool_calls = [
-            self.inject_tool_args(call, input, store) for call in latest_ai_message.tool_calls
-        ]
+        tool_calls = list(latest_ai_message.tool_calls)
         return tool_calls, input_type
 
     def _validate_tool_call(self, call: ToolCall) -> ToolMessage | None:
@@ -673,6 +962,21 @@ class ToolNode(RunnableCallable):
                 content, name=requested_tool, tool_call_id=call["id"], status="error"
             )
         return None
+
+    def _extract_state(
+        self, input: list[AnyMessage] | dict[str, Any] | BaseModel
+    ) -> list[AnyMessage] | dict[str, Any] | BaseModel:
+        """Extract state from input, handling ToolCallWithContext if present.
+
+        Args:
+            input: The input which may be raw state or ToolCallWithContext.
+
+        Returns:
+            The actual state to pass to on_tool_call handlers.
+        """
+        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            return input["state"]
+        return input
 
     def _inject_state(
         self,
@@ -696,14 +1000,20 @@ class ToolNode(RunnableCallable):
                     err_msg += f" State should contain fields {required_fields_str}."
                 raise ValueError(err_msg)
 
-        if isinstance(input, dict):
+        # Extract state from ToolCallWithContext if present
+        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            state = input["state"]
+        else:
+            state = input
+
+        if isinstance(state, dict):
             tool_state_args = {
-                tool_arg: input[state_field] if state_field else input
+                tool_arg: state[state_field] if state_field else state
                 for tool_arg, state_field in state_args.items()
             }
         else:
             tool_state_args = {
-                tool_arg: getattr(input, state_field) if state_field else input
+                tool_arg: getattr(state, state_field) if state_field else state
                 for tool_arg, state_field in state_args.items()
             }
 
@@ -731,7 +1041,7 @@ class ToolNode(RunnableCallable):
         }
         return tool_call
 
-    def inject_tool_args(
+    def _inject_tool_args(
         self,
         tool_call: ToolCall,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
@@ -739,10 +1049,11 @@ class ToolNode(RunnableCallable):
     ) -> ToolCall:
         """Inject graph state and store into tool call arguments.
 
-        This method enables tools to access graph context that should not be controlled
-        by the model. Tools can declare dependencies on graph state or persistent storage
-        using InjectedState and InjectedStore annotations. This method automatically
-        identifies these dependencies and injects the appropriate values.
+        This is an internal method that enables tools to access graph context that
+        should not be controlled by the model. Tools can declare dependencies on graph
+        state or persistent storage using InjectedState and InjectedStore annotations.
+        This method automatically identifies these dependencies and injects the
+        appropriate values.
 
         The injection process preserves the original tool call structure while adding
         the necessary context arguments. This allows tools to be both model-callable
@@ -765,10 +1076,8 @@ class ToolNode(RunnableCallable):
                        or if state injection requirements cannot be satisfied.
 
         Note:
-            This method is automatically called during tool execution but can also
-            be used manually when working with the Send API or custom routing logic.
-            The injection is performed on a copy of the tool call to avoid mutating
-            the original.
+            This method is called automatically during tool execution. It should not
+            be called from outside the ToolNode.
         """
         if tool_call["name"] not in self.tools_by_name:
             return tool_call
@@ -940,7 +1249,7 @@ class InjectedState(InjectedToolArg):
     to the model's tool-calling interface.
 
     Args:
-        field: Optional key to extract from the state dictionary. If None, the entire
+        field: Optional key to extract from the state dictionary. If `None`, the entire
             state is injected. If specified, only that field's value is injected.
             This allows tools to request specific state components rather than
             processing the full state structure.

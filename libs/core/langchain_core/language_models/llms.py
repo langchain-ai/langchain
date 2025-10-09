@@ -299,7 +299,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     @property
     @override
     def OutputType(self) -> type[str]:
-        """Get the input type for this runnable."""
+        """Get the input type for this `Runnable`."""
         return str
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:

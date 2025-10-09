@@ -1,6 +1,6 @@
 """__ModuleName__ chat models."""
 
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -40,16 +40,16 @@ class Chat__ModuleName__(BaseChatModel):
             Name of __ModuleName__ model to use.
         temperature: float
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens: int | None
             Max number of tokens to generate.
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        timeout: Optional[float]
+        timeout: float | None
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: str | None
             __ModuleName__ API key. If not passed in will be read from env var
             __MODULE_NAME___API_KEY.
 
@@ -162,7 +162,7 @@ class Chat__ModuleName__(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
@@ -273,10 +273,10 @@ class Chat__ModuleName__(BaseChatModel):
     """The name of the model"""
     parrot_buffer_length: int
     """The number of characters from the last message of the prompt to be echoed."""
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    timeout: Optional[int] = None
-    stop: Optional[List[str]] = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    timeout: int | None = None
+    stop: list[str] | None = None
     max_retries: int = 2
 
     @property
@@ -302,8 +302,8 @@ class Chat__ModuleName__(BaseChatModel):
     def _generate(
         self,
         messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Override the _generate method to implement the chat model logic.
@@ -348,8 +348,8 @@ class Chat__ModuleName__(BaseChatModel):
     def _stream(
         self,
         messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model.
@@ -410,8 +410,8 @@ class Chat__ModuleName__(BaseChatModel):
     # async def _astream(
     #     self,
     #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     stop: list[str] | None = None,
+    #     run_manager: AsyncCallbackManagerForLLMRun | None = None,
     #     **kwargs: Any,
     # ) -> AsyncIterator[ChatGenerationChunk]:
 
@@ -419,7 +419,7 @@ class Chat__ModuleName__(BaseChatModel):
     # async def _agenerate(
     #     self,
     #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     stop: list[str] | None = None,
+    #     run_manager: AsyncCallbackManagerForLLMRun | None = None,
     #     **kwargs: Any,
     # ) -> ChatResult:

@@ -209,7 +209,7 @@ class ConstitutionalChain(Chain):
 
         Args:
             names: List of names of constitutional principles to retrieve.
-                If None (default), all principles are returned.
+                If `None` (Default), all principles are returned.
         """
         if names is None:
             return list(PRINCIPLES.values())

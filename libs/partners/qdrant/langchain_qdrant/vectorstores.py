@@ -7,7 +7,7 @@ import warnings
 from collections.abc import Callable
 from itertools import islice
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -24,8 +24,8 @@ from langchain_qdrant._utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 
-    DictFilter = dict[str, Union[str, int, bool, dict, list]]
-    MetadataFilter = Union[DictFilter, models.Filter]
+    DictFilter = dict[str, str | int | bool | dict | list]
+    MetadataFilter = DictFilter | models.Filter
 
 
 class QdrantException(Exception):  # noqa: N818
@@ -74,19 +74,19 @@ class Qdrant(VectorStore):
 
     CONTENT_KEY: str = "page_content"
     METADATA_KEY: str = "metadata"
-    VECTOR_NAME: Optional[str] = None
+    VECTOR_NAME: str | None = None
 
     def __init__(
         self,
         client: Any,
         collection_name: str,
-        embeddings: Optional[Embeddings] = None,
+        embeddings: Embeddings | None = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         distance_strategy: str = "COSINE",
-        vector_name: Optional[str] = VECTOR_NAME,
-        async_client: Optional[Any] = None,
-        embedding_function: Optional[Callable] = None,  # deprecated
+        vector_name: str | None = VECTOR_NAME,
+        async_client: Any | None = None,
+        embedding_function: Callable | None = None,  # deprecated
     ) -> None:
         """Initialize with necessary components."""
         if not isinstance(client, QdrantClient):
@@ -117,7 +117,7 @@ class Qdrant(VectorStore):
         self._embeddings = embeddings
         self._embeddings_function = embedding_function
         self.client: QdrantClient = client
-        self.async_client: Optional[AsyncQdrantClient] = async_client
+        self.async_client: AsyncQdrantClient | None = async_client
         self.collection_name = collection_name
         self.content_payload_key = content_payload_key or self.CONTENT_KEY
         self.metadata_payload_key = metadata_payload_key or self.METADATA_KEY
@@ -142,14 +142,14 @@ class Qdrant(VectorStore):
         self.distance_strategy = distance_strategy.upper()
 
     @property
-    def embeddings(self) -> Optional[Embeddings]:
+    def embeddings(self) -> Embeddings | None:
         return self._embeddings
 
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str]:
@@ -185,8 +185,8 @@ class Qdrant(VectorStore):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str]:
@@ -228,11 +228,11 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to query.
@@ -240,7 +240,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -287,7 +287,7 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
+        filter: MetadataFilter | None = None,  # noqa: A002
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to query.
@@ -295,7 +295,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -309,11 +309,11 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
@@ -321,7 +321,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -367,11 +367,11 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
@@ -379,7 +379,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -426,11 +426,11 @@ class Qdrant(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to embedding vector.
@@ -438,7 +438,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -485,11 +485,11 @@ class Qdrant(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs most similar to embedding vector.
@@ -497,7 +497,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -544,11 +544,11 @@ class Qdrant(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
@@ -556,7 +556,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -633,11 +633,11 @@ class Qdrant(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
         offset: int = 0,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
@@ -645,7 +645,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -729,10 +729,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -749,7 +749,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -795,10 +795,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -815,7 +815,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -861,10 +861,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -880,7 +880,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -926,10 +926,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
@@ -946,7 +946,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -993,10 +993,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
@@ -1013,7 +1013,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -1085,10 +1085,10 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,  # noqa: A002
-        search_params: Optional[models.SearchParams] = None,
-        score_threshold: Optional[float] = None,
-        consistency: Optional[models.ReadConsistency] = None,
+        filter: MetadataFilter | None = None,  # noqa: A002
+        search_params: models.SearchParams | None = None,
+        score_threshold: float | None = None,
+        consistency: models.ReadConsistency | None = None,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
@@ -1105,7 +1105,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            filter: Filter by metadata. Defaults to `None`.
             search_params: Additional search params.
             score_threshold: Define a minimal score threshold for the result.
             consistency: Read consistency of the search.
@@ -1159,7 +1159,7 @@ class Qdrant(VectorStore):
             for i in mmr_selected
         ]
 
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -1177,9 +1177,7 @@ class Qdrant(VectorStore):
         return result.status == models.UpdateStatus.COMPLETED
 
     @sync_call_fallback
-    async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    async def adelete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -1208,35 +1206,35 @@ class Qdrant(VectorStore):
         cls: type[Qdrant],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
+        collection_name: str | None = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_name: Optional[str] = VECTOR_NAME,
+        vector_name: str | None = VECTOR_NAME,
         batch_size: int = 64,
-        shard_number: Optional[int] = None,
-        replication_factor: Optional[int] = None,
-        write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
-        hnsw_config: Optional[models.HnswConfigDiff] = None,
-        optimizers_config: Optional[models.OptimizersConfigDiff] = None,
-        wal_config: Optional[models.WalConfigDiff] = None,
-        quantization_config: Optional[models.QuantizationConfig] = None,
-        init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,  # noqa: FBT001
+        shard_number: int | None = None,
+        replication_factor: int | None = None,
+        write_consistency_factor: int | None = None,
+        on_disk_payload: bool | None = None,  # noqa: FBT001
+        hnsw_config: models.HnswConfigDiff | None = None,
+        optimizers_config: models.OptimizersConfigDiff | None = None,
+        wal_config: models.WalConfigDiff | None = None,
+        quantization_config: models.QuantizationConfig | None = None,
+        init_from: models.InitFrom | None = None,
+        on_disk: bool | None = None,  # noqa: FBT001
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1255,8 +1253,8 @@ class Qdrant(VectorStore):
                 If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
-            url: either host or str of "Optional[scheme], host, Optional[port],
-                Optional[prefix]". Default: `None`
+            url: either host or str of "scheme | None, host, port | None,
+                prefix | None".
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:
@@ -1388,22 +1386,22 @@ class Qdrant(VectorStore):
     def from_existing_collection(
         cls: type[Qdrant],
         embedding: Embeddings,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        path: str | None = None,
+        collection_name: str | None = None,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         distance_strategy: str = "COSINE",
-        vector_name: Optional[str] = VECTOR_NAME,
+        vector_name: str | None = VECTOR_NAME,
         **kwargs: Any,
     ) -> Qdrant:
         """Get instance of an existing Qdrant collection.
@@ -1446,35 +1444,35 @@ class Qdrant(VectorStore):
         cls: type[Qdrant],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
+        collection_name: str | None = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_name: Optional[str] = VECTOR_NAME,
+        vector_name: str | None = VECTOR_NAME,
         batch_size: int = 64,
-        shard_number: Optional[int] = None,
-        replication_factor: Optional[int] = None,
-        write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
-        hnsw_config: Optional[models.HnswConfigDiff] = None,
-        optimizers_config: Optional[models.OptimizersConfigDiff] = None,
-        wal_config: Optional[models.WalConfigDiff] = None,
-        quantization_config: Optional[models.QuantizationConfig] = None,
-        init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,  # noqa: FBT001
+        shard_number: int | None = None,
+        replication_factor: int | None = None,
+        write_consistency_factor: int | None = None,
+        on_disk_payload: bool | None = None,  # noqa: FBT001
+        hnsw_config: models.HnswConfigDiff | None = None,
+        optimizers_config: models.OptimizersConfigDiff | None = None,
+        wal_config: models.WalConfigDiff | None = None,
+        quantization_config: models.QuantizationConfig | None = None,
+        init_from: models.InitFrom | None = None,
+        on_disk: bool | None = None,  # noqa: FBT001
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1493,8 +1491,8 @@ class Qdrant(VectorStore):
                 If ':memory:' - use in-memory Qdrant instance.
                 If `str` - use it as a `url` parameter.
                 If `None` - fallback to relying on `host` and `port` parameters.
-            url: either host or str of "Optional[scheme], host, Optional[port],
-                Optional[prefix]". Default: `None`
+            url: either host or str of "scheme | None, host, port | None,
+                prefix | None".
             port: Port of the REST API interface. Default: 6333
             grpc_port: Port of the gRPC interface. Default: 6334
             prefer_grpc:
@@ -1631,32 +1629,32 @@ class Qdrant(VectorStore):
         cls: type[Qdrant],
         texts: list[str],
         embedding: Embeddings,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
+        collection_name: str | None = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_name: Optional[str] = VECTOR_NAME,
-        shard_number: Optional[int] = None,
-        replication_factor: Optional[int] = None,
-        write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
-        hnsw_config: Optional[models.HnswConfigDiff] = None,
-        optimizers_config: Optional[models.OptimizersConfigDiff] = None,
-        wal_config: Optional[models.WalConfigDiff] = None,
-        quantization_config: Optional[models.QuantizationConfig] = None,
-        init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,  # noqa: FBT001
+        vector_name: str | None = VECTOR_NAME,
+        shard_number: int | None = None,
+        replication_factor: int | None = None,
+        write_consistency_factor: int | None = None,
+        on_disk_payload: bool | None = None,  # noqa: FBT001
+        hnsw_config: models.HnswConfigDiff | None = None,
+        optimizers_config: models.OptimizersConfigDiff | None = None,
+        wal_config: models.WalConfigDiff | None = None,
+        quantization_config: models.QuantizationConfig | None = None,
+        init_from: models.InitFrom | None = None,
+        on_disk: bool | None = None,  # noqa: FBT001
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -1796,32 +1794,32 @@ class Qdrant(VectorStore):
         cls: type[Qdrant],
         texts: list[str],
         embedding: Embeddings,
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
-        collection_name: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
+        collection_name: str | None = None,
         distance_func: str = "Cosine",
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
-        vector_name: Optional[str] = VECTOR_NAME,
-        shard_number: Optional[int] = None,
-        replication_factor: Optional[int] = None,
-        write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
-        hnsw_config: Optional[models.HnswConfigDiff] = None,
-        optimizers_config: Optional[models.OptimizersConfigDiff] = None,
-        wal_config: Optional[models.WalConfigDiff] = None,
-        quantization_config: Optional[models.QuantizationConfig] = None,
-        init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,  # noqa: FBT001
+        vector_name: str | None = VECTOR_NAME,
+        shard_number: int | None = None,
+        replication_factor: int | None = None,
+        write_consistency_factor: int | None = None,
+        on_disk_payload: bool | None = None,  # noqa: FBT001
+        hnsw_config: models.HnswConfigDiff | None = None,
+        optimizers_config: models.OptimizersConfigDiff | None = None,
+        wal_config: models.WalConfigDiff | None = None,
+        quantization_config: models.QuantizationConfig | None = None,
+        init_from: models.InitFrom | None = None,
+        on_disk: bool | None = None,  # noqa: FBT001
         force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
@@ -2034,7 +2032,7 @@ class Qdrant(VectorStore):
     def _build_payloads(
         cls,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]],
+        metadatas: list[dict] | None,
         content_payload_key: str,
         metadata_payload_key: str,
     ) -> list[dict]:
@@ -2095,8 +2093,8 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter_: Optional[DictFilter]
-    ) -> Optional[models.Filter]:
+        self, filter_: DictFilter | None
+    ) -> models.Filter | None:
         if not filter_:
             return None
 
@@ -2211,8 +2209,8 @@ class Qdrant(VectorStore):
     def _generate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
         batch_size: int = 64,
     ) -> Generator[tuple[list[str], list[models.PointStruct]], None, None]:
         texts_iterator = iter(texts)
@@ -2252,8 +2250,8 @@ class Qdrant(VectorStore):
     async def _agenerate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: Sequence[str] | None = None,
         batch_size: int = 64,
     ) -> AsyncGenerator[tuple[list[str], list[models.PointStruct]], None]:
         texts_iterator = iter(texts)
@@ -2292,19 +2290,19 @@ class Qdrant(VectorStore):
 
     @staticmethod
     def _generate_clients(
-        location: Optional[str] = None,
-        url: Optional[str] = None,
-        port: Optional[int] = 6333,
+        location: str | None = None,
+        url: str | None = None,
+        port: int | None = 6333,
         grpc_port: int = 6334,
         prefer_grpc: bool = False,  # noqa: FBT001, FBT002
-        https: Optional[bool] = None,  # noqa: FBT001
-        api_key: Optional[str] = None,
-        prefix: Optional[str] = None,
-        timeout: Optional[int] = None,
-        host: Optional[str] = None,
-        path: Optional[str] = None,
+        https: bool | None = None,  # noqa: FBT001
+        api_key: str | None = None,
+        prefix: str | None = None,
+        timeout: int | None = None,
+        host: str | None = None,
+        path: str | None = None,
         **kwargs: Any,
-    ) -> tuple[QdrantClient, Optional[AsyncQdrantClient]]:
+    ) -> tuple[QdrantClient, AsyncQdrantClient | None]:
         if api_key is None:
             api_key = os.getenv("QDRANT_API_KEY")
 

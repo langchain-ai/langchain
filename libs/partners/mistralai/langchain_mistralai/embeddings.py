@@ -54,7 +54,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             Name of MistralAI model to use.
 
     Key init args — client params:
-        api_key: Optional[SecretStr]
+        api_key: SecretStr | None
             The API key for the MistralAI API. If not provided, it will be read from the
             environment variable ``MISTRAL_API_KEY``.
         max_retries: int

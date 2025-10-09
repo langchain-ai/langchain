@@ -157,7 +157,7 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_store: The store to use for caching document embeddings.
             batch_size: The number of documents to embed between store updates.
             query_embedding_store: The store to use for caching query embeddings.
-                If ``None``, query embeddings are not cached.
+                If `None`, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
@@ -235,7 +235,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to ``True`` when initializing the embedder.
+        ``cache_query`` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -258,7 +258,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to ``True`` when initializing the embedder.
+        ``cache_query`` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.

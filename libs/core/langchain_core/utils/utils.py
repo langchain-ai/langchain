@@ -122,9 +122,9 @@ def guard_import(
     Args:
         module_name (str): The name of the module to import.
         pip_name (str, optional): The name of the module to install with pip.
-            Defaults to None.
+            Defaults to `None`.
         package (str, optional): The package to import the module from.
-            Defaults to None.
+            Defaults to `None`.
 
     Returns:
         Any: The imported module.
@@ -156,13 +156,13 @@ def check_package_version(
     Args:
         package (str): The name of the package.
         lt_version (str, optional): The version must be less than this.
-            Defaults to None.
+            Defaults to `None`.
         lte_version (str, optional): The version must be less than or equal to this.
-            Defaults to None.
+            Defaults to `None`.
         gt_version (str, optional): The version must be greater than this.
-            Defaults to None.
+            Defaults to `None`.
         gte_version (str, optional): The version must be greater than or equal to this.
-            Defaults to None.
+            Defaults to `None`.
 
     Raises:
         ValueError: If the package version does not meet the requirements.

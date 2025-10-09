@@ -6,7 +6,7 @@ service.
 !!! note
     **Newly added in 0.3.4:** ``validate_model_on_init`` param on all models.
     This parameter allows you to validate the model exists in Ollama locally on
-    initialization. If set to ``True``, it will raise an error if the model does not
+    initialization. If set to `True`, it will raise an error if the model does not
     exist locally. This is useful for ensuring that the model is available before
     attempting to use it, especially in environments where models may not be
     pre-downloaded.

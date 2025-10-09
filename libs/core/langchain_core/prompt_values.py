@@ -113,8 +113,8 @@ class ImageURL(TypedDict, total=False):
     """Image URL."""
 
     detail: Literal["auto", "low", "high"]
-    """Specifies the detail level of the image. Defaults to ``'auto'``.
-    Can be ``'auto'``, ``'low'``, or ``'high'``.
+    """Specifies the detail level of the image. Defaults to `'auto'`.
+    Can be `'auto'`, `'low'`, or `'high'`.
 
     This follows OpenAI's Chat Completion API's image URL format.
 

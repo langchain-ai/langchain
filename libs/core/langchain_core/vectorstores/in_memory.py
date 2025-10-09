@@ -38,7 +38,7 @@ class InMemoryVectorStore(VectorStore):
     Uses a dictionary, and computes cosine similarity for search using numpy.
 
     Setup:
-        Install ``langchain-core``.
+        Install `langchain-core`.
 
         .. code-block:: bash
 

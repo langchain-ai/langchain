@@ -97,7 +97,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
     exception_key: str | None = None
     """If string is specified then handled exceptions will be passed to fallbacks as
-        part of the input under the specified key. If None, exceptions
+        part of the input under the specified key. If `None`, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks
         must accept a dictionary as input."""
 

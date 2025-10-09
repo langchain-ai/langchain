@@ -278,10 +278,10 @@ class InMemoryRecordManager(RecordManager):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+                Defaults to `None`.
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores. Defaults to `None`.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -315,10 +315,10 @@ class InMemoryRecordManager(RecordManager):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+                Defaults to `None`.
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores. Defaults to `None`.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -361,13 +361,13 @@ class InMemoryRecordManager(RecordManager):
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+                Defaults to `None`.
             after: Filter to list records updated after this time.
-                Defaults to None.
+                Defaults to `None`.
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+                Defaults to `None`.
             limit: optional limit on the number of records to return.
-                Defaults to None.
+                Defaults to `None`.
 
         Returns:
             A list of keys for the matching records.
@@ -397,13 +397,13 @@ class InMemoryRecordManager(RecordManager):
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+                Defaults to `None`.
             after: Filter to list records updated after this time.
-                Defaults to None.
+                Defaults to `None`.
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+                Defaults to `None`.
             limit: optional limit on the number of records to return.
-                Defaults to None.
+                Defaults to `None`.
 
         Returns:
             A list of keys for the matching records.

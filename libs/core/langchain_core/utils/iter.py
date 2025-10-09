@@ -139,7 +139,7 @@ class Tee(Generic[T]):
             iterable: The iterable to split.
             n: The number of iterators to create. Defaults to 2.
             lock: The lock to synchronise access to the shared buffers.
-                Defaults to None.
+                Defaults to `None`.
         """
         self._iterator = iter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
@@ -207,7 +207,7 @@ def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:
-        size: The size of the batch. If None, returns a single batch.
+        size: The size of the batch. If `None`, returns a single batch.
         iterable: The iterable to batch.
 
     Yields:

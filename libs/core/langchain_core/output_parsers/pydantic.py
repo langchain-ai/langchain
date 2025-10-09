@@ -50,9 +50,9 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                Defaults to False.
+                Defaults to `False`.
 
         Raises:
             OutputParserException: If the result is not valid JSON
