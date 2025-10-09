@@ -4,7 +4,10 @@ from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
-from .human_in_the_loop import HumanInTheLoopMiddleware
+from .human_in_the_loop import (
+    HumanInTheLoopMiddleware,
+    InterruptOnConfig,
+)
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
@@ -34,6 +37,7 @@ __all__ = [
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
+    "InterruptOnConfig",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
