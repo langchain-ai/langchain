@@ -60,9 +60,9 @@ class Fireworks(LLM):
     """Model temperature."""
     top_p: float | None = None
     """Used to dynamically adjust the number of choices for each predicted token based
-    on the cumulative probabilities. A value of ``1`` will always yield the same output.
-    A temperature less than ``1`` favors more correctness and is appropriate for
-    question answering or summarization. A value greater than ``1`` introduces more
+    on the cumulative probabilities. A value of `1` will always yield the same output.
+    A temperature less than `1` favors more correctness and is appropriate for
+    question answering or summarization. A value greater than `1` introduces more
     randomness in the output.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
