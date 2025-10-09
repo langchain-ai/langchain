@@ -39,33 +39,15 @@ T = TypeVar("T")
 
 
 def _hash_string_to_uuid(input_string: str) -> str:
-    """Hashes a string and returns the corresponding UUID."""
-    hash_value = hashlib.sha1(
-        input_string.encode("utf-8"), usedforsecurity=False
-    ).hexdigest()
+    """Hashes a string (using SHA-256) and returns the corresponding UUID."""
+    hash_value = hashlib.sha256(input_string.encode("utf-8")).hexdigest()
     return str(uuid.uuid5(NAMESPACE_UUID, hash_value))
 
 
 _WARNED_ABOUT_SHA1: bool = False
 
 
-def _warn_about_sha1() -> None:
-    """Emit a one-time warning about SHA-1 collision weaknesses."""
-    # Global variable OK in this case
-    global _WARNED_ABOUT_SHA1  # noqa: PLW0603
-    if not _WARNED_ABOUT_SHA1:
-        warnings.warn(
-            "Using SHA-1 for document hashing. SHA-1 is *not* "
-            "collision-resistant; a motivated attacker can construct distinct inputs "
-            "that map to the same fingerprint. If this matters in your "
-            "threat model, switch to a stronger algorithm such "
-            "as 'blake2b', 'sha256', or 'sha512' by specifying "
-            " `key_encoder` parameter in the `index` or `aindex` function. ",
-            category=UserWarning,
-            stacklevel=2,
-        )
-        _WARNED_ABOUT_SHA1 = True
-
+# (SHA-1 warning functionality removed; SHA-256 is now default)
 
 def _hash_string(
     input_string: str, *, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
@@ -146,13 +128,12 @@ class IndexingException(LangChainException):
 
 
 def _calculate_hash(
-    text: str, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
+    text: str, algorithm: Literal["sha256", "sha512", "blake2b", "sha1"] = "sha256"
 ) -> str:
-    """Return a hexadecimal digest of *text* using *algorithm*."""
+    """Return a hexadecimal digest of *text* using *algorithm*. Defaults to sha256."""
     if algorithm == "sha1":
-        # Calculate the SHA-1 hash and return it as a UUID.
-        digest = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
-        return str(uuid.uuid5(NAMESPACE_UUID, digest))
+        # SHA-1 is not recommended and should only be used for legacy compatibility
+        return hashlib.sha1(text.encode("utf-8")).hexdigest()
     if algorithm == "blake2b":
         return hashlib.blake2b(text.encode("utf-8")).hexdigest()
     if algorithm == "sha256":
@@ -177,13 +158,11 @@ def _get_document_with_hash(
     Args:
         document: Document to hash.
         key_encoder: Hashing algorithm to use for hashing the document.
-            If not provided, a default encoder using SHA-1 will be used.
-            SHA-1 is not collision-resistant, and a motivated attacker
-            could craft two different texts that hash to the
-            same cache key.
+            If not provided, a default encoder using SHA-256 will be used.
+            SHA-256 is collision-resistant and recommended for new applications.
 
-            New applications should use one of the alternative encoders
-            or provide a custom and strong key encoder function to avoid this risk.
+            Applications may configure an alternative strong encoder
+            or provide a custom key encoder function.
 
             When changing the key encoder, you must change the
             index as well to avoid duplicated documents in the cache.
