@@ -62,7 +62,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
           API references for individual test methods include troubleshooting tips.
 
     Testing initialization from environment variables
-        Overriding the ``init_from_env_params`` property will enable additional tests
+        Overriding the `init_from_env_params` property will enable additional tests
         for initialization from environment variables. See below for details.
 
         ??? note "`init_from_env_params`"
@@ -119,12 +119,12 @@ class EmbeddingsUnitTests(EmbeddingsTests):
     def test_init_from_env(self) -> None:
         """Test initialization from environment variables.
 
-        Relies on the ``init_from_env_params`` property.
+        Relies on the `init_from_env_params` property.
         Test is skipped if that property is not set.
 
         ??? note "Troubleshooting"
 
-            If this test fails, ensure that ``init_from_env_params`` is specified
+            If this test fails, ensure that `init_from_env_params` is specified
             correctly and that model parameters are properly set from environment
             variables during initialization.
         """

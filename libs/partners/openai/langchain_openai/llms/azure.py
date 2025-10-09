@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable, Mapping
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import openai
 from langchain_core.language_models import LangSmithParams
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
-    To use, you should have the ``openai`` python package installed, and the
+    To use, you should have the `openai` python package installed, and the
     environment variable ``OPENAI_API_KEY`` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
@@ -35,7 +35,7 @@ class AzureOpenAI(BaseOpenAI):
 
     """
 
-    azure_endpoint: Optional[str] = Field(
+    azure_endpoint: str | None = Field(
         default_factory=from_env("AZURE_OPENAI_ENDPOINT", default=None)
     )
     """Your Azure endpoint, including the resource.
@@ -44,7 +44,7 @@ class AzureOpenAI(BaseOpenAI):
 
         Example: ``'https://example-resource.azure.openai.com/'``
     """
-    deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
+    deployment_name: str | None = Field(default=None, alias="azure_deployment")
     """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
@@ -53,7 +53,7 @@ class AzureOpenAI(BaseOpenAI):
             This means you won't be able to use non-deployment endpoints.
 
     """
-    openai_api_version: Optional[str] = Field(
+    openai_api_version: str | None = Field(
         alias="api_version",
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
@@ -61,13 +61,13 @@ class AzureOpenAI(BaseOpenAI):
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env(
             ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
         ),
     )
-    azure_ad_token: Optional[SecretStr] = Field(
+    azure_ad_token: SecretStr | None = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
     )
     """Your Azure Active Directory token.
@@ -76,18 +76,18 @@ class AzureOpenAI(BaseOpenAI):
 
         `For more, see this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>.`__
     """
-    azure_ad_token_provider: Union[Callable[[], str], None] = None
+    azure_ad_token_provider: Callable[[], str] | None = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
         will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
-    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    azure_ad_async_token_provider: Callable[[], Awaitable[str]] | None = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every async request.
     """
-    openai_api_type: Optional[str] = Field(
+    openai_api_type: str | None = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
     """Legacy, for ``openai<1.0.0`` support."""
@@ -205,7 +205,7 @@ class AzureOpenAI(BaseOpenAI):
         return {**openai_params, **super()._invocation_params}
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)

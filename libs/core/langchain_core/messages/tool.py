@@ -18,7 +18,7 @@ class ToolOutputMixin:
 
     If a custom BaseTool is invoked with a ``ToolCall`` and the output of custom code is
     not an instance of ``ToolOutputMixin``, the output will automatically be coerced to
-    a string and wrapped in a ``ToolMessage``.
+    a string and wrapped in a `ToolMessage`.
 
     """
 
@@ -26,10 +26,10 @@ class ToolOutputMixin:
 class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
-    ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+    `ToolMessage` objects contain the result of a tool invocation. Typically, the result
     is encoded inside the ``content`` field.
 
-    Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+    Example: A `ToolMessage` representing a result of ``42`` from a tool call with id
 
         .. code-block:: python
 
@@ -38,7 +38,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
 
 
-    Example: A ``ToolMessage`` where only part of the tool output is sent to the model
+    Example: A `ToolMessage` where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
         !!! version-added "Added in version 0.2.17"
@@ -60,7 +60,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                 tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
             )
 
-    The ``tool_call_id`` field is used to associate the tool call request with the
+    The `tool_call_id` field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
@@ -165,7 +165,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``ToolMessage``.
+        """Initialize `ToolMessage`.
 
         Specify ``content`` as positional arg or ``content_blocks`` for typing.
 

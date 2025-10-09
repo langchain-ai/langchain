@@ -89,7 +89,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -134,14 +134,14 @@ class LangChainTracer(BaseTracer):
             serialized: The serialized model.
             messages: The messages.
             run_id: The run ID.
-            tags: The tags. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata. Defaults to None.
-            name: The name. Defaults to None.
-            kwargs: Additional keyword arguments.
+            tags: The tags. Defaults to `None`.
+            parent_run_id: The parent run ID. Defaults to `None`.
+            metadata: The metadata. Defaults to `None`.
+            name: The name. Defaults to `None`.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Run: The run.
+            The run.
         """
         start_time = datetime.now(timezone.utc)
         if metadata:
@@ -175,7 +175,7 @@ class LangChainTracer(BaseTracer):
         """Get the LangSmith root run URL.
 
         Returns:
-            str: The LangSmith root run URL.
+            The LangSmith root run URL.
 
         Raises:
             ValueError: If no traced run is found.

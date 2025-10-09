@@ -33,15 +33,15 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         Args:
             error: The error that's being re-raised or an error message.
             observation: String explanation of error which can be passed to a
-                model to try and remediate the issue. Defaults to None.
+                model to try and remediate the issue. Defaults to `None`.
             llm_output: String model output which is error-ing.
-                Defaults to None.
+                Defaults to `None`.
             send_to_llm: Whether to send the observation and llm_output back to an Agent
                 after an OutputParserException has been raised.
                 This gives the underlying model driving the agent the context that the
                 previous output was improperly structured, in the hopes that it will
                 update the output to the correct format.
-                Defaults to False.
+                Defaults to `False`.
 
         Raises:
             ValueError: If ``send_to_llm`` is True but either observation or

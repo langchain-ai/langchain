@@ -15,7 +15,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
     @property
     @abstractmethod
     def retriever_constructor(self) -> type[BaseRetriever]:
-        """A ``BaseRetriever`` subclass to be tested."""
+        """A `BaseRetriever` subclass to be tested."""
         ...
 
     @property
@@ -26,13 +26,13 @@ class RetrieversIntegrationTests(BaseStandardTests):
     @property
     @abstractmethod
     def retriever_query_example(self) -> str:
-        """Returns a str representing the ``query`` of an example retriever call."""
+        """Returns a str representing the `query` of an example retriever call."""
 
     @property
     def num_results_arg_name(self) -> str:
         """Returns the name of the parameter for the number of results returned.
 
-        Usually something like ``k`` or ``top_k``.
+        Usually something like `k` or `top_k`.
 
         """
         return "k"
@@ -48,12 +48,12 @@ class RetrieversIntegrationTests(BaseStandardTests):
         Test that the retriever constructor accepts a parameter representing
         the number of documents to return.
 
-        By default, the parameter tested is named ``k``, but it can be overridden by
-        setting the ``num_results_arg_name`` property.
+        By default, the parameter tested is named `k`, but it can be overridden by
+        setting the `num_results_arg_name` property.
 
         !!! note
             If the retriever doesn't support configuring the number of results returned
-            via the constructor, this test can be skipped using a pytest ``xfail`` on
+            via the constructor, this test can be skipped using a pytest `xfail` on
             the test class:
 
             .. code-block:: python
@@ -69,7 +69,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             If this test fails, the retriever constructor does not accept a number
             of results parameter, or the retriever does not return the correct number
-            of documents ( of the one set in ``num_results_arg_name``) when it is
+            of documents ( of the one set in `num_results_arg_name`) when it is
             set.
 
             For example, a retriever like
@@ -99,17 +99,17 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_1)
 
     def test_invoke_with_k_kwarg(self, retriever: BaseRetriever) -> None:
-        """Test the number of results parameter in ``invoke()``.
+        """Test the number of results parameter in `invoke`.
 
         Test that the invoke method accepts a parameter representing
         the number of documents to return.
 
-        By default, the parameter is named ``, but it can be overridden by
-        setting the ``num_results_arg_name`` property.
+        By default, the parameter is named, but it can be overridden by
+        setting the `num_results_arg_name` property.
 
         !!! note
             If the retriever doesn't support configuring the number of results returned
-            via the invoke method, this test can be skipped using a pytest ``xfail`` on
+            via the invoke method, this test can be skipped using a pytest `xfail` on
             the test class:
 
             .. code-block:: python
@@ -125,7 +125,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             If this test fails, the retriever's invoke method does not accept a number
             of results parameter, or the retriever does not return the correct number
-            of documents (``k`` of the one set in ``num_results_arg_name``) when it is
+            of documents (`k` of the one set in `num_results_arg_name`) when it is
             set.
 
             For example, a retriever like
@@ -158,8 +158,8 @@ class RetrieversIntegrationTests(BaseStandardTests):
         ??? note "Troubleshooting"
 
             If this test fails, the retriever's invoke method does not return a list of
-            ``langchain_core.document.Document`` objects. Please confirm that your
-            ``_get_relevant_documents`` method returns a list of ``Document`` objects.
+            `Document` objects. Please confirm that your
+            `_get_relevant_documents` method returns a list of `Document` objects.
         """
         result = retriever.invoke(self.retriever_query_example)
 

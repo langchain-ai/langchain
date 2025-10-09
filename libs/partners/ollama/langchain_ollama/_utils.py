@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-from typing import Optional
 from urllib.parse import unquote, urlparse
 
 from httpx import ConnectError
@@ -49,8 +48,8 @@ def validate_model(client: Client, model_name: str) -> None:
 
 
 def parse_url_with_auth(
-    url: Optional[str],
-) -> tuple[Optional[str], Optional[dict[str, str]]]:
+    url: str | None,
+) -> tuple[str | None, dict[str, str] | None]:
     """Parse URL and extract `userinfo` credentials for headers.
 
     Handles URLs of the form: `https://user:password@host:port/path`
@@ -101,7 +100,7 @@ def parse_url_with_auth(
 
 def merge_auth_headers(
     client_kwargs: dict,
-    auth_headers: Optional[dict[str, str]],
+    auth_headers: dict[str, str] | None,
 ) -> None:
     """Merge authentication headers into client kwargs in-place.
 

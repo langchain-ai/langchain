@@ -123,12 +123,11 @@ class VectorStore(ABC):
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
@@ -191,12 +190,11 @@ class VectorStore(ABC):
         """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         return await run_in_executor(None, self.delete, ids, **kwargs)
 
@@ -255,7 +253,7 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
                 if kwargs contains ids and documents contain ids,
                 the ids in the kwargs will receive precedence.
 
@@ -287,7 +285,7 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
@@ -815,10 +813,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -845,10 +843,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -882,10 +880,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
 
     @classmethod
@@ -906,10 +904,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
         if ids is not None:
             kwargs["ids"] = ids
@@ -930,12 +928,11 @@ class VectorStore(ABC):
         Args:
             **kwargs: Keyword arguments to pass to the search function.
                 Can include:
-                search_type (Optional[str]): Defines the type of search that
-                    the Retriever should perform.
-                    Can be "similarity" (default), "mmr", or
+                search_type: Defines the type of search that the Retriever should
+                    perform. Can be "similarity" (default), "mmr", or
                     "similarity_score_threshold".
-                search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                    search function. Can include things like:
+                search_kwargs: Keyword arguments to pass to the search function. Can
+                    include things like:
                         k: Amount of documents to return (Default: 4)
                         score_threshold: Minimum relevance threshold
                             for similarity_score_threshold
@@ -946,7 +943,7 @@ class VectorStore(ABC):
                         filter: Filter by document metadata
 
         Returns:
-            VectorStoreRetriever: Retriever class for VectorStore.
+            Retriever class for VectorStore.
 
         Examples:
 
@@ -1012,7 +1009,7 @@ class VectorStoreRetriever(BaseRetriever):
             values: Values to validate.
 
         Returns:
-            Values: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If search_type is not one of the allowed search types.

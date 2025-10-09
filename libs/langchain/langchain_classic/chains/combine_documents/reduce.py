@@ -207,7 +207,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     This is typically a StuffDocumentsChain."""
     collapse_documents_chain: BaseCombineDocumentsChain | None = None
     """Chain to use to collapse documents if needed until they can all fit.
-    If None, will use the combine_documents_chain.
+    If `None`, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
     token_max: int = 3000
     """The maximum number of tokens to group documents into. For example, if
@@ -215,7 +215,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     3000 tokens before trying to combine them into a smaller chunk."""
     collapse_max_retries: int | None = None
     """The maximum number of retries to collapse documents to fit token_max.
-    If None, it will keep trying to collapse documents to fit token_max.
+    If `None`, it will keep trying to collapse documents to fit token_max.
     Otherwise, after it reaches the max number, it will throw an error"""
 
     model_config = ConfigDict(

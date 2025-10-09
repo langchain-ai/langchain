@@ -1,6 +1,6 @@
 """__ModuleName__ tools."""
 
-from typing import Optional, Type
+from typing import Type
 
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
@@ -74,12 +74,12 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
     """The schema that is passed to the model when performing tool calling."""
 
     # TODO: Add any other init params for the tool.
-    # param1: Optional[str]
+    # param1: str | None
     # """param1 determines foobar"""
 
     # TODO: Replaced (a, b) with real tool arguments.
     def _run(
-        self, a: int, b: int, *, run_manager: Optional[CallbackManagerForToolRun] = None
+        self, a: int, b: int, *, run_manager: CallbackManagerForToolRun | None = None
     ) -> str:
         return str(a + b + 80)
 
@@ -90,6 +90,6 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
     #     a: int,
     #     b: int,
     #     *,
-    #     run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    #     run_manager: AsyncCallbackManagerForToolRun | None = None,
     # ) -> str:
     #     ...

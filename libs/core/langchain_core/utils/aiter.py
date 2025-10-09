@@ -50,7 +50,7 @@ def py_anext(
 
     Returns:
         The next value from the iterator, or the default value
-            if the iterator is exhausted.
+        if the iterator is exhausted.
 
     Raises:
         TypeError: If the iterator is not an async iterator.
@@ -203,7 +203,7 @@ class Tee(Generic[T]):
             iterable: The iterable to split.
             n: The number of iterators to create. Defaults to 2.
             lock: The lock to synchronise access to the shared buffers.
-                Defaults to None.
+                Defaults to `None`.
         """
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]

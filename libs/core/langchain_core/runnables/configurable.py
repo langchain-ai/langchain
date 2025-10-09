@@ -49,8 +49,8 @@ if TYPE_CHECKING:
 class DynamicRunnable(RunnableSerializable[Input, Output]):
     """Serializable Runnable that can be dynamically configured.
 
-    A DynamicRunnable should be initiated using the ``configurable_fields`` or
-    ``configurable_alternatives`` method of a Runnable.
+    A DynamicRunnable should be initiated using the `configurable_fields` or
+    `configurable_alternatives` method of a Runnable.
     """
 
     default: RunnableSerializable[Input, Output]
@@ -123,11 +123,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Prepare the Runnable for invocation.
 
         Args:
-            config: The configuration to use. Defaults to None.
+            config: The configuration to use. Defaults to `None`.
 
         Returns:
-            tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
-            configuration.
+            The prepared Runnable and configuration.
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
@@ -384,7 +383,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         """Get the configuration specs for the RunnableConfigurableFields.
 
         Returns:
-            list[ConfigurableFieldSpec]: The configuration specs.
+            The configuration specs.
         """
         config_specs = []
 
@@ -541,7 +540,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to ``'default'``."""
+    """The enum value to use for the default option. Defaults to `'default'`."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace
@@ -656,7 +655,7 @@ def prefix_config_spec(
         prefix: The prefix to add.
 
     Returns:
-        ConfigurableFieldSpec: The prefixed ConfigurableFieldSpec.
+        The prefixed ConfigurableFieldSpec.
     """
     return (
         ConfigurableFieldSpec(

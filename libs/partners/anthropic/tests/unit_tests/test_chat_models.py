@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
@@ -45,6 +45,12 @@ def test_initialization() -> None:
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
+    llm = ChatAnthropic(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_anthropic_client_caching() -> None:
@@ -1318,10 +1324,10 @@ def test_usage_metadata_standardization() -> None:
 
     # Null input and output tokens
     class UsageModelNulls(BaseModel):
-        input_tokens: Optional[int] = None
-        output_tokens: Optional[int] = None
-        cache_read_input_tokens: Optional[int] = None
-        cache_creation_input_tokens: Optional[int] = None
+        input_tokens: int | None = None
+        output_tokens: int | None = None
+        cache_read_input_tokens: int | None = None
+        cache_creation_input_tokens: int | None = None
 
     usage_nulls = UsageModelNulls()
     result = _create_usage_metadata(usage_nulls)

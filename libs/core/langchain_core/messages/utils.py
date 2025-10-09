@@ -96,9 +96,9 @@ def get_buffer_string(
 
     Args:
         messages: Messages to be converted to strings.
-        human_prefix: The prefix to prepend to contents of ``HumanMessage``s.
+        human_prefix: The prefix to prepend to contents of `HumanMessage`s.
             Default is ``'Human'``.
-        ai_prefix: The prefix to prepend to contents of ``AIMessage``. Default is
+        ai_prefix: The prefix to prepend to contents of `AIMessage`. Default is
             ``'AI'``.
 
     Returns:
@@ -312,7 +312,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     The message format can be one of the following:
 
     - ``BaseMessagePromptTemplate``
-    - ``BaseMessage``
+    - `BaseMessage`
     - 2-tuple of (role string, template); e.g., (``'human'``, ``'{user_input}'``)
     - dict: a message dict with role and content keys
     - string: shorthand for (``'human'``, template); e.g., ``'{user_input}'``
@@ -423,31 +423,31 @@ def filter_messages(
     exclude_ids: Sequence[str] | None = None,
     exclude_tool_calls: Sequence[str] | bool | None = None,
 ) -> list[BaseMessage]:
-    """Filter messages based on ``name``, ``type`` or ``id``.
+    """Filter messages based on `name`, `type` or `id`.
 
     Args:
         messages: Sequence Message-like objects to filter.
         include_names: Message names to include. Default is None.
         exclude_names: Messages names to exclude. Default is None.
         include_types: Message types to include. Can be specified as string names
-            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as ``BaseMessage``
-            classes (e.g. ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...).
+            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as `BaseMessage`
+            classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`, ...).
             Default is None.
         exclude_types: Message types to exclude. Can be specified as string names
-            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as ``BaseMessage``
-            classes (e.g. ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...).
+            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as `BaseMessage`
+            classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`, ...).
             Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
-            - ``True``: all ``AIMessage``s with tool calls and all
-              ``ToolMessage``s will be excluded.
+            - `True`: all `AIMessage`s with tool calls and all
+              `ToolMessage` objects will be excluded.
             - a sequence of tool call IDs to exclude:
-              - ``ToolMessage``s with the corresponding tool call ID will be
+              - `ToolMessage` objects with the corresponding tool call ID will be
                 excluded.
-              - The ``tool_calls`` in the AIMessage will be updated to exclude
-                matching tool calls. If all ``tool_calls`` are filtered from an
+              - The `tool_calls` in the AIMessage will be updated to exclude
+                matching tool calls. If all `tool_calls` are filtered from an
                 AIMessage, the whole message is excluded.
 
     Returns:
@@ -565,8 +565,8 @@ def merge_message_runs(
     r"""Merge consecutive Messages of the same type.
 
     !!! note
-        ToolMessages are not merged, as each has a distinct tool call id that can't be
-        merged.
+        `ToolMessage` objects are not merged, as each has a distinct tool call id that
+        can't be merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
@@ -714,17 +714,17 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage``
-       followed by a ``HumanMessage``. To achieve this, set ``start_on='human'``.
-       In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
+       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage`
+       followed by a `HumanMessage`. To achieve this, set ``start_on='human'``.
+       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
        To achieve this set the ``strategy='last'``.
-    3. Usually, the new chat history should include the ``SystemMessage`` if it
-       was present in the original chat history since the ``SystemMessage`` includes
-       special instructions to the chat model. The ``SystemMessage`` is almost always
+    3. Usually, the new chat history should include the `SystemMessage` if it
+       was present in the original chat history since the `SystemMessage` includes
+       special instructions to the chat model. The `SystemMessage` is almost always
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
@@ -735,8 +735,8 @@ def trim_messages(
     Args:
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
-        token_counter: Function or llm for counting tokens in a ``BaseMessage`` or a
-            list of ``BaseMessage``. If a ``BaseLanguageModel`` is passed in then
+        token_counter: Function or llm for counting tokens in a `BaseMessage` or a
+            list of `BaseMessage`. If a `BaseLanguageModel` is passed in then
             ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
             Set to ``len`` to count the number of **messages** in the chat history.
 
@@ -760,18 +760,18 @@ def trim_messages(
             is done before we attempt to get the last ``max_tokens``. If
             ``strategy='first'`` then this is done after we get the first
             ``max_tokens``. Can be specified as string names (e.g. ``'system'``,
-            ``'human'``, ``'ai'``, ...) or as ``BaseMessage`` classes (e.g.
-            ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...). Can be a single
+            ``'human'``, ``'ai'``, ...) or as `BaseMessage` classes (e.g.
+            `SystemMessage`, `HumanMessage`, `AIMessage`, ...). Can be a single
             type or a list of types.
             Default is None.
         start_on: The message type to start on. Should only be specified if
             ``strategy='last'``. If specified then every message before
             the first occurrence of this type is ignored. This is done after we trim
             the initial messages to the last ``max_tokens``. Does not
-            apply to a ``SystemMessage`` at index 0 if ``include_system=True``. Can be
+            apply to a `SystemMessage` at index 0 if ``include_system=True``. Can be
             specified as string names (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or
-            as ``BaseMessage`` classes (e.g. ``SystemMessage``, ``HumanMessage``,
-            ``AIMessage``, ...). Can be a single type or a list of types.
+            as `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`,
+            `AIMessage`, ...). Can be a single type or a list of types.
             Default is None.
         include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if ``strategy="last"``.
@@ -786,16 +786,16 @@ def trim_messages(
             newlines.
 
     Returns:
-        list of trimmed ``BaseMessage``.
+        list of trimmed `BaseMessage`.
 
     Raises:
         ValueError: if two incompatible arguments are specified or an unrecognized
             ``strategy`` is specified.
 
     Example:
-        Trim chat history based on token count, keeping the ``SystemMessage`` if
-        present, and ensuring that the chat history starts with a ``HumanMessage`` (
-        or a ``SystemMessage`` followed by a ``HumanMessage``).
+        Trim chat history based on token count, keeping the `SystemMessage` if
+        present, and ensuring that the chat history starts with a `HumanMessage` (
+        or a `SystemMessage` followed by a `HumanMessage`).
 
         .. code-block:: python
 
@@ -850,9 +850,9 @@ def trim_messages(
                 HumanMessage(content="what do you call a speechless parrot"),
             ]
 
-        Trim chat history based on the message count, keeping the ``SystemMessage`` if
-        present, and ensuring that the chat history starts with a ``HumanMessage`` (
-        or a ``SystemMessage`` followed by a ``HumanMessage``).
+        Trim chat history based on the message count, keeping the `SystemMessage` if
+        present, and ensuring that the chat history starts with a `HumanMessage` (
+        or a `SystemMessage` followed by a `HumanMessage`).
 
             trim_messages(
                 messages,
@@ -1697,11 +1697,11 @@ def count_tokens_approximately(
         chars_per_token: Number of characters per token to use for the approximation.
             Default is 4 (one token corresponds to ~4 chars for common English text).
             You can also specify float values for more fine-grained control.
-            `See more here. <https://platform.openai.com/tokenizer>`__
+            [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message.
             Default is 3 (special tokens, including beginning/end of message).
             You can also specify float values for more fine-grained control.
-            `See more here. <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>`__
+            [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
             Enabled by default.
 

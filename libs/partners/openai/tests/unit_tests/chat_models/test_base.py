@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from functools import partial
 from types import TracebackType
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -87,6 +87,12 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:
+    llm = ChatOpenAI(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_openai_client_caching() -> None:
@@ -285,9 +291,9 @@ class MockAsyncContextManager:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -313,9 +319,9 @@ class MockSyncContextManager:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -364,7 +370,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -389,7 +395,7 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -444,7 +450,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -468,7 +474,7 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -513,7 +519,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -541,7 +547,7 @@ def test_openai_stream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -867,7 +873,7 @@ class MakeASandwich(BaseModel):
     ],
 )
 @pytest.mark.parametrize("strict", [True, False, None])
-def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:
+def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.bind_tools(
@@ -882,10 +888,10 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_with_structured_output(
-    schema: Union[type, dict[str, Any], None],
+    schema: type | dict[str, Any] | None,
     method: Literal["function_calling", "json_mode", "json_schema"],
     include_raw: bool,
-    strict: Optional[bool],
+    strict: bool | None,
 ) -> None:
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
@@ -1082,7 +1088,7 @@ def test__convert_to_openai_response_format() -> None:
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
 @pytest.mark.parametrize("strict", [True, None])
 def test_structured_output_strict(
-    method: Literal["function_calling", "json_schema"], strict: Optional[bool]
+    method: Literal["function_calling", "json_schema"], strict: bool | None
 ) -> None:
     """Test to verify structured output with strict=True."""
 

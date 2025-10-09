@@ -293,16 +293,16 @@ def create_schema_from_function(
         filter_args: Optional list of arguments to exclude from the schema.
             Defaults to FILTERED_ARGS.
         parse_docstring: Whether to parse the function's docstring for descriptions
-            for each argument. Defaults to False.
+            for each argument. Defaults to `False`.
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
-            Defaults to False.
+            Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
-            Defaults to True, since we want to include them in the schema
+            Defaults to `True`, since we want to include them in the schema
             when *validating* tool inputs.
 
     Returns:
-        A pydantic model with the same arguments as the function.
+        A Pydantic model with the same arguments as the function.
     """
     sig = inspect.signature(func)
 
@@ -460,13 +460,13 @@ class ChildTool(BaseTool):
     """Callbacks to be called during tool execution."""
 
     tags: list[str] | None = None
-    """Optional list of tags associated with the tool. Defaults to None.
+    """Optional list of tags associated with the tool. Defaults to `None`.
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the tool. Defaults to None.
+    """Optional metadata associated with the tool. Defaults to `None`.
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
@@ -492,7 +492,7 @@ class ChildTool(BaseTool):
         """Initialize the tool.
 
         Raises:
-            TypeError: If ``args_schema`` is not a subclass of pydantic ``BaseModel`` or
+            TypeError: If ``args_schema`` is not a subclass of pydantic `BaseModel` or
                 dict.
         """
         if (
@@ -617,9 +617,9 @@ class ChildTool(BaseTool):
 
         Raises:
             ValueError: If string input is provided with JSON schema ``args_schema``.
-            ValueError: If InjectedToolCallId is required but ``tool_call_id`` is not
+            ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
-            TypeError: If args_schema is not a Pydantic ``BaseModel`` or dict.
+            TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -686,8 +686,8 @@ class ChildTool(BaseTool):
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
-        Add run_manager: Optional[CallbackManagerForToolRun] = None
-        to child implementations to enable tracing.
+        Add `run_manager: CallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
 
         Returns:
             The result of the tool execution.
@@ -696,8 +696,8 @@ class ChildTool(BaseTool):
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
-        Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-        to child implementations to enable tracing.
+        Add `run_manager: AsyncCallbackManagerForToolRun | None = None` to child
+        implementations to enable tracing.
 
         Returns:
             The result of the tool execution.
@@ -767,17 +767,17 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to None.
+            verbose: Whether to log the tool's progress. Defaults to `None`.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to None.
-            tags: Optional list of tags associated with the tool. Defaults to None.
-            metadata: Optional metadata associated with the tool. Defaults to None.
-            run_name: The name of the run. Defaults to None.
-            run_id: The id of the run. Defaults to None.
-            config: The configuration for the tool. Defaults to None.
-            tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Keyword arguments to be passed to tool callbacks (event handler)
+            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
+            tags: Optional list of tags associated with the tool. Defaults to `None`.
+            metadata: Optional metadata associated with the tool. Defaults to `None`.
+            run_name: The name of the run. Defaults to `None`.
+            run_id: The id of the run. Defaults to `None`.
+            config: The configuration for the tool. Defaults to `None`.
+            tool_call_id: The id of the tool call. Defaults to `None`.
+            **kwargs: Keyword arguments to be passed to tool callbacks (event handler)
 
         Returns:
             The output of the tool.
@@ -879,17 +879,17 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to None.
+            verbose: Whether to log the tool's progress. Defaults to `None`.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to None.
-            tags: Optional list of tags associated with the tool. Defaults to None.
-            metadata: Optional metadata associated with the tool. Defaults to None.
-            run_name: The name of the run. Defaults to None.
-            run_id: The id of the run. Defaults to None.
-            config: The configuration for the tool. Defaults to None.
-            tool_call_id: The id of the tool call. Defaults to None.
-            kwargs: Keyword arguments to be passed to tool callbacks
+            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
+            tags: Optional list of tags associated with the tool. Defaults to `None`.
+            metadata: Optional metadata associated with the tool. Defaults to `None`.
+            run_name: The name of the run. Defaults to `None`.
+            run_id: The id of the run. Defaults to `None`.
+            config: The configuration for the tool. Defaults to `None`.
+            tool_call_id: The id of the tool call. Defaults to `None`.
+            **kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
             The output of the tool.

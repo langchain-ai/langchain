@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
@@ -61,7 +61,7 @@ def test_perplexity_stream_includes_citations(mocker: MockerFixture) -> None:
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessage] = None
+    full: BaseMessage | None = None
     chunks_list = list(stream)
     # BaseChatModel.stream() adds an extra chunk after the final chunk from _stream
     assert len(chunks_list) == 4
@@ -124,7 +124,7 @@ def test_perplexity_stream_includes_citations_and_images(mocker: MockerFixture) 
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessage] = None
+    full: BaseMessage | None = None
     chunks_list = list(stream)
     # BaseChatModel.stream() adds an extra chunk after the final chunk from _stream
     assert len(chunks_list) == 4
@@ -194,7 +194,7 @@ def test_perplexity_stream_includes_citations_and_related_questions(
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessage] = None
+    full: BaseMessage | None = None
     chunks_list = list(stream)
     # BaseChatModel.stream() adds an extra chunk after the final chunk from _stream
     assert len(chunks_list) == 4
@@ -258,7 +258,7 @@ def test_perplexity_stream_includes_citations_and_search_results(
         llm.client.chat.completions, "create", return_value=mock_stream
     )
     stream = llm.stream("Hello langchain")
-    full: Optional[BaseMessage] = None
+    full: BaseMessage | None = None
     chunks_list = list(stream)
     # BaseChatModel.stream() adds an extra chunk after the final chunk from _stream
     assert len(chunks_list) == 4

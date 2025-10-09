@@ -6,8 +6,9 @@ import pytest
 
 from dataclasses import dataclass
 from typing import Union, Sequence, Any, Callable
+from collections.abc import Awaitable
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage as CoreAIMessage
 from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -82,12 +83,14 @@ location_json_schema = {
 }
 
 
+@tool
 def get_weather() -> str:
     """Get the weather."""
 
     return "The weather is sunny and 75°F."
 
 
+@tool
 def get_location() -> str:
     """Get the current location."""
 
@@ -724,10 +727,14 @@ class TestDynamicModelWithResponseFormat:
 
         # Create middleware that swaps the model in the request
         class ModelSwappingMiddleware(AgentMiddleware):
-            def modify_model_request(self, request: ModelRequest, state, runtime) -> ModelRequest:
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], CoreAIMessage],
+            ) -> CoreAIMessage:
                 # Replace the model with our custom test model
                 request.model = model
-                return request
+                return handler(request)
 
         # Track which model is checked for provider strategy support
         calls = []
@@ -748,7 +755,7 @@ class TestDynamicModelWithResponseFormat:
         )
 
         with patch(
-            "langchain.agents.middleware_agent._supports_provider_strategy",
+            "langchain.agents.factory._supports_provider_strategy",
             side_effect=mock_supports_provider_strategy,
         ):
             response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})

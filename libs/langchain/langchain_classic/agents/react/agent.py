@@ -33,7 +33,7 @@ def create_react_agent(
        For a more robust and feature-rich implementation, we recommend using the
        `create_react_agent` function from the LangGraph library.
        See the
-       `reference doc <https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent>`__
+       [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
        for more information.
 
     Args:
@@ -44,8 +44,8 @@ def create_react_agent(
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
         stop_sequence: bool or list of str.
-            If True, adds a stop token of "Observation:" to avoid hallucinates.
-            If False, does not add a stop token.
+            If `True`, adds a stop token of "Observation:" to avoid hallucinates.
+            If `False`, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
 
             Default is True. You may to set this to False if the LLM you are using

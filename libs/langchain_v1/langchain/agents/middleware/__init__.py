@@ -1,11 +1,11 @@
 """Middleware plugins for agents."""
 
-from .call_tracking import ModelCallLimitMiddleware
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
@@ -23,7 +23,7 @@ from .types import (
     before_model,
     dynamic_prompt,
     hook_config,
-    modify_model_request,
+    wrap_model_call,
 )
 
 __all__ = [
@@ -49,5 +49,5 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "modify_model_request",
+    "wrap_model_call",
 ]

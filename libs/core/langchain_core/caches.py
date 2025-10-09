@@ -154,7 +154,7 @@ class InMemoryCache(BaseCache):
 
         Args:
             maxsize: The maximum number of items to store in the cache.
-                If None, the cache has no maximum size.
+                If `None`, the cache has no maximum size.
                 If the cache exceeds the maximum size, the oldest items are removed.
                 Default is None.
 

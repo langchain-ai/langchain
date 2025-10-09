@@ -1,8 +1,8 @@
-from typing import Union
+from typing import TypeAlias
 
 import numpy as np
 
-Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
+Matrix: TypeAlias = list[list[float]] | list[np.ndarray] | np.ndarray
 
 
 def maximal_marginal_relevance(
@@ -44,8 +44,8 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:  # noqa: N803
     if len(X) == 0 or len(Y) == 0:
         return np.array([])
 
-    x = np.array(X)
-    y = np.array(Y)
+    x: np.ndarray = np.array(X)
+    y: np.ndarray = np.array(Y)
     if x.shape[1] != y.shape[1]:
         msg = (
             f"Number of columns in X and Y must be the same. X has shape {x.shape} "

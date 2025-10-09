@@ -32,7 +32,7 @@ to be included without breaking the standard structure.
     is subject to deprecation in future releases as we move towards PEP 728.
 
 !!! note
-    Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we
+    Following widespread adoption of [PEP 728](https://peps.python.org/pep-0728/), we
     will add ``extra_items=Any`` as a param to Content Blocks. This will signify to type
     checkers that additional provider-specific fields are allowed outside of the
     ``extras`` field, and that will become the new standard approach to adding
@@ -125,7 +125,7 @@ The module defines several types of content blocks, including:
 
 Factory functions offer benefits such as:
 - Automatic ID generation (when not provided)
-- No need to manually specify the ``type`` field
+- No need to manually specify the `type` field
 
 """
 
@@ -305,7 +305,7 @@ class ToolCallChunk(TypedDict):
 
     When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
-    values of ``index`` are equal and not ``None``.
+    values of ``index`` are equal and not `None`.
 
     Example:
 
@@ -350,7 +350,7 @@ class ToolCallChunk(TypedDict):
 class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
 
-    Here we add an ``error`` key to surface errors made during generation
+    Here we add an `error` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
 
     """
@@ -525,7 +525,7 @@ class ImageContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the image. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#image>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#image)
 
     """
 
@@ -572,7 +572,7 @@ class VideoContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the video. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#video>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#video)
 
     """
 
@@ -618,7 +618,7 @@ class AudioContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the audio. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#audio>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml#audio)
 
     """
 
@@ -641,12 +641,12 @@ class PlainTextContentBlock(TypedDict):
     !!! note
         A ``PlainTextContentBlock`` existed in ``langchain-core<1.0.0``. Although the
         name has carried over, the structure has changed significantly. The only shared
-        keys between the old and new versions are ``type`` and ``text``, though the
-        ``type`` value has changed from ``'text'`` to ``'text-plain'``.
+        keys between the old and new versions are `type` and ``text``, though the
+        `type` value has changed from ``'text'`` to ``'text-plain'``.
 
     !!! note
         Title and context are optional fields that may be passed to the model. See
-        Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
+        Anthropic [example](https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
 
     !!! note
         ``create_plaintext_block`` may also be used as a factory to create a
@@ -734,7 +734,7 @@ class FileContentBlock(TypedDict):
     mime_type: NotRequired[str]
     """MIME type of the file. Required for base64.
 
-    `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml>`__
+    [Examples from IANA](https://www.iana.org/assignments/media-types/media-types.xhtml)
 
     """
 
@@ -935,7 +935,7 @@ def create_text_block(
         A properly formatted ``TextContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -984,7 +984,7 @@ def create_image_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1040,7 +1040,7 @@ def create_video_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1100,7 +1100,7 @@ def create_audio_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1160,7 +1160,7 @@ def create_file_block(
             ``mime_type``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1219,7 +1219,7 @@ def create_plaintext_block(
         A properly formatted ``PlainTextContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1271,7 +1271,7 @@ def create_tool_call(
         A properly formatted ``ToolCall``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1309,7 +1309,7 @@ def create_reasoning_block(
         A properly formatted ``ReasoningContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1353,7 +1353,7 @@ def create_citation(
         A properly formatted ``Citation``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
@@ -1394,7 +1394,7 @@ def create_non_standard_block(
         A properly formatted ``NonStandardContentBlock``.
 
     !!! note
-        The ``id`` is generated automatically if not provided, using a UUID4 format
+        The `id` is generated automatically if not provided, using a UUID4 format
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """

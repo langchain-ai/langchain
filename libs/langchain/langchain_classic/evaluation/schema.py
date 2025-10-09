@@ -114,8 +114,8 @@ class _EvalArgsMixin:
         """Check if the evaluation arguments are valid.
 
         Args:
-            reference (Optional[str], optional): The reference label.
-            input_ (Optional[str], optional): The input string.
+            reference (str | None, optional): The reference label.
+            input_ (str | None, optional): The input string.
 
         Raises:
             ValueError: If the evaluator requires an input string but none is provided,
@@ -163,8 +163,8 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
         Args:
             prediction (str): The LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): The reference label to evaluate against.
-            input (Optional[str], optional): The input to consider during evaluation.
+            reference (str | None, optional): The reference label to evaluate against.
+            input (str | None, optional): The input to consider during evaluation.
             kwargs: Additional keyword arguments, including callbacks, tags, etc.
 
         Returns:
@@ -173,7 +173,7 @@ class StringEvaluator(_EvalArgsMixin, ABC):
                      - score: the score of the evaluation, if applicable.
                      - value: the string value of the evaluation, if applicable.
                      - reasoning: the reasoning for the evaluation, if applicable.
-        """  # noqa: E501
+        """
 
     async def _aevaluate_strings(
         self,
@@ -187,8 +187,8 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
         Args:
             prediction (str): The LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): The reference label to evaluate against.
-            input (Optional[str], optional): The input to consider during evaluation.
+            reference (str | None, optional): The reference label to evaluate against.
+            input (str | None, optional): The input to consider during evaluation.
             kwargs: Additional keyword arguments, including callbacks, tags, etc.
 
         Returns:
@@ -219,13 +219,13 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
         Args:
             prediction (str): The LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): The reference label to evaluate against.
-            input (Optional[str], optional): The input to consider during evaluation.
+            reference (str | None, optional): The reference label to evaluate against.
+            input (str | None, optional): The input to consider during evaluation.
             kwargs: Additional keyword arguments, including callbacks, tags, etc.
 
         Returns:
             dict: The evaluation results containing the score or value.
-        """  # noqa: E501
+        """
         self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_strings(
             prediction=prediction,
@@ -246,8 +246,8 @@ class StringEvaluator(_EvalArgsMixin, ABC):
 
         Args:
             prediction (str): The LLM or chain prediction to evaluate.
-            reference (Optional[str], optional): The reference label to evaluate against.
-            input (Optional[str], optional): The input to consider during evaluation.
+            reference (str | None, optional): The reference label to evaluate against.
+            input (str | None, optional): The input to consider during evaluation.
             kwargs: Additional keyword arguments, including callbacks, tags, etc.
 
         Returns:
@@ -280,8 +280,8 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (Optional[str], optional): The expected output / reference string.
-            input (Optional[str], optional): The input string.
+            reference (str | None, optional): The expected output / reference string.
+            input (str | None, optional): The input string.
             kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
@@ -302,8 +302,8 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (Optional[str], optional): The expected output / reference string.
-            input (Optional[str], optional): The input string.
+            reference (str | None, optional): The expected output / reference string.
+            input (str | None, optional): The input string.
             kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
@@ -333,8 +333,8 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (Optional[str], optional): The expected output / reference string.
-            input (Optional[str], optional): The input string.
+            reference (str | None, optional): The expected output / reference string.
+            input (str | None, optional): The input string.
             kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
@@ -363,8 +363,8 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            reference (Optional[str], optional): The expected output / reference string.
-            input (Optional[str], optional): The input string.
+            reference (str | None, optional): The expected output / reference string.
+            input (str | None, optional): The input string.
             kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:

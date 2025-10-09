@@ -25,11 +25,11 @@ def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
     """Validate specified keyword args are mutually exclusive.
 
     Args:
-        *arg_groups (tuple[str, ...]): Groups of mutually exclusive keyword args.
+        *arg_groups: Groups of mutually exclusive keyword args.
 
     Returns:
-        Callable: Decorator that validates the specified keyword args
-            are mutually exclusive.
+        Decorator that validates the specified keyword args
+        are mutually exclusive.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -60,7 +60,7 @@ def raise_for_status_with_text(response: Response) -> None:
     """Raise an error with the response text.
 
     Args:
-        response (Response): The response to check for errors.
+        response: The response to check for errors.
 
     Raises:
         ValueError: If the response has an error status code.
@@ -79,11 +79,14 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         dt_value: The datetime value to use for datetime.now().
 
     Yields:
-        datetime.datetime: The mocked datetime class.
+        The mocked datetime class.
 
     Example:
-    with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
-        assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
+
+        .. code-block:: python
+
+            with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
+                assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
     """
 
     class MockDateTime(datetime.datetime):
@@ -120,14 +123,12 @@ def guard_import(
     Raise an exception if the module is not installed.
 
     Args:
-        module_name (str): The name of the module to import.
-        pip_name (str, optional): The name of the module to install with pip.
-            Defaults to None.
-        package (str, optional): The package to import the module from.
-            Defaults to None.
+        module_name: The name of the module to import.
+        pip_name: The name of the module to install with pip. Defaults to `None`.
+        package: The package to import the module from. Defaults to `None`.
 
     Returns:
-        Any: The imported module.
+        The imported module.
 
     Raises:
         ImportError: If the module is not installed.
@@ -154,15 +155,12 @@ def check_package_version(
     """Check the version of a package.
 
     Args:
-        package (str): The name of the package.
-        lt_version (str, optional): The version must be less than this.
-            Defaults to None.
-        lte_version (str, optional): The version must be less than or equal to this.
-            Defaults to None.
-        gt_version (str, optional): The version must be greater than this.
-            Defaults to None.
-        gte_version (str, optional): The version must be greater than or equal to this.
-            Defaults to None.
+        package: The name of the package.
+        lt_version: The version must be less than this. Defaults to `None`.
+        lte_version: The version must be less than or equal to this. Defaults to `None`.
+        gt_version: The version must be greater than this. Defaults to `None`.
+        gte_version: The version must be greater than or equal to this.
+            Defaults to `None`.
 
     Raises:
         ValueError: If the package version does not meet the requirements.
@@ -201,7 +199,7 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
         pydantic_cls: Pydantic class.
 
     Returns:
-        set[str]: Field names.
+        Field names.
     """
     all_required_field_names = set()
     if is_pydantic_v1_subclass(pydantic_cls):
@@ -228,7 +226,7 @@ def _build_model_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        dict[str, Any]: Extra kwargs.
+        Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.
@@ -276,7 +274,7 @@ def build_extra_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        dict[str, Any]: Extra kwargs.
+        Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.
@@ -310,10 +308,10 @@ def convert_to_secret_str(value: SecretStr | str) -> SecretStr:
     """Convert a string to a SecretStr if needed.
 
     Args:
-        value (Union[SecretStr, str]): The value to convert.
+        value: The value to convert.
 
     Returns:
-        SecretStr: The SecretStr value.
+        The SecretStr value.
     """
     if isinstance(value, SecretStr):
         return value

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,7 +40,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
     model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
     """Model name to use."""
-    cache_folder: Optional[str] = None
+    cache_folder: str | None = None
     """Path to store models.
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)

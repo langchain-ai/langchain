@@ -112,7 +112,7 @@ class StructuredPrompt(ChatPromptTemplate):
                   (4) 2-tuple of (message class, template), (5) a string which is
                   shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
-            kwargs: Any additional kwargs to pass through to
+            **kwargs: Any additional kwargs to pass through to
                 ``ChatModel.with_structured_output(schema, **kwargs)``.
 
         Returns:
@@ -145,7 +145,7 @@ class StructuredPrompt(ChatPromptTemplate):
 
         Args:
             others: The language model to pipe the structured prompt to.
-            name: The name of the pipeline. Defaults to None.
+            name: The name of the pipeline. Defaults to `None`.
 
         Returns:
             A RunnableSequence object.

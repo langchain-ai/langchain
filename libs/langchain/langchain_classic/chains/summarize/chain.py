@@ -50,7 +50,7 @@ def _load_stuff_chain(
             passed into the LLM. Defaults to `stuff_prompt.PROMPT`.
         document_variable_name: Variable name in the prompt template where the
             document text will be inserted. Defaults to "text".
-        verbose: Whether to log progress and intermediate steps. Defaults to None.
+        verbose: Whether to log progress and intermediate steps. Defaults to `None`.
         **kwargs: Additional keyword arguments passed to the StuffDocumentsChain.
 
     Returns:
@@ -112,17 +112,17 @@ def _load_map_reduce_chain(
         map_reduce_document_variable_name: Variable name in the `map_prompt`
             where document text is inserted. Defaults to "text".
         collapse_prompt: Optional prompt used to collapse intermediate summaries
-            if they exceed the token limit (`token_max`). Defaults to None.
-        reduce_llm: Optional separate LLM for the reduce step. Defaults to None,
+            if they exceed the token limit (`token_max`). Defaults to `None`.
+        reduce_llm: Optional separate LLM for the reduce step. Defaults to `None`,
             which uses the same model as the map step.
-        collapse_llm: Optional separate LLM for the collapse step. Defaults to None,
+        collapse_llm: Optional separate LLM for the collapse step. Defaults to `None`,
             which uses the same model as the map step.
-        verbose: Whether to log progess and intermediate steps. Defaults to None.
+        verbose: Whether to log progess and intermediate steps. Defaults to `None`.
         token_max: Token threshold that triggers the collapse step during reduction.
             Defaults to 3000.
-        callbacks: Optional callbacks for logging and tracing. Defaults to None.
+        callbacks: Optional callbacks for logging and tracing. Defaults to `None`.
         collapse_max_retries: Maximum retries for the collapse step if it fails.
-            Defaults to None.
+            Defaults to `None`.
         **kwargs: Additional keyword arguments passed to the MapReduceDocumentsChain.
 
     Returns:

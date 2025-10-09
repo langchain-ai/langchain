@@ -405,7 +405,7 @@ def _validate_example_inputs_for_chain(
             )
             raise InputFormatError(msg)
     else:
-        first_inputs = first_example.inputs
+        first_inputs = first_example.inputs or {}
         missing_keys = set(chain.input_keys).difference(first_inputs)
         if len(first_inputs) == 1 and len(chain.input_keys) == 1:
             # We can pass this through the run method.
@@ -1113,7 +1113,7 @@ class _DatasetRunContainer:
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results, strict=False):
-            row_result = cast("_RowResult", all_eval_results.get(str(example.id), {}))
+            row_result = all_eval_results.get(str(example.id), {})
             results[str(example.id)] = {
                 "input": example.inputs,
                 "feedback": row_result.get("feedback", []),
@@ -1302,8 +1302,8 @@ def _is_jupyter_environment() -> bool:
     try:
         from IPython.core.getipython import get_ipython
 
-        res = get_ipython()
-        return get_ipython() is not None and "zmqshell" in str(type(res))
+        res = get_ipython()  # type: ignore[no-untyped-call]
+        return res is not None and "zmqshell" in str(type(res))
     except ImportError:
         return False
 
@@ -1312,8 +1312,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
     if _is_jupyter_environment():
         from IPython.display import HTML, display
 
-        display(HTML("<h3>Experiment Results:</h3>"))
-        display(aggregate_results)
+        display(HTML("<h3>Experiment Results:</h3>"))  # type: ignore[no-untyped-call]
+        display(aggregate_results)  # type: ignore[no-untyped-call]
     else:
         formatted_string = aggregate_results.to_string(
             float_format=lambda x: f"{x:.2f}",

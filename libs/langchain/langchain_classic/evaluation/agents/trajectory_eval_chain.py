@@ -286,9 +286,8 @@ The following is the expected answer. Use this to measure correctness:
         """Run the chain and generate the output.
 
         Args:
-            inputs (Dict[str, str]): The input values for the chain.
-            run_manager (Optional[CallbackManagerForChainRun]): The callback
-                manager for the chain run.
+            inputs: The input values for the chain.
+            run_manager: The callback manager for the chain run.
 
         Returns:
             Dict[str, Any]: The output values of the chain.
@@ -311,9 +310,8 @@ The following is the expected answer. Use this to measure correctness:
         """Run the chain and generate the output.
 
         Args:
-            inputs (Dict[str, str]): The input values for the chain.
-            run_manager (Optional[CallbackManagerForChainRun]): The callback
-                manager for the chain run.
+            inputs: The input values for the chain.
+            run_manager: The callback manager for the chain run.
 
         Returns:
             Dict[str, Any]: The output values of the chain.

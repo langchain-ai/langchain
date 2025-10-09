@@ -35,7 +35,7 @@ class RecursiveJsonSplitter:
 
         Args:
             max_chunk_size: The maximum size for a chunk. Defaults to 2000.
-            min_chunk_size: The minimum size for a chunk. If None,
+            min_chunk_size: The minimum size for a chunk. If `None`,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
         """
         super().__init__()
@@ -55,14 +55,17 @@ class RecursiveJsonSplitter:
     def _set_nested_dict(
         d: dict[str, Any],
         path: list[str],
-        value: Any,
+        value: Any,  # noqa: ANN401
     ) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def _list_to_dict_preprocessing(self, data: Any) -> Any:
+    def _list_to_dict_preprocessing(
+        self,
+        data: Any,  # noqa: ANN401
+    ) -> Any:  # noqa: ANN401
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
@@ -77,7 +80,7 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: Any,
+        data: Any,  # noqa: ANN401
         current_path: list[str] | None = None,
         chunks: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:

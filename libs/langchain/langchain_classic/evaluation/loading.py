@@ -50,7 +50,7 @@ from langchain_classic.evaluation.string_distance.base import (
 
 
 def load_dataset(uri: str) -> list[dict]:
-    """Load a dataset from the `LangChainDatasets on HuggingFace <https://huggingface.co/LangChainDatasets>`_.
+    """Load a dataset from the [LangChainDatasets on HuggingFace](https://huggingface.co/LangChainDatasets).
 
     Args:
         uri: The uri of the dataset to load.

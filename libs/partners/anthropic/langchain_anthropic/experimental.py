@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from typing import (
     Any,
-    Union,
 )
 
 SYSTEM_PROMPT_FORMAT = """In this environment you have access to a set of tools you can use to answer the user's question.
@@ -83,7 +82,7 @@ def get_system_message(tools: list[dict]) -> str:
     return SYSTEM_PROMPT_FORMAT.format(formatted_tools=tools_formatted)
 
 
-def _xml_to_dict(t: Any) -> Union[str, dict[str, Any]]:
+def _xml_to_dict(t: Any) -> str | dict[str, Any]:
     # Base case: If the element has no children, return its text or an empty string.
     if len(t) == 0:
         return t.text or ""
