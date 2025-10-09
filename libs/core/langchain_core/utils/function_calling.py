@@ -27,7 +27,7 @@ from pydantic.v1 import create_model as create_model_v1
 from typing_extensions import TypedDict, is_typeddict
 
 import langchain_core
-from langchain_core._api import beta, deprecated
+from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -168,42 +168,6 @@ def _convert_pydantic_to_openai_function(
     )
 
 
-convert_pydantic_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_convert_pydantic_to_openai_function)
-
-
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="1.0",
-)
-def convert_pydantic_to_openai_tool(
-    model: type[BaseModel],
-    *,
-    name: str | None = None,
-    description: str | None = None,
-) -> ToolDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API.
-
-    Args:
-        model: The Pydantic model to convert.
-        name: The name of the function. If not provided, the title of the schema will be
-            used.
-        description: The description of the function. If not provided, the description
-            of the schema will be used.
-
-    Returns:
-        The tool description.
-    """
-    function = _convert_pydantic_to_openai_function(
-        model, name=name, description=description
-    )
-    return {"type": "function", "function": function}
-
-
 def _get_python_function_name(function: Callable) -> str:
     """Get the name of a Python function."""
     return function.__name__
@@ -238,13 +202,6 @@ def _convert_python_function_to_openai_function(
         name=func_name,
         description=model.__doc__,
     )
-
-
-convert_python_function_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_convert_python_function_to_openai_function)
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
@@ -366,31 +323,6 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             "type": "object",
         },
     }
-
-
-format_tool_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_format_tool_to_openai_function)
-
-
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="1.0",
-)
-def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
-    """Format tool into the OpenAI function API.
-
-    Args:
-        tool: The tool to format.
-
-    Returns:
-        The tool description.
-    """
-    function = _format_tool_to_openai_function(tool)
-    return {"type": "function", "function": function}
 
 
 def convert_to_openai_function(
