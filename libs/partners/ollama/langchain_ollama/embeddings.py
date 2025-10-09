@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -128,7 +128,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     """
 
-    base_url: Optional[str] = None
+    base_url: str | None = None
     """Base url the model is hosted under.
 
     If none, defaults to the Ollama client default.
@@ -150,7 +150,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     """
 
-    client_kwargs: Optional[dict] = {}
+    client_kwargs: dict | None = {}
     """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
@@ -159,7 +159,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     to synchronous and asynchronous clients.
     """
 
-    async_client_kwargs: Optional[dict] = {}
+    async_client_kwargs: dict | None = {}
     """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
@@ -167,7 +167,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
-    sync_client_kwargs: Optional[dict] = {}
+    sync_client_kwargs: dict | None = {}
     """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
@@ -175,73 +175,73 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
-    _client: Optional[Client] = PrivateAttr(default=None)
+    _client: Client | None = PrivateAttr(default=None)
     """The client to use for making requests."""
 
-    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
+    _async_client: AsyncClient | None = PrivateAttr(default=None)
     """The async client to use for making requests."""
 
-    mirostat: Optional[int] = None
+    mirostat: int | None = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: `0`, `0` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+    (default: `0`, `0` = disabled, `1` = Mirostat, `2` = Mirostat 2.0)"""
 
-    mirostat_eta: Optional[float] = None
+    mirostat_eta: float | None = None
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
     the algorithm more responsive. (Default: ``0.1``)"""
 
-    mirostat_tau: Optional[float] = None
+    mirostat_tau: float | None = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
     coherent text. (Default: ``5.0``)"""
 
-    num_ctx: Optional[int] = None
+    num_ctx: int | None = None
     """Sets the size of the context window used to generate the
     next token. (Default: ``2048``)	"""
 
-    num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to ``1`` to
+    num_gpu: int | None = None
+    """The number of GPUs to use. On macOS it defaults to `1` to
     enable metal support, `0` to disable."""
 
-    keep_alive: Optional[int] = None
+    keep_alive: int | None = None
     """Controls how long the model will stay loaded into memory
     following the request (default: ``5m``)
     """
 
-    num_thread: Optional[int] = None
+    num_thread: int | None = None
     """Sets the number of threads to use during computation.
     By default, Ollama will detect this for optimal performance.
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
-    repeat_last_n: Optional[int] = None
+    repeat_last_n: int | None = None
     """Sets how far back for the model to look back to prevent
     repetition. (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)"""
 
-    repeat_penalty: Optional[float] = None
+    repeat_penalty: float | None = None
     """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
     will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
     will be more lenient. (Default: ``1.1``)"""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: ``0.8``)"""
 
-    stop: Optional[list[str]] = None
+    stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
-    tfs_z: Optional[float] = None
+    tfs_z: float | None = None
     """Tail free sampling is used to reduce the impact of less probable
     tokens from the output. A higher value (e.g., ``2.0``) will reduce the
-    impact more, while a value of ``1.0`` disables this setting. (default: ``1``)"""
+    impact more, while a value of ``1.0`` disables this setting. (default: `1`)"""
 
-    top_k: Optional[int] = None
+    top_k: int | None = None
     """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
     will give more diverse answers, while a lower value (e.g. ``10``)
     will be more conservative. (Default: ``40``)"""
 
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Works together with top-k. A higher value (e.g., ``0.95``) will lead
     to more diverse text, while a lower value (e.g., ``0.5``) will
     generate more focused and conservative text. (Default: ``0.9``)"""
