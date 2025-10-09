@@ -2240,9 +2240,9 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     ]
 
 
-# Tests for on_model_call hook
-def test_on_model_call_hook() -> None:
-    """Test that on_model_call hook is called on model errors."""
+# Tests for wrap_model_call hook
+def test_wrap_model_call_hook() -> None:
+    """Test that wrap_model_call hook is called on model errors."""
     call_count = {"value": 0}
 
     class FailingModel(BaseChatModel):
@@ -2265,7 +2265,7 @@ def test_on_model_call_hook() -> None:
             super().__init__()
             self.retry_count = 0
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             try:
                 return handler(request)
             except Exception:
@@ -2287,8 +2287,8 @@ def test_on_model_call_hook() -> None:
     assert result["messages"][1].content == "Success on retry"
 
 
-def test_on_model_call_retry_count() -> None:
-    """Test that on_model_call can retry multiple times."""
+def test_wrap_model_call_retry_count() -> None:
+    """Test that wrap_model_call can retry multiple times."""
 
     class AlwaysFailingModel(BaseChatModel):
         """Model that always fails."""
@@ -2305,7 +2305,7 @@ def test_on_model_call_retry_count() -> None:
             super().__init__()
             self.attempts = []
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             max_retries = 3
             last_exception = None
             for attempt in range(max_retries):
@@ -2333,7 +2333,7 @@ def test_on_model_call_retry_count() -> None:
     assert tracker.attempts == [1, 2, 3]
 
 
-def test_on_model_call_no_retry() -> None:
+def test_wrap_model_call_no_retry() -> None:
     """Test that error is propagated when middleware doesn't retry."""
 
     class FailingModel(BaseChatModel):
@@ -2347,7 +2347,7 @@ def test_on_model_call_no_retry() -> None:
             return "failing"
 
     class NoRetryMiddleware(AgentMiddleware):
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             return handler(request)
 
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
@@ -2443,7 +2443,7 @@ def test_model_fallback_middleware_initialization() -> None:
     assert len(middleware.models) == 2
 
 
-def test_on_model_call_max_attempts() -> None:
+def test_wrap_model_call_max_attempts() -> None:
     """Test that middleware controls termination via retry limits."""
 
     class AlwaysFailingModel(BaseChatModel):
@@ -2464,7 +2464,7 @@ def test_on_model_call_max_attempts() -> None:
             self.max_retries = max_retries
             self.attempt_count = 0
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             last_exception = None
             for attempt in range(self.max_retries):
                 self.attempt_count += 1
@@ -2491,8 +2491,8 @@ def test_on_model_call_max_attempts() -> None:
     assert middleware.attempt_count == 10
 
 
-async def test_on_model_call_async() -> None:
-    """Test on_model_call hook with async model execution."""
+async def test_wrap_model_call_async() -> None:
+    """Test wrap_model_call hook with async model execution."""
     call_count = {"value": 0}
 
     class AsyncFailingModel(BaseChatModel):
@@ -2518,7 +2518,7 @@ async def test_on_model_call_async() -> None:
             super().__init__()
             self.retry_count = 0
 
-        async def aon_model_call(self, request, handler):
+        async def awrap_model_call(self, request, handler):
             try:
                 return await handler(request)
             except Exception:
@@ -2540,7 +2540,7 @@ async def test_on_model_call_async() -> None:
     assert result["messages"][1].content == "Async retry success"
 
 
-def test_on_model_call_rewrite_response() -> None:
+def test_wrap_model_call_rewrite_response() -> None:
     """Test that middleware can rewrite model responses."""
 
     class SimpleModel(BaseChatModel):
@@ -2558,7 +2558,7 @@ def test_on_model_call_rewrite_response() -> None:
     class ResponseRewriteMiddleware(AgentMiddleware):
         """Middleware that rewrites the response."""
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             result = handler(request)
 
             # Rewrite the response
@@ -2575,7 +2575,7 @@ def test_on_model_call_rewrite_response() -> None:
     assert result["messages"][1].content == "REWRITTEN: Original response"
 
 
-def test_on_model_call_convert_error_to_response() -> None:
+def test_wrap_model_call_convert_error_to_response() -> None:
     """Test that middleware can convert errors to successful responses."""
 
     class AlwaysFailingModel(BaseChatModel):
@@ -2591,7 +2591,7 @@ def test_on_model_call_convert_error_to_response() -> None:
     class ErrorToResponseMiddleware(AgentMiddleware):
         """Middleware that converts errors to success responses."""
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             try:
                 return handler(request)
             except Exception as e:

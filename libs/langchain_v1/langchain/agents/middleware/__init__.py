@@ -23,7 +23,7 @@ from .types import (
     before_model,
     dynamic_prompt,
     hook_config,
-    on_model_call,
+    wrap_model_call,
 )
 
 __all__ = [
@@ -49,5 +49,5 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "on_model_call",
+    "wrap_model_call",
 ]

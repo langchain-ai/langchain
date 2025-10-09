@@ -50,7 +50,6 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "on_model_call",
     "wrap_tool_call",
 ]
 
@@ -165,7 +164,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],
@@ -189,7 +188,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Retry on error:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
                         return handler(request)
@@ -200,14 +199,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Rewrite response:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=f"[{result.content}]")
             ```
 
             Error to fallback:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except Exception:
@@ -216,7 +215,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Cache/short-circuit:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 if cached := get_cache(request):
                     return cached  # Short-circuit with cached result
                 result = handler(request)
@@ -226,12 +225,12 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         raise NotImplementedError
 
-    async def aon_model_call(
+    async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[AIMessage]],
     ) -> AIMessage:
-        """Async version of on_model_call.
+        """Async version of wrap_model_call.
 
         Args:
             request: Model request to execute (includes state and runtime).
@@ -243,7 +242,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Retry on error:
             ```python
-            async def aon_model_call(self, request, handler):
+            async def awrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
                         return await handler(request)
@@ -1083,13 +1082,13 @@ def dynamic_prompt(
 
 
 @overload
-def on_model_call(
+def wrap_model_call(
     func: _CallableReturningModelResponse[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
-def on_model_call(
+def wrap_model_call(
     func: None = None,
     *,
     state_schema: type[StateT] | None = None,
@@ -1101,7 +1100,7 @@ def on_model_call(
 ]: ...
 
 
-def on_model_call(
+def wrap_model_call(
     func: _CallableReturningModelResponse[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
@@ -1114,7 +1113,7 @@ def on_model_call(
     ]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Create middleware with on_model_call hook from a function.
+    """Create middleware with wrap_model_call hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     model calls, implement retry logic, handle errors, and rewrite responses.
@@ -1132,7 +1131,7 @@ def on_model_call(
     Examples:
         Basic retry logic:
         ```python
-        @on_model_call
+        @wrap_model_call
         def retry_on_error(request, handler):
             max_retries = 3
             for attempt in range(max_retries):
@@ -1145,7 +1144,7 @@ def on_model_call(
 
         Model fallback:
         ```python
-        @on_model_call
+        @wrap_model_call
         def fallback_model(request, handler):
             # Try primary model
             try:
@@ -1160,7 +1159,7 @@ def on_model_call(
 
         Rewrite response content:
         ```python
-        @on_model_call
+        @wrap_model_call
         def uppercase_responses(request, handler):
             result = handler(request)
             return AIMessage(content=result.content.upper())
@@ -1182,7 +1181,7 @@ def on_model_call(
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
-                "str", getattr(func, "__name__", "OnModelCallMiddleware")
+                "str", getattr(func, "__name__", "WrapModelCallMiddleware")
             )
 
             return type(
@@ -1191,7 +1190,7 @@ def on_model_call(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "aon_model_call": async_wrapped,
+                    "awrap_model_call": async_wrapped,
                 },
             )()
 
@@ -1202,7 +1201,7 @@ def on_model_call(
         ) -> AIMessage:
             return func(request, handler)
 
-        middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
+        middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
         return type(
             middleware_name,
@@ -1210,7 +1209,7 @@ def on_model_call(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "on_model_call": wrapped,
+                "wrap_model_call": wrapped,
             },
         )()
 
