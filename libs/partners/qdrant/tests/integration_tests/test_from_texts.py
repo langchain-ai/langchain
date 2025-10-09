@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import tempfile
 import uuid
-from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
@@ -37,9 +36,7 @@ def test_qdrant_from_texts_stores_duplicated_texts() -> None:
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
-def test_qdrant_from_texts_stores_ids(
-    batch_size: int, vector_name: Optional[str]
-) -> None:
+def test_qdrant_from_texts_stores_ids(batch_size: int, vector_name: str | None) -> None:
     """Test end to end Qdrant.from_texts stores provided ids."""
     from qdrant_client import QdrantClient
 
@@ -91,7 +88,7 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) 
 
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
-def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) -> None:
+def test_qdrant_from_texts_reuses_same_collection(vector_name: str | None) -> None:
     """Test if Qdrant.from_texts reuses the same collection."""
     from qdrant_client import QdrantClient
 
@@ -122,7 +119,7 @@ def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) ->
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 def test_qdrant_from_texts_raises_error_on_different_dimensionality(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test if Qdrant.from_texts raises an exception if dimensionality doesn't match."""
     collection_name = uuid.uuid4().hex
@@ -155,8 +152,8 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     ],
 )
 def test_qdrant_from_texts_raises_error_on_different_vector_name(
-    first_vector_name: Optional[str],
-    second_vector_name: Optional[str],
+    first_vector_name: str | None,
+    second_vector_name: str | None,
 ) -> None:
     """Test if Qdrant.from_texts raises an exception if vector name does not match."""
     collection_name = uuid.uuid4().hex
@@ -211,7 +208,7 @@ def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 def test_qdrant_from_texts_recreates_collection_on_force_recreate(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test if Qdrant.from_texts recreates the collection even if config mismatches."""
     from qdrant_client import QdrantClient

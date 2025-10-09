@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
 
@@ -15,10 +15,10 @@ class FastEmbedSparse(SparseEmbeddings):
         self,
         model_name: str = "Qdrant/bm25",
         batch_size: int = 256,
-        cache_dir: Optional[str] = None,
-        threads: Optional[int] = None,
-        providers: Optional[Sequence[Any]] = None,
-        parallel: Optional[int] = None,
+        cache_dir: str | None = None,
+        threads: int | None = None,
+        providers: Sequence[Any] | None = None,
+        parallel: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Sparse encoder implementation using FastEmbed.

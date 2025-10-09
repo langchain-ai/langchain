@@ -69,8 +69,6 @@ ignore = [
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
     "PLR0913", # Function has too many arguments
     "C901",    # Complex functions
     "TC003",
