@@ -67,9 +67,9 @@ class ChatPerplexity(BaseChatModel):
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
-        .. code-block:: bash
-
-            export PPLX_API_KEY=your_api_key
+        ```bash
+        export PPLX_API_KEY=your_api_key
+        ```
 
         Key init args - completion params:
             model: str
@@ -92,55 +92,58 @@ class ChatPerplexity(BaseChatModel):
         See full list of supported init args and their descriptions in the params section.
 
         Instantiate:
-            .. code-block:: python
 
-                from langchain_perplexity import ChatPerplexity
+        ```python
+        from langchain_perplexity import ChatPerplexity
 
-                llm = ChatPerplexity(model="sonar", temperature=0.7)
+        llm = ChatPerplexity(model="sonar", temperature=0.7)
+        ```
 
         Invoke:
-            .. code-block:: python
 
-                messages = [("system", "You are a chatbot."), ("user", "Hello!")]
-                llm.invoke(messages)
+        ```python
+        messages = [("system", "You are a chatbot."), ("user", "Hello!")]
+        llm.invoke(messages)
+        ```
 
         Invoke with structured output:
-            .. code-block:: python
 
-                from pydantic import BaseModel
-
-
-                class StructuredOutput(BaseModel):
-                    role: str
-                    content: str
+        ```python
+        from pydantic import BaseModel
 
 
-                llm.with_structured_output(StructuredOutput)
-                llm.invoke(messages)
+        class StructuredOutput(BaseModel):
+            role: str
+            content: str
+
+
+        llm.with_structured_output(StructuredOutput)
+        llm.invoke(messages)
+        ```
 
         Invoke with perplexity-specific params:
-            .. code-block:: python
 
-                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```python
+        llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```
 
         Stream:
-            .. code-block:: python
-
-                for chunk in llm.stream(messages):
-                    print(chunk.content)
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.content)
+        ```
 
         Token usage:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.usage_metadata
+        ```python
+        response = llm.invoke(messages)
+        response.usage_metadata
+        ```
 
         Response metadata:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.response_metadata
-
+        ```python
+        response = llm.invoke(messages)
+        response.response_metadata
+        ```
     """  # noqa: E501
 
     client: Any = None  #: :meta private:

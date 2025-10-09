@@ -1,31 +1,9 @@
 """**Prompt** is the input to the model.
 
 Prompt is often constructed
-from multiple components. Prompt classes and functions make constructing
- and working with prompts easy.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BasePromptTemplate --> StringPromptTemplate --> PromptTemplate
-                                                    FewShotPromptTemplate
-                                                    FewShotPromptWithTemplates
-                           BaseChatPromptTemplate --> AutoGPTPrompt
-                                                      ChatPromptTemplate --> AgentScratchPadChatPromptTemplate
-
-
-
-    BaseMessagePromptTemplate --> MessagesPlaceholder
-                                  BaseStringMessagePromptTemplate --> ChatMessagePromptTemplate
-                                                                      HumanMessagePromptTemplate
-                                                                      AIMessagePromptTemplate
-                                                                      SystemMessagePromptTemplate
-
-    PromptValue --> StringPromptValue
-                    ChatPromptValue
-
-"""  # noqa: E501
+from multiple components. Prompt classes and functions make constructing and working
+with prompts easy.
+"""
 
 from typing import TYPE_CHECKING, Any
 

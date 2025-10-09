@@ -41,35 +41,35 @@ class LLMMathChain(Chain):
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
         - Easier to modify or extend
-          (e.g., with additional tools, structured responses, etc.)
+            (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langgraph
+        ```
 
-            pip install -U langgraph
+        ```python
+        import math
+        from typing import Annotated, Sequence
 
-        .. code-block:: python
+        from langchain_core.messages import BaseMessage
+        from langchain_core.runnables import RunnableConfig
+        from langchain_core.tools import tool
+        from langchain_openai import ChatOpenAI
+        from langgraph.graph import END, StateGraph
+        from langgraph.graph.message import add_messages
+        from langgraph.prebuilt.tool_node import ToolNode
+        import numexpr
+        from typing_extensions import TypedDict
 
-            import math
-            from typing import Annotated, Sequence
+        @tool
+        def calculator(expression: str) -> str:
+            \"\"\"Calculate expression using Python's numexpr library.
 
-            from langchain_core.messages import BaseMessage
-            from langchain_core.runnables import RunnableConfig
-            from langchain_core.tools import tool
-            from langchain_openai import ChatOpenAI
-            from langgraph.graph import END, StateGraph
-            from langgraph.graph.message import add_messages
-            from langgraph.prebuilt.tool_node import ToolNode
-            import numexpr
-            from typing_extensions import TypedDict
-
-            @tool
-            def calculator(expression: str) -> str:
-                \"\"\"Calculate expression using Python's numexpr library.
-
-                Expression should be a single line mathematical expression
-                that solves the problem.
+            Expression should be a single line mathematical expression
+            that solves the problem.
+        ```
 
     Examples:
                     "37593 * 67" for "37593 times 67"
@@ -112,45 +112,44 @@ class LLMMathChain(Chain):
             graph_builder.add_edge("call_model", END)
             chain = graph_builder.compile()
 
-        .. code-block:: python
+        ```python
+        example_query = "What is 551368 divided by 82"
 
-            example_query = "What is 551368 divided by 82"
+        events = chain.astream(
+            {"messages": [("user", example_query)]},
+            stream_mode="values",
+        )
+        async for event in events:
+            event["messages"][-1].pretty_print()
+        ```
 
-            events = chain.astream(
-                {"messages": [("user", example_query)]},
-                stream_mode="values",
-            )
-            async for event in events:
-                event["messages"][-1].pretty_print()
+        ```txt
+        ================================ Human Message =================================
 
-        .. code-block::
+        What is 551368 divided by 82
+        ================================== Ai Message ==================================
+        Tool Calls:
+        calculator (call_MEiGXuJjJ7wGU4aOT86QuGJS)
+        Call ID: call_MEiGXuJjJ7wGU4aOT86QuGJS
+        Args:
+            expression: 551368 / 82
+        ================================= Tool Message =================================
+        Name: calculator
 
-            ================================ Human Message =================================
+        6724.0
+        ================================== Ai Message ==================================
 
-            What is 551368 divided by 82
-            ================================== Ai Message ==================================
-            Tool Calls:
-            calculator (call_MEiGXuJjJ7wGU4aOT86QuGJS)
-            Call ID: call_MEiGXuJjJ7wGU4aOT86QuGJS
-            Args:
-                expression: 551368 / 82
-            ================================= Tool Message =================================
-            Name: calculator
-
-            6724.0
-            ================================== Ai Message ==================================
-
-            551368 divided by 82 equals 6724.
+        551368 divided by 82 equals 6724.
+        ```
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import LLMMathChain
+        from langchain_community.llms import OpenAI
 
-            from langchain_classic.chains import LLMMathChain
-            from langchain_community.llms import OpenAI
-
-            llm_math = LLMMathChain.from_llm(OpenAI())
-
-    """  # noqa: E501
+        llm_math = LLMMathChain.from_llm(OpenAI())
+        ```
+    """
 
     llm_chain: LLMChain
     llm: BaseLanguageModel | None = None

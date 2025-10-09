@@ -13,10 +13,10 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         Install `langchain_fireworks` and set environment variable
         `FIREWORKS_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain_fireworks
-            export FIREWORKS_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain_fireworks
+        export FIREWORKS_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -30,42 +30,39 @@ class FireworksEmbeddings(BaseModel, Embeddings):
 
     Instantiate:
 
-        .. code-block:: python
+        ```python
+        from langchain_fireworks import FireworksEmbeddings
 
-            from langchain_fireworks import FireworksEmbeddings
-
-            model = FireworksEmbeddings(
-                model="nomic-ai/nomic-embed-text-v1.5"
-                # Use FIREWORKS_API_KEY env var or pass it in directly
-                # fireworks_api_key="..."
-            )
+        model = FireworksEmbeddings(
+            model="nomic-ai/nomic-embed-text-v1.5"
+            # Use FIREWORKS_API_KEY env var or pass it in directly
+            # fireworks_api_key="..."
+        )
+        ```
 
     Embed multiple texts:
 
-        .. code-block:: python
-
-            vectors = embeddings.embed_documents(["hello", "goodbye"])
-            # Showing only the first 3 coordinates
-            print(len(vectors))
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        vectors = embeddings.embed_documents(["hello", "goodbye"])
+        # Showing only the first 3 coordinates
+        print(len(vectors))
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed single text:
 
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embeddings.embed_query("hello")
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
-
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embeddings.embed_query("hello")
+        print(vector[:3])
+        ```
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
     """
 
     client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment] # :meta private:

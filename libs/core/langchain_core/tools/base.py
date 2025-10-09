@@ -1217,24 +1217,24 @@ class InjectedToolCallId(InjectedToolArg):
     This annotation is used to mark a tool parameter that should receive
     the tool call ID at runtime.
 
-    .. code-block:: python
+    ```python
+    from typing import Annotated
+    from langchain_core.messages import ToolMessage
+    from langchain_core.tools import tool, InjectedToolCallId
 
-        from typing import Annotated
-        from langchain_core.messages import ToolMessage
-        from langchain_core.tools import tool, InjectedToolCallId
+    @tool
+    def foo(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        \"\"\"Return x.\"\"\"
+        return ToolMessage(
+            str(x),
+            artifact=x,
+            name="foo",
+            tool_call_id=tool_call_id
+        )
 
-        @tool
-        def foo(
-            x: int, tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> ToolMessage:
-            \"\"\"Return x.\"\"\"
-            return ToolMessage(
-                str(x),
-                artifact=x,
-                name="foo",
-                tool_call_id=tool_call_id
-            )
-
+    ```
     """
 
 

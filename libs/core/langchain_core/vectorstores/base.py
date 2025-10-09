@@ -3,21 +3,7 @@
 One of the most common ways to store and search over unstructured data is to
 embed it and store the resulting embedding vectors, and then query the store
 and retrieve the data that are 'most similar' to the embedded query.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
-
-    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
-
-**Main helpers:**
-
-.. code-block::
-
-    Embeddings, Document
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -946,36 +932,32 @@ class VectorStore(ABC):
             Retriever class for VectorStore.
 
         Examples:
+        ```python
+        # Retrieve more documents with higher diversity
+        # Useful if your dataset has many similar documents
+        docsearch.as_retriever(
+            search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
+        )
 
-        .. code-block:: python
+        # Fetch more documents for the MMR algorithm to consider
+        # But only return the top 5
+        docsearch.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50})
 
-            # Retrieve more documents with higher diversity
-            # Useful if your dataset has many similar documents
-            docsearch.as_retriever(
-                search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
-            )
+        # Only retrieve documents that have a relevance score
+        # Above a certain threshold
+        docsearch.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"score_threshold": 0.8},
+        )
 
-            # Fetch more documents for the MMR algorithm to consider
-            # But only return the top 5
-            docsearch.as_retriever(
-                search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50}
-            )
+        # Only get the single most similar document from the dataset
+        docsearch.as_retriever(search_kwargs={"k": 1})
 
-            # Only retrieve documents that have a relevance score
-            # Above a certain threshold
-            docsearch.as_retriever(
-                search_type="similarity_score_threshold",
-                search_kwargs={"score_threshold": 0.8},
-            )
-
-            # Only get the single most similar document from the dataset
-            docsearch.as_retriever(search_kwargs={"k": 1})
-
-            # Use a filter to only retrieve documents from a specific paper
-            docsearch.as_retriever(
-                search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
-            )
-
+        # Use a filter to only retrieve documents from a specific paper
+        docsearch.as_retriever(
+            search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
+        )
+        ```
         """
         tags = kwargs.pop("tags", None) or [*self._get_retriever_tags()]
         return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)

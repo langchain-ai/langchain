@@ -24,18 +24,16 @@ class ChatParrotLink(BaseChatModel):
     links to the underlying models documentation or API.
 
     Example:
-
-        .. code-block:: python
-
-            model = ChatParrotLink(parrot_buffer_length=2, model="bird-brain-001")
-            result = model.invoke([HumanMessage(content="hello")])
-            result = model.batch(
-                [
-                    [HumanMessage(content="hello")],
-                    [HumanMessage(content="world")],
-                ]
-            )
-
+    ```python
+    model = ChatParrotLink(parrot_buffer_length=2, model="bird-brain-001")
+    result = model.invoke([HumanMessage(content="hello")])
+    result = model.batch(
+        [
+            [HumanMessage(content="hello")],
+            [HumanMessage(content="world")],
+        ]
+    )
+    ```
     """
 
     model_name: str = Field(alias="model")

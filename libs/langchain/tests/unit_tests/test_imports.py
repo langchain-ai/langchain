@@ -158,10 +158,7 @@ def _literal_eval_str(node: ast.AST) -> str:
     Returns:
         str: The corresponding string value.
     """
-    if (
-        isinstance(node, ast.Constant)  # Python 3.8+
-        and isinstance(node.value, str)
-    ):
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
     msg = f"Invalid DEPRECATED_LOOKUP format: expected str, got {type(node).__name__}"
     raise AssertionError(msg)

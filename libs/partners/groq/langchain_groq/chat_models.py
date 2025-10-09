@@ -73,10 +73,10 @@ class ChatGroq(BaseChatModel):
         Install `langchain-groq` and set environment variable
         `GROQ_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-groq
-            export GROQ_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-groq
+        export GROQ_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -121,184 +121,182 @@ class ChatGroq(BaseChatModel):
     section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_groq import ChatGroq
 
-            from langchain_groq import ChatGroq
-
-            llm = ChatGroq(
-                model="llama-3.1-8b-instant",
-                temperature=0.0,
-                max_retries=2,
-                # other params...
-            )
+        llm = ChatGroq(
+            model="llama-3.1-8b-instant",
+            temperature=0.0,
+            max_retries=2,
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(content='The English sentence "I love programming" can
-            be translated to French as "J\'aime programmer". The word
-            "programming" is translated as "programmer" in French.',
-            response_metadata={'token_usage': {'completion_tokens': 38,
-            'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
-            0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
-            'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
-            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
-            'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user sentence to French."),
+            ("human", "I love programming."),
+        ]
+        llm.invoke(messages)
+        ```
+        ```python
+        AIMessage(content='The English sentence "I love programming" can
+        be translated to French as "J\'aime programmer". The word
+        "programming" is translated as "programmer" in French.',
+        response_metadata={'token_usage': {'completion_tokens': 38,
+        'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
+        0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
+        'total_time': 0.063341565}, 'model_name': 'llama-3.1-8b-instant',
+        'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
+        'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        # Streaming `text` for each content chunk received
+        for chunk in llm.stream(messages):
+            print(chunk.text, end="")
+        ```
 
-            # Streaming `text` for each content chunk received
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
+        ```python
+        content='' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        content='The' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        content=' English' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        content=' sentence' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        ...
+        content=' program' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        content='".' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+        content='' response_metadata={'finish_reason': 'stop'}
+        id='run-4e9f926b-73f5-483b-8ef5-09533d925853
+        ```
 
-        .. code-block:: python
+        ```python
+        # Reconstructing a full response
+        stream = llm.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
-            content='' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content='The' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content=' English' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content=' sentence' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            ...
-            content=' program' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content='".' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content='' response_metadata={'finish_reason': 'stop'}
-            id='run-4e9f926b-73f5-483b-8ef5-09533d925853
-
-        .. code-block:: python
-
-            # Reconstructing a full response
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            AIMessageChunk(content='The English sentence "I love programming"
-            can be translated to French as "J\'aime programmer". Here\'s the
-            breakdown of the sentence: "J\'aime" is the French equivalent of "
-            I love", and "programmer" is the French infinitive for "to program".
-            So, the literal translation is "I love to program". However, in
-            English we often omit the "to" when talking about activities we
-            love, and the same applies to French. Therefore, "J\'aime
-            programmer" is the correct and natural way to express "I love
-            programming" in French.', response_metadata={'finish_reason':
-            'stop'}, id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+        ```python
+        AIMessageChunk(content='The English sentence "I love programming"
+        can be translated to French as "J\'aime programmer". Here\'s the
+        breakdown of the sentence: "J\'aime" is the French equivalent of "
+        I love", and "programmer" is the French infinitive for "to program".
+        So, the literal translation is "I love to program". However, in
+        English we often omit the "to" when talking about activities we
+        love, and the same applies to French. Therefore, "J\'aime
+        programmer" is the correct and natural way to express "I love
+        programming" in French.', response_metadata={'finish_reason':
+        'stop'}, id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await llm.ainvoke(messages)
+        ```
 
-            await llm.ainvoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(content='The English sentence "I love programming" can
-            be translated to French as "J\'aime programmer". The word
-            "programming" is translated as "programmer" in French. I hope
-            this helps! Let me know if you have any other questions.',
-            response_metadata={'token_usage': {'completion_tokens': 53,
-            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
-            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-            'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
-            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
-            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
+        ```python
+        AIMessage(content='The English sentence "I love programming" can
+        be translated to French as "J\'aime programmer". The word
+        "programming" is translated as "programmer" in French. I hope
+        this helps! Let me know if you have any other questions.',
+        response_metadata={'token_usage': {'completion_tokens': 53,
+        'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
+        0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
+        'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
+        'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
+        'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
+        ```
 
     Tool calling:
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        ```python
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = model_with_tools.invoke("What is the population of NY?")
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-        .. code-block:: python
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-            [
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "NY"},
-                    "id": "call_bb8d",
-                }
-            ]
+
+        model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("What is the population of NY?")
+        ai_msg.tool_calls
+        ```
+
+        ```python
+        [
+            {
+                "name": "GetPopulation",
+                "args": {"location": "NY"},
+                "id": "call_bb8d",
+            }
+        ]
+        ```
 
         See `ChatGroq.bind_tools()` method for more.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+        from pydantic import BaseModel, Field
 
 
-            structured_model = llm.with_structured_output(Joke)
-            structured_model.invoke("Tell me a joke about cats")
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-        .. code-block:: python
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
-            Joke(
-                setup="Why don't cats play poker in the jungle?",
-                punchline="Too many cheetahs!",
-                rating=None,
-            )
+
+        structured_model = llm.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
+        ```
+
+        ```python
+        Joke(
+            setup="Why don't cats play poker in the jungle?",
+            punchline="Too many cheetahs!",
+            rating=None,
+        )
+        ```
 
         See `ChatGroq.with_structured_output()` for more.
 
     Response metadata:
-        .. code-block:: python
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.response_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-            {
-                "token_usage": {
-                    "completion_tokens": 70,
-                    "prompt_tokens": 28,
-                    "total_tokens": 98,
-                    "completion_time": 0.111956391,
-                    "prompt_time": 0.007518279,
-                    "queue_time": None,
-                    "total_time": 0.11947467,
-                },
-                "model_name": "llama-3.1-8b-instant",
-                "system_fingerprint": "fp_c5f20b5bb1",
-                "finish_reason": "stop",
-                "logprobs": None,
-            }
-
+        ```python
+        {
+            "token_usage": {
+                "completion_tokens": 70,
+                "prompt_tokens": 28,
+                "total_tokens": 98,
+                "completion_time": 0.111956391,
+                "prompt_time": 0.007518279,
+                "queue_time": None,
+                "total_time": 0.11947467,
+            },
+            "model_name": "llama-3.1-8b-instant",
+            "system_fingerprint": "fp_c5f20b5bb1",
+            "finish_reason": "stop",
+            "logprobs": None,
+        }
+        ```
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -906,104 +904,100 @@ class ChatGroq(BaseChatModel):
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_groq import ChatGroq
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    # If we provide default values and/or descriptions for fields, these will be passed
-                    # to the model. This is an important part of improving a model's ability to
-                    # correctly return structured outputs.
-                    justification: str | None = Field(default=None, description="A justification for the answer.")
+            from langchain_groq import ChatGroq
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                answer: str
+                # If we provide default values and/or descriptions for fields, these will be passed
+                # to the model. This is an important part of improving a model's ability to
+                # correctly return structured outputs.
+                justification: str | None = Field(default=None, description="A justification for the answer.")
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
-            .. code-block:: python
-
-                from langchain_groq import ChatGroq
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from langchain_groq import ChatGroq
+            from pydantic import BaseModel
 
 
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    include_raw=True,
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification,
+                include_raw=True,
+            )
+
+            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
-            .. code-block:: python
+            ```python
+            from typing_extensions import Annotated, TypedDict
 
-                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
-                # from typing_extensions, not from typing.
-                from typing_extensions import Annotated, TypedDict
-
-                from langchain_groq import ChatGroq
+            from langchain_groq import ChatGroq
 
 
-                class AnswerWithJustification(TypedDict):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(TypedDict):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Annotated[str | None, None, "A justification for the answer."]
+                answer: str
+                justification: Annotated[str | None, None, "A justification for the answer."]
 
 
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
-            .. code-block:: python
+            ```python
+            from langchain_groq import ChatGroq
 
-                from langchain_groq import ChatGroq
-
-                oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
-                        },
-                       'required': ['answer']
-                   }
-               }
+            oai_schema = {
+                'name': 'AnswerWithJustification',
+                'description': 'An answer to the user question along with justification for the answer.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'answer': {'type': 'string'},
+                        'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                    },
+                    'required': ['answer']
+                }
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
@@ -1015,66 +1009,67 @@ class ChatGroq(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+            ```
 
         Example: schema=Pydantic class, method="json_schema", include_raw=False:
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_groq import ChatGroq
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    # If we provide default values and/or descriptions for fields, these will be passed
-                    # to the model. This is an important part of improving a model's ability to
-                    # correctly return structured outputs.
-                    justification: str | None = Field(default=None, description="A justification for the answer.")
+            from langchain_groq import ChatGroq
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_schema",
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                answer: str
+                # If we provide default values and/or descriptions for fields, these will be passed
+                # to the model. This is an important part of improving a model's ability to
+                # correctly return structured outputs.
+                justification: str | None = Field(default=None, description="A justification for the answer.")
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification,
+                method="json_schema",
+            )
+
+            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
-            .. code-block::
+            ```python
+            from langchain_groq import ChatGroq
+            from pydantic import BaseModel
 
-                from langchain_groq import ChatGroq
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
+            class AnswerWithJustification(BaseModel):
+                answer: str
+                justification: str
 
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
+            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, method="json_mode", include_raw=True
+            )
+
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

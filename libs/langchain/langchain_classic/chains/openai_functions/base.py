@@ -81,45 +81,45 @@ def create_openai_fn_chain(
         An LLMChain that will pass in the given functions to the model when run.
 
     Example:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
+        from langchain_classic.chains.openai_functions import create_openai_fn_chain
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_classic.chains.openai_functions import create_openai_fn_chain
-                from langchain_community.chat_models import ChatOpenAI
-                from langchain_core.prompts import ChatPromptTemplate
-
-                from pydantic import BaseModel, Field
-
-
-                class RecordPerson(BaseModel):
-                    \"\"\"Record some identifying information about a person.\"\"\"
-
-                    name: str = Field(..., description="The person's name")
-                    age: int = Field(..., description="The person's age")
-                    fav_food: str | None = Field(None, description="The person's favorite food")
+        from pydantic import BaseModel, Field
 
 
-                class RecordDog(BaseModel):
-                    \"\"\"Record some identifying information about a dog.\"\"\"
+        class RecordPerson(BaseModel):
+            \"\"\"Record some identifying information about a person.\"\"\"
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: str | None = Field(None, description="The dog's favorite food")
+            name: str = Field(..., description="The person's name")
+            age: int = Field(..., description="The person's age")
+            fav_food: str | None = Field(None, description="The person's favorite food")
 
 
-                llm = ChatOpenAI(model="gpt-4", temperature=0)
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("system", "You are a world class algorithm for recording entities."),
-                        ("human", "Make calls to the relevant function to record the entities in the following input: {input}"),
-                        ("human", "Tip: Make sure to answer in the correct format"),
-                    ]
-                )
-                chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
-                chain.run("Harry was a chubby brown beagle who loved chicken")
-                # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+        class RecordDog(BaseModel):
+            \"\"\"Record some identifying information about a dog.\"\"\"
 
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
+
+
+        llm = ChatOpenAI(model="gpt-4", temperature=0)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a world class algorithm for recording entities."),
+                ("human", "Make calls to the relevant function to record the entities in the following input: {input}"),
+                ("human", "Tip: Make sure to answer in the correct format"),
+            ]
+        )
+        chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
+        chain.run("Harry was a chubby brown beagle who loved chicken")
+        # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
+        ```
     """  # noqa: E501
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
@@ -175,35 +175,35 @@ def create_structured_output_chain(
         An LLMChain that will pass the given function to the model.
 
     Example:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
+        from langchain_classic.chains.openai_functions import create_structured_output_chain
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_classic.chains.openai_functions import create_structured_output_chain
-                from langchain_community.chat_models import ChatOpenAI
-                from langchain_core.prompts import ChatPromptTemplate
+        from pydantic import BaseModel, Field
 
-                from pydantic import BaseModel, Field
+        class Dog(BaseModel):
+            \"\"\"Identifying information about a dog.\"\"\"
 
-                class Dog(BaseModel):
-                    \"\"\"Identifying information about a dog.\"\"\"
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: str | None = Field(None, description="The dog's favorite food")
+        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a world class algorithm for extracting information in structured formats."),
+                ("human", "Use the given format to extract information from the following input: {input}"),
+                ("human", "Tip: Make sure to answer in the correct format"),
+            ]
+        )
+        chain = create_structured_output_chain(Dog, llm, prompt)
+        chain.run("Harry was a chubby brown beagle who loved chicken")
+        # -> Dog(name="Harry", color="brown", fav_food="chicken")
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("system", "You are a world class algorithm for extracting information in structured formats."),
-                        ("human", "Use the given format to extract information from the following input: {input}"),
-                        ("human", "Tip: Make sure to answer in the correct format"),
-                    ]
-                )
-                chain = create_structured_output_chain(Dog, llm, prompt)
-                chain.run("Harry was a chubby brown beagle who loved chicken")
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
-
+        ```
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {

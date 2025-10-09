@@ -20,17 +20,16 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     it as a named parameter to the constructor.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
-            from langchain_huggingface import HuggingFaceEndpointEmbeddings
-
-            model = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceEndpointEmbeddings(
-                model=model,
-                task="feature-extraction",
-                huggingfacehub_api_token="my-api-key",
-            )
-
+        model = "sentence-transformers/all-mpnet-base-v2"
+        hf = HuggingFaceEndpointEmbeddings(
+            model=model,
+            task="feature-extraction",
+            huggingfacehub_api_token="my-api-key",
+        )
+        ```
     """
 
     client: Any = None  #: :meta private:

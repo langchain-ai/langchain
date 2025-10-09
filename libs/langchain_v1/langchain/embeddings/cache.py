@@ -122,24 +122,24 @@ class CacheBackedEmbeddings(Embeddings):
     embeddings too, pass in a query_embedding_store to constructor.
 
     Examples:
-        .. code-block: python
+        ```python
+        from langchain.embeddings import CacheBackedEmbeddings
+        from langchain.storage import LocalFileStore
+        from langchain_community.embeddings import OpenAIEmbeddings
 
-            from langchain.embeddings import CacheBackedEmbeddings
-            from langchain.storage import LocalFileStore
-            from langchain_community.embeddings import OpenAIEmbeddings
+        store = LocalFileStore("./my_cache")
 
-            store = LocalFileStore('./my_cache')
+        underlying_embedder = OpenAIEmbeddings()
+        embedder = CacheBackedEmbeddings.from_bytes_store(
+            underlying_embedder, store, namespace=underlying_embedder.model
+        )
 
-            underlying_embedder = OpenAIEmbeddings()
-            embedder = CacheBackedEmbeddings.from_bytes_store(
-                underlying_embedder, store, namespace=underlying_embedder.model
-            )
+        # Embedding is computed and cached
+        embeddings = embedder.embed_documents(["hello", "goodbye"])
 
-            # Embedding is computed and cached
-            embeddings = embedder.embed_documents(["hello", "goodbye"])
-
-            # Embeddings are retrieved from the cache, no computation is done
-            embeddings = embedder.embed_documents(["hello", "goodbye"])
+        # Embeddings are retrieved from the cache, no computation is done
+        embeddings = embedder.embed_documents(["hello", "goodbye"])
+        ```
     """
 
     def __init__(

@@ -14,13 +14,11 @@ class NomicEmbeddings(Embeddings):
     """NomicEmbeddings embedding model.
 
     Example:
+        ```python
+        from langchain_nomic import NomicEmbeddings
 
-        .. code-block:: python
-
-            from langchain_nomic import NomicEmbeddings
-
-            model = NomicEmbeddings()
-
+        model = NomicEmbeddings()
+        ```
     """
 
     @overload

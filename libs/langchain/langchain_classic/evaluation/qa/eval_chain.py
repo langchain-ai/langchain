@@ -56,10 +56,10 @@ def _parse_string_eval_output(text: str) -> dict:
     """Parse the output text.
 
     Args:
-        text (str): The output text to parse.
+        text: The output text to parse.
 
     Returns:
-        Any: The parsed output.
+        The parsed output.
     """
     reasoning = text.strip()
     parsed_scores = _get_score(reasoning)
@@ -177,17 +177,15 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         """Evaluate Chain or LLM output, based on optional input and label.
 
         Args:
-            prediction (str): the LLM or chain prediction to evaluate.
-            reference (str | None, optional): the reference label
-                to evaluate against.
-            input (str | None, optional): the input to consider during evaluation
-            callbacks (Callbacks, optional): the callbacks to use for tracing.
-            include_run_info (bool, optional): whether to include run info in the
-                returned results.
-            **kwargs: additional keyword arguments, including callbacks, tags, etc.
+            prediction: The LLM or chain prediction to evaluate.
+            reference: The reference label to evaluate against.
+            input: The input to consider during evaluation
+            callbacks: The callbacks to use for tracing.
+            include_run_info: Whether to include run info in the returned results.
+            **kwargs: Additional keyword arguments, including callbacks, tags, etc.
 
         Returns:
-            dict: The evaluation results containing the score or value.
+            The evaluation results containing the score or value.
         """
         result = self(
             {

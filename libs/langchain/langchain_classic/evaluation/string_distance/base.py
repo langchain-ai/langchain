@@ -153,11 +153,11 @@ class _RapidFuzzChainMixin(Chain):
         """Compute the distance between two strings.
 
         Args:
-            a (str): The first string.
-            b (str): The second string.
+            a: The first string.
+            b: The second string.
 
         Returns:
-            float: The distance between the two strings.
+            The distance between the two strings.
         """
         return self.metric(a, b)
 

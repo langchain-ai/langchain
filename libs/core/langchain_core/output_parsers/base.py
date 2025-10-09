@@ -134,29 +134,28 @@ class BaseOutputParser(
     Output parsers help structure language model responses.
 
     Example:
-        .. code-block:: python
+        ```python
+        class BooleanOutputParser(BaseOutputParser[bool]):
+            true_val: str = "YES"
+            false_val: str = "NO"
 
-            class BooleanOutputParser(BaseOutputParser[bool]):
-                true_val: str = "YES"
-                false_val: str = "NO"
+            def parse(self, text: str) -> bool:
+                cleaned_text = text.strip().upper()
+                if cleaned_text not in (
+                    self.true_val.upper(),
+                    self.false_val.upper(),
+                ):
+                    raise OutputParserException(
+                        f"BooleanOutputParser expected output value to either be "
+                        f"{self.true_val} or {self.false_val} (case-insensitive). "
+                        f"Received {cleaned_text}."
+                    )
+                return cleaned_text == self.true_val.upper()
 
-                def parse(self, text: str) -> bool:
-                    cleaned_text = text.strip().upper()
-                    if cleaned_text not in (
-                        self.true_val.upper(),
-                        self.false_val.upper(),
-                    ):
-                        raise OutputParserException(
-                            f"BooleanOutputParser expected output value to either be "
-                            f"{self.true_val} or {self.false_val} (case-insensitive). "
-                            f"Received {cleaned_text}."
-                        )
-                    return cleaned_text == self.true_val.upper()
-
-                @property
-                def _type(self) -> str:
-                    return "boolean_output_parser"
-
+            @property
+            def _type(self) -> str:
+                return "boolean_output_parser"
+        ```
     """
 
     @property

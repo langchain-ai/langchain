@@ -41,12 +41,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Then install `langchain-openai` and set environment variables
         `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT`:
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langchain-openai
 
-            pip install -U langchain-openai
-
-            export AZURE_OPENAI_API_KEY="your-api-key"
-            export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+        export AZURE_OPENAI_API_KEY="your-api-key"
+        export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
+        ```
 
     Key init args — completion params:
         azure_deployment: str
@@ -79,22 +79,22 @@ class AzureChatOpenAI(BaseChatOpenAI):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import AzureChatOpenAI
 
-            from langchain_openai import AzureChatOpenAI
-
-            llm = AzureChatOpenAI(
-                azure_deployment="your-deployment",
-                api_version="2024-05-01-preview",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # organization="...",
-                # model="gpt-35-turbo",
-                # model_version="0125",
-                # other params...
-            )
+        llm = AzureChatOpenAI(
+            azure_deployment="your-deployment",
+            api_version="2024-05-01-preview",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # organization="...",
+            # model="gpt-35-turbo",
+            # model_version="0125",
+            # other params...
+        )
+        ```
 
     !!! note
         Any param which is not explicitly supported will be passed directly to the
@@ -103,342 +103,49 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         For example:
 
-        .. code-block:: python
+        ```python
+        from langchain_openai import AzureChatOpenAI
+        import openai
 
-            from langchain_openai import AzureChatOpenAI
-            import openai
+        AzureChatOpenAI(..., logprobs=True).invoke(...)
 
-            AzureChatOpenAI(..., logprobs=True).invoke(...)
+        # results in underlying API call of:
 
-            # results in underlying API call of:
+        openai.AzureOpenAI(..).chat.completions.create(..., logprobs=True)
 
-            openai.AzureOpenAI(..).chat.completions.create(..., logprobs=True)
+        # which is also equivalent to:
 
-            # which is also equivalent to:
-
-            AzureChatOpenAI(...).invoke(..., logprobs=True)
+        AzureChatOpenAI(...).invoke(..., logprobs=True)
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        messages = [
+            (
+                "system",
+                "You are a helpful translator. Translate the user sentence to French.",
+            ),
+            ("human", "I love programming."),
+        ]
+        llm.invoke(messages)
+        ```
 
-            messages = [
-                (
-                    "system",
-                    "You are a helpful translator. Translate the user sentence to French.",
-                ),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(
-                content="J'adore programmer.",
-                usage_metadata={
-                    "input_tokens": 28,
-                    "output_tokens": 6,
-                    "total_tokens": 34,
-                },
-                response_metadata={
-                    "token_usage": {
-                        "completion_tokens": 6,
-                        "prompt_tokens": 28,
-                        "total_tokens": 34,
-                    },
-                    "model_name": "gpt-4",
-                    "system_fingerprint": "fp_7ec89fabc6",
-                    "prompt_filter_results": [
-                        {
-                            "prompt_index": 0,
-                            "content_filter_results": {
-                                "hate": {"filtered": False, "severity": "safe"},
-                                "self_harm": {"filtered": False, "severity": "safe"},
-                                "sexual": {"filtered": False, "severity": "safe"},
-                                "violence": {"filtered": False, "severity": "safe"},
-                            },
-                        }
-                    ],
-                    "finish_reason": "stop",
-                    "logprobs": None,
-                    "content_filter_results": {
-                        "hate": {"filtered": False, "severity": "safe"},
-                        "self_harm": {"filtered": False, "severity": "safe"},
-                        "sexual": {"filtered": False, "severity": "safe"},
-                        "violence": {"filtered": False, "severity": "safe"},
-                    },
-                },
-                id="run-6d7a5282-0de0-4f27-9cc0-82a9db9a3ce9-0",
-            )
-
-    Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
-
-        .. code-block:: python
-
-            AIMessageChunk(content="", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="J", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="'", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(
-                content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
-            )
-            AIMessageChunk(
-                content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
-            )
-            AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
-            AIMessageChunk(
-                content="",
-                response_metadata={
-                    "finish_reason": "stop",
-                    "model_name": "gpt-4",
-                    "system_fingerprint": "fp_811936bd4f",
-                },
-                id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
-            )
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            AIMessageChunk(
-                content="J'adore la programmation.",
-                response_metadata={
-                    "finish_reason": "stop",
-                    "model_name": "gpt-4",
-                    "system_fingerprint": "fp_811936bd4f",
-                },
-                id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
-            )
-
-    Async:
-        .. code-block:: python
-
-            await llm.ainvoke(messages)
-
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
-
-    Tool calling:
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
-
-
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
-
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
-
-
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?"
-            )
-            ai_msg.tool_calls
-
-        .. code-block:: python
-
-            [
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
-                },
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "New York, NY"},
-                    "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
-                },
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
-                },
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "New York, NY"},
-                    "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
-                },
-            ]
-
-    Structured output:
-        .. code-block:: python
-
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(
-                    description="How funny the joke is, from 1 to 10"
-                )
-
-
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
-
-        .. code-block:: python
-
-            Joke(
-                setup="Why was the cat sitting on the computer?",
-                punchline="To keep an eye on the mouse!",
-                rating=None,
-            )
-
-        See `AzureChatOpenAI.with_structured_output()` for more.
-
-    JSON mode:
-        .. code-block:: python
-
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke(
-                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
-            )
-            ai_msg.content
-
-        .. code-block:: python
-
-            '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
-
-    Image input:
-        .. code-block:: python
-
-            import base64
-            import httpx
-            from langchain_core.messages import HumanMessage
-
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": "describe the weather in this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ]
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
-
-        .. code-block:: python
-
-            "The weather in the image appears to be quite pleasant. The sky is mostly clear"
-
-    Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
-    Logprobs:
-        .. code-block:: python
-
-            logprobs_llm = llm.bind(logprobs=True)
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-            {
-                "content": [
-                    {
-                        "token": "J",
-                        "bytes": [74],
-                        "logprob": -4.9617593e-06,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": "'adore",
-                        "bytes": [39, 97, 100, 111, 114, 101],
-                        "logprob": -0.25202933,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": " la",
-                        "bytes": [32, 108, 97],
-                        "logprob": -0.20141791,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": " programmation",
-                        "bytes": [
-                            32,
-                            112,
-                            114,
-                            111,
-                            103,
-                            114,
-                            97,
-                            109,
-                            109,
-                            97,
-                            116,
-                            105,
-                            111,
-                            110,
-                        ],
-                        "logprob": -1.9361265e-07,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": ".",
-                        "bytes": [46],
-                        "logprob": -1.2233183e-05,
-                        "top_logprobs": [],
-                    },
-                ]
-            }
-
-    Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-            {
+        ```python
+        AIMessage(
+            content="J'adore programmer.",
+            usage_metadata={
+                "input_tokens": 28,
+                "output_tokens": 6,
+                "total_tokens": 34,
+            },
+            response_metadata={
                 "token_usage": {
                     "completion_tokens": 6,
                     "prompt_tokens": 28,
                     "total_tokens": 34,
                 },
-                "model_name": "gpt-35-turbo",
-                "system_fingerprint": None,
+                "model_name": "gpt-4",
+                "system_fingerprint": "fp_7ec89fabc6",
                 "prompt_filter_results": [
                     {
                         "prompt_index": 0,
@@ -458,8 +165,297 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "sexual": {"filtered": False, "severity": "safe"},
                     "violence": {"filtered": False, "severity": "safe"},
                 },
-            }
+            },
+            id="run-6d7a5282-0de0-4f27-9cc0-82a9db9a3ce9-0",
+        )
+        ```
 
+    Stream:
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.text, end="")
+        ```
+
+        ```python
+        AIMessageChunk(content="", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content="J", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content="'", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(
+            content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f"
+        )
+        AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+        AIMessageChunk(
+            content="",
+            response_metadata={
+                "finish_reason": "stop",
+                "model_name": "gpt-4",
+                "system_fingerprint": "fp_811936bd4f",
+            },
+            id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
+        )
+        ```
+
+        ```python
+        stream = llm.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
+
+        ```python
+        AIMessageChunk(
+            content="J'adore la programmation.",
+            response_metadata={
+                "finish_reason": "stop",
+                "model_name": "gpt-4",
+                "system_fingerprint": "fp_811936bd4f",
+            },
+            id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
+        )
+        ```
+
+    Async:
+        ```python
+        await llm.ainvoke(messages)
+
+        # stream:
+        # async for chunk in (await llm.astream(messages))
+
+        # batch:
+        # await llm.abatch([messages])
+        ```
+
+    Tool calling:
+        ```python
+        from pydantic import BaseModel, Field
+
+
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
+
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
+            )
+
+
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
+
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
+            )
+
+
+        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        ai_msg = llm_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?"
+        )
+        ai_msg.tool_calls
+        ```
+
+        ```python
+        [
+            {
+                "name": "GetWeather",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
+            },
+            {
+                "name": "GetWeather",
+                "args": {"location": "New York, NY"},
+                "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "New York, NY"},
+                "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
+            },
+        ]
+        ```
+
+    Structured output:
+        ```python
+        from typing import Optional
+
+        from pydantic import BaseModel, Field
+
+
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
+
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(
+                description="How funny the joke is, from 1 to 10"
+            )
+
+
+        structured_llm = llm.with_structured_output(Joke)
+        structured_llm.invoke("Tell me a joke about cats")
+        ```
+
+        ```python
+        Joke(
+            setup="Why was the cat sitting on the computer?",
+            punchline="To keep an eye on the mouse!",
+            rating=None,
+        )
+        ```
+
+        See `AzureChatOpenAI.with_structured_output()` for more.
+
+    JSON mode:
+        ```python
+        json_llm = llm.bind(response_format={"type": "json_object"})
+        ai_msg = json_llm.invoke(
+            "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+        )
+        ai_msg.content
+        ```
+
+        ```python
+        '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
+        ```
+
+    Image input:
+        ```python
+        import base64
+        import httpx
+        from langchain_core.messages import HumanMessage
+
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ]
+        )
+        ai_msg = llm.invoke([message])
+        ai_msg.content
+        ```
+
+        ```python
+        "The weather in the image appears to be quite pleasant. The sky is mostly clear"
+        ```
+
+    Token usage:
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.usage_metadata
+        ```
+
+        ```python
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
+    Logprobs:
+        ```python
+        logprobs_llm = llm.bind(logprobs=True)
+        ai_msg = logprobs_llm.invoke(messages)
+        ai_msg.response_metadata["logprobs"]
+        ```
+
+        ```python
+        {
+            "content": [
+                {
+                    "token": "J",
+                    "bytes": [74],
+                    "logprob": -4.9617593e-06,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": "'adore",
+                    "bytes": [39, 97, 100, 111, 114, 101],
+                    "logprob": -0.25202933,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": " la",
+                    "bytes": [32, 108, 97],
+                    "logprob": -0.20141791,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": " programmation",
+                    "bytes": [
+                        32,
+                        112,
+                        114,
+                        111,
+                        103,
+                        114,
+                        97,
+                        109,
+                        109,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                    ],
+                    "logprob": -1.9361265e-07,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": ".",
+                    "bytes": [46],
+                    "logprob": -1.2233183e-05,
+                    "top_logprobs": [],
+                },
+            ]
+        }
+        ```
+
+    Response metadata
+        ```python
+        ai_msg = llm.invoke(messages)
+        ai_msg.response_metadata
+        ```
+
+        ```python
+        {
+            "token_usage": {
+                "completion_tokens": 6,
+                "prompt_tokens": 28,
+                "total_tokens": 34,
+            },
+            "model_name": "gpt-35-turbo",
+            "system_fingerprint": None,
+            "prompt_filter_results": [
+                {
+                    "prompt_index": 0,
+                    "content_filter_results": {
+                        "hate": {"filtered": False, "severity": "safe"},
+                        "self_harm": {"filtered": False, "severity": "safe"},
+                        "sexual": {"filtered": False, "severity": "safe"},
+                        "violence": {"filtered": False, "severity": "safe"},
+                    },
+                }
+            ],
+            "finish_reason": "stop",
+            "logprobs": None,
+            "content_filter_results": {
+                "hate": {"filtered": False, "severity": "safe"},
+                "self_harm": {"filtered": False, "severity": "safe"},
+                "sexual": {"filtered": False, "severity": "safe"},
+                "violence": {"filtered": False, "severity": "safe"},
+            },
+        }
+        ```
     """  # noqa: E501
 
     azure_endpoint: str | None = Field(
@@ -902,38 +898,38 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 ??? example
 
-                    .. code-block:: python
-
-                        from langchain.chat_models import init_chat_model
-                        from pydantic import BaseModel
-
-
-                        class ResponseSchema(BaseModel):
-                            response: str
+                    ```python
+                    from langchain.chat_models import init_chat_model
+                    from pydantic import BaseModel
 
 
-                        def get_weather(location: str) -> str:
-                            \"\"\"Get weather at a location.\"\"\"
-                            pass
+                    class ResponseSchema(BaseModel):
+                        response: str
 
-                        llm = init_chat_model("openai:gpt-4o-mini")
 
-                        structured_llm = llm.with_structured_output(
-                            ResponseSchema,
-                            tools=[get_weather],
-                            strict=True,
-                            include_raw=True,
-                        )
+                    def get_weather(location: str) -> str:
+                        \"\"\"Get weather at a location.\"\"\"
+                        pass
 
-                        structured_llm.invoke("What's the weather in Boston?")
+                    llm = init_chat_model("openai:gpt-4o-mini")
 
-                    .. code-block:: python
+                    structured_llm = llm.with_structured_output(
+                        ResponseSchema,
+                        tools=[get_weather],
+                        strict=True,
+                        include_raw=True,
+                    )
 
-                        {
-                            "raw": AIMessage(content="", tool_calls=[...], ...),
-                            "parsing_error": None,
-                            "parsed": None,
-                        }
+                    structured_llm.invoke("What's the weather in Boston?")
+                    ```
+
+                    ```python
+                    {
+                        "raw": AIMessage(content="", tool_calls=[...], ...),
+                        "parsing_error": None,
+                        "parsed": None,
+                    }
+                    ```
 
             kwargs: Additional keyword args are passed through to the model.
 
@@ -974,152 +970,142 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             See all constraints [here](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
 
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_openai import AzureChatOpenAI
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str | None = Field(
-                        default=..., description="A justification for the answer."
-                    )
+            from langchain_openai import AzureChatOpenAI
+            from pydantic import BaseModel, Field
 
 
-                llm = AzureChatOpenAI(
-                    azure_deployment="...", model="gpt-4o", temperature=0
-                )
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
+                answer: str
+                justification: str | None = Field(
+                    default=..., description="A justification for the answer."
                 )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_openai import AzureChatOpenAI
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str | None = Field(
-                        default=..., description="A justification for the answer."
-                    )
+            from langchain_openai import AzureChatOpenAI
+            from pydantic import BaseModel, Field
 
 
-                llm = AzureChatOpenAI(
-                    azure_deployment="...", model="gpt-4o", temperature=0
-                )
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="function_calling"
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
+
+                answer: str
+                justification: str | None = Field(
+                    default=..., description="A justification for the answer."
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, method="function_calling"
+            )
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
-            .. code-block:: python
-
-                from langchain_openai import AzureChatOpenAI
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from langchain_openai import AzureChatOpenAI
+            from pydantic import BaseModel
 
 
-                llm = AzureChatOpenAI(
-                    azure_deployment="...", model="gpt-4o", temperature=0
-                )
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
-            .. code-block:: python
+            ```python
+            from typing_extensions import Annotated, TypedDict
 
-                from typing_extensions import Annotated, TypedDict
-
-                from langchain_openai import AzureChatOpenAI
-
-
-                class AnswerWithJustification(TypedDict):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: Annotated[
-                        str | None, None, "A justification for the answer."
-                    ]
+            from langchain_openai import AzureChatOpenAI
 
 
-                llm = AzureChatOpenAI(
-                    azure_deployment="...", model="gpt-4o", temperature=0
-                )
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(TypedDict):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+                answer: str
+                justification: Annotated[
+                    str | None, None, "A justification for the answer."
+                ]
+
+
+            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
-            .. code-block:: python
+            ```python
+            from langchain_openai import AzureChatOpenAI
 
-                from langchain_openai import AzureChatOpenAI
-
-                oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
-                        },
-                       'required': ['answer']
-                   }
-               }
+            oai_schema = {
+                'name': 'AnswerWithJustification',
+                'description': 'An answer to the user question along with justification for the answer.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'answer': {'type': 'string'},
+                        'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                    },
+                    'required': ['answer']
+                }
 
                 llm = AzureChatOpenAI(
                     azure_deployment="...",
@@ -1135,59 +1121,62 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
-            .. code-block::
+            ```python
+            from langchain_openai import AzureChatOpenAI
+            from pydantic import BaseModel
 
-                from langchain_openai import AzureChatOpenAI
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
+            class AnswerWithJustification(BaseModel):
+                answer: str
+                justification: str
 
-                llm = AzureChatOpenAI(
-                    azure_deployment="...",
-                    model="gpt-4o",
-                    temperature=0,
-                )
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
+            llm = AzureChatOpenAI(
+                azure_deployment="...",
+                model="gpt-4o",
+                temperature=0,
+            )
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, method="json_mode", include_raw=True
+            )
+
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
-            .. code-block::
+            ```python
+            structured_llm = llm.with_structured_output(
+                method="json_mode", include_raw=True
+            )
 
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'parsed': {
+            #         'answer': 'They are both the same weight.',
+            #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+            #     },
+            #     'parsing_error': None
+            # }
+            ```
 
         """  # noqa: E501
         return super().with_structured_output(

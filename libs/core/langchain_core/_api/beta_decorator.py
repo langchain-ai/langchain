@@ -66,14 +66,11 @@ def beta(
     Returns:
         A decorator which can be used to mark functions or classes as beta.
 
-    Examples:
-
-        .. code-block:: python
-
-            @beta
-            def the_function_to_annotate():
-                pass
-
+    ```python
+    @beta
+    def the_function_to_annotate():
+        pass
+    ```
     """
 
     def beta(

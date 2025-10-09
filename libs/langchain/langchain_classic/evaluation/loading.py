@@ -60,18 +60,17 @@ def load_dataset(uri: str) -> list[dict]:
 
     **Prerequisites**
 
-    .. code-block:: shell
-
-        pip install datasets
+    ```bash
+    pip install datasets
+    ```
 
     Examples:
     --------
-    .. code-block:: python
+    ```python
+    from langchain_classic.evaluation import load_dataset
 
-        from langchain_classic.evaluation import load_dataset
-
-        ds = load_dataset("llm-math")
-
+    ds = load_dataset("llm-math")
+    ```
     """
     try:
         from datasets import load_dataset

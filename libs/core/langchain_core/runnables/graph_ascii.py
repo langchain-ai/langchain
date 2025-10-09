@@ -267,7 +267,8 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
         print(draw_ascii(vertices, edges))
         ```
-        .. code-block::
+
+        ```txt
 
                  +---+
                  | 1 |
@@ -284,7 +285,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
             +---+     +---+
             | 3 |     | 4 |
             +---+     +---+
-
+        ```
     """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
