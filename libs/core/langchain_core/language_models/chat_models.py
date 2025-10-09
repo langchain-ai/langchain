@@ -470,8 +470,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if "stream" in kwargs:
             return kwargs["stream"]
 
-        if getattr(self, "streaming", False):
-            return True
+        if "streaming" in self.model_fields_set:
+            streaming_value = getattr(self, "streaming", None)
+            if isinstance(streaming_value, bool):
+                return streaming_value
 
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
