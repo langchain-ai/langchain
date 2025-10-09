@@ -207,8 +207,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             allowed_decisions=config["allowed_decisions"],
             description=description,
         )
-        if "arguments_schema" in config:
-            review_config["arguments_schema"] = config["arguments_schema"]
+        # eventually can get tool information and populate arguments_schema from there
 
         return review_config
 
