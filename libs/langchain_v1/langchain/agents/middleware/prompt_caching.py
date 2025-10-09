@@ -42,7 +42,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.min_messages_to_cache = min_messages_to_cache
         self.unsupported_model_behavior = unsupported_model_behavior
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],

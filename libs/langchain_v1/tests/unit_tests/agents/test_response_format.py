@@ -727,7 +727,7 @@ class TestDynamicModelWithResponseFormat:
 
         # Create middleware that swaps the model in the request
         class ModelSwappingMiddleware(AgentMiddleware):
-            def on_model_call(
+            def wrap_model_call(
                 self,
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], CoreAIMessage],

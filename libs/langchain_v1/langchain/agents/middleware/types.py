@@ -987,7 +987,7 @@ def dynamic_prompt(
 ):
     """Decorator used to dynamically generate system prompts for the model.
 
-    This is a convenience decorator that creates middleware using `on_model_call`
+    This is a convenience decorator that creates middleware using `wrap_model_call`
     specifically for dynamic prompt generation. The decorated function should return
     a string that will be set as the system prompt for the model request.
 
@@ -1051,7 +1051,7 @@ def dynamic_prompt(
                 {
                     "state_schema": AgentState,
                     "tools": [],
-                    "aon_model_call": async_wrapped,
+                    "awrap_model_call": async_wrapped,
                 },
             )()
 
@@ -1072,7 +1072,7 @@ def dynamic_prompt(
             {
                 "state_schema": AgentState,
                 "tools": [],
-                "on_model_call": wrapped,
+                "wrap_model_call": wrapped,
             },
         )()
 

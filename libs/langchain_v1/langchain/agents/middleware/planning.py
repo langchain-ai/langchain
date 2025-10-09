@@ -186,7 +186,7 @@ class PlanningMiddleware(AgentMiddleware):
 
         self.tools = [write_todos]
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],

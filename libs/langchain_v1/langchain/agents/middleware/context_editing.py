@@ -206,7 +206,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],

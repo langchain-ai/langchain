@@ -262,7 +262,7 @@ def test_create_agent_invoke(
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("NoopSeven.on_model_call")
+            calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
         def after_model(self, state, runtime):
@@ -277,7 +277,7 @@ def test_create_agent_invoke(
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("NoopEight.on_model_call")
+            calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
         def after_model(self, state, runtime):
@@ -334,15 +334,15 @@ def test_create_agent_invoke(
     assert calls == [
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.on_model_call",
-        "NoopEight.on_model_call",
+        "NoopSeven.wrap_model_call",
+        "NoopEight.wrap_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
         "my_tool",
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.on_model_call",
-        "NoopEight.on_model_call",
+        "NoopSeven.wrap_model_call",
+        "NoopEight.wrap_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
     ]
@@ -363,7 +363,7 @@ def test_create_agent_jump(
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("NoopSeven.on_model_call")
+            calls.append("NoopSeven.wrap_model_call")
             return handler(request)
 
         def after_model(self, state, runtime):
@@ -380,7 +380,7 @@ def test_create_agent_jump(
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("NoopEight.on_model_call")
+            calls.append("NoopEight.wrap_model_call")
             return handler(request)
 
         def after_model(self, state, runtime):
@@ -2049,7 +2049,7 @@ async def test_create_agent_async_invoke() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
-            calls.append("AsyncMiddleware.aon_model_call")
+            calls.append("AsyncMiddleware.awrap_model_call")
             request.messages.append(HumanMessage("async middleware message"))
             return await handler(request)
 
@@ -2088,11 +2088,11 @@ async def test_create_agent_async_invoke() -> None:
     assert result["messages"][1].content == "async middleware message"
     assert calls == [
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.aon_model_call",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
         "my_tool",
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.aon_model_call",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
     ]
 
@@ -2110,7 +2110,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
-            calls.append("AsyncMiddlewareOne.aon_model_call")
+            calls.append("AsyncMiddlewareOne.awrap_model_call")
             return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
@@ -2125,7 +2125,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
-            calls.append("AsyncMiddlewareTwo.aon_model_call")
+            calls.append("AsyncMiddlewareTwo.awrap_model_call")
             return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
@@ -2143,8 +2143,8 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
     assert calls == [
         "AsyncMiddlewareOne.abefore_model",
         "AsyncMiddlewareTwo.abefore_model",
-        "AsyncMiddlewareOne.aon_model_call",
-        "AsyncMiddlewareTwo.aon_model_call",
+        "AsyncMiddlewareOne.awrap_model_call",
+        "AsyncMiddlewareTwo.awrap_model_call",
         "AsyncMiddlewareTwo.aafter_model",
         "AsyncMiddlewareOne.aafter_model",
     ]
@@ -2198,7 +2198,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("SyncMiddleware.on_model_call")
+            calls.append("SyncMiddleware.wrap_model_call")
             return handler(request)
 
         def after_model(self, state, runtime) -> None:
@@ -2213,7 +2213,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
-            calls.append("AsyncMiddleware.aon_model_call")
+            calls.append("AsyncMiddleware.awrap_model_call")
             return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
@@ -2234,7 +2234,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     assert calls == [
         "SyncMiddleware.before_model",
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.aon_model_call",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
         "SyncMiddleware.after_model",
     ]
@@ -2651,7 +2651,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("MixedMiddleware.on_model_call")
+            calls.append("MixedMiddleware.wrap_model_call")
             return handler(request)
 
         async def awrap_model_call(
@@ -2659,7 +2659,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
-            calls.append("MixedMiddleware.aon_model_call")
+            calls.append("MixedMiddleware.awrap_model_call")
             return await handler(request)
 
     agent = create_agent(
@@ -2674,5 +2674,5 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     # In sync mode, only sync methods should be called
     assert calls == [
         "MixedMiddleware.before_model",
-        "MixedMiddleware.on_model_call",
+        "MixedMiddleware.wrap_model_call",
     ]

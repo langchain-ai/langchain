@@ -85,8 +85,8 @@ def test_no_edit_when_below_trigger() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call which modifies the request
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call which modifies the request
+    middleware.wrap_model_call(request, mock_handler)
 
     # The request should have been modified in place
     assert request.messages[0].content == ""
@@ -118,8 +118,8 @@ def test_clear_tool_outputs_and_inputs() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call which modifies the request
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call which modifies the request
+    middleware.wrap_model_call(request, mock_handler)
 
     cleared_ai = request.messages[0]
     cleared_tool = request.messages[1]
@@ -170,8 +170,8 @@ def test_respects_keep_last_tool_results() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call which modifies the request
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call which modifies the request
+    middleware.wrap_model_call(request, mock_handler)
 
     cleared_messages = [
         msg
@@ -218,8 +218,8 @@ def test_exclude_tools_prevents_clearing() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call which modifies the request
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call which modifies the request
+    middleware.wrap_model_call(request, mock_handler)
 
     search_tool = request.messages[1]
     calc_tool = request.messages[3]

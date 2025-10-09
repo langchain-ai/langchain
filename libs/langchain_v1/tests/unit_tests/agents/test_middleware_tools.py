@@ -27,7 +27,7 @@ def test_model_request_tools_are_base_tools() -> None:
         return f"Result: {expression}"
 
     class RequestCapturingMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -73,7 +73,7 @@ def test_middleware_can_modify_tools() -> None:
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -118,7 +118,7 @@ def test_unknown_tool_raises_error() -> None:
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -157,7 +157,7 @@ def test_middleware_can_add_and_remove_tools() -> None:
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
         state_schema = AdminState
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -195,7 +195,7 @@ def test_empty_tools_list_is_valid() -> None:
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -238,7 +238,7 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -249,7 +249,7 @@ def test_tools_preserved_across_multiple_middleware() -> None:
             return handler(request)
 
     class SecondMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
