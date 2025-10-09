@@ -70,7 +70,7 @@ class ChatGroq(BaseChatModel):
     can be passed in, even if not explicitly saved on this class.
 
     Setup:
-        Install ``langchain-groq`` and set environment variable
+        Install `langchain-groq` and set environment variable
         ``GROQ_API_KEY``.
 
         .. code-block:: bash
@@ -1199,6 +1199,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
         message_dict = {"role": "assistant", "content": message.content}
+
+        # If content is a list of content blocks, filter out tool_call blocks
+        # as Groq API only accepts 'text' type blocks in content
+        if isinstance(message.content, list):
+            text_blocks = [
+                block
+                for block in message.content
+                if isinstance(block, dict) and block.get("type") == "text"
+            ]
+            message_dict["content"] = text_blocks if text_blocks else ""
+
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -1211,10 +1222,19 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
                 _lc_invalid_tool_call_to_groq_tool_call(tc)
                 for tc in message.invalid_tool_calls
             ]
+            # If tool calls only (no text blocks), content is None not empty string
+            if message_dict["content"] == "" or (
+                isinstance(message_dict["content"], list)
+                and not message_dict["content"]
+            ):
+                message_dict["content"] = None
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
-            if message_dict["content"] == "":
+            if message_dict["content"] == "" or (
+                isinstance(message_dict["content"], list)
+                and not message_dict["content"]
+            ):
                 message_dict["content"] = None
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
