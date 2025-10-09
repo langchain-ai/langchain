@@ -93,7 +93,7 @@ lint = [
     "cffi; python_version >= \"3.10\"",
 ]
 typing = [
-    "mypy>=1.15.0,<1.16.0",
+    "mypy>=1.18.2,<1.19.0",
     "mypy-protobuf>=3.0.0,<4.0.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
@@ -105,6 +105,7 @@ typing = [
     "numpy>=2.1.0; python_version >= '3.13'",
     "langchain-core",
     "langchain-text-splitters",
+    "fastapi<1.0.0,>=0.116.1",
 ]
 dev = [
     "jupyter>=1.0.0,<2.0.0",
@@ -126,18 +127,14 @@ exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
-strict = "True"
-strict_bytes = "True"
-ignore_missing_imports = "True"
+strict = true
+ignore_missing_imports = true
 enable_error_code = "deprecated"
-warn_unreachable = "True"
+warn_unreachable = true
 
 # TODO: activate for 'strict' checking
-disallow_untyped_calls = "False"
-disallow_any_generics = "False"
-disallow_untyped_decorators = "False"
-warn_return_any = "False"
-strict_equality = "False"
+disallow_any_generics = false
+warn_return_any = false
 
 [tool.ruff.format]
 docstring-code-format = true
