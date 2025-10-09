@@ -870,14 +870,14 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         action_request = captured_request["action_requests"][0]
         assert action_request["name"] == "test_tool"
         assert action_request["arguments"] == {"input": "test", "location": "SF"}
+        assert "Custom prefix" in action_request["description"]
+        assert "Tool: test_tool" in action_request["description"]
+        assert "Args: {'input': 'test', 'location': 'SF'}" in action_request["description"]
 
         assert len(captured_request["review_configs"]) == 1
         review_config = captured_request["review_configs"][0]
         assert review_config["action_name"] == "test_tool"
         assert review_config["allowed_decisions"] == ["approve", "edit", "reject"]
-        assert "Custom prefix" in review_config["description"]
-        assert "Tool: test_tool" in review_config["description"]
-        assert "Args: {'input': 'test', 'location': 'SF'}" in review_config["description"]
 
 
 def test_human_in_the_loop_middleware_boolean_configs() -> None:
@@ -1009,17 +1009,17 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
         middleware.after_model(state, None)
 
         assert captured_request is not None
-        assert "review_configs" in captured_request
-        assert len(captured_request["review_configs"]) == 2
+        assert "action_requests" in captured_request
+        assert len(captured_request["action_requests"]) == 2
 
         # Check callable description
         assert (
-            captured_request["review_configs"][0]["description"]
+            captured_request["action_requests"][0]["description"]
             == "Custom: tool_with_callable with args {'x': 1}"
         )
 
         # Check string description
-        assert captured_request["review_configs"][1]["description"] == "Static description"
+        assert captured_request["action_requests"][1]["description"] == "Static description"
 
 
 # Tests for AnthropicPromptCachingMiddleware

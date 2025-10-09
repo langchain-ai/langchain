@@ -20,6 +20,19 @@ class Action(TypedDict):
     """Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})."""
 
 
+class ActionRequest(TypedDict):
+    """Represents an action request with a name, arguments, and description."""
+
+    name: str
+    """The name of the action being requested."""
+
+    arguments: dict[str, Any]
+    """Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})."""
+
+    description: NotRequired[str]
+    """The description of the action to be reviewed."""
+
+
 DecisionType = Literal["approve", "edit", "reject"]
 
 
@@ -32,9 +45,6 @@ class ReviewConfig(TypedDict):
     allowed_decisions: list[DecisionType]
     """The decisions that are allowed for this request."""
 
-    description: NotRequired[str]
-    """The description of the action to be reviewed."""
-
     arguments_schema: NotRequired[dict[str, Any]]
     """JSON schema for the arguments associated with the action, if edits are allowed."""
 
@@ -42,7 +52,7 @@ class ReviewConfig(TypedDict):
 class HITLRequest(TypedDict):
     """Request for human feedback on a sequence of actions requested by a model."""
 
-    action_requests: list[Action]
+    action_requests: list[ActionRequest]
     """A list of agent actions for human review."""
 
     review_configs: list[ReviewConfig]
@@ -181,14 +191,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 
-    def _create_review_config(
+    def _create_action_and_config(
         self,
         tool_call: ToolCall,
         config: InterruptOnConfig,
         state: AgentState,
         runtime: Runtime,
-    ) -> ReviewConfig:
-        """Create a ReviewConfig for a tool call."""
+    ) -> tuple[ActionRequest, ReviewConfig]:
+        """Create an ActionRequest and ReviewConfig for a tool call."""
         tool_name = tool_call["name"]
         tool_args = tool_call["args"]
 
@@ -201,13 +211,21 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         else:
             description = f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
 
-        # Create ReviewConfig
-        # eventually can get tool information and populate arguments_schema from there
-        return ReviewConfig(
-            action_name=tool_name,
-            allowed_decisions=config["allowed_decisions"],
+        # Create ActionRequest with description
+        action_request = ActionRequest(
+            name=tool_name,
+            arguments=tool_args,
             description=description,
         )
+
+        # Create ReviewConfig
+        # eventually can get tool information and populate arguments_schema from there
+        review_config = ReviewConfig(
+            action_name=tool_name,
+            allowed_decisions=config["allowed_decisions"],
+        )
+
+        return action_request, review_config
 
     def _process_decision(
         self,
@@ -279,20 +297,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create action requests and review configs for all tools that need approval
-        action_requests: list[Action] = []
+        action_requests: list[ActionRequest] = []
         review_configs: list[ReviewConfig] = []
 
         for tool_call in interrupt_tool_calls:
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-            config = self.interrupt_on[tool_name]
+            config = self.interrupt_on[tool_call["name"]]
 
-            # Create Action
-            action = Action(name=tool_name, arguments=tool_args)
-            action_requests.append(action)
-
-            # Create ReviewConfig using helper method
-            review_config = self._create_review_config(tool_call, config, state, runtime)
+            # Create ActionRequest and ReviewConfig using helper method
+            action_request, review_config = self._create_action_and_config(
+                tool_call, config, state, runtime
+            )
+            action_requests.append(action_request)
             review_configs.append(review_config)
 
         # Create single HITLRequest with all actions and configs
