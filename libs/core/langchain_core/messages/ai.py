@@ -122,7 +122,7 @@ class UsageMetadata(TypedDict):
             }
 
     !!! warning "Behavior changed in 0.3.9"
-        Added ``input_token_details`` and ``output_token_details``.
+        Added `input_token_details` and `output_token_details`.
 
     """
 
@@ -191,7 +191,7 @@ class AIMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``AIMessage``.
+        """Initialize `AIMessage`.
 
         Specify ``content`` as positional arg or ``content_blocks`` for typing.
 
@@ -229,7 +229,7 @@ class AIMessage(BaseMessage):
 
         If the message has a known model provider, use the provider-specific translator
         first before falling back to best-effort parsing. For details, see the property
-        on ``BaseMessage``.
+        on `BaseMessage`.
         """
         if self.response_metadata.get("output_version") == "v1":
             return cast("list[types.ContentBlock]", self.content)
@@ -335,7 +335,7 @@ class AIMessage(BaseMessage):
 
         Args:
             html: Whether to return an HTML-formatted string.
-                 Defaults to False.
+                 Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -391,7 +391,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     """Optional span represented by an aggregated AIMessageChunk.
 
     If a chunk with ``chunk_position="last"`` is aggregated into a stream,
-    ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
+    ``tool_call_chunks`` in message content will be parsed into `tool_calls`.
     """
 
     @property

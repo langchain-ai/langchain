@@ -39,9 +39,9 @@ class BaseRateLimiter(abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
@@ -58,9 +58,9 @@ class BaseRateLimiter(abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
@@ -207,9 +207,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.
@@ -231,9 +231,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
            True if the tokens were successfully acquired, False otherwise.

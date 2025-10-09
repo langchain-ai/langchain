@@ -676,9 +676,7 @@ def test_convert_to_openai_function_no_description_no_params(func: dict) -> None
     assert actual == expected
 
 
-@pytest.mark.xfail(
-    reason="Pydantic converts Optional[str] to str in .model_json_schema()"
-)
+@pytest.mark.xfail(reason="Pydantic converts str | None to str in .model_json_schema()")
 def test_function_optional_param() -> None:
     @tool
     def func5(

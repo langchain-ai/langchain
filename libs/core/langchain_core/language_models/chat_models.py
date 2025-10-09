@@ -112,7 +112,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
 
     - Update image content blocks to OpenAI Chat Completions format (backward
     compatibility).
-    - Add ``type`` key to content blocks that have a single key.
+    - Add `type` key to content blocks that have a single key.
 
     Args:
         messages: List of messages to format.
@@ -179,7 +179,7 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     """Generate from a stream.
 
     Args:
-        stream: Iterator of ``ChatGenerationChunk``.
+        stream: Iterator of `ChatGenerationChunk`.
 
     Raises:
         ValueError: If no generations are found in the stream.
@@ -210,7 +210,7 @@ async def agenerate_from_stream(
     """Async generate from a stream.
 
     Args:
-        stream: Iterator of ``ChatGenerationChunk``.
+        stream: Iterator of `ChatGenerationChunk`.
 
     Returns:
         ChatResult: Chat result.
@@ -322,38 +322,37 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     disable_streaming: bool | Literal["tool_calling"] = False
     """Whether to disable streaming for this model.
 
-    If streaming is bypassed, then ``stream()``/``astream()``/``astream_events()`` will
-    defer to ``invoke()``/``ainvoke()``.
+    If streaming is bypassed, then `stream`/`astream`/`astream_events` will
+    defer to `invoke`/`ainvoke`.
 
-    - If True, will always bypass streaming case.
-    - If ``'tool_calling'``, will bypass streaming case only when the model is called
-      with a ``tools`` keyword argument. In other words, LangChain will automatically
-      switch to non-streaming behavior (``invoke()``) only when the tools argument is
+    - If `True`, will always bypass streaming case.
+    - If `'tool_calling'`, will bypass streaming case only when the model is called
+      with a `tools` keyword argument. In other words, LangChain will automatically
+      switch to non-streaming behavior (`invoke`) only when the tools argument is
       provided. This offers the best of both worlds.
-    - If False (default), will always use streaming case if available.
+    - If `False` (Default), will always use streaming case if available.
 
-    The main reason for this flag is that code might be written using ``stream()`` and
+    The main reason for this flag is that code might be written using `stream` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
-
     """
 
     output_version: str | None = Field(
         default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
-    """Version of ``AIMessage`` output format to store in message content.
+    """Version of `AIMessage` output format to store in message content.
 
-    ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into a
+    `AIMessage.content_blocks` will lazily parse the contents of ``content`` into a
     standard format. This flag can be used to additionally store the standard format
     in message content, e.g., for serialization purposes.
 
     Supported values:
 
-    - ``"v0"``: provider-specific format in content (can lazily-parse with
-      ``.content_blocks``)
-    - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
+    - `'v0'`: provider-specific format in content (can lazily-parse with
+      `.content_blocks`)
+    - `'v1'`: standardized format in content (consistent with `.content_blocks`)
 
-    Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
+    Partner packages (e.g., `langchain-openai`) can also use this field to roll out
     new content formats in a backward-compatible way.
 
     !!! version-added "Added in version 1.0"
@@ -373,7 +372,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     @property
     @override
     def OutputType(self) -> Any:
-        """Get the output type for this runnable."""
+        """Get the output type for this `Runnable`."""
         return AnyMessage
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
@@ -471,8 +470,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if "stream" in kwargs:
             return kwargs["stream"]
 
-        if getattr(self, "streaming", False):
-            return True
+        if "streaming" in self.model_fields_set:
+            streaming_value = getattr(self, "streaming", None)
+            if isinstance(streaming_value, bool):
+                return streaming_value
 
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
@@ -1529,7 +1530,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -1537,11 +1538,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -1564,7 +1565,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python

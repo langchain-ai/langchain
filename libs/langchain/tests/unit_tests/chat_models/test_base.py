@@ -70,9 +70,9 @@ def test_configurable() -> None:
     """Test configurable chat model behavior without default parameters.
 
     Verifies that a configurable chat model initialized without default parameters:
-    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
+    - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
     - Blocks access to non-configurable methods until configuration is provided
-    - Supports declarative operations (``bind_tools``) without mutating original model
+    - Supports declarative operations (`bind_tools`) without mutating original model
     - Can chain declarative operations and configuration to access full functionality
     - Properly resolves to the configured model type when parameters are provided
 
@@ -196,7 +196,7 @@ def test_configurable_with_default() -> None:
     """Test configurable chat model behavior with default parameters.
 
     Verifies that a configurable chat model initialized with default parameters:
-    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
+    - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
     - Provides immediate access to non-configurable methods (e.g. ``get_num_tokens``)
     - Supports model switching through runtime configuration using ``config_prefix``
     - Maintains proper model identity and attributes when reconfigured

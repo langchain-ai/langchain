@@ -88,7 +88,7 @@ def create_openai_fn_runnable(
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
         enforce_single_function_usage: only used if a single function is passed in. If
-            True, then the model will be forced to use the given function. If False,
+            True, then the model will be forced to use the given function. If `False`,
             then the model will be given the option to use the given function or not.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
@@ -117,7 +117,7 @@ def create_openai_fn_runnable(
 
                     name: str = Field(..., description="The person's name")
                     age: int = Field(..., description="The person's age")
-                    fav_food: Optional[str] = Field(None, description="The person's favorite food")
+                    fav_food: str | None = Field(None, description="The person's favorite food")
 
 
                 class RecordDog(BaseModel):
@@ -125,7 +125,7 @@ def create_openai_fn_runnable(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
 
                 llm = ChatOpenAI(model="gpt-4", temperature=0)
@@ -221,12 +221,12 @@ def create_structured_output_runnable(
             recommended over 'openai-functions'. If 'openai-json' then OpenAI model
             with response_format set to JSON is used.
         enforce_function_usage: Only applies when mode is 'openai-tools' or
-            'openai-functions'. If True, then the model will be forced to use the given
-            output schema. If False, then the model can elect whether to use the output
+            'openai-functions'. If `True`, then the model will be forced to use the given
+            output schema. If `False`, then the model can elect whether to use the output
             schema.
         return_single: Only applies when mode is 'openai-tools'. Whether to a list of
-            structured outputs or a single one. If True and model does not return any
-            structured outputs then chain output is None. If False and model does not
+            structured outputs or a single one. If `True` and model does not return any
+            structured outputs then chain output is None. If `False` and model does not
             return any structured outputs then chain output is an empty list.
         kwargs: Additional named arguments.
 
@@ -249,7 +249,7 @@ def create_structured_output_runnable(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 prompt = ChatPromptTemplate.from_messages(
@@ -329,7 +329,7 @@ def create_structured_output_runnable(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
@@ -351,7 +351,7 @@ def create_structured_output_runnable(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
@@ -377,7 +377,7 @@ def create_structured_output_runnable(
 
                     name: str = Field(..., description="The dog's name")
                     color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+                    fav_food: str | None = Field(None, description="The dog's favorite food")
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json")

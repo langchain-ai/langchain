@@ -9,7 +9,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 class HumanMessage(BaseMessage):
     """Message from a human.
 
-    ``HumanMessage``s are messages that are passed in from a human to the model.
+    `HumanMessage`s are messages that are passed in from a human to the model.
 
     Example:
 

@@ -32,7 +32,7 @@ def init_chat_model(
     model: str,
     *,
     model_provider: str | None = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: str | None = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -40,10 +40,10 @@ def init_chat_model(
 
 @overload
 def init_chat_model(
-    model: Literal[None] = None,
+    model: None = None,
     *,
     model_provider: str | None = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: str | None = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -163,8 +163,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    ??? note "Init non-configurable model"
-        :open:
+    ???+ note "Init non-configurable model"
 
         .. code-block:: python
 
@@ -273,7 +272,7 @@ def init_chat_model(
     !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
-        Support for ``configurable_fields`` and ``config_prefix`` added.
+        Support for `configurable_fields` and ``config_prefix`` added.
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
@@ -626,7 +625,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     @property
     def InputType(self) -> TypeAlias:
-        """Get the input type for this runnable."""
+        """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import (
             ChatPromptValueConcrete,
             StringPromptValue,

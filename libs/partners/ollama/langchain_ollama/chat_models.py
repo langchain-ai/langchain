@@ -46,7 +46,7 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -96,13 +96,13 @@ log = logging.getLogger(__name__)
 
 
 def _get_usage_metadata_from_generation_info(
-    generation_info: Optional[Mapping[str, Any]],
-) -> Optional[UsageMetadata]:
+    generation_info: Mapping[str, Any] | None,
+) -> UsageMetadata | None:
     """Get usage metadata from Ollama generation info mapping."""
     if generation_info is None:
         return None
-    input_tokens: Optional[int] = generation_info.get("prompt_eval_count")
-    output_tokens: Optional[int] = generation_info.get("eval_count")
+    input_tokens: int | None = generation_info.get("prompt_eval_count")
+    output_tokens: int | None = generation_info.get("eval_count")
     if input_tokens is not None and output_tokens is not None:
         return UsageMetadata(
             input_tokens=input_tokens,
@@ -166,7 +166,7 @@ def _parse_json_string(
 
 def _parse_arguments_from_tool_call(
     raw_tool_call: dict[str, Any],
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Parse arguments by trying to parse any shallowly nested string-encoded JSON.
 
     Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
@@ -257,10 +257,9 @@ def _is_pydantic_class(obj: Any) -> bool:
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
-    ??? note "Setup"
-        :open:
+    ???+ note "Setup"
 
-        Install ``langchain-ollama`` and download any models you want to use from ollama.
+        Install `langchain-ollama` and download any models you want to use from ollama.
 
         .. code-block:: bash
 
@@ -270,23 +269,23 @@ class ChatOllama(BaseChatModel):
     Key init args — completion params:
         model: str
             Name of Ollama model to use.
-        reasoning: Optional[bool]
+        reasoning: bool | None
             Controls the reasoning/thinking mode for
             `supported models <https://ollama.com/search?c=thinking>`__.
 
-            - ``True``: Enables reasoning mode. The model's reasoning process will be
+            - `True`: Enables reasoning mode. The model's reasoning process will be
               captured and returned separately in the ``additional_kwargs`` of the
               response message, under ``reasoning_content``. The main response
               content will not include the reasoning tags.
-            - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+            - `False`: Disables reasoning mode. The model will not perform any reasoning,
               and the response will not include any reasoning content.
-            - ``None`` (Default): The model will use its default reasoning behavior. Note
+            - `None` (Default): The model will use its default reasoning behavior. Note
               however, if the model's default behavior *is* to perform reasoning, think tags
               (``<think>`` and ``</think>``) will be present within the main response content
-              unless you set ``reasoning`` to ``True``.
+              unless you set ``reasoning`` to `True`.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
-        num_predict: Optional[int]
+        num_predict: int | None
             Max number of tokens to generate.
 
     See full list of supported init args and their descriptions in the params section.
@@ -482,12 +481,12 @@ class ChatOllama(BaseChatModel):
 
     Thinking / Reasoning:
         You can enable reasoning mode for models that support it by setting
-        the ``reasoning`` parameter to ``True`` in either the constructor or
-        the ``invoke``/``stream`` methods. This will enable the model to think
+        the ``reasoning`` parameter to `True` in either the constructor or
+        the `invoke`/`stream` methods. This will enable the model to think
         through the problem and return the reasoning process separately in the
         ``additional_kwargs`` of the response message, under ``reasoning_content``.
 
-        If ``reasoning`` is set to ``None``, the model will use its default reasoning
+        If ``reasoning`` is set to `None`, the model will use its default reasoning
         behavior, and any reasoning content will *not* be captured under the
         ``reasoning_content`` key, but will be present within the main response content
         as think tags (``<think>`` and ``</think>``).
@@ -524,20 +523,20 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[Union[bool, str]] = None
+    reasoning: bool | str | None = None
     """Controls the reasoning/thinking mode for `supported models <https://ollama.com/search?c=thinking>`__.
 
-    - ``True``: Enables reasoning mode. The model's reasoning process will be
+    - `True`: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
       response message, under ``reasoning_content``. The main response
       content will not include the reasoning tags.
-    - ``False``: Disables reasoning mode. The model will not perform any reasoning,
+    - `False`: Disables reasoning mode. The model will not perform any reasoning,
       and the response will not include any reasoning content.
-    - ``None`` (Default): The model will use its default reasoning behavior. Note
+    - `None` (Default): The model will use its default reasoning behavior. Note
       however, if the model's default behavior *is* to perform reasoning, think tags
       ()``<think>`` and ``</think>``) will be present within the main response content
-      unless you set ``reasoning`` to ``True``.
-    - ``str``: e.g. ``'low'``, ``'medium'``, ``'high'``. Enables reasoning with a custom
+      unless you set ``reasoning`` to `True`.
+    - `str`: e.g. `'low'`, ``'medium'``, `'high'`. Enables reasoning with a custom
       intensity level. Currently, this is only supported ``gpt-oss``. See the
       `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
       for more information.
@@ -549,13 +548,13 @@ class ChatOllama(BaseChatModel):
     !!! version-added "Added in version 0.3.4"
     """
 
-    mirostat: Optional[int] = None
+    mirostat: int | None = None
     """Enable Mirostat sampling for controlling perplexity.
 
-    (Default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)
+    (Default: `0`, `0` = disabled, `1` = Mirostat, `2` = Mirostat 2.0)
     """
 
-    mirostat_eta: Optional[float] = None
+    mirostat_eta: float | None = None
     """Influences how quickly the algorithm responds to feedback from generated text.
 
     A lower learning rate will result in slower adjustments, while a higher learning
@@ -564,7 +563,7 @@ class ChatOllama(BaseChatModel):
     (Default: ``0.1``)
     """
 
-    mirostat_tau: Optional[float] = None
+    mirostat_tau: float | None = None
     """Controls the balance between coherence and diversity of the output.
 
     A lower value will result in more focused and coherent text.
@@ -572,19 +571,19 @@ class ChatOllama(BaseChatModel):
     (Default: ``5.0``)
     """
 
-    num_ctx: Optional[int] = None
+    num_ctx: int | None = None
     """Sets the size of the context window used to generate the next token.
 
     (Default: ``2048``)
     """
 
-    num_gpu: Optional[int] = None
+    num_gpu: int | None = None
     """The number of GPUs to use.
 
-    On macOS it defaults to ``1`` to enable metal support, ``0`` to disable.
+    On macOS it defaults to `1` to enable metal support, `0` to disable.
     """
 
-    num_thread: Optional[int] = None
+    num_thread: int | None = None
     """Sets the number of threads to use during computation.
 
     By default, Ollama will detect this for optimal performance. It is recommended to
@@ -592,26 +591,26 @@ class ChatOllama(BaseChatModel):
     the logical number of cores).
     """
 
-    num_predict: Optional[int] = None
+    num_predict: int | None = None
     """Maximum number of tokens to predict when generating text.
 
     (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)
     """
 
-    repeat_last_n: Optional[int] = None
+    repeat_last_n: int | None = None
     """Sets how far back for the model to look back to prevent repetition.
 
-    (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)
+    (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)
     """
 
-    repeat_penalty: Optional[float] = None
+    repeat_penalty: float | None = None
     """Sets how strongly to penalize repetitions.
 
     A higher value (e.g., ``1.5``) will penalize repetitions more strongly, while a
     lower value (e.g., ``0.9``) will be more lenient. (Default: ``1.1``)
     """
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """The temperature of the model.
 
     Increasing the temperature will make the model answer more creatively.
@@ -619,17 +618,17 @@ class ChatOllama(BaseChatModel):
     (Default: ``0.8``)
     """
 
-    seed: Optional[int] = None
+    seed: int | None = None
     """Sets the random number seed to use for generation.
 
     Setting this to a specific number will make the model generate the same text for the
     same prompt.
     """
 
-    stop: Optional[list[str]] = None
+    stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
-    tfs_z: Optional[float] = None
+    tfs_z: float | None = None
     """Tail free sampling.
 
     Used to reduce the impact of less probable tokens from the output.
@@ -637,10 +636,10 @@ class ChatOllama(BaseChatModel):
     A higher value (e.g., ``2.0``) will reduce the impact more, while a value of ``1.0``
     disables this setting.
 
-    (Default: ``1``)
+    (Default: `1`)
     """
 
-    top_k: Optional[int] = None
+    top_k: int | None = None
     """Reduces the probability of generating nonsense.
 
     A higher value (e.g. ``100``) will give more diverse answers, while a lower value
@@ -649,7 +648,7 @@ class ChatOllama(BaseChatModel):
     (Default: ``40``)
     """
 
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Works together with top-k.
 
     A higher value (e.g., ``0.95``) will lead to more diverse text, while a lower value
@@ -658,13 +657,13 @@ class ChatOllama(BaseChatModel):
     (Default: ``0.9``)
     """
 
-    format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
+    format: Literal["", "json"] | JsonSchemaValue | None = None
     """Specify the format of the output (options: ``'json'``, JSON schema)."""
 
-    keep_alive: Optional[Union[int, str]] = None
+    keep_alive: int | str | None = None
     """How long the model will stay loaded into memory."""
 
-    base_url: Optional[str] = None
+    base_url: str | None = None
     """Base url the model is hosted under.
 
     If none, defaults to the Ollama client default.
@@ -686,7 +685,7 @@ class ChatOllama(BaseChatModel):
 
     """
 
-    client_kwargs: Optional[dict] = {}
+    client_kwargs: dict | None = {}
     """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
@@ -695,18 +694,18 @@ class ChatOllama(BaseChatModel):
     to synchronous and asynchronous clients.
     """
 
-    async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    async_client_kwargs: dict | None = {}
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the async client; for shared args use ``client_kwargs``.
+    These are clients unique to the async client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
-    sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
+    sync_client_kwargs: dict | None = {}
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    These are clients unique to the sync client; for shared args use ``client_kwargs``.
+    These are clients unique to the sync client; for shared args use `client_kwargs`.
 
     For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
@@ -720,7 +719,7 @@ class ChatOllama(BaseChatModel):
     def _chat_params(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Assemble the parameters for a chat completion request.
@@ -835,8 +834,8 @@ class ChatOllama(BaseChatModel):
         ollama_messages: list = []
         for message in messages:
             role: str
-            tool_call_id: Optional[str] = None
-            tool_calls: Optional[list[dict[str, Any]]] = None
+            tool_call_id: str | None = None
+            tool_calls: list[dict[str, Any]] | None = None
             if isinstance(message, HumanMessage):
                 role = "user"
             elif isinstance(message, AIMessage):
@@ -926,9 +925,9 @@ class ChatOllama(BaseChatModel):
     async def _acreate_chat_stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
+    ) -> AsyncIterator[Mapping[str, Any] | str]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -940,9 +939,9 @@ class ChatOllama(BaseChatModel):
     def _create_chat_stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> Iterator[Union[Mapping[str, Any], str]]:
+    ) -> Iterator[Mapping[str, Any] | str]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -954,8 +953,8 @@ class ChatOllama(BaseChatModel):
     def _chat_stream_with_aggregation(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
@@ -980,8 +979,8 @@ class ChatOllama(BaseChatModel):
     async def _achat_stream_with_aggregation(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
@@ -1004,7 +1003,7 @@ class ChatOllama(BaseChatModel):
         return final_chunk
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1021,8 +1020,8 @@ class ChatOllama(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         final_chunk = self._chat_stream_with_aggregation(
@@ -1045,7 +1044,7 @@ class ChatOllama(BaseChatModel):
     def _iterate_over_stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         reasoning = kwargs.get("reasoning", self.reasoning)
@@ -1107,8 +1106,8 @@ class ChatOllama(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self._iterate_over_stream(messages, stop, **kwargs):
@@ -1122,7 +1121,7 @@ class ChatOllama(BaseChatModel):
     async def _aiterate_over_stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         reasoning = kwargs.get("reasoning", self.reasoning)
@@ -1184,8 +1183,8 @@ class ChatOllama(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
@@ -1199,8 +1198,8 @@ class ChatOllama(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         final_chunk = await self._achat_stream_with_aggregation(
@@ -1227,9 +1226,9 @@ class ChatOllama(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051, ARG002
+        tool_choice: dict | str | Literal["auto", "any"] | bool | None = None,  # noqa: PYI051, ARG002
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1250,12 +1249,12 @@ class ChatOllama(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[dict, type],
+        schema: dict | type,
         *,
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -1263,7 +1262,7 @@ class ChatOllama(BaseChatModel):
 
                 - a Pydantic class,
                 - a JSON schema
-                - a TypedDict class
+                - a `TypedDict` class
                 - an OpenAI function/tool schema.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -1271,7 +1270,7 @@ class ChatOllama(BaseChatModel):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1285,9 +1284,9 @@ class ChatOllama(BaseChatModel):
                     desired schema into the model call.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a ``BaseMessage``) and the parsed model
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
@@ -1301,9 +1300,9 @@ class ChatOllama(BaseChatModel):
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: ``BaseMessage``
+            - ``'raw'``: `BaseMessage`
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         !!! warning "Behavior changed in 0.2.2"
             Added support for structured output API via ``format`` parameter.
@@ -1325,7 +1324,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=...,
                         description="A justification for the answer.",
                     )
@@ -1383,7 +1382,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Optional[str] = Field(
+                    justification: str | None = Field(
                         default=...,
                         description="A justification for the answer.",
                     )
@@ -1417,7 +1416,7 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Annotated[Optional[str], None, "A justification for the answer."]
+                    justification: Annotated[str | None, None, "A justification for the answer."]
 
 
                 llm = ChatOllama(model="llama3.1", temperature=0)

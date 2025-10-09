@@ -91,8 +91,8 @@ class ConversationalChatAgent(Agent):
                 Defaults to the PREFIX.
             human_message: The human message to use.
                 Defaults to the SUFFIX.
-            input_variables: The input variables to use. Defaults to None.
-            output_parser: The output parser to use. Defaults to None.
+            input_variables: The input variables to use. Defaults to `None`.
+            output_parser: The output parser to use. Defaults to `None`.
 
         Returns:
             A PromptTemplate.

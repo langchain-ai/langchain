@@ -37,7 +37,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
     `similarity_threshold` must be specified. Defaults to 20."""
     similarity_threshold: float | None = None
     """Threshold for determining when two documents are similar enough
-    to be considered redundant. Defaults to None, must be specified if `k` is set
+    to be considered redundant. Defaults to `None`, must be specified if `k` is set
     to None."""
 
     model_config = ConfigDict(

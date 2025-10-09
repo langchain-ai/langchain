@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import openai
 from langchain_core.messages import AIMessageChunk
@@ -19,9 +19,8 @@ if TYPE_CHECKING:
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
     from langchain_core.runnables import Runnable
 
-_BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel] | type
+_DictOrPydantic: TypeAlias = dict | BaseModel
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -31,7 +30,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     for more nuanced details on the API's behavior and supported parameters.
 
     Setup:
-        Install ``langchain-xai`` and set environment variable ``XAI_API_KEY``.
+        Install `langchain-xai` and set environment variable `XAI_API_KEY`.
 
         .. code-block:: bash
 
@@ -43,13 +42,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         model: str
             Name of model to use.
         temperature: float
-            Sampling temperature between ``0`` and ``2``. Higher values mean more random completions,
-            while lower values (like ``0.2``) mean more focused and deterministic completions.
-            (Default: ``1``.)
-        max_tokens: Optional[int]
+            Sampling temperature between `0` and `2`. Higher values mean more random completions,
+            while lower values (like `0.2`) mean more focused and deterministic completions.
+            (Default: `1`.)
+        max_tokens: int | None
             Max number of tokens to generate. Refer to your `model's documentation <https://docs.x.ai/docs/models#model-pricing>`__
             for the maximum number of tokens it can generate.
-        logprobs: Optional[bool]
+        logprobs: bool | None
             Whether to return logprobs.
 
     Key init args — client params:
@@ -57,8 +56,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
-            xAI API key. If not passed in will be read from env var ``XAI_API_KEY``.
+        api_key: str | None
+            xAI API key. If not passed in will be read from env var `XAI_API_KEY`.
 
     Instantiate:
         .. code-block:: python
@@ -170,9 +169,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         If provided, reasoning content is returned under the ``additional_kwargs`` field of the
         AIMessage or AIMessageChunk.
 
-        If supported, reasoning effort can be specified in the model constructor's ``extra_body``
+        If supported, reasoning effort can be specified in the model constructor's `extra_body`
         argument, which will control the amount of reasoning the model does. The value can be one of
-        ``'low'`` or ``'high'``.
+        `'low'` or `'high'`.
 
         .. code-block:: python
 
@@ -235,19 +234,19 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             With stream response, the tool / function call will be returned in whole in a
             single chunk, instead of being streamed across chunks.
 
-        Tool choice can be controlled by setting the ``tool_choice`` parameter in the model
-        constructor's ``extra_body`` argument. For example, to disable tool / function calling:
+        Tool choice can be controlled by setting the `tool_choice` parameter in the model
+        constructor's `extra_body` argument. For example, to disable tool / function calling:
         .. code-block:: python
 
             llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
 
-        To require that the model always calls a tool / function, set ``tool_choice`` to ``'required'``:
+        To require that the model always calls a tool / function, set `tool_choice` to ``'required'``:
 
         .. code-block:: python
 
             llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
 
-        To specify a tool / function to call, set ``tool_choice`` to the name of the tool / function:
+        To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
 
         .. code-block:: python
 
@@ -309,7 +308,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -399,21 +398,21 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     model_name: str = Field(default="grok-4", alias="model")
     """Model name to use."""
-    xai_api_key: Optional[SecretStr] = Field(
+    xai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("XAI_API_KEY", default=None),
     )
     """xAI API key.
 
-    Automatically read from env variable ``XAI_API_KEY`` if not provided.
+    Automatically read from env variable `XAI_API_KEY` if not provided.
     """
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
-    search_parameters: Optional[dict[str, Any]] = None
+    search_parameters: dict[str, Any] | None = None
     """Parameters for search requests. Example: ``{"mode": "auto"}``."""
 
-    openai_api_key: Optional[SecretStr] = None
-    openai_api_base: Optional[str] = None
+    openai_api_key: SecretStr | None = None
+    openai_api_base: str | None = None
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -457,7 +456,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
@@ -525,8 +524,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[dict] = None,
+        response: dict | openai.BaseModel,
+        generation_info: dict | None = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
@@ -549,8 +548,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         self,
         chunk: dict,
         default_chunk_class: type,
-        base_generation_info: Optional[dict],
-    ) -> Optional[ChatGenerationChunk]:
+        base_generation_info: dict | None,
+    ) -> ChatGenerationChunk | None:
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
             default_chunk_class,
@@ -576,13 +575,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -592,7 +591,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class (support added in 0.1.20),
+                - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -600,7 +599,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -612,21 +611,21 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     Uses xAI's JSON mode feature.
 
             include_raw:
-                If ``False`` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If ``True``
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             strict:
-                - ``True``:
+                - `True`:
                     Model output is guaranteed to exactly match the schema.
                     The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
-                - ``False``:
+                - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
-                - ``None``:
+                - `None`:
                     ``strict`` argument will not be passed to the model.
 
             kwargs: Additional keyword args aren't supported.
@@ -634,13 +633,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
+            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
 
-            If ``include_raw`` is ``True``, then Runnable outputs a dict with keys:
+            If ``include_raw`` is `True`, then Runnable outputs a dict with keys:
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

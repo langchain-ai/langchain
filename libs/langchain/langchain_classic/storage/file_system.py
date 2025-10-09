@@ -163,7 +163,7 @@ class LocalFileStore(ByteStore):
         """Get an iterator over keys that match the given prefix.
 
         Args:
-            prefix (Optional[str]): The prefix to match.
+            prefix (str | None): The prefix to match.
 
         Returns:
             Iterator[str]: An iterator over keys that match the given prefix.

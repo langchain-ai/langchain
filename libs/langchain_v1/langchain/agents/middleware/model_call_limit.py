@@ -108,9 +108,9 @@ class ModelCallLimitMiddleware(AgentMiddleware):
 
         Args:
             thread_limit: Maximum number of model calls allowed per thread.
-                None means no limit. Defaults to None.
+                None means no limit. Defaults to `None`.
             run_limit: Maximum number of model calls allowed per run.
-                None means no limit. Defaults to None.
+                None means no limit. Defaults to `None`.
             exit_behavior: What to do when limits are exceeded.
                 - "end": Jump to the end of the agent execution and
                     inject an artificial AI message indicating that the limit was exceeded.

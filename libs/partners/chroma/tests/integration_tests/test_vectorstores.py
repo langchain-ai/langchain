@@ -1,9 +1,8 @@
 """Test Chroma functionality."""
 
-import os.path
 import tempfile
 import uuid
-from collections.abc import Generator
+from pathlib import Path
 from typing import (
     cast,
 )
@@ -29,15 +28,14 @@ class MyEmbeddingFunction:
         self.fak = fak
 
     def __call__(self, input_: Embeddable) -> list[list[float]]:
-        texts = cast(list[str], input_)
+        texts = cast("list[str]", input_)
         return self.fak.embed_documents(texts=texts)
 
 
-@pytest.fixture()
-def client() -> Generator[chromadb.ClientAPI, None, None]:
+@pytest.fixture
+def client() -> chromadb.ClientAPI:
     SharedSystemClient.clear_system_cache()
-    client = chromadb.Client(chromadb.config.Settings())
-    yield client
+    return chromadb.Client(chromadb.config.Settings())
 
 
 def test_chroma() -> None:
@@ -297,7 +295,7 @@ def test_chroma_with_persistence() -> None:
             output = docsearch.similarity_search("foo", k=1)
             assert output == [Document(page_content="foo", id="id_0")]
 
-            assert os.path.exists(chroma_persist_dir)
+            assert Path(chroma_persist_dir).exists()
 
             # Get a new VectorStore from the persisted directory
             docsearch = Chroma(
@@ -344,7 +342,7 @@ def test_chroma_with_persistence_with_client_settings() -> None:
             output = docsearch.similarity_search("foo", k=1)
             assert output == [Document(page_content="foo", id="id_0")]
 
-            assert os.path.exists(chroma_persist_dir)
+            assert Path(chroma_persist_dir).exists()
 
             # Get a new VectorStore from the persisted directory
             docsearch = Chroma(

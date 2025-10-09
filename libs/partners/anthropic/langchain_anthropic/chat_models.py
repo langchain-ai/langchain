@@ -9,7 +9,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, Optional, Union, cast
+from typing import Any, Final, Literal, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -170,7 +170,7 @@ def _format_image(url: str) -> dict:
 
 def _merge_messages(
     messages: Sequence[BaseMessage],
-) -> list[Union[SystemMessage, AIMessage, HumanMessage]]:
+) -> list[SystemMessage | AIMessage | HumanMessage]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
@@ -344,9 +344,9 @@ def _format_data_content_block(block: dict) -> dict:
 
 def _format_messages(
     messages: Sequence[BaseMessage],
-) -> tuple[Union[str, list[dict], None], list[dict]]:
+) -> tuple[str | list[dict] | None, list[dict]]:
     """Format messages for Anthropic's API."""
-    system: Union[str, list[dict], None] = None
+    system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
     for _i, message in enumerate(merged_messages):
@@ -368,7 +368,7 @@ def _format_messages(
             continue
 
         role = _message_type_lookups[message.type]
-        content: Union[str, list]
+        content: str | list
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -569,7 +569,7 @@ class ChatAnthropic(BaseChatModel):
     list of the latest models.
 
     Setup:
-        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+        Install `langchain-anthropic` and set environment variable ``ANTHROPIC_API_KEY``.
 
         .. code-block:: bash
 
@@ -585,17 +585,17 @@ class ChatAnthropic(BaseChatModel):
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: Optional[float]
+        timeout: float | None
             Timeout for requests.
-        anthropic_proxy: Optional[str]
+        anthropic_proxy: str | None
             Proxy to use for the Anthropic clients, will be used for every API call.
             If not passed in will be read from env var ``ANTHROPIC_PROXY``.
         max_retries: int
             Max number of retries if a request fails.
-        api_key: Optional[str]
+        api_key: str | None
             Anthropic API key. If not passed in will be read from env var
             ``ANTHROPIC_API_KEY``.
-        base_url: Optional[str]
+        base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
 
@@ -788,7 +788,7 @@ class ChatAnthropic(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
             structured_llm = llm.with_structured_output(Joke)
@@ -1153,7 +1153,7 @@ class ChatAnthropic(BaseChatModel):
                 response = llm.invoke(messages)
 
             Details of cached token counts will be included on the ``InputTokenDetails``
-            of response's ``usage_metadata``:
+            of response's `usage_metadata`:
 
             .. code-block:: python
 
@@ -1419,29 +1419,29 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: Optional[int] = Field(default=None, alias="max_tokens_to_sample")
+    max_tokens: int | None = Field(default=None, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    top_k: Optional[int] = None
+    top_k: int | None = None
     """Number of most likely tokens to consider at each step."""
 
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = Field(None, alias="timeout")
+    default_request_timeout: float | None = Field(None, alias="timeout")
     """Timeout for requests to Anthropic Completion API."""
 
     # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    stop_sequences: Optional[list[str]] = Field(None, alias="stop")
+    stop_sequences: list[str] | None = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: Optional[str] = Field(
+    anthropic_api_url: str | None = Field(
         alias="base_url",
         default_factory=from_env(
             ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
@@ -1462,7 +1462,7 @@ class ChatAnthropic(BaseChatModel):
     )
     """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
-    anthropic_proxy: Optional[str] = Field(
+    anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
     )
     """Proxy to use for the Anthropic clients, will be used for every API call.
@@ -1470,10 +1470,10 @@ class ChatAnthropic(BaseChatModel):
     If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
     variable."""
 
-    default_headers: Optional[Mapping[str, str]] = None
+    default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
-    betas: Optional[list[str]] = None
+    betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through client.beta.messages.create.
 
@@ -1486,22 +1486,22 @@ class ChatAnthropic(BaseChatModel):
     """Whether to use streaming or not."""
 
     stream_usage: bool = True
-    """Whether to include usage metadata in streaming output. If ``True``, additional
+    """Whether to include usage metadata in streaming output. If `True`, additional
     message chunks will be generated during the stream including usage metadata.
     """
 
-    thinking: Optional[dict[str, Any]] = Field(default=None)
+    thinking: dict[str, Any] | None = Field(default=None)
     """Parameters for Claude reasoning,
     e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
 
-    mcp_servers: Optional[list[dict[str, Any]]] = None
+    mcp_servers: list[dict[str, Any]] | None = None
     """List of MCP servers to use for the request.
 
     Example: ``mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
     "name": "example-mcp"}]``
     """
 
-    context_management: Optional[dict[str, Any]] = None
+    context_management: dict[str, Any] | None = None
     """Configuration for
     `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__.
     """
@@ -1547,7 +1547,7 @@ class ChatAnthropic(BaseChatModel):
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
@@ -1630,7 +1630,7 @@ class ChatAnthropic(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: dict,
     ) -> dict:
         """Get the request payload for the Anthropic API."""
@@ -1717,10 +1717,10 @@ class ChatAnthropic(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if stream_usage is None:
@@ -1753,10 +1753,10 @@ class ChatAnthropic(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         if stream_usage is None:
@@ -1839,8 +1839,8 @@ class ChatAnthropic(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1853,8 +1853,8 @@ class ChatAnthropic(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1866,7 +1866,7 @@ class ChatAnthropic(BaseChatModel):
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
-        schema: Union[dict, type],
+        schema: dict | type,
         formatted_tool: AnthropicTool,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
@@ -1894,12 +1894,10 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict[str, str], Literal["any", "auto"], str]  # noqa: PYI051
-        ] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        tool_choice: dict[str, str] | str | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         r"""Bind tool-like objects to this chat model.
@@ -1910,15 +1908,14 @@ class ChatAnthropic(BaseChatModel):
                 by `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
-                - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
-            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
-                Defaults to ``None`` (no specification, which allows parallel tool use).
+                - name of the tool as a string or as dict `{"type": "tool", "name": "<<tool_name>>"}`: calls corresponding tool;
+                - `'auto'`, `{"type: "auto"}`, or `None`: automatically selects a tool (including no tool);
+                - `'any'` or `{"type: "any"}`: force at least one tool to be called;
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel tool use).
 
                 !!! version-added "Added in version 0.3.2"
-            kwargs: Any additional parameters are passed directly to
-                `langchain_anthropic.chat_models.ChatAnthropic.bind`.
+            kwargs: Any additional parameters are passed directly to `bind`.
 
         Example:
 
@@ -1954,7 +1951,7 @@ class ChatAnthropic(BaseChatModel):
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
-        Example — force tool call with tool_choice ``'any'``:
+        Example — force tool call with tool_choice `'any'`:
 
             .. code-block:: python
 
@@ -2170,11 +2167,11 @@ class ChatAnthropic(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[dict, type],
+        schema: dict | type,
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -2183,7 +2180,7 @@ class ChatAnthropic(BaseChatModel):
                 - an Anthropic tool schema,
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If ``schema`` is a Pydantic class then the model output will be a
@@ -2191,10 +2188,10 @@ class ChatAnthropic(BaseChatModel):
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
             include_raw:
-                If ``False`` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If ``True``
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -2204,16 +2201,16 @@ class ChatAnthropic(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
+            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
+            Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
             - ``'raw'``: BaseMessage
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - ``'parsing_error'``: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
 
@@ -2340,9 +2337,7 @@ class ChatAnthropic(BaseChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Optional[
-            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
         **kwargs: Any,
     ) -> int:
         """Count tokens in a sequence of input messages.
@@ -2430,7 +2425,7 @@ class ChatAnthropic(BaseChatModel):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[dict[str, Any], type, Callable, BaseTool],
+    tool: dict[str, Any] | type | Callable | BaseTool,
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
@@ -2500,8 +2495,8 @@ def _make_message_chunk_from_anthropic_event(
     *,
     stream_usage: bool = True,
     coerce_content_to_string: bool,
-    block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
-) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
+    block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
     """Convert Anthropic streaming event to `AIMessageChunk`.
 
     Args:
@@ -2526,7 +2521,7 @@ def _make_message_chunk_from_anthropic_event(
         updating the `block_start_event` for context tracking.
 
     """
-    message_chunk: Optional[AIMessageChunk] = None
+    message_chunk: AIMessageChunk | None = None
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
 

@@ -62,8 +62,6 @@ ignore = [
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
     "FIX002",  # TODOs
     "TD002",   # TODO authors
     "TD003",   # TODO missing url

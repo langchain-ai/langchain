@@ -1,4 +1,4 @@
-"""``langchain-core`` defines the base abstractions for the LangChain ecosystem.
+"""`langchain-core` defines the base abstractions for the LangChain ecosystem.
 
 The interfaces for core components like chat models, LLMs, vector stores, retrievers,
 and more are defined here. The universal invocation protocol (Runnables) along with

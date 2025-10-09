@@ -114,7 +114,7 @@ def _convert_json_schema_to_openai_function(
             used.
         description: The description of the function. If not provided, the description
             of the schema will be used.
-        rm_titles: Whether to remove titles from the schema. Defaults to True.
+        rm_titles: Whether to remove titles from the schema. Defaults to `True`.
 
     Returns:
         The function description.
@@ -148,7 +148,7 @@ def _convert_pydantic_to_openai_function(
             used.
         description: The description of the function. If not provided, the description
             of the schema will be used.
-        rm_titles: Whether to remove titles from the schema. Defaults to True.
+        rm_titles: Whether to remove titles from the schema. Defaults to `True`.
 
     Raises:
         TypeError: If the model is not a Pydantic model.
@@ -408,8 +408,8 @@ def convert_to_openai_function(
             top-level 'title' key specified, an Anthropic format
             tool, or an Amazon Bedrock Converse format tool.
         strict:
-            If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, ``strict`` argument will not
             be included in function definition.
 
     Returns:
@@ -538,8 +538,8 @@ def convert_to_openai_tool(
             top-level 'title' key specified, an Anthropic format
             tool, or an Amazon Bedrock Converse format tool.
         strict:
-            If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, ``strict`` argument will not
             be included in tool definition.
 
     Returns:
@@ -601,8 +601,8 @@ def convert_to_json_schema(
 
     Args:
         schema: The schema to convert.
-        strict: If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+        strict: If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, ``strict`` argument will not
             be included in function definition.
 
     Raises:
@@ -649,15 +649,15 @@ def tool_example_to_messages(
 
     The list of messages per example by default corresponds to:
 
-    1. ``HumanMessage``: contains the content from which content should be extracted.
-    2. ``AIMessage``: contains the extracted information from the model
-    3. ``ToolMessage``: contains confirmation to the model that the model requested a
+    1. `HumanMessage`: contains the content from which content should be extracted.
+    2. `AIMessage`: contains the extracted information from the model
+    3. `ToolMessage`: contains confirmation to the model that the model requested a
        tool correctly.
 
-    If ``ai_response`` is specified, there will be a final ``AIMessage`` with that
+    If ``ai_response`` is specified, there will be a final `AIMessage` with that
     response.
 
-    The ``ToolMessage`` is required because some chat models are hyper-optimized for
+    The `ToolMessage` is required because some chat models are hyper-optimized for
     agents rather than for an extraction use case.
 
     Args:
@@ -665,8 +665,8 @@ def tool_example_to_messages(
         tool_calls: Tool calls represented as Pydantic BaseModels
         tool_outputs: Tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
-            will be inserted. Defaults to None.
-        ai_response: If provided, content for a final ``AIMessage``.
+            will be inserted. Defaults to `None`.
+        ai_response: If provided, content for a final `AIMessage`.
 
     Returns:
         A list of messages
@@ -683,11 +683,11 @@ def tool_example_to_messages(
             class Person(BaseModel):
                 '''Information about a person.'''
 
-                name: Optional[str] = Field(..., description="The name of the person")
-                hair_color: Optional[str] = Field(
+                name: str | None = Field(..., description="The name of the person")
+                hair_color: str | None = Field(
                     ..., description="The color of the person's hair if known"
                 )
-                height_in_meters: Optional[str] = Field(
+                height_in_meters: str | None = Field(
                     ..., description="Height in METERS"
                 )
 

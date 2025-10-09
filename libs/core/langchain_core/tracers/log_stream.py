@@ -659,7 +659,7 @@ async def _astream_log_implementation(
         stream: The stream to send the run logs to.
         diff: Whether to yield run log patches (True) or full run logs (False).
         with_streamed_output_list: Whether to include a list of all streamed
-            outputs in each patch. If False, only the final output will be included
+            outputs in each patch. If `False`, only the final output will be included
             in the patches.
         **kwargs: Additional keyword arguments to pass to the runnable.
 

@@ -193,8 +193,7 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
-        config (Optional[RunnableConfig], optional): The config to ensure.
-          Defaults to None.
+        config: The config to ensure. Defaults to `None`.
 
     Returns:
         RunnableConfig: The ensured config.
@@ -251,9 +250,8 @@ def get_config_list(
      It is useful for subclasses overriding batch() or abatch().
 
     Args:
-        config (Optional[Union[RunnableConfig, list[RunnableConfig]]]):
-          The config or list of configs.
-        length (int): The length of the list.
+        config: The config or list of configs.
+        length: The length of the list.
 
     Returns:
         list[RunnableConfig]: The list of configs.
@@ -302,16 +300,12 @@ def patch_config(
     """Patch a config with new values.
 
     Args:
-        config (Optional[RunnableConfig]): The config to patch.
-        callbacks (Optional[BaseCallbackManager], optional): The callbacks to set.
-          Defaults to None.
-        recursion_limit (Optional[int], optional): The recursion limit to set.
-          Defaults to None.
-        max_concurrency (Optional[int], optional): The max concurrency to set.
-          Defaults to None.
-        run_name (Optional[str], optional): The run name to set. Defaults to None.
-        configurable (Optional[dict[str, Any]], optional): The configurable to set.
-          Defaults to None.
+        config: The config to patch.
+        callbacks: The callbacks to set.
+        recursion_limit: The recursion limit to set.
+        max_concurrency: The max concurrency to set.
+        run_name: The run name to set.
+        configurable: The configurable to set.
 
     Returns:
         RunnableConfig: The patched config.
@@ -340,7 +334,7 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
     Args:
-        *configs (Optional[RunnableConfig]): The configs to merge.
+        *configs: The configs to merge.
 
     Returns:
         RunnableConfig: The merged config.
@@ -418,7 +412,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function. Defaults to `None`.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -452,7 +446,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function. Defaults to `None`.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -542,7 +536,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             fn (Callable[..., T]): The function to map.
             *iterables (Iterable[Any]): The iterables to map over.
             timeout (float | None, optional): The timeout for the map.
-                Defaults to None.
+                Defaults to `None`.
             chunksize (int, optional): The chunksize for the map. Defaults to 1.
 
         Returns:

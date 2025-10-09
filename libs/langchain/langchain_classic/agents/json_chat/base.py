@@ -26,8 +26,8 @@ def create_json_chat_agent(
         tools: Tools this agent has access to.
         prompt: The prompt to use. See Prompt section below for more.
         stop_sequence: bool or list of str.
-            If True, adds a stop token of "Observation:" to avoid hallucinates.
-            If False, does not add a stop token.
+            If `True`, adds a stop token of "Observation:" to avoid hallucinates.
+            If `False`, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
 
             Default is True. You may to set this to False if the LLM you are using
