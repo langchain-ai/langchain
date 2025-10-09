@@ -43,31 +43,32 @@ class HuggingFacePipeline(BaseLLM):
     `summarization` and `translation`  for now.
 
     Example using from_model_id:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFacePipeline
 
-            from langchain_huggingface import HuggingFacePipeline
-            hf = HuggingFacePipeline.from_model_id(
-                model_id="gpt2",
-                task="text-generation",
-                pipeline_kwargs={"max_new_tokens": 10},
-            )
+        hf = HuggingFacePipeline.from_model_id(
+            model_id="gpt2",
+            task="text-generation",
+            pipeline_kwargs={"max_new_tokens": 10},
+        )
+        ```
+
     Example passing pipeline in directly:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFacePipeline
+        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-            from langchain_huggingface import HuggingFacePipeline
-            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-
-            model_id = "gpt2"
-            tokenizer = AutoTokenizer.from_pretrained(model_id)
-            model = AutoModelForCausalLM.from_pretrained(model_id)
-            pipe = pipeline(
-                "text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                max_new_tokens=10,
-            )
-            hf = HuggingFacePipeline(pipeline=pipe)
-
+        model_id = "gpt2"
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(model_id)
+        pipe = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_new_tokens=10,
+        )
+        hf = HuggingFacePipeline(pipeline=pipe)
+        ```
     """
 
     pipeline: Any = None  #: :meta private:

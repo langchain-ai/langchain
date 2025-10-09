@@ -176,15 +176,14 @@ class StructuredTool(BaseTool):
             TypeError: If the `args_schema` is not a `BaseModel` or dict.
 
         Examples:
+            ```python
+            def add(a: int, b: int) -> int:
+                \"\"\"Add two numbers\"\"\"
+                return a + b
+            tool = StructuredTool.from_function(add)
+            tool.run(1, 2) # 3
 
-            .. code-block:: python
-
-                def add(a: int, b: int) -> int:
-                    \"\"\"Add two numbers\"\"\"
-                    return a + b
-                tool = StructuredTool.from_function(add)
-                tool.run(1, 2) # 3
-
+            ```
         """
         if func is not None:
             source_function = func

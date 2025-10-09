@@ -27,12 +27,11 @@ class AzureOpenAI(BaseOpenAI):
     in, even if not explicitly saved on this class.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_openai import AzureOpenAI
 
-            from langchain_openai import AzureOpenAI
-
-            openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
-
+        openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
+        ```
     """
 
     azure_endpoint: str | None = Field(

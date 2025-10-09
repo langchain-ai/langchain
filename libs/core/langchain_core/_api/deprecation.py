@@ -130,14 +130,11 @@ def deprecated(
     Returns:
         A decorator to mark a function or class as deprecated.
 
-    Examples:
-
-        .. code-block:: python
-
-            @deprecated("1.4.0")
-            def the_function_to_deprecate():
-                pass
-
+    ```python
+    @deprecated("1.4.0")
+    def the_function_to_deprecate():
+        pass
+    ```
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -550,12 +547,10 @@ def rename_parameter(
         A decorator indicating that a parameter was renamed.
 
     Example:
-
-        .. code-block:: python
-
-            @_api.rename_parameter("3.1", "bad_name", "good_name")
-            def func(good_name): ...
-
+        ```python
+        @_api.rename_parameter("3.1", "bad_name", "good_name")
+        def func(good_name): ...
+        ```
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

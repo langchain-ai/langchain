@@ -37,27 +37,24 @@ class EmbeddingsUnitTests(EmbeddingsTests):
     embeddings model to be tested. You can also override the
     `embedding_model_params` property to specify initialization parameters.
 
-    Example:
+    ```python
+    from typing import Type
 
-    .. code-block:: python
-
-        from typing import Type
-
-        from langchain_tests.unit_tests import EmbeddingsUnitTests
-        from my_package.embeddings import MyEmbeddingsModel
+    from langchain_tests.unit_tests import EmbeddingsUnitTests
+    from my_package.embeddings import MyEmbeddingsModel
 
 
-        class TestMyEmbeddingsModelUnit(EmbeddingsUnitTests):
-            @property
-            def embeddings_class(self) -> Type[MyEmbeddingsModel]:
-                # Return the embeddings model class to test here
-                return MyEmbeddingsModel
+    class TestMyEmbeddingsModelUnit(EmbeddingsUnitTests):
+        @property
+        def embeddings_class(self) -> Type[MyEmbeddingsModel]:
+            # Return the embeddings model class to test here
+            return MyEmbeddingsModel
 
-            @property
-            def embedding_model_params(self) -> dict:
-                # Return initialization parameters for the model.
-                return {"model": "model-001"}
-
+        @property
+        def embedding_model_params(self) -> dict:
+            # Return initialization parameters for the model.
+            return {"model": "model-001"}
+    ```
     !!! note
         API references for individual test methods include troubleshooting tips.
 
@@ -74,25 +71,22 @@ class EmbeddingsUnitTests(EmbeddingsTests):
 
             Defaults to empty dicts. If not overridden, the test is skipped.
 
-            Example:
-
-            .. code-block:: python
-
-                @property
-                def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-                    return (
-                        {
-                            "MY_API_KEY": "api_key",
-                        },
-                        {
-                            "model": "model-001",
-                        },
-                        {
-                            "my_api_key": "api_key",
-                        },
-                    )
-
-    """  # noqa: D214
+            ```python
+            @property
+            def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+                return (
+                    {
+                        "MY_API_KEY": "api_key",
+                    },
+                    {
+                        "model": "model-001",
+                    },
+                    {
+                        "my_api_key": "api_key",
+                    },
+                )
+            ```
+    """
 
     def test_init(self) -> None:
         """Test model initialization.

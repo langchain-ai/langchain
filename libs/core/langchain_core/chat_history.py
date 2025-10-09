@@ -1,18 +1,4 @@
-"""**Chat message history** stores a history of the message interactions in a chat.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseChatMessageHistory --> <name>ChatMessageHistory  # Examples: FileChatMessageHistory, PostgresChatMessageHistory
-
-**Main helpers:**
-
-.. code-block::
-
-    AIMessage, HumanMessage, BaseMessage
-
-"""  # noqa: E501
+"""**Chat message history** stores a history of the message interactions in a chat."""
 
 from __future__ import annotations
 
@@ -63,46 +49,45 @@ class BaseChatMessageHistory(ABC):
 
     Example: Shows a default implementation.
 
-        .. code-block:: python
+        ```python
+        import json
+        import os
+        from langchain_core.messages import messages_from_dict, message_to_dict
 
-            import json
-            import os
-            from langchain_core.messages import messages_from_dict, message_to_dict
 
+        class FileChatMessageHistory(BaseChatMessageHistory):
+            storage_path: str
+            session_id: str
 
-            class FileChatMessageHistory(BaseChatMessageHistory):
-                storage_path: str
-                session_id: str
+            @property
+            def messages(self) -> list[BaseMessage]:
+                try:
+                    with open(
+                        os.path.join(self.storage_path, self.session_id),
+                        "r",
+                        encoding="utf-8",
+                    ) as f:
+                        messages_data = json.load(f)
+                    return messages_from_dict(messages_data)
+                except FileNotFoundError:
+                    return []
 
-                @property
-                def messages(self) -> list[BaseMessage]:
-                    try:
-                        with open(
-                            os.path.join(self.storage_path, self.session_id),
-                            "r",
-                            encoding="utf-8",
-                        ) as f:
-                            messages_data = json.load(f)
-                        return messages_from_dict(messages_data)
-                    except FileNotFoundError:
-                        return []
+            def add_messages(self, messages: Sequence[BaseMessage]) -> None:
+                all_messages = list(self.messages)  # Existing messages
+                all_messages.extend(messages)  # Add new messages
 
-                def add_messages(self, messages: Sequence[BaseMessage]) -> None:
-                    all_messages = list(self.messages)  # Existing messages
-                    all_messages.extend(messages)  # Add new messages
+                serialized = [message_to_dict(message) for message in all_messages]
+                file_path = os.path.join(self.storage_path, self.session_id)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(serialized, f)
 
-                    serialized = [message_to_dict(message) for message in all_messages]
-                    file_path = os.path.join(self.storage_path, self.session_id)
-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump(serialized, f)
-
-                def clear(self) -> None:
-                    file_path = os.path.join(self.storage_path, self.session_id)
-                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        json.dump([], f)
-
+            def clear(self) -> None:
+                file_path = os.path.join(self.storage_path, self.session_id)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump([], f)
+        ```
     """
 
     messages: list[BaseMessage]

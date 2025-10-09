@@ -28,14 +28,14 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         instance and key. You can find the key in the Azure Portal,
         under the “Keys and Endpoint” section of your instance.
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langchain_openai
 
-            pip install -U langchain_openai
-
-            # Set up your environment variables (or pass them directly to the model)
-            export AZURE_OPENAI_API_KEY="your-api-key"
-            export AZURE_OPENAI_ENDPOINT="https://<your-endpoint>.openai.azure.com/"
-            export AZURE_OPENAI_API_VERSION="2024-02-01"
+        # Set up your environment variables (or pass them directly to the model)
+        export AZURE_OPENAI_API_KEY="your-api-key"
+        export AZURE_OPENAI_ENDPOINT="https://<your-endpoint>.openai.azure.com/"
+        export AZURE_OPENAI_API_VERSION="2024-02-01"
+        ```
 
     Key init args — completion params:
         model: str
@@ -45,61 +45,58 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             if the underlying model supports it.
 
     Key init args — client params:
-      api_key: SecretStr | None
+        api_key: SecretStr | None
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import AzureOpenAIEmbeddings
 
-            from langchain_openai import AzureOpenAIEmbeddings
-
-            embeddings = AzureOpenAIEmbeddings(
-                model="text-embedding-3-large"
-                # dimensions: int | None = None, # Can specify dimensions with new text-embedding-3 models
-                # azure_endpoint="https://<your-endpoint>.openai.azure.com/", If not provided, will read env variable AZURE_OPENAI_ENDPOINT
-                # api_key=... # Can provide an API key directly. If missing read env variable AZURE_OPENAI_API_KEY
-                # openai_api_version=..., # If not provided, will read env variable AZURE_OPENAI_API_VERSION
-            )
+        embeddings = AzureOpenAIEmbeddings(
+            model="text-embedding-3-large"
+            # dimensions: int | None = None, # Can specify dimensions with new text-embedding-3 models
+            # azure_endpoint="https://<your-endpoint>.openai.azure.com/", If not provided, will read env variable AZURE_OPENAI_ENDPOINT
+            # api_key=... # Can provide an API key directly. If missing read env variable AZURE_OPENAI_API_KEY
+            # openai_api_version=..., # If not provided, will read env variable AZURE_OPENAI_API_VERSION
+        )
+        ```
 
     Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
-
-             input_texts = ["Document 1...", "Document 2..."]
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        ```
             vectors = embed.embed_documents(input_texts)
             print(len(vectors))
             # The first 3 coordinates for the first vector
             print(vectors[0][:3])
 
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        vector = await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            vector = await embed.aembed_query(input_text)
-            print(vector[:3])
-
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """  # noqa: E501
 
     azure_endpoint: str | None = Field(

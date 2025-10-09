@@ -12,26 +12,24 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     embeddings model to be tested. You can also override the
     `embedding_model_params` property to specify initialization parameters.
 
-    Example:
+    ```python
+    from typing import Type
 
-    .. code-block:: python
-
-        from typing import Type
-
-        from langchain_tests.integration_tests import EmbeddingsIntegrationTests
-        from my_package.embeddings import MyEmbeddingsModel
+    from langchain_tests.integration_tests import EmbeddingsIntegrationTests
+    from my_package.embeddings import MyEmbeddingsModel
 
 
-        class TestMyEmbeddingsModelIntegration(EmbeddingsIntegrationTests):
-            @property
-            def embeddings_class(self) -> Type[MyEmbeddingsModel]:
-                # Return the embeddings model class to test here
-                return MyEmbeddingsModel
+    class TestMyEmbeddingsModelIntegration(EmbeddingsIntegrationTests):
+        @property
+        def embeddings_class(self) -> Type[MyEmbeddingsModel]:
+            # Return the embeddings model class to test here
+            return MyEmbeddingsModel
 
-            @property
-            def embedding_model_params(self) -> dict:
-                # Return initialization parameters for the model.
-                return {"model": "model-001"}
+        @property
+        def embedding_model_params(self) -> dict:
+            # Return initialization parameters for the model.
+            return {"model": "model-001"}
+    ```
 
     !!! note
         API references for individual test methods include troubleshooting tips.

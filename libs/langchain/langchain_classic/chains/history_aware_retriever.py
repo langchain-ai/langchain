@@ -30,23 +30,23 @@ def create_history_aware_retriever(
         The Runnable output is a list of Documents
 
     Example:
-        .. code-block:: python
+        ```python
+        # pip install -U langchain langchain-community
 
-            # pip install -U langchain langchain-community
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.chains import create_history_aware_retriever
+        from langchain_classic import hub
 
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.chains import create_history_aware_retriever
-            from langchain_classic import hub
+        rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
+        llm = ChatOpenAI()
+        retriever = ...
+        chat_retriever_chain = create_history_aware_retriever(
+            llm, retriever, rephrase_prompt
+        )
 
-            rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
-            llm = ChatOpenAI()
-            retriever = ...
-            chat_retriever_chain = create_history_aware_retriever(
-                llm, retriever, rephrase_prompt
-            )
+        chain.invoke({"input": "...", "chat_history": })
 
-            chain.invoke({"input": "...", "chat_history": })
-
+        ```
     """
     if "input" not in prompt.input_variables:
         msg = (

@@ -56,10 +56,10 @@ class BaseOpenAI(BaseLLM):
     Setup:
         Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model_name: str
@@ -107,62 +107,60 @@ class BaseOpenAI(BaseLLM):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai.llms.base import BaseOpenAI
 
-            from langchain_openai.llms.base import BaseOpenAI
-
-            llm = BaseOpenAI(
-                model_name="gpt-3.5-turbo-instruct",
-                temperature=0.7,
-                max_tokens=256,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0,
-                # openai_api_key="...",
-                # openai_api_base="...",
-                # openai_organization="...",
-                # other params...
-            )
+        llm = BaseOpenAI(
+            model_name="gpt-3.5-turbo-instruct",
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            # openai_api_key="...",
+            # openai_api_base="...",
+            # openai_organization="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        input_text = "The meaning of life is "
+        response = llm.invoke(input_text)
+        print(response)
+        ```
 
-            input_text = "The meaning of life is "
-            response = llm.invoke(input_text)
-            print(response)
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and
-            scholars for centuries."
+        ```txt
+        "a philosophical question that has been debated by thinkers and
+        scholars for centuries."
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(input_text):
-                print(chunk, end="")
-
-        .. code-block::
-
-            a philosophical question that has been debated by thinkers and
-            scholars for centuries.
+        ```python
+        for chunk in llm.stream(input_text):
+            print(chunk, end="")
+        ```
+        ```txt
+        a philosophical question that has been debated by thinkers and
+        scholars for centuries.
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        response = await llm.ainvoke(input_text)
 
-            response = await llm.ainvoke(input_text)
+        # stream:
+        # async for chunk in llm.astream(input_text):
+        #     print(chunk, end="")
 
-            # stream:
-            # async for chunk in llm.astream(input_text):
-            #     print(chunk, end="")
-
-            # batch:
-            # await llm.abatch([input_text])
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and
-            scholars for centuries."
+        # batch:
+        # await llm.abatch([input_text])
+        ```
+        ```
+        "a philosophical question that has been debated by thinkers and
+        scholars for centuries."
+        ```
 
     """
 
@@ -404,10 +402,9 @@ class BaseOpenAI(BaseLLM):
             The full LLM output.
 
         Example:
-            .. code-block:: python
-
-                response = openai.generate(["Tell me a joke."])
-
+            ```python
+            response = openai.generate(["Tell me a joke."])
+            ```
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -626,10 +623,9 @@ class BaseOpenAI(BaseLLM):
             The maximum context size
 
         Example:
-            .. code-block:: python
-
-                max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
-
+            ```python
+            max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+            ```
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -691,10 +687,9 @@ class BaseOpenAI(BaseLLM):
             The maximum number of tokens to generate for a prompt.
 
         Example:
-            .. code-block:: python
-
-                max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
-
+            ```python
+            max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+            ```
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -706,10 +701,10 @@ class OpenAI(BaseOpenAI):
     Setup:
         Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -741,64 +736,59 @@ class OpenAI(BaseOpenAI):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import OpenAI
 
-            from langchain_openai import OpenAI
-
-            llm = OpenAI(
-                model="gpt-3.5-turbo-instruct",
-                temperature=0,
-                max_retries=2,
-                # api_key="...",
-                # base_url="...",
-                # organization="...",
-                # other params...
-            )
+        llm = OpenAI(
+            model="gpt-3.5-turbo-instruct",
+            temperature=0,
+            max_retries=2,
+            # api_key="...",
+            # base_url="...",
+            # organization="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            input_text = "The meaning of life is "
-            llm.invoke(input_text)
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```python
+        input_text = "The meaning of life is "
+        llm.invoke(input_text)
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in llm.stream(input_text):
+            print(chunk, end="|")
+        ```
+        ```txt
+        a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
+        ```
 
-            for chunk in llm.stream(input_text):
-                print(chunk, end="|")
-
-        .. code-block::
-
-            a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
-
-        .. code-block:: python
-
-            "".join(llm.stream(input_text))
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```python
+        "".join(llm.stream(input_text))
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await llm.ainvoke(input_text)
 
-            await llm.ainvoke(input_text)
+        # stream:
+        # async for chunk in (await llm.astream(input_text)):
+        #    print(chunk)
 
-            # stream:
-            # async for chunk in (await llm.astream(input_text)):
-            #    print(chunk)
-
-            # batch:
-            # await llm.abatch([input_text])
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
-
+        # batch:
+        # await llm.abatch([input_text])
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
     """  # noqa: E501
 
     @classmethod

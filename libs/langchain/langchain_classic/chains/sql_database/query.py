@@ -69,18 +69,17 @@ def create_sql_query_chain(
         that question.
 
     Example:
+        ```python
+        # pip install -U langchain langchain-community langchain-openai
+        from langchain_openai import ChatOpenAI
+        from langchain_classic.chains import create_sql_query_chain
+        from langchain_community.utilities import SQLDatabase
 
-        .. code-block:: python
-
-            # pip install -U langchain langchain-community langchain-openai
-            from langchain_openai import ChatOpenAI
-            from langchain_classic.chains import create_sql_query_chain
-            from langchain_community.utilities import SQLDatabase
-
-            db = SQLDatabase.from_uri("sqlite:///Chinook.db")
-            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-            chain = create_sql_query_chain(llm, db)
-            response = chain.invoke({"question": "How many employees are there"})
+        db = SQLDatabase.from_uri("sqlite:///Chinook.db")
+        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        chain = create_sql_query_chain(llm, db)
+        response = chain.invoke({"question": "How many employees are there"})
+        ```
 
     Prompt:
         If no prompt is provided, a default prompt is selected based on the SQLDatabase
@@ -88,34 +87,33 @@ def create_sql_query_chain(
 
             * input: The user question plus suffix "\\nSQLQuery: " is passed here.
             * top_k: The number of results per select statement (the `k` argument to
-              this function) is passed in here.
+                this function) is passed in here.
             * table_info: Table definitions and sample rows are passed in here. If the
-              user specifies "table_names_to_use" when invoking chain, only those
-              will be included. Otherwise, all tables are included.
+                user specifies "table_names_to_use" when invoking chain, only those
+                will be included. Otherwise, all tables are included.
             * dialect (optional): If dialect input variable is in prompt, the db
-              dialect will be passed in here.
+                dialect will be passed in here.
 
         Here's an example prompt:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.prompts import PromptTemplate
+        template = '''Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
+        Use the following format:
 
-            template = '''Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
-            Use the following format:
+        Question: "Question here"
+        SQLQuery: "SQL Query to run"
+        SQLResult: "Result of the SQLQuery"
+        Answer: "Final answer here"
 
-            Question: "Question here"
-            SQLQuery: "SQL Query to run"
-            SQLResult: "Result of the SQLQuery"
-            Answer: "Final answer here"
+        Only use the following tables:
 
-            Only use the following tables:
+        {table_info}.
 
-            {table_info}.
-
-            Question: {input}'''
-            prompt = PromptTemplate.from_template(template)
-
+        Question: {input}'''
+        prompt = PromptTemplate.from_template(template)
+        ```
     """  # noqa: E501
     if prompt is not None:
         prompt_to_use = prompt

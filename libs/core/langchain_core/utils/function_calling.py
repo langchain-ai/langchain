@@ -672,43 +672,39 @@ def tool_example_to_messages(
         A list of messages
 
     Examples:
-
-        .. code-block:: python
-
-            from typing import Optional
-            from pydantic import BaseModel, Field
-            from langchain_openai import ChatOpenAI
+        ```python
+        from typing import Optional
+        from pydantic import BaseModel, Field
+        from langchain_openai import ChatOpenAI
 
 
-            class Person(BaseModel):
-                '''Information about a person.'''
+        class Person(BaseModel):
+            '''Information about a person.'''
 
-                name: str | None = Field(..., description="The name of the person")
-                hair_color: str | None = Field(
-                    ..., description="The color of the person's hair if known"
-                )
-                height_in_meters: str | None = Field(
-                    ..., description="Height in METERS"
-                )
+            name: str | None = Field(..., description="The name of the person")
+            hair_color: str | None = Field(
+                ..., description="The color of the person's hair if known"
+            )
+            height_in_meters: str | None = Field(..., description="Height in METERS")
 
 
-            examples = [
-                (
-                    "The ocean is vast and blue. It's more than 20,000 feet deep.",
-                    Person(name=None, height_in_meters=None, hair_color=None),
-                ),
-                (
-                    "Fiona traveled far from France to Spain.",
-                    Person(name="Fiona", height_in_meters=None, hair_color=None),
-                ),
-            ]
+        examples = [
+            (
+                "The ocean is vast and blue. It's more than 20,000 feet deep.",
+                Person(name=None, height_in_meters=None, hair_color=None),
+            ),
+            (
+                "Fiona traveled far from France to Spain.",
+                Person(name="Fiona", height_in_meters=None, hair_color=None),
+            ),
+        ]
 
 
-            messages = []
+        messages = []
 
-            for txt, tool_call in examples:
-                messages.extend(tool_example_to_messages(txt, [tool_call]))
-
+        for txt, tool_call in examples:
+            messages.extend(tool_example_to_messages(txt, [tool_call]))
+        ```
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = [
