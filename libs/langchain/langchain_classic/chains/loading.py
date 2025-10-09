@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from langchain_core._api import deprecated
 from langchain_core.prompts.loading import (
     _load_output_parser,
     load_prompt,
@@ -672,49 +671,6 @@ type_to_loader_dict = {
     "retrieval_qa_with_sources_chain": _load_retrieval_qa_with_sources_chain,
     "graph_cypher_chain": _load_graph_cypher_chain,
 }
-
-
-@deprecated(
-    since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in langchain 1.0. "
-        "At that point chains must be imported from their respective modules."
-    ),
-    removal="1.0",
-)
-def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
-    """Load chain from Config Dict."""
-    if "_type" not in config:
-        msg = "Must specify a chain Type in config"
-        raise ValueError(msg)
-    config_type = config.pop("_type")
-
-    if config_type not in type_to_loader_dict:
-        msg = f"Loading {config_type} chain not supported"
-        raise ValueError(msg)
-
-    chain_loader = type_to_loader_dict[config_type]
-    return chain_loader(config, **kwargs)
-
-
-@deprecated(
-    since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in langchain 1.0. "
-        "At that point chains must be imported from their respective modules."
-    ),
-    removal="1.0",
-)
-def load_chain(path: str | Path, **kwargs: Any) -> Chain:
-    """Unified method for loading a chain from LangChainHub or local fs."""
-    if isinstance(path, str) and path.startswith("lc://"):
-        msg = (
-            "Loading from the deprecated github-based Hub is no longer supported. "
-            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
-            "instead."
-        )
-        raise RuntimeError(msg)
-    return _load_chain_from_file(path, **kwargs)
 
 
 def _load_chain_from_file(file: str | Path, **kwargs: Any) -> Chain:
