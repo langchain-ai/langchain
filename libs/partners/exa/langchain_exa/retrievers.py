@@ -1,6 +1,8 @@
+"""Retriever using Exa Search API."""
+
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -39,39 +41,37 @@ class ExaSearchRetriever(BaseRetriever):
 
     k: int = 10  # num_results
     """The number of search results to return (1 to 100)."""
-    include_domains: Optional[list[str]] = None
+    include_domains: list[str] | None = None
     """A list of domains to include in the search."""
-    exclude_domains: Optional[list[str]] = None
+    exclude_domains: list[str] | None = None
     """A list of domains to exclude from the search."""
-    start_crawl_date: Optional[str] = None
+    start_crawl_date: str | None = None
     """The start date for the crawl (in YYYY-MM-DD format)."""
-    end_crawl_date: Optional[str] = None
+    end_crawl_date: str | None = None
     """The end date for the crawl (in YYYY-MM-DD format)."""
-    start_published_date: Optional[str] = None
+    start_published_date: str | None = None
     """The start date for when the document was published (in YYYY-MM-DD format)."""
-    end_published_date: Optional[str] = None
+    end_published_date: str | None = None
     """The end date for when the document was published (in YYYY-MM-DD format)."""
-    use_autoprompt: Optional[bool] = None
+    use_autoprompt: bool | None = None
     """Whether to use autoprompt for the search."""
     type: str = "neural"
     """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
-    highlights: Optional[Union[HighlightsContentsOptions, bool]] = None
+    highlights: HighlightsContentsOptions | bool | None = None
     """Whether to set the page content to the highlights of the results."""
-    text_contents_options: Union[TextContentsOptions, dict[str, Any], Literal[True]] = (
-        True
-    )
+    text_contents_options: TextContentsOptions | dict[str, Any] | Literal[True] = True
     """How to set the page content of the results. Can be True or a dict with options
     like max_characters."""
-    livecrawl: Optional[Literal["always", "fallback", "never"]] = None
+    livecrawl: Literal["always", "fallback", "never"] | None = None
     """Option to crawl live webpages if content is not in the index. Options: "always",
     "fallback", "never"."""
-    summary: Optional[Union[bool, dict[str, str]]] = None
+    summary: bool | dict[str, str] | None = None
     """Whether to include a summary of the content. Can be a boolean or a dict with a
     custom query."""
 
     client: Exa = Field(default=None)
     exa_api_key: SecretStr = Field(default=None)
-    exa_base_url: Optional[str] = None
+    exa_base_url: str | None = None
 
     @model_validator(mode="before")
     @classmethod

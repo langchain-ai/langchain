@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -103,22 +103,23 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         self,
         query: str,
         num_results: int = 10,
-        text_contents_options: Optional[  # noqa: FBT001
-            Union[TextContentsOptions, dict[str, Any], bool]
-        ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
-        include_domains: Optional[list[str]] = None,
-        exclude_domains: Optional[list[str]] = None,
-        start_crawl_date: Optional[str] = None,
-        end_crawl_date: Optional[str] = None,
-        start_published_date: Optional[str] = None,
-        end_published_date: Optional[str] = None,
-        use_autoprompt: Optional[bool] = None,  # noqa: FBT001
-        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
-        type: Optional[Literal["neural", "keyword", "auto"]] = None,  # noqa: A002
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[list[dict], str]:
+        text_contents_options: TextContentsOptions  # noqa: FBT001
+        | dict[str, Any]
+        | bool
+        | None = None,
+        highlights: HighlightsContentsOptions | bool | None = None,  # noqa: FBT001
+        include_domains: list[str] | None = None,
+        exclude_domains: list[str] | None = None,
+        start_crawl_date: str | None = None,
+        end_crawl_date: str | None = None,
+        start_published_date: str | None = None,
+        end_published_date: str | None = None,
+        use_autoprompt: bool | None = None,  # noqa: FBT001
+        livecrawl: Literal["always", "fallback", "never"] | None = None,
+        summary: bool | dict[str, str] | None = None,  # noqa: FBT001
+        type: Literal["neural", "keyword", "auto"] | None = None,  # noqa: A002
+        run_manager: CallbackManagerForToolRun | None = None,
+    ) -> list[dict] | str:
         # TODO: rename `type` to something else, as it is a reserved keyword
         """Use the tool.
 
@@ -172,7 +173,7 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     )
     client: Exa = Field(default=None)
     exa_api_key: SecretStr = Field(default=None)
-    exa_base_url: Optional[str] = None
+    exa_base_url: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -184,22 +185,23 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         self,
         url: str,
         num_results: int = 10,
-        text_contents_options: Optional[  # noqa: FBT001
-            Union[TextContentsOptions, dict[str, Any], bool]
-        ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
-        include_domains: Optional[list[str]] = None,
-        exclude_domains: Optional[list[str]] = None,
-        start_crawl_date: Optional[str] = None,
-        end_crawl_date: Optional[str] = None,
-        start_published_date: Optional[str] = None,
-        end_published_date: Optional[str] = None,
-        exclude_source_domain: Optional[bool] = None,  # noqa: FBT001
-        category: Optional[str] = None,
-        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[list[dict], str]:
+        text_contents_options: TextContentsOptions  # noqa: FBT001
+        | dict[str, Any]
+        | bool
+        | None = None,
+        highlights: HighlightsContentsOptions | bool | None = None,  # noqa: FBT001
+        include_domains: list[str] | None = None,
+        exclude_domains: list[str] | None = None,
+        start_crawl_date: str | None = None,
+        end_crawl_date: str | None = None,
+        start_published_date: str | None = None,
+        end_published_date: str | None = None,
+        exclude_source_domain: bool | None = None,  # noqa: FBT001
+        category: str | None = None,
+        livecrawl: Literal["always", "fallback", "never"] | None = None,
+        summary: bool | dict[str, str] | None = None,  # noqa: FBT001
+        run_manager: CallbackManagerForToolRun | None = None,
+    ) -> list[dict] | str:
         """Use the tool.
 
         Args:
