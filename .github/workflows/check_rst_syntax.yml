@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   check-rst-syntax:
-    name: "Check for RST Syntax"
+    name: "Scan diff"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
