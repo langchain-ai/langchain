@@ -909,12 +909,12 @@ def create_agent(  # noqa: PLR0915
                 if len(structured_tool_calls) > 1:
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]
-                    exception = MultipleStructuredOutputsError(tool_names)
+                    multiple_outputs_error = MultipleStructuredOutputsError(tool_names)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        multiple_outputs_error, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise multiple_outputs_error
 
                     # Add error messages and retry
                     tool_messages = [
@@ -951,12 +951,12 @@ def create_agent(  # noqa: PLR0915
                         structured_response=structured_response,
                     )
                 except Exception as exc:  # noqa: BLE001
-                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    validation_error = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        validation_error, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise validation_error
 
                     return ModelResponse(
                         result=[
@@ -1061,12 +1061,12 @@ def create_agent(  # noqa: PLR0915
                 if len(structured_tool_calls) > 1:
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]
-                    exception = MultipleStructuredOutputsError(tool_names)
+                    multiple_outputs_error = MultipleStructuredOutputsError(tool_names)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        multiple_outputs_error, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise multiple_outputs_error
 
                     # Add error messages and retry
                     tool_messages = [
@@ -1103,12 +1103,12 @@ def create_agent(  # noqa: PLR0915
                         structured_response=structured_response,
                     )
                 except Exception as exc:  # noqa: BLE001
-                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    validation_error = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
+                        validation_error, effective_response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise validation_error
 
                     return ModelResponse(
                         result=[
