@@ -47,7 +47,7 @@ class FileCallbackHandler(BaseCallbackHandler):
     Args:
         filename: The file path to write to.
         mode: The file open mode. Defaults to `'a'` (append).
-        color: Default color for text output. Defaults to `None`.
+        color: Default color for text output.
 
     !!! note
         When not used as a context manager, a deprecation warning will be issued
@@ -64,7 +64,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             filename: Path to the output file.
             mode: File open mode (e.g., `'w'`, `'a'`, `'x'`). Defaults to `'a'`.
-            color: Default text color for output. Defaults to `None`.
+            color: Default text color for output.
 
         """
         self.filename = filename

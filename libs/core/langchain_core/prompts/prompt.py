@@ -281,7 +281,7 @@ class PromptTemplate(StringPromptTemplate):
                                fill in the template. For example, if the template is
                               `"{variable1} {variable2}"`, and `partial_variables` is
                               `{"variable1": "foo"}`, then the final prompt will be
-                              `"foo {variable2}"`. Defaults to `None`.
+                              `"foo {variable2}"`.
             **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:

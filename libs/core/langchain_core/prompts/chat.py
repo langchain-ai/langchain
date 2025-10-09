@@ -135,7 +135,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
 
     n_messages: PositiveInt | None = None
     """Maximum number of messages to include. If `None`, then will include all.
-    Defaults to `None`."""
+    """
 
     def __init__(
         self, variable_name: str, *, optional: bool = False, **kwargs: Any
@@ -241,7 +241,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
                 `"{variable1} {variable2}"`, and `partial_variables` is
                 `{"variable1": "foo"}`, then the final prompt will be
                 `"foo {variable2}"`.
-                Defaults to `None`.
+
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -414,7 +414,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             template_format: format of the template.
                 Options are: 'f-string', 'mustache', 'jinja2'. Defaults to "f-string".
             partial_variables: A dictionary of variables that can be used too partially.
-                Defaults to `None`.
+
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:

@@ -665,7 +665,7 @@ def tool_example_to_messages(
         tool_calls: Tool calls represented as Pydantic BaseModels
         tool_outputs: Tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
-            will be inserted. Defaults to `None`.
+            will be inserted.
         ai_response: If provided, content for a final `AIMessage`.
 
     Returns:

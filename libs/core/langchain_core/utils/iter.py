@@ -139,7 +139,7 @@ class Tee(Generic[T]):
             iterable: The iterable to split.
             n: The number of iterators to create. Defaults to 2.
             lock: The lock to synchronise access to the shared buffers.
-                Defaults to `None`.
+
         """
         self._iterator = iter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]

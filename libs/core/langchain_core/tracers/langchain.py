@@ -134,10 +134,10 @@ class LangChainTracer(BaseTracer):
             serialized: The serialized model.
             messages: The messages.
             run_id: The run ID.
-            tags: The tags. Defaults to `None`.
-            parent_run_id: The parent run ID. Defaults to `None`.
-            metadata: The metadata. Defaults to `None`.
-            name: The name. Defaults to `None`.
+            tags: The tags.
+            parent_run_id: The parent run ID.
+            metadata: The metadata.
+            name: The name.
             **kwargs: Additional keyword arguments.
 
         Returns:

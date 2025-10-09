@@ -48,9 +48,9 @@ def tracing_v2_enabled(
 
     Args:
         project_name: The name of the project. Defaults to `'default'`.
-        example_id: The ID of the example. Defaults to `None`.
-        tags: The tags to add to the run. Defaults to `None`.
-        client: The client of the langsmith. Defaults to `None`.
+        example_id: The ID of the example.
+        tags: The tags to add to the run.
+        client: The client of the langsmith.
 
     Yields:
         The LangChain tracer.
