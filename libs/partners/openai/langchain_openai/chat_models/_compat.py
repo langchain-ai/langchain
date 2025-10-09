@@ -187,14 +187,18 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
                 new_ann["title"] = annotation["title"]
             new_ann["type"] = "url_citation"
             new_ann["url"] = annotation["url"]
+
+            if extra_fields := annotation.get("extras"):
+                new_ann.update(dict(extra_fields.items()))
         else:
             # Document citation
             new_ann["type"] = "file_citation"
+
+            if extra_fields := annotation.get("extras"):
+                new_ann.update(dict(extra_fields.items()))
+
             if "title" in annotation:
                 new_ann["filename"] = annotation["title"]
-
-        if extra_fields := annotation.get("extras"):
-            new_ann.update(dict(extra_fields.items()))
 
         return new_ann
 
