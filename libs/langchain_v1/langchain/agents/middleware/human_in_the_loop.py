@@ -202,14 +202,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             description = f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
 
         # Create ReviewConfig
-        review_config = ReviewConfig(
+        # eventually can get tool information and populate arguments_schema from there
+        return ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
             description=description,
         )
-        # eventually can get tool information and populate arguments_schema from there
-
-        return review_config
 
     def _process_decision(
         self,
