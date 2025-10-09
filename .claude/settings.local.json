@@ -10,7 +10,11 @@
       "Bash(python3:*)",
       "WebFetch(domain:github.com)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr diff:*)"
+      "Bash(gh pr diff:*)",
+      "WebFetch(domain:langchain-ai.github.io)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:kirshatrov.com)",
+      "WebFetch(domain:aiengineerguide.com)"
     ],
     "deny": [],
     "ask": []
