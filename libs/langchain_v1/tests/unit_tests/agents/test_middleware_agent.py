@@ -115,7 +115,7 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -129,7 +129,7 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -257,7 +257,7 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -272,7 +272,7 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopEight.before_model")
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -358,7 +358,7 @@ def test_create_agent_jump(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -375,7 +375,7 @@ def test_create_agent_jump(
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -1047,7 +1047,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response", **req.model_settings)
 
-    result = middleware.on_model_call(fake_request, mock_handler)
+    result = middleware.wrap_model_call(fake_request, mock_handler)
     # Check that model_settings were passed through via the request
     assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
 
@@ -1077,7 +1077,7 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         ValueError,
         match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
     ):
-        middleware.on_model_call(fake_request, mock_handler)
+        middleware.wrap_model_call(fake_request, mock_handler)
 
     langchain_anthropic = ModuleType("langchain_anthropic")
 
@@ -1091,12 +1091,12 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
             ValueError,
             match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
         ):
-            middleware.on_model_call(fake_request, mock_handler)
+            middleware.wrap_model_call(fake_request, mock_handler)
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
 
     with warnings.catch_warnings(record=True) as w:
-        result = middleware.on_model_call(fake_request, mock_handler)
+        result = middleware.wrap_model_call(fake_request, mock_handler)
         assert len(w) == 1
         assert (
             "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
@@ -1106,7 +1106,7 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     with warnings.catch_warnings(record=True) as w:
         with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.on_model_call(fake_request, mock_handler)
+            result = middleware.wrap_model_call(fake_request, mock_handler)
             assert isinstance(result, AIMessage)
             assert len(w) == 1
             assert (
@@ -1116,11 +1116,11 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
-    result = middleware.on_model_call(fake_request, mock_handler)
+    result = middleware.wrap_model_call(fake_request, mock_handler)
     assert isinstance(result, AIMessage)
 
     with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.on_model_call(fake_request, mock_handler)
+        result = middleware.wrap_model_call(fake_request, mock_handler)
         assert isinstance(result, AIMessage)
 
 
@@ -1343,7 +1343,7 @@ def test_summarization_middleware_full_workflow() -> None:
 
 def test_on_model_call() -> None:
     class ModifyMiddleware(AgentMiddleware):
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -1479,7 +1479,7 @@ def test_runtime_injected_into_middleware() -> None:
             assert runtime is not None
             return None
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -1575,7 +1575,7 @@ def test_planning_middleware_initialization() -> None:
     ],
 )
 def test_planning_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
-    """Test that on_model_call handles system prompts correctly."""
+    """Test that wrap_model_call handles system prompts correctly."""
     middleware = PlanningMiddleware()
     model = FakeToolCallingModel()
 
@@ -1596,8 +1596,8 @@ def test_planning_middleware_on_model_call(original_prompt, expected_prompt_pref
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call to trigger the middleware logic
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
     assert request.system_prompt.startswith(expected_prompt_prefix)
 
@@ -1728,8 +1728,8 @@ def test_planning_middleware_custom_system_prompt() -> None:
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call to trigger the middleware logic
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
     assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
 
@@ -1772,8 +1772,8 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
 
-    # Call on_model_call to trigger the middleware logic
-    middleware.on_model_call(request, mock_handler)
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
     # Check that the request was modified in place
     assert request.system_prompt == custom_system_prompt
 
@@ -2044,7 +2044,7 @@ async def test_create_agent_async_invoke() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
@@ -2105,7 +2105,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
@@ -2120,7 +2120,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.abefore_model")
 
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
@@ -2193,7 +2193,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         def before_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.before_model")
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -2208,7 +2208,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
@@ -2229,7 +2229,7 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     # In async mode, both sync and async middleware should work
-    # Note: Sync on_model_call is not called when running in async mode,
+    # Note: Sync wrap_model_call is not called when running in async mode,
     # as the async version is preferred
     assert calls == [
         "SyncMiddleware.before_model",
@@ -2615,7 +2615,7 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
     """Test that sync invoke with only async middleware works via run_in_executor."""
 
     class AsyncOnlyMiddleware(AgentMiddleware):
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
@@ -2646,7 +2646,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("MixedMiddleware.abefore_model")
 
-        def on_model_call(
+        def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
@@ -2654,7 +2654,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
             calls.append("MixedMiddleware.on_model_call")
             return handler(request)
 
-        async def aon_model_call(
+        async def awrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
