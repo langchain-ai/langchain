@@ -22,7 +22,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
     r"""Exa Search tool.
 
     Setup:
-        Install ``langchain-exa`` and set environment variable ``EXA_API_KEY``.
+        Install `langchain-exa` and set environment variable `EXA_API_KEY`.
 
         .. code-block:: bash
 

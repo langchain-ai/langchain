@@ -47,8 +47,8 @@ def sync_call_fallback(method: Callable) -> Callable:
         except NotImplementedError:
             # If the async method is not implemented, call the synchronous method
             # by removing the first letter from the method name. For example,
-            # if the async method is called ``aadd_texts``, the synchronous method
-            # will be called ``aad_texts``.
+            # if the async method is called `aadd_texts`, the synchronous method
+            # will be called `aad_texts`.
             return await run_in_executor(
                 None, getattr(self, method.__name__[1:]), *args, **kwargs
             )
@@ -163,7 +163,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: ``64``
+                Default: `64`
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -200,7 +200,7 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: ``64``
+                Default: `64`
             **kwargs: Additional keyword arguments.
 
         Returns:

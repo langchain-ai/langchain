@@ -616,7 +616,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             denylist_tags: These tags will be removed from the HTML.
             preserve_parent_metadata: Whether to pass through parent document
                 metadata to split documents when calling
-                ``transform_documents/atransform_documents()``.
+                `transform_documents/atransform_documents()`.
             keep_separator: Whether separators
                 should be at the beginning of a chunk, at the end, or not at all.
         """

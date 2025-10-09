@@ -276,7 +276,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "base"]``
+            `["langchain", "prompts", "base"]`
         """
         return ["langchain", "prompts", "base"]
 

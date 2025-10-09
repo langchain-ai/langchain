@@ -389,7 +389,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     max_tokens_limit: int | None = None
     """If set, enforces that the documents returned are less than this limit.
 
-    This is only enforced if ``combine_docs_chain`` is of type StuffDocumentsChain.
+    This is only enforced if `combine_docs_chain` is of type StuffDocumentsChain.
     """
 
     def _reduce_tokens_below_limit(self, docs: list[Document]) -> list[Document]:

@@ -71,7 +71,7 @@ class PromptTemplate(StringPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "prompt"]``
+            `["langchain", "prompts", "prompt"]`
         """
         return ["langchain", "prompts", "prompt"]
 
@@ -144,10 +144,10 @@ class PromptTemplate(StringPromptTemplate):
         Raises:
             ValueError: If the template formats are not f-string or if there are
                 conflicting partial variables.
-            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+            NotImplementedError: If the other object is not a `PromptTemplate` or str.
 
         Returns:
-            A new ``PromptTemplate`` that is the combination of the two.
+            A new `PromptTemplate` that is the combination of the two.
         """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):

@@ -438,12 +438,12 @@ def create_agent(  # noqa: PLR0915
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
-    For more details on using ``create_agent``,
+    For more details on using `create_agent`,
     visit [Agents](https://docs.langchain.com/oss/python/langchain/agents) documentation.
 
     Args:
         model: The language model for the agent. Can be a string identifier
-            (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
+            (e.g., `"openai:gpt-4"`), a chat model instance (e.g., `ChatOpenAI()`).
         tools: A list of tools, dicts, or callables. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
@@ -753,7 +753,7 @@ def create_agent(  # noqa: PLR0915
             request: The model request containing model, tools, and response format.
 
         Returns:
-            Tuple of (bound_model, effective_response_format) where ``effective_response_format``
+            Tuple of (bound_model, effective_response_format) where `effective_response_format`
             is the actual strategy used (may differ from initial if auto-detected).
         """
         # Validate ONLY client-side tools that need to exist in tool_node

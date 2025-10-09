@@ -86,7 +86,7 @@ def create_tool_calling_agent(
     Prompt:
 
         The agent prompt must have an `agent_scratchpad` key that is a
-            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
     """

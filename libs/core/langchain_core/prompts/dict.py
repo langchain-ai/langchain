@@ -77,7 +77,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain_core", "prompts", "dict"]``
+            `["langchain_core", "prompts", "dict"]`
         """
         return ["langchain_core", "prompts", "dict"]
 

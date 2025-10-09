@@ -180,8 +180,8 @@ class ContextEditingMiddleware(AgentMiddleware):
     """Middleware that automatically prunes tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count
-    exceeds configured thresholds. Currently the ``ClearToolUsesEdit`` strategy is
-    supported, aligning with Anthropic's ``clear_tool_uses_20250919`` behaviour.
+    exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is
+    supported, aligning with Anthropic's `clear_tool_uses_20250919` behaviour.
     """
 
     edits: list[ContextEdit]

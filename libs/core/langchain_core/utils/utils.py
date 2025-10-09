@@ -501,7 +501,7 @@ Used for:
 def ensure_id(id_val: str | None) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    Auto-generated UUIDs are prefixed by `'lc_'` to indicate they are
     LangChain-generated IDs.
 
     Args:

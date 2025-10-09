@@ -473,7 +473,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         For both chat models and non-chat models (legacy LLMs).
 
         Raises:
-            ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.
+            ValueError: If the run type is not `'llm'` or `'chat_model'`.
         """
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info.get("inputs")

@@ -15,8 +15,8 @@ VALID_TASKS = ("feature-extraction",)
 class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
-    To use, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
+    To use, you should have the `huggingface_hub` python package installed, and the
+    environment variable `HUGGINGFACEHUB_API_TOKEN` set with your API token, or pass
     it as a named parameter to the constructor.
 
     Example:
@@ -39,7 +39,7 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """Model name to use."""
     provider: str | None = None
     """Name of the provider to use for inference with the model specified in
-        ``repo_id``. e.g. "sambanova". if not specified, defaults to HF Inference API.
+        `repo_id`. e.g. "sambanova". if not specified, defaults to HF Inference API.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
     repo_id: str | None = None
     """Huggingfacehub repository id, for backward compatibility."""

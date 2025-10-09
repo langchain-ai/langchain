@@ -21,7 +21,7 @@ class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
 
     To use, you should have the `openai` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    environment variable `OPENAI_API_KEY` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
@@ -40,9 +40,9 @@ class AzureOpenAI(BaseOpenAI):
     )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
+        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
 
-        Example: ``'https://example-resource.azure.openai.com/'``
+        Example: `'https://example-resource.azure.openai.com/'`
     """
     deployment_name: str | None = Field(default=None, alias="azure_deployment")
     """A model deployment.
@@ -57,7 +57,7 @@ class AzureOpenAI(BaseOpenAI):
         alias="api_version",
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
-    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided."""
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
@@ -72,7 +72,7 @@ class AzureOpenAI(BaseOpenAI):
     )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
+        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
         `For more, see this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>.`__
     """
@@ -80,7 +80,7 @@ class AzureOpenAI(BaseOpenAI):
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
-        will be invoked if ``azure_ad_async_token_provider`` is not provided.
+        will be invoked if `azure_ad_async_token_provider` is not provided.
     """
     azure_ad_async_token_provider: Callable[[], Awaitable[str]] | None = None
     """A function that returns an Azure Active Directory token.
@@ -90,7 +90,7 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: str | None = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
-    """Legacy, for ``openai<1.0.0`` support."""
+    """Legacy, for `openai<1.0.0` support."""
     validate_base_url: bool = True
     """For backwards compatibility. If legacy val openai_api_base is passed in, try to
         infer if it is a base_url or azure_endpoint and update accordingly.

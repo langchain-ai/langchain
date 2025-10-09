@@ -10,8 +10,8 @@ class FireworksEmbeddings(BaseModel, Embeddings):
 
     Setup:
 
-        Install ``langchain_fireworks`` and set environment variable
-        ``FIREWORKS_API_KEY``.
+        Install `langchain_fireworks` and set environment variable
+        `FIREWORKS_API_KEY`.
 
         .. code-block:: bash
 
@@ -78,7 +78,7 @@ class FireworksEmbeddings(BaseModel, Embeddings):
     )
     """Fireworks API key.
 
-    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
     """
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 

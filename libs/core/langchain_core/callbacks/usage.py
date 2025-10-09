@@ -96,11 +96,11 @@ def get_usage_metadata_callback(
     """Get usage metadata callback.
 
     Get context manager for tracking usage metadata across chat model calls using
-    ``AIMessage.usage_metadata``.
+    `AIMessage.usage_metadata`.
 
     Args:
         name (str): The name of the context variable. Defaults to
-            ``'usage_metadata_callback'``.
+            `'usage_metadata_callback'`.
 
     Yields:
         The usage metadata callback.

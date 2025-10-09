@@ -193,7 +193,7 @@ class AIMessage(BaseMessage):
     ) -> None:
         """Initialize `AIMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
             content: The content of the message.
@@ -335,7 +335,7 @@ class AIMessage(BaseMessage):
 
         Args:
             html: Whether to return an HTML-formatted string.
-                 Defaults to `False`.
+                Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -380,7 +380,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization).
 
-    Defaults to ``AIMessageChunk``.
+    Defaults to `AIMessageChunk`.
 
     """
 
@@ -390,8 +390,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     chunk_position: Literal["last"] | None = None
     """Optional span represented by an aggregated AIMessageChunk.
 
-    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
-    ``tool_call_chunks`` in message content will be parsed into `tool_calls`.
+    If a chunk with `chunk_position="last"` is aggregated into a stream,
+    `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
 
     @property
@@ -596,14 +596,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple ``AIMessageChunk``s together.
+    """Add multiple `AIMessageChunk`s together.
 
     Args:
-        left: The first ``AIMessageChunk``.
-        *others: Other ``AIMessageChunk``s to add.
+        left: The first `AIMessageChunk`.
+        *others: Other `AIMessageChunk`s to add.
 
     Returns:
-        The resulting ``AIMessageChunk``.
+        The resulting `AIMessageChunk`.
 
     """
     content = merge_content(left.content, *(o.content for o in others))
@@ -713,11 +713,11 @@ def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageM
             )
 
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The sum of the two ``UsageMetadata`` objects.
+        The sum of the two `UsageMetadata` objects.
 
     """
     if not (left or right):
@@ -740,9 +740,9 @@ def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageM
 def subtract_usage(
     left: UsageMetadata | None, right: UsageMetadata | None
 ) -> UsageMetadata:
-    """Recursively subtract two ``UsageMetadata`` objects.
+    """Recursively subtract two `UsageMetadata` objects.
 
-    Token counts cannot be negative so the actual operation is ``max(left - right, 0)``.
+    Token counts cannot be negative so the actual operation is `max(left - right, 0)`.
 
     Example:
         .. code-block:: python
@@ -777,11 +777,11 @@ def subtract_usage(
             )
 
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The resulting ``UsageMetadata`` after subtraction.
+        The resulting `UsageMetadata` after subtraction.
 
     """
     if not (left or right):

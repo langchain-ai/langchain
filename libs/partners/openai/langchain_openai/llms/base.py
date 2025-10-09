@@ -54,7 +54,7 @@ class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class.
 
     Setup:
-        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
         .. code-block:: bash
 
@@ -90,13 +90,13 @@ class BaseOpenAI(BaseLLM):
     Key init args — client params:
         openai_api_key: SecretStr | None
             OpenAI API key. If not passed in will be read from env var
-            ``OPENAI_API_KEY``.
+            `OPENAI_API_KEY`.
         openai_api_base: str | None
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
         openai_organization: str | None
             OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+            var `OPENAI_ORG_ID`.
         request_timeout: Union[float, tuple[float, float], Any, None]
             Timeout for requests to OpenAI completion API.
         max_retries: int
@@ -191,7 +191,7 @@ class BaseOpenAI(BaseLLM):
     openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
@@ -203,7 +203,7 @@ class BaseOpenAI(BaseLLM):
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
@@ -213,7 +213,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
+    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     None."""
     logit_bias: dict[str, float] | None = None
     """Adjust the probability of specific tokens being generated."""
@@ -245,13 +245,13 @@ class BaseOpenAI(BaseLLM):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
-        ``http_async_client`` as well if you'd like a custom client for async
+    """Optional `httpx.Client`. Only used for sync invocations. Must specify
+        `http_async_client` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Any | None = None
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
+        `http_client` as well if you'd like a custom client for sync invocations."""
     extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
@@ -704,7 +704,7 @@ class OpenAI(BaseOpenAI):
     """OpenAI completion model integration.
 
     Setup:
-        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
         .. code-block:: bash
 
@@ -722,7 +722,7 @@ class OpenAI(BaseOpenAI):
             Whether to return logprobs.
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
-            streaming (``{"include_usage": True}``).
+            streaming (`{"include_usage": True}`).
 
     Key init args — client params:
         timeout: Union[float, Tuple[float, float], Any, None]
@@ -730,13 +730,13 @@ class OpenAI(BaseOpenAI):
         max_retries: int
             Max number of retries.
         api_key: str | None
-            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
+            OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
         base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: str | None
             OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+            var `OPENAI_ORG_ID`.
 
     See full list of supported init args and their descriptions in the params section.
 

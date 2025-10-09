@@ -39,7 +39,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         to create your Azure OpenAI deployment.
 
         Then install `langchain-openai` and set environment variables
-        ``AZURE_OPENAI_API_KEY`` and ``AZURE_OPENAI_ENDPOINT``:
+        `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_ENDPOINT`:
 
         .. code-block:: bash
 
@@ -68,13 +68,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             Max number of retries.
         organization: str | None
             OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+            var `OPENAI_ORG_ID`.
         model: str | None
             The name of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g. ``'gpt-4'``, ``'gpt-35-turbo'``, etc.
+            counting. Does not affect completion. E.g. `'gpt-4'`, `'gpt-35-turbo'`, etc.
         model_version: str | None
             The version of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g., ``'0125'``, ``'0125-preview'``, etc.
+            counting. Does not affect completion. E.g., `'0125'`, `'0125-preview'`, etc.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -98,7 +98,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     !!! note
         Any param which is not explicitly supported will be passed directly to the
-        ``openai.AzureOpenAI.chat.completions.create(...)`` API every time to the model is
+        `openai.AzureOpenAI.chat.completions.create(...)` API every time to the model is
         invoked.
 
         For example:
@@ -314,7 +314,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 rating=None,
             )
 
-        See ``AzureChatOpenAI.with_structured_output()`` for more.
+        See `AzureChatOpenAI.with_structured_output()` for more.
 
     JSON mode:
         .. code-block:: python
@@ -467,14 +467,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
     )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
+        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
 
-        Example: ``https://example-resource.azure.openai.com/``
+        Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: str | None = Field(default=None, alias="azure_deployment")
     """A model deployment.
 
-        If given sets the base client URL to include ``/deployments/{azure_deployment}``
+        If given sets the base client URL to include `/deployments/{azure_deployment}`
 
         !!! note
             This means you won't be able to use non-deployment endpoints.
@@ -483,7 +483,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         alias="api_version",
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
-    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided."""
+    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     # Check OPENAI_API_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
@@ -493,13 +493,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
             ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
         ),
     )
-    """Automatically inferred from env var ``AZURE_OPENAI_API_KEY`` if not provided."""
+    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: SecretStr | None = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
     )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
+        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
         For more, see `this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__.
     """
@@ -507,7 +507,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
-        will be invoked if ``azure_ad_async_token_provider`` is not provided.
+        will be invoked if `azure_ad_async_token_provider` is not provided.
     """
 
     azure_ad_async_token_provider: Callable[[], Awaitable[str]] | None = None
@@ -517,7 +517,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_version: str = ""
-    """The version of the model (e.g. ``'0125'`` for ``'gpt-3.5-0125'``).
+    """The version of the model (e.g. `'0125'` for `'gpt-3.5-0125'`).
 
     Azure OpenAI doesn't return model version with the response by default so it must
     be manually specified if you want to use this information downstream, e.g. when
@@ -532,15 +532,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
     openai_api_type: str | None = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
-    """Legacy, for ``openai<1.0.0`` support."""
+    """Legacy, for `openai<1.0.0` support."""
 
     validate_base_url: bool = True
-    """If legacy arg ``openai_api_base`` is passed in, try to infer if it is a
-        ``base_url`` or ``azure_endpoint`` and update client params accordingly.
+    """If legacy arg `openai_api_base` is passed in, try to infer if it is a
+        `base_url` or `azure_endpoint` and update client params accordingly.
     """
 
     model_name: str | None = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. ``'gpt-4o'``, ``'gpt-35-turbo'``, etc.
+    """Name of the deployed OpenAI model, e.g. `'gpt-4o'`, `'gpt-35-turbo'`, etc.
 
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
@@ -553,12 +553,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
 
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
+    Should be specified as `{"param": None | ['val1', 'val2']}` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
 
-    For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed
+    For example, older models may not support the `'parallel_tool_calls'` parameter at
+    all, in which case `disabled_params={"parallel_tool_calls: None}` can ben passed
     in.
 
     If a parameter is disabled then it will not be used by default in any methods, e.g.
@@ -567,8 +567,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
     However this does not prevent a user from directly passed in the parameter during
     invocation.
 
-    By default, unless ``model_name="gpt-4o"`` is specified, then
-    ``'parallel_tools_calls'`` will be disabled.
+    By default, unless `model_name="gpt-4o"` is specified, then
+    `'parallel_tools_calls'` will be disabled.
     """
 
     max_tokens: int | None = Field(default=None, alias="max_completion_tokens")  # type: ignore[assignment]
@@ -842,7 +842,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 - or a Pydantic class,
                 - an OpenAI function/tool schema.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -851,14 +851,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             method: The method for steering model generation, one of:
 
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses OpenAI's `Structured Output API <https://platform.openai.com/docs/guides/structured-outputs>`__.
-                    Supported for ``'gpt-4o-mini'``, ``'gpt-4o-2024-08-06'``, ``'o1'``, and later
+                    Supported for `'gpt-4o-mini'`, `'gpt-4o-2024-08-06'`, `'o1'`, and later
                     models.
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses OpenAI's tool-calling (formerly called function calling)
                     `API <https://platform.openai.com/docs/guides/function-calling>`__
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call
@@ -872,7 +872,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
             strict:
 
                 - True:
@@ -882,23 +882,23 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     Input schema will not be validated and model output will not be
                     validated.
                 - None:
-                    ``strict`` argument will not be passed to the model.
+                    `strict` argument will not be passed to the model.
 
-                If schema is specified via TypedDict or JSON schema, ``strict`` is not
-                enabled by default. Pass ``strict=True`` to enable it.
+                If schema is specified via TypedDict or JSON schema, `strict` is not
+                enabled by default. Pass `strict=True` to enable it.
 
                 !!! note
-                    ``strict`` can only be non-null if ``method`` is ``'json_schema'``
-                    or ``'function_calling'``.
+                    `strict` can only be non-null if `method` is `'json_schema'`
+                    or `'function_calling'`.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 
-                - ``method`` is ``'json_schema'`` (default).
-                - ``strict=True``
-                - ``include_raw=True``
+                - `method` is `'json_schema'` (default).
+                - `strict=True`
+                - `include_raw=True`
 
                 If a model elects to call a
-                tool, the resulting `AIMessage` in ``'raw'`` will include tool calls.
+                tool, the resulting `AIMessage` in `'raw'` will include tool calls.
 
                 ??? example
 
@@ -940,35 +940,35 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class ``schema``.
+            Added support for TypedDict class `schema`.
 
         !!! warning "Behavior changed in 0.1.21"
-            Support for ``strict`` argument added.
-            Support for ``method="json_schema"`` added.
+            Support for `strict` argument added.
+            Support for `method="json_schema"` added.
 
         !!! warning "Behavior changed in 0.3.0"
-            ``method`` default changed from "function_calling" to "json_schema".
+            `method` default changed from "function_calling" to "json_schema".
 
         !!! warning "Behavior changed in 0.3.12"
             Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
-            Pass ``kwargs`` through to the model.
+            Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
 
             Note, OpenAI has a number of restrictions on what types of schemas can be
-            provided if ``strict`` = True. When using Pydantic, our model cannot
+            provided if `strict` = True. When using Pydantic, our model cannot
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 

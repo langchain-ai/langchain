@@ -64,14 +64,14 @@ class ChatGroq(BaseChatModel):
     r"""Groq Chat large language models API.
 
     To use, you should have the
-    environment variable ``GROQ_API_KEY`` set with your API key.
+    environment variable `GROQ_API_KEY` set with your API key.
 
     Any parameters that are valid to be passed to the groq.create call
     can be passed in, even if not explicitly saved on this class.
 
     Setup:
         Install `langchain-groq` and set environment variable
-        ``GROQ_API_KEY``.
+        `GROQ_API_KEY`.
 
         .. code-block:: bash
 
@@ -80,23 +80,23 @@ class ChatGroq(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Groq model to use, e.g. ``llama-3.1-8b-instant``.
+            Name of Groq model to use, e.g. `llama-3.1-8b-instant`.
         temperature: float
-            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
+            Sampling temperature. Ranges from `0.0` to `1.0`.
         max_tokens: int | None
             Max number of tokens to generate.
         reasoning_format: Literal["parsed", "raw", "hidden] | None
-            The format for reasoning output. Groq will default to ``raw`` if left
+            The format for reasoning output. Groq will default to `raw` if left
             undefined.
 
-            - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
-              response concise. Reasoning will be returned in the
-              ``additional_kwargs.reasoning_content`` field of the response.
-            - ``'raw'``: Includes reasoning within think tags (e.g.
-              ``<think>{reasoning_content}</think>``).
-            - ``'hidden'``: Returns only the final answer content. Note: this only
-              supresses reasoning content in the response; the model will still perform
-              reasoning unless overridden in ``reasoning_effort``.
+            - `'parsed'`: Separates reasoning into a dedicated field while keeping the
+                response concise. Reasoning will be returned in the
+                `additional_kwargs.reasoning_content` field of the response.
+            - `'raw'`: Includes reasoning within think tags (e.g.
+                `<think>{reasoning_content}</think>`).
+            - `'hidden'`: Returns only the final answer content. Note: this only
+                supresses reasoning content in the response; the model will still perform
+                reasoning unless overridden in `reasoning_effort`.
 
             See the `Groq documentation
             <https://console.groq.com/docs/reasoning#reasoning>`__ for more
@@ -111,7 +111,7 @@ class ChatGroq(BaseChatModel):
         max_retries: int
             Max number of retries.
         api_key: str | None
-            Groq API key. If not passed in will be read from env var ``GROQ_API_KEY``.
+            Groq API key. If not passed in will be read from env var `GROQ_API_KEY`.
         base_url: str | None
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
@@ -202,16 +202,16 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-           AIMessage(content='The English sentence "I love programming" can
-           be translated to French as "J\'aime programmer". The word
-           "programming" is translated as "programmer" in French. I hope
-           this helps! Let me know if you have any other questions.',
-           response_metadata={'token_usage': {'completion_tokens': 53,
-           'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
-           0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
-           'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
-           'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
-           'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
+            AIMessage(content='The English sentence "I love programming" can
+            be translated to French as "J\'aime programmer". The word
+            "programming" is translated as "programmer" in French. I hope
+            this helps! Let me know if you have any other questions.',
+            response_metadata={'token_usage': {'completion_tokens': 53,
+            'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
+            0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
+            'total_time': 0.090988878}, 'model_name': 'llama-3.1-8b-instant',
+            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
+            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
     Tool calling:
         .. code-block:: python
@@ -245,7 +245,7 @@ class ChatGroq(BaseChatModel):
                 }
             ]
 
-        See ``ChatGroq.bind_tools()`` method for more.
+        See `ChatGroq.bind_tools()` method for more.
 
     Structured output:
         .. code-block:: python
@@ -274,7 +274,7 @@ class ChatGroq(BaseChatModel):
                 rating=None,
             )
 
-        See ``ChatGroq.with_structured_output()`` for more.
+        See `ChatGroq.with_structured_output()` for more.
 
     Response metadata:
         .. code-block:: python
@@ -313,14 +313,14 @@ class ChatGroq(BaseChatModel):
     reasoning_format: Literal["parsed", "raw", "hidden"] | None = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
-    - ``'parsed'``: Separates reasoning into a dedicated field while keeping the
-      response concise. Reasoning will be returned in the
-      ``additional_kwargs.reasoning_content`` field of the response.
-    - ``'raw'``: Includes reasoning within think tags (e.g.
-      ``<think>{reasoning_content}</think>``).
-    - ``'hidden'``: Returns only the final answer content. Note: this only supresses
-      reasoning content in the response; the model will still perform reasoning unless
-      overridden in ``reasoning_effort``.
+    - `'parsed'`: Separates reasoning into a dedicated field while keeping the
+        response concise. Reasoning will be returned in the
+        `additional_kwargs.reasoning_content` field of the response.
+    - `'raw'`: Includes reasoning within think tags (e.g.
+        `<think>{reasoning_content}</think>`).
+    - `'hidden'`: Returns only the final answer content. Note: this only supresses
+        reasoning content in the response; the model will still perform reasoning unless
+        overridden in `reasoning_effort`.
 
     See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
     for more details and a list of supported models.
@@ -338,7 +338,7 @@ class ChatGroq(BaseChatModel):
     groq_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
     )
-    """Automatically inferred from env var ``GROQ_API_KEY`` if not provided."""
+    """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
     groq_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
     )
@@ -349,7 +349,7 @@ class ChatGroq(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Groq completion API. Can be float, ``httpx.Timeout`` or
+    """Timeout for requests to Groq completion API. Can be float, `httpx.Timeout` or
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -363,12 +363,12 @@ class ChatGroq(BaseChatModel):
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
 
-    - ``'on_demand'``: Default.
-    - ``'flex'``: On-demand processing when capacity is available, with rapid timeouts
-      if resources are constrained. Provides balance between performance and reliability
-      for workloads that don't require guaranteed processing.
-    - `'auto'`: Uses on-demand rate limits, then falls back to ``'flex'`` if those
-      limits are exceeded
+    - `'on_demand'`: Default.
+    - `'flex'`: On-demand processing when capacity is available, with rapid timeouts
+        if resources are constrained. Provides balance between performance and
+        reliability for workloads that don't require guaranteed processing.
+    - `'auto'`: Uses on-demand rate limits, then falls back to `'flex'` if those
+        limits are exceeded
 
     See the `Groq documentation
     <https://console.groq.com/docs/flex-processing>`__ for more details and a list of
@@ -379,10 +379,10 @@ class ChatGroq(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
-    """Optional ``httpx.Client``."""
+    """Optional `httpx.Client`."""
     http_async_client: Any | None = None
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
+        `http_client` as well if you'd like a custom client for sync invocations."""
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -834,7 +834,7 @@ class ChatGroq(BaseChatModel):
                 - a `TypedDict` class (supported added in 0.1.9),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -846,19 +846,19 @@ class ChatGroq(BaseChatModel):
 
                 !!! warning "Behavior changed in 0.3.8"
                     Added support for Groq's dedicated structured output feature via
-                    ``method="json_schema"``.
+                    `method="json_schema"`.
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Groq's tool-calling `API <https://console.groq.com/docs/tool-use>`__
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Groq's `Structured Output API <https://console.groq.com/docs/structured-outputs>`__.
-                    Supported for a subset of models, including ``openai/gpt-oss``,
-                    ``moonshotai/kimi-k2-instruct-0905``, and some ``meta-llama/llama-4``
+                    Supported for a subset of models, including `openai/gpt-oss`,
+                    `moonshotai/kimi-k2-instruct-0905`, and some `meta-llama/llama-4`
                     models. See `docs <https://console.groq.com/docs/structured-outputs>`__
                     for details.
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses Groq's `JSON mode <https://console.groq.com/docs/structured-outputs#json-object-mode>`__.
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call
@@ -867,18 +867,18 @@ class ChatGroq(BaseChatModel):
                 support which methods `here <https://console.groq.com/docs/structured-outputs>`__.
 
             method:
-                The method for steering model generation, either ``'function_calling'``
-                or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
+                The method for steering model generation, either `'function_calling'`
+                or `'json_mode'`. If `'function_calling'` then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
-                function-calling API. If ``'json_mode'`` then JSON mode will be used.
+                function-calling API. If `'json_mode'` then JSON mode will be used.
 
                 !!! note
-                    If using ``'json_mode'`` then you must include instructions for formatting
+                    If using `'json_mode'` then you must include instructions for formatting
                     the output into the desired schema into the model call. (either via the
                     prompt itself or in the system message/prompt/instructions).
 
                 !!! warning
-                    ``'json_mode'`` does not support streaming responses stop sequences.
+                    `'json_mode'` does not support streaming responses stop sequences.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -886,7 +886,7 @@ class ChatGroq(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs:
                 Any additional parameters to pass to the
@@ -895,16 +895,16 @@ class ChatGroq(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 

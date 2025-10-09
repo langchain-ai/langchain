@@ -569,7 +569,7 @@ class ChatAnthropic(BaseChatModel):
     list of the latest models.
 
     Setup:
-        Install `langchain-anthropic` and set environment variable ``ANTHROPIC_API_KEY``.
+        Install `langchain-anthropic` and set environment variable `ANTHROPIC_API_KEY`.
 
         .. code-block:: bash
 
@@ -578,9 +578,9 @@ class ChatAnthropic(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Anthropic model to use. e.g. ``'claude-3-7-sonnet-20250219'``.
+            Name of Anthropic model to use. e.g. `'claude-3-7-sonnet-20250219'`.
         temperature: float
-            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
+            Sampling temperature. Ranges from `0.0` to `1.0`.
         max_tokens: int
             Max number of tokens to generate.
 
@@ -589,12 +589,12 @@ class ChatAnthropic(BaseChatModel):
             Timeout for requests.
         anthropic_proxy: str | None
             Proxy to use for the Anthropic clients, will be used for every API call.
-            If not passed in will be read from env var ``ANTHROPIC_PROXY``.
+            If not passed in will be read from env var `ANTHROPIC_PROXY`.
         max_retries: int
             Max number of retries if a request fails.
         api_key: str | None
             Anthropic API key. If not passed in will be read from env var
-            ``ANTHROPIC_API_KEY``.
+            `ANTHROPIC_API_KEY`.
         base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
@@ -618,7 +618,7 @@ class ChatAnthropic(BaseChatModel):
             )
 
     **NOTE**: Any param which is not explicitly supported will be passed directly to the
-    ``anthropic.Anthropic.messages.create(...)`` API every time to the model is
+    `anthropic.Anthropic.messages.create(...)` API every time to the model is
     invoked. For example:
 
     .. code-block:: python
@@ -773,7 +773,7 @@ class ChatAnthropic(BaseChatModel):
                 },
             ]
 
-        See ``ChatAnthropic.bind_tools()`` method for more.
+        See `ChatAnthropic.bind_tools()` method for more.
 
     Structured output:
         .. code-block:: python
@@ -802,7 +802,7 @@ class ChatAnthropic(BaseChatModel):
                 rating=None,
             )
 
-        See ``ChatAnthropic.with_structured_output()`` for more.
+        See `ChatAnthropic.with_structured_output()` for more.
 
     Image input:
         See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`__
@@ -976,7 +976,7 @@ class ChatAnthropic(BaseChatModel):
         feature that lets Claude attach context to its answers based on source
         documents supplied by the user. When
         `document content blocks <https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types>`__
-        with ``"citations": {"enabled": True}`` are included in a query, Claude may
+        with `"citations": {"enabled": True}` are included in a query, Claude may
         generate citations in its response.
 
         .. code-block:: python
@@ -1068,8 +1068,8 @@ class ChatAnthropic(BaseChatModel):
 
             {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
 
-        These can be disabled by setting ``stream_usage=False`` in the stream method,
-        or by setting ``stream_usage=False`` when initializing ChatAnthropic.
+        These can be disabled by setting `stream_usage=False` in the stream method,
+        or by setting `stream_usage=False` when initializing ChatAnthropic.
 
     Prompt caching:
         Prompt caching reduces processing time and costs for repetitive tasks or prompts
@@ -1129,7 +1129,7 @@ class ChatAnthropic(BaseChatModel):
         ??? note "Extended caching"
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by setting ``ttl`` to ``'1h'``.
+            apply one hour caching by setting `ttl` to `'1h'`.
 
             .. code-block:: python
 
@@ -1152,7 +1152,7 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm.invoke(messages)
 
-            Details of cached token counts will be included on the ``InputTokenDetails``
+            Details of cached token counts will be included on the `InputTokenDetails`
             of response's `usage_metadata`:
 
             .. code-block:: python
@@ -1451,8 +1451,8 @@ class ChatAnthropic(BaseChatModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
-    ``ANTHROPIC_API_URL`` and if that is not set, ``ANTHROPIC_BASE_URL``.
-    If neither are set, the default value of ``https://api.anthropic.com`` will
+    `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
+    If neither are set, the default value of `https://api.anthropic.com` will
     be used.
     """
 
@@ -1460,14 +1460,14 @@ class ChatAnthropic(BaseChatModel):
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
     )
     """Proxy to use for the Anthropic clients, will be used for every API call.
 
-    If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
+    If not provided, will attempt to read from the `ANTHROPIC_PROXY` environment
     variable."""
 
     default_headers: Mapping[str, str] | None = None
@@ -1477,7 +1477,7 @@ class ChatAnthropic(BaseChatModel):
     """List of beta features to enable. If specified, invocations will be routed
     through client.beta.messages.create.
 
-    Example: ``betas=["mcp-client-2025-04-04"]``
+    Example: `betas=["mcp-client-2025-04-04"]`
     """
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -1492,13 +1492,13 @@ class ChatAnthropic(BaseChatModel):
 
     thinking: dict[str, Any] | None = Field(default=None)
     """Parameters for Claude reasoning,
-    e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
+    e.g., `{"type": "enabled", "budget_tokens": 10_000}`"""
 
     mcp_servers: list[dict[str, Any]] | None = None
     """List of MCP servers to use for the request.
 
-    Example: ``mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
-    "name": "example-mcp"}]``
+    Example: `mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
+    "name": "example-mcp"}]`
     """
 
     context_management: dict[str, Any] | None = None
@@ -1978,7 +1978,7 @@ class ChatAnthropic(BaseChatModel):
                 )
 
 
-        Example — force specific tool call with tool_choice ``'<name_of_tool>'``:
+        Example — force specific tool call with tool_choice `'<name_of_tool>'`:
 
             .. code-block:: python
 
@@ -2183,7 +2183,7 @@ class ChatAnthropic(BaseChatModel):
                 - a `TypedDict` class,
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -2195,22 +2195,22 @@ class ChatAnthropic(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``raw``, ``parsed``, and ``parsing_error``.
+                with keys `raw`, `parsed`, and `parsing_error`.
             kwargs: Additional keyword arguments are ignored.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
+            Otherwise, if `include_raw` is `False` then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
 
@@ -2347,7 +2347,7 @@ class ChatAnthropic(BaseChatModel):
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
             kwargs: Additional keyword arguments are passed to the Anthropic
-                ``messages.count_tokens`` method.
+                `messages.count_tokens` method.
 
         Basic usage:
 

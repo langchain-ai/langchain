@@ -130,7 +130,7 @@ class BaseChatMessageHistory(ABC):
         """Convenience method for adding a human message string to the store.
 
         !!! note
-            This is a convenience method. Code should favor the bulk ``add_messages``
+            This is a convenience method. Code should favor the bulk `add_messages`
             interface instead to save on round-trips to the persistence layer.
 
         This method may be deprecated in a future release.
@@ -147,7 +147,7 @@ class BaseChatMessageHistory(ABC):
         """Convenience method for adding an AI message string to the store.
 
         !!! note
-            This is a convenience method. Code should favor the bulk ``add_messages``
+            This is a convenience method. Code should favor the bulk `add_messages`
             interface instead to save on round-trips to the persistence layer.
 
         This method may be deprecated in a future release.

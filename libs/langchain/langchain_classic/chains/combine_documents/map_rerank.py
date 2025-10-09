@@ -31,8 +31,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     r"""Combining documents by mapping a chain over them, then reranking results.
 
     This algorithm calls an LLMChain on each input document. The LLMChain is expected
-    to have an OutputParser that parses the result into both an answer (``answer_key``)
-    and a score (``rank_key``). The answer with the highest score is then returned.
+    to have an OutputParser that parses the result into both an answer (`answer_key`)
+    and a score (`rank_key`). The answer with the highest score is then returned.
 
     Example:
         .. code-block:: python

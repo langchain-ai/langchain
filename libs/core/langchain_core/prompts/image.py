@@ -26,8 +26,8 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Create an image prompt template.
 
         Raises:
-            ValueError: If the input variables contain ``'url'``, ``'path'``, or
-                ``'detail'``.
+            ValueError: If the input variables contain `'url'`, `'path'`, or
+                `'detail'`.
         """
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
@@ -52,7 +52,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "image"]``
+            `["langchain", "prompts", "image"]`
         """
         return ["langchain", "prompts", "image"]
 
@@ -93,7 +93,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Raises:
             ValueError: If the url is not provided.
             ValueError: If the url is not a string.
-            ValueError: If ``'path'`` is provided in the template or kwargs.
+            ValueError: If `'path'` is provided in the template or kwargs.
 
         Example:
 

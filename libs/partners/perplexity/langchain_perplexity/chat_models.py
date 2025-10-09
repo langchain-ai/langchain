@@ -63,7 +63,7 @@ class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     Setup:
-        To use, you should have the environment variable ``PPLX_API_KEY`` set to your API key.
+        To use, you should have the environment variable `PPLX_API_KEY` set to your API key.
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
@@ -416,7 +416,7 @@ class ChatPerplexity(BaseChatModel):
 
             method: The method for steering model generation, currently only support:
 
-                - ``'json_schema'``: Use the JSON Schema to parse the model output
+                - `'json_schema'`: Use the JSON Schema to parse the model output
 
 
             include_raw:
@@ -425,7 +425,7 @@ class ChatPerplexity(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 Unsupported: whether to enable strict schema adherence when generating
@@ -437,14 +437,14 @@ class ChatPerplexity(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):

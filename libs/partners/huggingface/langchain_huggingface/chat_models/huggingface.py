@@ -889,9 +889,9 @@ class ChatHuggingFace(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``: uses tool-calling features.
-                - ``'json_schema'``: uses dedicated structured output features.
-                - ``'json_mode'``: uses JSON mode.
+                - `'function_calling'`: uses tool-calling features.
+                - `'json_schema'`: uses dedicated structured output features.
+                - `'json_mode'`: uses JSON mode.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -899,7 +899,7 @@ class ChatHuggingFace(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs:
                 Additional parameters to pass to the underlying LLM's
@@ -909,16 +909,16 @@ class ChatHuggingFace(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

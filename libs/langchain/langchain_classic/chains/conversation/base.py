@@ -19,18 +19,18 @@ from langchain_classic.memory.buffer import ConversationBufferMemory
 class ConversationChain(LLMChain):
     """Chain to have a conversation and load context from memory.
 
-    This class is deprecated in favor of ``RunnableWithMessageHistory``. Please refer
+    This class is deprecated in favor of `RunnableWithMessageHistory`. Please refer
     to this tutorial for more detail: https://python.langchain.com/docs/tutorials/chatbot/
 
-    ``RunnableWithMessageHistory`` offers several benefits, including:
+    `RunnableWithMessageHistory` offers several benefits, including:
 
     - Stream, batch, and async support;
     - More flexible memory handling, including the ability to manage memory
-      outside the chain;
+        outside the chain;
     - Support for multiple threads.
 
-    Below is a minimal implementation, analogous to using ``ConversationChain`` with
-    the default ``ConversationBufferMemory``:
+    Below is a minimal implementation, analogous to using `ConversationChain` with
+    the default `ConversationBufferMemory`:
 
         .. code-block:: python
 
@@ -56,7 +56,7 @@ class ConversationChain(LLMChain):
                 config={"configurable": {"session_id": "1"}},
             )  # session_id determines thread
 
-    Memory objects can also be incorporated into the ``get_session_history`` callable:
+    Memory objects can also be incorporated into the `get_session_history` callable:
 
         .. code-block:: python
 

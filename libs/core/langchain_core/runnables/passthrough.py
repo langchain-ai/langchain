@@ -188,7 +188,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -395,7 +395,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         """Create a RunnableAssign.
 
         Args:
-            mapper: A ``RunnableParallel`` instance that will be used to transform the
+            mapper: A `RunnableParallel` instance that will be used to transform the
                 input dictionary.
         """
         super().__init__(mapper=mapper, **kwargs)
@@ -412,7 +412,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -717,7 +717,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 

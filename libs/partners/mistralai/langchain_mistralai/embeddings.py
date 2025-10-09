@@ -41,8 +41,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding model integration.
 
     Setup:
-        Install ``langchain_mistralai`` and set environment variable
-        ``MISTRAL_API_KEY``.
+        Install `langchain_mistralai` and set environment variable
+        `MISTRAL_API_KEY`.
 
         .. code-block:: bash
 
@@ -56,7 +56,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     Key init args — client params:
         api_key: SecretStr | None
             The API key for the MistralAI API. If not provided, it will be read from the
-            environment variable ``MISTRAL_API_KEY``.
+            environment variable `MISTRAL_API_KEY`.
         max_retries: int
             The number of times to retry a request if it fails.
         timeout: int

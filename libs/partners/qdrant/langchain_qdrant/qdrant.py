@@ -40,7 +40,7 @@ class QdrantVectorStore(VectorStore):
     """Qdrant vector store integration.
 
     Setup:
-        Install ``langchain-qdrant`` package.
+        Install `langchain-qdrant` package.
 
         .. code-block:: bash
 
@@ -270,7 +270,7 @@ class QdrantVectorStore(VectorStore):
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            QdrantClient: An instance of ``QdrantClient``.
+            QdrantClient: An instance of `QdrantClient`.
 
         """
         return self._client
@@ -280,7 +280,7 @@ class QdrantVectorStore(VectorStore):
         """Get the dense embeddings instance that is being used.
 
         Returns:
-            Embeddings: An instance of ``Embeddings``, or None for SPARSE mode.
+            Embeddings: An instance of `Embeddings`, or None for SPARSE mode.
 
         """
         return self._embeddings
@@ -330,7 +330,7 @@ class QdrantVectorStore(VectorStore):
             ValueError: If sparse embeddings are `None`.
 
         Returns:
-            SparseEmbeddings: An instance of ``SparseEmbeddings``.
+            SparseEmbeddings: An instance of `SparseEmbeddings`.
 
         """
         if self._sparse_embeddings is None:
@@ -376,7 +376,7 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of ``QdrantVectorStore`` from a list of texts.
+        """Construct an instance of `QdrantVectorStore` from a list of texts.
 
         This is a user-friendly interface that:
         1. Creates embeddings, one for each text
@@ -463,10 +463,10 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct ``QdrantVectorStore`` from existing collection without adding data.
+        """Construct `QdrantVectorStore` from existing collection without adding data.
 
         Returns:
-            QdrantVectorStore: A new instance of ``QdrantVectorStore``.
+            QdrantVectorStore: A new instance of `QdrantVectorStore`.
         """
         client = QdrantClient(
             location=location,
@@ -1011,7 +1011,7 @@ class QdrantVectorStore(VectorStore):
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale ``[0, 1]``."""
+        """Normalize the distance to a score on a scale `[0, 1]`."""
         return (distance + 1.0) / 2.0
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

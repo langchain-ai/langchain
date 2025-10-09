@@ -59,7 +59,7 @@ class _AnthropicCommon(BaseLanguageModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value from
-    ``ANTHROPIC_API_URL``. If not set, the default value ``https://api.anthropic.com``
+    `ANTHROPIC_API_URL`. If not set, the default value `https://api.anthropic.com`
     will be used.
     """
 
@@ -67,7 +67,7 @@ class _AnthropicCommon(BaseLanguageModel):
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     HUMAN_PROMPT: str | None = None
     AI_PROMPT: str | None = None
@@ -129,7 +129,7 @@ class _AnthropicCommon(BaseLanguageModel):
 class AnthropicLLM(LLM, _AnthropicCommon):
     """Anthropic large language model.
 
-    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
+    To use, you should have the environment variable `ANTHROPIC_API_KEY`
     set with your API key, or pass it as a named parameter to the constructor.
 
     Example:
@@ -293,7 +293,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return response.content[0].text
 
     def convert_prompt(self, prompt: PromptValue) -> str:
-        """Convert a ``PromptValue`` to a string."""
+        """Convert a `PromptValue` to a string."""
         return prompt.to_string()
 
     async def _acall(

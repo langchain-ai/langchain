@@ -33,9 +33,9 @@ class EmbeddingsTests(BaseStandardTests):
 class EmbeddingsUnitTests(EmbeddingsTests):
     """Base class for embeddings unit tests.
 
-    Test subclasses must implement the ``embeddings_class`` property to specify the
+    Test subclasses must implement the `embeddings_class` property to specify the
     embeddings model to be tested. You can also override the
-    ``embedding_model_params`` property to specify initialization parameters.
+    `embedding_model_params` property to specify initialization parameters.
 
     Example:
 
@@ -59,7 +59,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                 return {"model": "model-001"}
 
     !!! note
-          API references for individual test methods include troubleshooting tips.
+        API references for individual test methods include troubleshooting tips.
 
     Testing initialization from environment variables
         Overriding the `init_from_env_params` property will enable additional tests
@@ -99,7 +99,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
 
         ??? note "Troubleshooting"
 
-            If this test fails, ensure that ``embedding_model_params`` is specified
+            If this test fails, ensure that `embedding_model_params` is specified
             and the model can be initialized from those params.
         """
         model = self.embeddings_class(**self.embedding_model_params)

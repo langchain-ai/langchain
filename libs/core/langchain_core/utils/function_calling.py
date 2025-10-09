@@ -409,7 +409,7 @@ def convert_to_openai_function(
             tool, or an Amazon Bedrock Converse format tool.
         strict:
             If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If `None`, ``strict`` argument will not
+            provided in the function definition. If `None`, `strict` argument will not
             be included in function definition.
 
     Returns:
@@ -420,7 +420,7 @@ def convert_to_openai_function(
         ValueError: If function is not in a supported format.
 
     !!! warning "Behavior changed in 0.2.29"
-        ``strict`` arg added.
+        `strict` arg added.
 
     !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
@@ -539,7 +539,7 @@ def convert_to_openai_tool(
             tool, or an Amazon Bedrock Converse format tool.
         strict:
             If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If `None`, ``strict`` argument will not
+            provided in the function definition. If `None`, `strict` argument will not
             be included in tool definition.
 
     Returns:
@@ -547,7 +547,7 @@ def convert_to_openai_tool(
         OpenAI tool-calling API.
 
     !!! warning "Behavior changed in 0.2.29"
-        ``strict`` arg added.
+        `strict` arg added.
 
     !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
@@ -602,7 +602,7 @@ def convert_to_json_schema(
     Args:
         schema: The schema to convert.
         strict: If `True`, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If `None`, ``strict`` argument will not
+            provided in the function definition. If `None`, `strict` argument will not
             be included in function definition.
 
     Raises:
@@ -652,9 +652,9 @@ def tool_example_to_messages(
     1. `HumanMessage`: contains the content from which content should be extracted.
     2. `AIMessage`: contains the extracted information from the model
     3. `ToolMessage`: contains confirmation to the model that the model requested a
-       tool correctly.
+        tool correctly.
 
-    If ``ai_response`` is specified, there will be a final `AIMessage` with that
+    If `ai_response` is specified, there will be a final `AIMessage` with that
     response.
 
     The `ToolMessage` is required because some chat models are hyper-optimized for

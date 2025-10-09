@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
-    To use, you should have the ``transformers`` python package installed.
+    To use, you should have the `transformers` python package installed.
 
     Only supports `text-generation`, `text2text-generation`, `image-text-to-text`,
     `summarization` and `translation`  for now.

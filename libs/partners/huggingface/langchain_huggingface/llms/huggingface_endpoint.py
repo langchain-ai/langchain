@@ -29,8 +29,8 @@ VALID_TASKS = (
 class HuggingFaceEndpoint(LLM):
     """Hugging Face Endpoint. This works with any model that supports text generation (i.e. text completion) task.
 
-    To use this class, you should have installed the ``huggingface_hub`` package, and
-    the environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token,
+    To use this class, you should have installed the `huggingface_hub` package, and
+    the environment variable `HUGGINGFACEHUB_API_TOKEN` set with your API token,
     or given as a named parameter to the constructor.
 
     Example:

@@ -14,8 +14,8 @@ class __ModuleName__Retriever(BaseRetriever):
 
     # TODO: Replace with relevant packages, env vars, etc.
     Setup:
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
         .. code-block:: bash
 

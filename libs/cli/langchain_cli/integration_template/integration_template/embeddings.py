@@ -8,8 +8,8 @@ class __ModuleName__Embeddings(Embeddings):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
         .. code-block:: bash
 
@@ -49,7 +49,7 @@ class __ModuleName__Embeddings(Embeddings):
     Embed multiple text:
         .. code-block:: python
 
-             input_texts = ["Document 1...", "Document 2..."]
+            input_texts = ["Document 1...", "Document 2..."]
             embed.embed_documents(input_texts)
 
         .. code-block:: python
