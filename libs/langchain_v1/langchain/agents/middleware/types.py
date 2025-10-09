@@ -72,9 +72,9 @@ class ModelRequest:
     tool_choice: Any | None
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
+    state: AgentState
+    runtime: Runtime[ContextT]
     model_settings: dict[str, Any] = field(default_factory=dict)
-    state: AgentState = field(default_factory=dict)
-    runtime: Runtime[ContextT] | None = None
 
 
 @dataclass

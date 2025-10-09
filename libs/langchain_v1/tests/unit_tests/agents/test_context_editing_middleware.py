@@ -62,6 +62,8 @@ def _make_state_and_request(
         tool_choice=None,
         tools=[],
         response_format=None,
+        state=state,
+        runtime=_fake_runtime(),
         model_settings={},
     )
     return state, request

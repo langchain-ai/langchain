@@ -317,6 +317,8 @@ class TestOnModelCallDecorator:
                 tool_choice=request.tool_choice,
                 tools=request.tools,
                 response_format=request.response_format,
+                state={},
+                runtime=None,
             )
             modified_prompts.append(modified_request.system_prompt)
             return handler(modified_request)

@@ -6,9 +6,13 @@ from langchain_core.messages import AIMessage
 from langchain.agents.factory import _chain_model_call_handlers
 from langchain.agents.middleware.types import ModelRequest
 
+from typing import cast
+from langgraph.runtime import Runtime
+
 
 def create_test_request(**kwargs):
     """Helper to create a ModelRequest with sensible defaults."""
+
     defaults = {
         "messages": [],
         "model": None,
@@ -16,6 +20,8 @@ def create_test_request(**kwargs):
         "tool_choice": None,
         "tools": [],
         "response_format": None,
+        "state": {},
+        "runtime": cast(Runtime, object()),
     }
     defaults.update(kwargs)
     return ModelRequest(**defaults)

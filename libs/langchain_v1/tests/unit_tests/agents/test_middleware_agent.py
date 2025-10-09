@@ -13,6 +13,8 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from typing import cast
+
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -1012,6 +1014,8 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
         model_settings={},
     )
 
@@ -1022,6 +1026,8 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
 
 def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
     """Test AnthropicPromptCachingMiddleware with unsupported model."""
+    from typing import cast
+
     fake_request = ModelRequest(
         model=FakeToolCallingModel(),
         messages=[HumanMessage("Hello")],
@@ -1029,6 +1035,8 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
         model_settings={},
     )
 
@@ -1532,6 +1540,8 @@ def test_planning_middleware_modify_model_request(original_prompt, expected_prom
     middleware = PlanningMiddleware()
     model = FakeToolCallingModel()
 
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
+
     request = ModelRequest(
         model=model,
         system_prompt=original_prompt,
@@ -1539,10 +1549,11 @@ def test_planning_middleware_modify_model_request(original_prompt, expected_prom
         tool_choice=None,
         tools=[],
         response_format=None,
+        state=state,
+        runtime=cast(Runtime, object()),
         model_settings={},
     )
 
-    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
     modified_request = middleware.modify_model_request(request)
     assert modified_request.system_prompt.startswith(expected_prompt_prefix)
 
@@ -1694,6 +1705,8 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
 
     # Verify system prompt
     model = FakeToolCallingModel()
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
+
     request = ModelRequest(
         model=model,
         system_prompt=None,
@@ -1701,10 +1714,11 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
         tool_choice=None,
         tools=[],
         response_format=None,
+        state=state,
+        runtime=cast(Runtime, object()),
         model_settings={},
     )
 
-    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
     modified_request = middleware.modify_model_request(request)
     assert modified_request.system_prompt == custom_system_prompt
 
