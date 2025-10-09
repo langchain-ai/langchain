@@ -91,41 +91,41 @@ def init_chat_model(
             above). Supported model_provider values and the corresponding integration
             package are:
 
-            - ``openai``              -> `langchain-openai`
-            - ``anthropic``           -> `langchain-anthropic`
-            - ``azure_openai``        -> `langchain-openai`
-            - ``azure_ai``            -> ``langchain-azure-ai``
-            - ``google_vertexai``     -> ``langchain-google-vertexai``
-            - ``google_genai``        -> ``langchain-google-genai``
-            - ``bedrock``             -> ``langchain-aws``
-            - ``bedrock_converse``    -> ``langchain-aws``
-            - ``cohere``              -> ``langchain-cohere``
-            - ``fireworks``           -> ``langchain-fireworks``
-            - ``together``            -> ``langchain-together``
-            - ``mistralai``           -> ``langchain-mistralai``
-            - ``huggingface``         -> ``langchain-huggingface``
-            - ``groq``                -> ``langchain-groq``
-            - ``ollama``              -> ``langchain-ollama``
-            - ``google_anthropic_vertex``    -> ``langchain-google-vertexai``
-            - ``deepseek``            -> ``langchain-deepseek``
-            - ``ibm``                 -> ``langchain-ibm``
-            - ``nvidia``              -> ``langchain-nvidia-ai-endpoints``
-            - ``xai``                 -> ``langchain-xai``
-            - ``perplexity``          -> ``langchain-perplexity``
+            - `openai`              -> `langchain-openai`
+            - `anthropic`           -> `langchain-anthropic`
+            - `azure_openai`        -> `langchain-openai`
+            - `azure_ai`            -> `langchain-azure-ai`
+            - `google_vertexai`     -> `langchain-google-vertexai`
+            - `google_genai`        -> `langchain-google-genai`
+            - `bedrock`             -> `langchain-aws`
+            - `bedrock_converse`    -> `langchain-aws`
+            - `cohere`              -> `langchain-cohere`
+            - `fireworks`           -> `langchain-fireworks`
+            - `together`            -> `langchain-together`
+            - `mistralai`           -> `langchain-mistralai`
+            - `huggingface`         -> `langchain-huggingface`
+            - `groq`                -> `langchain-groq`
+            - `ollama`              -> `langchain-ollama`
+            - `google_anthropic_vertex`    -> `langchain-google-vertexai`
+            - `deepseek`            -> `langchain-deepseek`
+            - `ibm`                 -> `langchain-ibm`
+            - `nvidia`              -> `langchain-nvidia-ai-endpoints`
+            - `xai`                 -> `langchain-xai`
+            - `perplexity`          -> `langchain-perplexity`
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - ``gpt-...`` | ``o1...`` | ``o3...`` -> ``openai``
-            - ``claude...``                       -> ``anthropic``
-            - ``amazon...``                       -> ``bedrock``
-            - ``gemini...``                       -> ``google_vertexai``
-            - ``command...``                      -> ``cohere``
-            - ``accounts/fireworks...``           -> ``fireworks``
-            - ``mistral...``                      -> ``mistralai``
-            - ``deepseek...``                     -> ``deepseek``
-            - ``grok...``                         -> ``xai``
-            - ``sonar...``                        -> ``perplexity``
+            - `gpt-...` | `o1...` | `o3...`       -> `openai`
+            - `claude...`                        -> `anthropic`
+            - `amazon...`                        -> `bedrock`
+            - `gemini...`                        -> `google_vertexai`
+            - `command...`                       -> `cohere`
+            - `accounts/fireworks...`            -> `fireworks`
+            - `mistral...`                       -> `mistralai`
+            - `deepseek...`                      -> `deepseek`
+            - `grok...`                          -> `xai`
+            - `sonar...`                         -> `perplexity`
         configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
