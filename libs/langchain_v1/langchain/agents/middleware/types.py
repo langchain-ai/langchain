@@ -73,7 +73,7 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
-    runtime: Runtime[ContextT]
+    runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
 
@@ -329,7 +329,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):
+class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable with ModelRequest as argument (contains state and runtime)."""
 
     def __call__(self, request: ModelRequest) -> ModelRequest | Awaitable[ModelRequest]:
@@ -337,7 +337,7 @@ class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, Contex
         ...
 
 
-class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):
+class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable that returns a prompt string given ModelRequest (contains state and runtime)."""
 
     def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
@@ -345,7 +345,7 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):
         ...
 
 
-class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):
+class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
     Receives handler callback to execute model and returns final AIMessage.
