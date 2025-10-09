@@ -1,4 +1,4 @@
-"""Unit tests for on_tool_call handler in ToolNode."""
+"""Unit tests for tool call interceptor in ToolNode."""
 
 from collections.abc import Callable
 

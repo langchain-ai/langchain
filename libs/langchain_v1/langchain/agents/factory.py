@@ -545,16 +545,16 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
-    # Collect middleware with on_tool_call hooks
-    middleware_w_on_tool_call = [
-        m for m in middleware if m.__class__.on_tool_call is not AgentMiddleware.on_tool_call
+    # Collect middleware with wrap_tool_call hooks
+    middleware_w_wrap_tool_call = [
+        m for m in middleware if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
     ]
 
-    # Chain all on_tool_call handlers into a single composed handler
-    on_tool_call_handler = None
-    if middleware_w_on_tool_call:
-        handlers = [m.on_tool_call for m in middleware_w_on_tool_call]
-        on_tool_call_handler = _chain_tool_call_handlers(handlers)
+    # Chain all wrap_tool_call handlers into a single composed handler
+    wrap_tool_call_handler = None
+    if middleware_w_wrap_tool_call:
+        handlers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
+        wrap_tool_call_handler = _chain_tool_call_handlers(handlers)
 
     # Setup tools
     tool_node: ToolNode | None = None
@@ -567,7 +567,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, on_tool_call=on_tool_call_handler)
+        ToolNode(tools=available_tools, on_tool_call=wrap_tool_call_handler)
         if available_tools
         else None
     )
