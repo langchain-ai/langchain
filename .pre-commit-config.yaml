@@ -1,6 +1,12 @@
 repos:
   - repo: local
     hooks:
+      - id: check-rst-syntax
+        name: check for RST syntax
+        language: system
+        entry: python scripts/check_rst_syntax.py
+        files: \.py$
+        types: [file]
       - id: core
         name: format and lint core
         language: system

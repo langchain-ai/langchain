@@ -1,0 +1,54 @@
+# Check for reStructuredText (RST) syntax in Python files.
+#
+# This project uses Markdown/MkDocs Material syntax instead of RST.
+# This workflow prevents RST-specific patterns from being introduced.
+
+name: "📝 Ensure no RST Syntax"
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  merge_group:
+
+# Cancel redundant workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-rst-syntax:
+    name: "Check for RST Syntax"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: "📂 Get Changed Python Files"
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: "**/*.py"
+
+      - name: "🔍 Check for RST Syntax in Changed Files"
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking the following files for RST syntax:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          python scripts/check_rst_syntax.py ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: "✅ No RST Syntax Detected"
+        if: steps.changed-files.outputs.any_changed != 'true'
+        run: |
+          echo "No Python files changed, skipping RST syntax check."
