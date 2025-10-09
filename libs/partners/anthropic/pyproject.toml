@@ -69,8 +69,6 @@ ignore = [
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "UP007",   # non-pep604-annotation-union
-    "UP045",   # non-pep604-annotation-optional
     "SIM105",  # Rarely useful
     "FIX",     # TODOs
     "TD",      # TODOs
