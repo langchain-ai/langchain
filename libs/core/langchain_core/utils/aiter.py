@@ -50,7 +50,7 @@ def py_anext(
 
     Returns:
         The next value from the iterator, or the default value
-            if the iterator is exhausted.
+        if the iterator is exhausted.
 
     Raises:
         TypeError: If the iterator is not an async iterator.

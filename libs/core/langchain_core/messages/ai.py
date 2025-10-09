@@ -198,7 +198,7 @@ class AIMessage(BaseMessage):
         Args:
             content: The content of the message.
             content_blocks: Typed standard content.
-            kwargs: Additional arguments to pass to the parent class.
+            **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
             # If there are tool calls in content_blocks, but not in tool_calls, add them

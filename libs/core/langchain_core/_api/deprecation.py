@@ -97,34 +97,34 @@ def deprecated(
     property, and 'function' otherwise.
 
     Args:
-        since : str
+        since:
             The release at which this API became deprecated.
-        message : str, optional
+        message:
             Override the default deprecation message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the deprecated object.
-        alternative : str, optional
+        alternative:
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
-        alternative_import: str, optional
+        alternative_import:
             An alternative import that the user may use instead.
-        pending : bool, optional
+        pending:
             If `True`, uses a `PendingDeprecationWarning` instead of a
             DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
+        obj_type:
             The object type being deprecated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
-        removal : str, optional
+        removal:
             The expected removal version. With the default (an empty
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
-        package: str, optional
+        package:
             The package of the deprecated object.
 
     Returns:

@@ -1298,7 +1298,7 @@ def test_docstring_parsing() -> None:
             baz: The baz.
 
         Returns:
-            str: description of returned value.
+            description of returned value.
         """
         return bar
 

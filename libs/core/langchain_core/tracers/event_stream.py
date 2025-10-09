@@ -179,7 +179,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             output: The output of the Runnable.
 
         Yields:
-            T: The output of the Runnable.
+            The output of the Runnable.
         """
         sentinel = object()
         # atomic check and set
@@ -229,7 +229,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             output: The output of the Runnable.
 
         Yields:
-            T: The output of the Runnable.
+            The output of the Runnable.
         """
         sentinel = object()
         # atomic check and set

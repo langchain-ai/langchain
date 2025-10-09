@@ -590,7 +590,7 @@ class Graph:
             node_colors: The colors of the nodes. Defaults to NodeStyles().
             wrap_label_n_words: The number of words to wrap the node labels at.
                 Defaults to 9.
-            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph. Defaults to `None`.
 
@@ -661,7 +661,7 @@ class Graph:
                 Defaults to 1.
             retry_delay: The delay between retries (MermaidDrawMethod.API).
                 Defaults to 1.0.
-            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph. Defaults to `None`.
 
