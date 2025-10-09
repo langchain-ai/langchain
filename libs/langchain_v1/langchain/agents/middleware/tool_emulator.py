@@ -11,7 +11,7 @@ from langchain.agents.middleware.types import AgentMiddleware
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langgraph.types import Command
 
@@ -139,6 +139,58 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Get emulated response from LLM
         response = self.model.invoke([HumanMessage(prompt)])
+
+        # Short-circuit: return emulated result without executing real tool
+        return ToolMessage(
+            content=response.content,
+            tool_call_id=request.tool_call["id"],
+            name=tool_name,
+        )
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
+        """Async version of wrap_tool_call.
+
+        Emulate tool execution using LLM if tool should be emulated.
+
+        Args:
+            request: Tool call request to potentially emulate.
+            handler: Async callback to execute the tool (can be called multiple times).
+
+        Returns:
+            ToolMessage with emulated response if tool should be emulated,
+            otherwise calls handler for normal execution.
+        """
+        tool_name = request.tool_call["name"]
+
+        # Check if this tool should be emulated
+        should_emulate = self.emulate_all or tool_name in self.tools_to_emulate
+
+        if not should_emulate:
+            # Let it execute normally by calling the handler
+            return await handler(request)
+
+        # Extract tool information for emulation
+        tool_args = request.tool_call["args"]
+        tool_description = request.tool.description
+
+        # Build prompt for emulator LLM
+        prompt = (
+            f"You are emulating a tool call for testing purposes.\n\n"
+            f"Tool: {tool_name}\n"
+            f"Description: {tool_description}\n"
+            f"Arguments: {tool_args}\n\n"
+            f"Generate a realistic response that this tool would return "
+            f"given these arguments.\n"
+            f"Return ONLY the tool's output, no explanation or preamble. "
+            f"Introduce variation into your responses."
+        )
+
+        # Get emulated response from LLM (using async invoke)
+        response = await self.model.ainvoke([HumanMessage(prompt)])
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(

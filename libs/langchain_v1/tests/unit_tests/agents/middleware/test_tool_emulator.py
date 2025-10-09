@@ -99,6 +99,19 @@ class FakeEmulatorModel(BaseChatModel):
         self.response_index += 1
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
 
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> Any:
+        from langchain_core.outputs import ChatGeneration, ChatResult
+
+        response = self.responses[self.response_index % len(self.responses)]
+        self.response_index += 1
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
+
     @property
     def _llm_type(self) -> str:
         return "fake_emulator"
@@ -405,3 +418,208 @@ class TestLLMToolEmulatorModelConfiguration:
             # If anthropic isn't installed, that's fine for this unit test
             # The integration tests will verify the full functionality
             pass
+
+
+class TestLLMToolEmulatorAsync:
+    """Test async tool emulator functionality."""
+
+    async def test_async_emulates_specified_tool_by_name(self) -> None:
+        """Test that tools specified by name are emulated in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "Paris"}}
+                        ],
+                    ),
+                    AIMessage(content="The weather has been retrieved."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(responses=["Emulated: 72°F, sunny in Paris"])
+
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[get_weather, calculator],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke({"messages": [HumanMessage("What's the weather in Paris?")]})
+
+        # Should complete without raising NotImplementedError
+        assert isinstance(result["messages"][-1], AIMessage)
+
+    async def test_async_emulates_specified_tool_by_instance(self) -> None:
+        """Test that tools specified by BaseTool instance are emulated in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[{"name": "search_web", "id": "1", "args": {"query": "Python"}}],
+                    ),
+                    AIMessage(content="Search results retrieved."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(responses=["Emulated: Python is a programming language"])
+
+        emulator = LLMToolEmulator(tools=[search_web], model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[search_web, calculator],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke({"messages": [HumanMessage("Search for Python")]})
+
+        assert isinstance(result["messages"][-1], AIMessage)
+
+    async def test_async_non_emulated_tools_execute_normally(self) -> None:
+        """Test that tools not in tools_to_emulate execute normally in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "calculator", "id": "1", "args": {"expression": "2+2"}}
+                        ],
+                    ),
+                    AIMessage(content="The calculation is complete."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(responses=["Should not be used"])
+
+        # Only emulate get_weather, not calculator
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[get_weather, calculator],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke({"messages": [HumanMessage("Calculate 2+2")]})
+
+        # Calculator should execute normally and return Result: 4
+        tool_messages = [
+            msg for msg in result["messages"] if hasattr(msg, "name") and msg.name == "calculator"
+        ]
+        assert len(tool_messages) > 0
+        assert "Result: 4" in tool_messages[0].content
+
+    async def test_async_none_tools_emulates_all(self) -> None:
+        """Test that None tools means ALL tools are emulated in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
+                        ],
+                    ),
+                    AIMessage(content="Done."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(responses=["Emulated: 65°F in NYC"])
+
+        # tools=None means emulate ALL tools
+        emulator = LLMToolEmulator(tools=None, model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[get_weather],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke({"messages": [HumanMessage("What's the weather in NYC?")]})
+
+        # Should complete without raising NotImplementedError
+        assert isinstance(result["messages"][-1], AIMessage)
+
+    async def test_async_emulate_multiple_tools(self) -> None:
+        """Test that multiple tools can be emulated in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "Paris"}},
+                            {"name": "search_web", "id": "2", "args": {"query": "Paris"}},
+                        ],
+                    ),
+                    AIMessage(content="Both tools executed."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(
+            responses=["Emulated weather: 20°C", "Emulated search results for Paris"]
+        )
+
+        emulator = LLMToolEmulator(tools=["get_weather", "search_web"], model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[get_weather, search_web, calculator],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke(
+            {"messages": [HumanMessage("Get weather and search for Paris")]}
+        )
+
+        # Both tools should be emulated without raising NotImplementedError
+        assert isinstance(result["messages"][-1], AIMessage)
+
+    async def test_async_mixed_emulated_and_real_tools(self) -> None:
+        """Test that some tools can be emulated while others execute normally in async mode."""
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}},
+                            {"name": "calculator", "id": "2", "args": {"expression": "10*2"}},
+                        ],
+                    ),
+                    AIMessage(content="Both completed."),
+                ]
+            )
+        )
+
+        emulator_model = FakeEmulatorModel(responses=["Emulated: 65°F in NYC"])
+
+        # Only emulate get_weather
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+
+        agent = create_agent(
+            model=agent_model,
+            tools=[get_weather, calculator],
+            middleware=[emulator],
+        )
+
+        result = await agent.ainvoke({"messages": [HumanMessage("Weather and calculate")]})
+
+        tool_messages = [msg for msg in result["messages"] if hasattr(msg, "name")]
+        assert len(tool_messages) >= 2
+
+        # Calculator should have real result
+        calc_messages = [msg for msg in tool_messages if msg.name == "calculator"]
+        assert len(calc_messages) > 0
+        assert "Result: 20" in calc_messages[0].content
