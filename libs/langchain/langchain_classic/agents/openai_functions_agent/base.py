@@ -106,7 +106,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Defaults to `None`.
+            callbacks: Callbacks to use.
             with_functions: Whether to use functions. Defaults to `True`.
             **kwargs: User inputs.
 
@@ -146,7 +146,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Defaults to `None`.
+            callbacks: Callbacks to use.
             **kwargs: User inputs.
 
         Returns:
@@ -261,8 +261,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             llm: The LLM to use as the agent.
             tools: The tools to use.
-            callback_manager: The callback manager to use. Defaults to `None`.
-            extra_prompt_messages: Extra prompt messages to use. Defaults to `None`.
+            callback_manager: The callback manager to use.
+            extra_prompt_messages: Extra prompt messages to use.
             system_message: The system message to use.
                 Defaults to a default system message.
             kwargs: Additional parameters to pass to the agent.

@@ -73,14 +73,14 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     """
 
     memory: BaseMemory | None = None
-    """Optional memory object. Defaults to `None`.
+    """Optional memory object.
     Memory is a class that gets called at the start
     and at the end of every chain. At the start, memory loads variables and passes
     them along in the chain. At the end, it saves any returned variables.
     There are many different types of memory - please see memory docs
     for the full catalog."""
     callbacks: Callbacks = Field(default=None, exclude=True)
-    """Optional list of callback handlers (or callback manager). Defaults to `None`.
+    """Optional list of callback handlers (or callback manager).
     Callback handlers are called throughout the lifecycle of a call to a chain,
     starting with on_chain_start, ending with on_chain_end or on_chain_error.
     Each custom chain can optionally call additional callback methods, see Callback docs
@@ -90,13 +90,13 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     will be printed to the console. Defaults to the global `verbose` value,
     accessible via `langchain.globals.get_verbose()`."""
     tags: list[str] | None = None
-    """Optional list of tags associated with the chain. Defaults to `None`.
+    """Optional list of tags associated with the chain.
     These tags will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the chain. Defaults to `None`.
+    """Optional metadata associated with the chain.
     This metadata will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
@@ -394,7 +394,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to `None`.
+            metadata: Optional metadata associated with the chain.
             run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
@@ -446,7 +446,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to `None`.
+            metadata: Optional metadata associated with the chain.
             run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.

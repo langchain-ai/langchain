@@ -460,13 +460,13 @@ class ChildTool(BaseTool):
     """Callbacks to be called during tool execution."""
 
     tags: list[str] | None = None
-    """Optional list of tags associated with the tool. Defaults to `None`.
+    """Optional list of tags associated with the tool.
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the tool. Defaults to `None`.
+    """Optional metadata associated with the tool.
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
@@ -767,16 +767,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks (event handler)
 
         Returns:
@@ -879,16 +879,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:

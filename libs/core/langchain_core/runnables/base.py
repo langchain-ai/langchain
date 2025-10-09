@@ -821,7 +821,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
                 do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details. Defaults to `None`.
+                for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -841,7 +841,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
                 do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details. Defaults to `None`.
+                for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -869,7 +869,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work
                 to do in parallel, and other keys. Please refer to the
-                `RunnableConfig` for more details. Defaults to `None`.
+                `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to `False`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
@@ -936,7 +936,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
                 do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details. Defaults to `None`.
+                for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to `False`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
@@ -1003,7 +1003,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
                 do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details. Defaults to `None`.
+                for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to `False`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
@@ -1067,7 +1067,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
                 do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details. Defaults to `None`.
+                for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to `False`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
@@ -1120,7 +1120,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             input: The input to the `Runnable`.
-            config: The config to use for the `Runnable`. Defaults to `None`.
+            config: The config to use for the `Runnable`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
@@ -1141,7 +1141,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             input: The input to the `Runnable`.
-            config: The config to use for the `Runnable`. Defaults to `None`.
+            config: The config to use for the `Runnable`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
@@ -1526,7 +1526,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             input: An iterator of inputs to the `Runnable`.
-            config: The config to use for the `Runnable`. Defaults to `None`.
+            config: The config to use for the `Runnable`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
@@ -1571,7 +1571,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             input: An async iterator of inputs to the `Runnable`.
-            config: The config to use for the `Runnable`. Defaults to `None`.
+            config: The config to use for the `Runnable`.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
@@ -1682,11 +1682,11 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             on_start: Called before the `Runnable` starts running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_end: Called after the `Runnable` finishes running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_error: Called if the `Runnable` throws an error, with the `Run`
-                object. Defaults to `None`.
+                object.
 
         Returns:
             A new `Runnable` with the listeners bound.
@@ -1750,11 +1750,11 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Args:
             on_start: Called asynchronously before the `Runnable` starts running,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
             on_end: Called asynchronously after the `Runnable` finishes running,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
             on_error: Called asynchronously if the `Runnable` throws an error,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
 
         Returns:
             A new `Runnable` with the listeners bound.
@@ -1833,8 +1833,8 @@ class Runnable(ABC, Generic[Input, Output]):
         """Bind input and output types to a `Runnable`, returning a new `Runnable`.
 
         Args:
-            input_type: The input type to bind to the `Runnable`. Defaults to `None`.
-            output_type: The output type to bind to the `Runnable`. Defaults to `None`.
+            input_type: The input type to bind to the `Runnable`.
+            output_type: The output type to bind to the `Runnable`.
 
         Returns:
             A new Runnable with the types bound.
@@ -1955,7 +1955,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 to fallbacks as part of the input under the specified key.
                 If `None`, exceptions will not be passed to fallbacks.
                 If used, the base `Runnable` and its fallbacks must accept a
-                dictionary as input. Defaults to `None`.
+                dictionary as input.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
@@ -2462,10 +2462,10 @@ class Runnable(ABC, Generic[Input, Output]):
         pass `arg_types` to just specify the required arguments and their types.
 
         Args:
-            args_schema: The schema for the tool. Defaults to `None`.
-            name: The name of the tool. Defaults to `None`.
-            description: The description of the tool. Defaults to `None`.
-            arg_types: A dictionary of argument names to types. Defaults to `None`.
+            args_schema: The schema for the tool.
+            name: The name of the tool.
+            description: The description of the tool.
+            arg_types: A dictionary of argument names to types.
 
         Returns:
             A `BaseTool` instance.
@@ -2888,10 +2888,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         Args:
             steps: The steps to include in the sequence.
-            name: The name of the `Runnable`. Defaults to `None`.
-            first: The first `Runnable` in the sequence. Defaults to `None`.
-            middle: The middle `Runnable` objects in the sequence. Defaults to `None`.
-            last: The last Runnable in the sequence. Defaults to `None`.
+            name: The name of the `Runnable`.
+            first: The first `Runnable` in the sequence.
+            middle: The middle `Runnable` objects in the sequence.
+            last: The last Runnable in the sequence.
 
         Raises:
             ValueError: If the sequence has less than 2 steps.
@@ -2960,7 +2960,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """Get the input schema of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The input schema of the `Runnable`.
@@ -2975,7 +2975,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """Get the output schema of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The output schema of the `Runnable`.
@@ -3002,7 +3002,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """Get the graph representation of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The graph representation of the `Runnable`.
@@ -3629,7 +3629,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Create a `RunnableParallel`.
 
         Args:
-            steps__: The steps to include. Defaults to `None`.
+            steps__: The steps to include.
             **kwargs: Additional steps to include.
 
         """
@@ -3664,8 +3664,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Get the name of the `Runnable`.
 
         Args:
-            suffix: The suffix to use. Defaults to `None`.
-            name: The name to use. Defaults to `None`.
+            suffix: The suffix to use.
+            name: The name to use.
 
         Returns:
             The name of the `Runnable`.
@@ -3689,7 +3689,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Get the input schema of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The input schema of the `Runnable`.
@@ -3720,7 +3720,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Get the output schema of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The output schema of the `Runnable`.
@@ -3747,7 +3747,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Get the graph representation of the `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The graph representation of the `Runnable`.
@@ -4157,8 +4157,8 @@ class RunnableGenerator(Runnable[Input, Output]):
 
         Args:
             transform: The transform function.
-            atransform: The async transform function. Defaults to `None`.
-            name: The name of the `Runnable`. Defaults to `None`.
+            atransform: The async transform function.
+            name: The name of the `Runnable`.
 
         Raises:
             TypeError: If the transform is not a generator function.
@@ -4435,8 +4435,8 @@ class RunnableLambda(Runnable[Input, Output]):
         Args:
             func: Either sync or async callable
             afunc: An async callable that takes an input and returns an output.
-                Defaults to `None`.
-            name: The name of the `Runnable`. Defaults to `None`.
+
+            name: The name of the `Runnable`.
 
         Raises:
             TypeError: If the `func` is not a callable type.
@@ -4496,7 +4496,7 @@ class RunnableLambda(Runnable[Input, Output]):
         """The pydantic schema for the input to this `Runnable`.
 
         Args:
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
 
         Returns:
             The input schema for this `Runnable`.
@@ -4830,7 +4830,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
         Args:
             input: The input to this `Runnable`.
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -4861,7 +4861,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
         Args:
             input: The input to this `Runnable`.
-            config: The config to use. Defaults to `None`.
+            config: The config to use.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -5303,11 +5303,11 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
         Args:
             on_start: Called before the `Runnable` starts running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_end: Called after the `Runnable` finishes running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_error: Called if the `Runnable` throws an error, with the `Run`
-                object. Defaults to `None`.
+                object.
 
         Returns:
             A new `Runnable` with the listeners bound.
@@ -5336,11 +5336,11 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
         Args:
             on_start: Called asynchronously before the `Runnable` starts running,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
             on_end: Called asynchronously after the `Runnable` finishes running,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
             on_error: Called asynchronously if the `Runnable` throws an error,
-                with the `Run` object. Defaults to `None`.
+                with the `Run` object.
 
         Returns:
             A new `Runnable` with the listeners bound.
@@ -5420,16 +5420,16 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
             kwargs: optional kwargs to pass to the underlying `Runnable`, when running
                 the underlying `Runnable` (e.g., via `invoke`, `batch`,
                 `transform`, or `stream` or async variants)
-                Defaults to `None`.
+
             config: optional config to bind to the underlying `Runnable`.
-                Defaults to `None`.
+
             config_factories: optional list of config factories to apply to the
                 config before binding to the underlying `Runnable`.
-                Defaults to `None`.
+
             custom_input_type: Specify to override the input type of the underlying
-                `Runnable` with a custom type. Defaults to `None`.
+                `Runnable` with a custom type.
             custom_output_type: Specify to override the output type of the underlying
-                `Runnable` with a custom type. Defaults to `None`.
+                `Runnable` with a custom type.
             **other_kwargs: Unpacked into the base class.
         """
         super().__init__(
@@ -5866,11 +5866,11 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
 
         Args:
             on_start: Called before the `Runnable` starts running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_end: Called after the `Runnable` finishes running, with the `Run`
-                object. Defaults to `None`.
+                object.
             on_error: Called if the `Runnable` throws an error, with the `Run`
-                object. Defaults to `None`.
+                object.
 
         Returns:
             A new `Runnable` with the listeners bound.

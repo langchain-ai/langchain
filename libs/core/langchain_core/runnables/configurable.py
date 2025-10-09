@@ -123,7 +123,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Prepare the Runnable for invocation.
 
         Args:
-            config: The configuration to use. Defaults to `None`.
+            config: The configuration to use.
 
         Returns:
             The prepared Runnable and configuration.

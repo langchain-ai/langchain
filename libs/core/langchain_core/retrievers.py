@@ -121,14 +121,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
     tags: list[str] | None = None
-    """Optional list of tags associated with the retriever. Defaults to `None`.
+    """Optional list of tags associated with the retriever.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the retriever. Defaults to `None`.
+    """Optional metadata associated with the retriever.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
@@ -207,7 +207,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
+            config: Configuration for the retriever.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
@@ -268,7 +268,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
+            config: Configuration for the retriever.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
@@ -367,16 +367,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             query: string to find relevant documents for.
-            callbacks: Callback manager or list of callbacks. Defaults to `None`.
+            callbacks: Callback manager or list of callbacks.
             tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
+
             metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
+
+            run_name: Optional name for the run.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
@@ -415,12 +415,12 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
+
             metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
+
+            run_name: Optional name for the run.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
