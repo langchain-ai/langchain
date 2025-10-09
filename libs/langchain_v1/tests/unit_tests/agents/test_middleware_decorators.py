@@ -1,4 +1,4 @@
-"""Consolidated tests for middleware decorators: before_model, after_model, and on_model_call."""
+"""Consolidated tests for middleware decorators: before_model, after_model, and wrap_model_call."""
 
 import pytest
 from typing import Any
@@ -17,7 +17,7 @@ from langchain.agents.middleware.types import (
     before_model,
     after_model,
     dynamic_prompt,
-    on_model_call,
+    wrap_model_call,
     hook_config,
 )
 from langchain.agents.factory import create_agent, _get_can_jump_to
@@ -85,9 +85,9 @@ def test_after_model_decorator() -> None:
 
 
 def test_on_model_call_decorator() -> None:
-    """Test on_model_call decorator with all configuration options."""
+    """Test wrap_model_call decorator with all configuration options."""
 
-    @on_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
+    @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
     def custom_on_model_call(request, handler):
         request.system_prompt = "Modified"
         return handler(request)
@@ -113,7 +113,7 @@ def test_on_model_call_decorator() -> None:
     def mock_handler(req):
         return AIMessage(content=f"Handled with prompt: {req.system_prompt}")
 
-    result = custom_on_model_call.on_model_call(original_request, mock_handler)
+    result = custom_on_model_call.wrap_model_call(original_request, mock_handler)
     assert result.content == "Handled with prompt: Modified"
 
 
@@ -126,7 +126,7 @@ def test_all_decorators_integration() -> None:
         call_order.append("before")
         return None
 
-    @on_model_call
+    @wrap_model_call
     def track_on_call(request, handler):
         call_order.append("on_call")
         return handler(request)
@@ -152,7 +152,7 @@ def test_decorators_use_function_names_as_default() -> None:
     def my_before_hook(state: AgentState, runtime: Runtime) -> None:
         return None
 
-    @on_model_call
+    @wrap_model_call
     def my_on_call_hook(request, handler):
         return handler(request)
 
@@ -272,9 +272,9 @@ def test_async_after_model_decorator() -> None:
 
 
 def test_async_on_model_call_decorator() -> None:
-    """Test on_model_call decorator with async function."""
+    """Test wrap_model_call decorator with async function."""
 
-    @on_model_call(state_schema=CustomState, tools=[test_tool], name="AsyncOnModelCall")
+    @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="AsyncOnModelCall")
     async def async_on_model_call(request, handler):
         request.system_prompt = "Modified async"
         return await handler(request)
@@ -296,11 +296,11 @@ def test_mixed_sync_async_decorators() -> None:
     async def async_before(state: AgentState, runtime: Runtime) -> None:
         return None
 
-    @on_model_call(name="MixedOnModelCall")
+    @wrap_model_call(name="MixedOnModelCall")
     def sync_on_call(request, handler):
         return handler(request)
 
-    @on_model_call(name="MixedOnModelCall")
+    @wrap_model_call(name="MixedOnModelCall")
     async def async_on_call(request, handler):
         return await handler(request)
 
@@ -321,7 +321,7 @@ async def test_async_decorators_integration() -> None:
         call_order.append("async_before")
         return None
 
-    @on_model_call
+    @wrap_model_call
     async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
         return await handler(request)
@@ -356,12 +356,12 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         call_order.append("async_before")
         return None
 
-    @on_model_call
+    @wrap_model_call
     def track_sync_on_call(request, handler):
         call_order.append("sync_on_call")
         return handler(request)
 
-    @on_model_call
+    @wrap_model_call
     async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
         return await handler(request)
@@ -390,7 +390,7 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
-    # In async mode, only async on_model_call is invoked (not sync)
+    # In async mode, only async wrap_model_call is invoked (not sync)
     # Sync before_model and after_model are still called via run_in_executor
     assert call_order == [
         "sync_before",
@@ -595,7 +595,7 @@ def test_dynamic_prompt_decorator() -> None:
     def mock_handler(req):
         return AIMessage(content=req.system_prompt)
 
-    result = my_prompt.on_model_call(original_request, mock_handler)
+    result = my_prompt.wrap_model_call(original_request, mock_handler)
     assert result.content == "Dynamic test prompt"
 
 
@@ -622,7 +622,7 @@ def test_dynamic_prompt_uses_state() -> None:
     def mock_handler(req):
         return AIMessage(content=req.system_prompt)
 
-    result = custom_prompt.on_model_call(original_request, mock_handler)
+    result = custom_prompt.wrap_model_call(original_request, mock_handler)
     assert result.content == "Prompt with 2 messages"
 
 
@@ -708,7 +708,7 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
         return "Second prompt."
 
     # When used together, the last middleware in the list should win
-    # since they're both on_model_call hooks composed in sequence
+    # since they're both wrap_model_call hooks composed in sequence
     agent = create_agent(model=FakeToolCallingModel(), middleware=[first_prompt, second_prompt])
     # Agent is already compiled
 

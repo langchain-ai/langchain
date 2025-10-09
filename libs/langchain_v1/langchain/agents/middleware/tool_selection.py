@@ -242,7 +242,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request.tools = [*selected_tools, *provider_tools]
         return request
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],
@@ -273,7 +273,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         )
         return handler(modified_request)
 
-    async def aon_model_call(
+    async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[AIMessage]],

@@ -1,4 +1,4 @@
-"""Unit tests for the @on_model_call decorator."""
+"""Unit tests for the @wrap_model_call decorator."""
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -9,17 +9,17 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
-    on_model_call,
+    wrap_model_call,
 )
 
 
 class TestOnModelCallDecorator:
-    """Test the @on_model_call decorator for creating middleware."""
+    """Test the @wrap_model_call decorator for creating middleware."""
 
     def test_basic_decorator_usage(self) -> None:
         """Test basic decorator usage without parameters."""
 
-        @on_model_call
+        @wrap_model_call
         def passthrough_middleware(request, handler):
             return handler(request)
 
@@ -37,7 +37,7 @@ class TestOnModelCallDecorator:
     def test_decorator_with_custom_name(self) -> None:
         """Test decorator with custom middleware name."""
 
-        @on_model_call(name="CustomMiddleware")
+        @wrap_model_call(name="CustomMiddleware")
         def my_middleware(request, handler):
             return handler(request)
 
@@ -55,7 +55,7 @@ class TestOnModelCallDecorator:
                     raise ValueError("First call fails")
                 return super()._generate(messages, **kwargs)
 
-        @on_model_call
+        @wrap_model_call
         def retry_once(request, handler):
             try:
                 return handler(request)
@@ -74,7 +74,7 @@ class TestOnModelCallDecorator:
     def test_decorator_response_rewriting(self) -> None:
         """Test decorator for rewriting responses."""
 
-        @on_model_call
+        @wrap_model_call
         def uppercase_responses(request, handler):
             result = handler(request)
             return AIMessage(content=result.content.upper())
@@ -93,7 +93,7 @@ class TestOnModelCallDecorator:
             def _generate(self, messages, **kwargs):
                 raise ValueError("Model error")
 
-        @on_model_call
+        @wrap_model_call
         def error_to_fallback(request, handler):
             try:
                 return handler(request)
@@ -111,7 +111,7 @@ class TestOnModelCallDecorator:
         """Test decorator accessing agent state."""
         state_values = []
 
-        @on_model_call
+        @wrap_model_call
         def log_state(request, handler):
             state_values.append(request.state.get("messages"))
             return handler(request)
@@ -130,14 +130,14 @@ class TestOnModelCallDecorator:
         """Test composition of multiple decorated middleware."""
         execution_order = []
 
-        @on_model_call
+        @wrap_model_call
         def outer_middleware(request, handler):
             execution_order.append("outer-before")
             result = handler(request)
             execution_order.append("outer-after")
             return result
 
-        @on_model_call
+        @wrap_model_call
         def inner_middleware(request, handler):
             execution_order.append("inner-before")
             result = handler(request)
@@ -164,7 +164,7 @@ class TestOnModelCallDecorator:
             messages: list
             custom_field: str
 
-        @on_model_call(state_schema=CustomState)
+        @wrap_model_call(state_schema=CustomState)
         def middleware_with_schema(request, handler):
             return handler(request)
 
@@ -181,7 +181,7 @@ class TestOnModelCallDecorator:
             """A test tool."""
             return f"Result: {query}"
 
-        @on_model_call(tools=[test_tool])
+        @wrap_model_call(tools=[test_tool])
         def middleware_with_tools(request, handler):
             return handler(request)
 
@@ -193,12 +193,12 @@ class TestOnModelCallDecorator:
         """Test that decorator works both with and without parentheses."""
 
         # Without parentheses
-        @on_model_call
+        @wrap_model_call
         def middleware_no_parens(request, handler):
             return handler(request)
 
         # With parentheses
-        @on_model_call()
+        @wrap_model_call()
         def middleware_with_parens(request, handler):
             return handler(request)
 
@@ -208,7 +208,7 @@ class TestOnModelCallDecorator:
     def test_decorator_preserves_function_name(self) -> None:
         """Test that decorator uses function name for class name."""
 
-        @on_model_call
+        @wrap_model_call
         def my_custom_middleware(request, handler):
             return handler(request)
 
@@ -218,7 +218,7 @@ class TestOnModelCallDecorator:
         """Test decorated middleware mixed with class-based middleware."""
         execution_order = []
 
-        @on_model_call
+        @wrap_model_call
         def decorated_middleware(request, handler):
             execution_order.append("decorated-before")
             result = handler(request)
@@ -226,7 +226,7 @@ class TestOnModelCallDecorator:
             return result
 
         class ClassMiddleware(AgentMiddleware):
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 execution_order.append("class-before")
                 result = handler(request)
                 execution_order.append("class-after")
@@ -260,7 +260,7 @@ class TestOnModelCallDecorator:
                     raise ValueError(f"Attempt {call_count['value']} failed")
                 return super()._generate(messages, **kwargs)
 
-        @on_model_call
+        @wrap_model_call
         def retry_with_tracking(request, handler):
             max_retries = 3
             last_exception = None
@@ -288,7 +288,7 @@ class TestOnModelCallDecorator:
         """Test that decorated middleware works with async agent invocation."""
         call_log = []
 
-        @on_model_call
+        @wrap_model_call
         async def logging_middleware(request, handler):
             call_log.append("before")
             result = await handler(request)
@@ -307,7 +307,7 @@ class TestOnModelCallDecorator:
         """Test decorator modifying request before execution."""
         modified_prompts = []
 
-        @on_model_call
+        @wrap_model_call
         def add_system_prompt(request, handler):
             # Modify request to add system prompt
             modified_request = ModelRequest(
@@ -333,7 +333,7 @@ class TestOnModelCallDecorator:
     def test_decorator_multi_stage_transformation(self) -> None:
         """Test decorator applying multiple transformations."""
 
-        @on_model_call
+        @wrap_model_call
         def multi_transform(request, handler):
             result = handler(request)
 

@@ -98,7 +98,7 @@ def _chain_model_call_handlers(
     ]
     | None
 ):
-    """Compose multiple on_model_call handlers into single middleware stack.
+    """Compose multiple wrap_model_call handlers into single middleware stack.
 
     Composes handlers so first in list becomes outermost layer. Each handler
     receives a handler callback to execute inner layers.
@@ -189,7 +189,7 @@ def _chain_async_model_call_handlers(
     ]
     | None
 ):
-    """Compose multiple async on_model_call handlers into single middleware stack.
+    """Compose multiple async wrap_model_call handlers into single middleware stack.
 
     Args:
         handlers: List of async handlers. First handler wraps all others.
@@ -609,24 +609,26 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.after_agent is not AgentMiddleware.after_agent
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
-    middleware_w_on_model_call = [
-        m for m in middleware if m.__class__.on_model_call is not AgentMiddleware.on_model_call
+    middleware_w_wrap_model_call = [
+        m for m in middleware if m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
     ]
-    middleware_w_aon_model_call = [
-        m for m in middleware if m.__class__.aon_model_call is not AgentMiddleware.aon_model_call
+    middleware_w_awrap_model_call = [
+        m
+        for m in middleware
+        if m.__class__.awrap_model_call is not AgentMiddleware.awrap_model_call
     ]
 
-    # Compose on_model_call handlers into a single middleware stack (sync)
-    on_model_call_handler = None
-    if middleware_w_on_model_call:
-        sync_handlers = [m.on_model_call for m in middleware_w_on_model_call]
-        on_model_call_handler = _chain_model_call_handlers(sync_handlers)
+    # Compose wrap_model_call handlers into a single middleware stack (sync)
+    wrap_model_call_handler = None
+    if middleware_w_wrap_model_call:
+        sync_handlers = [m.wrap_model_call for m in middleware_w_wrap_model_call]
+        wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
 
-    # Compose aon_model_call handlers into a single middleware stack (async)
-    aon_model_call_handler = None
-    if middleware_w_aon_model_call:
-        async_handlers = [m.aon_model_call for m in middleware_w_aon_model_call]
-        aon_model_call_handler = _chain_async_model_call_handlers(async_handlers)
+    # Compose awrap_model_call handlers into a single middleware stack (async)
+    awrap_model_call_handler = None
+    if middleware_w_awrap_model_call:
+        async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
+        awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
@@ -858,7 +860,7 @@ def create_agent(  # noqa: PLR0915
     def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
         """Execute model and return result or exception.
 
-        This is the core model execution logic wrapped by on_model_call handlers.
+        This is the core model execution logic wrapped by wrap_model_call handlers.
         """
         try:
             # Get the bound model (with auto-detection if needed)
@@ -909,12 +911,12 @@ def create_agent(  # noqa: PLR0915
             effective_response_format = internal_response.effective_response_format
             return internal_response.result
 
-        if on_model_call_handler is None:
+        if wrap_model_call_handler is None:
             # No handlers - execute directly
             output = base_handler(request)
         else:
             # Call composed handler with base handler
-            output = on_model_call_handler(request, base_handler)
+            output = wrap_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
@@ -924,7 +926,7 @@ def create_agent(  # noqa: PLR0915
     async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
         """Execute model asynchronously and return result or exception.
 
-        This is the core async model execution logic wrapped by on_model_call handlers.
+        This is the core async model execution logic wrapped by wrap_model_call handlers.
         """
         try:
             # Get the bound model (with auto-detection if needed)
@@ -975,12 +977,12 @@ def create_agent(  # noqa: PLR0915
             effective_response_format = internal_response.effective_response_format
             return internal_response.result
 
-        if aon_model_call_handler is None:
+        if awrap_model_call_handler is None:
             # No async handlers - execute directly
             output = await base_handler(request)
         else:
             # Call composed async handler with base handler
-            output = await aon_model_call_handler(request, base_handler)
+            output = await awrap_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
