@@ -3,7 +3,7 @@ from __future__ import annotations  # type: ignore[import-not-found]
 import importlib.util
 import logging
 from collections.abc import Iterator, Mapping
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
@@ -71,13 +71,13 @@ class HuggingFacePipeline(BaseLLM):
     """
 
     pipeline: Any = None  #: :meta private:
-    model_id: Optional[str] = None
+    model_id: str | None = None
     """The model name. If not set explicitly by the user,
     it will be inferred from the provided pipeline (if available).
     If neither is provided, the DEFAULT_MODEL_ID will be used."""
-    model_kwargs: Optional[dict] = None
+    model_kwargs: dict | None = None
     """Keyword arguments passed to the model."""
-    pipeline_kwargs: Optional[dict] = None
+    pipeline_kwargs: dict | None = None
     """Keyword arguments passed to the pipeline."""
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
@@ -103,10 +103,10 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: Optional[int] = None,
-        device_map: Optional[str] = None,
-        model_kwargs: Optional[dict] = None,
-        pipeline_kwargs: Optional[dict] = None,
+        device: int | None = None,
+        device_map: str | None = None,
+        model_kwargs: dict | None = None,
+        pipeline_kwargs: dict | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> HuggingFacePipeline:
@@ -311,8 +311,8 @@ class HuggingFacePipeline(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         # List to hold all results
@@ -363,8 +363,8 @@ class HuggingFacePipeline(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         from threading import Thread

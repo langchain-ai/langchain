@@ -92,7 +92,7 @@ class Serializable(BaseModel, ABC):
 
     It relies on the following methods and properties:
 
-    - ``is_lc_serializable``: Is this class serializable?
+    - `is_lc_serializable`: Is this class serializable?
       By design, even if a class inherits from Serializable, it is not serializable by
       default. This is to prevent accidental serialization of objects that should not
       be serialized.
@@ -161,8 +161,9 @@ class Serializable(BaseModel, ABC):
 
         The unique identifier is a list of strings that describes the path
         to the object.
+
         For example, for the class `langchain.llms.openai.OpenAI`, the id is
-        ["langchain", "llms", "openai", "OpenAI"].
+        `["langchain", "llms", "openai", "OpenAI"]`.
         """
         # Pydantic generics change the class name. So we need to do the following
         if (

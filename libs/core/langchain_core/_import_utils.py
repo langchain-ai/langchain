@@ -13,7 +13,7 @@ def import_attr(
 
     Args:
         attr_name: The name of the attribute to import.
-        module_name: The name of the module to import from. If None, the attribute
+        module_name: The name of the module to import from. If `None`, the attribute
             is imported from the package itself.
         package: The name of the package where the module is located.
 

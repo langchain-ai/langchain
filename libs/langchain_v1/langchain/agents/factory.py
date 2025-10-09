@@ -330,7 +330,7 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
         model: Model name string or BaseChatModel instance.
 
     Returns:
-        ``True`` if the model supports provider-specific structured output, ``False`` otherwise.
+        `True` if the model supports provider-specific structured output, `False` otherwise.
     """
     model_name: str | None = None
     if isinstance(model, str):
@@ -448,7 +448,7 @@ def create_agent(  # noqa: PLR0915
     Args:
         model: The language model for the agent. Can be a string identifier
             (e.g., ``"openai:gpt-4"``), a chat model instance (e.g., ``ChatOpenAI()``).
-        tools: A list of tools, dicts, or callables. If ``None`` or an empty list,
+        tools: A list of tools, dicts, or callables. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. If provided as a string,
             it will be converted to a SystemMessage and added to the beginning
@@ -483,10 +483,10 @@ def create_agent(  # noqa: PLR0915
         A compiled StateGraph that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting AIMessage contains ``tool_calls``, the graph will
+    the system prompt). If the resulting AIMessage contains `tool_calls`, the graph will
     then call the tools. The tools node executes the tools and adds the responses
-    to the messages list as ``ToolMessage`` objects. The agent node then calls the
-    language model again. The process repeats until no more ``tool_calls`` are
+    to the messages list as `ToolMessage` objects. The agent node then calls the
+    language model again. The process repeats until no more `tool_calls` are
     present in the response. The agent then returns the full list of messages.
 
     Example:

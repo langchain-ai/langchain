@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
@@ -1324,10 +1324,10 @@ def test_usage_metadata_standardization() -> None:
 
     # Null input and output tokens
     class UsageModelNulls(BaseModel):
-        input_tokens: Optional[int] = None
-        output_tokens: Optional[int] = None
-        cache_read_input_tokens: Optional[int] = None
-        cache_creation_input_tokens: Optional[int] = None
+        input_tokens: int | None = None
+        output_tokens: int | None = None
+        cache_read_input_tokens: int | None = None
+        cache_creation_input_tokens: int | None = None
 
     usage_nulls = UsageModelNulls()
     result = _create_usage_metadata(usage_nulls)

@@ -286,7 +286,7 @@ def _handle_tool_error(
     Args:
         e: The exception that occurred during tool execution.
         flag: Configuration for how to handle the error. Can be:
-            - bool: If True, use default error template
+            - bool: If `True`, use default error template
             - str: Use this string as the error message
             - Callable: Call this function with the exception to get error message
             - tuple: Not used in this context (handled by caller)
@@ -419,7 +419,7 @@ class ToolNode(RunnableCallable):
         name: The name identifier for this node in the graph. Used for debugging
             and visualization. Defaults to "tools".
         tags: Optional metadata tags to associate with the node for filtering
-            and organization. Defaults to None.
+            and organization. Defaults to `None`.
         handle_tool_errors: Configuration for error handling during tool execution.
             Supports multiple strategies:
 
@@ -441,7 +441,7 @@ class ToolNode(RunnableCallable):
                 - ignores tool execution errors (they will be re-raised)
 
         messages_key: The key in the state dictionary that contains the message list.
-            This same key will be used for the output ToolMessages.
+            This same key will be used for the output `ToolMessage` objects.
             Defaults to "messages".
             Allows custom state schemas with different message field names.
 
@@ -1249,7 +1249,7 @@ class InjectedState(InjectedToolArg):
     to the model's tool-calling interface.
 
     Args:
-        field: Optional key to extract from the state dictionary. If None, the entire
+        field: Optional key to extract from the state dictionary. If `None`, the entire
             state is injected. If specified, only that field's value is injected.
             This allows tools to request specific state components rather than
             processing the full state structure.

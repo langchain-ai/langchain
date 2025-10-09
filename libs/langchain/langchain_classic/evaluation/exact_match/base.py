@@ -35,11 +35,11 @@ class ExactMatchStringEvaluator(StringEvaluator):
 
         Args:
             ignore_case: Whether to ignore case when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
             ignore_punctuation: Whether to ignore punctuation when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
             ignore_numbers: Whether to ignore numbers when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
         """
         super().__init__()
         self.ignore_case = ignore_case

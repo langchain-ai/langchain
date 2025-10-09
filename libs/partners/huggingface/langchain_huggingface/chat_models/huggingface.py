@@ -7,7 +7,7 @@ import json
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -316,7 +316,7 @@ class ChatHuggingFace(BaseChatModel):
     the HuggingFace Hub.
 
     Setup:
-        Install ``langchain-huggingface`` and ensure your Hugging Face token
+        Install `langchain-huggingface` and ensure your Hugging Face token
         is saved.
 
         .. code-block:: bash
@@ -478,33 +478,33 @@ class ChatHuggingFace(BaseChatModel):
         HuggingFaceHub, or HuggingFacePipeline."""
     tokenizer: Any = None
     """Tokenizer for the model. Only used for HuggingFacePipeline."""
-    model_id: Optional[str] = None
+    model_id: str | None = None
     """Model ID for the model. Only used for HuggingFaceEndpoint."""
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """What sampling temperature to use."""
-    stop: Optional[Union[str, list[str]]] = Field(default=None, alias="stop_sequences")
+    stop: str | list[str] | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    presence_penalty: Optional[float] = None
+    presence_penalty: float | None = None
     """Penalizes repeated tokens."""
-    frequency_penalty: Optional[float] = None
+    frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
-    seed: Optional[int] = None
+    seed: int | None = None
     """Seed for generation"""
-    logprobs: Optional[bool] = None
+    logprobs: bool | None = None
     """Whether to return logprobs."""
-    top_logprobs: Optional[int] = None
+    top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with
      an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
-    logit_bias: Optional[dict[int, int]] = None
+    logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: Optional[int] = None
+    n: int | None = None
     """Number of chat completions to generate for each prompt."""
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
     """Maximum number of tokens to generate."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -558,9 +558,9 @@ class ChatHuggingFace(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,  # noqa: FBT001
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -599,9 +599,9 @@ class ChatHuggingFace(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,  # noqa: FBT001
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         if _is_huggingface_textgen_inference(self.llm):
@@ -638,8 +638,8 @@ class ChatHuggingFace(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if _is_huggingface_endpoint(self.llm):
@@ -687,8 +687,8 @@ class ChatHuggingFace(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -779,7 +779,7 @@ class ChatHuggingFace(BaseChatModel):
             self.model_id = self.llm.repo_id
             return
         if _is_huggingface_textgen_inference(self.llm):
-            endpoint_url: Optional[str] = self.llm.inference_server_url
+            endpoint_url: str | None = self.llm.inference_server_url
         if _is_huggingface_pipeline(self.llm):
             from transformers import AutoTokenizer  # type: ignore[import]
 
@@ -809,11 +809,9 @@ class ChatHuggingFace(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required"], bool]  # noqa: PYI051
-        ] = None,
+        tool_choice: dict | str | bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -826,7 +824,7 @@ class ChatHuggingFace(BaseChatModel):
                 `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
-                ``'auto'`` to automatically determine which function to call
+                `'auto'` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
@@ -870,14 +868,14 @@ class ChatHuggingFace(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[dict, type[BaseModel]]] = None,
+        schema: dict | type[BaseModel] | None = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -896,8 +894,8 @@ class ChatHuggingFace(BaseChatModel):
                 - ``'json_mode'``: uses JSON mode.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
@@ -948,7 +946,7 @@ class ChatHuggingFace(BaseChatModel):
             if is_pydantic_schema:
                 msg = "Pydantic schema is not supported for function calling"
                 raise NotImplementedError(msg)
-            output_parser: Union[JsonOutputKeyToolsParser, JsonOutputParser] = (
+            output_parser: JsonOutputKeyToolsParser | JsonOutputParser = (
                 JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
             )
         elif method == "json_schema":
@@ -966,9 +964,7 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, JsonOutputParser
-            ] = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()  # type: ignore[arg-type]
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
@@ -977,9 +973,7 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, JsonOutputParser
-            ] = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()  # type: ignore[arg-type]
         else:
             msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -999,7 +993,7 @@ class ChatHuggingFace(BaseChatModel):
         return llm | output_parser
 
     def _create_message_dicts(
-        self, messages: list[BaseMessage], stop: Optional[list[str]]
+        self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = self._default_params
         if stop is not None:

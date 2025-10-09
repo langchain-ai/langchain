@@ -93,21 +93,12 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
-    "D102",    # Missing docstring in public method
-    "D103",    # Missing docstring in public function
-    "D104",    # Missing docstring in public package
-    "D105",    # Missing docstring in magic method
-    "D107",    # Missing docstring in __init__
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -130,4 +121,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]

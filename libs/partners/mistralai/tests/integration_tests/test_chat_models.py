@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from httpx import ReadTimeout
@@ -33,7 +33,7 @@ async def test_astream() -> None:
     """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     async for token in llm.astream("Hello"):

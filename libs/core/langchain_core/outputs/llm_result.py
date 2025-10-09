@@ -91,10 +91,10 @@ class LLMResult(BaseModel):
         return llm_results
 
     def __eq__(self, other: object) -> bool:
-        """Check for ``LLMResult`` equality by ignoring any metadata related to runs.
+        """Check for `LLMResult` equality by ignoring any metadata related to runs.
 
         Args:
-            other: Another ``LLMResult`` object to compare against.
+            other: Another `LLMResult` object to compare against.
 
         Returns:
             True if the generations and ``llm_output`` are equal, False otherwise.

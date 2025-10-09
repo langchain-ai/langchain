@@ -35,7 +35,7 @@ class RecursiveJsonSplitter:
 
         Args:
             max_chunk_size: The maximum size for a chunk. Defaults to 2000.
-            min_chunk_size: The minimum size for a chunk. If None,
+            min_chunk_size: The minimum size for a chunk. If `None`,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
         """
         super().__init__()

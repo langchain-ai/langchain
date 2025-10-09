@@ -194,7 +194,7 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
 
     Args:
         config (Optional[RunnableConfig], optional): The config to ensure.
-          Defaults to None.
+          Defaults to `None`.
 
     Returns:
         RunnableConfig: The ensured config.
@@ -304,14 +304,14 @@ def patch_config(
     Args:
         config (Optional[RunnableConfig]): The config to patch.
         callbacks (Optional[BaseCallbackManager], optional): The callbacks to set.
-          Defaults to None.
+          Defaults to `None`.
         recursion_limit (Optional[int], optional): The recursion limit to set.
-          Defaults to None.
+          Defaults to `None`.
         max_concurrency (Optional[int], optional): The max concurrency to set.
-          Defaults to None.
-        run_name (Optional[str], optional): The run name to set. Defaults to None.
+          Defaults to `None`.
+        run_name (Optional[str], optional): The run name to set. Defaults to `None`.
         configurable (Optional[dict[str, Any]], optional): The configurable to set.
-          Defaults to None.
+          Defaults to `None`.
 
     Returns:
         RunnableConfig: The patched config.
@@ -418,7 +418,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function. Defaults to `None`.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -452,7 +452,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function. Defaults to `None`.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -542,7 +542,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             fn (Callable[..., T]): The function to map.
             *iterables (Iterable[Any]): The iterables to map over.
             timeout (float | None, optional): The timeout for the map.
-                Defaults to None.
+                Defaults to `None`.
             chunksize (int, optional): The chunksize for the map. Defaults to 1.
 
         Returns:

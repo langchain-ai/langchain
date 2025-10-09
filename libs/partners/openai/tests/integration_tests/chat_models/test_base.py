@@ -5,7 +5,7 @@ import json
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 import httpx
 import openai
@@ -202,7 +202,7 @@ def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
     llm = ChatOpenAI(model="gpt-4.1-mini")
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -211,7 +211,7 @@ def test_stream() -> None:
     assert full.response_metadata.get("model_name") is not None
 
     # check token usage
-    aggregate: Optional[BaseMessageChunk] = None
+    aggregate: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     for chunk in llm.stream("Hello"):
@@ -242,7 +242,7 @@ async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
 
     async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:
-        full: Optional[BaseMessageChunk] = None
+        full: BaseMessageChunk | None = None
         chunks_with_token_counts = 0
         chunks_with_response_metadata = 0
         async for chunk in stream:
@@ -357,7 +357,7 @@ async def test_async_response_metadata() -> None:
 
 def test_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -370,7 +370,7 @@ def test_response_metadata_streaming() -> None:
 
 async def test_async_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -564,7 +564,7 @@ def test_openai_response_headers(use_responses_api: bool) -> None:
     assert "content-type" in headers
 
     # Stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in chat_openai.stream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
@@ -588,7 +588,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
     assert "content-type" in headers
 
     # Stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in chat_openai.astream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
@@ -672,7 +672,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
     class magic_function_notrequired_arg(BaseModel):  # noqa: N801
         """Applies a magic function to an input."""
 
-        input: Optional[int] = Field(default=None)
+        input: int | None = Field(default=None)
 
     model = ChatOpenAI(
         model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
@@ -694,7 +694,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
         model_with_invalid_tool_schema.invoke(query)
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in model_with_tools.stream(query):
         full = chunk if full is None else full + chunk  # type: ignore
     assert isinstance(full, AIMessage)
@@ -960,7 +960,7 @@ class Foo(BaseModel):
 
 
 def test_stream_response_format() -> None:
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks = []
     for chunk in ChatOpenAI(model="gpt-5-nano").stream(
         "how are ya", response_format=Foo
@@ -977,7 +977,7 @@ def test_stream_response_format() -> None:
 
 
 async def test_astream_response_format() -> None:
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks = []
     async for chunk in ChatOpenAI(model="gpt-5-nano").astream(
         "how are ya", response_format=Foo
@@ -1048,7 +1048,7 @@ def test_structured_output_and_tools() -> None:
     assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
 
     # Test streaming tool calls
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream(
         "Generate a user name for Alice, black hair. Use the tool."
     ):

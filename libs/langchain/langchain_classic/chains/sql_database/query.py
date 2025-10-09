@@ -59,10 +59,10 @@ def create_sql_query_chain(
         llm: The language model to use.
         db: The SQLDatabase to generate the query for.
         prompt: The prompt to use. If none is provided, will choose one
-            based on dialect. Defaults to None. See Prompt section below for more.
+            based on dialect. Defaults to `None`. See Prompt section below for more.
         k: The number of results per select statement to return. Defaults to 5.
         get_col_comments: Whether to retrieve column comments along with table info.
-            Defaults to False.
+            Defaults to `False`.
 
     Returns:
         A chain that takes in a question and generates a SQL query that answers

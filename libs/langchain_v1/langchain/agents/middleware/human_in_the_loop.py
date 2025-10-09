@@ -163,8 +163,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             interrupt_on: Mapping of tool name to allowed actions.
                 If a tool doesn't have an entry, it's auto-approved by default.
 
-                * ``True`` indicates all actions are allowed: accept, edit, and respond.
-                * ``False`` indicates that the tool is auto-approved.
+                * `True` indicates all actions are allowed: accept, edit, and respond.
+                * `False` indicates that the tool is auto-approved.
                 * ``ToolConfig`` indicates the specific actions allowed for this tool.
                   The ToolConfig can include a ``description`` field (str or callable) for
                   custom formatting of the interrupt description.

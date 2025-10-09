@@ -145,7 +145,7 @@ class StructuredPrompt(ChatPromptTemplate):
 
         Args:
             others: The language model to pipe the structured prompt to.
-            name: The name of the pipeline. Defaults to None.
+            name: The name of the pipeline. Defaults to `None`.
 
         Returns:
             A RunnableSequence object.
