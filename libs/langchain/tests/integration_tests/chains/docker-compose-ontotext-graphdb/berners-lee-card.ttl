@@ -53,7 +53,7 @@ blog:4 dc:title "timbl's blog on DIG" ;
     :maker card:i .
 
 Pub:friends.ttl a :PersonalProfileDocument ;
-    cc:license <http://creativecommons.org/licenses/by-nc/3.0/> ;
+    cc:license <http://creativecommons.org/licenses/by/4.0/> ;
     dc:title "Tim Berners-Lee's editable profile" ;
     :maker card:i ;
     :primaryTopic card:i .
@@ -112,4 +112,5 @@ card:i a con:Male,
     :title "Sir" ;
     :weblog blog:4 ;
     :workplaceHomepage <https://www.w3.org/> .
+
 
