@@ -43,7 +43,7 @@ w3c:W3C :member card:i .
     :maker card:i .
 
 Be:card a :PersonalProfileDocument ;
-    cc:license <http://creativecommons.org/licenses/by-nc/3.0/> ;
+    cc:license <http://creativecommons.org/licenses/by/4.0/> ;
     dc:title "Tim Berners-Lee's FOAF file" ;
     :maker card:i ;
     :primaryTopic card:i .
@@ -112,3 +112,4 @@ card:i a con:Male,
     :title "Sir" ;
     :weblog blog:4 ;
     :workplaceHomepage <https://www.w3.org/> .
+
