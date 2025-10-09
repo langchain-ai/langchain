@@ -9,7 +9,7 @@ from langchain_chroma import Chroma
 
 
 class TestChromaStandard(VectorStoreIntegrationTests):
-    @pytest.fixture()
+    @pytest.fixture
     def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore[override]
         """Get an empty vectorstore for unit tests."""
         store = Chroma(embedding_function=self.get_embeddings())

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from json import JSONDecodeError
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, TypeAlias
 
 import openai
 from langchain_core.callbacks import (
@@ -22,16 +22,15 @@ from typing_extensions import Self
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
-_BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
+_DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
 
 
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install ``langchain-deepseek`` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install `langchain-deepseek` and set environment variable ``DEEPSEEK_API_KEY``.
 
         .. code-block:: bash
 
@@ -170,7 +169,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     model_name: str = Field(alias="model")
     """The name of the model"""
-    api_key: Optional[SecretStr] = Field(
+    api_key: SecretStr | None = Field(
         default_factory=secret_from_env("DEEPSEEK_API_KEY", default=None),
     )
     """DeepSeek API key"""
@@ -193,7 +192,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
@@ -202,6 +201,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
+        """Validate necessary environment vars and client params."""
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
@@ -237,19 +237,30 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
+            elif message["role"] == "assistant" and isinstance(
+                message["content"], list
+            ):
+                # DeepSeek API expects assistant content to be a string, not a list.
+                # Extract text blocks and join them, or use empty string if none exist.
+                text_parts = [
+                    block.get("text", "")
+                    for block in message["content"]
+                    if isinstance(block, dict) and block.get("type") == "text"
+                ]
+                message["content"] = "".join(text_parts) if text_parts else ""
         return payload
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[dict] = None,
+        response: dict | openai.BaseModel,
+        generation_info: dict | None = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
@@ -277,8 +288,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         chunk: dict,
         default_chunk_class: type,
-        base_generation_info: Optional[dict],
-    ) -> Optional[ChatGenerationChunk]:
+        base_generation_info: dict | None,
+    ) -> ChatGenerationChunk | None:
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
             default_chunk_class,
@@ -304,8 +315,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         try:
@@ -329,8 +340,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         try:
@@ -353,7 +364,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal[
             "function_calling",
@@ -361,7 +372,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             "json_schema",
         ] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.

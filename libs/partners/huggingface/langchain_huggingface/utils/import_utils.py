@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import operator as op
-from typing import Union
 
 from packaging import version
 
@@ -44,7 +43,7 @@ _openvino_available = importlib.util.find_spec("openvino") is not None
 
 # This function was copied from: https://github.com/huggingface/accelerate/blob/874c4967d94badd24f893064cc3bef45f57cadf7/src/accelerate/utils/versions.py#L319
 def compare_versions(
-    library_or_version: Union[str, version.Version],
+    library_or_version: str | version.Version,
     operation: str,
     requirement_version: str,
 ) -> bool:

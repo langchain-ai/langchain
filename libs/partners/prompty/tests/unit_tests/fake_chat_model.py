@@ -1,7 +1,7 @@
 """Fake Chat Model wrapper for testing purposes."""
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -18,8 +18,8 @@ class FakeEchoPromptChatModel(SimpleChatModel):
     def _call(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         return json.dumps([message.model_dump() for message in messages])
@@ -27,8 +27,8 @@ class FakeEchoPromptChatModel(SimpleChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         output_str = "fake response 2"

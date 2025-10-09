@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.messages.tool import tool_call
@@ -18,7 +18,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
     """Whether to return only the first tool call."""
     args_only: bool = False
     """Whether to return only the arguments of the tool calls."""
-    pydantic_schemas: Optional[list[type[BaseModel]]] = None
+    pydantic_schemas: list[type[BaseModel]] | None = None
     """Pydantic schemas to parse tool calls into."""
 
     model_config = ConfigDict(
@@ -77,7 +77,7 @@ def _extract_tool_calls_from_message(message: AIMessage) -> list[ToolCall]:
     return extract_tool_calls(message.content)
 
 
-def extract_tool_calls(content: Union[str, list[Union[str, dict]]]) -> list[ToolCall]:
+def extract_tool_calls(content: str | list[str | dict]) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
     if isinstance(content, list):
         tool_calls = []

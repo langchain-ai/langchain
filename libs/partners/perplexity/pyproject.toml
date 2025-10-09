@@ -67,7 +67,6 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", "UP045"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

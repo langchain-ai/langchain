@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Optional, Union, cast
+from typing import cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
@@ -102,7 +102,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
     """  # noqa: E501
 
-    azure_endpoint: Optional[str] = Field(
+    azure_endpoint: str | None = Field(
         default_factory=from_env("AZURE_OPENAI_ENDPOINT", default=None)
     )
     """Your Azure endpoint, including the resource.
@@ -111,7 +111,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
         Example: `https://example-resource.azure.openai.com/`
     """
-    deployment: Optional[str] = Field(default=None, alias="azure_deployment")
+    deployment: str | None = Field(default=None, alias="azure_deployment")
     """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
@@ -123,14 +123,14 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env(
             ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
         ),
     )
     """Automatically inferred from env var ``AZURE_OPENAI_API_KEY`` if not provided."""
-    openai_api_version: Optional[str] = Field(
+    openai_api_version: str | None = Field(
         default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15"),
         alias="api_version",
     )
@@ -139,7 +139,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     Set to ``'2023-05-15'`` by default if env variable ``OPENAI_API_VERSION`` is not
     set.
     """
-    azure_ad_token: Optional[SecretStr] = Field(
+    azure_ad_token: SecretStr | None = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
     )
     """Your Azure Active Directory token.
@@ -148,18 +148,18 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
 
         `For more, see this page. <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__
     """
-    azure_ad_token_provider: Union[Callable[[], str], None] = None
+    azure_ad_token_provider: Callable[[], str] | None = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
         will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
-    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    azure_ad_async_token_provider: Callable[[], Awaitable[str]] | None = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every async request.
     """
-    openai_api_type: Optional[str] = Field(
+    openai_api_type: str | None = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
     validate_base_url: bool = True

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import pytest
 from groq import BadRequestError
@@ -102,7 +102,7 @@ async def test_astream() -> None:
     """Test streaming tokens from Groq."""
     chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     async for token in chat.astream("Welcome to the Groqetship!"):
@@ -254,7 +254,7 @@ def test_reasoning_output_stream() -> None:
         HumanMessage(content="I love programming."),
     ]
 
-    full_response: Optional[AIMessageChunk] = None
+    full_response: AIMessageChunk | None = None
     for token in chat.stream(message):
         assert isinstance(token, AIMessageChunk)
 
