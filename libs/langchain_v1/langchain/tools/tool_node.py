@@ -120,13 +120,13 @@ class ToolCallRequest:
     runtime: Any
 
 
-ToolCallHandler = Callable[
+ToolCallWrapper = Callable[
     [ToolCallRequest, Callable[[ToolCall], ToolMessage | Command]],
     ToolMessage | Command,
 ]
-"""Handler-based tool call interceptor with multi-call support.
+"""Wrapper-based tool call interceptor with multi-call support.
 
-Handler receives:
+Wrapper receives:
     request: ToolCallRequest with tool_call, tool, state, and runtime.
     execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
         Takes a ToolCall dict and returns ToolMessage or Command.
@@ -146,19 +146,19 @@ Note:
 Examples:
     Passthrough (execute once):
 
-    def handler(request, execute):
+    def wrapper(request, execute):
         return execute(request.tool_call)
 
     Modify request before execution:
 
-    def handler(request, execute):
+    def wrapper(request, execute):
         modified_call = request.tool_call.copy()
         modified_call["args"]["value"] *= 2
         return execute(modified_call)
 
     Retry on error (execute multiple times):
 
-    def handler(request, execute):
+    def wrapper(request, execute):
         for attempt in range(3):
             try:
                 result = execute(request.tool_call)
@@ -171,7 +171,7 @@ Examples:
 
     Conditional retry based on response:
 
-    def handler(request, execute):
+    def wrapper(request, execute):
         for attempt in range(3):
             result = execute(request.tool_call)
             if isinstance(result, ToolMessage) and result.status != "error":
@@ -182,7 +182,7 @@ Examples:
 
     Cache/short-circuit without calling execute:
 
-    def handler(request, execute):
+    def wrapper(request, execute):
         if cached := get_cache(request):
             return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
         result = execute(request.tool_call)
@@ -501,7 +501,7 @@ class ToolNode(RunnableCallable):
         | type[Exception]
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
-        on_tool_call: ToolCallHandler | None = None,
+        wrap_tool_call: ToolCallWrapper | None = None,
     ) -> None:
         """Initialize ToolNode with tools and configuration.
 
@@ -511,7 +511,7 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            on_tool_call: Handler to intercept tool execution. Receives ToolCallRequest
+            wrap_tool_call: Wrapper to intercept tool execution. Receives ToolCallRequest
                 and execute callable. Execute callable takes ToolCall dict and returns
                 ToolMessage or Command. Enables retries, caching, request modification,
                 and control flow by calling execute multiple times with modified tool calls.
@@ -522,7 +522,7 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
-        self._on_tool_call = on_tool_call
+        self._wrap_tool_call = wrap_tool_call
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -716,7 +716,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call with on_tool_call handler if configured.
+        """Execute single tool call with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -744,7 +744,7 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._on_tool_call is None:
+        if self._wrap_tool_call is None:
             # No handler - execute directly
             return self._execute_tool_sync(call, tool, input_type, config)
 
@@ -755,7 +755,7 @@ class ToolNode(RunnableCallable):
 
         # Call handler with request and execute callable
         try:
-            return self._on_tool_call(tool_request, execute)
+            return self._wrap_tool_call(tool_request, execute)
         except Exception as e:
             # Handler threw an exception
             if not self._handle_tool_errors:
@@ -858,7 +858,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call asynchronously with on_tool_call handler if configured.
+        """Execute single tool call asynchronously with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -886,7 +886,7 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._on_tool_call is None:
+        if self._wrap_tool_call is None:
             # No handler - execute directly
             return await self._execute_tool_async(call, tool, input_type, config)
 
@@ -898,7 +898,7 @@ class ToolNode(RunnableCallable):
         # Call handler with request and execute callable
         # Note: handler is sync, but execute callable is async
         try:
-            result = self._on_tool_call(tool_request, execute)  # type: ignore[arg-type]
+            result = self._wrap_tool_call(tool_request, execute)  # type: ignore[arg-type]
             # If result is a coroutine, await it (though handler should be sync)
             return await result if hasattr(result, "__await__") else result
         except Exception as e:
@@ -974,7 +974,7 @@ class ToolNode(RunnableCallable):
             input: The input which may be raw state or ToolCallWithContext.
 
         Returns:
-            The actual state to pass to on_tool_call handlers.
+            The actual state to pass to wrap_tool_call wrappers.
         """
         if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
             return input["state"]

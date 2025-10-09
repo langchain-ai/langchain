@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest
+    from langchain.tools.tool_node import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -373,8 +373,8 @@ def _handle_structured_output_error(
 
 
 def _chain_tool_call_handlers(
-    handlers: Sequence[ToolCallHandler],
-) -> ToolCallHandler | None:
+    handlers: Sequence[ToolCallWrapper],
+) -> ToolCallWrapper | None:
     """Compose handlers into middleware stack (first = outermost).
 
     Args:
@@ -394,7 +394,7 @@ def _chain_tool_call_handlers(
     if len(handlers) == 1:
         return handlers[0]
 
-    def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
+    def compose_two(outer: ToolCallWrapper, inner: ToolCallWrapper) -> ToolCallWrapper:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
@@ -571,7 +571,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, on_tool_call=wrap_tool_call_handler)
+        ToolNode(tools=available_tools, wrap_tool_call=wrap_tool_call_handler)
         if available_tools
         else None
     )
