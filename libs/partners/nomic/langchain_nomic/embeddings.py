@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Literal, Optional, overload
+from typing import Literal, overload
 
 import nomic  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
@@ -28,8 +28,8 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: Literal["remote"] = ...,
     ) -> None: ...
 
@@ -38,10 +38,10 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: Literal["local", "dynamic"],
-        device: Optional[str] = ...,
+        device: str | None = ...,
     ) -> None: ...
 
     @overload
@@ -49,21 +49,21 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: str,
-        device: Optional[str] = ...,
+        device: str | None = ...,
     ) -> None: ...
 
     def __init__(
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = None,
-        dimensionality: Optional[int] = None,
+        nomic_api_key: str | None = None,
+        dimensionality: int | None = None,
         inference_mode: str = "remote",
-        device: Optional[str] = None,
-        vision_model: Optional[str] = None,
+        device: str | None = None,
+        vision_model: str | None = None,
     ):
         """Initialize NomicEmbeddings model.
 
