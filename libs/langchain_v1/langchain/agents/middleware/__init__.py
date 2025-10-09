@@ -23,7 +23,6 @@ from .types import (
     before_model,
     dynamic_prompt,
     hook_config,
-    modify_model_request,
     on_model_call,
 )
 
@@ -50,6 +49,5 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "modify_model_request",
     "on_model_call",
 ]

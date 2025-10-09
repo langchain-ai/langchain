@@ -1,11 +1,12 @@
 """Test Middleware handling of tools in agents."""
 
 import pytest
+from collections.abc import Callable
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.agents.factory import create_agent
 from langchain.tools import ToolNode
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
 from langgraph.runtime import Runtime
@@ -26,9 +27,13 @@ def test_model_request_tools_are_base_tools() -> None:
         return f"Result: {expression}"
 
     class RequestCapturingMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             captured_requests.append(request)
-            return request
+            return handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -68,10 +73,14 @@ def test_middleware_can_modify_tools() -> None:
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             # Only allow tool_a and tool_b
             request.tools = [t for t in request.tools if t.name in ["tool_a", "tool_b"]]
-            return request
+            return handler(request)
 
     # Model will try to call tool_a
     model = FakeToolCallingModel(
@@ -109,10 +118,14 @@ def test_unknown_tool_raises_error() -> None:
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             # Add an unknown tool
             request.tools = request.tools + [unknown_tool]
-            return request
+            return handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -144,11 +157,15 @@ def test_middleware_can_add_and_remove_tools() -> None:
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
         state_schema = AdminState
 
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             # Remove admin_tool if not admin
             if not request.state.get("is_admin", False):
                 request.tools = [t for t in request.tools if t.name != "admin_tool"]
-            return request
+            return handler(request)
 
     model = FakeToolCallingModel()
 
@@ -178,10 +195,14 @@ def test_empty_tools_list_is_valid() -> None:
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             # Remove all tools
             request.tools = []
-            return request
+            return handler(request)
 
     model = FakeToolCallingModel()
 
@@ -217,20 +238,28 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             modification_order.append([t.name for t in request.tools])
             # Remove tool_c
             request.tools = [t for t in request.tools if t.name != "tool_c"]
-            return request
+            return handler(request)
 
     class SecondMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def on_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             modification_order.append([t.name for t in request.tools])
             # Should not see tool_c here
             assert all(t.name != "tool_c" for t in request.tools)
             # Remove tool_b
             request.tools = [t for t in request.tools if t.name != "tool_b"]
-            return request
+            return handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),

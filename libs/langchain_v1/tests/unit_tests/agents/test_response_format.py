@@ -6,8 +6,9 @@ import pytest
 
 from dataclasses import dataclass
 from typing import Union, Sequence, Any, Callable
+from collections.abc import Awaitable
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage as CoreAIMessage
 from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -726,10 +727,14 @@ class TestDynamicModelWithResponseFormat:
 
         # Create middleware that swaps the model in the request
         class ModelSwappingMiddleware(AgentMiddleware):
-            def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+            def on_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], CoreAIMessage],
+            ) -> CoreAIMessage:
                 # Replace the model with our custom test model
                 request.model = model
-                return request
+                return handler(request)
 
         # Track which model is checked for provider strategy support
         calls = []

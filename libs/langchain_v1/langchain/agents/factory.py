@@ -597,12 +597,6 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.before_model is not AgentMiddleware.before_model
         or m.__class__.abefore_model is not AgentMiddleware.abefore_model
     ]
-    middleware_w_modify_model_request = [
-        m
-        for m in middleware
-        if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
-        or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
-    ]
     middleware_w_after_model = [
         m
         for m in middleware
@@ -900,19 +894,6 @@ def create_agent(  # noqa: PLR0915
             runtime=runtime,
         )
 
-        # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
-                request = m.modify_model_request(request)
-            else:
-                msg = (
-                    f"No synchronous function provided for "
-                    f'{m.__class__.__name__}.amodify_model_request".'
-                    "\nEither initialize with a synchronous function or invoke"
-                    " via the async API (ainvoke, astream, etc.)"
-                )
-                raise TypeError(msg)
-
         # Execute with or without handler
         effective_response_format: Any = None
 
@@ -978,10 +959,6 @@ def create_agent(  # noqa: PLR0915
             state=state,
             runtime=runtime,
         )
-
-        # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            request = await m.amodify_model_request(request)
 
         # Execute with or without handler
         effective_response_format: Any = None
