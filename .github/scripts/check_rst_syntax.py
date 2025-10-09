@@ -13,9 +13,9 @@ from typing import List, Tuple
 # RST patterns to detect (pattern, description)
 RST_PATTERNS: List[Tuple[str, str]] = [
     (r"\.\.\s+code-block::", "RST code-block directive (use ```language instead)"),
-    (r":func:`", "RST :func: role (use regular Markdown links)"),
-    (r":class:`", "RST :class: role (use regular Markdown links)"),
-    (r":meth:`", "RST :meth: role (use regular Markdown links)"),
+    (r":func:", "RST :func: role (use regular Markdown links)"),
+    (r":class:", "RST :class: role (use regular Markdown links)"),
+    (r":meth:", "RST :meth: role (use regular Markdown links)"),
     (
         r"\.\.\s+deprecated::",
         "RST deprecated directive (use !!! deprecated admonition)",
@@ -29,7 +29,7 @@ RST_PATTERNS: List[Tuple[str, str]] = [
     (r"\.\.\s+warning::", "RST warning directive (use !!! warning admonition)"),
     (r"\.\.\s+important::", "RST important directive (use !!! important admonition)"),
     (r"\.\.\s+note::", "RST note directive (use !!! note admonition)"),
-    (r":private:`", "RST :private: role (prefix name with underscore instead)"),
+    (r":private:", "RST :private: role (prefix name with underscore instead)"),
     (r"`[^`]+<[^>]+>`__", "RST anonymous hyperlink (use [text](link) instead)"),
     (r"`[^`]+<[^>]+>`_", "RST named hyperlink (use [text](link) instead)"),
 ]

@@ -40,13 +40,14 @@ jobs:
         uses: tj-actions/changed-files@v47
         with:
           files: "**/*.py"
+          files_ignore: ".github/scripts/check_rst_syntax.py"
 
       - name: "🔍 Check for RST Syntax in Changed Files"
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           echo "Checking the following files for RST syntax:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
-          python scripts/check_rst_syntax.py ${{ steps.changed-files.outputs.all_changed_files }}
+          python .github/scripts/check_rst_syntax.py ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: "✅ No RST Syntax Detected"
         if: steps.changed-files.outputs.any_changed != 'true'
