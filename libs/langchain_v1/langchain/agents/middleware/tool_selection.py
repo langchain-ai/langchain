@@ -6,19 +6,18 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Literal, Union
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from langchain.tools import BaseTool
+
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest, StateT
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain.chat_models.base import init_chat_model
-
-if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
-    from langgraph.typing import ContextT
-
-    from langchain.tools import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -243,16 +242,15 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         request.tools = [*selected_tools, *provider_tools]
         return request
 
-    def modify_model_request(
+    def on_model_call(
         self,
         request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
-    ) -> ModelRequest:
-        """Modify the model request to filter tools based on LLM selection."""
+        handler: Callable[[ModelRequest], AIMessage],
+    ) -> AIMessage:
+        """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
-            return request
+            return handler(request)
 
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
@@ -270,20 +268,20 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
             raise AssertionError(msg)
-        return self._process_selection_response(
+        modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
+        return handler(modified_request)
 
-    async def amodify_model_request(
+    async def aon_model_call(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-    ) -> ModelRequest:
-        """Modify the model request to filter tools based on LLM selection."""
+        handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+    ) -> AIMessage:
+        """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
-            return request
+            return await handler(request)
 
         # Create dynamic response model with Literal enum of available tool names
         type_adapter = _create_tool_selection_response(selection_request.available_tools)
@@ -301,6 +299,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         if not isinstance(response, dict):
             msg = f"Expected dict response, got {type(response)}"
             raise AssertionError(msg)
-        return self._process_selection_response(
+        modified_request = self._process_selection_response(
             response, selection_request.available_tools, selection_request.valid_tool_names, request
         )
+        return await handler(modified_request)

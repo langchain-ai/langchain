@@ -6,9 +6,13 @@ from langchain_core.messages import AIMessage
 from langchain.agents.factory import _chain_model_call_handlers
 from langchain.agents.middleware.types import ModelRequest
 
+from typing import cast
+from langgraph.runtime import Runtime
+
 
 def create_test_request(**kwargs):
     """Helper to create a ModelRequest with sensible defaults."""
+
     defaults = {
         "messages": [],
         "model": None,
@@ -16,6 +20,8 @@ def create_test_request(**kwargs):
         "tool_choice": None,
         "tools": [],
         "response_format": None,
+        "state": {},
+        "runtime": cast(Runtime, object()),
     }
     defaults.update(kwargs)
     return ModelRequest(**defaults)
@@ -42,13 +48,13 @@ class TestChainModelCallHandlers:
         """Test basic composition of two handlers."""
         execution_order = []
 
-        def outer(request, state, runtime, handler):
+        def outer(request, handler):
             execution_order.append("outer-before")
             result = handler(request)
             execution_order.append("outer-after")
             return result
 
-        def inner(request, state, runtime, handler):
+        def inner(request, handler):
             execution_order.append("inner-before")
             result = handler(request)
             execution_order.append("inner-after")
@@ -61,7 +67,7 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             return AIMessage(content="test")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         assert execution_order == [
             "outer-before",
@@ -75,19 +81,19 @@ class TestChainModelCallHandlers:
         """Test composition of three handlers."""
         execution_order = []
 
-        def first(request, state, runtime, handler):
+        def first(request, handler):
             execution_order.append("first-before")
             result = handler(request)
             execution_order.append("first-after")
             return result
 
-        def second(request, state, runtime, handler):
+        def second(request, handler):
             execution_order.append("second-before")
             result = handler(request)
             execution_order.append("second-after")
             return result
 
-        def third(request, state, runtime, handler):
+        def third(request, handler):
             execution_order.append("third-before")
             result = handler(request)
             execution_order.append("third-after")
@@ -99,7 +105,7 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             return AIMessage(content="test")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         # First wraps second wraps third
         assert execution_order == [
@@ -116,10 +122,10 @@ class TestChainModelCallHandlers:
         """Test inner handler retrying before outer sees response."""
         inner_attempts = []
 
-        def outer_passthrough(request, state, runtime, handler):
+        def outer_passthrough(request, handler):
             return handler(request)
 
-        def inner_with_retry(request, state, runtime, handler):
+        def inner_with_retry(request, handler):
             for attempt in range(3):
                 inner_attempts.append(attempt)
                 try:
@@ -140,7 +146,7 @@ class TestChainModelCallHandlers:
                 raise ValueError("fail")
             return AIMessage(content="success")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         assert inner_attempts == [0, 1, 2]
         assert result.content == "success"
@@ -148,13 +154,13 @@ class TestChainModelCallHandlers:
     def test_error_to_success_conversion(self) -> None:
         """Test handler converting error to success response."""
 
-        def outer_error_handler(request, state, runtime, handler):
+        def outer_error_handler(request, handler):
             try:
                 return handler(request)
             except Exception:
                 return AIMessage(content="Fallback response")
 
-        def inner_passthrough(request, state, runtime, handler):
+        def inner_passthrough(request, handler):
             return handler(request)
 
         composed = _chain_model_call_handlers([outer_error_handler, inner_passthrough])
@@ -163,7 +169,7 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             raise ValueError("Model failed")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         assert result.content == "Fallback response"
 
@@ -171,13 +177,13 @@ class TestChainModelCallHandlers:
         """Test handlers modifying the request."""
         requests_seen = []
 
-        def outer_add_context(request, state, runtime, handler):
+        def outer_add_context(request, handler):
             modified_request = create_test_request(
                 messages=[*request.messages], system_prompt="Added by outer"
             )
             return handler(modified_request)
 
-        def inner_track_request(request, state, runtime, handler):
+        def inner_track_request(request, handler):
             requests_seen.append(request.system_prompt)
             return handler(request)
 
@@ -187,7 +193,7 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             return AIMessage(content="response")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         assert requests_seen == ["Added by outer"]
         assert result.content == "response"
@@ -197,14 +203,14 @@ class TestChainModelCallHandlers:
         state_values = []
         runtime_values = []
 
-        def outer(request, state, runtime, handler):
-            state_values.append(("outer", state))
-            runtime_values.append(("outer", runtime))
+        def outer(request, handler):
+            state_values.append(("outer", request.state))
+            runtime_values.append(("outer", request.runtime))
             return handler(request)
 
-        def inner(request, state, runtime, handler):
-            state_values.append(("inner", state))
-            runtime_values.append(("inner", runtime))
+        def inner(request, handler):
+            state_values.append(("inner", request.state))
+            runtime_values.append(("inner", request.runtime))
             return handler(request)
 
         composed = _chain_model_call_handlers([outer, inner])
@@ -216,7 +222,11 @@ class TestChainModelCallHandlers:
         def mock_base_handler(req):
             return AIMessage(content="test")
 
-        result = composed(create_test_request(), test_state, test_runtime, mock_base_handler)
+        # Create request with state and runtime
+        test_request = create_test_request()
+        test_request.state = test_state
+        test_request.runtime = test_runtime
+        result = composed(test_request, mock_base_handler)
 
         # Both handlers should see same state and runtime
         assert state_values == [("outer", test_state), ("inner", test_state)]
@@ -227,11 +237,11 @@ class TestChainModelCallHandlers:
         """Test handler that retries multiple times."""
         call_count = {"value": 0}
 
-        def outer_counts_calls(request, state, runtime, handler):
+        def outer_counts_calls(request, handler):
             call_count["value"] += 1
             return handler(request)
 
-        def inner_retries(request, state, runtime, handler):
+        def inner_retries(request, handler):
             try:
                 return handler(request)
             except ValueError:
@@ -249,7 +259,7 @@ class TestChainModelCallHandlers:
                 raise ValueError("fail")
             return AIMessage(content="ok")
 
-        result = composed(create_test_request(), None, None, mock_base_handler)
+        result = composed(create_test_request(), mock_base_handler)
 
         # Outer called once, inner retried so base handler called twice
         assert call_count["value"] == 1

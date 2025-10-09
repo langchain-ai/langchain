@@ -5,16 +5,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Literal
 
-from langchain_core.messages import ToolMessage
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.tools import InjectedToolCallId
-
-if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
 
 
 class Todo(TypedDict):
@@ -186,16 +186,15 @@ class PlanningMiddleware(AgentMiddleware):
 
         self.tools = [write_todos]
 
-    def modify_model_request(
+    def on_model_call(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-    ) -> ModelRequest:
+        handler: Callable[[ModelRequest], AIMessage],
+    ) -> AIMessage:
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt
             if request.system_prompt
             else self.system_prompt
         )
-        return request
+        return handler(request)

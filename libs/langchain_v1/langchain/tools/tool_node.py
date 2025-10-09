@@ -38,7 +38,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-from collections.abc import Callable, Generator
+from collections.abc import Callable
 from copy import copy, deepcopy
 from dataclasses import dataclass, replace
 from types import UnionType
@@ -105,66 +105,87 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 
 @dataclass()
 class ToolCallRequest:
-    """Tool execution request passed to on_tool_call handlers.
+    """Tool execution request passed to tool call interceptors.
 
     Attributes:
         tool_call: Tool call dict with name, args, and id from model output.
         tool: BaseTool instance to be invoked.
+        state: Agent state (dict, list, or BaseModel).
+        runtime: LangGraph runtime context (optional, None if outside graph).
     """
 
     tool_call: ToolCall
     tool: BaseTool
+    state: Any
+    runtime: Any
 
 
 ToolCallHandler = Callable[
-    [ToolCallRequest, Any, Any],
-    Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None],
+    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
+    ToolMessage | Command,
 ]
-"""Generator-based handler for intercepting tool execution.
+"""Handler-based tool call interceptor with multi-call support.
 
-Receives (request, state, runtime), yields ToolCallRequest/ToolMessage/Command,
-receives results via .send(). Returns None; the last value sent becomes the result.
+Handler receives:
+    request: ToolCallRequest with tool_call, tool, state, and runtime.
+    execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
 
-Exceptions propagate unless handle_tool_errors is configured on ToolNode.
+Returns:
+    ToolMessage or Command (the final result).
 
-Type Parameters:
-    The handler signature is ``(ToolCallRequest, Any, Any) -> Generator[...]``:
+The execute callable can be invoked multiple times for retry logic,
+with potentially modified requests each time. Each call to execute
+is independent and stateless.
 
-    - **First Any (state)**: Typed as ``Any`` because ToolNode supports multiple input
-      formats (list, dict, BaseModel, ToolCallWithContext). When used in ``create_agent``,
-      state will be the agent's StateT (dict with "messages" key). When used standalone,
-      state matches the input type passed to ToolNode.
+Note:
+    When implementing middleware for ``create_agent``, use
+    ``AgentMiddleware.wrap_tool_call`` which provides properly typed
+    state parameter for better type safety.
 
-    - **Second Any (runtime)**: Typed as ``Any`` because runtime is optional and only
-      available when ToolNode runs within a LangGraph graph. Will be ``None`` in
-      standalone usage or unit tests.
+Examples:
+    Passthrough (execute once):
 
-    Note:
-        When implementing middleware for ``create_agent``, use
-        ``AgentMiddleware.on_tool_call`` which has properly typed ``state: StateT``
-        parameter for better type safety.
+    def handler(request, execute):
+        return execute(request)
 
-Example:
-    Passthrough:
+    Modify request before execution:
 
-    def handler(request, state, runtime):
-        yield request
+    def handler(request, execute):
+        request.tool_call["args"]["value"] *= 2
+        return execute(request)
 
-    Cache result:
+    Retry on error (execute multiple times):
 
-    def handler(request, state, runtime):
-        if cached := get_cache(request):
-            yield ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-        else:
-            yield request
-
-    Retry with validation:
-
-    def handler(request, state, runtime):
+    def handler(request, execute):
         for attempt in range(3):
-            response = yield request
-            if valid(response) or attempt == 2:
-                return
+            try:
+                result = execute(request)
+                if is_valid(result):
+                    return result
+            except Exception:
+                if attempt == 2:
+                    raise
+        return result
+
+    Conditional retry based on response:
+
+    def handler(request, execute):
+        for attempt in range(3):
+            result = execute(request)
+            if isinstance(result, ToolMessage) and result.status != "error":
+                return result
+            if attempt < 2:
+                continue
+            return result
+
+    Cache/short-circuit without calling execute:
+
+    def handler(request, execute):
+        if cached := get_cache(request):
+            return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+        result = execute(request)
+        save_cache(request, result)
+        return result
 """
 
 
@@ -685,7 +706,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    def _run_one(  # noqa: PLR0912
+    def _run_one(
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -710,105 +731,41 @@ class ToolNode(RunnableCallable):
 
         tool = self.tools_by_name[call["name"]]
 
-        # Create the tool request
-        tool_request = ToolCallRequest(
-            tool_call=call,
-            tool=tool,
-        )
-
-        if self._on_tool_call is None:
-            return self._execute_tool_sync(tool_request, input_type, config)
-
         # Extract state from ToolCallWithContext if present
         state = self._extract_state(input)
 
-        # Generator protocol: start generator, send messages, receive requests/messages
-        gen = self._on_tool_call(tool_request, state, runtime)
-        last_sent_value: ToolMessage | Command | None = None
-        first_yield = True
-        short_circuited_immediately = False
+        # Create the tool request with state and runtime
+        tool_request = ToolCallRequest(
+            tool_call=call,
+            tool=tool,
+            state=state,
+            runtime=runtime,
+        )
 
+        if self._on_tool_call is None:
+            # No handler - execute directly
+            return self._execute_tool_sync(tool_request, input_type, config)
+
+        # Define execute callable that can be called multiple times
+        def execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Execute tool with given request. Can be called multiple times."""
+            return self._execute_tool_sync(req, input_type, config)
+
+        # Call handler with request and execute callable
         try:
-            yielded = next(gen)
-        except StopIteration:
-            # Handler ended immediately without yielding
-            msg = (
-                "on_tool_call handler must yield at least once. "
-                "The final result is the last value sent to the handler."
+            return self._on_tool_call(tool_request, execute)
+        except Exception as e:
+            # Handler threw an exception
+            if not self._handle_tool_errors:
+                raise
+            # Convert to error message
+            content = _handle_tool_error(e, flag=self._handle_tool_errors)
+            return ToolMessage(
+                content=content,
+                name=tool_request.tool_call["name"],
+                tool_call_id=tool_request.tool_call["id"],
+                status="error",
             )
-            raise ValueError(msg)
-
-        # Handler yielded - check if short-circuit (ToolMessage/Command) or normal (ToolCallRequest)
-        while True:
-            if isinstance(yielded, (ToolMessage, Command)):
-                # Handler yielded ToolMessage or Command
-                if first_yield:
-                    # First yield is ToolMessage/Command = immediate short-circuit
-                    short_circuited_immediately = True
-                elif short_circuited_immediately:
-                    # Already short-circuited immediately, cannot yield again
-                    msg = (
-                        "on_tool_call handler yielded multiple values after short-circuit. "
-                        "After yielding ToolMessage or Command as first yield, handler must "
-                        "end or throw."
-                    )
-                    raise ValueError(msg)
-                # Otherwise: this is response modification after execution - allowed
-
-                first_yield = False
-
-                # Send it back to generator
-                last_sent_value = yielded
-                try:
-                    yielded = gen.send(yielded)
-                    # If generator yields again, continue the loop
-                except StopIteration:
-                    # Handler ended - return the last value we sent to it
-                    return last_sent_value
-                except Exception as e:
-                    # Handler threw an exception
-                    if not self._handle_tool_errors:
-                        raise
-                    # Convert to error message
-                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
-                    return ToolMessage(
-                        content=content,
-                        name=tool_request.tool_call["name"],
-                        tool_call_id=tool_request.tool_call["id"],
-                        status="error",
-                    )
-            else:
-                # Normal flow: execute the tool with the request
-                if short_circuited_immediately:
-                    msg = (
-                        "on_tool_call handler yielded ToolCallRequest after short-circuit. "
-                        "After short-circuit, handler must end or throw."
-                    )
-                    raise ValueError(msg)
-
-                first_yield = False
-
-                tool_message_or_command = self._execute_tool_sync(yielded, input_type, config)
-
-                # Send result back to generator (ToolMessage or Command)
-                last_sent_value = tool_message_or_command
-                try:
-                    yielded = gen.send(tool_message_or_command)
-                except StopIteration:
-                    # Handler ended - return the last value we sent to it
-                    return last_sent_value
-                except Exception as e:
-                    # Handler threw an exception
-                    if not self._handle_tool_errors:
-                        raise
-                    # Convert to error message
-                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
-                    return ToolMessage(
-                        content=content,
-                        name=tool_request.tool_call["name"],
-                        tool_call_id=tool_request.tool_call["id"],
-                        status="error",
-                    )
 
     async def _execute_tool_async(
         self,
@@ -891,7 +848,7 @@ class ToolNode(RunnableCallable):
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
-    async def _arun_one(  # noqa: PLR0912
+    async def _arun_one(
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
@@ -916,107 +873,44 @@ class ToolNode(RunnableCallable):
 
         tool = self.tools_by_name[call["name"]]
 
-        # Create the tool request
-        tool_request = ToolCallRequest(
-            tool_call=call,
-            tool=tool,
-        )
-
-        if self._on_tool_call is None:
-            return await self._execute_tool_async(tool_request, input_type, config)
-
         # Extract state from ToolCallWithContext if present
         state = self._extract_state(input)
 
-        # Generator protocol: handler is sync generator, tool execution is async
-        gen = self._on_tool_call(tool_request, state, runtime)
-        last_sent_value: ToolMessage | Command | None = None
-        first_yield = True
-        short_circuited_immediately = False
+        # Create the tool request with state and runtime
+        tool_request = ToolCallRequest(
+            tool_call=call,
+            tool=tool,
+            state=state,
+            runtime=runtime,
+        )
 
+        if self._on_tool_call is None:
+            # No handler - execute directly
+            return await self._execute_tool_async(tool_request, input_type, config)
+
+        # Define async execute callable that can be called multiple times
+        async def execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Execute tool with given request. Can be called multiple times."""
+            return await self._execute_tool_async(req, input_type, config)
+
+        # Call handler with request and execute callable
+        # Note: handler is sync, but execute callable is async
         try:
-            yielded = next(gen)
-        except StopIteration:
-            # Handler ended immediately without yielding
-            msg = (
-                "on_tool_call handler must yield at least once. "
-                "The final result is the last value sent to the handler."
+            result = self._on_tool_call(tool_request, execute)  # type: ignore[arg-type]
+            # If result is a coroutine, await it (though handler should be sync)
+            return await result if hasattr(result, "__await__") else result
+        except Exception as e:
+            # Handler threw an exception
+            if not self._handle_tool_errors:
+                raise
+            # Convert to error message
+            content = _handle_tool_error(e, flag=self._handle_tool_errors)
+            return ToolMessage(
+                content=content,
+                name=tool_request.tool_call["name"],
+                tool_call_id=tool_request.tool_call["id"],
+                status="error",
             )
-            raise ValueError(msg)
-
-        # Handler yielded - check if short-circuit (ToolMessage/Command) or normal (ToolCallRequest)
-        while True:
-            if isinstance(yielded, (ToolMessage, Command)):
-                # Handler yielded ToolMessage or Command
-                if first_yield:
-                    # First yield is ToolMessage/Command = immediate short-circuit
-                    short_circuited_immediately = True
-                elif short_circuited_immediately:
-                    # Already short-circuited immediately, cannot yield again
-                    msg = (
-                        "on_tool_call handler yielded multiple values after short-circuit. "
-                        "After yielding ToolMessage or Command as first yield, handler must "
-                        "end or throw."
-                    )
-                    raise ValueError(msg)
-                # Otherwise: this is response modification after execution - allowed
-
-                first_yield = False
-
-                # Send it back to generator
-                last_sent_value = yielded
-                try:
-                    yielded = gen.send(yielded)
-                    # If generator yields again, continue the loop
-                except StopIteration:
-                    # Handler ended - return the last value we sent to it
-                    return last_sent_value
-                except Exception as e:
-                    # Handler threw an exception
-                    if not self._handle_tool_errors:
-                        raise
-                    # Convert to error message
-                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
-                    return ToolMessage(
-                        content=content,
-                        name=tool_request.tool_call["name"],
-                        tool_call_id=tool_request.tool_call["id"],
-                        status="error",
-                    )
-            else:
-                # Normal flow: execute the tool with the request
-                if short_circuited_immediately:
-                    msg = (
-                        "on_tool_call handler yielded ToolCallRequest after short-circuit. "
-                        "After short-circuit, handler must end or throw."
-                    )
-                    raise ValueError(msg)
-
-                first_yield = False
-
-                tool_message_or_command = await self._execute_tool_async(
-                    yielded, input_type, config
-                )
-
-                # Send result back to generator (ToolMessage or Command)
-                last_sent_value = tool_message_or_command
-                try:
-                    yielded = gen.send(tool_message_or_command)
-                except StopIteration:
-                    # Handler ended - return the last value we sent to it
-                    return last_sent_value
-                except Exception as e:
-                    # Handler threw an exception
-                    if not self._handle_tool_errors:
-                        raise
-                    # Convert to error message
-                    content = _handle_tool_error(e, flag=self._handle_tool_errors)
-                    return ToolMessage(
-                        content=content,
-                        name=tool_request.tool_call["name"],
-                        tool_call_id=tool_request.tool_call["id"],
-                        status="error",
-                    )
 
     def _parse_input(
         self,

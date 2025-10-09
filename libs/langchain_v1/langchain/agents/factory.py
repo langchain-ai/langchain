@@ -51,7 +51,7 @@ from langchain.tools import ToolNode
 from langchain.tools.tool_node import ToolCallWithContext
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Sequence
+    from collections.abc import Callable, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -87,13 +87,13 @@ class _InternalModelResponse:
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+        [ModelRequest, Callable[[ModelRequest], AIMessage]],
         AIMessage,
     ]
     | None
@@ -141,31 +141,29 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ],
         inner: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+            [ModelRequest, Callable[[ModelRequest], AIMessage]],
             AIMessage,
         ],
     ) -> Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], AIMessage]],
+        [ModelRequest, Callable[[ModelRequest], AIMessage]],
         AIMessage,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            state: Any,
-            runtime: Any,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
             # Create a wrapper that calls inner with the base handler
             def inner_handler(req: ModelRequest) -> AIMessage:
-                return inner(req, state, runtime, handler)
+                return inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
-            return outer(request, state, runtime, inner_handler)
+            return outer(request, inner_handler)
 
         return composed
 
@@ -180,13 +178,13 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
         Awaitable[AIMessage],
     ]
     | None
@@ -207,31 +205,29 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ],
         inner: Callable[
-            [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
             Awaitable[AIMessage],
         ],
     ) -> Callable[
-        [ModelRequest, Any, Any, Callable[[ModelRequest], Awaitable[AIMessage]]],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
         Awaitable[AIMessage],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest,
-            state: Any,
-            runtime: Any,
             handler: Callable[[ModelRequest], Awaitable[AIMessage]],
         ) -> AIMessage:
             # Create a wrapper that calls inner with the base handler
             async def inner_handler(req: ModelRequest) -> AIMessage:
-                return await inner(req, state, runtime, handler)
+                return await inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
-            return await outer(request, state, runtime, inner_handler)
+            return await outer(request, inner_handler)
 
         return composed
 
@@ -402,61 +398,15 @@ def _chain_tool_call_handlers(
         """Compose two handlers where outer wraps inner."""
 
         def composed(
-            request: ToolCallRequest, state: Any, runtime: Any
-        ) -> Generator[ToolCallRequest | ToolMessage | Command, ToolMessage | Command, None]:
-            outer_gen = outer(request, state, runtime)
+            request: ToolCallRequest,
+            execute: Callable[[ToolCallRequest], ToolMessage | Command],
+        ) -> ToolMessage | Command:
+            # Create a callable that invokes inner with the original execute
+            def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+                return inner(req, execute)
 
-            # Initialize outer generator
-            try:
-                outer_request_or_result = next(outer_gen)
-            except StopIteration:
-                msg = "outer handler must yield at least once"
-                raise ValueError(msg)
-
-            # Outer retry loop
-            while True:
-                # If outer yielded a ToolMessage or Command, bypass inner and yield directly
-                if isinstance(outer_request_or_result, (ToolMessage, Command)):
-                    result = yield outer_request_or_result
-                    try:
-                        outer_request_or_result = outer_gen.send(result)
-                    except StopIteration:
-                        # Outer ended - final result is what we sent to it
-                        return
-                    continue
-
-                inner_gen = inner(outer_request_or_result, state, runtime)
-                last_sent_to_inner: ToolMessage | Command | None = None
-
-                # Initialize inner generator
-                try:
-                    inner_request_or_result = next(inner_gen)
-                except StopIteration:
-                    msg = "inner handler must yield at least once"
-                    raise ValueError(msg)
-
-                # Inner retry loop
-                while True:
-                    # Yield to actual tool execution
-                    result = yield inner_request_or_result
-                    last_sent_to_inner = result
-
-                    # Send result to inner
-                    try:
-                        inner_request_or_result = inner_gen.send(result)
-                    except StopIteration:
-                        # Inner is done - final result from inner is last_sent_to_inner
-                        break
-
-                # Send inner's final result to outer
-                if last_sent_to_inner is None:
-                    msg = "inner handler ended without receiving any result"
-                    raise ValueError(msg)
-                try:
-                    outer_request_or_result = outer_gen.send(last_sent_to_inner)
-                except StopIteration:
-                    # Outer is done - final result is what we sent to it
-                    return
+            # Outer can call call_inner multiple times
+            return outer(request, call_inner)
 
         return composed
 
@@ -595,16 +545,16 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
-    # Collect middleware with on_tool_call hooks
-    middleware_w_on_tool_call = [
-        m for m in middleware if m.__class__.on_tool_call is not AgentMiddleware.on_tool_call
+    # Collect middleware with wrap_tool_call hooks
+    middleware_w_wrap_tool_call = [
+        m for m in middleware if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
     ]
 
-    # Chain all on_tool_call handlers into a single composed handler
-    on_tool_call_handler = None
-    if middleware_w_on_tool_call:
-        handlers = [m.on_tool_call for m in middleware_w_on_tool_call]
-        on_tool_call_handler = _chain_tool_call_handlers(handlers)
+    # Chain all wrap_tool_call handlers into a single composed handler
+    wrap_tool_call_handler = None
+    if middleware_w_wrap_tool_call:
+        handlers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
+        wrap_tool_call_handler = _chain_tool_call_handlers(handlers)
 
     # Setup tools
     tool_node: ToolNode | None = None
@@ -617,7 +567,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, on_tool_call=on_tool_call_handler)
+        ToolNode(tools=available_tools, on_tool_call=wrap_tool_call_handler)
         if available_tools
         else None
     )
@@ -646,12 +596,6 @@ def create_agent(  # noqa: PLR0915
         for m in middleware
         if m.__class__.before_model is not AgentMiddleware.before_model
         or m.__class__.abefore_model is not AgentMiddleware.abefore_model
-    ]
-    middleware_w_modify_model_request = [
-        m
-        for m in middleware
-        if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
-        or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
     ]
     middleware_w_after_model = [
         m
@@ -946,20 +890,9 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            state=state,
+            runtime=runtime,
         )
-
-        # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
-                request = m.modify_model_request(request, state, runtime)
-            else:
-                msg = (
-                    f"No synchronous function provided for "
-                    f'{m.__class__.__name__}.amodify_model_request".'
-                    "\nEither initialize with a synchronous function or invoke"
-                    " via the async API (ainvoke, astream, etc.)"
-                )
-                raise TypeError(msg)
 
         # Execute with or without handler
         effective_response_format: Any = None
@@ -981,7 +914,7 @@ def create_agent(  # noqa: PLR0915
             output = base_handler(request)
         else:
             # Call composed handler with base handler
-            output = on_model_call_handler(request, state, runtime, base_handler)
+            output = on_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
@@ -1023,11 +956,9 @@ def create_agent(  # noqa: PLR0915
             response_format=initial_response_format,
             messages=state["messages"],
             tool_choice=None,
+            state=state,
+            runtime=runtime,
         )
-
-        # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            request = await m.amodify_model_request(request, state, runtime)
 
         # Execute with or without handler
         effective_response_format: Any = None
@@ -1049,7 +980,7 @@ def create_agent(  # noqa: PLR0915
             output = await base_handler(request)
         else:
             # Call composed async handler with base handler
-            output = await aon_model_call_handler(request, state, runtime, base_handler)
+            output = await aon_model_call_handler(request, base_handler)
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
