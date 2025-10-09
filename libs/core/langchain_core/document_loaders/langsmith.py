@@ -22,22 +22,22 @@ class LangSmithLoader(BaseLoader):
 
     ??? note "Lazy load"
 
-        .. code-block:: python
+        ```python
+        from langchain_core.document_loaders import LangSmithLoader
 
-            from langchain_core.document_loaders import LangSmithLoader
+        loader = LangSmithLoader(dataset_id="...", limit=100)
+        docs = []
+        for doc in loader.lazy_load():
+            docs.append(doc)
+        ```
 
-            loader = LangSmithLoader(dataset_id="...", limit=100)
-            docs = []
-            for doc in loader.lazy_load():
-                docs.append(doc)
-
-        .. code-block:: python
-
-            # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
+        ```python
+        # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
+        ```
 
     !!! version-added "Added in version 0.2.34"
 
-    """  # noqa: E501
+    """
 
     def __init__(
         self,

@@ -38,37 +38,36 @@ def create_openai_tools_agent(
         ValueError: If the prompt is missing required variables.
 
     Example:
+        ```python
+        from langchain_classic import hub
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.agents import (
+            AgentExecutor,
+            create_openai_tools_agent,
+        )
 
-        .. code-block:: python
+        prompt = hub.pull("hwchase17/openai-tools-agent")
+        model = ChatOpenAI()
+        tools = ...
 
-            from langchain_classic import hub
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import (
-                AgentExecutor,
-                create_openai_tools_agent,
-            )
+        agent = create_openai_tools_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            prompt = hub.pull("hwchase17/openai-tools-agent")
-            model = ChatOpenAI()
-            tools = ...
+        agent_executor.invoke({"input": "hi"})
 
-            agent = create_openai_tools_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
+        # Using with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
 
-            agent_executor.invoke({"input": "hi"})
-
-            # Using with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    "chat_history": [
-                        HumanMessage(content="hi! my name is bob"),
-                        AIMessage(content="Hello Bob! How can I assist you today?"),
-                    ],
-                }
-            )
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                "chat_history": [
+                    HumanMessage(content="hi! my name is bob"),
+                    AIMessage(content="Hello Bob! How can I assist you today?"),
+                ],
+            }
+        )
+        ```
 
     Prompt:
 
@@ -78,19 +77,18 @@ def create_openai_tools_agent(
 
         Here's an example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", "You are a helpful assistant"),
-                    MessagesPlaceholder("chat_history", optional=True),
-                    ("human", "{input}"),
-                    MessagesPlaceholder("agent_scratchpad"),
-                ]
-            )
-
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant"),
+                MessagesPlaceholder("chat_history", optional=True),
+                ("human", "{input}"),
+                MessagesPlaceholder("agent_scratchpad"),
+            ]
+        )
+        ```
     """
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

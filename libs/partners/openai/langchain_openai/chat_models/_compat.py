@@ -7,56 +7,56 @@ Supported values are `None`, `'v0'`, and `'responses/v1'`.
 `'v0'` corresponds to the format as of `ChatOpenAI` v0.3. For the Responses API, it
 stores reasoning and tool outputs in `AIMessage.additional_kwargs`:
 
-.. code-block:: python
-
-    AIMessage(
-        content=[
-            {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
-        ],
-        additional_kwargs={
-            "reasoning": {
-                "type": "reasoning",
-                "id": "rs_123",
-                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
-            },
-            "tool_outputs": [
-                {
-                    "type": "web_search_call",
-                    "id": "websearch_123",
-                    "status": "completed",
-                }
-            ],
-            "refusal": "I cannot assist with that.",
+```python
+AIMessage(
+    content=[
+        {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
+    ],
+    additional_kwargs={
+        "reasoning": {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
         },
-        response_metadata={"id": "resp_123"},
-        id="msg_123",
-    )
+        "tool_outputs": [
+            {
+                "type": "web_search_call",
+                "id": "websearch_123",
+                "status": "completed",
+            }
+        ],
+        "refusal": "I cannot assist with that.",
+    },
+    response_metadata={"id": "resp_123"},
+    id="msg_123",
+)
+```
 
 `'responses/v1'` is only applicable to the Responses API. It retains information
 about response item sequencing and accommodates multiple reasoning items by
 representing these items in the content sequence:
 
-.. code-block:: python
-
-    AIMessage(
-        content=[
-            {
-                "type": "reasoning",
-                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
-                "id": "rs_123",
-            },
-            {
-                "type": "text",
-                "text": "Hello, world!",
-                "annotations": [{"type": "foo"}],
-                "id": "msg_123",
-            },
-            {"type": "refusal", "refusal": "I cannot assist with that."},
-            {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
-        ],
-        response_metadata={"id": "resp_123"},
-        id="resp_123",
-    )
+```python
+AIMessage(
+    content=[
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+            "id": "rs_123",
+        },
+        {
+            "type": "text",
+            "text": "Hello, world!",
+            "annotations": [{"type": "foo"}],
+            "id": "msg_123",
+        },
+        {"type": "refusal", "refusal": "I cannot assist with that."},
+        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+    ],
+    response_metadata={"id": "resp_123"},
+    id="resp_123",
+)
+```
 
 There are other, small improvements as well-- e.g., we store message IDs on text
 content blocks, rather than on the AIMessage.id, which now stores the response ID.

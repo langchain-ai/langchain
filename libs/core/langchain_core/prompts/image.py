@@ -96,11 +96,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             ValueError: If `'path'` is provided in the template or kwargs.
 
         Example:
-
-            .. code-block:: python
-
-                prompt.format(variable1="foo")
-
+            ```python
+            prompt.format(variable1="foo")
+            ```
         """
         formatted = {}
         for k, v in self.template.items():

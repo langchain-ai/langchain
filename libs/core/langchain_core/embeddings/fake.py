@@ -21,37 +21,34 @@ class FakeEmbeddings(Embeddings, BaseModel):
     Do not use this outside of testing, as it is not a real embedding model.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_core.embeddings import FakeEmbeddings
 
-            from langchain_core.embeddings import FakeEmbeddings
-
-            embed = FakeEmbeddings(size=100)
+        embed = FakeEmbeddings(size=100)
+        ```
 
     Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
+        ```python
+        [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
-
-            input_texts = ["Document 1...", "Document 2..."]
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
-
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
+        ```
     """
 
     size: int
@@ -78,37 +75,34 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     Do not use this outside of testing, as it is not a real embedding model.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_core.embeddings import DeterministicFakeEmbedding
 
-            from langchain_core.embeddings import DeterministicFakeEmbedding
-
-            embed = DeterministicFakeEmbedding(size=100)
+        embed = DeterministicFakeEmbedding(size=100)
+        ```
 
     Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
+        ```python
+        [-0.700234640213188, -0.581266257710429, -1.1328482266445354]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
-
-            input_texts = ["Document 1...", "Document 2..."]
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
-
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.5670477847544458, -0.31403828652395727, -0.5840547508955257]
+        ```
     """
 
     size: int

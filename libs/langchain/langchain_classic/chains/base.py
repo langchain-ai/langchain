@@ -609,19 +609,18 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             The chain output.
 
         Example:
-            .. code-block:: python
+            ```python
+            # Suppose we have a single-input chain that takes a 'question' string:
+            chain.run("What's the temperature in Boise, Idaho?")
+            # -> "The temperature in Boise is..."
 
-                # Suppose we have a single-input chain that takes a 'question' string:
-                chain.run("What's the temperature in Boise, Idaho?")
-                # -> "The temperature in Boise is..."
-
-                # Suppose we have a multi-input chain that takes a 'question' string
-                # and 'context' string:
-                question = "What's the temperature in Boise, Idaho?"
-                context = "Weather report for Boise, Idaho on 07/03/23..."
-                chain.run(question=question, context=context)
-                # -> "The temperature in Boise is..."
-
+            # Suppose we have a multi-input chain that takes a 'question' string
+            # and 'context' string:
+            question = "What's the temperature in Boise, Idaho?"
+            context = "Weather report for Boise, Idaho on 07/03/23..."
+            chain.run(question=question, context=context)
+            # -> "The temperature in Boise is..."
+            ```
         """
         # Run at start to make sure this is possible/defined
         _output_key = self._run_output_key
@@ -685,19 +684,18 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             The chain output.
 
         Example:
-            .. code-block:: python
+            ```python
+            # Suppose we have a single-input chain that takes a 'question' string:
+            await chain.arun("What's the temperature in Boise, Idaho?")
+            # -> "The temperature in Boise is..."
 
-                # Suppose we have a single-input chain that takes a 'question' string:
-                await chain.arun("What's the temperature in Boise, Idaho?")
-                # -> "The temperature in Boise is..."
-
-                # Suppose we have a multi-input chain that takes a 'question' string
-                # and 'context' string:
-                question = "What's the temperature in Boise, Idaho?"
-                context = "Weather report for Boise, Idaho on 07/03/23..."
-                await chain.arun(question=question, context=context)
-                # -> "The temperature in Boise is..."
-
+            # Suppose we have a multi-input chain that takes a 'question' string
+            # and 'context' string:
+            question = "What's the temperature in Boise, Idaho?"
+            context = "Weather report for Boise, Idaho on 07/03/23..."
+            await chain.arun(question=question, context=context)
+            # -> "The temperature in Boise is..."
+            ```
         """
         if len(self.output_keys) != 1:
             msg = (
@@ -748,11 +746,10 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             A dictionary representation of the chain.
 
         Example:
-            .. code-block:: python
-
-                chain.model_dump(exclude_unset=True)
-                # -> {"_type": "foo", "verbose": False, ...}
-
+            ```python
+            chain.model_dump(exclude_unset=True)
+            # -> {"_type": "foo", "verbose": False, ...}
+            ```
         """
         _dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -769,10 +766,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             file_path: Path to file to save the chain to.
 
         Example:
-            .. code-block:: python
-
-                chain.save(file_path="path/chain.yaml")
-
+            ```python
+            chain.save(file_path="path/chain.yaml")
+            ```
         """
         if self.memory is not None:
             msg = "Saving of memory is not yet supported."

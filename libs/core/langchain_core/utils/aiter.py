@@ -163,12 +163,12 @@ class Tee(Generic[T]):
     A `tee` works lazily and can handle an infinite `iterable`, provided
     that all iterators advance.
 
-    .. code-block:: python
-
-        async def derivative(sensor_data):
-            previous, current = a.tee(sensor_data, n=2)
-            await a.anext(previous)  # advance one iterator
-            return a.map(operator.sub, previous, current)
+    ```python
+    async def derivative(sensor_data):
+        previous, current = a.tee(sensor_data, n=2)
+        await a.anext(previous)  # advance one iterator
+        return a.map(operator.sub, previous, current)
+    ```
 
     Unlike `itertools.tee`, `.tee` returns a custom type instead
     of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
@@ -273,21 +273,21 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
     Code like this:
 
-    .. code-block:: python
-
-        async with aclosing(<module>.fetch(<arguments>)) as agen:
-            <block>
+    ```python
+    async with aclosing(<module>.fetch(<arguments>)) as agen:
+        <block>
+    ```
 
     is equivalent to this:
 
-    .. code-block:: python
+    ```python
+    agen = <module>.fetch(<arguments>)
+    try:
+        <block>
+    finally:
+        await agen.aclose()
 
-        agen = <module>.fetch(<arguments>)
-        try:
-            <block>
-        finally:
-            await agen.aclose()
-
+    ```
     """
 
     def __init__(self, thing: AsyncGenerator[Any, Any] | AsyncIterator[Any]) -> None:

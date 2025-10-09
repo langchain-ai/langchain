@@ -189,31 +189,34 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     the provided schema.
 
     Example:
-        ... code-block:: python
+        ```python
+        message = AIMessage(
+            content="This is a test message",
+            additional_kwargs={
+                "function_call": {
+                    "name": "cookie",
+                    "arguments": json.dumps({"name": "value", "age": 10}),
+                }
+            },
+        )
+        chat_generation = ChatGeneration(message=message)
 
-            message = AIMessage(
-                content="This is a test message",
-                additional_kwargs={
-                    "function_call": {
-                        "name": "cookie",
-                        "arguments": json.dumps({"name": "value", "age": 10}),
-                    }
-                },
-            )
-            chat_generation = ChatGeneration(message=message)
 
-            class Cookie(BaseModel):
-                name: str
-                age: int
+        class Cookie(BaseModel):
+            name: str
+            age: int
 
-            class Dog(BaseModel):
-                species: str
 
-            # Full output
-            parser = PydanticOutputFunctionsParser(
-                pydantic_schema={"cookie": Cookie, "dog": Dog}
-            )
-            result = parser.parse_result([chat_generation])
+        class Dog(BaseModel):
+            species: str
+
+
+        # Full output
+        parser = PydanticOutputFunctionsParser(
+            pydantic_schema={"cookie": Cookie, "dog": Dog}
+        )
+        result = parser.parse_result([chat_generation])
+        ```
 
     """
 

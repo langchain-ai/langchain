@@ -170,121 +170,120 @@ def init_chat_model(
 
     ???+ note "Init non-configurable model"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
+        from langchain_classic.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
-            from langchain_classic.chat_models import init_chat_model
+        o3_mini = init_chat_model("openai:o3-mini", temperature=0)
+        claude_sonnet = init_chat_model(
+            "anthropic:claude-3-5-sonnet-latest", temperature=0
+        )
+        gemini_2_flash = init_chat_model(
+            "google_vertexai:gemini-2.5-flash", temperature=0
+        )
 
-            o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-            claude_sonnet = init_chat_model(
-                "anthropic:claude-3-5-sonnet-latest", temperature=0
-            )
-            gemini_2_flash = init_chat_model(
-                "google_vertexai:gemini-2.5-flash", temperature=0
-            )
-
-            o3_mini.invoke("what's your name")
-            claude_sonnet.invoke("what's your name")
-            gemini_2_flash.invoke("what's your name")
-
+        o3_mini.invoke("what's your name")
+        claude_sonnet.invoke("what's your name")
+        gemini_2_flash.invoke("what's your name")
+        ```
 
     ??? note "Partially configurable model with no default"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain_classic.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain_classic.chat_models import init_chat_model
+        # We don't need to specify configurable=True if a model isn't specified.
+        configurable_model = init_chat_model(temperature=0)
 
-            # We don't need to specify configurable=True if a model isn't specified.
-            configurable_model = init_chat_model(temperature=0)
+        configurable_model.invoke(
+            "what's your name", config={"configurable": {"model": "gpt-4o"}}
+        )
+        # GPT-4o response
 
-            configurable_model.invoke(
-                "what's your name", config={"configurable": {"model": "gpt-4o"}}
-            )
-            # GPT-4o response
-
-            configurable_model.invoke(
-                "what's your name",
-                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
-            )
-            # claude-3.5 sonnet response
+        configurable_model.invoke(
+            "what's your name",
+            config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+        )
+        # claude-3.5 sonnet response
+        ```
 
     ??? note "Fully configurable model with a default"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain_classic.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain_classic.chat_models import init_chat_model
+        configurable_model_with_default = init_chat_model(
+            "openai:gpt-4o",
+            configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+            config_prefix="foo",
+            temperature=0,
+        )
 
-            configurable_model_with_default = init_chat_model(
-                "openai:gpt-4o",
-                configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
-                config_prefix="foo",
-                temperature=0,
-            )
+        configurable_model_with_default.invoke("what's your name")
+        # GPT-4o response with temperature 0
 
-            configurable_model_with_default.invoke("what's your name")
-            # GPT-4o response with temperature 0
-
-            configurable_model_with_default.invoke(
-                "what's your name",
-                config={
-                    "configurable": {
-                        "foo_model": "anthropic:claude-3-5-sonnet-latest",
-                        "foo_temperature": 0.6,
-                    }
-                },
-            )
-            # Claude-3.5 sonnet response with temperature 0.6
+        configurable_model_with_default.invoke(
+            "what's your name",
+            config={
+                "configurable": {
+                    "foo_model": "anthropic:claude-3-5-sonnet-latest",
+                    "foo_temperature": 0.6,
+                }
+            },
+        )
+        # Claude-3.5 sonnet response with temperature 0.6
+        ```
 
     ??? note "Bind tools to a configurable model"
 
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
 
-        .. code-block:: python
-
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain_classic.chat_models import init_chat_model
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain_classic.chat_models import init_chat_model
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
-
-
-            configurable_model = init_chat_model(
-                "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
             )
 
-            configurable_model_with_tools = configurable_model.bind_tools(
-                [
-                    GetWeather,
-                    GetPopulation,
-                ]
-            )
-            configurable_model_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?"
-            )
-            # GPT-4o response with tool calls
 
-            configurable_model_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?",
-                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
+
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
             )
-            # Claude-3.5 sonnet response with tools
+
+
+        configurable_model = init_chat_model(
+            "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
+        )
+
+        configurable_model_with_tools = configurable_model.bind_tools(
+            [
+                GetWeather,
+                GetPopulation,
+            ]
+        )
+        configurable_model_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?"
+        )
+        # GPT-4o response with tool calls
+
+        configurable_model_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?",
+            config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+        )
+        # Claude-3.5 sonnet response with tools
+        ```
 
     !!! version-added "Added in version 0.2.7"
 

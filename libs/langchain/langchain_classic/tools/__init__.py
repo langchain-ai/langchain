@@ -2,19 +2,6 @@
 
 Each tool has a **description**. Agent uses the description to choose the right
 tool for the job.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    ToolMetaclass --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
-                                   <name>      # Examples: BraveSearch, HumanInputRun
-
-**Main helpers:**
-
-.. code-block::
-
-    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
 
 import warnings

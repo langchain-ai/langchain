@@ -27,9 +27,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
         For example, to pull the llama3 model:
 
-        .. code-block:: bash
-
-            ollama pull llama3
+        ```bash
+        ollama pull llama3
+        ```
 
         This will download the default tagged version of the model.
         Typically, the default points to the latest, smallest sized-parameter model.
@@ -42,26 +42,26 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
         To view pulled models:
 
-        .. code-block:: bash
-
-            ollama list
+        ```bash
+        ollama list
+        ```
 
         To start serving:
 
-        .. code-block:: bash
-
-            ollama serve
+        ```bash
+        ollama serve
+        ```
 
         View the Ollama documentation for more commands.
 
-        .. code-block:: bash
+        ```bash
+        ollama help
+        ```
 
-            ollama help
-
-    Install the langchain-ollama integration package:
-        .. code-block:: bash
-
-            pip install -U langchain_ollama
+    Install the `langchain-ollama` integration package:
+        ```bash
+        pip install -U langchain_ollama
+        ```
 
     Key init args — completion params:
         model: str
@@ -72,50 +72,49 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_ollama import OllamaEmbeddings
 
-            from langchain_ollama import OllamaEmbeddings
-
-            embed = OllamaEmbeddings(model="llama3")
+        embed = OllamaEmbeddings(model="llama3")
+        ```
 
     Embed single text:
-        .. code-block:: python
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
 
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
+        ```
 
-            input_texts = ["Document 1...", "Document 2..."]
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        vector = await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            vector = await embed.aembed_query(input_text)
-            print(vector[:3])
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
 
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """  # noqa: E501
 
     model: str

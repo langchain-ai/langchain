@@ -13,19 +13,17 @@ class SystemMessage(BaseMessage):
     of input messages.
 
     Example:
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
 
-        .. code-block:: python
+        messages = [
+            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+            HumanMessage(content="What is your name?"),
+        ]
 
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                HumanMessage(content="What is your name?"),
-            ]
-
-            # Define a chat model and invoke it with the messages
-            print(model.invoke(messages))
-
+        # Define a chat model and invoke it with the messages
+        print(model.invoke(messages))
+        ```
     """
 
     type: Literal["system"] = "system"

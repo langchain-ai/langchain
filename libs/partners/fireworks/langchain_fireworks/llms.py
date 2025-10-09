@@ -31,10 +31,9 @@ class Fireworks(LLM):
     [Fireworks AI API reference](https://readme.fireworks.ai/)
 
     Example:
-
-        .. code-block:: python
-            response = fireworks.generate(["Tell me a joke."])
-
+        ```python
+        response = fireworks.generate(["Tell me a joke."])
+        ```
     """
 
     base_url: str = "https://api.fireworks.ai/inference/v1/completions"

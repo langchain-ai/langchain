@@ -122,11 +122,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.

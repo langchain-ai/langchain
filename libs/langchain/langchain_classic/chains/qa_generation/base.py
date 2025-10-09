@@ -36,34 +36,33 @@ class QAGenerationChain(Chain):
     - Use of JsonOutputParser supports JSONPatch operations in streaming mode,
       as well as robustness to markdown.
 
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains.qa_generation.prompt import (
+            CHAT_PROMPT as prompt,
+        )
 
-            from langchain_classic.chains.qa_generation.prompt import (
-                CHAT_PROMPT as prompt,
-            )
+        # Note: import PROMPT if using a legacy non-chat model.
+        from langchain_core.output_parsers import JsonOutputParser
+        from langchain_core.runnables import (
+            RunnableLambda,
+            RunnableParallel,
+            RunnablePassthrough,
+        )
+        from langchain_core.runnables.base import RunnableEach
+        from langchain_openai import ChatOpenAI
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-            # Note: import PROMPT if using a legacy non-chat model.
-            from langchain_core.output_parsers import JsonOutputParser
-            from langchain_core.runnables import (
-                RunnableLambda,
-                RunnableParallel,
-                RunnablePassthrough,
-            )
-            from langchain_core.runnables.base import RunnableEach
-            from langchain_openai import ChatOpenAI
-            from langchain_text_splitters import RecursiveCharacterTextSplitter
+        llm = ChatOpenAI()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_overlap=500)
+        split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
 
-            llm = ChatOpenAI()
-            text_splitter = RecursiveCharacterTextSplitter(chunk_overlap=500)
-            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
-
-            chain = RunnableParallel(
-                text=RunnablePassthrough(),
-                questions=(
-                    split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
-                ),
-            )
-
+        chain = RunnableParallel(
+            text=RunnablePassthrough(),
+            questions=(
+                split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
+            ),
+        )
+        ```
     """
 
     llm_chain: LLMChain

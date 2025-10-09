@@ -137,94 +137,94 @@ def tool(
         - Function must have a docstring
 
     Examples:
-        .. code-block:: python
-
-            @tool
-            def search_api(query: str) -> str:
-                # Searches the API for the query.
-                return
-
-
-            @tool("search", return_direct=True)
-            def search_api(query: str) -> str:
-                # Searches the API for the query.
-                return
+        ```python
+        @tool
+        def search_api(query: str) -> str:
+            # Searches the API for the query.
+            return
 
 
-            @tool(response_format="content_and_artifact")
-            def search_api(query: str) -> tuple[str, dict]:
-                return "partial json of results", {"full": "object of results"}
+        @tool("search", return_direct=True)
+        def search_api(query: str) -> str:
+            # Searches the API for the query.
+            return
+
+
+        @tool(response_format="content_and_artifact")
+        def search_api(query: str) -> tuple[str, dict]:
+            return "partial json of results", {"full": "object of results"}
+        ```
 
     !!! version-added "Added in version 0.2.14"
 
         Parse Google-style docstrings:
 
-        .. code-block:: python
+        ```python
+        @tool(parse_docstring=True)
+        def foo(bar: str, baz: int) -> str:
+            \"\"\"The foo.
 
-            @tool(parse_docstring=True)
-            def foo(bar: str, baz: int) -> str:
-                \"\"\"The foo.
+            Args:
+                bar: The bar.
+                baz: The baz.
+            \"\"\"
+            return bar
 
-                Args:
-                    bar: The bar.
-                    baz: The baz.
-                \"\"\"
-                return bar
+        foo.args_schema.model_json_schema()
+        ```
 
-            foo.args_schema.model_json_schema()
-
-        .. code-block:: python
-
-            {
-                "title": "foo",
-                "description": "The foo.",
-                "type": "object",
-                "properties": {
-                    "bar": {
-                        "title": "Bar",
-                        "description": "The bar.",
-                        "type": "string",
-                    },
-                    "baz": {
-                        "title": "Baz",
-                        "description": "The baz.",
-                        "type": "integer",
-                    },
+        ```python
+        {
+            "title": "foo",
+            "description": "The foo.",
+            "type": "object",
+            "properties": {
+                "bar": {
+                    "title": "Bar",
+                    "description": "The bar.",
+                    "type": "string",
                 },
-                "required": ["bar", "baz"],
-            }
+                "baz": {
+                    "title": "Baz",
+                    "description": "The baz.",
+                    "type": "integer",
+                },
+            },
+            "required": ["bar", "baz"],
+        }
+        ```
 
         Note that parsing by default will raise `ValueError` if the docstring
         is considered invalid. A docstring is considered invalid if it contains
         arguments not in the function signature, or is unable to be parsed into
         a summary and "Args:" blocks. Examples below:
 
-        .. code-block:: python
+        ```python
+        # No args section
+        def invalid_docstring_1(bar: str, baz: int) -> str:
+            \"\"\"The foo.\"\"\"
+            return bar
 
-            # No args section
-            def invalid_docstring_1(bar: str, baz: int) -> str:
-                \"\"\"The foo.\"\"\"
-                return bar
+        # Improper whitespace between summary and args section
+        def invalid_docstring_2(bar: str, baz: int) -> str:
+            \"\"\"The foo.
+            Args:
+                bar: The bar.
+                baz: The baz.
+            \"\"\"
+            return bar
 
-            # Improper whitespace between summary and args section
-            def invalid_docstring_2(bar: str, baz: int) -> str:
-                \"\"\"The foo.
-                Args:
-                    bar: The bar.
-                    baz: The baz.
-                \"\"\"
-                return bar
+        # Documented args absent from function signature
+        def invalid_docstring_3(bar: str, baz: int) -> str:
+            \"\"\"The foo.
 
-            # Documented args absent from function signature
-            def invalid_docstring_3(bar: str, baz: int) -> str:
-                \"\"\"The foo.
+            Args:
+                banana: The bar.
+                monkey: The baz.
+            \"\"\"
+            return bar
 
-                Args:
-                    banana: The bar.
-                    monkey: The baz.
-                \"\"\"
-                return bar
-
+        ```
     """  # noqa: D214, D410, D411  # We're intentionally showing bad formatting in examples
 
     def _create_tool_factory(

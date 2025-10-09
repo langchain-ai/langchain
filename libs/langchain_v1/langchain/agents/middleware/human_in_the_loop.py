@@ -112,33 +112,33 @@ class InterruptOnConfig(TypedDict):
     Can be either:
     - A static string describing the approval request
     - A callable that dynamically generates the description based on agent state,
-      runtime, and tool call information
+        runtime, and tool call information
 
     Example:
-        .. code-block:: python
+        ```python
+        # Static string description
+        config = ToolConfig(
+            allowed_decisions=["approve", "reject"],
+            description="Please review this tool execution"
+        )
 
-            # Static string description
-            config = InterruptOnConfig(
-                allowed_decisions=["approve", "reject"],
-                description="Please review this tool execution"
+        # Dynamic callable description
+        def format_tool_description(
+            tool_call: ToolCall,
+            state: AgentState,
+            runtime: Runtime
+        ) -> str:
+            import json
+            return (
+                f"Tool: {tool_call['name']}\\n"
+                f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
             )
 
-            # Dynamic callable description
-            def format_tool_description(
-                tool_call: ToolCall,
-                state: AgentState,
-                runtime: Runtime
-            ) -> str:
-                import json
-                return (
-                    f"Tool: {tool_call['name']}\\n"
-                    f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
-                )
-
-            config = InterruptOnConfig(
-                allowed_decisions=["approve", "edit"],
-                description=format_tool_description
-            )
+        config = ToolConfig(
+            allow_accept=True,
+            description=format_tool_description
+        )
+        ```
     """
     arguments_schema: NotRequired[dict[str, Any]]
     """JSON schema for the arguments associated with the action, if edits are allowed."""
