@@ -329,7 +329,7 @@ async def test_handler_with_async_execution() -> None:
     """Test handler works correctly with async tool execution."""
 
     @tool
-    async def async_add(a: int, b: int) -> int:
+    def async_add(a: int, b: int) -> int:
         """Async add two numbers."""
         return a + b
 

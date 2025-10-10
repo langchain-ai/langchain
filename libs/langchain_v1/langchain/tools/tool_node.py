@@ -910,7 +910,6 @@ class ToolNode(RunnableCallable):
         try:
             if self._awrap_tool_call is not None:
                 return await self._awrap_tool_call(tool_request, execute)
-            # TODO kick this off on a thread to avoid blocking event loop?
             return self._wrap_tool_call(tool_request, _sync_execute)
         except Exception as e:
             # Wrapper threw an exception
