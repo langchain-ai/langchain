@@ -57,7 +57,7 @@ def _content_blocks_equal_ignore_id(
         expected: Expected content to compare against (string or list of blocks).
 
     Returns:
-        True if content matches (excluding `id` fields), False otherwise.
+        True if content matches (excluding `id` fields), `False` otherwise.
 
     """
     if isinstance(actual, str) or isinstance(expected, str):

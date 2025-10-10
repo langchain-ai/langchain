@@ -47,14 +47,15 @@ class LocalFileStore(ByteStore):
         """Implement the BaseStore interface for the local file system.
 
         Args:
-            root_path (Union[str, Path]): The root path of the file store. All keys are
-                interpreted as paths relative to this root.
-            chmod_file: (optional, defaults to `None`) If specified, sets permissions
-                for newly created files, overriding the current `umask` if needed.
-            chmod_dir: (optional, defaults to `None`) If specified, sets permissions
-                for newly created dirs, overriding the current `umask` if needed.
-            update_atime: (optional, defaults to `False`) If `True`, updates the
-                filesystem access time (but not the modified time) when a file is read.
+            root_path: The root path of the file store. All keys are interpreted as
+                paths relative to this root.
+            chmod_file: If specified, sets permissions for newly created files,
+                overriding the current `umask` if needed.
+            chmod_dir: If specified, sets permissions for newly created dirs,
+                overriding the current `umask` if needed.
+            update_atime: If `True`, updates the filesystem access time
+                (but not the modified time) when a file is read.
+
                 This allows MRU/LRU cache policies to be implemented for filesystems
                 where access time updates are disabled.
         """
@@ -67,10 +68,10 @@ class LocalFileStore(ByteStore):
         """Get the full path for a given key relative to the root path.
 
         Args:
-            key (str): The key relative to the root path.
+            key: The key relative to the root path.
 
         Returns:
-            Path: The full path for the given key.
+            The full path for the given key.
         """
         if not re.match(r"^[a-zA-Z0-9_.\-/]+$", key):
             msg = f"Invalid characters in key: {key}"
@@ -148,10 +149,8 @@ class LocalFileStore(ByteStore):
         """Delete the given keys and their associated values.
 
         Args:
-            keys (Sequence[str]): A sequence of keys to delete.
+            keys: A sequence of keys to delete.
 
-        Returns:
-            None
         """
         for key in keys:
             full_path = self._get_full_path(key)
@@ -162,10 +161,10 @@ class LocalFileStore(ByteStore):
         """Get an iterator over keys that match the given prefix.
 
         Args:
-            prefix (str | None): The prefix to match.
+            prefix: The prefix to match.
 
-        Returns:
-            Iterator[str]: An iterator over keys that match the given prefix.
+        Yields:
+            Keys that match the given prefix.
         """
         prefix_path = self._get_full_path(prefix) if prefix else self.root_path
         for file in prefix_path.rglob("*"):

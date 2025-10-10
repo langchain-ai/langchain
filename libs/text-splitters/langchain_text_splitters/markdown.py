@@ -367,10 +367,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         horizontal rules.
 
         Args:
-            text (str): The input text to be split into chunks.
+            text: The input text to be split into chunks.
 
         Returns:
-            List[Document]: A list of `Document` objects representing the structured
+            A list of `Document` objects representing the structured
             chunks of the input text. If `return_each_line` is enabled, each line
             is returned as a separate `Document`.
         """

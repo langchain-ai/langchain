@@ -69,7 +69,7 @@ class Tool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: str | dict, tool_call_id: str | None
     ) -> tuple[tuple, dict]:
-        """Convert tool input to pydantic model.
+        """Convert tool input to Pydantic model.
 
         Args:
             tool_input: The input to the tool.
@@ -79,8 +79,7 @@ class Tool(BaseTool):
             ToolException: If the tool input is invalid.
 
         Returns:
-            the pydantic model args and kwargs.
-
+            The Pydantic model args and kwargs.
         """
         args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input

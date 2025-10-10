@@ -13,7 +13,7 @@ def env_var_is_set(env_var: str) -> bool:
         env_var: The name of the environment variable.
 
     Returns:
-        True if the environment variable is set, False otherwise.
+        `True` if the environment variable is set, `False` otherwise.
     """
     return env_var in os.environ and os.environ[env_var] not in {
         "",

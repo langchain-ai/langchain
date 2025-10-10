@@ -1983,11 +1983,10 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
 
 
 def test_args_schema_explicitly_typed() -> None:
-    """This should test that one can type the args schema as a pydantic model.
+    """This should test that one can type the args schema as a Pydantic model.
 
-    Please note that this will test using pydantic 2 even though BaseTool
-    is a pydantic 1 model!
-
+    Please note that this will test using pydantic 2 even though `BaseTool`
+    is a Pydantic 1 model!
     """
 
     class Foo(BaseModel):
@@ -2030,7 +2029,7 @@ def test_args_schema_explicitly_typed() -> None:
 
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
 def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -> None:
-    """This should test that one can type the args schema as a pydantic model."""
+    """This should test that one can type the args schema as a Pydantic model."""
 
     def foo(a: int, b: str) -> str:
         """Hahaha."""
