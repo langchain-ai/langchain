@@ -51,7 +51,7 @@ def _embedding_factory() -> Embeddings:
     """Create an Embeddings object.
 
     Returns:
-        The created Embeddings object.
+        The created `Embeddings` object.
     """
     # Here for backwards compatibility.
     # Generally, we do not want to be seeing imports from langchain community
