@@ -241,7 +241,10 @@ def msg_content_output(output: Any) -> str | list[dict]:
 
 
 class ToolInvocationError(ToolException):
-    """An error occurred while invoking a tool due to invalid arguments."""
+    """An error occurred while invoking a tool due to invalid arguments.
+
+    This exception is only raised when invoking a tool using the ToolNode!
+    """
 
     def __init__(
         self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
