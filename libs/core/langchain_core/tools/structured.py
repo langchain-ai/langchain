@@ -150,7 +150,7 @@ class StructuredTool(BaseTool):
                 Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
                 Defaults to `False`.
-            args_schema: The schema of the tool's input arguments. Defaults to `None`.
+            args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
                 Defaults to `True`.
             response_format: The tool response format. If "content" then the output of

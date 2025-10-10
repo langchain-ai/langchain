@@ -40,7 +40,7 @@ class FastEmbedSparse(SparseEmbeddings):
                                       If `0`, use all available cores.\
                                       If `None`, don't use data-parallel processing,\
                                       use default onnxruntime threading instead.\
-                                      Defaults to `None`.
+
             kwargs: Additional options to pass to fastembed.SparseTextEmbedding
         Raises:
             ValueError: If the model_name is not supported in SparseTextEmbedding.

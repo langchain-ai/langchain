@@ -155,10 +155,10 @@ def create_extraction_chain_pydantic(
     prompt: BasePromptTemplate | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
-    """Creates a chain that extracts information from a passage using pydantic schema.
+    """Creates a chain that extracts information from a passage using Pydantic schema.
 
     Args:
-        pydantic_schema: The pydantic schema of the entities to extract.
+        pydantic_schema: The Pydantic schema of the entities to extract.
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate

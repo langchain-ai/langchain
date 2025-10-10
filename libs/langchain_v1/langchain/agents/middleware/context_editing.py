@@ -22,7 +22,12 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -209,8 +214,8 @@ class ContextEditingMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Apply context edits before invoking the model via handler."""
         if not request.messages:
             return handler(request)

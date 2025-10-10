@@ -209,7 +209,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """Get an iterator over keys that match the given prefix.
 
         Args:
-            prefix: The prefix to match. Defaults to `None`.
+            prefix: The prefix to match.
 
         Yields:
             The keys that match the given prefix.
@@ -225,7 +225,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """Async get an async iterator over keys that match the given prefix.
 
         Args:
-            prefix: The prefix to match. Defaults to `None`.
+            prefix: The prefix to match.
 
         Yields:
             The keys that match the given prefix.

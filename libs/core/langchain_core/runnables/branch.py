@@ -191,7 +191,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
+            config: The configuration for the Runnable.
             **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
@@ -301,7 +301,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
+            config: The configuration for the Runnable.
             **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
@@ -385,7 +385,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
+            config: The configuration for the Runnable.
             **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:

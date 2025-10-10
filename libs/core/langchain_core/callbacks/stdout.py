@@ -20,7 +20,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler.
 
         Args:
-            color: The color to use for the text. Defaults to `None`.
+            color: The color to use for the text.
         """
         self.color = color
 
@@ -61,7 +61,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             action: The agent action.
-            color: The color to use for the text. Defaults to `None`.
+            color: The color to use for the text.
             **kwargs: Additional keyword arguments.
         """
         print_text(action.log, color=color or self.color)
@@ -79,9 +79,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             output: The output to print.
-            color: The color to use for the text. Defaults to `None`.
-            observation_prefix: The observation prefix. Defaults to `None`.
-            llm_prefix: The LLM prefix. Defaults to `None`.
+            color: The color to use for the text.
+            observation_prefix: The observation prefix.
+            llm_prefix: The LLM prefix.
             **kwargs: Additional keyword arguments.
         """
         output = str(output)
@@ -103,7 +103,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             text: The text to print.
-            color: The color to use for the text. Defaults to `None`.
+            color: The color to use for the text.
             end: The end character to use. Defaults to "".
             **kwargs: Additional keyword arguments.
         """
@@ -117,7 +117,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
 
         Args:
             finish: The agent finish.
-            color: The color to use for the text. Defaults to `None`.
+            color: The color to use for the text.
             **kwargs: Additional keyword arguments.
         """
         print_text(finish.log, color=color or self.color, end="\n")
