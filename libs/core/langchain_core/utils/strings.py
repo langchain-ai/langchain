@@ -1,7 +1,7 @@
 """String utilities."""
 
-from typing import Any
 import re
+from typing import Any
 
 
 def stringify_value(val: Any) -> str:
@@ -62,8 +62,8 @@ def truncate_with_ellipsis(text: str, max_length: int, *, ellipsis: str = "...")
     """
     if len(text) <= max_length:
         return text
-    
-    return text[:max_length - len(ellipsis)] + ellipsis
+
+    return text[: max_length - len(ellipsis)] + ellipsis
 
 
 def normalize_whitespace(text: str, *, preserve_newlines: bool = True) -> str:
@@ -76,13 +76,12 @@ def normalize_whitespace(text: str, *, preserve_newlines: bool = True) -> str:
     Returns:
         Text with normalized whitespace.
     """
-    
     if preserve_newlines:
-        text = re.sub(r'[ \t]+', ' ', text) 
-        text = re.sub(r' +', ' ', text)      
+        text = re.sub(r"[ \t]+", " ", text)
+        text = re.sub(r" +", " ", text)
     else:
-        text = re.sub(r'\s+', ' ', text)
-    
+        text = re.sub(r"\s+", " ", text)
+
     return text.strip()
 
 

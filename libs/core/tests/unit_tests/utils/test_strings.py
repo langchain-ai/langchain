@@ -88,23 +88,23 @@ def test_truncate_with_ellipsis() -> None:
     # Basic functionality
     assert truncate_with_ellipsis("Hello world", 8) == "Hello..."
     assert truncate_with_ellipsis("Short", 10) == "Short"
-    
+
     # Custom ellipsis
     assert truncate_with_ellipsis("Hello world", 8, ellipsis="->") == "Hello wo->"
     assert truncate_with_ellipsis("Hello world", 8, ellipsis="...") == "Hello..."
-    
+
     # Edge cases
     assert truncate_with_ellipsis("", 5) == ""
     assert truncate_with_ellipsis("Hello", 5) == "Hello"
     assert truncate_with_ellipsis("Hello", 4) == "H..."
-    
+
     # Unicode characters
     assert truncate_with_ellipsis("Hello 世界", 8) == "Hello..."
     assert truncate_with_ellipsis("Hello 世界", 7) == "Hello..."
-    
+
     # Long ellipsis
     assert truncate_with_ellipsis("Hello world", 8, ellipsis="----") == "Hell----"
-    
+
     # Empty ellipsis
     assert truncate_with_ellipsis("Hello world", 8, ellipsis="") == "Hello wo"
 
@@ -114,32 +114,35 @@ def test_normalize_whitespace() -> None:
     # Basic functionality - preserve newlines
     text_with_spaces = "Hello    world   test"
     assert normalize_whitespace(text_with_spaces) == "Hello world test"
-    
+
     # Multiple tabs and spaces
     text_with_tabs = "Hello\t\t\tworld   test"
     assert normalize_whitespace(text_with_tabs) == "Hello world test"
-    
+
     # Preserve newlines by default
     text_with_newlines = "Hello   world\n\n\nTest   here"
     assert normalize_whitespace(text_with_newlines) == "Hello world\n\n\nTest here"
-    
+
     # Don't preserve newlines when specified
     text_with_newlines = "Hello   world\n\n\nTest   here"
-    assert normalize_whitespace(text_with_newlines, preserve_newlines=False) == "Hello world Test here"
-    
+    assert (
+        normalize_whitespace(text_with_newlines, preserve_newlines=False)
+        == "Hello world Test here"
+    )
+
     # Edge cases
     assert normalize_whitespace("") == ""
     assert normalize_whitespace("   ") == ""
     assert normalize_whitespace("  Hello  ") == "Hello"
-    
+
     # Mixed whitespace
     mixed_text = "  Hello\t\t  world\n  \n  test  "
     assert normalize_whitespace(mixed_text) == "Hello world\n\ntest"
-    
+
     # Single spaces should remain
     single_spaces = "Hello world test"
     assert normalize_whitespace(single_spaces) == "Hello world test"
-    
+
     # Unicode whitespace
-    unicode_text = "Hello\u00A0\u00A0world"  # Non-breaking spaces
+    unicode_text = "Hello\u00a0\u00a0world"  # Non-breaking spaces
     assert normalize_whitespace(unicode_text) == "Hello world"
