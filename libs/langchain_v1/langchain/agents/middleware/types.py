@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from langchain.tools.tool_node import ToolCallRequest
 
-# needed as top level import for pydantic schema generation on AgentState
+# Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002

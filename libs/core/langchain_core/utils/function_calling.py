@@ -713,7 +713,7 @@ def tool_example_to_messages(
             "type": "function",
             "function": {
                 # The name of the function right now corresponds to the name
-                # of the pydantic model. This is implicit in the API right now,
+                # of the Pydantic model. This is implicit in the API right now,
                 # and will be improved over time.
                 "name": tool_call.__class__.__name__,
                 "arguments": tool_call.model_dump_json(),

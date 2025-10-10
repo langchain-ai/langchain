@@ -285,17 +285,17 @@ def create_schema_from_function(
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
 ) -> type[BaseModel]:
-    """Create a pydantic schema from a function's signature.
+    """Create a Pydantic schema from a function's signature.
 
     Args:
-        model_name: Name to assign to the generated pydantic schema.
+        model_name: Name to assign to the generated Pydantic schema.
         func: Function to generate the schema from.
         filter_args: Optional list of arguments to exclude from the schema.
-            Defaults to FILTERED_ARGS.
+            Defaults to `FILTERED_ARGS`.
         parse_docstring: Whether to parse the function's docstring for descriptions
             for each argument. Defaults to `False`.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
-            whether to raise ValueError on invalid Google Style docstrings.
+            whether to raise `ValueError` on invalid Google Style docstrings.
             Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
             Defaults to `True`, since we want to include them in the schema
@@ -312,7 +312,7 @@ def create_schema_from_function(
         # https://docs.pydantic.dev/latest/usage/validation_decorator/
         with warnings.catch_warnings():
             # We are using deprecated functionality here.
-            # This code should be re-written to simply construct a pydantic model
+            # This code should be re-written to simply construct a Pydantic model
             # using inspect.signature and create_model.
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
             validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]

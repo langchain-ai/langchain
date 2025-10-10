@@ -431,14 +431,12 @@ class PIIMiddleware(AgentMiddleware):
 
     Strategy Selection Guide:
 
-        ========  ===================  =======================================
-        Strategy  Preserves Identity?  Best For
-        ========  ===================  =======================================
-        `block`   N/A                  Avoid PII completely
-        `redact`  No                   General compliance, log sanitization
-        `mask`    No                   Human readability, customer service UIs
-        `hash`    Yes (pseudonymous)   Analytics, debugging
-        ========  ===================  =======================================
+        | Strategy | Preserves Identity? | Best For                                |
+        | -------- | ------------------- | --------------------------------------- |
+        | `block`  | N/A                 | Avoid PII completely                    |
+        | `redact` | No                  | General compliance, log sanitization    |
+        | `mask`   | No                  | Human readability, customer service UIs |
+        | `hash`   | Yes (pseudonymous)  | Analytics, debugging                    |
 
     Example:
         ```python
