@@ -72,6 +72,7 @@ from langchain_core.tools import BaseTool, InjectedToolArg
 from langchain_core.tools import tool as create_tool
 from langchain_core.tools.base import (
     TOOL_MESSAGE_BLOCK_TYPES,
+    ToolException,
     get_all_basemodel_annotations,
 )
 from langgraph._internal._runnable import RunnableCallable
@@ -239,8 +240,8 @@ def msg_content_output(output: Any) -> str | list[dict]:
         return str(output)
 
 
-class ToolInvocationError(Exception):
-    """Exception raised when a tool invocation fails due to invalid arguments."""
+class ToolInvocationError(ToolException):
+    """An error occurred while invoking a tool due to invalid arguments."""
 
     def __init__(
         self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
