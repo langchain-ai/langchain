@@ -155,7 +155,7 @@ def tool(
             return "partial json of results", {"full": "object of results"}
         ```
 
-    !!! version-added "Added in version 0.2.14"
+    .. versionadded:: 0.2.14
 
         Parse Google-style docstrings:
 

@@ -156,8 +156,19 @@ jobs:
           echo "Running extended tests, installing dependencies with uv..."
           uv venv
           uv sync --group test
-          VIRTUAL_ENV=.venv uv pip install -r extended_testing_deps.txt
-          VIRTUAL_ENV=.venv make extended_tests
+          if [ "${{ matrix.job-configs.working-directory }}" = "libs/langchain_v1" ]; then
+            echo "Installing extended test dependencies for langchain_v1 using dependency groups"
+            uv sync --group extended_tests
+            # Run tests directly without make to avoid Docker service requirements in CI
+            VIRTUAL_ENV=.venv LANGGRAPH_TEST_FAST=0 uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+          elif [ -f "extended_testing_deps.txt" ]; then
+            echo "Installing extended test dependencies from file"
+            VIRTUAL_ENV=.venv uv pip install -r extended_testing_deps.txt
+            VIRTUAL_ENV=.venv make extended_tests
+          else
+            echo "No extended test dependencies found, running make extended_tests"
+            VIRTUAL_ENV=.venv make extended_tests
+          fi
 
       - name: "🧹 Verify Clean Working Directory"
         shell: bash
