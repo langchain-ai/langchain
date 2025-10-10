@@ -33,6 +33,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     JumpTo,
     ModelRequest,
+    ModelResponse,
     OmitFromSchema,
     PublicAgentState,
 )
@@ -71,11 +72,11 @@ class _InternalModelResponse:
     """Internal wrapper for model execution results.
 
     Contains either a successful result or an exception, plus cached metadata.
-    Middleware receives either AIMessage via .send() or Exception via .throw().
+    Middleware receives ModelResponse with messages and optional structured output.
     """
 
-    result: AIMessage | None
-    """The AI message result on success."""
+    result: ModelResponse | None
+    """The model response on success."""
 
     exception: Exception | None
     """The exception on error."""
@@ -87,14 +88,14 @@ class _InternalModelResponse:
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            ModelResponse,
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], AIMessage]],
-        AIMessage,
+        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        ModelResponse,
     ]
     | None
 ):
@@ -141,25 +142,25 @@ def _chain_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            ModelResponse,
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], AIMessage]],
-            AIMessage,
+            [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+            ModelResponse,
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], AIMessage]],
-        AIMessage,
+        [ModelRequest, Callable[[ModelRequest], ModelResponse]],
+        ModelResponse,
     ]:
         """Compose two handlers where outer wraps inner."""
 
         def composed(
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler
-            def inner_handler(req: ModelRequest) -> AIMessage:
+            def inner_handler(req: ModelRequest) -> ModelResponse:
                 return inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
@@ -178,14 +179,14 @@ def _chain_model_call_handlers(
 def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ]
     ],
 ) -> (
     Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-        Awaitable[AIMessage],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        Awaitable[ModelResponse],
     ]
     | None
 ):
@@ -205,25 +206,25 @@ def _chain_async_model_call_handlers(
 
     def compose_two(
         outer: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ],
         inner: Callable[
-            [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-            Awaitable[AIMessage],
+            [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+            Awaitable[ModelResponse],
         ],
     ) -> Callable[
-        [ModelRequest, Callable[[ModelRequest], Awaitable[AIMessage]]],
-        Awaitable[AIMessage],
+        [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
+        Awaitable[ModelResponse],
     ]:
         """Compose two async handlers where outer wraps inner."""
 
         async def composed(
             request: ModelRequest,
-            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
             # Create a wrapper that calls inner with the base handler
-            async def inner_handler(req: ModelRequest) -> AIMessage:
+            async def inner_handler(req: ModelRequest) -> ModelResponse:
                 return await inner(req, handler)
 
             # Call outer with the wrapped inner as its handler
@@ -870,8 +871,17 @@ def create_agent(  # noqa: PLR0915
                 messages = [SystemMessage(request.system_prompt), *messages]
 
             output = model_.invoke(messages)
+
+            # Handle model output to get messages and structured_response
+            handled_output = _handle_model_output(output, effective_response_format)
+            messages_list = handled_output["messages"]
+            structured_response = handled_output.get("structured_response")
+
             return _InternalModelResponse(
-                result=output,
+                result=ModelResponse(
+                    result=messages_list,
+                    structured_response=structured_response,
+                ),
                 exception=None,
                 effective_response_format=effective_response_format,
             )
@@ -900,7 +910,7 @@ def create_agent(  # noqa: PLR0915
         effective_response_format: Any = None
 
         # Define base handler that executes the model
-        def base_handler(req: ModelRequest) -> AIMessage:
+        def base_handler(req: ModelRequest) -> ModelResponse:
             nonlocal effective_response_format
             internal_response = _execute_model_sync(req)
             if internal_response.exception is not None:
@@ -913,14 +923,20 @@ def create_agent(  # noqa: PLR0915
 
         if wrap_model_call_handler is None:
             # No handlers - execute directly
-            output = base_handler(request)
+            response = base_handler(request)
         else:
             # Call composed handler with base handler
-            output = wrap_model_call_handler(request, base_handler)
+            response = wrap_model_call_handler(request, base_handler)
+
+        # Extract state updates from ModelResponse
+        state_updates = {"messages": response.result}
+        if response.structured_response is not None:
+            state_updates["structured_response"] = response.structured_response
+
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
+            **state_updates,
         }
 
     async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
@@ -936,8 +952,17 @@ def create_agent(  # noqa: PLR0915
                 messages = [SystemMessage(request.system_prompt), *messages]
 
             output = await model_.ainvoke(messages)
+
+            # Handle model output to get messages and structured_response
+            handled_output = _handle_model_output(output, effective_response_format)
+            messages_list = handled_output["messages"]
+            structured_response = handled_output.get("structured_response")
+
             return _InternalModelResponse(
-                result=output,
+                result=ModelResponse(
+                    result=messages_list,
+                    structured_response=structured_response,
+                ),
                 exception=None,
                 effective_response_format=effective_response_format,
             )
@@ -966,7 +991,7 @@ def create_agent(  # noqa: PLR0915
         effective_response_format: Any = None
 
         # Define base async handler that executes the model
-        async def base_handler(req: ModelRequest) -> AIMessage:
+        async def base_handler(req: ModelRequest) -> ModelResponse:
             nonlocal effective_response_format
             internal_response = await _execute_model_async(req)
             if internal_response.exception is not None:
@@ -979,14 +1004,20 @@ def create_agent(  # noqa: PLR0915
 
         if awrap_model_call_handler is None:
             # No async handlers - execute directly
-            output = await base_handler(request)
+            response = await base_handler(request)
         else:
             # Call composed async handler with base handler
-            output = await awrap_model_call_handler(request, base_handler)
+            response = await awrap_model_call_handler(request, base_handler)
+
+        # Extract state updates from ModelResponse
+        state_updates = {"messages": response.result}
+        if response.structured_response is not None:
+            state_updates["structured_response"] = response.structured_response
+
         return {
             "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
             "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output, effective_response_format),
+            **state_updates,
         }
 
     # Use sync or async based on model capabilities
