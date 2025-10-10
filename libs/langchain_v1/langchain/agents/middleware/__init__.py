@@ -15,6 +15,7 @@ from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
+from .tool_emulator import LLMToolEmulator
 from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
     AgentMiddleware,
@@ -38,6 +39,7 @@ __all__ = [
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
+    "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
