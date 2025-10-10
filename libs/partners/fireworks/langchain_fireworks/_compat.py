@@ -1,7 +1,9 @@
 """Converts between AIMessage output formats, governed by `output_version`."""
+
 from __future__ import annotations
 
 from langchain_core.messages import AIMessage
+
 
 def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
     """Convert a v1 message to the Chat Completions format."""
