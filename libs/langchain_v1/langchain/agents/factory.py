@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -65,24 +64,6 @@ if TYPE_CHECKING:
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
-
-
-@dataclass
-class _InternalModelResponse:
-    """Internal wrapper for model execution results.
-
-    Contains either a successful result or an exception, plus cached metadata.
-    Middleware receives ModelResponse with messages and optional structured output.
-    """
-
-    result: ModelResponse | None
-    """The model response on success."""
-
-    exception: Exception | None
-    """The exception on error."""
-
-    effective_response_format: Any = None
-    """Cached response format after auto-detection."""
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -907,40 +888,29 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings), None
 
-    def _execute_model_sync(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model and return result or exception.
+    def _execute_model_sync(request: ModelRequest) -> ModelResponse:
+        """Execute model and return response.
 
         This is the core model execution logic wrapped by wrap_model_call handlers.
+        Raises any exceptions that occur during model invocation.
         """
-        try:
-            # Get the bound model (with auto-detection if needed)
-            model_, effective_response_format = _get_bound_model(request)
-            messages = request.messages
-            if request.system_prompt:
-                messages = [SystemMessage(request.system_prompt), *messages]
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(request)
+        messages = request.messages
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
 
-            output = model_.invoke(messages)
+        output = model_.invoke(messages)
 
-            # Handle model output to get messages and structured_response
-            handled_output = _handle_model_output(output, effective_response_format)
-            messages_list = handled_output["messages"]
-            structured_response = handled_output.get("structured_response")
+        # Handle model output to get messages and structured_response
+        handled_output = _handle_model_output(output, effective_response_format)
+        messages_list = handled_output["messages"]
+        structured_response = handled_output.get("structured_response")
 
-            return _InternalModelResponse(
-                result=ModelResponse(
-                    result=messages_list,
-                    structured_response=structured_response,
-                ),
-                exception=None,
-                effective_response_format=effective_response_format,
-            )
-        except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation
-            return _InternalModelResponse(
-                result=None,
-                exception=error,
-                effective_response_format=None,
-            )
+        return ModelResponse(
+            result=messages_list,
+            structured_response=structured_response,
+        )
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
@@ -955,27 +925,12 @@ def create_agent(  # noqa: PLR0915
             runtime=runtime,
         )
 
-        # Execute with or without handler
-        effective_response_format: Any = None
-
-        # Define base handler that executes the model
-        def base_handler(req: ModelRequest) -> ModelResponse:
-            nonlocal effective_response_format
-            internal_response = _execute_model_sync(req)
-            if internal_response.exception is not None:
-                raise internal_response.exception
-            if internal_response.result is None:
-                msg = "Model execution succeeded but returned no result"
-                raise RuntimeError(msg)
-            effective_response_format = internal_response.effective_response_format
-            return internal_response.result
-
         if wrap_model_call_handler is None:
             # No handlers - execute directly
-            response = base_handler(request)
+            response = _execute_model_sync(request)
         else:
             # Call composed handler with base handler
-            response = wrap_model_call_handler(request, base_handler)
+            response = wrap_model_call_handler(request, _execute_model_sync)
 
         # Extract state updates from ModelResponse
         state_updates = {"messages": response.result}
@@ -988,40 +943,29 @@ def create_agent(  # noqa: PLR0915
             **state_updates,
         }
 
-    async def _execute_model_async(request: ModelRequest) -> _InternalModelResponse:
-        """Execute model asynchronously and return result or exception.
+    async def _execute_model_async(request: ModelRequest) -> ModelResponse:
+        """Execute model asynchronously and return response.
 
         This is the core async model execution logic wrapped by wrap_model_call handlers.
+        Raises any exceptions that occur during model invocation.
         """
-        try:
-            # Get the bound model (with auto-detection if needed)
-            model_, effective_response_format = _get_bound_model(request)
-            messages = request.messages
-            if request.system_prompt:
-                messages = [SystemMessage(request.system_prompt), *messages]
+        # Get the bound model (with auto-detection if needed)
+        model_, effective_response_format = _get_bound_model(request)
+        messages = request.messages
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
 
-            output = await model_.ainvoke(messages)
+        output = await model_.ainvoke(messages)
 
-            # Handle model output to get messages and structured_response
-            handled_output = _handle_model_output(output, effective_response_format)
-            messages_list = handled_output["messages"]
-            structured_response = handled_output.get("structured_response")
+        # Handle model output to get messages and structured_response
+        handled_output = _handle_model_output(output, effective_response_format)
+        messages_list = handled_output["messages"]
+        structured_response = handled_output.get("structured_response")
 
-            return _InternalModelResponse(
-                result=ModelResponse(
-                    result=messages_list,
-                    structured_response=structured_response,
-                ),
-                exception=None,
-                effective_response_format=effective_response_format,
-            )
-        except Exception as error:  # noqa: BLE001
-            # Catch all exceptions from model invocation
-            return _InternalModelResponse(
-                result=None,
-                exception=error,
-                effective_response_format=None,
-            )
+        return ModelResponse(
+            result=messages_list,
+            structured_response=structured_response,
+        )
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -1036,27 +980,12 @@ def create_agent(  # noqa: PLR0915
             runtime=runtime,
         )
 
-        # Execute with or without handler
-        effective_response_format: Any = None
-
-        # Define base async handler that executes the model
-        async def base_handler(req: ModelRequest) -> ModelResponse:
-            nonlocal effective_response_format
-            internal_response = await _execute_model_async(req)
-            if internal_response.exception is not None:
-                raise internal_response.exception
-            if internal_response.result is None:
-                msg = "Model execution succeeded but returned no result"
-                raise RuntimeError(msg)
-            effective_response_format = internal_response.effective_response_format
-            return internal_response.result
-
         if awrap_model_call_handler is None:
             # No async handlers - execute directly
-            response = await base_handler(request)
+            response = await _execute_model_async(request)
         else:
             # Call composed async handler with base handler
-            response = await awrap_model_call_handler(request, base_handler)
+            response = await awrap_model_call_handler(request, _execute_model_async)
 
         # Extract state updates from ModelResponse
         state_updates = {"messages": response.result}
