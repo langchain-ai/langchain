@@ -1,5 +1,4 @@
 """Middleware for providing subagents to an agent via a `task` tool."""
-# ruff: noqa: E501
 
 from collections.abc import Callable, Sequence
 from typing import Annotated, Any, NotRequired, TypedDict, cast
@@ -54,7 +53,7 @@ class CustomSubAgent(TypedDict):
 
 
 DEFAULT_SUBAGENT_PROMPT = """In order to complete the objective that the user asks of you, you have access to a number of standard tools.
-"""
+"""  # noqa: E501
 
 TASK_TOOL_DESCRIPTION = """Launch an ephemeral subagent to handle complex, multi-step independent tasks with isolated context windows.
 
@@ -165,7 +164,7 @@ user: "Hello"
 Since the user is greeting, use the greeting-responder agent to respond with a friendly joke
 </commentary>
 assistant: "I'm going to use the Task tool to launch with the greeting-responder agent"
-</example>"""
+</example>"""  # noqa: E501
 
 
 def _get_subagents(
@@ -255,7 +254,11 @@ def _create_task_tool(
             tool_call_id: Annotated[str, InjectedToolCallId],
         ) -> str | Command:
             if subagent_type not in subagent_graphs:
-                return f"Error: invoked agent of type {subagent_type}, the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+                msg = (
+                    f"Error: invoked agent of type {subagent_type}, "
+                    f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+                )
+                raise ValueError(msg)
             subagent = subagent_graphs[subagent_type]
             state["messages"] = [HumanMessage(content=description)]
             if "todos" in state:
@@ -272,7 +275,11 @@ def _create_task_tool(
             tool_call_id: Annotated[str, InjectedToolCallId],
         ) -> str | Command:
             if subagent_type not in subagent_graphs:
-                return f"Error: invoked agent of type {subagent_type}, the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+                msg = (
+                    f"Error: invoked agent of type {subagent_type}, "
+                    f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+                )
+                raise ValueError(msg)
             subagent = subagent_graphs[subagent_type]
             state["messages"] = [HumanMessage(content=description)]
             if "todos" in state:

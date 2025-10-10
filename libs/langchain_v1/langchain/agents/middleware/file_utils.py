@@ -245,3 +245,39 @@ def check_empty_content(content: str) -> str | None:
     if not content or content.strip() == "":
         return "System reminder: File exists but has empty contents"
     return None
+
+
+def has_memories_prefix(file_path: str) -> bool:
+    """Check if file path has the memories prefix.
+
+    Args:
+        file_path: File path.
+
+    Returns:
+        True if file path has the memories prefix, False otherwise.
+    """
+    return file_path.startswith("/memories/")
+
+
+def append_memories_prefix(file_path: str) -> str:
+    """Append the memories prefix to a file path.
+
+    Args:
+        file_path: File path.
+
+    Returns:
+        File path with the memories prefix.
+    """
+    return f"/memories{file_path}"
+
+
+def strip_memories_prefix(file_path: str) -> str:
+    """Strip the memories prefix from a file path.
+
+    Args:
+        file_path: File path.
+
+    Returns:
+        File path without the memories prefix.
+    """
+    return file_path.replace("/memories", "")

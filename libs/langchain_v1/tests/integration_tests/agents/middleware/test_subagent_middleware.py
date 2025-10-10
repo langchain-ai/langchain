@@ -15,13 +15,6 @@ class WeatherMiddleware(AgentMiddleware):
     tools = [get_weather]
 
 
-custom_subagent = create_agent(
-    model="gpt-4.1-2025-04-14",
-    system_prompt="Use the get_weather tool to get the weather in a city.",
-    tools=[get_weather],
-)
-
-
 def assert_expected_subgraph_actions(expected_tool_calls, agent, inputs):
     current_idx = 0
     for update in agent.stream(
@@ -194,6 +187,11 @@ class TestSubagentMiddleware:
         )
 
     def test_defined_subagent_custom_runnable(self):
+        custom_subagent = create_agent(
+            model="gpt-4.1-2025-04-14",
+            system_prompt="Use the get_weather tool to get the weather in a city.",
+            tools=[get_weather],
+        )
         agent = create_agent(
             model="claude-sonnet-4-20250514",
             system_prompt="Use the task tool to call a subagent.",
