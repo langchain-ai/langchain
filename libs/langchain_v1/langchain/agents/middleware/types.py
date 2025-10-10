@@ -402,6 +402,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         raise NotImplementedError
 
+
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""
 

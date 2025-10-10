@@ -637,9 +637,14 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
-    # Collect middleware with wrap_tool_call hooks
+    # Collect middleware with wrap_tool_call or awrap_tool_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
     middleware_w_wrap_tool_call = [
-        m for m in middleware if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
+        m
+        for m in middleware
+        if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
+        or m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
     ]
 
     # Chain all wrap_tool_call handlers into a single composed handler
@@ -648,12 +653,14 @@ def create_agent(  # noqa: PLR0915
         wrappers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
 
-    # Collect middleware with awrap_tool_call hooks
-    # If middleware defines sync wrap_tool_call, use its async version (which delegates by default)
+    # Collect middleware with awrap_tool_call or wrap_tool_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
     middleware_w_awrap_tool_call = [
         m
         for m in middleware
-        or m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
+        if m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
+        or m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
     ]
 
     # Chain all awrap_tool_call handlers into a single composed async handler
