@@ -192,7 +192,16 @@ def _chain_model_call_handlers(
     for handler in reversed(handlers[:-1]):
         result = compose_two(handler, result)
 
-    return result
+    # Wrap to ensure final return type is exactly ModelResponse
+    def final_normalized(
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
+        # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
+        final_result = result(request, handler)
+        return _normalize_to_model_response(final_result)
+
+    return final_normalized
 
 
 def _chain_async_model_call_handlers(
@@ -268,7 +277,16 @@ def _chain_async_model_call_handlers(
     for handler in reversed(handlers[:-1]):
         result = compose_two(handler, result)
 
-    return result
+    # Wrap to ensure final return type is exactly ModelResponse
+    async def final_normalized(
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        # result here is typed as returning ModelResponse | AIMessage but compose_two normalizes
+        final_result = await result(request, handler)
+        return _normalize_to_model_response(final_result)
+
+    return final_normalized
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
