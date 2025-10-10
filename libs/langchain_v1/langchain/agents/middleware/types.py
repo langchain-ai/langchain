@@ -263,18 +263,35 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return AIMessage(content="Simplified response")
             ```
         """
-        raise NotImplementedError
+        msg = (
+            "Synchronous implementation of wrap_model_call is not available. "
+            "You are likely encountering this error because you defined only the async version "
+            "(awrap_model_call) and invoked your agent in a synchronous context "
+            "(e.g., using `stream()` or `invoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the synchronous wrap_model_call method, "
+            "(2) use the @wrap_model_call decorator on a standalone sync function, or "
+            "(3) invoke your agent asynchronously using `astream()` or `ainvoke()`."
+        )
+        raise NotImplementedError(msg)
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Async version of wrap_model_call.
+        """Intercept and control async model execution via handler callback.
+
+        The handler callback executes the model request and returns a ModelResponse.
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request.
+            handler: Async callback that executes the model request and returns ModelResponse.
+                     Call this to execute the model. Can be called multiple times
+                     for retry logic. Can skip calling it to short-circuit.
 
         Returns:
             ModelCallResult
@@ -291,7 +308,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                             raise
             ```
         """
-        raise NotImplementedError
+        msg = (
+            "Asynchronous implementation of awrap_model_call is not available. "
+            "You are likely encountering this error because you defined only the sync version "
+            "(wrap_model_call) and invoked your agent in an asynchronous context "
+            "(e.g., using `astream()` or `ainvoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the asynchronous awrap_model_call method, "
+            "(2) use the @wrap_model_call decorator on a standalone async function, or "
+            "(3) invoke your agent synchronously using `stream()` or `invoke()`."
+        )
+        raise NotImplementedError(msg)
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
@@ -353,32 +380,46 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         continue
                     return result
         """
-        raise NotImplementedError
+        msg = (
+            "Synchronous implementation of wrap_tool_call is not available. "
+            "You are likely encountering this error because you defined only the async version "
+            "(awrap_tool_call) and invoked your agent in a synchronous context "
+            "(e.g., using `stream()` or `invoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the synchronous wrap_tool_call method, "
+            "(2) use the @wrap_tool_call decorator on a standalone sync function, or "
+            "(3) invoke your agent asynchronously using `astream()` or `ainvoke()`."
+        )
+        raise NotImplementedError(msg)
 
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
     ) -> ToolMessage | Command:
-        """Async version of wrap_tool_call.
+        """Intercept and control async tool execution via handler callback.
 
-        Intercept async tool execution for retries, monitoring, or modification.
-        Multiple middleware compose automatically (first defined = outermost).
-
-        By default, delegates to the sync wrap_tool_call method if overridden.
-        Override this method for native async tool call interception.
+        The handler callback executes the tool call and returns a ToolMessage or Command.
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
 
         Args:
             request: Tool call request with call dict, BaseTool, state, and runtime.
                 Access state via request.state and runtime via request.runtime.
-            handler: Async callable to execute the tool (can be called multiple times).
+            handler: Async callable to execute the tool and returns ToolMessage or Command.
+                     Call this to execute the tool. Can be called multiple times
+                     for retry logic. Can skip calling it to short-circuit.
 
         Returns:
             ToolMessage or Command (the final result).
 
+        The handler callable can be invoked multiple times for retry logic.
+        Each call to handler is independent and stateless.
+
         Examples:
             Async retry on error:
-
+            ```python
             async def awrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -389,8 +430,8 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         if attempt == 2:
                             raise
                 return result
+            ```
 
-            Async cache/short-circuit:
 
             async def awrap_tool_call(self, request, handler):
                 if cached := await get_cache_async(request):
@@ -399,7 +440,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 await save_cache_async(request, result)
                 return result
         """
-        raise NotImplementedError
+        msg = (
+            "Asynchronous implementation of awrap_tool_call is not available. "
+            "You are likely encountering this error because you defined only the sync version "
+            "(wrap_tool_call) and invoked your agent in an asynchronous context "
+            "(e.g., using `astream()` or `ainvoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the asynchronous awrap_tool_call method, "
+            "(2) use the @wrap_tool_call decorator on a standalone async function, or "
+            "(3) invoke your agent synchronously using `stream()` or `invoke()`."
+        )
+        raise NotImplementedError(msg)
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
