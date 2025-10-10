@@ -65,11 +65,11 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         processed segments as a list of strings.
 
         Args:
-            text (str): The input text to be split.
+            text: The input text to be split.
 
         Returns:
-            List[str]: A list of string components derived from the input text after
-            encoding and processing.
+            A list of string components derived from the input text after encoding and
+            processing.
         """
 
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
@@ -91,7 +91,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         calculates the total number of tokens in the encoded result.
 
         Args:
-            text (str): The input text for which the token count is calculated.
+            text: The input text for which the token count is calculated.
 
         Returns:
             int: The number of tokens in the encoded text.
