@@ -1362,20 +1362,6 @@ def wrap_tool_call(
         AgentMiddleware instance if func provided, otherwise a decorator.
 
     Examples:
-        Basic passthrough:
-        ```python
-        @wrap_tool_call
-        def passthrough(request, handler):
-            return handler(request)
-        ```
-
-        Async passthrough:
-        ```python
-        @wrap_tool_call
-        async def async_passthrough(request, handler):
-            return await handler(request)
-        ```
-
         Retry logic:
         ```python
         @wrap_tool_call
