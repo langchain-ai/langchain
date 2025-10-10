@@ -567,7 +567,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, wrap_tool=wrap_tool_call_wrapper)
+        ToolNode(tools=available_tools, wrap_tool_call=wrap_tool_call_wrapper)
         if available_tools
         else None
     )

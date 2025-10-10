@@ -499,7 +499,7 @@ class ToolNode(RunnableCallable):
         | type[Exception]
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
-        wrap_tool: ToolCallWrapper | None = None,
+        wrap_tool_call: ToolCallWrapper | None = None,
     ) -> None:
         """Initialize ToolNode with tools and configuration.
 
@@ -509,7 +509,7 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            wrap_tool: Wrapper function to intercept tool execution. Receives
+            wrap_tool_call: Wrapper function to intercept tool execution. Receives
                 ToolCallRequest and execute callable, returns ToolMessage or Command.
                 Enables retries, caching, request modification, and control flow.
         """
@@ -519,7 +519,7 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
-        self._wrap_tool = wrap_tool
+        self._wrap_tool_call = wrap_tool_call
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -713,7 +713,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call with wrap_tool wrapper if configured.
+        """Execute single tool call with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -741,7 +741,7 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._wrap_tool is None:
+        if self._wrap_tool_call is None:
             # No wrapper - execute directly
             return self._execute_tool_sync(tool_request, input_type, config)
 
@@ -752,7 +752,7 @@ class ToolNode(RunnableCallable):
 
         # Call wrapper with request and execute callable
         try:
-            return self._wrap_tool(tool_request, execute)
+            return self._wrap_tool_call(tool_request, execute)
         except Exception as e:
             # Wrapper threw an exception
             if not self._handle_tool_errors:
@@ -855,7 +855,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call asynchronously with wrap_tool wrapper if configured.
+        """Execute single tool call asynchronously with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -883,7 +883,7 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._wrap_tool is None:
+        if self._wrap_tool_call is None:
             # No wrapper - execute directly
             return await self._execute_tool_async(tool_request, input_type, config)
 
@@ -895,7 +895,7 @@ class ToolNode(RunnableCallable):
         # Call wrapper with request and execute callable
         # Note: wrapper is sync, but execute callable is async
         try:
-            result = self._wrap_tool(tool_request, execute)  # type: ignore[arg-type]
+            result = self._wrap_tool_call(tool_request, execute)  # type: ignore[arg-type]
             # If result is a coroutine, await it (though wrapper should be sync)
             return await result if hasattr(result, "__await__") else result
         except Exception as e:
@@ -971,7 +971,7 @@ class ToolNode(RunnableCallable):
             input: The input which may be raw state or ToolCallWithContext.
 
         Returns:
-            The actual state to pass to wrap_tool wrappers.
+            The actual state to pass to wrap_tool_call wrappers.
         """
         if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
             return input["state"]
