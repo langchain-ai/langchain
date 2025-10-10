@@ -24,9 +24,11 @@ if TYPE_CHECKING:
     from langchain_core.utils.pydantic import pre_init
     from langchain_core.utils.strings import (
         comma_list,
+        normalize_whitespace,
         sanitize_for_postgres,
         stringify_dict,
         stringify_value,
+        truncate_with_ellipsis,
     )
     from langchain_core.utils.utils import (
         build_extra_kwargs,
@@ -60,6 +62,7 @@ __all__ = (
     "guard_import",
     "image",
     "mock_now",
+    "normalize_whitespace",
     "pre_init",
     "print_text",
     "raise_for_status_with_text",
@@ -67,6 +70,7 @@ __all__ = (
     "secret_from_env",
     "stringify_dict",
     "stringify_value",
+    "truncate_with_ellipsis",
     "xor_args",
 )
 
@@ -84,9 +88,11 @@ _dynamic_imports = {
     "batch_iterate": "iter",
     "pre_init": "pydantic",
     "comma_list": "strings",
+    "normalize_whitespace": "strings",
     "sanitize_for_postgres": "strings",
     "stringify_dict": "strings",
     "stringify_value": "strings",
+    "truncate_with_ellipsis": "strings",
     "build_extra_kwargs": "utils",
     "check_package_version": "utils",
     "convert_to_secret_str": "utils",

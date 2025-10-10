@@ -1,6 +1,7 @@
 """String utilities."""
 
 from typing import Any
+import re
 
 
 def stringify_value(val: Any) -> str:
@@ -46,6 +47,43 @@ def comma_list(items: list[Any]) -> str:
         The comma-separated string.
     """
     return ", ".join(str(item) for item in items)
+
+
+def truncate_with_ellipsis(text: str, max_length: int, *, ellipsis: str = "...") -> str:
+    """Truncate text to a maximum length with ellipsis.
+
+    Args:
+        text: The text to truncate.
+        max_length: Maximum length of the resulting string.
+        ellipsis: String to append when truncating. Defaults to "...".
+
+    Returns:
+        Truncated text with ellipsis if needed.
+    """
+    if len(text) <= max_length:
+        return text
+    
+    return text[:max_length - len(ellipsis)] + ellipsis
+
+
+def normalize_whitespace(text: str, *, preserve_newlines: bool = True) -> str:
+    """Normalize whitespace in text.
+
+    Args:
+        text: The text to normalize.
+        preserve_newlines: Whether to preserve newline characters. Defaults to True.
+
+    Returns:
+        Text with normalized whitespace.
+    """
+    
+    if preserve_newlines:
+        text = re.sub(r'[ \t]+', ' ', text) 
+        text = re.sub(r' +', ' ', text)      
+    else:
+        text = re.sub(r'\s+', ' ', text)
+    
+    return text.strip()
 
 
 def sanitize_for_postgres(text: str, replacement: str = "") -> str:
