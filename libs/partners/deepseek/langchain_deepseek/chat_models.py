@@ -59,7 +59,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```python
         from langchain_deepseek import ChatDeepSeek
 
-        llm = ChatDeepSeek(
+        model = ChatDeepSeek(
             model="...",
             temperature=0,
             max_tokens=None,
@@ -76,16 +76,16 @@ class ChatDeepSeek(BaseChatOpenAI):
             ("system", "You are a helpful translator. Translate the user sentence to French."),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
     Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -94,13 +94,13 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # stream:
-        # async for chunk in (await llm.astream(messages))
+        # async for chunk in (await model.astream(messages))
 
         # batch:
-        # await llm.abatch([messages])
+        # await model.abatch([messages])
         ```
 
     Tool calling:
@@ -120,8 +120,8 @@ class ChatDeepSeek(BaseChatOpenAI):
             location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
         ai_msg.tool_calls
         ```
 
@@ -142,15 +142,15 @@ class ChatDeepSeek(BaseChatOpenAI):
             rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         See `ChatDeepSeek.with_structured_output()` for more.
 
     Token usage:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
         ```python
@@ -158,7 +158,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```
     Response metadata
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
     """  # noqa: E501

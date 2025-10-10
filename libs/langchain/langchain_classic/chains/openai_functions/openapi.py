@@ -330,7 +330,7 @@ def get_openapi_chain(
         prompt = ChatPromptTemplate.from_template(
             "Use the provided APIs to respond to this user query:\\n\\n{query}"
         )
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
 
         def _execute_tool(message) -> Any:
             if tool_calls := message.tool_calls:
@@ -341,7 +341,7 @@ def get_openapi_chain(
             else:
                 return message.content
 
-        chain = prompt | llm | _execute_tool
+        chain = prompt | model | _execute_tool
         ```
 
         ```python
@@ -394,7 +394,7 @@ def get_openapi_chain(
         msg = (
             "Must provide an LLM for this chain.For example,\n"
             "from langchain_openai import ChatOpenAI\n"
-            "llm = ChatOpenAI()\n"
+            "model = ChatOpenAI()\n"
         )
         raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(

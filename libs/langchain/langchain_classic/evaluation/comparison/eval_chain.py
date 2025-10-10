@@ -165,10 +165,10 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain_classic.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(
+        >>> model = ChatOpenAI(
         ...     temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42}
         ... )
-        >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
+        >>> chain = PairwiseStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",
         ...     prediction = "H2O",

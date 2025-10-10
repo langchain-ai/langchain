@@ -38,10 +38,10 @@ def create_history_aware_retriever(
         from langchain_classic import hub
 
         rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
         retriever = ...
         chat_retriever_chain = create_history_aware_retriever(
-            llm, retriever, rephrase_prompt
+            model, retriever, rephrase_prompt
         )
 
         chain.invoke({"input": "...", "chat_history": })

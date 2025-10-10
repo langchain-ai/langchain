@@ -68,8 +68,8 @@ def create_stuff_documents_chain(
         prompt = ChatPromptTemplate.from_messages(
             [("system", "What are everyone's favorite colors:\n\n{context}")]
         )
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
-        chain = create_stuff_documents_chain(llm, prompt)
+        model = ChatOpenAI(model="gpt-3.5-turbo")
+        chain = create_stuff_documents_chain(model, prompt)
 
         docs = [
             Document(page_content="Jesse loves red but not yellow"),
@@ -132,11 +132,11 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             input_variables=["page_content"], template="{page_content}"
         )
         document_variable_name = "context"
-        llm = OpenAI()
+        model = OpenAI()
         # The prompt here should take as an input variable the
         # `document_variable_name`
         prompt = PromptTemplate.from_template("Summarize this content: {context}")
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=model, prompt=prompt)
         chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             document_prompt=document_prompt,

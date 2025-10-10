@@ -776,11 +776,11 @@ class Runnable(ABC, Generic[Input, Output]):
             SystemMessagePromptTemplate.from_template("You are a nice assistant.")
             + "{question}"
         )
-        llm = FakeStreamingListLLM(responses=["foo-lish"])
+        model = FakeStreamingListLLM(responses=["foo-lish"])
 
-        chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+        chain: Runnable = prompt | model | {"str": StrOutputParser()}
 
-        chain_with_assign = chain.assign(hello=itemgetter("str") | llm)
+        chain_with_assign = chain.assign(hello=itemgetter("str") | model)
 
         print(chain_with_assign.input_schema.model_json_schema())
         # {'title': 'PromptInput', 'type': 'object', 'properties':
@@ -1598,16 +1598,16 @@ class Runnable(ABC, Generic[Input, Output]):
             from langchain_ollama import ChatOllama
             from langchain_core.output_parsers import StrOutputParser
 
-            llm = ChatOllama(model="llama3.1")
+            model = ChatOllama(model="llama3.1")
 
             # Without bind
-            chain = llm | StrOutputParser()
+            chain = model | StrOutputParser()
 
             chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
             # Output is 'One two three four five.'
 
             # With bind
-            chain = llm.bind(stop=["three"]) | StrOutputParser()
+            chain = model.bind(stop=["three"]) | StrOutputParser()
 
             chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
             # Output is 'One two'
@@ -6056,10 +6056,10 @@ def chain(
         @chain
         def my_func(fields):
             prompt = PromptTemplate("Hello, {name}!")
-            llm = OpenAI()
+            model = OpenAI()
             formatted = prompt.invoke(**fields)
 
-            for chunk in llm.stream(formatted):
+            for chunk in model.stream(formatted):
                 yield chunk
         ```
     """

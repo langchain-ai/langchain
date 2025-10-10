@@ -748,13 +748,13 @@ class ChatFireworks(BaseChatModel):
                 )
 
 
-            llm = ChatFireworks(
+            model = ChatFireworks(
                 model="accounts/fireworks/models/firefunction-v1",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -778,15 +778,15 @@ class ChatFireworks(BaseChatModel):
                 justification: str
 
 
-            llm = ChatFireworks(
+            model = ChatFireworks(
                 model="accounts/fireworks/models/firefunction-v1",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -813,13 +813,13 @@ class ChatFireworks(BaseChatModel):
                 ]
 
 
-            llm = ChatFireworks(
+            model = ChatFireworks(
                 model="accounts/fireworks/models/firefunction-v1",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -849,13 +849,13 @@ class ChatFireworks(BaseChatModel):
                 },
             }
 
-            llm = ChatFireworks(
+            model = ChatFireworks(
                 model="accounts/fireworks/models/firefunction-v1",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(oai_schema)
+            structured_model = model.with_structured_output(oai_schema)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -876,14 +876,14 @@ class ChatFireworks(BaseChatModel):
                 justification: str
 
 
-            llm = ChatFireworks(
+            model = ChatFireworks(
                 model="accounts/fireworks/models/firefunction-v1", temperature=0
             )
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -898,11 +898,11 @@ class ChatFireworks(BaseChatModel):
         Example: schema=None, method="json_mode", include_raw=True:
 
             ```python
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                 "What's heavier a pound of bricks or a pound of feathers?"

@@ -156,8 +156,8 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain_classic.evaluation.scoring import ScoreStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
-        >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
+        >>> model = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> chain = ScoreStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_strings(
         ...     input="What is the chemical formula for water?",
         ...     prediction="H2O",

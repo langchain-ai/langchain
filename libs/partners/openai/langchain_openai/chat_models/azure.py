@@ -82,7 +82,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```python
         from langchain_openai import AzureChatOpenAI
 
-        llm = AzureChatOpenAI(
+        model = AzureChatOpenAI(
             azure_deployment="your-deployment",
             api_version="2024-05-01-preview",
             temperature=0,
@@ -127,7 +127,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             ),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         ```python
@@ -172,7 +172,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -200,7 +200,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -221,13 +221,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # stream:
-        # async for chunk in (await llm.astream(messages))
+        # async for chunk in (await model.astream(messages))
 
         # batch:
-        # await llm.abatch([messages])
+        # await model.abatch([messages])
         ```
 
     Tool calling:
@@ -251,8 +251,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke(
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
         ai_msg.tool_calls
@@ -300,8 +300,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         ```python
@@ -316,8 +316,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     JSON mode:
         ```python
-        json_llm = llm.bind(response_format={"type": "json_object"})
-        ai_msg = json_llm.invoke(
+        json_model = model.bind(response_format={"type": "json_object"})
+        ai_msg = json_model.invoke(
             "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
         )
         ai_msg.content
@@ -344,7 +344,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 },
             ]
         )
-        ai_msg = llm.invoke([message])
+        ai_msg = model.invoke([message])
         ai_msg.content
         ```
 
@@ -354,7 +354,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Token usage:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
 
@@ -363,8 +363,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
     Logprobs:
         ```python
-        logprobs_llm = llm.bind(logprobs=True)
-        ai_msg = logprobs_llm.invoke(messages)
+        logprobs_model = model.bind(logprobs=True)
+        ai_msg = logprobs_model.invoke(messages)
         ai_msg.response_metadata["logprobs"]
         ```
 
@@ -422,7 +422,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Response metadata
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
@@ -911,16 +911,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    llm = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    structured_llm = llm.with_structured_output(
+                    structured_model = model.with_structured_output(
                         ResponseSchema,
                         tools=[get_weather],
                         strict=True,
                         include_raw=True,
                     )
 
-                    structured_llm.invoke("What's the weather in Boston?")
+                    structured_model.invoke("What's the weather in Boston?")
                     ```
 
                     ```python
@@ -986,10 +986,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -1017,12 +1019,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="function_calling"
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -1046,12 +1050,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 justification: str
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -1078,10 +1084,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 ]
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -1107,14 +1115,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'required': ['answer']
                 }
 
-                llm = AzureChatOpenAI(
+                model = AzureChatOpenAI(
                     azure_deployment="...",
                     model="gpt-4o",
                     temperature=0,
                 )
-                structured_llm = llm.with_structured_output(oai_schema)
+                structured_model = model.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
+                structured_model.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
                 )
                 # -> {
@@ -1135,16 +1143,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 justification: str
 
 
-            llm = AzureChatOpenAI(
+            model = AzureChatOpenAI(
                 azure_deployment="...",
                 model="gpt-4o",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -1159,11 +1167,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             ```python
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"

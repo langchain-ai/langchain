@@ -237,7 +237,7 @@ class RetrievalQA(BaseRetrievalQA):
 
 
         retriever = ...  # Your retriever
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
 
         system_prompt = (
             "Use the given context to answer the question. "
@@ -251,7 +251,7 @@ class RetrievalQA(BaseRetrievalQA):
                 ("human", "{input}"),
             ]
         )
-        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        question_answer_chain = create_stuff_documents_chain(model, prompt)
         chain = create_retrieval_chain(retriever, question_answer_chain)
 
         chain.invoke({"input": query})

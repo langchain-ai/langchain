@@ -53,16 +53,16 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             input_variables=["page_content"], template="{page_content}"
         )
         document_variable_name = "context"
-        llm = OpenAI()
+        model = OpenAI()
         # The prompt here should take as an input variable the
         # `document_variable_name`
         prompt = PromptTemplate.from_template("Summarize this content: {context}")
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=model, prompt=prompt)
         # We now define how to combine these summaries
         reduce_prompt = PromptTemplate.from_template(
             "Combine these summaries: {context}"
         )
-        reduce_llm_chain = LLMChain(llm=llm, prompt=reduce_prompt)
+        reduce_llm_chain = LLMChain(llm=model, prompt=reduce_prompt)
         combine_documents_chain = StuffDocumentsChain(
             llm_chain=reduce_llm_chain,
             document_prompt=document_prompt,
@@ -79,7 +79,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         # which is specifically aimed at collapsing documents BEFORE
         # the final call.
         prompt = PromptTemplate.from_template("Collapse this content: {context}")
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=model, prompt=prompt)
         collapse_documents_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             document_prompt=document_prompt,

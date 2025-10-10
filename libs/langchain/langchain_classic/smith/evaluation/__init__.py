@@ -16,8 +16,8 @@ from langchain_classic.smith import EvaluatorType, RunEvalConfig, run_on_dataset
 
 
 def construct_chain():
-    llm = ChatOpenAI(temperature=0)
-    chain = LLMChain.from_string(llm, "What's the answer to {your_input_key}")
+    model = ChatOpenAI(temperature=0)
+    chain = LLMChain.from_string(model, "What's the answer to {your_input_key}")
     return chain
 
 
