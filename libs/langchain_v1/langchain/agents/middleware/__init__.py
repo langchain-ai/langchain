@@ -39,6 +39,7 @@ __all__ = [
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
+    "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
