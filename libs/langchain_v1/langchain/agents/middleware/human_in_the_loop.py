@@ -144,8 +144,8 @@ class InterruptOnConfig(TypedDict):
                 f"Arguments:\\n{json.dumps(tool_call['args'], indent=2)}"
             )
 
-        config = ToolConfig(
-            allow_accept=True,
+        config = InterruptOnConfig(
+            allowed_decisions=["approve", "edit", "reject"],
             description=format_tool_description
         )
         ```
