@@ -13,9 +13,6 @@ from typing import (
     get_type_hints,
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Awaitable
-
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
@@ -51,7 +48,7 @@ from langchain.tools import ToolNode
 from langchain.tools.tool_node import ToolCallWithContext
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Awaitable, Callable, Sequence
 
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
@@ -449,6 +446,70 @@ def _chain_tool_call_wrappers(
     return result
 
 
+def _chain_async_tool_call_wrappers(
+    wrappers: Sequence[
+        Callable[
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+            Awaitable[ToolMessage | Command],
+        ]
+    ],
+) -> (
+    Callable[
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+        Awaitable[ToolMessage | Command],
+    ]
+    | None
+):
+    """Compose async wrappers into middleware stack (first = outermost).
+
+    Args:
+        wrappers: Async wrappers in middleware order.
+
+    Returns:
+        Composed async wrapper, or None if empty.
+    """
+    if not wrappers:
+        return None
+
+    if len(wrappers) == 1:
+        return wrappers[0]
+
+    def compose_two(
+        outer: Callable[
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+            Awaitable[ToolMessage | Command],
+        ],
+        inner: Callable[
+            [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+            Awaitable[ToolMessage | Command],
+        ],
+    ) -> Callable[
+        [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+        Awaitable[ToolMessage | Command],
+    ]:
+        """Compose two async wrappers where outer wraps inner."""
+
+        async def composed(
+            request: ToolCallRequest,
+            execute: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+        ) -> ToolMessage | Command:
+            # Create an async callable that invokes inner with the original execute
+            async def call_inner(req: ToolCallRequest) -> ToolMessage | Command:
+                return await inner(req, execute)
+
+            # Outer can call call_inner multiple times
+            return await outer(request, call_inner)
+
+        return composed
+
+    # Chain all wrappers: first -> second -> ... -> last
+    result = wrappers[-1]
+    for wrapper in reversed(wrappers[:-1]):
+        result = compose_two(wrapper, result)
+
+    return result
+
+
 def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
@@ -576,9 +637,14 @@ def create_agent(  # noqa: PLR0915
             structured_output_tools[structured_tool_info.tool.name] = structured_tool_info
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
-    # Collect middleware with wrap_tool_call hooks
+    # Collect middleware with wrap_tool_call or awrap_tool_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
     middleware_w_wrap_tool_call = [
-        m for m in middleware if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
+        m
+        for m in middleware
+        if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
+        or m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
     ]
 
     # Chain all wrap_tool_call handlers into a single composed handler
@@ -586,6 +652,22 @@ def create_agent(  # noqa: PLR0915
     if middleware_w_wrap_tool_call:
         wrappers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
+
+    # Collect middleware with awrap_tool_call or wrap_tool_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
+    middleware_w_awrap_tool_call = [
+        m
+        for m in middleware
+        if m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
+        or m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
+    ]
+
+    # Chain all awrap_tool_call handlers into a single composed async handler
+    awrap_tool_call_wrapper = None
+    if middleware_w_awrap_tool_call:
+        async_wrappers = [m.awrap_tool_call for m in middleware_w_awrap_tool_call]
+        awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
     tool_node: ToolNode | None = None
@@ -598,7 +680,11 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, wrap_tool_call=wrap_tool_call_wrapper)
+        ToolNode(
+            tools=available_tools,
+            wrap_tool_call=wrap_tool_call_wrapper,
+            awrap_tool_call=awrap_tool_call_wrapper,
+        )
         if available_tools
         else None
     )
