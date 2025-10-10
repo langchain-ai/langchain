@@ -44,8 +44,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
-from langchain.tools import ToolNode
-from langchain.tools.tool_node import ToolCallWithContext
+from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -670,7 +669,7 @@ def create_agent(  # noqa: PLR0915
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
-    tool_node: ToolNode | None = None
+    tool_node: _ToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
     built_in_tools = [t for t in tools if isinstance(t, dict)]
     regular_tools = [t for t in tools if not isinstance(t, dict)]
@@ -680,7 +679,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(
+        _ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
@@ -726,13 +725,23 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.after_agent is not AgentMiddleware.after_agent
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
     ]
+    # Collect middleware with wrap_model_call or awrap_model_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
     middleware_w_wrap_model_call = [
-        m for m in middleware if m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
+        m
+        for m in middleware
+        if m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
+        or m.__class__.awrap_model_call is not AgentMiddleware.awrap_model_call
     ]
+    # Collect middleware with awrap_model_call or wrap_model_call hooks
+    # Include middleware with either implementation to ensure NotImplementedError is raised
+    # when middleware doesn't support the execution path
     middleware_w_awrap_model_call = [
         m
         for m in middleware
         if m.__class__.awrap_model_call is not AgentMiddleware.awrap_model_call
+        or m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
     ]
 
     # Compose wrap_model_call handlers into a single middleware stack (sync)
@@ -1464,7 +1473,7 @@ def _make_model_to_model_edge(
 
 def _make_tools_to_model_edge(
     *,
-    tool_node: ToolNode,
+    tool_node: _ToolNode,
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,

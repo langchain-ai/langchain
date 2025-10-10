@@ -1150,6 +1150,16 @@ def dynamic_prompt(
             request.system_prompt = prompt
             return handler(request)
 
+        async def async_wrapped_from_sync(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelCallResult:
+            # Delegate to sync function
+            prompt = cast("str", func(request))
+            request.system_prompt = prompt
+            return await handler(request)
+
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
         return type(
@@ -1159,6 +1169,7 @@ def dynamic_prompt(
                 "state_schema": AgentState,
                 "tools": [],
                 "wrap_model_call": wrapped,
+                "awrap_model_call": async_wrapped_from_sync,
             },
         )()
 
