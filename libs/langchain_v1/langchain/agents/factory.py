@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.tools.tool_node import ToolCallHandler, ToolCallRequest
+    from langchain.tools.tool_node import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -372,30 +372,30 @@ def _handle_structured_output_error(
     return False, ""
 
 
-def _chain_tool_call_handlers(
-    handlers: Sequence[ToolCallHandler],
-) -> ToolCallHandler | None:
-    """Compose handlers into middleware stack (first = outermost).
+def _chain_tool_call_wrappers(
+    wrappers: Sequence[ToolCallWrapper],
+) -> ToolCallWrapper | None:
+    """Compose wrappers into middleware stack (first = outermost).
 
     Args:
-        handlers: Handlers in middleware order.
+        wrappers: Wrappers in middleware order.
 
     Returns:
-        Composed handler, or None if empty.
+        Composed wrapper, or None if empty.
 
     Example:
-        handler = _chain_tool_call_handlers([auth, cache, retry])
+        wrapper = _chain_tool_call_wrappers([auth, cache, retry])
         # Request flows: auth -> cache -> retry -> tool
         # Response flows: tool -> retry -> cache -> auth
     """
-    if not handlers:
+    if not wrappers:
         return None
 
-    if len(handlers) == 1:
-        return handlers[0]
+    if len(wrappers) == 1:
+        return wrappers[0]
 
-    def compose_two(outer: ToolCallHandler, inner: ToolCallHandler) -> ToolCallHandler:
-        """Compose two handlers where outer wraps inner."""
+    def compose_two(outer: ToolCallWrapper, inner: ToolCallWrapper) -> ToolCallWrapper:
+        """Compose two wrappers where outer wraps inner."""
 
         def composed(
             request: ToolCallRequest,
@@ -410,10 +410,10 @@ def _chain_tool_call_handlers(
 
         return composed
 
-    # Chain all handlers: first -> second -> ... -> last
-    result = handlers[-1]
-    for handler in reversed(handlers[:-1]):
-        result = compose_two(handler, result)
+    # Chain all wrappers: first -> second -> ... -> last
+    result = wrappers[-1]
+    for wrapper in reversed(wrappers[:-1]):
+        result = compose_two(wrapper, result)
 
     return result
 
@@ -551,10 +551,10 @@ def create_agent(  # noqa: PLR0915
     ]
 
     # Chain all wrap_tool_call handlers into a single composed handler
-    wrap_tool_call_handler = None
+    wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
-        handlers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
-        wrap_tool_call_handler = _chain_tool_call_handlers(handlers)
+        wrappers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
+        wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
 
     # Setup tools
     tool_node: ToolNode | None = None
@@ -567,7 +567,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        ToolNode(tools=available_tools, on_tool_call=wrap_tool_call_handler)
+        ToolNode(tools=available_tools, wrap_tool=wrap_tool_call_wrapper)
         if available_tools
         else None
     )
