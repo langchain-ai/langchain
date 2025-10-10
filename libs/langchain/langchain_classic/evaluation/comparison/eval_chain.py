@@ -217,7 +217,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires an input.
 
         Returns:
-            bool: True if the chain requires an input, False otherwise.
+            True if the chain requires an input, False otherwise.
 
         """
         return True
@@ -227,7 +227,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return the warning to show when reference is ignored.
 
         Returns:
-            str: The warning to show when reference is ignored.
+            The warning to show when reference is ignored.
 
         """
         return (
@@ -425,7 +425,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if the chain requires a reference, False otherwise.
+            True if the chain requires a reference, False otherwise.
 
         """
         return True
@@ -442,13 +442,13 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         """Initialize the LabeledPairwiseStringEvalChain from an LLM.
 
         Args:
-            llm (BaseLanguageModel): The LLM to use.
-            prompt (PromptTemplate, optional): The prompt to use.
-            criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
-            **kwargs (Any): Additional keyword arguments.
+            llm: The LLM to use.
+            prompt: The prompt to use.
+            criteria: The criteria to use.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            LabeledPairwiseStringEvalChain: The initialized LabeledPairwiseStringEvalChain.
+            The initialized LabeledPairwiseStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.

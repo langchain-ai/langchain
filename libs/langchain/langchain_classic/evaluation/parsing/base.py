@@ -71,10 +71,10 @@ class JsonValidityEvaluator(StringEvaluator):
             **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: A dictionary containing the evaluation score. The score is 1 if
+            A dictionary containing the evaluation score. The score is 1 if
             the prediction is valid JSON, and 0 otherwise.
-                If the prediction is not valid JSON, the dictionary also contains
-                a "reasoning" field with the error message.
+            If the prediction is not valid JSON, the dictionary also contains
+            a "reasoning" field with the error message.
 
         """
         try:

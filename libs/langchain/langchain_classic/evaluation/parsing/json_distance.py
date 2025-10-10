@@ -50,7 +50,7 @@ class JsonEditDistanceEvaluator(StringEvaluator):
 
         Raises:
             ImportError: If the `rapidfuzz` package is not installed and no
-            `string_distance` function is provided.
+                `string_distance` function is provided.
         """
         super().__init__()
         if string_distance is not None:

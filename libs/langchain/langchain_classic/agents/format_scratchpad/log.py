@@ -16,7 +16,7 @@ def format_log_to_str(
                 Defaults to "Thought: ".
 
     Returns:
-        str: The scratchpad.
+        The scratchpad.
     """
     thoughts = ""
     for action, observation in intermediate_steps:

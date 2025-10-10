@@ -113,17 +113,15 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         """Load QA Eval Chain from LLM.
 
         Args:
-            llm (BaseLanguageModel): the base language model to use.
-
-            prompt (PromptTemplate): A prompt template containing the input_variables:
-            'input', 'answer' and 'result' that will be used as the prompt
-            for evaluation.
-            Defaults to PROMPT.
-
+            llm: the base language model to use.
+            prompt: A prompt template containing the input_variables:
+                'input', 'answer' and 'result' that will be used as the prompt
+                for evaluation.
+                Defaults to PROMPT.
             **kwargs: additional keyword arguments.
 
         Returns:
-            QAEvalChain: the loaded QA eval chain.
+            the loaded QA eval chain.
         """
         prompt = prompt or PROMPT
         expected_input_vars = {"query", "answer", "result"}
@@ -264,17 +262,15 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         """Load QA Eval Chain from LLM.
 
         Args:
-            llm (BaseLanguageModel): the base language model to use.
-
-            prompt (PromptTemplate): A prompt template containing the input_variables:
-            'query', 'context' and 'result' that will be used as the prompt
-            for evaluation.
-            Defaults to PROMPT.
-
+            llm: the base language model to use.
+            prompt: A prompt template containing the input_variables:
+                'query', 'context' and 'result' that will be used as the prompt
+                for evaluation.
+                Defaults to PROMPT.
             **kwargs: additional keyword arguments.
 
         Returns:
-            ContextQAEvalChain: the loaded QA eval chain.
+            the loaded QA eval chain.
         """
         prompt = prompt or CONTEXT_PROMPT
         cls._validate_input_vars(prompt)
