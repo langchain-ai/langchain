@@ -2649,10 +2649,8 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         middleware=[AsyncOnlyMiddleware()],
     )
 
-    # This should work now via run_in_executor
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert result is not None
-    assert "messages" in result
+    with pytest.raises(NotImplementedError):
+        agent.invoke({"messages": [HumanMessage("hello")]})
 
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
