@@ -56,8 +56,7 @@ test = [
     "syrupy>=4.0.2,<5.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain-tests",
-    "langchain-text-splitters",
-    "langchain-openai"
+    "langchain-openai",
 ]
 lint = [
     "ruff>=0.12.2,<0.13.0",
