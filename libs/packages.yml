@@ -752,3 +752,7 @@ packages:
 - name: langchain-scraperapi
   path: .
   repo: scraperapi/langchain-scraperapi
+- name: langchain-agb-integration
+  repo: InnoArchClub/agbcloud-integrations
+  path: packages/langchain-agb-integration
+
