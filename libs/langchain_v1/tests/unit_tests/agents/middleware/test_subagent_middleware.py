@@ -1,6 +1,9 @@
 from langchain.agents.middleware.subagents import TASK_TOOL_DESCRIPTION, SubAgentMiddleware
 
+import pytest
 
+
+@pytest.mark.requires("langchain_openai")
 class TestSubagentMiddleware:
     """Test the SubagentMiddleware class."""
 

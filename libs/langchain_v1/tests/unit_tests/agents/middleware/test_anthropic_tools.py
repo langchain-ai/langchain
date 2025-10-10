@@ -6,7 +6,7 @@ from langchain.agents.middleware.anthropic_tools import (
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
 )
-from langchain.agents.middleware.file_utils import validate_path
+from langchain.agents._internal.file_utils import validate_path
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
