@@ -78,6 +78,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,6 +154,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            message = _convert_from_v1_to_chat_completions(message)
         message_dict = {"role": "assistant", "content": message.content}
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
