@@ -98,7 +98,7 @@ ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
 
 Middleware can return either:
 - ModelResponse: Full response with messages and optional structured output
-- AIMessage: Simplified return for backwards compatibility (converted to ModelResponse internally)
+- AIMessage: Simplified return for simple use cases
 """
 
 
@@ -211,7 +211,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                      for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            Final response to use (ModelResponse or AIMessage for backwards compatibility).
+            ModelCallResult
 
         Examples:
             Retry on error:
@@ -277,7 +277,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             handler: Async callback that executes the model request.
 
         Returns:
-            Final response to use (ModelResponse or AIMessage for backwards compatibility).
+            ModelCallResult
 
         Examples:
             Retry on error:
