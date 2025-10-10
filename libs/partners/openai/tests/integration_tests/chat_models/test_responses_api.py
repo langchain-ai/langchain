@@ -380,6 +380,10 @@ def test_computer_calls() -> None:
 def test_file_search(
     output_version: Literal["responses/v1", "v1"],
 ) -> None:
+    vector_store_id = os.getenv("OPENAI_VECTOR_STORE_ID")
+    if not vector_store_id:
+        pytest.skip()
+
     llm = ChatOpenAI(
         model=MODEL_NAME,
         use_responses_api=True,
@@ -387,7 +391,7 @@ def test_file_search(
     )
     tool = {
         "type": "file_search",
-        "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
+        "vector_store_ids": [vector_store_id],
     }
 
     input_message = {"role": "user", "content": "What is deep research by OpenAI?"}

@@ -78,6 +78,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,6 +154,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            message = _convert_from_v1_to_chat_completions(message)
         message_dict = {"role": "assistant", "content": message.content}
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
@@ -238,6 +243,7 @@ def _convert_chunk_to_message_chunk(
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata={"model_provider": "fireworks"},
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -515,6 +521,8 @@ class ChatFireworks(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
+                message.response_metadata["model_provider"] = "fireworks"
+                message.response_metadata["model_name"] = self.model_name
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -525,7 +533,6 @@ class ChatFireworks(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)

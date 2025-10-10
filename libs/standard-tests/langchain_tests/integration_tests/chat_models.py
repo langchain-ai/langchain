@@ -1498,8 +1498,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         prompt = ChatPromptTemplate.from_messages(
             [("human", "Hello. Please respond in the style of {answer_style}.")]
         )
-        model = GenericFakeChatModel(messages=iter(["hello matey"]))
-        chain = prompt | model | StrOutputParser()
+        llm = GenericFakeChatModel(messages=iter(["hello matey"]))
+        chain = prompt | llm | StrOutputParser()
         tool_ = chain.as_tool(
             name="greeting_generator",
             description="Generate a greeting in a particular style of speaking.",
