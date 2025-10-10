@@ -4,9 +4,12 @@ from collections.abc import Callable
 from typing import Literal
 from warnings import warn
 
-from langchain_core.messages import AIMessage
-
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
@@ -45,8 +48,8 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Modify the model request to add cache control blocks."""
         try:
             from langchain_anthropic import ChatAnthropic

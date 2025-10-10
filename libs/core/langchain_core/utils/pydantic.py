@@ -206,7 +206,7 @@ def _create_subset_model_v1(
     descriptions: dict | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
+    """Create a Pydantic model with only a subset of model's fields."""
     fields = {}
 
     for field_name in field_names:
@@ -235,7 +235,7 @@ def _create_subset_model_v2(
     descriptions: dict | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with a subset of the model fields."""
+    """Create a Pydantic model with a subset of the model fields."""
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
@@ -438,9 +438,9 @@ def create_model(
     /,
     **field_definitions: Any,
 ) -> type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
+    """Create a Pydantic model with the given field definitions.
 
-    Please use create_model_v2 instead of this function.
+    Please use `create_model_v2` instead of this function.
 
     Args:
         model_name: The name of the model.
@@ -511,7 +511,7 @@ def create_model_v2(
     field_definitions: dict[str, Any] | None = None,
     root: Any | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
+    """Create a Pydantic model with the given field definitions.
 
     Attention:
         Please do not use outside of langchain packages. This API
@@ -522,7 +522,7 @@ def create_model_v2(
         module_name: The name of the module where the model is defined.
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
-        root: Type for a root model (RootModel)
+        root: Type for a root model (`RootModel`)
 
     Returns:
         The created model.

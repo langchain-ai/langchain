@@ -93,7 +93,7 @@ def create_tagging_chain(
         kwargs: Additional keyword arguments to pass to the chain.
 
     Returns:
-        Chain (LLMChain) that can be used to extract information from a passage.
+        Chain (`LLMChain`) that can be used to extract information from a passage.
 
     """
     function = _get_tagging_function(schema)
@@ -130,10 +130,10 @@ def create_tagging_chain_pydantic(
     prompt: ChatPromptTemplate | None = None,
     **kwargs: Any,
 ) -> Chain:
-    """Create tagging chain from pydantic schema.
+    """Create tagging chain from Pydantic schema.
 
     Create a chain that extracts information from a passage
-    based on a pydantic schema.
+    based on a Pydantic schema.
 
     This function is deprecated. Please use `with_structured_output` instead.
     See example usage below:
@@ -163,13 +163,13 @@ def create_tagging_chain_pydantic(
     Read more here: https://python.langchain.com/docs/how_to/structured_output/
 
     Args:
-        pydantic_schema: The pydantic schema of the entities to extract.
+        pydantic_schema: The Pydantic schema of the entities to extract.
         llm: The language model to use.
         prompt: The prompt template to use for the chain.
         kwargs: Additional keyword arguments to pass to the chain.
 
     Returns:
-        Chain (LLMChain) that can be used to extract information from a passage.
+        Chain (`LLMChain`) that can be used to extract information from a passage.
 
     """
     if hasattr(pydantic_schema, "model_json_schema"):

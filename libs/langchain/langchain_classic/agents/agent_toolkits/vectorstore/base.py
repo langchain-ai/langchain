@@ -86,7 +86,7 @@ def create_vectorstore_agent(
     Args:
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent
-        callback_manager: Object to handle the callback [ Defaults to `None`. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the agent. If not provided uses default PREFIX.
         verbose: If you want to see the content of the scratchpad.
             [ Defaults to `False` ]
@@ -200,7 +200,7 @@ def create_vectorstore_router_agent(
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent which have routing capability with multiple
             vector stores
-        callback_manager: Object to handle the callback [ Defaults to `None`. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the router agent.
             If not provided uses default ROUTER_PREFIX.
         verbose: If you want to see the content of the scratchpad.

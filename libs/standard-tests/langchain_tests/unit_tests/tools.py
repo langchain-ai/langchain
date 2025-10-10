@@ -35,8 +35,8 @@ class ToolsTests(BaseStandardTests):
     def tool_invoke_params_example(self) -> dict:
         """Returns a dictionary representing the "args" of an example tool call.
 
-        This should NOT be a ToolCall dict - it should not
-        have {"name", "id", "args"} keys.
+        This should NOT be a `ToolCall` dict - it should not have
+        `{"name", "id", "args"}` keys.
         """
         return {}
 
@@ -69,9 +69,9 @@ class ToolsUnitTests(ToolsTests):
     def test_init(self) -> None:
         """Test init.
 
-        Test that the tool can be initialized with :attr:`tool_constructor` and
-        :attr:`tool_constructor_params`. If this fails, check that the
-        keyword args defined in :attr:`tool_constructor_params` are valid.
+        Test that the tool can be initialized with `tool_constructor` and
+        `tool_constructor_params`. If this fails, check that the
+        keyword args defined in `tool_constructor_params` are valid.
         """
         if isinstance(self.tool_constructor, BaseTool):
             tool = self.tool_constructor
@@ -117,7 +117,7 @@ class ToolsUnitTests(ToolsTests):
         If this fails, update the `tool_invoke_params_example` attribute to match
         the input schema (`args_schema`) of the tool.
         """
-        # this will be a pydantic object
+        # This will be a Pydantic object
         input_schema = tool.get_input_schema()
 
         assert input_schema(**self.tool_invoke_params_example)
