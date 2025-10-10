@@ -18,6 +18,7 @@ from langchain.agents.middleware.types import (
     after_model,
     dynamic_prompt,
     wrap_model_call,
+    wrap_tool_call,
     hook_config,
 )
 from langchain.agents.factory import create_agent, _get_can_jump_to
@@ -357,13 +358,13 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         return None
 
     @wrap_model_call
-    def track_sync_on_call(request, handler):
-        call_order.append("sync_on_call")
-        return handler(request)
-
-    @wrap_model_call
     async def track_async_on_call(request, handler):
         call_order.append("async_on_call")
+        return await handler(request)
+
+    @wrap_tool_call
+    async def track_sync_on_tool_call(request, handler):
+        call_order.append("async_on_tool_call")
         return await handler(request)
 
     @after_model
@@ -381,8 +382,8 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         middleware=[
             track_sync_before,
             track_async_before,
-            track_sync_on_call,
             track_async_on_call,
+            track_sync_on_tool_call,
             track_async_after,
             track_sync_after,
         ],
@@ -390,8 +391,9 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
-    # In async mode, only async wrap_model_call is invoked (not sync)
-    # Sync before_model and after_model are still called via run_in_executor
+    # In async mode, we can automatically delegate to sync middleware for nodes
+    # (although we cannot delegate to sync middleware for model call or tool call)
+
     assert call_order == [
         "sync_before",
         "async_before",
@@ -714,3 +716,51 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert result["messages"][-1].content == "Second prompt.-Hello"
+
+
+def test_async_dynamic_prompt_skipped_on_sync_invoke() -> None:
+    """Test that async dynamic_prompt raises NotImplementedError when invoked via sync path (.invoke).
+
+    When an async-only middleware is defined, it cannot be called from the sync path.
+    The framework will raise NotImplementedError when trying to invoke the sync method.
+    """
+    calls = []
+
+    @dynamic_prompt
+    async def async_only_prompt(request: ModelRequest) -> str:
+        calls.append("async_prompt")
+        return "Async prompt"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_only_prompt])
+
+    # Async-only middleware raises NotImplementedError in sync path
+    with pytest.raises(NotImplementedError):
+        agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    # The async prompt was not called
+    assert calls == []
+
+
+async def test_sync_dynamic_prompt_on_async_invoke() -> None:
+    """Test that sync dynamic_prompt works when invoked via async path (.ainvoke).
+
+    When a sync middleware is defined with @dynamic_prompt, it automatically creates
+    both sync and async implementations. The async implementation delegates to the
+    sync function, allowing the middleware to work in both sync and async contexts.
+    """
+    calls = []
+
+    @dynamic_prompt
+    def sync_prompt(request: ModelRequest) -> str:
+        calls.append("sync_prompt")
+        return "Sync prompt"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[sync_prompt])
+
+    # Sync dynamic_prompt now works in async path via delegation
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+
+    # The sync prompt function was called via async delegation
+    assert calls == ["sync_prompt"]
+    # The model executed with the custom prompt
+    assert result["messages"][-1].content == "Sync prompt-Hello"
