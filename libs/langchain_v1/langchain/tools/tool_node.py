@@ -910,7 +910,10 @@ class ToolNode(RunnableCallable):
         try:
             if self._awrap_tool_call is not None:
                 return await self._awrap_tool_call(tool_request, execute)
-            return self._wrap_tool_call(tool_request, _sync_execute)
+            if self._wrap_tool_call is not None:
+                return self._wrap_tool_call(tool_request, _sync_execute)
+            msg = "Unreachable code reached in ToolNode._arun_one"
+            raise AssertionError(msg)
         except Exception as e:
             # Wrapper threw an exception
             if not self._handle_tool_errors:
