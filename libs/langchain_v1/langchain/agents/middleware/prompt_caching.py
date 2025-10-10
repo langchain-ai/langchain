@@ -51,7 +51,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         try:
             from langchain_anthropic import ChatAnthropic
         except ImportError:
-            ChatAnthropic = None  # noqa: N806
+            ChatAnthropic = None  # type: ignore[assignment,misc]  # noqa: N806
 
         msg: str | None = None
 
