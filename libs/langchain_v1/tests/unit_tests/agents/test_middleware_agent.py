@@ -54,6 +54,8 @@ from langchain.agents.middleware.types import (
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
+    ModelResponse,
+    ModelCallResult,
 )
 from langchain.agents.factory import create_agent
 from langchain.agents.structured_output import ToolStrategy
@@ -2196,20 +2198,28 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     """Test async invoke with mixed sync and async middleware."""
     calls = []
 
-    class SyncMiddleware(AgentMiddleware):
+    class MostlySyncMiddleware(AgentMiddleware):
         def before_model(self, state, runtime) -> None:
-            calls.append("SyncMiddleware.before_model")
+            calls.append("MostlySyncMiddleware.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("SyncMiddleware.wrap_model_call")
+            calls.append("MostlySyncMiddleware.wrap_model_call")
             return handler(request)
 
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelCallResult:
+            calls.append("MostlySyncMiddleware.awrap_model_call")
+            return await handler(request)
+
         def after_model(self, state, runtime) -> None:
-            calls.append("SyncMiddleware.after_model")
+            calls.append("MostlySyncMiddleware.after_model")
 
     class AsyncMiddleware(AgentMiddleware):
         async def abefore_model(self, state, runtime) -> None:
@@ -2230,20 +2240,21 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         model=FakeToolCallingModel(),
         tools=[],
         system_prompt="You are a helpful assistant.",
-        middleware=[SyncMiddleware(), AsyncMiddleware()],
+        middleware=[MostlySyncMiddleware(), AsyncMiddleware()],
     )
 
-    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+    await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     # In async mode, both sync and async middleware should work
     # Note: Sync wrap_model_call is not called when running in async mode,
     # as the async version is preferred
     assert calls == [
-        "SyncMiddleware.before_model",
+        "MostlySyncMiddleware.before_model",
         "AsyncMiddleware.abefore_model",
+        "MostlySyncMiddleware.awrap_model_call",
         "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
-        "SyncMiddleware.after_model",
+        "MostlySyncMiddleware.after_model",
     ]
 
 
