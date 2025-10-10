@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.agents.factory import create_agent
-from langchain.tools import ToolNode
+from langchain.tools import _ToolNode
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
@@ -327,7 +327,7 @@ def test_tool_node_not_accepted() -> None:
         """Some tool."""
         return "result"
 
-    tool_node = ToolNode([some_tool])
+    tool_node = _ToolNode([some_tool])
 
     with pytest.raises(TypeError, match="'ToolNode' object is not iterable"):
         create_agent(
