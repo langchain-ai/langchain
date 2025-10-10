@@ -58,7 +58,7 @@ def create_vectorstore_agent(
         from langchain_openai import ChatOpenAI, OpenAIEmbeddings
         from langgraph.prebuilt import create_react_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         vector_store = InMemoryVectorStore.from_texts(
             [
@@ -74,7 +74,7 @@ def create_vectorstore_agent(
             "Fetches information about pets.",
         )
 
-        agent = create_react_agent(llm, [tool])
+        agent = create_react_agent(model, [tool])
 
         for step in agent.stream(
             {"messages": [("human", "What are dogs known for?")]},
@@ -156,7 +156,7 @@ def create_vectorstore_router_agent(
         from langchain_openai import ChatOpenAI, OpenAIEmbeddings
         from langgraph.prebuilt import create_react_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         pet_vector_store = InMemoryVectorStore.from_texts(
             [
@@ -187,7 +187,7 @@ def create_vectorstore_router_agent(
             ),
         ]
 
-        agent = create_react_agent(llm, tools)
+        agent = create_react_agent(model, tools)
 
         for step in agent.stream(
             {"messages": [("human", "Tell me about carrots.")]},

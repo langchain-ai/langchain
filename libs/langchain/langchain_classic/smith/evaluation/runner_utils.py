@@ -1395,9 +1395,9 @@ async def arun_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain
@@ -1570,9 +1570,9 @@ def run_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain

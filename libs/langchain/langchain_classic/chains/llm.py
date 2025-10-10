@@ -55,8 +55,8 @@ class LLMChain(Chain):
 
         prompt_template = "Tell me a {adjective} joke"
         prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
-        llm = OpenAI()
-        chain = prompt | llm | StrOutputParser()
+        model = OpenAI()
+        chain = prompt | model | StrOutputParser()
 
         chain.invoke("your adjective here")
         ```
@@ -69,7 +69,7 @@ class LLMChain(Chain):
 
         prompt_template = "Tell me a {adjective} joke"
         prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
-        llm = LLMChain(llm=OpenAI(), prompt=prompt)
+        model = LLMChain(llm=OpenAI(), prompt=prompt)
         ```
     """
 

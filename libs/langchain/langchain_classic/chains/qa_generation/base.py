@@ -34,7 +34,7 @@ class QAGenerationChain(Chain):
     - Supports async and streaming;
     - Surfaces prompt and text splitter for easier customization;
     - Use of JsonOutputParser supports JSONPatch operations in streaming mode,
-      as well as robustness to markdown.
+        as well as robustness to markdown.
 
         ```python
         from langchain_classic.chains.qa_generation.prompt import (
@@ -52,14 +52,14 @@ class QAGenerationChain(Chain):
         from langchain_openai import ChatOpenAI
         from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
         text_splitter = RecursiveCharacterTextSplitter(chunk_overlap=500)
         split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
 
         chain = RunnableParallel(
             text=RunnablePassthrough(),
             questions=(
-                split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
+                split_text | RunnableEach(bound=prompt | model | JsonOutputParser())
             ),
         )
         ```

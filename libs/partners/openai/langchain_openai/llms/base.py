@@ -110,7 +110,7 @@ class BaseOpenAI(BaseLLM):
         ```python
         from langchain_openai.llms.base import BaseOpenAI
 
-        llm = BaseOpenAI(
+        model = BaseOpenAI(
             model_name="gpt-3.5-turbo-instruct",
             temperature=0.7,
             max_tokens=256,
@@ -127,7 +127,7 @@ class BaseOpenAI(BaseLLM):
     Invoke:
         ```python
         input_text = "The meaning of life is "
-        response = llm.invoke(input_text)
+        response = model.invoke(input_text)
         print(response)
         ```
 
@@ -138,7 +138,7 @@ class BaseOpenAI(BaseLLM):
 
     Stream:
         ```python
-        for chunk in llm.stream(input_text):
+        for chunk in model.stream(input_text):
             print(chunk, end="")
         ```
         ```txt
@@ -148,14 +148,14 @@ class BaseOpenAI(BaseLLM):
 
     Async:
         ```python
-        response = await llm.ainvoke(input_text)
+        response = await model.ainvoke(input_text)
 
         # stream:
-        # async for chunk in llm.astream(input_text):
+        # async for chunk in model.astream(input_text):
         #     print(chunk, end="")
 
         # batch:
-        # await llm.abatch([input_text])
+        # await model.abatch([input_text])
         ```
         ```
         "a philosophical question that has been debated by thinkers and
@@ -739,7 +739,7 @@ class OpenAI(BaseOpenAI):
         ```python
         from langchain_openai import OpenAI
 
-        llm = OpenAI(
+        model = OpenAI(
             model="gpt-3.5-turbo-instruct",
             temperature=0,
             max_retries=2,
@@ -753,7 +753,7 @@ class OpenAI(BaseOpenAI):
     Invoke:
         ```python
         input_text = "The meaning of life is "
-        llm.invoke(input_text)
+        model.invoke(input_text)
         ```
         ```txt
         "a philosophical question that has been debated by thinkers and scholars for centuries."
@@ -761,7 +761,7 @@ class OpenAI(BaseOpenAI):
 
     Stream:
         ```python
-        for chunk in llm.stream(input_text):
+        for chunk in model.stream(input_text):
             print(chunk, end="|")
         ```
         ```txt
@@ -769,7 +769,7 @@ class OpenAI(BaseOpenAI):
         ```
 
         ```python
-        "".join(llm.stream(input_text))
+        "".join(model.stream(input_text))
         ```
         ```txt
         "a philosophical question that has been debated by thinkers and scholars for centuries."
@@ -777,14 +777,14 @@ class OpenAI(BaseOpenAI):
 
     Async:
         ```python
-        await llm.ainvoke(input_text)
+        await model.ainvoke(input_text)
 
         # stream:
-        # async for chunk in (await llm.astream(input_text)):
+        # async for chunk in (await model.astream(input_text)):
         #    print(chunk)
 
         # batch:
-        # await llm.abatch([input_text])
+        # await model.abatch([input_text])
         ```
         ```txt
         "a philosophical question that has been debated by thinkers and scholars for centuries."

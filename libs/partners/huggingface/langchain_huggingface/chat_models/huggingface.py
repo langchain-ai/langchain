@@ -352,7 +352,7 @@ class ChatHuggingFace(BaseChatModel):
         from langchain_huggingface import HuggingFaceEndpoint,
         ChatHuggingFace
 
-        llm = HuggingFaceEndpoint(
+        model = HuggingFaceEndpoint(
             repo_id="microsoft/Phi-3-mini-4k-instruct",
             task="text-generation",
             max_new_tokens=512,
@@ -360,7 +360,7 @@ class ChatHuggingFace(BaseChatModel):
             repetition_penalty=1.03,
         )
 
-        chat = ChatHuggingFace(llm=llm, verbose=True)
+        chat = ChatHuggingFace(llm=model, verbose=True)
         ```
 
     Invoke:

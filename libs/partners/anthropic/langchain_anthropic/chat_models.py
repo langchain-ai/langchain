@@ -609,7 +609,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(
+        model = ChatAnthropic(
             model="claude-3-7-sonnet-20250219",
             temperature=0,
             max_tokens=1024,
@@ -650,7 +650,7 @@ class ChatAnthropic(BaseChatModel):
             ),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         ```python
@@ -674,7 +674,7 @@ class ChatAnthropic(BaseChatModel):
 
     Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -690,7 +690,7 @@ class ChatAnthropic(BaseChatModel):
         ```
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -703,13 +703,13 @@ class ChatAnthropic(BaseChatModel):
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # stream:
-        # async for chunk in (await llm.astream(messages))
+        # async for chunk in (await model.astream(messages))
 
         # batch:
-        # await llm.abatch([messages])
+        # await model.abatch([messages])
         ```
 
         ```python
@@ -748,8 +748,8 @@ class ChatAnthropic(BaseChatModel):
             location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
         ai_msg.tool_calls
         ```
 
@@ -795,8 +795,8 @@ class ChatAnthropic(BaseChatModel):
             rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         ```python
@@ -823,7 +823,7 @@ class ChatAnthropic(BaseChatModel):
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        model = ChatAnthropic(model="claude-3-5-sonnet-latest")
         message = HumanMessage(
             content=[
                 {
@@ -841,7 +841,7 @@ class ChatAnthropic(BaseChatModel):
                 },
             ],
         )
-        ai_msg = llm.invoke([message])
+        ai_msg = model.invoke([message])
         ai_msg.content
         ```
 
@@ -857,7 +857,7 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 betas=["files-api-2025-04-14"],
             )
@@ -874,7 +874,7 @@ class ChatAnthropic(BaseChatModel):
                     },
                 ],
             }
-            llm.invoke([input_message])
+            model.invoke([input_message])
             ```
 
     PDF input:
@@ -890,8 +890,8 @@ class ChatAnthropic(BaseChatModel):
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         data = b64encode(requests.get(url).content).decode()
 
-        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
-        ai_msg = llm.invoke(
+        model = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        ai_msg = model.invoke(
             [
                 HumanMessage(
                     [
@@ -920,7 +920,7 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 betas=["files-api-2025-04-14"],
             )
@@ -937,7 +937,7 @@ class ChatAnthropic(BaseChatModel):
                     },
                 ],
             }
-            llm.invoke([input_message])
+            model.invoke([input_message])
             ```
 
     Extended thinking:
@@ -954,13 +954,13 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(
+        model = ChatAnthropic(
             model="claude-3-7-sonnet-latest",
             max_tokens=5000,
             thinking={"type": "enabled", "budget_tokens": 2000},
         )
 
-        response = llm.invoke("What is the cube root of 50.653?")
+        response = model.invoke("What is the cube root of 50.653?")
         response.content
         ```
 
@@ -987,7 +987,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+        model = ChatAnthropic(model="claude-3-5-haiku-latest")
 
         messages = [
             {
@@ -1008,7 +1008,7 @@ class ChatAnthropic(BaseChatModel):
                 ],
             }
         ]
-        response = llm.invoke(messages)
+        response = model.invoke(messages)
         response.content
         ```
 
@@ -1050,7 +1050,7 @@ class ChatAnthropic(BaseChatModel):
 
     Token usage:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
 
@@ -1062,7 +1062,7 @@ class ChatAnthropic(BaseChatModel):
         default:
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -1088,7 +1088,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+        model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
 
         messages = [
             {
@@ -1111,7 +1111,7 @@ class ChatAnthropic(BaseChatModel):
             },
         ]
 
-        response = llm.invoke(messages)
+        response = model.invoke(messages)
         response.usage_metadata["input_token_details"]
         ```
 
@@ -1125,7 +1125,7 @@ class ChatAnthropic(BaseChatModel):
         cache.
 
         ```python
-        response = llm.invoke(
+        response = model.invoke(
             messages,
             cache_control={"type": "ephemeral"},
         )
@@ -1137,7 +1137,7 @@ class ChatAnthropic(BaseChatModel):
             apply one hour caching by setting `ttl` to `'1h'`.
 
             ```python
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-3-7-sonnet-20250219",
             )
 
@@ -1154,14 +1154,14 @@ class ChatAnthropic(BaseChatModel):
                 }
             ]
 
-            response = llm.invoke(messages)
+            response = model.invoke(messages)
             ```
 
             Details of cached token counts will be included on the `InputTokenDetails`
             of response's `usage_metadata`:
 
             ```python
-            response = llm.invoke(messages)
+            response = model.invoke(messages)
             response.usage_metadata
             ```
 
@@ -1189,7 +1189,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(
+        model = ChatAnthropic(
             model="claude-sonnet-4-20250514",
             betas=["context-1m-2025-08-07"],  # Enable 1M context beta
         )
@@ -1210,7 +1210,7 @@ class ChatAnthropic(BaseChatModel):
         \"\"\")
         ]
 
-        response = llm.invoke(messages)
+        response = model.invoke(messages)
         ```
 
         See [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window)
@@ -1225,7 +1225,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
         from langchain_core.tools import tool
 
-        llm = ChatAnthropic(
+        model = ChatAnthropic(
             model="claude-3-7-sonnet-20250219",
             temperature=0,
             model_kwargs={
@@ -1240,8 +1240,8 @@ class ChatAnthropic(BaseChatModel):
             \"\"\"Get the weather at a location.\"\"\"
             return "It's sunny."
 
-        llm_with_tools = llm.bind_tools([get_weather])
-        response = llm_with_tools.invoke(
+        model_with_tools = model.bind_tools([get_weather])
+        response = model_with_tools.invoke(
             "What's the weather in San Francisco?"
         )
         print(response.tool_calls)
@@ -1263,13 +1263,13 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        llm = ChatAnthropic(
+        model = ChatAnthropic(
             model="claude-sonnet-4-5-20250929",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
-        llm_with_tools = llm.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
-        response = llm_with_tools.invoke("Search for recent developments in AI")
+        model_with_tools = model.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
+        response = model_with_tools.invoke("Search for recent developments in AI")
         ```
 
     Built-in tools:
@@ -1281,16 +1281,16 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+            model = ChatAnthropic(model="claude-3-5-haiku-latest")
 
             tool = {
                 "type": "web_search_20250305",
                 "name": "web_search",
                 "max_uses": 3,
             }
-            llm_with_tools = llm.bind_tools([tool])
+            model_with_tools = model.bind_tools([tool])
 
-            response = llm_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
+            response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
             ```
 
         ??? note "Web fetch (beta)"
@@ -1298,7 +1298,7 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-3-5-haiku-latest",
                 betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
             )
@@ -1308,23 +1308,23 @@ class ChatAnthropic(BaseChatModel):
                 "name": "web_fetch",
                 "max_uses": 3,
             }
-            llm_with_tools = llm.bind_tools([tool])
+            model_with_tools = model.bind_tools([tool])
 
-            response = llm_with_tools.invoke("Please analyze the content at https://example.com/article")
+            response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
             ```
 
         ??? note "Code execution"
 
             ```python
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 betas=["code-execution-2025-05-22"],
             )
 
             tool = {"type": "code_execution_20250522", "name": "code_execution"}
-            llm_with_tools = llm.bind_tools([tool])
+            model_with_tools = model.bind_tools([tool])
 
-            response = llm_with_tools.invoke(
+            response = model_with_tools.invoke(
                 "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
             )
             ```
@@ -1347,13 +1347,13 @@ class ChatAnthropic(BaseChatModel):
                 }
             ]
 
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-sonnet-4-20250514",
                 betas=["mcp-client-2025-04-04"],
                 mcp_servers=mcp_servers,
             )
 
-            response = llm.invoke(
+            response = model.invoke(
                 "What transport protocols does the 2025-03-26 version of the MCP "
                 "spec (modelcontextprotocol/modelcontextprotocol) support?"
             )
@@ -1364,12 +1364,12 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+            model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
 
             tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
-            llm_with_tools = llm.bind_tools([tool])
+            model_with_tools = model.bind_tools([tool])
 
-            response = llm_with_tools.invoke(
+            response = model_with_tools.invoke(
                 "There's a syntax error in my primes.py file. Can you help me fix it?"
             )
             print(response.text)
@@ -1390,18 +1390,18 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-sonnet-4-5-20250929",
                 betas=["context-management-2025-06-27"],
             )
-            llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
-            response = llm_with_tools.invoke("What are my interests?")
+            model_with_tools = model.bind_tools([{"type": "memory_20250818", "name": "memory"}])
+            response = model_with_tools.invoke("What are my interests?")
             ```
 
     Response metadata
 
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
@@ -1939,9 +1939,9 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
-            llm_with_tools.invoke(
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            model_with_tools = model.bind_tools([GetWeather, GetPrice])
+            model_with_tools.invoke(
                 "What is the weather like in San Francisco",
             )
             # -> AIMessage(
@@ -1973,9 +1973,9 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
-            llm_with_tools.invoke(
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="any")
+            model_with_tools.invoke(
                 "what is the weather like in San Francisco",
             )
             ```
@@ -1999,9 +1999,9 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
-            llm_with_tools.invoke("What is the weather like in San Francisco")
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
+            model_with_tools.invoke("What is the weather like in San Francisco")
             ```
 
         Example — cache specific tools:
@@ -2033,12 +2033,12 @@ class ChatAnthropic(BaseChatModel):
 
             # We need to pass in extra headers to enable use of the beta cache
             # control API.
-            llm = ChatAnthropic(
+            model = ChatAnthropic(
                 model="claude-3-5-sonnet-latest",
                 temperature=0,
             )
-            llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
-            llm_with_tools.invoke("What is the weather like in San Francisco")
+            model_with_tools = model.bind_tools([GetWeather, cached_price_tool])
+            model_with_tools.invoke("What is the weather like in San Francisco")
             ```
 
             This outputs:
@@ -2227,10 +2227,10 @@ class ChatAnthropic(BaseChatModel):
                 justification: str
 
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
 
             # -> AnswerWithJustification(
             #     answer='They weigh the same',
@@ -2252,10 +2252,10 @@ class ChatAnthropic(BaseChatModel):
                 justification: str
 
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification, include_raw=True)
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
             # -> {
             #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
             #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -2280,10 +2280,10 @@ class ChatAnthropic(BaseChatModel):
                     "required": ["answer", "justification"],
                 },
             }
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-            structured_llm = llm.with_structured_output(schema)
+            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            structured_model = model.with_structured_output(schema)
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
             # -> {
             #     'answer': 'They weigh the same',
             #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -2356,13 +2356,13 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
             from langchain_core.messages import HumanMessage, SystemMessage
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+            model = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 
             messages = [
                 SystemMessage(content="You are a scientist"),
                 HumanMessage(content="Hello, Claude"),
             ]
-            llm.get_num_tokens_from_messages(messages)
+            model.get_num_tokens_from_messages(messages)
             ```
 
             ```txt
@@ -2376,7 +2376,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_core.messages import HumanMessage
             from langchain_core.tools import tool
 
-            llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+            model = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 
             @tool(parse_docstring=True)
             def get_weather(location: str) -> str:
@@ -2390,7 +2390,7 @@ class ChatAnthropic(BaseChatModel):
             messages = [
                 HumanMessage(content="What's the weather like in San Francisco?"),
             ]
-            llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+            model.get_num_tokens_from_messages(messages, tools=[get_weather])
             ```
 
             ```txt

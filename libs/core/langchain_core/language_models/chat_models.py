@@ -1555,10 +1555,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 justification: str
 
 
-            llm = ChatModel(model="model-name", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -1580,12 +1580,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 justification: str
 
 
-            llm = ChatModel(model="model-name", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -1609,10 +1609,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
 
             dict_schema = convert_to_openai_tool(AnswerWithJustification)
-            llm = ChatModel(model="model-name", temperature=0)
-            structured_llm = llm.with_structured_output(dict_schema)
+            model = ChatModel(model="model-name", temperature=0)
+            structured_model = model.with_structured_output(dict_schema)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {

@@ -66,7 +66,7 @@ class OllamaLLM(BaseLLM):
         ```python
         from langchain_ollama import OllamaLLM
 
-        llm = OllamaLLM(
+        model = OllamaLLM(
             model="llama3.1",
             temperature=0.7,
             num_predict=256,
@@ -78,7 +78,7 @@ class OllamaLLM(BaseLLM):
     Invoke:
         ```python
         input_text = "The meaning of life is "
-        response = llm.invoke(input_text)
+        response = model.invoke(input_text)
         print(response)
         ```
         ```txt
@@ -88,7 +88,7 @@ class OllamaLLM(BaseLLM):
 
     Stream:
         ```python
-        for chunk in llm.stream(input_text):
+        for chunk in model.stream(input_text):
             print(chunk, end="")
         ```
         ```txt
@@ -98,10 +98,10 @@ class OllamaLLM(BaseLLM):
 
     Async:
         ```python
-        response = await llm.ainvoke(input_text)
+        response = await model.ainvoke(input_text)
 
         # stream:
-        # async for chunk in llm.astream(input_text):
+        # async for chunk in model.astream(input_text):
         #     print(chunk, end="")
         ```
     """

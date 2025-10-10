@@ -96,14 +96,14 @@ class ChatPerplexity(BaseChatModel):
         ```python
         from langchain_perplexity import ChatPerplexity
 
-        llm = ChatPerplexity(model="sonar", temperature=0.7)
+        model = ChatPerplexity(model="sonar", temperature=0.7)
         ```
 
         Invoke:
 
         ```python
         messages = [("system", "You are a chatbot."), ("user", "Hello!")]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         Invoke with structured output:
@@ -117,31 +117,31 @@ class ChatPerplexity(BaseChatModel):
             content: str
 
 
-        llm.with_structured_output(StructuredOutput)
-        llm.invoke(messages)
+        model.with_structured_output(StructuredOutput)
+        model.invoke(messages)
         ```
 
         Invoke with perplexity-specific params:
 
         ```python
-        llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        model.invoke(messages, extra_body={"search_recency_filter": "week"})
         ```
 
         Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.content)
         ```
 
         Token usage:
         ```python
-        response = llm.invoke(messages)
+        response = model.invoke(messages)
         response.usage_metadata
         ```
 
         Response metadata:
         ```python
-        response = llm.invoke(messages)
+        response = model.invoke(messages)
         response.response_metadata
         ```
     """  # noqa: E501

@@ -77,8 +77,8 @@ def create_tagging_chain(
     # to see an up to date list of which models support
     # with_structured_output.
     model = ChatAnthropic(model="claude-3-haiku-20240307", temperature=0)
-    structured_llm = model.with_structured_output(Joke)
-    structured_llm.invoke(
+    structured_model = model.with_structured_output(Joke)
+    structured_model.invoke(
         "Why did the cat cross the road? To get to the other "
         "side... and then lay down in the middle of it!"
     )
@@ -153,8 +153,8 @@ def create_tagging_chain_pydantic(
     # to see an up to date list of which models support
     # with_structured_output.
     model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-    structured_llm = model.with_structured_output(Joke)
-    structured_llm.invoke(
+    structured_model = model.with_structured_output(Joke)
+    structured_model.invoke(
         "Why did the cat cross the road? To get to the other "
         "side... and then lay down in the middle of it!"
     )

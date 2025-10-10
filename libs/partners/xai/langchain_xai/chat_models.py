@@ -62,7 +62,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_xai import ChatXAI
 
-        llm = ChatXAI(
+        model = ChatXAI(
             model="grok-4",
             temperature=0,
             max_tokens=None,
@@ -82,7 +82,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             ),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         ```python
@@ -110,7 +110,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -129,13 +129,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # stream:
-        # async for chunk in (await llm.astream(messages))
+        # async for chunk in (await model.astream(messages))
 
         # batch:
-        # await llm.abatch([messages])
+        # await model.abatch([messages])
         ```
 
         ```python
@@ -192,7 +192,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from pydantic import BaseModel, Field
 
-        llm = ChatXAI(model="grok-4")
+        model = ChatXAI(model="grok-4")
 
 
         class GetWeather(BaseModel):
@@ -207,8 +207,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke("Which city is bigger: LA or NY?")
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is bigger: LA or NY?")
         ai_msg.tool_calls
         ```
 
@@ -237,12 +237,12 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         constructor's `extra_body` argument. For example, to disable tool / function calling:
 
         ```python
-        llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
+        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
         ```
         To require that the model always calls a tool / function, set `tool_choice` to `'required'`:
 
         ```python
-        llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
+        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
         ```
 
         To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
@@ -250,7 +250,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from pydantic import BaseModel, Field
 
-        llm = ChatXAI(
+        model = ChatXAI(
             model="grok-4",
             extra_body={
                 "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
@@ -269,8 +269,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke(
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke(
             "Which city is bigger: LA or NY?",
         )
         ai_msg.tool_calls
@@ -309,8 +309,8 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         ```python
@@ -328,7 +328,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_xai import ChatXAI
 
-        llm = ChatXAI(
+        model = ChatXAI(
             model="grok-4",
             search_parameters={
                 "mode": "auto",
@@ -339,7 +339,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             },
         )
 
-        llm.invoke("Provide me a digest of world news in the last 24 hours.")
+        model.invoke("Provide me a digest of world news in the last 24 hours.")
         ```
 
         !!! note
@@ -348,7 +348,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Token usage:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
 
@@ -358,9 +358,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Logprobs:
         ```python
-        logprobs_llm = llm.bind(logprobs=True)
+        logprobs_model = model.bind(logprobs=True)
         messages = [("human", "Say Hello World! Do not return anything else.")]
-        ai_msg = logprobs_llm.invoke(messages)
+        ai_msg = logprobs_model.invoke(messages)
         ai_msg.response_metadata["logprobs"]
         ```
 
@@ -375,7 +375,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Response metadata
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
