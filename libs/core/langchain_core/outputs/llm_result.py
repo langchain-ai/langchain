@@ -30,8 +30,8 @@ class LLMResult(BaseModel):
     The second dimension of the list represents different candidate generations for a
     given prompt.
 
-    - When returned from **an LLM**, the type is ``list[list[Generation]]``.
-    - When returned from a **chat model**, the type is ``list[list[ChatGeneration]]``.
+    - When returned from **an LLM**, the type is `list[list[Generation]]`.
+    - When returned from a **chat model**, the type is `list[list[ChatGeneration]]`.
 
     ChatGeneration is a subclass of Generation that has a field for a structured chat
     message.
@@ -97,7 +97,7 @@ class LLMResult(BaseModel):
             other: Another `LLMResult` object to compare against.
 
         Returns:
-            True if the generations and ``llm_output`` are equal, False otherwise.
+            True if the generations and `llm_output` are equal, False otherwise.
         """
         if not isinstance(other, LLMResult):
             return NotImplemented

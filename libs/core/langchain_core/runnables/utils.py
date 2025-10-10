@@ -120,10 +120,10 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
 
 @lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
+    """Cache the result of checking if asyncio.create_task accepts a `context` arg.
 
     Returns:
-        True if ``asyncio.create_task`` accepts a context argument, False otherwise.
+        True if `asyncio.create_task` accepts a context argument, False otherwise.
     """
     return accepts_context(asyncio.create_task)
 
@@ -552,11 +552,11 @@ class ConfigurableField(NamedTuple):
     id: str
     """The unique identifier of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     annotation: Any | None = None
-    """The annotation of the field. Defaults to `None`."""
+    """The annotation of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -575,9 +575,9 @@ class ConfigurableFieldSingleOption(NamedTuple):
     default: str
     """The default value for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -596,9 +596,9 @@ class ConfigurableFieldMultiOption(NamedTuple):
     default: Sequence[str]
     """The default values for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -620,15 +620,15 @@ class ConfigurableFieldSpec(NamedTuple):
     annotation: Any
     """The annotation of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     default: Any = None
-    """The default value for the field. Defaults to `None`."""
+    """The default value for the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
     dependencies: list[str] | None = None
-    """The dependencies of the field. Defaults to `None`."""
+    """The dependencies of the field. """
 
 
 def get_unique_config_specs(

@@ -406,8 +406,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: int | None = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-    probability sum is at least ``top_p``. Must be in the closed interval
-    ``[0.0, 1.0]``."""
+    probability sum is at least `top_p`. Must be in the closed interval
+    `[0.0, 1.0]`."""
     random_seed: int | None = None
     safe_mode: bool | None = None
     streaming: bool = False
@@ -710,7 +710,7 @@ class ChatMistralAI(BaseChatModel):
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``.
+                `self.bind(**kwargs)`.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -752,7 +752,7 @@ class ChatMistralAI(BaseChatModel):
                 - a `TypedDict` class (support added in 0.1.12),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -764,13 +764,13 @@ class ChatMistralAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Mistral's
                     [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Mistral's
                     [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses Mistral's
                     [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).
                     Note that if using JSON mode then you
@@ -786,10 +786,10 @@ class ChatMistralAI(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs: Any additional parameters are passed directly to
-                ``self.bind(**kwargs)``. This is useful for passing in
+                `self.bind(**kwargs)`. This is useful for passing in
                 parameters such as `tool_choice` or `tools` to control
                 which tool the model should call, or to pass in parameters such as
                 `stop` to control when the model should stop generating output.
@@ -797,124 +797,120 @@ class ChatMistralAI(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``'raw'``: BaseMessage
-                - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``'parsing_error'``: BaseException | None
+            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `'raw'`: BaseMessage
+                - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+                - `'parsing_error'`: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_mistralai import ChatMistralAI
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    # If we provide default values and/or descriptions for fields, these will be passed
-                    # to the model. This is an important part of improving a model's ability to
-                    # correctly return structured outputs.
-                    justification: str | None = Field(
-                        default=None, description="A justification for the answer."
-                    )
+            from langchain_mistralai import ChatMistralAI
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
+                answer: str
+                # If we provide default values and/or descriptions for fields, these will be passed
+                # to the model. This is an important part of improving a model's ability to
+                # correctly return structured outputs.
+                justification: str | None = Field(
+                    default=None, description="A justification for the answer."
                 )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
-            .. code-block:: python
-
-                from langchain_mistralai import ChatMistralAI
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from langchain_mistralai import ChatMistralAI
+            from pydantic import BaseModel
 
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
-            .. code-block:: python
+            ```python
+            from typing_extensions import Annotated, TypedDict
 
-                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
-                # from typing_extensions, not from typing.
-                from typing_extensions import Annotated, TypedDict
-
-                from langchain_mistralai import ChatMistralAI
+            from langchain_mistralai import ChatMistralAI
 
 
-                class AnswerWithJustification(TypedDict):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(TypedDict):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Annotated[
-                        str | None, None, "A justification for the answer."
-                    ]
+                answer: str
+                justification: Annotated[
+                    str | None, None, "A justification for the answer."
+                ]
 
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
-            .. code-block:: python
+            ```python
+            from langchain_mistralai import ChatMistralAI
 
-                from langchain_mistralai import ChatMistralAI
-
-                oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
-                        },
-                       'required': ['answer']
-                   }
-               }
+            oai_schema = {
+                'name': 'AnswerWithJustification',
+                'description': 'An answer to the user question along with justification for the answer.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'answer': {'type': 'string'},
+                        'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                    },
+                    'required': ['answer']
+                }
 
                 llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
@@ -926,53 +922,56 @@ class ChatMistralAI(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+            ```
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
-            .. code-block::
+            ```python
+            from langchain_mistralai import ChatMistralAI
+            from pydantic import BaseModel
 
-                from langchain_mistralai import ChatMistralAI
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
+            class AnswerWithJustification(BaseModel):
+                answer: str
+                justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
+            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, method="json_mode", include_raw=True
+            )
+
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: schema=None, method="json_mode", include_raw=True:
-            .. code-block::
+            ```python
+            structured_llm = llm.with_structured_output(
+                method="json_mode", include_raw=True
+            )
 
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
+            #     'parsed': {
+            #         'answer': 'They are both the same weight.',
+            #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+            #     },
+            #     'parsing_error': None
+            # }
+            ```
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

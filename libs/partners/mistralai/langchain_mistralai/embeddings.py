@@ -41,13 +41,13 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     """MistralAI embedding model integration.
 
     Setup:
-        Install ``langchain_mistralai`` and set environment variable
-        ``MISTRAL_API_KEY``.
+        Install `langchain_mistralai` and set environment variable
+        `MISTRAL_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain_mistralai
-            export MISTRAL_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain_mistralai
+        export MISTRAL_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -56,7 +56,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     Key init args — client params:
         api_key: SecretStr | None
             The API key for the MistralAI API. If not provided, it will be read from the
-            environment variable ``MISTRAL_API_KEY``.
+            environment variable `MISTRAL_API_KEY`.
         max_retries: int
             The number of times to retry a request if it fails.
         timeout: int
@@ -71,57 +71,53 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     Instantiate:
 
-        .. code-block:: python
+        ```python
+        from __module_name__ import MistralAIEmbeddings
 
-            from __module_name__ import MistralAIEmbeddings
-
-            embed = MistralAIEmbeddings(
-                model="mistral-embed",
-                # api_key="...",
-                # other params...
-            )
+        embed = MistralAIEmbeddings(
+            model="mistral-embed",
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Embed single text:
 
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple text:
 
-        .. code-block:: python
-
-            input_texts = ["Document 1...", "Document 2..."]
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
 
-        .. code-block:: python
+        ```python
+        vector = await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            vector = await embed.aembed_query(input_text)
-            print(vector[:3])
-
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """
 
     # The type for client and async_client is ignored because the type is not

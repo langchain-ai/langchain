@@ -77,7 +77,9 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def uppercase_responses(request, handler):
             result = handler(request)
-            return AIMessage(content=result.content.upper())
+            # result is ModelResponse, extract AIMessage from it
+            ai_message = result.result[0]
+            return AIMessage(content=ai_message.content.upper())
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[uppercase_responses])
@@ -336,9 +338,11 @@ class TestOnModelCallDecorator:
         @wrap_model_call
         def multi_transform(request, handler):
             result = handler(request)
+            # result is ModelResponse, extract AIMessage from it
+            ai_message = result.result[0]
 
             # First transformation: uppercase
-            content = result.content.upper()
+            content = ai_message.content.upper()
             # Second transformation: add prefix and suffix
             content = f"[START] {content} [END]"
             return AIMessage(content=content)

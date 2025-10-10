@@ -79,13 +79,13 @@ def trace_as_chain_group(
 
     Args:
         group_name: The name of the chain group.
-        callback_manager: The callback manager to use. Defaults to `None`.
-        inputs: The inputs to the chain group. Defaults to `None`.
-        project_name: The name of the project. Defaults to `None`.
-        example_id: The ID of the example. Defaults to `None`.
+        callback_manager: The callback manager to use.
+        inputs: The inputs to the chain group.
+        project_name: The name of the project.
+        example_id: The ID of the example.
         run_id: The ID of the run.
-        tags: The inheritable tags to apply to all runs. Defaults to `None`.
-        metadata: The metadata to apply to all runs. Defaults to `None`.
+        tags: The inheritable tags to apply to all runs.
+        metadata: The metadata to apply to all runs.
 
     !!! note
         Must have `LANGCHAIN_TRACING_V2` env var set to true to see the trace in
@@ -95,16 +95,13 @@ def trace_as_chain_group(
         The callback manager for the chain group.
 
     Example:
-        .. code-block:: python
-
-            llm_input = "Foo"
-            with trace_as_chain_group(
-                "group_name", inputs={"input": llm_input}
-            ) as manager:
-                # Use the callback manager for the chain group
-                res = llm.invoke(llm_input, {"callbacks": manager})
-                manager.on_chain_end({"output": res})
-
+        ```python
+        llm_input = "Foo"
+        with trace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+            # Use the callback manager for the chain group
+            res = llm.invoke(llm_input, {"callbacks": manager})
+            manager.on_chain_end({"output": res})
+        ```
     """
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
@@ -158,13 +155,13 @@ async def atrace_as_chain_group(
     Args:
         group_name: The name of the chain group.
         callback_manager: The async callback manager to use,
-            which manages tracing and other callback behavior. Defaults to `None`.
-        inputs: The inputs to the chain group. Defaults to `None`.
-        project_name: The name of the project. Defaults to `None`.
-        example_id: The ID of the example. Defaults to `None`.
+            which manages tracing and other callback behavior.
+        inputs: The inputs to the chain group.
+        project_name: The name of the project.
+        example_id: The ID of the example.
         run_id: The ID of the run.
-        tags: The inheritable tags to apply to all runs. Defaults to `None`.
-        metadata: The metadata to apply to all runs. Defaults to `None`.
+        tags: The inheritable tags to apply to all runs.
+        metadata: The metadata to apply to all runs.
 
     Yields:
         The async callback manager for the chain group.
@@ -174,16 +171,15 @@ async def atrace_as_chain_group(
         LangSmith.
 
     Example:
-        .. code-block:: python
-
-            llm_input = "Foo"
-            async with atrace_as_chain_group(
-                "group_name", inputs={"input": llm_input}
-            ) as manager:
-                # Use the async callback manager for the chain group
-                res = await llm.ainvoke(llm_input, {"callbacks": manager})
-                await manager.on_chain_end({"output": res})
-
+        ```python
+        llm_input = "Foo"
+        async with atrace_as_chain_group(
+            "group_name", inputs={"input": llm_input}
+        ) as manager:
+            # Use the async callback manager for the chain group
+            res = await llm.ainvoke(llm_input, {"callbacks": manager})
+            await manager.on_chain_end({"output": res})
+        ```
     """
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
@@ -466,11 +462,11 @@ class BaseRunManager(RunManagerMixin):
             run_id: The ID of the run.
             handlers: The list of handlers.
             inheritable_handlers: The list of inheritable handlers.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
-            tags: The list of tags. Defaults to `None`.
-            inheritable_tags: The list of inheritable tags. Defaults to `None`.
-            metadata: The metadata. Defaults to `None`.
-            inheritable_metadata: The inheritable metadata. Defaults to `None`.
+            parent_run_id: The ID of the parent run.
+            tags: The list of tags.
+            inheritable_tags: The list of inheritable tags.
+            metadata: The metadata.
+            inheritable_metadata: The inheritable metadata.
 
         """
         self.run_id = run_id
@@ -561,7 +557,7 @@ class ParentRunManager(RunManager):
         """Get a child callback manager.
 
         Args:
-            tag: The tag for the child callback manager. Defaults to `None`.
+            tag: The tag for the child callback manager.
 
         Returns:
             The child callback manager.
@@ -645,7 +641,7 @@ class AsyncParentRunManager(AsyncRunManager):
         """Get a child callback manager.
 
         Args:
-            tag: The tag for the child callback manager. Defaults to `None`.
+            tag: The tag for the child callback manager.
 
         Returns:
             The child callback manager.
@@ -1307,7 +1303,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             prompts: The list of prompts.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1358,7 +1354,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             messages: The list of messages.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1412,7 +1408,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized chain.
             inputs: The inputs to the chain.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1461,8 +1457,8 @@ class CallbackManager(BaseCallbackManager):
             serialized: Serialized representation of the tool.
             input_str: The  input to the tool as a string.
                 Non-string inputs are cast to strings.
-            run_id: ID for the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: ID for the run.
+            parent_run_id: The ID of the parent run.
             inputs: The original input to the tool if provided.
                 Recommended for usage instead of input_str when the original
                 input is needed.
@@ -1516,8 +1512,8 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized retriever.
             query: The query.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1566,7 +1562,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             name: The name of the adhoc event.
             data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
 
         Raises:
             ValueError: If additional keyword arguments are passed.
@@ -1693,33 +1689,28 @@ class CallbackManagerForChainGroup(CallbackManager):
 
         Example: Merging two callback managers.
 
-            .. code-block:: python
+            ```python
+            from langchain_core.callbacks.manager import (
+                CallbackManager,
+                trace_as_chain_group,
+            )
+            from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                from langchain_core.callbacks.manager import (
-                    CallbackManager,
-                    trace_as_chain_group,
-                )
-                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+            manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+            with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                merged_manager = group_manager.merge(manager)
+                print(type(merged_manager))
+                # <class 'langchain_core.callbacks.manager.CallbackManagerForChainGroup'>
 
-                manager = CallbackManager(
-                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
-                )
-                with trace_as_chain_group(
-                    "My Group Name", tags=["tag1"]
-                ) as group_manager:
-                    merged_manager = group_manager.merge(manager)
-                    print(type(merged_manager))
-                    # <class 'langchain_core.callbacks.manager.CallbackManagerForChainGroup'>
+                print(merged_manager.handlers)
+                # [
+                #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
+                #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
+                # ]
 
-                    print(merged_manager.handlers)
-                    # [
-                    #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
-                    #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
-                    # ]
-
-                    print(merged_manager.tags)
-                    #    ['tag2', 'tag1']
-
+                print(merged_manager.tags)
+                #    ['tag2', 'tag1']
+            ```
         """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
@@ -1791,7 +1782,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             prompts: The list of prompts.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1879,7 +1870,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             messages: The list of messages.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1950,7 +1941,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized chain.
             inputs: The inputs to the chain.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1997,8 +1988,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized tool.
             input_str: The input to the tool.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -2047,7 +2038,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             name: The name of the adhoc event.
             data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
 
         Raises:
             ValueError: If additional keyword arguments are passed.
@@ -2091,8 +2082,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized retriever.
             query: The query.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -2220,33 +2211,30 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 
         Example: Merging two callback managers.
 
-            .. code-block:: python
+            ```python
+            from langchain_core.callbacks.manager import (
+                CallbackManager,
+                atrace_as_chain_group,
+            )
+            from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                from langchain_core.callbacks.manager import (
-                    CallbackManager,
-                    atrace_as_chain_group,
-                )
-                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+            manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+            async with atrace_as_chain_group(
+                "My Group Name", tags=["tag1"]
+            ) as group_manager:
+                merged_manager = group_manager.merge(manager)
+                print(type(merged_manager))
+                # <class 'langchain_core.callbacks.manager.AsyncCallbackManagerForChainGroup'>
 
-                manager = CallbackManager(
-                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
-                )
-                async with atrace_as_chain_group(
-                    "My Group Name", tags=["tag1"]
-                ) as group_manager:
-                    merged_manager = group_manager.merge(manager)
-                    print(type(merged_manager))
-                    # <class 'langchain_core.callbacks.manager.AsyncCallbackManagerForChainGroup'>
+                print(merged_manager.handlers)
+                # [
+                #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
+                #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
+                # ]
 
-                    print(merged_manager.handlers)
-                    # [
-                    #    <langchain_core.callbacks.stdout.LangChainTracer object at ...>,
-                    #    <langchain_core.callbacks.streaming_stdout.StdOutCallbackHandler object at ...>,
-                    # ]
-
-                    print(merged_manager.tags)
-                    #    ['tag2', 'tag1']
-
+                print(merged_manager.tags)
+                #    ['tag2', 'tag1']
+            ```
         """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
@@ -2492,75 +2480,74 @@ async def adispatch_custom_event(
             the event with.
 
     Example:
+        ```python
+        from langchain_core.callbacks import (
+            AsyncCallbackHandler,
+            adispatch_custom_event
+        )
+        from langchain_core.runnable import RunnableLambda
 
-        .. code-block:: python
+        class CustomCallbackManager(AsyncCallbackHandler):
+            async def on_custom_event(
+                self,
+                name: str,
+                data: Any,
+                *,
+                run_id: UUID,
+                tags: list[str] | None = None,
+                metadata: dict[str, Any] | None = None,
+                **kwargs: Any,
+            ) -> None:
+                print(f"Received custom event: {name} with data: {data}")
 
-            from langchain_core.callbacks import (
-                AsyncCallbackHandler,
-                adispatch_custom_event
-            )
-            from langchain_core.runnable import RunnableLambda
+        callback = CustomCallbackManager()
 
-            class CustomCallbackManager(AsyncCallbackHandler):
-                async def on_custom_event(
-                    self,
-                    name: str,
-                    data: Any,
-                    *,
-                    run_id: UUID,
-                    tags: list[str] | None = None,
-                    metadata: dict[str, Any] | None = None,
-                    **kwargs: Any,
-                ) -> None:
-                    print(f"Received custom event: {name} with data: {data}")
+        async def foo(inputs):
+            await adispatch_custom_event("my_event", {"bar": "buzz})
+            return inputs
 
-            callback = CustomCallbackManager()
-
-            async def foo(inputs):
-                await adispatch_custom_event("my_event", {"bar": "buzz})
-                return inputs
-
-            foo_ = RunnableLambda(foo)
-            await foo_.ainvoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+        foo_ = RunnableLambda(foo)
+        await foo_.ainvoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+        ```
 
     Example: Use with astream events
 
-        .. code-block:: python
+        ```python
+        from langchain_core.callbacks import (
+            AsyncCallbackHandler,
+            adispatch_custom_event
+        )
+        from langchain_core.runnable import RunnableLambda
 
-            from langchain_core.callbacks import (
-                AsyncCallbackHandler,
-                adispatch_custom_event
-            )
-            from langchain_core.runnable import RunnableLambda
+        class CustomCallbackManager(AsyncCallbackHandler):
+            async def on_custom_event(
+                self,
+                name: str,
+                data: Any,
+                *,
+                run_id: UUID,
+                tags: list[str] | None = None,
+                metadata: dict[str, Any] | None = None,
+                **kwargs: Any,
+            ) -> None:
+                print(f"Received custom event: {name} with data: {data}")
 
-            class CustomCallbackManager(AsyncCallbackHandler):
-                async def on_custom_event(
-                    self,
-                    name: str,
-                    data: Any,
-                    *,
-                    run_id: UUID,
-                    tags: list[str] | None = None,
-                    metadata: dict[str, Any] | None = None,
-                    **kwargs: Any,
-                ) -> None:
-                    print(f"Received custom event: {name} with data: {data}")
+        callback = CustomCallbackManager()
 
-            callback = CustomCallbackManager()
+        async def foo(inputs):
+            await adispatch_custom_event("event_type_1", {"bar": "buzz})
+            await adispatch_custom_event("event_type_2", 5)
+            return inputs
 
-            async def foo(inputs):
-                await adispatch_custom_event("event_type_1", {"bar": "buzz})
-                await adispatch_custom_event("event_type_2", 5)
-                return inputs
+        foo_ = RunnableLambda(foo)
 
-            foo_ = RunnableLambda(foo)
-
-            async for event in foo_.ainvoke_stream(
-                {"a": "1"},
-                version="v2",
-                config={"callbacks": [CustomCallbackManager()]}
-            ):
-                print(event)
+        async for event in foo_.ainvoke_stream(
+            {"a": "1"},
+            version="v2",
+            config={"callbacks": [CustomCallbackManager()]}
+        ):
+            print(event)
+        ```
 
     !!! warning
         If using python <= 3.10 and async, you MUST
@@ -2618,32 +2605,31 @@ def dispatch_custom_event(
             the event with.
 
     Example:
+        ```python
+        from langchain_core.callbacks import BaseCallbackHandler
+        from langchain_core.callbacks import dispatch_custom_event
+        from langchain_core.runnable import RunnableLambda
 
-        .. code-block:: python
+        class CustomCallbackManager(BaseCallbackHandler):
+            def on_custom_event(
+                self,
+                name: str,
+                data: Any,
+                *,
+                run_id: UUID,
+                tags: list[str] | None = None,
+                metadata: dict[str, Any] | None = None,
+                **kwargs: Any,
+            ) -> None:
+                print(f"Received custom event: {name} with data: {data}")
 
-            from langchain_core.callbacks import BaseCallbackHandler
-            from langchain_core.callbacks import dispatch_custom_event
-            from langchain_core.runnable import RunnableLambda
+        def foo(inputs):
+            dispatch_custom_event("my_event", {"bar": "buzz})
+            return inputs
 
-            class CustomCallbackManager(BaseCallbackHandler):
-                def on_custom_event(
-                    self,
-                    name: str,
-                    data: Any,
-                    *,
-                    run_id: UUID,
-                    tags: list[str] | None = None,
-                    metadata: dict[str, Any] | None = None,
-                    **kwargs: Any,
-                ) -> None:
-                    print(f"Received custom event: {name} with data: {data}")
-
-            def foo(inputs):
-                dispatch_custom_event("my_event", {"bar": "buzz})
-                return inputs
-
-            foo_ = RunnableLambda(foo)
-            foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+        foo_ = RunnableLambda(foo)
+        foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+        ```
 
     !!! version-added "Added in version 0.2.15"
 

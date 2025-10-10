@@ -12,11 +12,16 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from pydantic import Field, TypeAdapter
 from typing_extensions import TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.chat_models.base import init_chat_model
 
 logger = logging.getLogger(__name__)
@@ -245,8 +250,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:
@@ -276,8 +281,8 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
     async def awrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
         """Filter tools based on LLM selection before invoking the model via handler."""
         selection_request = self._prepare_selection_request(request)
         if selection_request is None:

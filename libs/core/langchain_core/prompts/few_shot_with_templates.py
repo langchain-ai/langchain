@@ -49,7 +49,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "few_shot_with_templates"]``
+            `["langchain", "prompts", "few_shot_with_templates"]`
         """
         return ["langchain", "prompts", "few_shot_with_templates"]
 
@@ -122,11 +122,9 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.

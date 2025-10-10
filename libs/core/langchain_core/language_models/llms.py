@@ -835,7 +835,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
@@ -857,8 +857,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Raises:
             ValueError: If prompts is not a list.
-            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
-                ``run_name`` (if provided) does not match the length of prompts.
+            ValueError: If the length of `callbacks`, `tags`, `metadata`, or
+                `run_name` (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -1105,7 +1105,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
@@ -1126,8 +1126,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 to the model provider API call.
 
         Raises:
-            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
-                ``run_name`` (if provided) does not match the length of prompts.
+            ValueError: If the length of `callbacks`, `tags`, `metadata`, or
+                `run_name` (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -1340,11 +1340,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ValueError: If the file path is not a string or Path object.
 
         Example:
-
-            .. code-block:: python
-
-                llm.save(file_path="path/llm.yaml")
-
+            ```python
+            llm.save(file_path="path/llm.yaml")
+            ```
         """
         # Convert file to Path object.
         save_path = Path(file_path)

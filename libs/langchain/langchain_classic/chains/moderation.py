@@ -17,18 +17,17 @@ class OpenAIModerationChain(Chain):
     """Pass input through a moderation endpoint.
 
     To use, you should have the `openai` python package installed, and the
-    environment variable ``OPENAI_API_KEY`` set with your API key.
+    environment variable `OPENAI_API_KEY` set with your API key.
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import OpenAIModerationChain
 
-            from langchain_classic.chains import OpenAIModerationChain
-
-            moderation = OpenAIModerationChain()
-
+        moderation = OpenAIModerationChain()
+        ```
     """
 
     client: Any = None  #: :meta private:

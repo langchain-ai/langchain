@@ -259,20 +259,19 @@ class ChatFireworks(BaseChatModel):
     """`Fireworks` Chat large language models API.
 
     To use, you should have the
-    environment variable ``FIREWORKS_API_KEY`` set with your API key.
+    environment variable `FIREWORKS_API_KEY` set with your API key.
 
     Any parameters that are valid to be passed to the fireworks.create call
     can be passed in, even if not explicitly saved on this class.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_fireworks.chat_models import ChatFireworks
 
-            from langchain_fireworks.chat_models import ChatFireworks
-
-            fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
-            )
-
+        fireworks = ChatFireworks(
+            model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
+        )
+        ```
     """
 
     @property
@@ -320,7 +319,7 @@ class ChatFireworks(BaseChatModel):
     )
     """Fireworks API key.
 
-    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
     """
 
     fireworks_api_base: str | None = Field(
@@ -331,8 +330,8 @@ class ChatFireworks(BaseChatModel):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Fireworks completion API. Can be ``float``,
-    ``httpx.Timeout`` or `None`."""
+    """Timeout for requests to Fireworks completion API. Can be `float`,
+    `httpx.Timeout` or `None`."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -680,7 +679,7 @@ class ChatFireworks(BaseChatModel):
                 - a `TypedDict` class (support added in 0.1.7),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -692,15 +691,15 @@ class ChatFireworks(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
+                - `'function_calling'`:
                     Uses Fireworks's [tool-calling features](https://docs.fireworks.ai/guides/function-calling).
-                - ``'json_schema'``:
+                - `'json_schema'`:
                     Uses Fireworks's [structured output feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
-                - ``'json_mode'``:
+                - `'json_mode'`:
                     Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
                 !!! warning "Behavior changed in 0.2.8"
-                    Added support for ``'json_schema'``.
+                    Added support for `'json_schema'`.
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
@@ -708,7 +707,7 @@ class ChatFireworks(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             kwargs:
                 Any additional parameters to pass to the
@@ -717,204 +716,206 @@ class ChatFireworks(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 
-            .. code-block:: python
+            ```python
+            from typing import Optional
 
-                from typing import Optional
-
-                from langchain_fireworks import ChatFireworks
-                from pydantic import BaseModel, Field
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    # If we provide default values and/or descriptions for fields, these will be passed
-                    # to the model. This is an important part of improving a model's ability to
-                    # correctly return structured outputs.
-                    justification: str | None = Field(
-                        default=None, description="A justification for the answer."
-                    )
+            from langchain_fireworks import ChatFireworks
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatFireworks(
-                    model="accounts/fireworks/models/firefunction-v1",
-                    temperature=0,
-                )
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
+                answer: str
+                # If we provide default values and/or descriptions for fields, these will be passed
+                # to the model. This is an important part of improving a model's ability to
+                # correctly return structured outputs.
+                justification: str | None = Field(
+                    default=None, description="A justification for the answer."
                 )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = ChatFireworks(
+                model="accounts/fireworks/models/firefunction-v1",
+                temperature=0,
+            )
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
 
-            .. code-block:: python
-
-                from langchain_fireworks import ChatFireworks
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from langchain_fireworks import ChatFireworks
+            from pydantic import BaseModel
 
 
-                llm = ChatFireworks(
-                    model="accounts/fireworks/models/firefunction-v1",
-                    temperature=0,
-                )
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            llm = ChatFireworks(
+                model="accounts/fireworks/models/firefunction-v1",
+                temperature=0,
+            )
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
 
-            .. code-block:: python
+            ```python
+            from typing_extensions import Annotated, TypedDict
 
-                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
-                # from typing_extensions, not from typing.
-                from typing_extensions import Annotated, TypedDict
-
-                from langchain_fireworks import ChatFireworks
+            from langchain_fireworks import ChatFireworks
 
 
-                class AnswerWithJustification(TypedDict):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(TypedDict):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Annotated[
-                        str | None, None, "A justification for the answer."
-                    ]
+                answer: str
+                justification: Annotated[
+                    str | None, None, "A justification for the answer."
+                ]
 
 
-                llm = ChatFireworks(
-                    model="accounts/fireworks/models/firefunction-v1",
-                    temperature=0,
-                )
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            llm = ChatFireworks(
+                model="accounts/fireworks/models/firefunction-v1",
+                temperature=0,
+            )
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
 
-            .. code-block:: python
+            ```python
+            from langchain_fireworks import ChatFireworks
 
-                from langchain_fireworks import ChatFireworks
-
-                oai_schema = {
-                    "name": "AnswerWithJustification",
-                    "description": "An answer to the user question along with justification for the answer.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "answer": {"type": "string"},
-                            "justification": {
-                                "description": "A justification for the answer.",
-                                "type": "string",
-                            },
+            oai_schema = {
+                "name": "AnswerWithJustification",
+                "description": "An answer to the user question along with justification for the answer.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "answer": {"type": "string"},
+                        "justification": {
+                            "description": "A justification for the answer.",
+                            "type": "string",
                         },
-                        "required": ["answer"],
                     },
-                }
+                    "required": ["answer"],
+                },
+            }
 
-                llm = ChatFireworks(
-                    model="accounts/fireworks/models/firefunction-v1",
-                    temperature=0,
-                )
-                structured_llm = llm.with_structured_output(oai_schema)
+            llm = ChatFireworks(
+                model="accounts/fireworks/models/firefunction-v1",
+                temperature=0,
+            )
+            structured_llm = llm.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
 
-            .. code-block::
+            ```python
+            from langchain_fireworks import ChatFireworks
+            from pydantic import BaseModel
 
-                from langchain_fireworks import ChatFireworks
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
+            class AnswerWithJustification(BaseModel):
+                answer: str
+                justification: str
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
+            llm = ChatFireworks(
+                model="accounts/fireworks/models/firefunction-v1", temperature=0
+            )
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, method="json_mode", include_raw=True
+            )
+
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
+            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: schema=None, method="json_mode", include_raw=True:
 
-            .. code-block::
+            ```python
+            structured_llm = llm.with_structured_output(
+                method="json_mode", include_raw=True
+            )
 
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
+            structured_llm.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            # -> {
+            #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
+            #     'parsed': {
+            #         'answer': 'They are both the same weight.',
+            #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+            #     },
+            #     'parsing_error': None
+            # }
+            ```
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

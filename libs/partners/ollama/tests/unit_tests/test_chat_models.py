@@ -74,7 +74,7 @@ def test__parse_arguments_from_tool_call() -> None:
 def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
     """Test that functionName metadata is filtered out from tool arguments.
 
-    Some models may include metadata like ``functionName`` in the arguments
+    Some models may include metadata like `functionName` in the arguments
     that just echoes the function name. This should be filtered out for
     no-argument tools to return an empty dictionary.
     """

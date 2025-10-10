@@ -294,7 +294,7 @@ def create_schema_from_function(
             Defaults to FILTERED_ARGS.
         parse_docstring: Whether to parse the function's docstring for descriptions
             for each argument. Defaults to `False`.
-        error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
+        error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
@@ -460,13 +460,13 @@ class ChildTool(BaseTool):
     """Callbacks to be called during tool execution."""
 
     tags: list[str] | None = None
-    """Optional list of tags associated with the tool. Defaults to `None`.
+    """Optional list of tags associated with the tool.
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the tool. Defaults to `None`.
+    """Optional metadata associated with the tool.
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
@@ -492,7 +492,7 @@ class ChildTool(BaseTool):
         """Initialize the tool.
 
         Raises:
-            TypeError: If ``args_schema`` is not a subclass of pydantic `BaseModel` or
+            TypeError: If `args_schema` is not a subclass of pydantic `BaseModel` or
                 dict.
         """
         if (
@@ -616,7 +616,7 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema ``args_schema``.
+            ValueError: If string input is provided with JSON schema `args_schema`.
             ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
             TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
@@ -767,16 +767,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks (event handler)
 
         Returns:
@@ -879,16 +879,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
             start_color: The color to use when starting the tool. Defaults to 'green'.
             color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
@@ -1217,24 +1217,24 @@ class InjectedToolCallId(InjectedToolArg):
     This annotation is used to mark a tool parameter that should receive
     the tool call ID at runtime.
 
-    .. code-block:: python
+    ```python
+    from typing import Annotated
+    from langchain_core.messages import ToolMessage
+    from langchain_core.tools import tool, InjectedToolCallId
 
-        from typing import Annotated
-        from langchain_core.messages import ToolMessage
-        from langchain_core.tools import tool, InjectedToolCallId
+    @tool
+    def foo(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        \"\"\"Return x.\"\"\"
+        return ToolMessage(
+            str(x),
+            artifact=x,
+            name="foo",
+            tool_call_id=tool_call_id
+        )
 
-        @tool
-        def foo(
-            x: int, tool_call_id: Annotated[str, InjectedToolCallId]
-        ) -> ToolMessage:
-            \"\"\"Return x.\"\"\"
-            return ToolMessage(
-                str(x),
-                artifact=x,
-                name="foo",
-                tool_call_id=tool_call_id
-            )
-
+    ```
     """
 
 

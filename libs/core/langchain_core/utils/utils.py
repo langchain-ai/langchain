@@ -82,11 +82,10 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         The mocked datetime class.
 
     Example:
-
-        .. code-block:: python
-
-            with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
-                assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
+        ```python
+        with mock_now(datetime.datetime(2011, 2, 3, 10, 11)):
+            assert datetime.datetime.now() == datetime.datetime(2011, 2, 3, 10, 11)
+        ```
     """
 
     class MockDateTime(datetime.datetime):
@@ -124,8 +123,8 @@ def guard_import(
 
     Args:
         module_name: The name of the module to import.
-        pip_name: The name of the module to install with pip. Defaults to `None`.
-        package: The package to import the module from. Defaults to `None`.
+        pip_name: The name of the module to install with pip.
+        package: The package to import the module from.
 
     Returns:
         The imported module.
@@ -156,11 +155,11 @@ def check_package_version(
 
     Args:
         package: The name of the package.
-        lt_version: The version must be less than this. Defaults to `None`.
-        lte_version: The version must be less than or equal to this. Defaults to `None`.
-        gt_version: The version must be greater than this. Defaults to `None`.
+        lt_version: The version must be less than this.
+        lte_version: The version must be less than or equal to this.
+        gt_version: The version must be greater than this.
         gte_version: The version must be greater than or equal to this.
-            Defaults to `None`.
+
 
     Raises:
         ValueError: If the package version does not meet the requirements.
@@ -499,7 +498,7 @@ Used for:
 def ensure_id(id_val: str | None) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    Auto-generated UUIDs are prefixed by `'lc_'` to indicate they are
     LangChain-generated IDs.
 
     Args:
