@@ -140,6 +140,12 @@ def mustache_template_vars(
             and key != "."
             and section_depth == 0
         ):
+            if "." in key:
+                warnings.warn(
+                    f"Nested variable '{key}' detected. The template requires "
+                    f"'{key.split('.')[0]}' as a top-level input variable.",
+                    stacklevel=2,
+                )
             variables.add(key.split(".")[0])
         if type_ in {"section", "inverted section"}:
             section_depth += 1
