@@ -152,7 +152,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
 
 def _get_pydantic_test_configs(
-    dir_: str, *, python_version: str = "3.11"
+    dir_: str, *, python_version: str = "3.12"
 ) -> List[Dict[str, str]]:
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
