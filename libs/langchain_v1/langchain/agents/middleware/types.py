@@ -291,7 +291,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                             raise
             ```
         """
-        # The default implementation will run the sync version in a thread
         raise NotImplementedError
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
