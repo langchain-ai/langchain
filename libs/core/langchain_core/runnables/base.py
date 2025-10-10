@@ -304,7 +304,7 @@ class Runnable(ABC, Generic[Input, Output]):
             TypeError: If the input type cannot be inferred.
         """
         # First loop through all parent classes and if any of them is
-        # a pydantic model, we will pick up the generic parameterization
+        # a Pydantic model, we will pick up the generic parameterization
         # from that model via the __pydantic_generic_metadata__ attribute.
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
@@ -312,7 +312,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 if "args" in metadata and len(metadata["args"]) == 2:
                     return metadata["args"][0]
 
-        # If we didn't find a pydantic model in the parent classes,
+        # If we didn't find a Pydantic model in the parent classes,
         # then loop through __orig_bases__. This corresponds to
         # Runnables that are not pydantic models.
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
@@ -390,7 +390,7 @@ class Runnable(ABC, Generic[Input, Output]):
             self.get_name("Input"),
             root=root_type,
             # create model needs access to appropriate type annotations to be
-            # able to construct the pydantic model.
+            # able to construct the Pydantic model.
             # When we create the model, we pass information about the namespace
             # where the model is being created, so the type annotations can
             # be resolved correctly as well.
@@ -433,7 +433,7 @@ class Runnable(ABC, Generic[Input, Output]):
     def output_schema(self) -> type[BaseModel]:
         """Output schema.
 
-        The type of output this `Runnable` produces specified as a pydantic model.
+        The type of output this `Runnable` produces specified as a Pydantic model.
         """
         return self.get_output_schema()
 
@@ -468,7 +468,7 @@ class Runnable(ABC, Generic[Input, Output]):
             self.get_name("Output"),
             root=root_type,
             # create model needs access to appropriate type annotations to be
-            # able to construct the pydantic model.
+            # able to construct the Pydantic model.
             # When we create the model, we pass information about the namespace
             # where the model is being created, so the type annotations can
             # be resolved correctly as well.
@@ -1273,22 +1273,20 @@ class Runnable(ABC, Generic[Input, Output]):
 
         A `StreamEvent` is a dictionary with the following schema:
 
-        - `event`: **str** - Event names are of the format:
+        - `event`: Event names are of the format:
             `on_[runnable_type]_(start|stream|end)`.
-        - `name`: **str** - The name of the `Runnable` that generated the event.
-        - `run_id`: **str** - randomly generated ID associated with the given
-            execution of the `Runnable` that emitted the event. A child `Runnable` that gets
-            invoked as part of the execution of a parent `Runnable` is assigned its own
-            unique ID.
-        - `parent_ids`: **list[str]** - The IDs of the parent runnables that generated
-            the event. The root `Runnable` will have an empty list. The order of the parent
-            IDs is from the root to the immediate parent. Only available for v2 version of
-            the API. The v1 version of the API will return an empty list.
-        - `tags`: **list[str] | None** - The tags of the `Runnable` that generated
-            the event.
-        - `metadata`: **dict[str, Any] | None** - The metadata of the `Runnable` that
-            generated the event.
-        - `data`: **dict[str, Any]**
+        - `name`: The name of the `Runnable` that generated the event.
+        - `run_id`: Randomly generated ID associated with the given execution of the
+            `Runnable` that emitted the event. A child `Runnable` that gets invoked as
+            part of the execution of a parent `Runnable` is assigned its own unique ID.
+        - `parent_ids`: The IDs of the parent runnables that generated the event. The
+            root `Runnable` will have an empty list. The order of the parent IDs is from
+            the root to the immediate parent. Only available for v2 version of the API.
+            The v1 version of the API will return an empty list.
+        - `tags`: The tags of the `Runnable` that generated the event.
+        - `metadata`: The metadata of the `Runnable` that generated the event.
+        - `data`: The data associated with the event. The contents of this field
+            depend on the type of event. See the table below for more details.
 
         Below is a table that illustrates some events that might be emitted by various
         chains. Metadata fields have been omitted from the table for brevity.
@@ -1297,39 +1295,23 @@ class Runnable(ABC, Generic[Input, Output]):
         !!! note
             This reference table is for the v2 version of the schema.
 
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | event                    | name             | chunk                               | input                                             | output                                              |
-        +==========================+==================+=====================================+===================================================+=====================================================+
-        | `on_chat_model_start`  | [model name]     |                                     | `{"messages": [[SystemMessage, HumanMessage]]}` |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_chat_model_stream` | [model name]     | `AIMessageChunk(content="hello")` |                                                   |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_chat_model_end`    | [model name]     |                                     | `{"messages": [[SystemMessage, HumanMessage]]}` | `AIMessageChunk(content="hello world")`           |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_llm_start`         | [model name]     |                                     | `{'input': 'hello'}`                            |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_llm_stream`        | [model name]     | `'Hello' `                        |                                                   |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_llm_end`           | [model name]     |                                     | `'Hello human!'`                                |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_chain_start`       | format_docs      |                                     |                                                   |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_chain_stream`      | format_docs      | `'hello world!, goodbye world!'`  |                                                   |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_chain_end`         | format_docs      |                                     | `[Document(...)]`                               | `'hello world!, goodbye world!'`                  |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_tool_start`        | some_tool        |                                     | `{"x": 1, "y": "2"}`                            |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_tool_end`          | some_tool        |                                     |                                                   | `{"x": 1, "y": "2"}`                              |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_retriever_start`   | [retriever name] |                                     | `{"query": "hello"}`                            |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_retriever_end`     | [retriever name] |                                     | `{"query": "hello"}`                            | `[Document(...), ..]`                             |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_prompt_start`      | [template_name]  |                                     | `{"question": "hello"}`                         |                                                     |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
-        | `on_prompt_end`        | [template_name]  |                                     | `{"question": "hello"}`                         | `ChatPromptValue(messages: [SystemMessage, ...])` |
-        +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
+        | event                  | name                 | chunk                               | input                                             | output                                              |
+        | ---------------------- | -------------------- | ----------------------------------- | ------------------------------------------------- | --------------------------------------------------- |
+        | `on_chat_model_start`  | `'[model name]'`     |                                     | `{"messages": [[SystemMessage, HumanMessage]]}`   |                                                     |
+        | `on_chat_model_stream` | `'[model name]'`     | `AIMessageChunk(content="hello")`   |                                                   |                                                     |
+        | `on_chat_model_end`    | `'[model name]'`     |                                     | `{"messages": [[SystemMessage, HumanMessage]]}`   | `AIMessageChunk(content="hello world")`             |
+        | `on_llm_start`         | `'[model name]'`     |                                     | `{'input': 'hello'}`                              |                                                     |
+        | `on_llm_stream`        | `'[model name]'`     | `'Hello' `                          |                                                   |                                                     |
+        | `on_llm_end`           | `'[model name]'`     |                                     | `'Hello human!'`                                  |                                                     |
+        | `on_chain_start`       | `'format_docs'`      |                                     |                                                   |                                                     |
+        | `on_chain_stream`      | `'format_docs'`      | `'hello world!, goodbye world!'`    |                                                   |                                                     |
+        | `on_chain_end`         | `'format_docs'`      |                                     | `[Document(...)]`                                 | `'hello world!, goodbye world!'`                    |
+        | `on_tool_start`        | `'some_tool'`        |                                     | `{"x": 1, "y": "2"}`                              |                                                     |
+        | `on_tool_end`          | `'some_tool'`        |                                     |                                                   | `{"x": 1, "y": "2"}`                                |
+        | `on_retriever_start`   | `'[retriever name]'` |                                     | `{"query": "hello"}`                              |                                                     |
+        | `on_retriever_end`     | `'[retriever name]'` |                                     | `{"query": "hello"}`                              | `[Document(...), ..]`                               |
+        | `on_prompt_start`      | `'[template_name]'`  |                                     | `{"question": "hello"}`                           |                                                     |
+        | `on_prompt_end`        | `'[template_name]'`  |                                     | `{"question": "hello"}`                           | `ChatPromptValue(messages: [SystemMessage, ...])`   |
 
         In addition to the standard events, users can also dispatch custom events (see example below).
 
@@ -1337,13 +1319,10 @@ class Runnable(ABC, Generic[Input, Output]):
 
         A custom event has following format:
 
-        +-----------+------+-----------------------------------------------------------------------------------------------------------+
-        | Attribute | Type | Description                                                                                               |
-        +===========+======+===========================================================================================================+
-        | name      | str  | A user defined name for the event.                                                                        |
-        +-----------+------+-----------------------------------------------------------------------------------------------------------+
-        | data      | Any  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
-        +-----------+------+-----------------------------------------------------------------------------------------------------------+
+        | Attribute   | Type   | Description                                                                                               |
+        | ----------- | ------ | --------------------------------------------------------------------------------------------------------- |
+        | `name`      | `str`  | A user defined name for the event.                                                                        |
+        | `data`      | `Any`  | The data associated with the event. This can be anything, though we suggest making it JSON serializable.  |
 
         Here are declarations associated with the standard events shown above:
 
@@ -4493,7 +4472,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
     @override
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
-        """The pydantic schema for the input to this `Runnable`.
+        """The Pydantic schema for the input to this `Runnable`.
 
         Args:
             config: The config to use.
@@ -5127,7 +5106,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
                 None,
             ),
             # create model needs access to appropriate type annotations to be
-            # able to construct the pydantic model.
+            # able to construct the Pydantic model.
             # When we create the model, we pass information about the namespace
             # where the model is being created, so the type annotations can
             # be resolved correctly as well.
@@ -5150,7 +5129,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
             self.get_name("Output"),
             root=list[schema],  # type: ignore[valid-type]
             # create model needs access to appropriate type annotations to be
-            # able to construct the pydantic model.
+            # able to construct the Pydantic model.
             # When we create the model, we pass information about the namespace
             # where the model is being created, so the type annotations can
             # be resolved correctly as well.
@@ -5387,13 +5366,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     custom_input_type: Any | None = None
     """Override the input type of the underlying `Runnable` with a custom type.
 
-    The type can be a pydantic model, or a type annotation (e.g., `list[str]`).
+    The type can be a Pydantic model, or a type annotation (e.g., `list[str]`).
     """
     # Union[Type[Output], BaseModel] + things like list[str]
     custom_output_type: Any | None = None
     """Override the output type of the underlying `Runnable` with a custom type.
 
-    The type can be a pydantic model, or a type annotation (e.g., `list[str]`).
+    The type can be a Pydantic model, or a type annotation (e.g., `list[str]`).
     """
 
     model_config = ConfigDict(

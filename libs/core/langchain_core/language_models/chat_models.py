@@ -240,78 +240,54 @@ def _format_ls_structured_output(ls_structured_output_format: dict | None) -> di
 
 
 class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
-    """Base class for chat models.
+    r"""Base class for chat models.
 
     Key imperative methods:
         Methods that actually call the underlying model.
 
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | Method                    | Input                                                          | Output                                                              | Description                                                                                      |
-        +===========================+================================================================+=====================================================================+==================================================================================================+
-        | `invoke`                  | str | list[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `ainvoke`                 | '''                                                            | BaseMessage                                                         | Defaults to running invoke in an async executor.                                                 |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `stream`                  | '''                                                            | Iterator[BaseMessageChunk]                                          | Defaults to yielding output of invoke.                                                           |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `astream`                 | '''                                                            | AsyncIterator[BaseMessageChunk]                                     | Defaults to yielding output of ainvoke.                                                          |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `astream_events`          | '''                                                            | AsyncIterator[StreamEvent]                                          | Event types: 'on_chat_model_start', 'on_chat_model_stream', 'on_chat_model_end'.                 |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch`                   | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch`                  | list[''']                                                      | list[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `batch_as_completed`      | list[''']                                                      | Iterator[tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
-        | `abatch_as_completed`     | list[''']                                                      | AsyncIterator[tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
-        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        This table provides a brief overview of the main imperative methods. Please see the base `Runnable` reference for full documentation.
 
-        This table provides a brief overview of the main imperative methods. Please see the base Runnable reference for full documentation.
+        | Method                 | Input                                                        | Output                                                     | Description                                                                      |
+        | ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------------------- |
+        | `invoke`               | `str` \| `list[dict | tuple | BaseMessage]` \| `PromptValue` | `BaseMessage`                                              | A single chat model call.                                                        |
+        | `ainvoke`              | `'''`                                                        | `BaseMessage`                                              | Defaults to running `invoke` in an async executor.                               |
+        | `stream`               | `'''`                                                        | `Iterator[BaseMessageChunk]`                               | Defaults to yielding output of `invoke`.                                         |
+        | `astream`              | `'''`                                                        | `AsyncIterator[BaseMessageChunk]`                          | Defaults to yielding output of `ainvoke`.                                        |
+        | `astream_events`       | `'''`                                                        | `AsyncIterator[StreamEvent]`                               | Event types: `on_chat_model_start`, `on_chat_model_stream`, `on_chat_model_end`. |
+        | `batch`                | `list[''']`                                                  | `list[BaseMessage]`                                        | Defaults to running `invoke` in concurrent threads.                              |
+        | `abatch`               | `list[''']`                                                  | `list[BaseMessage]`                                        | Defaults to running `ainvoke` in concurrent threads.                             |
+        | `batch_as_completed`   | `list[''']`                                                  | `Iterator[tuple[int, Union[BaseMessage, Exception]]]`      | Defaults to running `invoke` in concurrent threads.                              |
+        | `abatch_as_completed`  | `list[''']`                                                  | `AsyncIterator[tuple[int, Union[BaseMessage, Exception]]]` | Defaults to running `ainvoke` in concurrent threads.                             |
 
     Key declarative methods:
-        Methods for creating another Runnable using the ChatModel.
-
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | Method                           | Description                                                                                               |
-        +==================================+===========================================================================================================+
-        | `bind_tools`                     | Create ChatModel that can call tools.                                                                     |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | `with_structured_output`         | Create wrapper that structures model output using schema.                                                 |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | `with_retry`                     | Create wrapper that retries model calls on failure.                                                       |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | `with_fallbacks`                 | Create wrapper that falls back to other models on failure.                                                |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | `configurable_fields`            | Specify init args of the model that can be configured at runtime via the RunnableConfig.                  |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
-        | `configurable_alternatives`      | Specify alternative models which can be swapped in at runtime via the RunnableConfig.                     |
-        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        Methods for creating another `Runnable` using the chat model.
 
         This table provides a brief overview of the main declarative methods. Please see the reference for each method for full documentation.
+
+        | Method                       | Description                                                                                  |
+        | ---------------------------- | -------------------------------------------------------------------------------------------- |
+        | `bind_tools`                 | Create chat model that can call tools.                                                        |
+        | `with_structured_output`     | Create wrapper that structures model output using schema.                                    |
+        | `with_retry`                 | Create wrapper that retries model calls on failure.                                          |
+        | `with_fallbacks`             | Create wrapper that falls back to other models on failure.                                   |
+        | `configurable_fields`        | Specify init args of the model that can be configured at runtime via the `RunnableConfig`.     |
+        | `configurable_alternatives`  | Specify alternative models which can be swapped in at runtime via the `RunnableConfig`.        |
 
     Creating custom chat model:
         Custom chat model implementations should inherit from this class.
         Please reference the table below for information about which
         methods and properties are required or optional for implementations.
 
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | Method/Property                  | Description                                                        | Required/Optional |
-        +==================================+====================================================================+===================+
+        | -------------------------------- | ------------------------------------------------------------------ | ----------------- |
         | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | `_stream`                        | Use to implement streaming                                         | Optional          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | `_agenerate`                     | Use to implement a native async method                             | Optional          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
         | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-        +----------------------------------+--------------------------------------------------------------------+-------------------+
 
-        Follow the guide for more information on how to implement a custom Chat Model:
+        Follow the guide for more information on how to implement a custom chat model:
         [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
@@ -327,9 +303,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     - If `True`, will always bypass streaming case.
     - If `'tool_calling'`, will bypass streaming case only when the model is called
-      with a `tools` keyword argument. In other words, LangChain will automatically
-      switch to non-streaming behavior (`invoke`) only when the tools argument is
-      provided. This offers the best of both worlds.
+        with a `tools` keyword argument. In other words, LangChain will automatically
+        switch to non-streaming behavior (`invoke`) only when the tools argument is
+        provided. This offers the best of both worlds.
     - If `False` (Default), will always use streaming case if available.
 
     The main reason for this flag is that code might be written using `stream` and
@@ -349,7 +325,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Supported values:
 
     - `'v0'`: provider-specific format in content (can lazily-parse with
-      `.content_blocks`)
+        `.content_blocks`)
     - `'v1'`: standardized format in content (consistent with `.content_blocks`)
 
     Partner packages (e.g., `langchain-openai`) can also use this field to roll out
