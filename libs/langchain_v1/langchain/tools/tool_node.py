@@ -902,11 +902,16 @@ class ToolNode(RunnableCallable):
             """Execute tool with given request. Can be called multiple times."""
             return await self._execute_tool_async(req, input_type, config)
 
+        def _sync_execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Sync execute fallback for sync wrapper."""
+            return self._execute_tool_sync(req, input_type, config)
+
         # Call wrapper with request and execute callable
         try:
             if self._awrap_tool_call is not None:
                 return await self._awrap_tool_call(tool_request, execute)
-            return self._wrap_tool_call(tool_request, execute)
+            # TODO kick this off on a thread to avoid blocking event loop?
+            return self._wrap_tool_call(tool_request, _sync_execute)
         except Exception as e:
             # Wrapper threw an exception
             if not self._handle_tool_errors:

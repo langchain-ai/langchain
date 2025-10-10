@@ -291,6 +291,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                             raise
             ```
         """
+        # The default implementation will run the sync version in a thread
         raise NotImplementedError
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
@@ -399,7 +400,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 await save_cache_async(request, result)
                 return result
         """
-
+        raise NotImplementedError
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""

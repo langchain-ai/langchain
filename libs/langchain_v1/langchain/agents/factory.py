@@ -653,7 +653,6 @@ def create_agent(  # noqa: PLR0915
     middleware_w_awrap_tool_call = [
         m
         for m in middleware
-        if m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
         or m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
     ]
 
