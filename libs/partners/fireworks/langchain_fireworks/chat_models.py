@@ -238,6 +238,7 @@ def _convert_chunk_to_message_chunk(
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata={"model_provider": "fireworks"},
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -515,6 +516,8 @@ class ChatFireworks(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
+                message.response_metadata["model_provider"] = "fireworks"
+                message.response_metadata["model_name"] = self.model_name
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -525,7 +528,6 @@ class ChatFireworks(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
