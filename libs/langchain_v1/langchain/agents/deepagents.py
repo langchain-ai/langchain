@@ -37,7 +37,7 @@ def get_default_model() -> ChatAnthropic:
         model_name="claude-sonnet-4-20250514",
         timeout=None,
         stop=None,
-        model_kwargs={"max_tokens": 64000},
+        max_tokens=64000,
     )
 
 
