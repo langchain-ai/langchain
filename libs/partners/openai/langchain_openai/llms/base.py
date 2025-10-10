@@ -54,12 +54,12 @@ class BaseOpenAI(BaseLLM):
     """Base OpenAI large language model class.
 
     Setup:
-        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model_name: str
@@ -90,13 +90,13 @@ class BaseOpenAI(BaseLLM):
     Key init args — client params:
         openai_api_key: SecretStr | None
             OpenAI API key. If not passed in will be read from env var
-            ``OPENAI_API_KEY``.
+            `OPENAI_API_KEY`.
         openai_api_base: str | None
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
         openai_organization: str | None
             OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+            var `OPENAI_ORG_ID`.
         request_timeout: Union[float, tuple[float, float], Any, None]
             Timeout for requests to OpenAI completion API.
         max_retries: int
@@ -107,62 +107,60 @@ class BaseOpenAI(BaseLLM):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai.llms.base import BaseOpenAI
 
-            from langchain_openai.llms.base import BaseOpenAI
-
-            llm = BaseOpenAI(
-                model_name="gpt-3.5-turbo-instruct",
-                temperature=0.7,
-                max_tokens=256,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0,
-                # openai_api_key="...",
-                # openai_api_base="...",
-                # openai_organization="...",
-                # other params...
-            )
+        model = BaseOpenAI(
+            model_name="gpt-3.5-turbo-instruct",
+            temperature=0.7,
+            max_tokens=256,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            # openai_api_key="...",
+            # openai_api_base="...",
+            # openai_organization="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        input_text = "The meaning of life is "
+        response = model.invoke(input_text)
+        print(response)
+        ```
 
-            input_text = "The meaning of life is "
-            response = llm.invoke(input_text)
-            print(response)
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and
-            scholars for centuries."
+        ```txt
+        "a philosophical question that has been debated by thinkers and
+        scholars for centuries."
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(input_text):
-                print(chunk, end="")
-
-        .. code-block::
-
-            a philosophical question that has been debated by thinkers and
-            scholars for centuries.
+        ```python
+        for chunk in model.stream(input_text):
+            print(chunk, end="")
+        ```
+        ```txt
+        a philosophical question that has been debated by thinkers and
+        scholars for centuries.
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        response = await model.ainvoke(input_text)
 
-            response = await llm.ainvoke(input_text)
+        # stream:
+        # async for chunk in model.astream(input_text):
+        #     print(chunk, end="")
 
-            # stream:
-            # async for chunk in llm.astream(input_text):
-            #     print(chunk, end="")
-
-            # batch:
-            # await llm.abatch([input_text])
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and
-            scholars for centuries."
+        # batch:
+        # await model.abatch([input_text])
+        ```
+        ```
+        "a philosophical question that has been debated by thinkers and
+        scholars for centuries."
+        ```
 
     """
 
@@ -191,7 +189,7 @@ class BaseOpenAI(BaseLLM):
     openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
@@ -203,7 +201,7 @@ class BaseOpenAI(BaseLLM):
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
@@ -213,7 +211,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
+    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     None."""
     logit_bias: dict[str, float] | None = None
     """Adjust the probability of specific tokens being generated."""
@@ -245,13 +243,13 @@ class BaseOpenAI(BaseLLM):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
-        ``http_async_client`` as well if you'd like a custom client for async
+    """Optional `httpx.Client`. Only used for sync invocations. Must specify
+        `http_async_client` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Any | None = None
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
+        `http_client` as well if you'd like a custom client for sync invocations."""
     extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
@@ -404,10 +402,9 @@ class BaseOpenAI(BaseLLM):
             The full LLM output.
 
         Example:
-            .. code-block:: python
-
-                response = openai.generate(["Tell me a joke."])
-
+            ```python
+            response = openai.generate(["Tell me a joke."])
+            ```
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -626,10 +623,9 @@ class BaseOpenAI(BaseLLM):
             The maximum context size
 
         Example:
-            .. code-block:: python
-
-                max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
-
+            ```python
+            max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+            ```
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -691,10 +687,9 @@ class BaseOpenAI(BaseLLM):
             The maximum number of tokens to generate for a prompt.
 
         Example:
-            .. code-block:: python
-
-                max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
-
+            ```python
+            max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+            ```
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -704,12 +699,12 @@ class OpenAI(BaseOpenAI):
     """OpenAI completion model integration.
 
     Setup:
-        Install `langchain-openai` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -722,7 +717,7 @@ class OpenAI(BaseOpenAI):
             Whether to return logprobs.
         stream_options: Dict
             Configure streaming outputs, like whether to return token usage when
-            streaming (``{"include_usage": True}``).
+            streaming (`{"include_usage": True}`).
 
     Key init args — client params:
         timeout: Union[float, Tuple[float, float], Any, None]
@@ -730,75 +725,70 @@ class OpenAI(BaseOpenAI):
         max_retries: int
             Max number of retries.
         api_key: str | None
-            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
+            OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
         base_url: str | None
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: str | None
             OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+            var `OPENAI_ORG_ID`.
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import OpenAI
 
-            from langchain_openai import OpenAI
-
-            llm = OpenAI(
-                model="gpt-3.5-turbo-instruct",
-                temperature=0,
-                max_retries=2,
-                # api_key="...",
-                # base_url="...",
-                # organization="...",
-                # other params...
-            )
+        model = OpenAI(
+            model="gpt-3.5-turbo-instruct",
+            temperature=0,
+            max_retries=2,
+            # api_key="...",
+            # base_url="...",
+            # organization="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            input_text = "The meaning of life is "
-            llm.invoke(input_text)
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```python
+        input_text = "The meaning of life is "
+        model.invoke(input_text)
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in model.stream(input_text):
+            print(chunk, end="|")
+        ```
+        ```txt
+        a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
+        ```
 
-            for chunk in llm.stream(input_text):
-                print(chunk, end="|")
-
-        .. code-block::
-
-            a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
-
-        .. code-block:: python
-
-            "".join(llm.stream(input_text))
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```python
+        "".join(model.stream(input_text))
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await model.ainvoke(input_text)
 
-            await llm.ainvoke(input_text)
+        # stream:
+        # async for chunk in (await model.astream(input_text)):
+        #    print(chunk)
 
-            # stream:
-            # async for chunk in (await llm.astream(input_text)):
-            #    print(chunk)
-
-            # batch:
-            # await llm.abatch([input_text])
-
-        .. code-block::
-
-            "a philosophical question that has been debated by thinkers and scholars for centuries."
-
+        # batch:
+        # await model.abatch([input_text])
+        ```
+        ```txt
+        "a philosophical question that has been debated by thinkers and scholars for centuries."
+        ```
     """  # noqa: E501
 
     @classmethod

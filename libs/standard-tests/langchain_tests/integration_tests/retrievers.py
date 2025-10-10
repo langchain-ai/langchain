@@ -56,14 +56,14 @@ class RetrieversIntegrationTests(BaseStandardTests):
             via the constructor, this test can be skipped using a pytest `xfail` on
             the test class:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(
-                    reason="This retriever doesn't support setting "
-                    "the number of results via the constructor."
-                )
-                def test_k_constructor_param(self) -> None:
-                    raise NotImplementedError
+            ```python
+            @pytest.mark.xfail(
+                reason="This retriever doesn't support setting "
+                "the number of results via the constructor."
+            )
+            def test_k_constructor_param(self) -> None:
+                raise NotImplementedError
+            ```
 
         ??? note "Troubleshooting"
 
@@ -74,9 +74,9 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             For example, a retriever like
 
-            .. code-block:: python
-
-                    MyRetriever(k=3).invoke("query")
+            ```python
+            MyRetriever(k=3).invoke("query")
+            ```
 
             should return 3 documents when invoked with a query.
 
@@ -112,14 +112,14 @@ class RetrieversIntegrationTests(BaseStandardTests):
             via the invoke method, this test can be skipped using a pytest `xfail` on
             the test class:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(
-                    reason="This retriever doesn't support setting "
-                    "the number of results in the invoke method."
-                )
-                def test_invoke_with_k_kwarg(self) -> None:
-                    raise NotImplementedError
+            ```python
+            @pytest.mark.xfail(
+                reason="This retriever doesn't support setting "
+                "the number of results in the invoke method."
+            )
+            def test_invoke_with_k_kwarg(self) -> None:
+                raise NotImplementedError
+            ```
 
         ??? note "Troubleshooting"
 
@@ -130,9 +130,9 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
             For example, a retriever like
 
-            .. code-block:: python
-
-                MyRetriever().invoke("query", k=3)
+            ```python
+            MyRetriever().invoke("query", k=3)
+            ```
 
             should return 3 documents when invoked with a query.
 

@@ -15,7 +15,7 @@ except ImportError:
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires ``graphviz`` and ``pygraphviz`` to be installed.
+    It requires `graphviz` and `pygraphviz` to be installed.
 
     Example:
         ```python
@@ -45,7 +45,7 @@ class PngDrawer:
                     }
                 }
                 The keys are the original labels, and the values are the new labels.
-                Defaults to `None`.
+
         """
         self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
@@ -104,7 +104,7 @@ class PngDrawer:
             viz: The graphviz object.
             source: The source node.
             target: The target node.
-            label: The label for the edge. Defaults to `None`.
+            label: The label for the edge.
             conditional: Whether the edge is conditional. Defaults to `False`.
         """
         viz.add_edge(
@@ -126,10 +126,10 @@ class PngDrawer:
             output_path: The path to save the PNG. If `None`, PNG bytes are returned.
 
         Raises:
-            ImportError: If ``pygraphviz`` is not installed.
+            ImportError: If `pygraphviz` is not installed.
 
         Returns:
-            The PNG bytes if ``output_path`` is None, else None.
+            The PNG bytes if `output_path` is None, else None.
         """
         if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."

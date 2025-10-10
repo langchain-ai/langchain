@@ -17,39 +17,38 @@ class EncoderBackedStore(BaseStore[K, V]):
 
     Examples that uses JSON for encoding/decoding:
 
-    .. code-block:: python
-
-        import json
-
-
-        def key_encoder(key: int) -> str:
-            return json.dumps(key)
+    ```python
+    import json
 
 
-        def value_serializer(value: float) -> str:
-            return json.dumps(value)
+    def key_encoder(key: int) -> str:
+        return json.dumps(key)
 
 
-        def value_deserializer(serialized_value: str) -> float:
-            return json.loads(serialized_value)
+    def value_serializer(value: float) -> str:
+        return json.dumps(value)
 
 
-        # Create an instance of the abstract store
-        abstract_store = MyCustomStore()
+    def value_deserializer(serialized_value: str) -> float:
+        return json.loads(serialized_value)
 
-        # Create an instance of the encoder-backed store
-        store = EncoderBackedStore(
-            store=abstract_store,
-            key_encoder=key_encoder,
-            value_serializer=value_serializer,
-            value_deserializer=value_deserializer,
-        )
 
-        # Use the encoder-backed store methods
-        store.mset([(1, 3.14), (2, 2.718)])
-        values = store.mget([1, 2])  # Retrieves [3.14, 2.718]
-        store.mdelete([1, 2])  # Deletes the keys 1 and 2
+    # Create an instance of the abstract store
+    abstract_store = MyCustomStore()
 
+    # Create an instance of the encoder-backed store
+    store = EncoderBackedStore(
+        store=abstract_store,
+        key_encoder=key_encoder,
+        value_serializer=value_serializer,
+        value_deserializer=value_deserializer,
+    )
+
+    # Use the encoder-backed store methods
+    store.mset([(1, 3.14), (2, 2.718)])
+    values = store.mget([1, 2])  # Retrieves [3.14, 2.718]
+    store.mdelete([1, 2])  # Deletes the keys 1 and 2
+    ```
     """
 
     def __init__(

@@ -276,10 +276,10 @@ class TokenTextSplitter(TextSplitter):
         `split_text_on_tokens` function.
 
         Args:
-            text (str): The input text to be split into smaller chunks.
+            text: The input text to be split into smaller chunks.
 
         Returns:
-            List[str]: A list of text chunks, where each chunk is derived from a portion
+            A list of text chunks, where each chunk is derived from a portion
             of the input text based on the tokenization and chunking rules.
         """
 

@@ -48,34 +48,29 @@ class LLMChain(Chain):
     This class is deprecated. See below for an example implementation using
     LangChain runnables:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import PromptTemplate
+        from langchain_openai import OpenAI
 
-            from langchain_core.output_parsers import StrOutputParser
-            from langchain_core.prompts import PromptTemplate
-            from langchain_openai import OpenAI
+        prompt_template = "Tell me a {adjective} joke"
+        prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
+        model = OpenAI()
+        chain = prompt | model | StrOutputParser()
 
-            prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
-            llm = OpenAI()
-            chain = prompt | llm | StrOutputParser()
-
-            chain.invoke("your adjective here")
+        chain.invoke("your adjective here")
+        ```
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import LLMChain
+        from langchain_community.llms import OpenAI
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_classic.chains import LLMChain
-            from langchain_community.llms import OpenAI
-            from langchain_core.prompts import PromptTemplate
-
-            prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
-            llm = LLMChain(llm=OpenAI(), prompt=prompt)
-
+        prompt_template = "Tell me a {adjective} joke"
+        prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
+        model = LLMChain(llm=OpenAI(), prompt=prompt)
+        ```
     """
 
     @classmethod
@@ -319,10 +314,9 @@ class LLMChain(Chain):
             Completion from LLM.
 
         Example:
-            .. code-block:: python
-
-                completion = llm.predict(adjective="funny")
-
+            ```python
+            completion = llm.predict(adjective="funny")
+            ```
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -337,10 +331,9 @@ class LLMChain(Chain):
             Completion from LLM.
 
         Example:
-            .. code-block:: python
-
-                completion = llm.predict(adjective="funny")
-
+            ```python
+            completion = llm.predict(adjective="funny")
+            ```
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 

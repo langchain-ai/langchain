@@ -24,17 +24,16 @@ logger = logging.getLogger(__name__)
 class Fireworks(LLM):
     """LLM models from `Fireworks`.
 
-    To use, you'll need an `API key <https://fireworks.ai>`__. This can be passed in as
-    init param ``fireworks_api_key`` or set as environment variable
-    ``FIREWORKS_API_KEY``.
+    To use, you'll need an [API key](https://fireworks.ai). This can be passed in as
+    init param `fireworks_api_key` or set as environment variable
+    `FIREWORKS_API_KEY`.
 
-    `Fireworks AI API reference <https://readme.fireworks.ai/>`__
+    [Fireworks AI API reference](https://readme.fireworks.ai/)
 
     Example:
-
-        .. code-block:: python
-            response = fireworks.generate(["Tell me a joke."])
-
+        ```python
+        response = fireworks.generate(["Tell me a joke."])
+        ```
     """
 
     base_url: str = "https://api.fireworks.ai/inference/v1/completions"
@@ -52,10 +51,10 @@ class Fireworks(LLM):
     )
     """Fireworks API key.
 
-    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
+    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
     """
     model: str
-    """Model name. `(Available models) <https://readme.fireworks.ai/>`__"""
+    """Model name. [(Available models)](https://readme.fireworks.ai/)"""
     temperature: float | None = None
     """Model temperature."""
     top_p: float | None = None
@@ -66,7 +65,7 @@ class Fireworks(LLM):
     randomness in the output.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
-    """Holds any model parameters valid for ``create`` call not explicitly specified."""
+    """Holds any model parameters valid for `create` call not explicitly specified."""
     top_k: int | None = None
     """Used to limit the number of choices for the next predicted word or token. It
     specifies the maximum number of tokens to consider at each step, based on their
