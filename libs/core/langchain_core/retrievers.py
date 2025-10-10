@@ -7,7 +7,6 @@ the backbone of a retriever, but there are other types of retrievers as well.
 
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any
@@ -136,35 +135,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        # Version upgrade for old retrievers that implemented the public
-        # methods directly.
-        if cls.get_relevant_documents != BaseRetriever.get_relevant_documents:
-            warnings.warn(
-                "Retrievers must implement abstract `_get_relevant_documents` method"
-                " instead of `get_relevant_documents`",
-                DeprecationWarning,
-                stacklevel=4,
-            )
-            swap = cls.get_relevant_documents
-            cls.get_relevant_documents = (  # type: ignore[method-assign]
-                BaseRetriever.get_relevant_documents
-            )
-            cls._get_relevant_documents = swap  # type: ignore[method-assign]
-        if (
-            hasattr(cls, "aget_relevant_documents")
-            and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
-        ):
-            warnings.warn(
-                "Retrievers must implement abstract `_aget_relevant_documents` method"
-                " instead of `aget_relevant_documents`",
-                DeprecationWarning,
-                stacklevel=4,
-            )
-            aswap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = (  # type: ignore[method-assign]
-                BaseRetriever.aget_relevant_documents
-            )
-            cls._aget_relevant_documents = aswap  # type: ignore[method-assign]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
