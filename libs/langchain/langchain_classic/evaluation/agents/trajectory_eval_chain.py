@@ -240,7 +240,7 @@ The following is the expected answer. Use this to measure correctness:
             **kwargs: Additional keyword arguments.
 
         Returns:
-            The TrajectoryEvalChain object.
+            The `TrajectoryEvalChain` object.
         """
         if not isinstance(llm, BaseChatModel):
             msg = "Only chat models supported by the current trajectory eval"
