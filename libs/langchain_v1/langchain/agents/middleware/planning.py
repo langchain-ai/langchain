@@ -8,12 +8,18 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.tools import InjectedToolCallId
 
 
@@ -189,8 +195,8 @@ class PlanningMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt

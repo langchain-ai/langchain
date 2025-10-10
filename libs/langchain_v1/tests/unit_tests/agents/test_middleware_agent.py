@@ -2568,8 +2568,10 @@ def test_wrap_model_call_rewrite_response() -> None:
         def wrap_model_call(self, request, handler):
             result = handler(request)
 
+            # result is ModelResponse, extract AIMessage from it
+            ai_message = result.result[0]
             # Rewrite the response
-            return AIMessage(content=f"REWRITTEN: {result.content}")
+            return AIMessage(content=f"REWRITTEN: {ai_message.content}")
 
     model = SimpleModel()
     middleware = ResponseRewriteMiddleware()
