@@ -6,15 +6,24 @@ memory tools using schema-less tool definitions and tool call interception.
 
 from __future__ import annotations
 
-import os
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
+from langchain.agents.middleware.file_utils import (
+    FileData,
+    apply_string_replacement,
+    create_file_data,
+    file_data_reducer,
+    file_data_to_string,
+    format_content_with_line_numbers,
+    list_directory,
+    update_file_data,
+    validate_path,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 
 if TYPE_CHECKING:
@@ -38,116 +47,14 @@ ASSUME INTERRUPTION: Your context window might be reset at any moment, so you ri
 losing any progress that is not recorded in your memory directory."""
 
 
-class FileData(TypedDict):
-    """Data structure for storing file contents."""
-
-    content: list[str]
-    """Lines of the file."""
-
-    created_at: str
-    """ISO 8601 timestamp of file creation."""
-
-    modified_at: str
-    """ISO 8601 timestamp of last modification."""
-
-
-def files_reducer(
-    left: dict[str, FileData] | None, right: dict[str, FileData | None]
-) -> dict[str, FileData]:
-    """Custom reducer that merges file updates.
-
-    Args:
-        left: Existing files dict.
-        right: New files dict to merge (None values delete files).
-
-    Returns:
-        Merged dict where right overwrites left for matching keys.
-    """
-    if left is None:
-        # Filter out None values when initializing
-        return {k: v for k, v in right.items() if v is not None}
-
-    # Merge, filtering out None values (deletions)
-    result = {**left}
-    for k, v in right.items():
-        if v is None:
-            result.pop(k, None)
-        else:
-            result[k] = v
-    return result
-
-
 class AnthropicToolsState(AgentState):
     """State schema for Anthropic text editor and memory tools."""
 
-    text_editor_files: NotRequired[Annotated[dict[str, FileData], files_reducer]]
+    text_editor_files: NotRequired[Annotated[dict[str, FileData], file_data_reducer]]
     """Virtual file system for text editor tools."""
 
-    memory_files: NotRequired[Annotated[dict[str, FileData], files_reducer]]
+    memory_files: NotRequired[Annotated[dict[str, FileData], file_data_reducer]]
     """Virtual file system for memory tools."""
-
-
-def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) -> str:
-    """Validate and normalize file path for security.
-
-    Args:
-        path: The path to validate.
-        allowed_prefixes: Optional list of allowed path prefixes.
-
-    Returns:
-        Normalized canonical path.
-
-    Raises:
-        ValueError: If path contains traversal sequences or violates prefix rules.
-    """
-    # Reject paths with traversal attempts
-    if ".." in path or path.startswith("~"):
-        msg = f"Path traversal not allowed: {path}"
-        raise ValueError(msg)
-
-    # Normalize path (resolve ., //, etc.)
-    normalized = os.path.normpath(path)
-
-    # Convert to forward slashes for consistency
-    normalized = normalized.replace("\\", "/")
-
-    # Ensure path starts with /
-    if not normalized.startswith("/"):
-        normalized = f"/{normalized}"
-
-    # Check allowed prefixes if specified
-    if allowed_prefixes is not None and not any(
-        normalized.startswith(prefix) for prefix in allowed_prefixes
-    ):
-        msg = f"Path must start with one of {allowed_prefixes}: {path}"
-        raise ValueError(msg)
-
-    return normalized
-
-
-def _list_directory(files: dict[str, FileData], path: str) -> list[str]:
-    """List files in a directory.
-
-    Args:
-        files: Files dict.
-        path: Normalized directory path.
-
-    Returns:
-        Sorted list of file paths in the directory.
-    """
-    # Ensure path ends with / for directory matching
-    dir_path = path if path.endswith("/") else f"{path}/"
-
-    matching_files = []
-    for file_path in files:
-        if file_path.startswith(dir_path):
-            # Get relative path from directory
-            relative = file_path[len(dir_path) :]
-            # Only include direct children (no subdirectories)
-            if "/" not in relative:
-                matching_files.append(file_path)
-
-    return sorted(matching_files)
 
 
 class _StateClaudeFileToolMiddleware(AgentMiddleware):
@@ -254,14 +161,14 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
     ) -> Command:
         """Handle view command."""
         path = args["path"]
-        normalized_path = _validate_path(path, allowed_prefixes=self.allowed_prefixes)
+        normalized_path = validate_path(path, allowed_prefixes=self.allowed_prefixes)
 
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
         file_data = files.get(normalized_path)
 
         if file_data is None:
             # Try directory listing
-            matching = _list_directory(files, normalized_path)
+            matching = list_directory(files, normalized_path)
 
             if matching:
                 content = "\n".join(matching)
@@ -281,9 +188,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             raise FileNotFoundError(msg)
 
         # Format file content with line numbers
-        lines_content = file_data["content"]
-        formatted_lines = [f"{i + 1}|{line}" for i, line in enumerate(lines_content)]
-        content = "\n".join(formatted_lines)
+        content = format_content_with_line_numbers(file_data["content"], format_style="pipe")
 
         return Command(
             update={
@@ -304,26 +209,22 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         path = args["path"]
         file_text = args["file_text"]
 
-        normalized_path = _validate_path(path, allowed_prefixes=self.allowed_prefixes)
+        normalized_path = validate_path(path, allowed_prefixes=self.allowed_prefixes)
 
         # Get existing files
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
         existing = files.get(normalized_path)
 
-        # Create file data
-        now = datetime.now(timezone.utc).isoformat()
-        created_at = existing["created_at"] if existing else now
-
-        content_lines = file_text.split("\n")
+        # Create or update file data
+        if existing:
+            new_file_data = update_file_data(existing, file_text)
+        else:
+            new_file_data = create_file_data(file_text)
 
         return Command(
             update={
                 self.state_key: {
-                    normalized_path: {
-                        "content": content_lines,
-                        "created_at": created_at,
-                        "modified_at": now,
-                    }
+                    normalized_path: new_file_data,
                 },
                 "messages": [
                     ToolMessage(
@@ -343,7 +244,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         old_str = args["old_str"]
         new_str = args.get("new_str", "")
 
-        normalized_path = _validate_path(path, allowed_prefixes=self.allowed_prefixes)
+        normalized_path = validate_path(path, allowed_prefixes=self.allowed_prefixes)
 
         # Read file
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -352,28 +253,21 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             msg = f"File not found: {path}"
             raise FileNotFoundError(msg)
 
-        lines_content = file_data["content"]
-        content = "\n".join(lines_content)
+        content = file_data_to_string(file_data)
 
         # Replace string
         if old_str not in content:
             msg = f"String not found in file: {old_str}"
             raise ValueError(msg)
-
-        new_content = content.replace(old_str, new_str, 1)
-        new_lines = new_content.split("\n")
+        new_content, _ = apply_string_replacement(content, old_str, new_str, replace_all=False)
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        new_file_data = update_file_data(file_data, new_content)
 
         return Command(
             update={
                 self.state_key: {
-                    normalized_path: {
-                        "content": new_lines,
-                        "created_at": file_data["created_at"],
-                        "modified_at": now,
-                    }
+                    normalized_path: new_file_data,
                 },
                 "messages": [
                     ToolMessage(
@@ -393,7 +287,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         insert_line = args["insert_line"]
         text_to_insert = args["new_str"]
 
-        normalized_path = _validate_path(path, allowed_prefixes=self.allowed_prefixes)
+        normalized_path = validate_path(path, allowed_prefixes=self.allowed_prefixes)
 
         # Read file
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -409,16 +303,12 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         updated_lines = lines_content[:insert_line] + new_lines + lines_content[insert_line:]
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        new_file_data = update_file_data(file_data, updated_lines)
 
         return Command(
             update={
                 self.state_key: {
-                    normalized_path: {
-                        "content": updated_lines,
-                        "created_at": file_data["created_at"],
-                        "modified_at": now,
-                    }
+                    normalized_path: new_file_data,
                 },
                 "messages": [
                     ToolMessage(
@@ -439,7 +329,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         """Handle delete command."""
         path = args["path"]
 
-        normalized_path = _validate_path(path, allowed_prefixes=self.allowed_prefixes)
+        normalized_path = validate_path(path, allowed_prefixes=self.allowed_prefixes)
 
         return Command(
             update={
@@ -461,8 +351,8 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         old_path = args["old_path"]
         new_path = args["new_path"]
 
-        normalized_old = _validate_path(old_path, allowed_prefixes=self.allowed_prefixes)
-        normalized_new = _validate_path(new_path, allowed_prefixes=self.allowed_prefixes)
+        normalized_old = validate_path(old_path, allowed_prefixes=self.allowed_prefixes)
+        normalized_new = validate_path(new_path, allowed_prefixes=self.allowed_prefixes)
 
         # Read file
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -472,15 +362,14 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Update timestamp
-        now = datetime.now(timezone.utc).isoformat()
-        file_data_copy = file_data.copy()
-        file_data_copy["modified_at"] = now
+        content = file_data["content"]
+        new_file_data = update_file_data(file_data, content)
 
         return Command(
             update={
                 self.state_key: {
                     normalized_old: None,
-                    normalized_new: file_data_copy,
+                    normalized_new: new_file_data,
                 },
                 "messages": [
                     ToolMessage(
@@ -745,12 +634,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
             raise ValueError(msg) from e
 
         # Format with line numbers
-        lines = content.split("\n")
-        # Remove trailing newline's empty string if present
-        if lines and lines[-1] == "":
-            lines = lines[:-1]
-        formatted_lines = [f"{i + 1}|{line}" for i, line in enumerate(lines)]
-        formatted_content = "\n".join(formatted_lines)
+        formatted_content = format_content_with_line_numbers(content, format_style="pipe")
 
         return Command(
             update={
@@ -808,8 +692,7 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         if old_str not in content:
             msg = f"String not found in file: {old_str}"
             raise ValueError(msg)
-
-        new_content = content.replace(old_str, new_str, 1)
+        new_content, _ = apply_string_replacement(content, old_str, new_str, replace_all=False)
 
         # Write back
         full_path.write_text(new_content)

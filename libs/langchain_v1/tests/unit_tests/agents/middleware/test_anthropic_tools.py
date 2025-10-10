@@ -5,8 +5,8 @@ from langchain.agents.middleware.anthropic_tools import (
     AnthropicToolsState,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
-    _validate_path,
 )
+from langchain.agents.middleware.file_utils import validate_path
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 
@@ -16,46 +16,46 @@ class TestPathValidation:
 
     def test_basic_path_normalization(self) -> None:
         """Test basic path normalization."""
-        assert _validate_path("/foo/bar") == "/foo/bar"
-        assert _validate_path("foo/bar") == "/foo/bar"
-        assert _validate_path("/foo//bar") == "/foo/bar"
-        assert _validate_path("/foo/./bar") == "/foo/bar"
+        assert validate_path("/foo/bar") == "/foo/bar"
+        assert validate_path("foo/bar") == "/foo/bar"
+        assert validate_path("/foo//bar") == "/foo/bar"
+        assert validate_path("/foo/./bar") == "/foo/bar"
 
     def test_path_traversal_blocked(self) -> None:
         """Test that path traversal attempts are blocked."""
         with pytest.raises(ValueError, match="Path traversal not allowed"):
-            _validate_path("/foo/../etc/passwd")
+            validate_path("/foo/../etc/passwd")
 
         with pytest.raises(ValueError, match="Path traversal not allowed"):
-            _validate_path("../etc/passwd")
+            validate_path("../etc/passwd")
 
         with pytest.raises(ValueError, match="Path traversal not allowed"):
-            _validate_path("~/.ssh/id_rsa")
+            validate_path("~/.ssh/id_rsa")
 
     def test_allowed_prefixes(self) -> None:
         """Test path prefix validation."""
         # Should pass
         assert (
-            _validate_path("/workspace/file.txt", allowed_prefixes=["/workspace"])
+            validate_path("/workspace/file.txt", allowed_prefixes=["/workspace"])
             == "/workspace/file.txt"
         )
 
         # Should fail
         with pytest.raises(ValueError, match="Path must start with"):
-            _validate_path("/etc/passwd", allowed_prefixes=["/workspace"])
+            validate_path("/etc/passwd", allowed_prefixes=["/workspace"])
 
         with pytest.raises(ValueError, match="Path must start with"):
-            _validate_path("/workspacemalicious/file.txt", allowed_prefixes=["/workspace/"])
+            validate_path("/workspacemalicious/file.txt", allowed_prefixes=["/workspace/"])
 
     def test_memories_prefix(self) -> None:
         """Test /memories prefix validation for memory tools."""
         assert (
-            _validate_path("/memories/notes.txt", allowed_prefixes=["/memories"])
+            validate_path("/memories/notes.txt", allowed_prefixes=["/memories"])
             == "/memories/notes.txt"
         )
 
         with pytest.raises(ValueError, match="Path must start with"):
-            _validate_path("/other/notes.txt", allowed_prefixes=["/memories"])
+            validate_path("/other/notes.txt", allowed_prefixes=["/memories"])
 
 
 class TestTextEditorMiddleware:
