@@ -38,7 +38,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
 from dataclasses import dataclass, replace
 from types import UnionType
@@ -187,6 +187,12 @@ Examples:
         save_cache(request, result)
         return result
 """
+
+AsyncToolCallWrapper = Callable[
+    [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+    Awaitable[ToolMessage | Command],
+]
+"""Async wrapper for tool call execution with multi-call support."""
 
 
 class ToolCallWithContext(TypedDict):
@@ -500,6 +506,7 @@ class ToolNode(RunnableCallable):
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
         wrap_tool_call: ToolCallWrapper | None = None,
+        awrap_tool_call: AsyncToolCallWrapper | None = None,
     ) -> None:
         """Initialize ToolNode with tools and configuration.
 
@@ -509,9 +516,11 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            wrap_tool_call: Wrapper function to intercept tool execution. Receives
+            wrap_tool_call: Sync wrapper function to intercept tool execution. Receives
                 ToolCallRequest and execute callable, returns ToolMessage or Command.
                 Enables retries, caching, request modification, and control flow.
+            awrap_tool_call: Async wrapper function to intercept tool execution.
+                If not provided, falls back to wrap_tool_call for async execution.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -520,6 +529,7 @@ class ToolNode(RunnableCallable):
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
         self._wrap_tool_call = wrap_tool_call
+        self._awrap_tool_call = awrap_tool_call
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -855,7 +865,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call asynchronously with wrap_tool_call wrapper if configured.
+        """Execute single tool call asynchronously with awrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -883,7 +893,7 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._wrap_tool_call is None:
+        if self._awrap_tool_call is None and self._wrap_tool_call is None:
             # No wrapper - execute directly
             return await self._execute_tool_async(tool_request, input_type, config)
 
@@ -893,11 +903,10 @@ class ToolNode(RunnableCallable):
             return await self._execute_tool_async(req, input_type, config)
 
         # Call wrapper with request and execute callable
-        # Note: wrapper is sync, but execute callable is async
         try:
-            result = self._wrap_tool_call(tool_request, execute)  # type: ignore[arg-type]
-            # If result is a coroutine, await it (though wrapper should be sync)
-            return await result if hasattr(result, "__await__") else result
+            if self._awrap_tool_call is not None:
+                return await self._awrap_tool_call(tool_request, execute)
+            return self._wrap_tool_call(tool_request, execute)
         except Exception as e:
             # Wrapper threw an exception
             if not self._handle_tool_errors:

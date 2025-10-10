@@ -355,6 +355,51 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         raise NotImplementedError
 
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
+        """Async version of wrap_tool_call.
+
+        Intercept async tool execution for retries, monitoring, or modification.
+        Multiple middleware compose automatically (first defined = outermost).
+
+        By default, delegates to the sync wrap_tool_call method if overridden.
+        Override this method for native async tool call interception.
+
+        Args:
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+                Access state via request.state and runtime via request.runtime.
+            handler: Async callable to execute the tool (can be called multiple times).
+
+        Returns:
+            ToolMessage or Command (the final result).
+
+        Examples:
+            Async retry on error:
+
+            async def awrap_tool_call(self, request, handler):
+                for attempt in range(3):
+                    try:
+                        result = await handler(request)
+                        if is_valid(result):
+                            return result
+                    except Exception:
+                        if attempt == 2:
+                            raise
+                return result
+
+            Async cache/short-circuit:
+
+            async def awrap_tool_call(self, request, handler):
+                if cached := await get_cache_async(request):
+                    return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+                result = await handler(request)
+                await save_cache_async(request, result)
+                return result
+        """
+
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""
@@ -1309,6 +1354,7 @@ def wrap_tool_call(
     Args:
         func: Function accepting (request, handler) that calls
             handler(request) to execute the tool and returns final ToolMessage or Command.
+            Can be sync or async.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
@@ -1323,6 +1369,13 @@ def wrap_tool_call(
             return handler(request)
         ```
 
+        Async passthrough:
+        ```python
+        @wrap_tool_call
+        async def async_passthrough(request, handler):
+            return await handler(request)
+        ```
+
         Retry logic:
         ```python
         @wrap_tool_call
@@ -1333,6 +1386,18 @@ def wrap_tool_call(
                     return handler(request)
                 except Exception:
                     if attempt == max_retries - 1:
+                        raise
+        ```
+
+        Async retry logic:
+        ```python
+        @wrap_tool_call
+        async def async_retry(request, handler):
+            for attempt in range(3):
+                try:
+                    return await handler(request)
+                except Exception:
+                    if attempt == 2:
                         raise
         ```
 
@@ -1359,6 +1424,31 @@ def wrap_tool_call(
     def decorator(
         func: _CallableReturningToolResponse,
     ) -> AgentMiddleware:
+        is_async = iscoroutinefunction(func)
+
+        if is_async:
+
+            async def async_wrapped(
+                self: AgentMiddleware,  # noqa: ARG001
+                request: ToolCallRequest,
+                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+            ) -> ToolMessage | Command:
+                return await func(request, handler)  # type: ignore[arg-type,misc]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "WrapToolCallMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": tools or [],
+                    "awrap_tool_call": async_wrapped,
+                },
+            )()
+
         def wrapped(
             self: AgentMiddleware,  # noqa: ARG001
             request: ToolCallRequest,
