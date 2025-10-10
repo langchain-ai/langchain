@@ -22,10 +22,10 @@ def _load_rapidfuzz() -> Any:
     """Load the RapidFuzz library.
 
     Raises:
-        ImportError: If the rapidfuzz library is not installed.
+        `ImportError`: If the rapidfuzz library is not installed.
 
     Returns:
-        The rapidfuzz.distance module.
+        The `rapidfuzz.distance` module.
     """
     try:
         import rapidfuzz
@@ -42,12 +42,12 @@ class StringDistance(str, Enum):
     """Distance metric to use.
 
     Attributes:
-        DAMERAU_LEVENSHTEIN: The Damerau-Levenshtein distance.
-        LEVENSHTEIN: The Levenshtein distance.
-        JARO: The Jaro distance.
-        JARO_WINKLER: The Jaro-Winkler distance.
-        HAMMING: The Hamming distance.
-        INDEL: The Indel distance.
+        `DAMERAU_LEVENSHTEIN`: The Damerau-Levenshtein distance.
+        `LEVENSHTEIN`: The Levenshtein distance.
+        `JARO`: The Jaro distance.
+        `JARO_WINKLER`: The Jaro-Winkler distance.
+        `HAMMING`: The Hamming distance.
+        `INDEL`: The Indel distance.
     """
 
     DAMERAU_LEVENSHTEIN = "damerau_levenshtein"
@@ -63,7 +63,7 @@ class _RapidFuzzChainMixin(Chain):
 
     distance: StringDistance = Field(default=StringDistance.JARO_WINKLER)
     normalize_score: bool = Field(default=True)
-    """Whether to normalize the score to a value between 0 and 1.
+    """Whether to normalize the score to a value between `0` and `1`.
     Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     @pre_init

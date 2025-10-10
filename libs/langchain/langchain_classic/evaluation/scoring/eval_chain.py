@@ -196,7 +196,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return False
@@ -206,7 +206,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires an input.
 
         Returns:
-            True if the chain requires an input, False otherwise.
+            `True` if the chain requires an input, `False` otherwise.
 
         """
         return True
@@ -424,7 +424,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return True

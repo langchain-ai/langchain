@@ -207,7 +207,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return False
@@ -217,7 +217,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires an input.
 
         Returns:
-            True if the chain requires an input, False otherwise.
+            `True` if the chain requires an input, `False` otherwise.
 
         """
         return True
@@ -425,7 +425,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return True
@@ -453,7 +453,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         Raises:
             ValueError: If the input variables are not as expected.
 
-        """  # noqa: E501
+        """
         expected_input_vars = {
             "prediction",
             "prediction_b",

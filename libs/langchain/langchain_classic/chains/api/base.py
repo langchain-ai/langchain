@@ -42,7 +42,7 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
         limit_to_domains: The allowed domains.
 
     Returns:
-        True if the URL is in the allowed domains, False otherwise.
+        `True` if the URL is in the allowed domains, `False` otherwise.
     """
     scheme, domain = _extract_scheme_and_domain(url)
 

@@ -361,7 +361,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Return whether the chain requires a reference.
 
         Returns:
-            True if a reference is required, False otherwise.
+            True if a reference is required, `False` otherwise.
         """
         return True
 

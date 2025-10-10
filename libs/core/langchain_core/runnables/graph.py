@@ -52,7 +52,7 @@ def is_uuid(value: str) -> bool:
         value: The string to check.
 
     Returns:
-        True if the string is a valid UUID, False otherwise.
+        `True` if the string is a valid UUID, `False` otherwise.
     """
     try:
         UUID(value)

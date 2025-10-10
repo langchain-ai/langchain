@@ -47,14 +47,15 @@ class LocalFileStore(ByteStore):
         """Implement the BaseStore interface for the local file system.
 
         Args:
-            root_path: The root path of the file store. All keys are
-                interpreted as paths relative to this root.
+            root_path: The root path of the file store. All keys are interpreted as
+                paths relative to this root.
             chmod_file: If specified, sets permissions for newly created files,
                 overriding the current `umask` if needed.
             chmod_dir: If specified, sets permissions for newly created dirs,
                 overriding the current `umask` if needed.
             update_atime: If `True`, updates the filesystem access time
                 (but not the modified time) when a file is read.
+
                 This allows MRU/LRU cache policies to be implemented for filesystems
                 where access time updates are disabled.
         """

@@ -877,7 +877,7 @@ def is_data_content_block(block: dict) -> bool:
         block: The content block to check.
 
     Returns:
-        True if the content block is a data content block, False otherwise.
+        `True` if the content block is a data content block, `False` otherwise.
 
     """
     if block.get("type") not in _get_data_content_block_types():

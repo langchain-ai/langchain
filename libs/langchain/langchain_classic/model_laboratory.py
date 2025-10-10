@@ -26,10 +26,10 @@ class ModelLaboratory:
 
 
         Raises:
-            ValueError: If any chain is not an instance of `Chain`.
-            ValueError: If a chain does not have exactly one input variable.
-            ValueError: If a chain does not have exactly one output variable.
-            ValueError: If the length of `names` does not match the number of chains.
+            `ValueError`: If any chain is not an instance of `Chain`.
+            `ValueError`: If a chain does not have exactly one input variable.
+            `ValueError`: If a chain does not have exactly one output variable.
+            `ValueError`: If the length of `names` does not match the number of chains.
         """
         for chain in chains:
             if not isinstance(chain, Chain):

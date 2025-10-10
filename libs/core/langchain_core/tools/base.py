@@ -92,7 +92,7 @@ def _is_annotated_type(typ: type[Any]) -> bool:
         typ: The type to check.
 
     Returns:
-        True if the type is an Annotated type, False otherwise.
+        `True` if the type is an Annotated type, `False` otherwise.
     """
     return get_origin(typ) is typing.Annotated
 
@@ -226,7 +226,7 @@ def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bo
         pydantic_version: The Pydantic version to check against ("v1" or "v2").
 
     Returns:
-        True if the annotation is a Pydantic model, False otherwise.
+        `True` if the annotation is a Pydantic model, `False` otherwise.
     """
     base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
     try:
@@ -245,7 +245,7 @@ def _function_annotations_are_pydantic_v1(
         func: The function being checked.
 
     Returns:
-        True if all Pydantic annotations are from V1, False otherwise.
+        True if all Pydantic annotations are from V1, `False` otherwise.
 
     Raises:
         NotImplementedError: If the function contains mixed V1 and V2 annotations.
@@ -517,7 +517,7 @@ class ChildTool(BaseTool):
         """Check if the tool accepts only a single input argument.
 
         Returns:
-            True if the tool has only one input argument, False otherwise.
+            `True` if the tool has only one input argument, `False` otherwise.
         """
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
@@ -981,7 +981,7 @@ def _is_tool_call(x: Any) -> bool:
         x: The input to check.
 
     Returns:
-        True if the input is a tool call, False otherwise.
+        `True` if the input is a tool call, `False` otherwise.
     """
     return isinstance(x, dict) and x.get("type") == "tool_call"
 
@@ -1128,7 +1128,7 @@ def _is_message_content_type(obj: Any) -> bool:
         obj: The object to check.
 
     Returns:
-        True if the object is valid message content, False otherwise.
+        `True` if the object is valid message content, `False` otherwise.
     """
     return isinstance(obj, str) or (
         isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
@@ -1144,7 +1144,7 @@ def _is_message_content_block(obj: Any) -> bool:
         obj: The object to check.
 
     Returns:
-        True if the object is a valid content block, False otherwise.
+        `True` if the object is a valid content block, `False` otherwise.
     """
     if isinstance(obj, str):
         return True
@@ -1248,7 +1248,7 @@ def _is_injected_arg_type(
         injected_type: The specific injected type to check for.
 
     Returns:
-        True if the type is an injected argument, False otherwise.
+        `True` if the type is an injected argument, `False` otherwise.
     """
     injected_type = injected_type or InjectedToolArg
     return any(
