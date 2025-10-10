@@ -85,11 +85,18 @@ class _InternalModelResponse:
     """Cached response format after auto-detection."""
 
 
+def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
+    """Normalize middleware return value to ModelResponse."""
+    if isinstance(result, AIMessage):
+        return ModelResponse(result=[result], structured_response=None)
+    return result
+
+
 def _chain_model_call_handlers(
     handlers: Sequence[
         Callable[
             [ModelRequest, Callable[[ModelRequest], ModelResponse]],
-            ModelResponse,
+            ModelResponse | AIMessage,
         ]
     ],
 ) -> (
@@ -138,16 +145,26 @@ def _chain_model_call_handlers(
         return None
 
     if len(handlers) == 1:
-        return handlers[0]
+        # Single handler - wrap to normalize output
+        single_handler = handlers[0]
+
+        def normalized_single(
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelResponse:
+            result = single_handler(request, handler)
+            return _normalize_to_model_response(result)
+
+        return normalized_single
 
     def compose_two(
         outer: Callable[
             [ModelRequest, Callable[[ModelRequest], ModelResponse]],
-            ModelResponse,
+            ModelResponse | AIMessage,
         ],
         inner: Callable[
             [ModelRequest, Callable[[ModelRequest], ModelResponse]],
-            ModelResponse,
+            ModelResponse | AIMessage,
         ],
     ) -> Callable[
         [ModelRequest, Callable[[ModelRequest], ModelResponse]],
@@ -159,12 +176,14 @@ def _chain_model_call_handlers(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelResponse:
-            # Create a wrapper that calls inner with the base handler
+            # Create a wrapper that calls inner with the base handler and normalizes
             def inner_handler(req: ModelRequest) -> ModelResponse:
-                return inner(req, handler)
+                inner_result = inner(req, handler)
+                return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler
-            return outer(request, inner_handler)
+            # Call outer with the wrapped inner as its handler and normalize
+            outer_result = outer(request, inner_handler)
+            return _normalize_to_model_response(outer_result)
 
         return composed
 
@@ -180,7 +199,7 @@ def _chain_async_model_call_handlers(
     handlers: Sequence[
         Callable[
             [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse],
+            Awaitable[ModelResponse | AIMessage],
         ]
     ],
 ) -> (
@@ -202,16 +221,26 @@ def _chain_async_model_call_handlers(
         return None
 
     if len(handlers) == 1:
-        return handlers[0]
+        # Single handler - wrap to normalize output
+        single_handler = handlers[0]
+
+        async def normalized_single(
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelResponse:
+            result = await single_handler(request, handler)
+            return _normalize_to_model_response(result)
+
+        return normalized_single
 
     def compose_two(
         outer: Callable[
             [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse],
+            Awaitable[ModelResponse | AIMessage],
         ],
         inner: Callable[
             [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
-            Awaitable[ModelResponse],
+            Awaitable[ModelResponse | AIMessage],
         ],
     ) -> Callable[
         [ModelRequest, Callable[[ModelRequest], Awaitable[ModelResponse]]],
@@ -223,12 +252,14 @@ def _chain_async_model_call_handlers(
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelResponse:
-            # Create a wrapper that calls inner with the base handler
+            # Create a wrapper that calls inner with the base handler and normalizes
             async def inner_handler(req: ModelRequest) -> ModelResponse:
-                return await inner(req, handler)
+                inner_result = await inner(req, handler)
+                return _normalize_to_model_response(inner_result)
 
-            # Call outer with the wrapped inner as its handler
-            return await outer(request, inner_handler)
+            # Call outer with the wrapped inner as its handler and normalize
+            outer_result = await outer(request, inner_handler)
+            return _normalize_to_model_response(outer_result)
 
         return composed
 

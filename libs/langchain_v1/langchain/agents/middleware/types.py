@@ -22,6 +22,8 @@ if TYPE_CHECKING:
     from langchain.tools.tool_node import ToolCallRequest
 
 # needed as top level import for pydantic schema generation on AgentState
+from typing import TypeAlias
+
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
@@ -88,6 +90,16 @@ class ModelResponse:
 
     structured_response: Any = None
     """Parsed structured output if response_format was specified, None otherwise."""
+
+
+# Type alias for middleware return type - allows returning either full response or just AIMessage
+ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
+"""Type alias for model call handler return value.
+
+Middleware can return either:
+- ModelResponse: Full response with messages and optional structured output
+- AIMessage: Simplified return for backwards compatibility (converted to ModelResponse internally)
+"""
 
 
 @dataclass
@@ -184,7 +196,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelResponse:
+    ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
         The handler callback executes the model request and returns a ModelResponse.
@@ -199,7 +211,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                      for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            Final ModelResponse to use (from handler or custom).
+            Final response to use (ModelResponse or AIMessage for backwards compatibility).
 
         Examples:
             Retry on error:
@@ -230,9 +242,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 try:
                     return handler(request)
                 except Exception:
-                    return ModelResponse(
-                        result=[AIMessage(content="Service unavailable")]
-                    )
+                    return ModelResponse(result=[AIMessage(content="Service unavailable")])
             ```
 
             Cache/short-circuit:
@@ -244,6 +254,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 save_cache(request, response)
                 return response
             ```
+
+            Simple AIMessage return (converted automatically):
+            ```python
+            def wrap_model_call(self, request, handler):
+                response = handler(request)
+                # Can return AIMessage directly for simple cases
+                return AIMessage(content="Simplified response")
+            ```
         """
         raise NotImplementedError
 
@@ -251,7 +269,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelResponse:
+    ) -> ModelCallResult:
         """Async version of wrap_model_call.
 
         Args:
@@ -259,7 +277,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             handler: Async callback that executes the model request.
 
         Returns:
-            Final ModelResponse to use (from handler or custom).
+            Final response to use (ModelResponse or AIMessage for backwards compatibility).
 
         Examples:
             Retry on error:
@@ -359,14 +377,14 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type
 class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
-    Receives handler callback to execute model and returns final ModelResponse.
+    Receives handler callback to execute model and returns ModelResponse or AIMessage.
     """
 
     def __call__(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelResponse:
+    ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
 
@@ -1060,7 +1078,7 @@ def dynamic_prompt(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> ModelResponse:
+            ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 request.system_prompt = prompt
                 return await handler(request)
@@ -1081,7 +1099,7 @@ def dynamic_prompt(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             prompt = cast("str", func(request))
             request.system_prompt = prompt
             return handler(request)
@@ -1142,7 +1160,8 @@ def wrap_model_call(
 
     Args:
         func: Function accepting (request, handler) that calls handler(request)
-            to execute the model and returns final AIMessage. Request contains state and runtime.
+            to execute the model and returns ModelResponse or AIMessage.
+            Request contains state and runtime.
         state_schema: Custom state schema. Defaults to AgentState.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
@@ -1179,7 +1198,7 @@ def wrap_model_call(
             return handler(request)
         ```
 
-        Rewrite response content:
+        Rewrite response content (full ModelResponse):
         ```python
         @wrap_model_call
         def uppercase_responses(request, handler):
@@ -1189,6 +1208,14 @@ def wrap_model_call(
                 result=[AIMessage(content=ai_msg.content.upper())],
                 structured_response=response.structured_response,
             )
+        ```
+
+        Simple AIMessage return (converted automatically):
+        ```python
+        @wrap_model_call
+        def simple_response(request, handler):
+            # AIMessage is automatically converted to ModelResponse
+            return AIMessage(content="Simple response")
         ```
     """
 
@@ -1203,7 +1230,7 @@ def wrap_model_call(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-            ) -> ModelResponse:
+            ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
@@ -1224,7 +1251,7 @@ def wrap_model_call(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
-        ) -> ModelResponse:
+        ) -> ModelCallResult:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
