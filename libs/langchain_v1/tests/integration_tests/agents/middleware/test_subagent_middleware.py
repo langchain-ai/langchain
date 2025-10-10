@@ -3,6 +3,7 @@ from langchain.agents.middleware import AgentMiddleware
 from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
+import pytest
 
 
 @tool
@@ -41,6 +42,7 @@ def assert_expected_subgraph_actions(expected_tool_calls, agent, inputs):
     assert current_idx == len(expected_tool_calls)
 
 
+@pytest.mark.requires("langchain_anthropic", "langchain_openai")
 class TestSubagentMiddleware:
     """Integration tests for the SubagentMiddleware class."""
 

@@ -14,6 +14,7 @@ import pytest
 import uuid
 
 
+@pytest.mark.requires("langchain_anthropic")
 class TestFilesystem:
     def test_create_deepagent_without_store_and_with_longterm_memory_should_fail(self):
         with pytest.raises(ValueError):

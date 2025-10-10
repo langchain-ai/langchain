@@ -1,13 +1,14 @@
 """Middleware for providing subagents to an agent via a `task` tool."""
 
 from collections.abc import Callable, Sequence
-from typing import Annotated, Any, NotRequired, TypedDict, cast
+from typing import Annotated, Any, TypedDict, cast
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from langgraph.types import Command
+from typing_extensions import NotRequired
 
 from langchain.agents.middleware.filesystem import FilesystemMiddleware
 from langchain.agents.middleware.planning import PlanningMiddleware

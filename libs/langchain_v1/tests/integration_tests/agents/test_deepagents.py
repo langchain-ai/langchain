@@ -6,6 +6,7 @@ from langchain.tools.tool_node import InjectedState
 from langchain.agents.middleware import AgentMiddleware, AgentState
 from langgraph.types import Command
 from langchain_core.messages import ToolMessage
+import pytest
 
 
 def assert_all_deepagent_qualities(agent):
@@ -91,6 +92,7 @@ class WeatherToolMiddleware(AgentMiddleware):
     tools = [get_weather]
 
 
+@pytest.mark.requires("langchain_anthropic")
 class TestDeepAgentsFilesystem:
     def test_base_deep_agent(self):
         agent = create_deep_agent()
