@@ -13,7 +13,7 @@ from langgraph.runtime import Runtime, get_runtime
 from langgraph.store.base import BaseStore, Item
 from langgraph.types import Command
 
-from langchain.agents.middleware.file_utils import (
+from langchain.agents._internal.file_utils import (
     FileData,
     append_memories_prefix,
     check_empty_content,

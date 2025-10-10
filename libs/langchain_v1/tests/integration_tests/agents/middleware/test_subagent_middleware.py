@@ -74,7 +74,7 @@ class TestSubagentMiddleware:
                         {
                             "name": "weather",
                             "description": "This subagent can get weather in cities.",
-                            "prompt": "Use the get_weather tool to get the weather in a city.",
+                            "system_prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
                         }
                     ],
@@ -100,7 +100,7 @@ class TestSubagentMiddleware:
                         {
                             "name": "weather",
                             "description": "This subagent can get weather in cities.",
-                            "prompt": "Use the get_weather tool to get the weather in a city.",
+                            "system_prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
                         }
                     ],
@@ -129,7 +129,7 @@ class TestSubagentMiddleware:
                         {
                             "name": "weather",
                             "description": "This subagent can get weather in cities.",
-                            "prompt": "Use the get_weather tool to get the weather in a city.",
+                            "system_prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [get_weather],
                             "model": "gpt-4.1",
                         }
@@ -163,7 +163,7 @@ class TestSubagentMiddleware:
                         {
                             "name": "weather",
                             "description": "This subagent can get weather in cities.",
-                            "prompt": "Use the get_weather tool to get the weather in a city.",
+                            "system_prompt": "Use the get_weather tool to get the weather in a city.",
                             "tools": [],  # No tools, only in middleware
                             "model": "gpt-4.1",
                             "middleware": [WeatherMiddleware()],

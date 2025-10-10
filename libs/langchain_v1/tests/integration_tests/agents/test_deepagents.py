@@ -117,7 +117,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "weather_agent",
                 "description": "Use this agent to get the weather",
-                "prompt": "You are a weather agent.",
+                "system_prompt": "You are a weather agent.",
                 "tools": [get_weather],
                 "model": SAMPLE_MODEL,
             }
@@ -142,7 +142,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "weather_agent",
                 "description": "Use this agent to get the weather",
-                "prompt": "You are a weather agent.",
+                "system_prompt": "You are a weather agent.",
                 "tools": [get_weather],
                 "model": SAMPLE_MODEL,
             }
@@ -174,7 +174,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "weather_agent",
                 "description": "Use this agent to get the weather",
-                "prompt": "You are a weather agent.",
+                "system_prompt": "You are a weather agent.",
                 "tools": [],
                 "model": SAMPLE_MODEL,
                 "middleware": [WeatherToolMiddleware()],
@@ -200,7 +200,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "weather_agent",
                 "description": "Use this agent to get the weather",
-                "prompt": "You are a weather agent.",
+                "system_prompt": "You are a weather agent.",
                 "tools": [get_weather],
                 "model": SAMPLE_MODEL,
             },
@@ -248,7 +248,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "basketball_info_agent",
                 "description": "Use this agent to get surface level info on any basketball topic",
-                "prompt": "You are a basketball info agent.",
+                "system_prompt": "You are a basketball info agent.",
                 "middleware": [ResearchMiddlewareWithTools()],
             }
         ]
@@ -277,7 +277,7 @@ class TestDeepAgentsFilesystem:
             {
                 "name": "basketball_info_agent",
                 "description": "Use this agent to get surface level info on any basketball topic",
-                "prompt": "You are a basketball info agent.",
+                "system_prompt": "You are a basketball info agent.",
             }
         ]
         agent = create_deep_agent(tools=[sample_tool], subagents=subagents)

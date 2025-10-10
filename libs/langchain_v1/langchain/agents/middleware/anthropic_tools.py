@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired
 
-from langchain.agents.middleware.file_utils import (
+from langchain.agents._internal.file_utils import (
     FileData,
     apply_string_replacement,
     create_file_data,

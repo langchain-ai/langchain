@@ -17,7 +17,7 @@ from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain.tools import InjectedState, InjectedToolCallId
 
 
-class DefinedSubAgent(TypedDict):
+class SubAgent(TypedDict):
     """A subagent constructed with user-defined parameters."""
 
     name: str
@@ -26,10 +26,10 @@ class DefinedSubAgent(TypedDict):
     description: str
     """The description of the subagent."""
 
-    prompt: str
+    system_prompt: str
     """The system prompt to use for the subagent."""
 
-    tools: NotRequired[list[BaseTool]]
+    tools: Sequence[BaseTool | Callable | dict[str, Any]]
     """The tools to use for the subagent."""
 
     model: NotRequired[str | BaseChatModel]
@@ -39,7 +39,7 @@ class DefinedSubAgent(TypedDict):
     """The middleware to use for the subagent."""
 
 
-class CustomSubAgent(TypedDict):
+class CompiledSubAgent(TypedDict):
     """A Runnable passed in as a subagent."""
 
     name: str
@@ -52,8 +52,7 @@ class CustomSubAgent(TypedDict):
     """The Runnable to use for the subagent."""
 
 
-DEFAULT_SUBAGENT_PROMPT = """In order to complete the objective that the user asks of you, you have access to a number of standard tools.
-"""  # noqa: E501
+DEFAULT_SUBAGENT_PROMPT = "In order to complete the objective that the user asks of you, you have access to a number of standard tools."  # noqa: E501
 
 TASK_TOOL_DESCRIPTION = """Launch an ephemeral subagent to handle complex, multi-step independent tasks with isolated context windows.
 
@@ -170,7 +169,7 @@ assistant: "I'm going to use the Task tool to launch with the greeting-responder
 def _get_subagents(
     default_subagent_model: str | BaseChatModel,
     default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]],
-    subagents: list[DefinedSubAgent | CustomSubAgent],
+    subagents: list[SubAgent | CompiledSubAgent],
 ) -> tuple[dict[str, Any], list[str]]:
     from langchain.agents.factory import create_agent
 
@@ -197,8 +196,7 @@ def _get_subagents(
     for _agent in subagents:
         subagent_descriptions.append(f"- {_agent['name']}: {_agent['description']}")
         if "runnable" in _agent:
-            # Type narrowing: _agent is CustomSubAgent here
-            custom_agent = cast("CustomSubAgent", _agent)
+            custom_agent = cast("CompiledSubAgent", _agent)
             agents[custom_agent["name"]] = custom_agent["runnable"]
             continue
         _tools = _agent.get("tools", list(default_subagent_tools))
@@ -212,7 +210,7 @@ def _get_subagents(
 
         agents[_agent["name"]] = create_agent(
             subagent_model,
-            system_prompt=_agent["prompt"],
+            system_prompt=_agent["system_prompt"],
             tools=_tools,
             middleware=_middleware,
             checkpointer=False,
@@ -223,7 +221,7 @@ def _get_subagents(
 def _create_task_tool(
     default_subagent_model: str | BaseChatModel,
     default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]],
-    subagents: list[DefinedSubAgent | CustomSubAgent],
+    subagents: list[SubAgent | CompiledSubAgent],
     *,
     is_async: bool = False,
 ) -> BaseTool:
@@ -331,7 +329,7 @@ class SubAgentMiddleware(AgentMiddleware):
         *,
         default_subagent_model: str | BaseChatModel,
         default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
-        subagents: list[DefinedSubAgent | CustomSubAgent] | None = None,
+        subagents: list[SubAgent | CompiledSubAgent] | None = None,
         system_prompt_extension: str | None = None,
         is_async: bool = False,
     ) -> None:

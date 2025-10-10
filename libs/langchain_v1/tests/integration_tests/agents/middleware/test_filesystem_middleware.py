@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage
 from langchain_anthropic import ChatAnthropic
 from langgraph.store.memory import InMemoryStore
 from langgraph.checkpoint.memory import MemorySaver
-from langchain.agents.middleware.file_utils import FileData
+from langchain.agents._internal.file_utils import FileData
 import pytest
 import uuid
 
