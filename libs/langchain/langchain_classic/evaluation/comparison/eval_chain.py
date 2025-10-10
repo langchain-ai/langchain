@@ -448,7 +448,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            The initialized LabeledPairwiseStringEvalChain.
+            The initialized `LabeledPairwiseStringEvalChain`.
 
         Raises:
             ValueError: If the input variables are not as expected.
