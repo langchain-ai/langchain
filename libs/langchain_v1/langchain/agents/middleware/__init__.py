@@ -13,12 +13,14 @@ from .context_editing import (
     ContextEditingMiddleware,
 )
 from .file_search import FilesystemFileSearchMiddleware, StateFileSearchMiddleware
+from .filesystem import FilesystemMiddleware
 from .human_in_the_loop import HumanInTheLoopMiddleware
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
 from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
+from .subagents import SubAgentMiddleware
 from .summarization import SummarizationMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
 from .tool_selection import LLMToolSelectorMiddleware
@@ -47,6 +49,7 @@ __all__ = [
     "FilesystemClaudeMemoryMiddleware",
     "FilesystemClaudeTextEditorMiddleware",
     "FilesystemFileSearchMiddleware",
+    "FilesystemMiddleware",
     "HumanInTheLoopMiddleware",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
@@ -58,6 +61,7 @@ __all__ = [
     "StateClaudeMemoryMiddleware",
     "StateClaudeTextEditorMiddleware",
     "StateFileSearchMiddleware",
+    "SubAgentMiddleware",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
     "after_agent",

@@ -10,7 +10,7 @@ from langchain_core.tools import BaseTool
 from langgraph.store.base import BaseStore
 from langgraph.types import Checkpointer
 
-from langchain.agents import create_agent
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware import AgentMiddleware
 from langchain.agents.middleware.filesystem import FilesystemMiddleware
 from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware, ToolConfig

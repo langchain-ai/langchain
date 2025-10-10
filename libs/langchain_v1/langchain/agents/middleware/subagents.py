@@ -10,12 +10,10 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from langgraph.types import Command
 
-from langchain.agents import create_agent
-from langchain.agents.middleware import (
-    AnthropicPromptCachingMiddleware,
-    PlanningMiddleware,
-    SummarizationMiddleware,
-)
+from langchain.agents.middleware.filesystem import FilesystemMiddleware
+from langchain.agents.middleware.planning import PlanningMiddleware
+from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
+from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 from langchain.tools import InjectedState, InjectedToolCallId
 
@@ -175,8 +173,11 @@ def _get_subagents(
     default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]],
     subagents: list[DefinedSubAgent | CustomSubAgent],
 ) -> tuple[dict[str, Any], list[str]]:
+    from langchain.agents.factory import create_agent
+
     default_subagent_middleware = [
         PlanningMiddleware(),
+        FilesystemMiddleware(),
         SummarizationMiddleware(
             model=default_subagent_model,
             max_tokens_before_summary=120000,
