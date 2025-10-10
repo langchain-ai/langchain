@@ -180,8 +180,8 @@ class ContextEditingMiddleware(AgentMiddleware):
     """Middleware that automatically prunes tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count
-    exceeds configured thresholds. Currently the ``ClearToolUsesEdit`` strategy is
-    supported, aligning with Anthropic's ``clear_tool_uses_20250919`` behaviour.
+    exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is
+    supported, aligning with Anthropic's `clear_tool_uses_20250919` behaviour.
     """
 
     edits: list[ContextEdit]
@@ -206,13 +206,14 @@ class ContextEditingMiddleware(AgentMiddleware):
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
 
-    def modify_model_request(
+    def wrap_model_call(
         self,
         request: ModelRequest,
-    ) -> ModelRequest:
-        """Modify the model request by applying context edits before invocation."""
+        handler: Callable[[ModelRequest], AIMessage],
+    ) -> AIMessage:
+        """Apply context edits before invoking the model via handler."""
         if not request.messages:
-            return request
+            return handler(request)
 
         if self.token_count_method == "approximate":  # noqa: S105
 
@@ -231,7 +232,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         for edit in self.edits:
             edit.apply(request.messages, count_tokens=count_tokens)
 
-        return request
+        return handler(request)
 
 
 __all__ = [

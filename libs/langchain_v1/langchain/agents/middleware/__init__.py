@@ -4,7 +4,10 @@ from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
-from .human_in_the_loop import HumanInTheLoopMiddleware
+from .human_in_the_loop import (
+    HumanInTheLoopMiddleware,
+    InterruptOnConfig,
+)
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
@@ -24,8 +27,7 @@ from .types import (
     before_model,
     dynamic_prompt,
     hook_config,
-    modify_model_request,
-    on_model_call,
+    wrap_model_call,
 )
 
 __all__ = [
@@ -37,6 +39,7 @@ __all__ = [
     "ContextEditingMiddleware",
     "HumanInTheLoopMiddleware",
     "LLMToolEmulator",
+    "InterruptOnConfig",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
     "ModelFallbackMiddleware",
@@ -52,6 +55,5 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "modify_model_request",
-    "on_model_call",
+    "wrap_model_call",
 ]

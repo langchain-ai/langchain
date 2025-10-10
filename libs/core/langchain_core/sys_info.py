@@ -1,8 +1,4 @@
-"""**sys_info** implementation.
-
-sys_info prints information about the system and langchain packages for
-debugging purposes.
-"""
+"""Print information about the system and langchain packages for debugging purposes."""
 
 import pkgutil
 import platform
@@ -79,17 +75,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         "OS Version": platform.version(),
         "Python Version": sys.version,
     }
-    print()  # noqa: T201
-    print("System Information")  # noqa: T201
-    print("------------------")  # noqa: T201
-    print("> OS: ", system_info["OS"])  # noqa: T201
-    print("> OS Version: ", system_info["OS Version"])  # noqa: T201
-    print("> Python Version: ", system_info["Python Version"])  # noqa: T201
+    print()
+    print("System Information")
+    print("------------------")
+    print("> OS: ", system_info["OS"])
+    print("> OS Version: ", system_info["OS Version"])
+    print("> Python Version: ", system_info["Python Version"])
 
     # Print out only langchain packages
-    print()  # noqa: T201
-    print("Package Information")  # noqa: T201
-    print("-------------------")  # noqa: T201
+    print()
+    print("Package Information")
+    print("-------------------")
 
     not_installed = []
 
@@ -110,28 +106,28 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
 
         # Print package with version
         if package_version is not None:
-            print(f"> {pkg}: {package_version}")  # noqa: T201
+            print(f"> {pkg}: {package_version}")
 
     if not_installed:
-        print()  # noqa: T201
-        print("Optional packages not installed")  # noqa: T201
-        print("-------------------------------")  # noqa: T201
+        print()
+        print("Optional packages not installed")
+        print("-------------------------------")
         for pkg in not_installed:
-            print(f"> {pkg}")  # noqa: T201
+            print(f"> {pkg}")
 
     sub_dependencies = _get_sub_deps(all_packages)
 
     if sub_dependencies:
-        print()  # noqa: T201
-        print("Other Dependencies")  # noqa: T201
-        print("------------------")  # noqa: T201
+        print()
+        print("Other Dependencies")
+        print("------------------")
 
         for dep in sub_dependencies:
             try:
                 dep_version = metadata.version(dep)
-                print(f"> {dep}: {dep_version}")  # noqa: T201
+                print(f"> {dep}: {dep_version}")
             except Exception:
-                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
+                print(f"> {dep}: Installed. No version info available.")
 
 
 if __name__ == "__main__":

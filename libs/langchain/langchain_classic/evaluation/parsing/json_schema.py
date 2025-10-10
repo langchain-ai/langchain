@@ -13,9 +13,9 @@ class JsonSchemaEvaluator(StringEvaluator):
     If the prediction is valid, the score is True (no errors). Otherwise, the score is False (error occurred).
 
     Attributes:
-        requires_input (bool): Whether the evaluator requires input.
-        requires_reference (bool): Whether the evaluator requires reference.
-        evaluation_name (str): The name of the evaluation.
+        requires_input: Whether the evaluator requires input.
+        requires_reference: Whether the evaluator requires reference.
+        evaluation_name: The name of the evaluation.
 
     Examples:
         evaluator = JsonSchemaEvaluator()

@@ -82,83 +82,79 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """OpenAI embedding model integration.
 
     Setup:
-        Install ``langchain_openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain_openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain_openai
-            export OPENAI_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain_openai
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
     Key init args — embedding params:
         model: str
             Name of OpenAI model to use.
-        dimensions: Optional[int] = None
+        dimensions: int | None = None
             The number of dimensions the resulting output embeddings should have.
-            Only supported in ``'text-embedding-3'`` and later models.
+            Only supported in `'text-embedding-3'` and later models.
 
     Key init args — client params:
-        api_key: Optional[SecretStr] = None
+        api_key: SecretStr | None = None
             OpenAI API key.
-        organization: Optional[str] = None
+        organization: str | None = None
             OpenAI organization ID. If not passed in will be read
-            from env var ``OPENAI_ORG_ID``.
+            from env var `OPENAI_ORG_ID`.
         max_retries: int = 2
             Maximum number of retries to make when generating.
-        request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
+        request_timeout: float | Tuple[float, float] | Any | None = None
             Timeout for requests to OpenAI completion API
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_openai import OpenAIEmbeddings
-
-            embed = OpenAIEmbeddings(
-                model="text-embedding-3-large"
-                # With the `text-embedding-3` class
-                # of models, you can specify the size
-                # of the embeddings you want returned.
-                # dimensions=1024
-            )
+        embed = OpenAIEmbeddings(
+            model="text-embedding-3-large"
+            # With the `text-embedding-3` class
+            # of models, you can specify the size
+            # of the embeddings you want returned.
+            # dimensions=1024
+        )
+        ```
 
     Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            vector = embeddings.embed_query("hello")
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embeddings.embed_query("hello")
+        print(vector[:3])
+        ```
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
-
-            vectors = embeddings.embed_documents(["hello", "goodbye"])
-            # Showing only the first 3 coordinates
-            print(len(vectors))
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        vectors = embeddings.embed_documents(["hello", "goodbye"])
+        # Showing only the first 3 coordinates
+        print(len(vectors))
+        print(vectors[0][:3])
+        ```
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            await embed.aembed_query(input_text)
-            print(vector[:3])
-
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -196,14 +192,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
+    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: str | None = Field(
         alias="organization",
         default_factory=from_env(
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     allowed_special: Literal["all"] | set[str] | None = None
     disallowed_special: Literal["all"] | set[str] | Sequence[str] | None = None
     chunk_size: int = 1000
@@ -213,12 +209,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
+    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     None."""
     headers: Any = None
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the ``--extensions openai`` extension for ``text-generation-webui``"""
+    the `--extensions openai` extension for `text-generation-webui`"""
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -245,13 +241,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Any | None = None
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
-        ``http_async_client`` as well if you'd like a custom client for async
+    """Optional `httpx.Client`. Only used for sync invocations. Must specify
+        `http_async_client` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Any | None = None
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
+    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
+        `http_client` as well if you'd like a custom client for sync invocations."""
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
@@ -472,7 +468,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Args:
             texts (List[str]): A list of texts to embed.
             engine (str): The engine or model to use for embeddings.
-            chunk_size (Optional[int]): The size of chunks for processing embeddings.
+            chunk_size (int | None): The size of chunks for processing embeddings.
 
         Returns:
             List[List[float]]: A list of embeddings for each input text.
@@ -524,7 +520,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Args:
             texts (List[str]): A list of texts to embed.
             engine (str): The engine or model to use for embeddings.
-            chunk_size (Optional[int]): The size of chunks for processing embeddings.
+            chunk_size (int | None): The size of chunks for processing embeddings.
 
         Returns:
             List[List[float]]: A list of embeddings for each input text.

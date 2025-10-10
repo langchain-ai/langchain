@@ -20,7 +20,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Initialize callback handler.
 
         Args:
-            color: The color to use for the text. Defaults to `None`.
+            color: The color to use for the text.
         """
         self.color = color
 
@@ -31,9 +31,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we are entering a chain.
 
         Args:
-            serialized (dict[str, Any]): The serialized chain.
-            inputs (dict[str, Any]): The inputs to the chain.
-            **kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chain.
+            inputs: The inputs to the chain.
+            **kwargs: Additional keyword arguments.
         """
         if "name" in kwargs:
             name = kwargs["name"]
@@ -48,8 +48,8 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Print out that we finished a chain.
 
         Args:
-            outputs (dict[str, Any]): The outputs of the chain.
-            **kwargs (Any): Additional keyword arguments.
+            outputs: The outputs of the chain.
+            **kwargs: Additional keyword arguments.
         """
         print("\n\033[1m> Finished chain.\033[0m")  # noqa: T201
 
@@ -60,9 +60,9 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Run on agent action.
 
         Args:
-            action (AgentAction): The agent action.
-            color (Optional[str]): The color to use for the text. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments.
+            action: The agent action.
+            color: The color to use for the text.
+            **kwargs: Additional keyword arguments.
         """
         print_text(action.log, color=color or self.color)
 
@@ -78,12 +78,11 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """If not the final action, print out observation.
 
         Args:
-            output (Any): The output to print.
-            color (Optional[str]): The color to use for the text. Defaults to `None`.
-            observation_prefix (Optional[str]): The observation prefix.
-                Defaults to `None`.
-            llm_prefix (Optional[str]): The LLM prefix. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments.
+            output: The output to print.
+            color: The color to use for the text.
+            observation_prefix: The observation prefix.
+            llm_prefix: The LLM prefix.
+            **kwargs: Additional keyword arguments.
         """
         output = str(output)
         if observation_prefix is not None:
@@ -103,10 +102,10 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Run when the agent ends.
 
         Args:
-            text (str): The text to print.
-            color (Optional[str]): The color to use for the text. Defaults to `None`.
-            end (str): The end character to use. Defaults to "".
-            **kwargs (Any): Additional keyword arguments.
+            text: The text to print.
+            color: The color to use for the text.
+            end: The end character to use. Defaults to "".
+            **kwargs: Additional keyword arguments.
         """
         print_text(text, color=color or self.color, end=end)
 
@@ -117,8 +116,8 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         """Run on the agent end.
 
         Args:
-            finish (AgentFinish): The agent finish.
-            color (Optional[str]): The color to use for the text. Defaults to `None`.
-            **kwargs (Any): Additional keyword arguments.
+            finish: The agent finish.
+            color: The color to use for the text.
+            **kwargs: Additional keyword arguments.
         """
         print_text(finish.log, color=color or self.color, end="\n")

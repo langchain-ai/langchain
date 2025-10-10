@@ -7,7 +7,7 @@ from itertools import cycle
 from pydantic import BaseModel
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import AgentState, ModelRequest, modify_model_request
+from langchain.agents.middleware import AgentState, ModelRequest, wrap_model_call
 from langchain.agents.middleware import LLMToolSelectorMiddleware
 from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
@@ -110,12 +110,12 @@ class TestLLMToolSelectorBasic:
 
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             """Middleware to select relevant tools based on state/context."""
             # Select a small, relevant subset of tools based on state/context
             model_requests.append(request)
-            return request
+            return handler(request)
 
         tool_selection_model = FakeModel(
             messages=cycle(
@@ -215,10 +215,10 @@ class TestMaxToolsLimiting:
         """Test that max_tools limits selection when model selects too many tools."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector model tries to select 4 tools
         tool_selection_model = FakeModel(
@@ -270,10 +270,10 @@ class TestMaxToolsLimiting:
         """Test that when max_tools is None, all selected tools are used."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         tool_selection_model = FakeModel(
             messages=cycle(
@@ -332,10 +332,10 @@ class TestAlwaysInclude:
         """Test that always_include tools are always present in the request."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector picks only search_web
         tool_selection_model = FakeModel(
@@ -382,10 +382,10 @@ class TestAlwaysInclude:
         """Test that always_include tools don't count against max_tools limit."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector picks 2 tools
         tool_selection_model = FakeModel(
@@ -436,10 +436,10 @@ class TestAlwaysInclude:
         """Test that multiple always_include tools are all present."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector picks 1 tool
         tool_selection_model = FakeModel(
@@ -493,10 +493,10 @@ class TestDuplicateAndInvalidTools:
         """Test that duplicate tool selections are deduplicated."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector returns duplicates
         tool_selection_model = FakeModel(
@@ -546,10 +546,10 @@ class TestDuplicateAndInvalidTools:
         """Test that max_tools works correctly with duplicate selections."""
         model_requests = []
 
-        @modify_model_request
-        def trace_model_requests(request: ModelRequest) -> ModelRequest:
+        @wrap_model_call
+        def trace_model_requests(request, handler):
             model_requests.append(request)
-            return request
+            return handler(request)
 
         # Selector returns duplicates but max_tools=2
         tool_selection_model = FakeModel(

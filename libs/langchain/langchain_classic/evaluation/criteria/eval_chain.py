@@ -74,10 +74,10 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
         """Parse the output text.
 
         Args:
-            text (str): The output text to parse.
+            text: The output text to parse.
 
         Returns:
-            Dict: The parsed output.
+            The parsed output.
         """
         verdict = None
         score = None

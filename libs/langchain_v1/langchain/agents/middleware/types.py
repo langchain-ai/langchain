@@ -16,8 +16,6 @@ from typing import (
     overload,
 )
 
-from langchain_core.runnables import run_in_executor
-
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
@@ -52,8 +50,6 @@ __all__ = [
     "before_model",
     "dynamic_prompt",
     "hook_config",
-    "modify_model_request",
-    "on_model_call",
     "wrap_tool_call",
 ]
 
@@ -160,20 +156,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run before the model is called."""
 
-    def modify_model_request(
-        self,
-        request: ModelRequest,
-    ) -> ModelRequest:
-        """Logic to modify request kwargs before the model is called."""
-        return request
-
-    async def amodify_model_request(
-        self,
-        request: ModelRequest,
-    ) -> ModelRequest:
-        """Async logic to modify request kwargs before the model is called."""
-        return await run_in_executor(None, self.modify_model_request, request)
-
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called."""
 
@@ -182,7 +164,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
-    def on_model_call(
+    def wrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], AIMessage],
@@ -206,7 +188,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Retry on error:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
                         return handler(request)
@@ -217,14 +199,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Rewrite response:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 result = handler(request)
                 return AIMessage(content=f"[{result.content}]")
             ```
 
             Error to fallback:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 try:
                     return handler(request)
                 except Exception:
@@ -233,7 +215,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
             Cache/short-circuit:
             ```python
-            def on_model_call(self, request, handler):
+            def wrap_model_call(self, request, handler):
                 if cached := get_cache(request):
                     return cached  # Short-circuit with cached result
                 result = handler(request)
@@ -243,12 +225,12 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         raise NotImplementedError
 
-    async def aon_model_call(
+    async def awrap_model_call(
         self,
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[AIMessage]],
     ) -> AIMessage:
-        """Async version of on_model_call.
+        """Async version of wrap_model_call.
 
         Args:
             request: Model request to execute (includes state and runtime).
@@ -260,7 +242,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Retry on error:
             ```python
-            async def aon_model_call(self, request, handler):
+            async def awrap_model_call(self, request, handler):
                 for attempt in range(3):
                     try:
                         return await handler(request)
@@ -301,11 +283,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Each call to handler is independent and stateless.
 
         Examples:
-            Passthrough (execute once):
-
-            def wrap_tool_call(self, request, handler):
-                return handler(request)
-
             Modify request before execution:
 
             def wrap_tool_call(self, request, handler):
@@ -335,16 +312,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     if attempt < 2:
                         continue
                     return result
-
-            Access state and runtime:
-
-            def wrap_tool_call(self, request, handler):
-                # Access state from request
-                messages = request.state.get("messages", [])
-                # Access runtime from request
-                if request.runtime:
-                    thread_id = request.runtime.config.get("configurable", {}).get("thread_id")
-                return handler(request)
         """
         raise NotImplementedError
 
@@ -356,14 +323,6 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
         self, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state and runtime."""
-        ...
-
-
-class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable with ModelRequest as argument (contains state and runtime)."""
-
-    def __call__(self, request: ModelRequest) -> ModelRequest | Awaitable[ModelRequest]:
-        """Perform some logic with the model request."""
         ...
 
 
@@ -590,134 +549,6 @@ def before_model(
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "before_model": wrapped,
-            },
-        )()
-
-    if func is not None:
-        return decorator(func)
-    return decorator
-
-
-@overload
-def modify_model_request(
-    func: _CallableWithModelRequestAndStateAndRuntime[StateT, ContextT],
-) -> AgentMiddleware[StateT, ContextT]: ...
-
-
-@overload
-def modify_model_request(
-    func: None = None,
-    *,
-    state_schema: type[StateT] | None = None,
-    tools: list[BaseTool] | None = None,
-    name: str | None = None,
-) -> Callable[
-    [_CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]],
-    AgentMiddleware[StateT, ContextT],
-]: ...
-
-
-def modify_model_request(
-    func: _CallableWithModelRequestAndStateAndRuntime[StateT, ContextT] | None = None,
-    *,
-    state_schema: type[StateT] | None = None,
-    tools: list[BaseTool] | None = None,
-    name: str | None = None,
-) -> (
-    Callable[
-        [_CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]],
-        AgentMiddleware[StateT, ContextT],
-    ]
-    | AgentMiddleware[StateT, ContextT]
-):
-    r"""Decorator used to dynamically create a middleware with the modify_model_request hook.
-
-    Args:
-        func: The function to be decorated. Must accept:
-            `request: ModelRequest` - Model request (contains state and runtime)
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
-        tools: Optional list of additional tools to register with this middleware.
-        name: Optional name for the generated middleware class. If not provided,
-            uses the decorated function's name.
-
-    Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
-
-    The decorated function should return:
-        - `ModelRequest` - The modified model request to be sent to the language model
-
-    Examples:
-        Basic usage to modify system prompt:
-        ```python
-        @modify_model_request
-        def add_context_to_prompt(request: ModelRequest) -> ModelRequest:
-            if request.system_prompt:
-                request.system_prompt += "\n\nAdditional context: ..."
-            else:
-                request.system_prompt = "Additional context: ..."
-            return request
-        ```
-
-        Usage with runtime and custom model settings:
-        ```python
-        @modify_model_request
-        def dynamic_model_settings(request: ModelRequest) -> ModelRequest:
-            # Use a different model based on user subscription tier
-            if request.runtime.context.get("subscription_tier") == "premium":
-                request.model = "gpt-4o"
-            else:
-                request.model = "gpt-4o-mini"
-
-            return request
-        ```
-    """
-
-    def decorator(
-        func: _CallableWithModelRequestAndStateAndRuntime[StateT, ContextT],
-    ) -> AgentMiddleware[StateT, ContextT]:
-        is_async = iscoroutinefunction(func)
-
-        if is_async:
-
-            async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-                request: ModelRequest,
-            ) -> ModelRequest:
-                return await func(request)  # type: ignore[misc]
-
-            middleware_name = name or cast(
-                "str", getattr(func, "__name__", "ModifyModelRequestMiddleware")
-            )
-
-            return type(
-                middleware_name,
-                (AgentMiddleware,),
-                {
-                    "state_schema": state_schema or AgentState,
-                    "tools": tools or [],
-                    "amodify_model_request": async_wrapped,
-                },
-            )()
-
-        def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
-            request: ModelRequest,
-        ) -> ModelRequest:
-            return func(request)  # type: ignore[return-value]
-
-        middleware_name = name or cast(
-            "str", getattr(func, "__name__", "ModifyModelRequestMiddleware")
-        )
-
-        return type(
-            middleware_name,
-            (AgentMiddleware,),
-            {
-                "state_schema": state_schema or AgentState,
-                "tools": tools or [],
-                "modify_model_request": wrapped,
             },
         )()
 
@@ -1156,7 +987,7 @@ def dynamic_prompt(
 ):
     """Decorator used to dynamically generate system prompts for the model.
 
-    This is a convenience decorator that creates middleware using `modify_model_request`
+    This is a convenience decorator that creates middleware using `wrap_model_call`
     specifically for dynamic prompt generation. The decorated function should return
     a string that will be set as the system prompt for the model request.
 
@@ -1206,10 +1037,11 @@ def dynamic_prompt(
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 request: ModelRequest,
-            ) -> ModelRequest:
+                handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+            ) -> AIMessage:
                 prompt = await func(request)  # type: ignore[misc]
                 request.system_prompt = prompt
-                return request
+                return await handler(request)
 
             middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
@@ -1219,17 +1051,18 @@ def dynamic_prompt(
                 {
                     "state_schema": AgentState,
                     "tools": [],
-                    "amodify_model_request": async_wrapped,
+                    "awrap_model_call": async_wrapped,
                 },
             )()
 
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
             request: ModelRequest,
-        ) -> ModelRequest:
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             prompt = cast("str", func(request))
             request.system_prompt = prompt
-            return request
+            return handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
@@ -1239,7 +1072,7 @@ def dynamic_prompt(
             {
                 "state_schema": AgentState,
                 "tools": [],
-                "modify_model_request": wrapped,
+                "wrap_model_call": wrapped,
             },
         )()
 
@@ -1249,13 +1082,13 @@ def dynamic_prompt(
 
 
 @overload
-def on_model_call(
+def wrap_model_call(
     func: _CallableReturningModelResponse[StateT, ContextT],
 ) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
-def on_model_call(
+def wrap_model_call(
     func: None = None,
     *,
     state_schema: type[StateT] | None = None,
@@ -1267,7 +1100,7 @@ def on_model_call(
 ]: ...
 
 
-def on_model_call(
+def wrap_model_call(
     func: _CallableReturningModelResponse[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
@@ -1280,7 +1113,7 @@ def on_model_call(
     ]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Create middleware with on_model_call hook from a function.
+    """Create middleware with wrap_model_call hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     model calls, implement retry logic, handle errors, and rewrite responses.
@@ -1298,7 +1131,7 @@ def on_model_call(
     Examples:
         Basic retry logic:
         ```python
-        @on_model_call
+        @wrap_model_call
         def retry_on_error(request, handler):
             max_retries = 3
             for attempt in range(max_retries):
@@ -1311,7 +1144,7 @@ def on_model_call(
 
         Model fallback:
         ```python
-        @on_model_call
+        @wrap_model_call
         def fallback_model(request, handler):
             # Try primary model
             try:
@@ -1326,7 +1159,7 @@ def on_model_call(
 
         Rewrite response content:
         ```python
-        @on_model_call
+        @wrap_model_call
         def uppercase_responses(request, handler):
             result = handler(request)
             return AIMessage(content=result.content.upper())
@@ -1348,7 +1181,7 @@ def on_model_call(
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
-                "str", getattr(func, "__name__", "OnModelCallMiddleware")
+                "str", getattr(func, "__name__", "WrapModelCallMiddleware")
             )
 
             return type(
@@ -1357,7 +1190,7 @@ def on_model_call(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "aon_model_call": async_wrapped,
+                    "awrap_model_call": async_wrapped,
                 },
             )()
 
@@ -1368,7 +1201,7 @@ def on_model_call(
         ) -> AIMessage:
             return func(request, handler)
 
-        middleware_name = name or cast("str", getattr(func, "__name__", "OnModelCallMiddleware"))
+        middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
 
         return type(
             middleware_name,
@@ -1376,7 +1209,7 @@ def on_model_call(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "on_model_call": wrapped,
+                "wrap_model_call": wrapped,
             },
         )()
 

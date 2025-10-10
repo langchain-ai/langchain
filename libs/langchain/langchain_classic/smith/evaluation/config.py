@@ -136,9 +136,9 @@ class RunEvalConfig(BaseModel):
 
         Parameters
         ----------
-        criteria : Optional[CRITERIA_TYPE]
+        criteria : CRITERIA_TYPE | None
             The criteria to evaluate.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
 
         """
@@ -152,9 +152,9 @@ class RunEvalConfig(BaseModel):
 
         Parameters
         ----------
-        criteria : Optional[CRITERIA_TYPE]
+        criteria : CRITERIA_TYPE | None
             The criteria to evaluate.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
         """
 
@@ -212,7 +212,7 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
         """
 
@@ -227,7 +227,7 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
 
         """
@@ -243,7 +243,7 @@ class RunEvalConfig(BaseModel):
         ----------
         prompt : Optional[BasePromptTemplate]
             The prompt template to use for generating the question.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
 
         """
@@ -311,11 +311,11 @@ class RunEvalConfig(BaseModel):
 
         Parameters
         ----------
-        criteria : Optional[CRITERIA_TYPE]
+        criteria : CRITERIA_TYPE | None
             The criteria to evaluate.
-        llm : Optional[BaseLanguageModel]
+        llm : BaseLanguageModel | None
             The language model to use for the evaluation chain.
-        normalize_by: Optional[int] = None
+        normalize_by: int | None = None
             If you want to normalize the score, the denominator to use.
             If not provided, the score will be between 1 and 10 (by default).
         prompt : Optional[BasePromptTemplate]

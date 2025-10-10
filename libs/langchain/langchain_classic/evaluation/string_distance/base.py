@@ -153,11 +153,11 @@ class _RapidFuzzChainMixin(Chain):
         """Compute the distance between two strings.
 
         Args:
-            a (str): The first string.
-            b (str): The second string.
+            a: The first string.
+            b: The second string.
 
         Returns:
-            float: The distance between the two strings.
+            The distance between the two strings.
         """
         return self.metric(a, b)
 
@@ -221,12 +221,11 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Compute the string distance between the prediction and the reference.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (Optional[CallbackManagerForChainRun]):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
@@ -239,12 +238,11 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Compute the string distance between the prediction and the reference.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (Optional[CallbackManagerForChainRun]):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 

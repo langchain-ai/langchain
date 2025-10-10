@@ -15,26 +15,25 @@ class LocalFileStore(ByteStore):
     Examples:
         Create a LocalFileStore instance and perform operations on it:
 
-        .. code-block:: python
+        ```python
+        from langchain_classic.storage import LocalFileStore
 
-            from langchain_classic.storage import LocalFileStore
+        # Instantiate the LocalFileStore with the root path
+        file_store = LocalFileStore("/path/to/root")
 
-            # Instantiate the LocalFileStore with the root path
-            file_store = LocalFileStore("/path/to/root")
+        # Set values for keys
+        file_store.mset([("key1", b"value1"), ("key2", b"value2")])
 
-            # Set values for keys
-            file_store.mset([("key1", b"value1"), ("key2", b"value2")])
+        # Get values for keys
+        values = file_store.mget(["key1", "key2"])  # Returns [b"value1", b"value2"]
 
-            # Get values for keys
-            values = file_store.mget(["key1", "key2"])  # Returns [b"value1", b"value2"]
+        # Delete keys
+        file_store.mdelete(["key1"])
 
-            # Delete keys
-            file_store.mdelete(["key1"])
-
-            # Iterate over keys
-            for key in file_store.yield_keys():
-                print(key)  # noqa: T201
-
+        # Iterate over keys
+        for key in file_store.yield_keys():
+            print(key)  # noqa: T201
+        ```
     """
 
     def __init__(
@@ -163,7 +162,7 @@ class LocalFileStore(ByteStore):
         """Get an iterator over keys that match the given prefix.
 
         Args:
-            prefix (Optional[str]): The prefix to match.
+            prefix (str | None): The prefix to match.
 
         Returns:
             Iterator[str]: An iterator over keys that match the given prefix.

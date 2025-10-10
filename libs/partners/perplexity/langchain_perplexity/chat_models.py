@@ -63,28 +63,28 @@ class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     Setup:
-        To use, you should have the environment variable ``PPLX_API_KEY`` set to your API key.
+        To use, you should have the environment variable `PPLX_API_KEY` set to your API key.
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
-        .. code-block:: bash
-
-            export PPLX_API_KEY=your_api_key
+        ```bash
+        export PPLX_API_KEY=your_api_key
+        ```
 
         Key init args - completion params:
             model: str
                 Name of the model to use. e.g. "sonar"
             temperature: float
                 Sampling temperature to use. Default is 0.7
-            max_tokens: Optional[int]
+            max_tokens: int | None
                 Maximum number of tokens to generate.
             streaming: bool
                 Whether to stream the results or not.
 
         Key init args - client params:
-            pplx_api_key: Optional[str]
+            pplx_api_key: str | None
                 API key for PerplexityChat API. Default is None.
-            request_timeout: Optional[Union[float, Tuple[float, float]]]
+            request_timeout: float | Tuple[float, float] | None
                 Timeout for requests to PerplexityChat completion API. Default is None.
             max_retries: int
                 Maximum number of retries to make when generating.
@@ -92,55 +92,58 @@ class ChatPerplexity(BaseChatModel):
         See full list of supported init args and their descriptions in the params section.
 
         Instantiate:
-            .. code-block:: python
 
-                from langchain_perplexity import ChatPerplexity
+        ```python
+        from langchain_perplexity import ChatPerplexity
 
-                llm = ChatPerplexity(model="sonar", temperature=0.7)
+        llm = ChatPerplexity(model="sonar", temperature=0.7)
+        ```
 
         Invoke:
-            .. code-block:: python
 
-                messages = [("system", "You are a chatbot."), ("user", "Hello!")]
-                llm.invoke(messages)
+        ```python
+        messages = [("system", "You are a chatbot."), ("user", "Hello!")]
+        llm.invoke(messages)
+        ```
 
         Invoke with structured output:
-            .. code-block:: python
 
-                from pydantic import BaseModel
-
-
-                class StructuredOutput(BaseModel):
-                    role: str
-                    content: str
+        ```python
+        from pydantic import BaseModel
 
 
-                llm.with_structured_output(StructuredOutput)
-                llm.invoke(messages)
+        class StructuredOutput(BaseModel):
+            role: str
+            content: str
+
+
+        llm.with_structured_output(StructuredOutput)
+        llm.invoke(messages)
+        ```
 
         Invoke with perplexity-specific params:
-            .. code-block:: python
 
-                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```python
+        llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```
 
         Stream:
-            .. code-block:: python
-
-                for chunk in llm.stream(messages):
-                    print(chunk.content)
+        ```python
+        for chunk in llm.stream(messages):
+            print(chunk.content)
+        ```
 
         Token usage:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.usage_metadata
+        ```python
+        response = llm.invoke(messages)
+        response.usage_metadata
+        ```
 
         Response metadata:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.response_metadata
-
+        ```python
+        response = llm.invoke(messages)
+        response.response_metadata
+        ```
     """  # noqa: E501
 
     client: Any = None  #: :meta private:
@@ -405,7 +408,7 @@ class ChatPerplexity(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
         Currently, Perplexity only supports "json_schema" method for structured output
-        as per their `official documentation <https://docs.perplexity.ai/guides/structured-outputs>`__.
+        as per their [official documentation](https://docs.perplexity.ai/guides/structured-outputs).
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -416,7 +419,7 @@ class ChatPerplexity(BaseChatModel):
 
             method: The method for steering model generation, currently only support:
 
-                - ``'json_schema'``: Use the JSON Schema to parse the model output
+                - `'json_schema'`: Use the JSON Schema to parse the model output
 
 
             include_raw:
@@ -425,7 +428,7 @@ class ChatPerplexity(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 Unsupported: whether to enable strict schema adherence when generating
@@ -437,14 +440,14 @@ class ChatPerplexity(BaseChatModel):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):

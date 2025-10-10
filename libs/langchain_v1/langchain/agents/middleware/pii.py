@@ -417,17 +417,17 @@ class PIIMiddleware(AgentMiddleware):
     MAC addresses, and URLs in both user input and agent output.
 
     Built-in PII types:
-        - ``email``: Email addresses
-        - ``credit_card``: Credit card numbers (validated with Luhn algorithm)
-        - ``ip``: IP addresses (validated with stdlib)
-        - ``mac_address``: MAC addresses
-        - ``url``: URLs (both http/https and bare URLs)
+        - `email`: Email addresses
+        - `credit_card`: Credit card numbers (validated with Luhn algorithm)
+        - `ip`: IP addresses (validated with stdlib)
+        - `mac_address`: MAC addresses
+        - `url`: URLs (both http/https and bare URLs)
 
     Strategies:
-        - ``block``: Raise an exception when PII is detected
-        - ``redact``: Replace PII with ``[REDACTED_TYPE]`` placeholders
-        - ``mask``: Partially mask PII (e.g., ``****-****-****-1234`` for credit card)
-        - ``hash``: Replace PII with deterministic hash (e.g., ``<email_hash:a1b2c3d4>``)
+        - `block`: Raise an exception when PII is detected
+        - `redact`: Replace PII with `[REDACTED_TYPE]` placeholders
+        - `mask`: Partially mask PII (e.g., `****-****-****-1234` for credit card)
+        - `hash`: Replace PII with deterministic hash (e.g., `<email_hash:a1b2c3d4>`)
 
     Strategy Selection Guide:
 
@@ -487,19 +487,19 @@ class PIIMiddleware(AgentMiddleware):
 
         Args:
             pii_type: Type of PII to detect. Can be a built-in type
-                (``email``, ``credit_card``, ``ip``, ``mac_address``, ``url``)
+                (`email`, `credit_card`, `ip`, `mac_address`, `url`)
                 or a custom type name.
             strategy: How to handle detected PII:
 
-                * ``block``: Raise PIIDetectionError when PII is detected
-                * ``redact``: Replace with ``[REDACTED_TYPE]`` placeholders
-                * ``mask``: Partially mask PII (show last few characters)
-                * ``hash``: Replace with deterministic hash (format: ``<type_hash:digest>``)
+                * `block`: Raise PIIDetectionError when PII is detected
+                * `redact`: Replace with `[REDACTED_TYPE]` placeholders
+                * `mask`: Partially mask PII (show last few characters)
+                * `hash`: Replace with deterministic hash (format: `<type_hash:digest>`)
 
             detector: Custom detector function or regex pattern.
 
-                * If ``Callable``: Function that takes content string and returns
-                  list of PIIMatch objects
+                * If `Callable`: Function that takes content string and returns
+                    list of PIIMatch objects
                 * If `str`: Regex pattern to match PII
                 * If `None`: Uses built-in detector for the pii_type
 

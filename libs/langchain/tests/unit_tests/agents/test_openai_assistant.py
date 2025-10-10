@@ -36,7 +36,7 @@ def test_user_supplied_client() -> None:
 @pytest.mark.requires("openai")
 @patch(
     "langchain_classic.agents.openai_assistant.base._get_openai_client",
-    new=partial(_create_mock_client, use_async=False),
+    _create_mock_client,
 )
 def test_create_assistant() -> None:
     assistant = OpenAIAssistantRunnable.create_assistant(
@@ -51,7 +51,7 @@ def test_create_assistant() -> None:
 @pytest.mark.requires("openai")
 @patch(
     "langchain_classic.agents.openai_assistant.base._get_openai_async_client",
-    new=partial(_create_mock_client, use_async=True),
+    partial(_create_mock_client, use_async=True),
 )
 async def test_ainvoke_uses_async_response_completed() -> None:
     # Arrange a runner with mocked async client and a completed run
@@ -93,7 +93,7 @@ async def test_ainvoke_uses_async_response_completed() -> None:
 @pytest.mark.requires("openai")
 @patch(
     "langchain_classic.agents.openai_assistant.base._get_openai_async_client",
-    new=partial(_create_mock_client, use_async=True),
+    partial(_create_mock_client, use_async=True),
 )
 async def test_ainvoke_uses_async_response_requires_action_agent() -> None:
     # Arrange a runner with mocked async client and requires_action run
@@ -130,7 +130,7 @@ async def test_ainvoke_uses_async_response_requires_action_agent() -> None:
 @pytest.mark.requires("openai")
 @patch(
     "langchain_classic.agents.openai_assistant.base._get_openai_async_client",
-    new=partial(_create_mock_client, use_async=True),
+    partial(_create_mock_client, use_async=True),
 )
 async def test_acreate_assistant() -> None:
     assistant = await OpenAIAssistantRunnable.acreate_assistant(

@@ -31,65 +31,65 @@ def custom_tool(*args: Any, **kwargs: Any) -> Any:
 
     See below for an example using LangGraph:
 
-    .. code-block:: python
+    ```python
+    @custom_tool
+    def execute_code(code: str) -> str:
+        \"\"\"Execute python code.\"\"\"
+        return "27"
 
-        @custom_tool
-        def execute_code(code: str) -> str:
-            \"\"\"Execute python code.\"\"\"
-            return "27"
 
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
 
-        llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    agent = create_react_agent(llm, [execute_code])
 
-        agent = create_react_agent(llm, [execute_code])
-
-        input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
-        for step in agent.stream(
-            {"messages": [input_message]},
-            stream_mode="values",
-        ):
-            step["messages"][-1].pretty_print()
+    input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
+    for step in agent.stream(
+        {"messages": [input_message]},
+        stream_mode="values",
+    ):
+        step["messages"][-1].pretty_print()
+    ```
 
     You can also specify a format for a corresponding context-free grammar using the
-    ``format`` kwarg:
+    `format` kwarg:
 
-    .. code-block:: python
+    ```python
+    from langchain_openai import ChatOpenAI, custom_tool
+    from langgraph.prebuilt import create_react_agent
 
-        from langchain_openai import ChatOpenAI, custom_tool
-        from langgraph.prebuilt import create_react_agent
+    grammar = \"\"\"
+    start: expr
+    expr: term (SP ADD SP term)* -> add
+    | term
+    term: factor (SP MUL SP factor)* -> mul
+    | factor
+    factor: INT
+    SP: " "
+    ADD: "+"
+    MUL: "*"
+    %import common.INT
+    \"\"\"
 
-        grammar = \"\"\"
-        start: expr
-        expr: term (SP ADD SP term)* -> add
-        | term
-        term: factor (SP MUL SP factor)* -> mul
-        | factor
-        factor: INT
-        SP: " "
-        ADD: "+"
-        MUL: "*"
-        %import common.INT
-        \"\"\"
+    format = {"type": "grammar", "syntax": "lark", "definition": grammar}
 
-        format = {"type": "grammar", "syntax": "lark", "definition": grammar}
-
-        # highlight-next-line
-        @custom_tool(format=format)
-        def do_math(input_string: str) -> str:
-            \"\"\"Do a mathematical operation.\"\"\"
-            return "27"
+    # highlight-next-line
+    @custom_tool(format=format)
+    def do_math(input_string: str) -> str:
+        \"\"\"Do a mathematical operation.\"\"\"
+        return "27"
 
 
-        llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
 
-        agent = create_react_agent(llm, [do_math])
+    agent = create_react_agent(llm, [do_math])
 
-        input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
-        for step in agent.stream(
-            {"messages": [input_message]},
-            stream_mode="values",
-        ):
-            step["messages"][-1].pretty_print()
+    input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
+    for step in agent.stream(
+        {"messages": [input_message]},
+        stream_mode="values",
+    ):
+        step["messages"][-1].pretty_print()
+    ```
     """
 
     def decorator(func: Callable[..., Any]) -> Any:

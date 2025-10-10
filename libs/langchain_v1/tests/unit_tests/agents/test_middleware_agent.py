@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Awaitable, Callable
 from types import ModuleType
 from typing import Any
 from unittest.mock import patch
@@ -28,7 +29,7 @@ from syrupy.assertion import SnapshotAssertion
 from typing_extensions import Annotated
 
 from langchain.agents.middleware.human_in_the_loop import (
-    ActionRequest,
+    Action,
     HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.planning import (
@@ -114,8 +115,12 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def modify_model_request(self, request):
-            pass
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            return handler(request)
 
         def after_model(self, state, runtime):
             pass
@@ -124,8 +129,12 @@ def test_create_agent_diagram(
         def before_model(self, state, runtime):
             pass
 
-        def modify_model_request(self, request):
-            pass
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            return handler(request)
 
         def after_model(self, state, runtime):
             pass
@@ -248,9 +257,13 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopSeven.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopSeven.wrap_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -259,9 +272,13 @@ def test_create_agent_invoke(
         def before_model(self, state, runtime):
             calls.append("NoopEight.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopEight.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopEight.wrap_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -317,15 +334,15 @@ def test_create_agent_invoke(
     assert calls == [
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.modify_model_request",
-        "NoopEight.modify_model_request",
+        "NoopSeven.wrap_model_call",
+        "NoopEight.wrap_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
         "my_tool",
         "NoopSeven.before_model",
         "NoopEight.before_model",
-        "NoopSeven.modify_model_request",
-        "NoopEight.modify_model_request",
+        "NoopSeven.wrap_model_call",
+        "NoopEight.wrap_model_call",
         "NoopEight.after_model",
         "NoopSeven.after_model",
     ]
@@ -341,9 +358,13 @@ def test_create_agent_jump(
         def before_model(self, state, runtime):
             calls.append("NoopSeven.before_model")
 
-        def modify_model_request(self, request):
-            calls.append("NoopSeven.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopSeven.wrap_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopSeven.after_model")
@@ -354,9 +375,13 @@ def test_create_agent_jump(
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("NoopEight.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("NoopEight.wrap_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime):
             calls.append("NoopEight.after_model")
@@ -438,14 +463,12 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
-        },
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
     )
 
     assert middleware.interrupt_on == {
-        "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        "test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
     }
     assert middleware.description_prefix == "Custom prefix"
 
@@ -454,9 +477,7 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     # Test with no messages
@@ -483,9 +504,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -495,7 +514,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "accept", "args": None}]
+        return {"decisions": [{"type": "approve"}]}
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state, None)
@@ -518,9 +537,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -530,15 +547,17 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_edit(requests):
-        return [
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="test_tool",
-                    args={"input": "edited"},
-                ),
-            }
-        ]
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        arguments={"input": "edited"},
+                    ),
+                }
+            ]
+        }
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit):
         result = middleware.after_model(state, None)
@@ -553,9 +572,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -565,7 +582,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_response(requests):
-        return [{"type": "response", "args": "Custom response message"}]
+        return {"decisions": [{"type": "reject", "message": "Custom response message"}]}
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
@@ -586,8 +603,8 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
-            "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
-            "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
+            "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "get_temperature": {"allowed_decisions": ["approve", "edit", "reject"]},
         }
     )
 
@@ -601,10 +618,12 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
 
     def mock_mixed_responses(requests):
-        return [
-            {"type": "accept", "args": None},
-            {"type": "response", "args": "User rejected this tool call"},
-        ]
+        return {
+            "decisions": [
+                {"type": "approve"},
+                {"type": "reject", "message": "User rejected this tool call"},
+            ]
+        }
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
@@ -634,8 +653,8 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
-            "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
-            "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
+            "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
+            "get_temperature": {"allowed_decisions": ["approve", "edit", "reject"]},
         }
     )
 
@@ -649,22 +668,24 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
 
     def mock_edit_responses(requests):
-        return [
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="get_forecast",
-                    args={"location": "New York"},
-                ),
-            },
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="get_temperature",
-                    args={"location": "New York"},
-                ),
-            },
-        ]
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="get_forecast",
+                        arguments={"location": "New York"},
+                    ),
+                },
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="get_temperature",
+                        arguments={"location": "New York"},
+                    ),
+                },
+            ]
+        }
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit_responses
@@ -685,9 +706,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -697,15 +716,17 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_edit_with_args(requests):
-        return [
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="test_tool",
-                    args={"input": "modified"},
-                ),
-            }
-        ]
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        arguments={"input": "modified"},
+                    ),
+                }
+            ]
+        }
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
@@ -725,9 +746,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -737,12 +756,12 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_unknown(requests):
-        return [{"type": "unknown", "args": None}]
+        return {"decisions": [{"type": "unknown"}]}
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human response: {'type': 'unknown', 'args': None}. Response action 'unknown' is not allowed for tool 'test_tool'. Expected one of \['accept', 'edit', 'response'\] based on the tool's configuration.",
+            match=r"Unexpected human decision: {'type': 'unknown'}. Decision type 'unknown' is not allowed for tool 'test_tool'. Expected one of \['approve', 'edit', 'reject'\] based on the tool's configuration.",
         ):
             middleware.after_model(state, None)
 
@@ -752,9 +771,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
 
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_respond": True, "allow_edit": False, "allow_accept": True}
-        }
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -764,15 +781,17 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_disallowed_action(requests):
-        return [
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="test_tool",
-                    args={"input": "modified"},
-                ),
-            }
-        ]
+        return {
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        arguments={"input": "modified"},
+                    ),
+                }
+            ]
+        }
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
@@ -780,7 +799,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human response: {'type': 'edit', 'args': {'action': 'test_tool', 'args': {'input': 'modified'}}}. Response action 'edit' is not allowed for tool 'test_tool'. Expected one of \['accept', 'response'\] based on the tool's configuration.",
+            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'arguments': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
         ):
             middleware.after_model(state, None)
 
@@ -789,9 +808,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "interrupt_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
-        }
+        interrupt_on={"interrupt_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
 
     ai_message = AIMessage(
@@ -804,7 +821,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "accept", "args": None}]
+        return {"decisions": [{"type": "approve"}]}
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state, None)
@@ -823,9 +840,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
 
     middleware = HumanInTheLoopMiddleware(
-        interrupt_on={
-            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
-        },
+        interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
     )
 
@@ -835,31 +850,34 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
-    captured_requests = []
+    captured_request = None
 
-    def mock_capture_requests(requests):
-        captured_requests.extend(requests)
-        return [{"type": "accept", "args": None}]
+    def mock_capture_requests(request):
+        nonlocal captured_request
+        captured_request = request
+        return {"decisions": [{"type": "approve"}]}
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
     ):
         middleware.after_model(state, None)
 
-        assert len(captured_requests) == 1
-        request = captured_requests[0]
+        assert captured_request is not None
+        assert "action_requests" in captured_request
+        assert "review_configs" in captured_request
 
-        assert "action_request" in request
-        assert "config" in request
-        assert "description" in request
+        assert len(captured_request["action_requests"]) == 1
+        action_request = captured_request["action_requests"][0]
+        assert action_request["name"] == "test_tool"
+        assert action_request["arguments"] == {"input": "test", "location": "SF"}
+        assert "Custom prefix" in action_request["description"]
+        assert "Tool: test_tool" in action_request["description"]
+        assert "Args: {'input': 'test', 'location': 'SF'}" in action_request["description"]
 
-        assert request["action_request"]["action"] == "test_tool"
-        assert request["action_request"]["args"] == {"input": "test", "location": "SF"}
-        expected_config = {"allow_accept": True, "allow_edit": True, "allow_respond": True}
-        assert request["config"] == expected_config
-        assert "Custom prefix" in request["description"]
-        assert "Tool: test_tool" in request["description"]
-        assert "Args: {'input': 'test', 'location': 'SF'}" in request["description"]
+        assert len(captured_request["review_configs"]) == 1
+        review_config = captured_request["review_configs"][0]
+        assert review_config["action_name"] == "test_tool"
+        assert review_config["allowed_decisions"] == ["approve", "edit", "reject"]
 
 
 def test_human_in_the_loop_middleware_boolean_configs() -> None:
@@ -875,7 +893,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     # Test accept
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "accept", "args": None}],
+        return_value={"decisions": [{"type": "approve"}]},
     ):
         result = middleware.after_model(state, None)
         assert result is not None
@@ -886,15 +904,17 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     # Test edit
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[
-            {
-                "type": "edit",
-                "args": ActionRequest(
-                    action="test_tool",
-                    args={"input": "edited"},
-                ),
-            }
-        ],
+        return_value={
+            "decisions": [
+                {
+                    "type": "edit",
+                    "edited_action": Action(
+                        name="test_tool",
+                        arguments={"input": "edited"},
+                    ),
+                }
+            ]
+        },
     ):
         result = middleware.after_model(state, None)
         assert result is not None
@@ -922,25 +942,27 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     # Test with too few responses
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[],  # No responses for 1 tool call
+        return_value={"decisions": []},  # No responses for 1 tool call
     ):
         with pytest.raises(
             ValueError,
-            match=r"Number of human responses \(0\) does not match number of hanging tool calls \(1\)\.",
+            match=r"Number of human decisions \(0\) does not match number of hanging tool calls \(1\)\.",
         ):
             middleware.after_model(state, None)
 
     # Test with too many responses
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[
-            {"type": "accept", "args": None},
-            {"type": "accept", "args": None},
-        ],  # 2 responses for 1 tool call
+        return_value={
+            "decisions": [
+                {"type": "approve"},
+                {"type": "approve"},
+            ]
+        },  # 2 responses for 1 tool call
     ):
         with pytest.raises(
             ValueError,
-            match=r"Number of human responses \(2\) does not match number of hanging tool calls \(1\)\.",
+            match=r"Number of human decisions \(2\) does not match number of hanging tool calls \(1\)\.",
         ):
             middleware.after_model(state, None)
 
@@ -954,8 +976,14 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
 
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
-            "tool_with_callable": {"allow_accept": True, "description": custom_description},
-            "tool_with_string": {"allow_accept": True, "description": "Static description"},
+            "tool_with_callable": {
+                "allowed_decisions": ["approve"],
+                "description": custom_description,
+            },
+            "tool_with_string": {
+                "allowed_decisions": ["approve"],
+                "description": "Static description",
+            },
         }
     )
 
@@ -968,26 +996,30 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
-    captured_requests = []
+    captured_request = None
 
-    def mock_capture_requests(requests):
-        captured_requests.extend(requests)
-        return [{"type": "accept"}, {"type": "accept"}]
+    def mock_capture_requests(request):
+        nonlocal captured_request
+        captured_request = request
+        return {"decisions": [{"type": "approve"}, {"type": "approve"}]}
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
     ):
         middleware.after_model(state, None)
 
-        assert len(captured_requests) == 2
+        assert captured_request is not None
+        assert "action_requests" in captured_request
+        assert len(captured_request["action_requests"]) == 2
 
         # Check callable description
         assert (
-            captured_requests[0]["description"] == "Custom: tool_with_callable with args {'x': 1}"
+            captured_request["action_requests"][0]["description"]
+            == "Custom: tool_with_callable with args {'x': 1}"
         )
 
         # Check string description
-        assert captured_requests[1]["description"] == "Static description"
+        assert captured_request["action_requests"][1]["description"] == "Static description"
 
 
 # Tests for AnthropicPromptCachingMiddleware
@@ -1019,9 +1051,12 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         model_settings={},
     )
 
-    assert middleware.modify_model_request(fake_request).model_settings == {
-        "cache_control": {"type": "ephemeral", "ttl": "5m"}
-    }
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response", **req.model_settings)
+
+    result = middleware.wrap_model_call(fake_request, mock_handler)
+    # Check that model_settings were passed through via the request
+    assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
 
 
 def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
@@ -1042,11 +1077,14 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
 
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
     with pytest.raises(
         ValueError,
         match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
     ):
-        middleware.modify_model_request(fake_request)
+        middleware.wrap_model_call(fake_request, mock_handler)
 
     langchain_anthropic = ModuleType("langchain_anthropic")
 
@@ -1060,23 +1098,23 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
             ValueError,
             match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
         ):
-            middleware.modify_model_request(fake_request)
+            middleware.wrap_model_call(fake_request, mock_handler)
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
 
     with warnings.catch_warnings(record=True) as w:
-        result = middleware.modify_model_request(fake_request)
+        result = middleware.wrap_model_call(fake_request, mock_handler)
         assert len(w) == 1
         assert (
             "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
             in str(w[-1].message)
         )
-        assert result == fake_request
+        assert isinstance(result, AIMessage)
 
     with warnings.catch_warnings(record=True) as w:
         with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.modify_model_request(fake_request)
-            assert result is fake_request
+            result = middleware.wrap_model_call(fake_request, mock_handler)
+            assert isinstance(result, AIMessage)
             assert len(w) == 1
             assert (
                 "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
@@ -1085,12 +1123,12 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
-    result = middleware.modify_model_request(fake_request)
-    assert result is fake_request
+    result = middleware.wrap_model_call(fake_request, mock_handler)
+    assert isinstance(result, AIMessage)
 
     with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.modify_model_request(fake_request)
-        assert result is fake_request
+        result = middleware.wrap_model_call(fake_request, mock_handler)
+        assert isinstance(result, AIMessage)
 
 
 # Tests for SummarizationMiddleware
@@ -1310,11 +1348,15 @@ def test_summarization_middleware_full_workflow() -> None:
     assert "Generated summary" in summary_message.content
 
 
-def test_modify_model_request() -> None:
+def test_on_model_call() -> None:
     class ModifyMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             request.messages.append(HumanMessage("remember to be nice!"))
-            return request
+            return handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -1444,9 +1486,13 @@ def test_runtime_injected_into_middleware() -> None:
             assert runtime is not None
             return None
 
-        def modify_model_request(self, request: ModelRequest) -> ModelRequest:
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
             assert request.runtime is not None
-            return request
+            return handler(request)
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
@@ -1535,8 +1581,8 @@ def test_planning_middleware_initialization() -> None:
         (None, "## `write_todos`"),
     ],
 )
-def test_planning_middleware_modify_model_request(original_prompt, expected_prompt_prefix) -> None:
-    """Test that modify_model_request handles system prompts correctly."""
+def test_planning_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
+    """Test that wrap_model_call handles system prompts correctly."""
     middleware = PlanningMiddleware()
     model = FakeToolCallingModel()
 
@@ -1554,8 +1600,13 @@ def test_planning_middleware_modify_model_request(original_prompt, expected_prom
         model_settings={},
     )
 
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt.startswith(expected_prompt_prefix)
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt.startswith(expected_prompt_prefix)
 
 
 @pytest.mark.parametrize(
@@ -1680,8 +1731,14 @@ def test_planning_middleware_custom_system_prompt() -> None:
     )
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
 
 
 def test_planning_middleware_custom_tool_description() -> None:
@@ -1719,8 +1776,13 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
         model_settings={},
     )
 
-    modified_request = middleware.modify_model_request(request)
-    assert modified_request.system_prompt == custom_system_prompt
+    def mock_handler(req: ModelRequest) -> AIMessage:
+        return AIMessage(content="mock response")
+
+    # Call wrap_model_call to trigger the middleware logic
+    middleware.wrap_model_call(request, mock_handler)
+    # Check that the request was modified in place
+    assert request.system_prompt == custom_system_prompt
 
     # Verify tool description
     assert len(middleware.tools) == 1
@@ -1989,10 +2051,14 @@ async def test_create_agent_async_invoke() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddleware.amodify_model_request")
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddleware.awrap_model_call")
             request.messages.append(HumanMessage("async middleware message"))
-            return request
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2029,11 +2095,11 @@ async def test_create_agent_async_invoke() -> None:
     assert result["messages"][1].content == "async middleware message"
     assert calls == [
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
         "my_tool",
         "AsyncMiddleware.abefore_model",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
     ]
 
@@ -2046,9 +2112,13 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddlewareOne.amodify_model_request")
-            return request
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddlewareOne.awrap_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareOne.aafter_model")
@@ -2057,9 +2127,13 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddlewareTwo.amodify_model_request")
-            return request
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddlewareTwo.awrap_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddlewareTwo.aafter_model")
@@ -2076,8 +2150,8 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
     assert calls == [
         "AsyncMiddlewareOne.abefore_model",
         "AsyncMiddlewareTwo.abefore_model",
-        "AsyncMiddlewareOne.amodify_model_request",
-        "AsyncMiddlewareTwo.amodify_model_request",
+        "AsyncMiddlewareOne.awrap_model_call",
+        "AsyncMiddlewareTwo.awrap_model_call",
         "AsyncMiddlewareTwo.aafter_model",
         "AsyncMiddlewareOne.aafter_model",
     ]
@@ -2126,9 +2200,13 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         def before_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.before_model")
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("SyncMiddleware.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("SyncMiddleware.wrap_model_call")
+            return handler(request)
 
         def after_model(self, state, runtime) -> None:
             calls.append("SyncMiddleware.after_model")
@@ -2137,9 +2215,13 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.abefore_model")
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("AsyncMiddleware.amodify_model_request")
-            return request
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("AsyncMiddleware.awrap_model_call")
+            return await handler(request)
 
         async def aafter_model(self, state, runtime) -> None:
             calls.append("AsyncMiddleware.aafter_model")
@@ -2154,19 +2236,20 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     # In async mode, both sync and async middleware should work
+    # Note: Sync wrap_model_call is not called when running in async mode,
+    # as the async version is preferred
     assert calls == [
         "SyncMiddleware.before_model",
         "AsyncMiddleware.abefore_model",
-        "SyncMiddleware.modify_model_request",
-        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
         "SyncMiddleware.after_model",
     ]
 
 
-# Tests for on_model_call hook
-def test_on_model_call_hook() -> None:
-    """Test that on_model_call hook is called on model errors."""
+# Tests for wrap_model_call hook
+def test_wrap_model_call_hook() -> None:
+    """Test that wrap_model_call hook is called on model errors."""
     call_count = {"value": 0}
 
     class FailingModel(BaseChatModel):
@@ -2189,7 +2272,7 @@ def test_on_model_call_hook() -> None:
             super().__init__()
             self.retry_count = 0
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             try:
                 return handler(request)
             except Exception:
@@ -2211,8 +2294,8 @@ def test_on_model_call_hook() -> None:
     assert result["messages"][1].content == "Success on retry"
 
 
-def test_on_model_call_retry_count() -> None:
-    """Test that on_model_call can retry multiple times."""
+def test_wrap_model_call_retry_count() -> None:
+    """Test that wrap_model_call can retry multiple times."""
 
     class AlwaysFailingModel(BaseChatModel):
         """Model that always fails."""
@@ -2229,7 +2312,7 @@ def test_on_model_call_retry_count() -> None:
             super().__init__()
             self.attempts = []
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             max_retries = 3
             last_exception = None
             for attempt in range(max_retries):
@@ -2257,7 +2340,7 @@ def test_on_model_call_retry_count() -> None:
     assert tracker.attempts == [1, 2, 3]
 
 
-def test_on_model_call_no_retry() -> None:
+def test_wrap_model_call_no_retry() -> None:
     """Test that error is propagated when middleware doesn't retry."""
 
     class FailingModel(BaseChatModel):
@@ -2271,7 +2354,7 @@ def test_on_model_call_no_retry() -> None:
             return "failing"
 
     class NoRetryMiddleware(AgentMiddleware):
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             return handler(request)
 
     agent = create_agent(model=FailingModel(), middleware=[NoRetryMiddleware()])
@@ -2367,7 +2450,7 @@ def test_model_fallback_middleware_initialization() -> None:
     assert len(middleware.models) == 2
 
 
-def test_on_model_call_max_attempts() -> None:
+def test_wrap_model_call_max_attempts() -> None:
     """Test that middleware controls termination via retry limits."""
 
     class AlwaysFailingModel(BaseChatModel):
@@ -2388,7 +2471,7 @@ def test_on_model_call_max_attempts() -> None:
             self.max_retries = max_retries
             self.attempt_count = 0
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             last_exception = None
             for attempt in range(self.max_retries):
                 self.attempt_count += 1
@@ -2415,8 +2498,8 @@ def test_on_model_call_max_attempts() -> None:
     assert middleware.attempt_count == 10
 
 
-async def test_on_model_call_async() -> None:
-    """Test on_model_call hook with async model execution."""
+async def test_wrap_model_call_async() -> None:
+    """Test wrap_model_call hook with async model execution."""
     call_count = {"value": 0}
 
     class AsyncFailingModel(BaseChatModel):
@@ -2442,7 +2525,7 @@ async def test_on_model_call_async() -> None:
             super().__init__()
             self.retry_count = 0
 
-        async def aon_model_call(self, request, handler):
+        async def awrap_model_call(self, request, handler):
             try:
                 return await handler(request)
             except Exception:
@@ -2464,7 +2547,7 @@ async def test_on_model_call_async() -> None:
     assert result["messages"][1].content == "Async retry success"
 
 
-def test_on_model_call_rewrite_response() -> None:
+def test_wrap_model_call_rewrite_response() -> None:
     """Test that middleware can rewrite model responses."""
 
     class SimpleModel(BaseChatModel):
@@ -2482,7 +2565,7 @@ def test_on_model_call_rewrite_response() -> None:
     class ResponseRewriteMiddleware(AgentMiddleware):
         """Middleware that rewrites the response."""
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             result = handler(request)
 
             # Rewrite the response
@@ -2499,7 +2582,7 @@ def test_on_model_call_rewrite_response() -> None:
     assert result["messages"][1].content == "REWRITTEN: Original response"
 
 
-def test_on_model_call_convert_error_to_response() -> None:
+def test_wrap_model_call_convert_error_to_response() -> None:
     """Test that middleware can convert errors to successful responses."""
 
     class AlwaysFailingModel(BaseChatModel):
@@ -2515,7 +2598,7 @@ def test_on_model_call_convert_error_to_response() -> None:
     class ErrorToResponseMiddleware(AgentMiddleware):
         """Middleware that converts errors to success responses."""
 
-        def on_model_call(self, request, handler):
+        def wrap_model_call(self, request, handler):
             try:
                 return handler(request)
             except Exception as e:
@@ -2539,8 +2622,12 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
     """Test that sync invoke with only async middleware works via run_in_executor."""
 
     class AsyncOnlyMiddleware(AgentMiddleware):
-        async def amodify_model_request(self, request) -> ModelRequest:
-            return request
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            return await handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -2549,11 +2636,10 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         middleware=[AsyncOnlyMiddleware()],
     )
 
-    with pytest.raises(
-        TypeError,
-        match="No synchronous function provided for AsyncOnlyMiddleware.amodify_model_request",
-    ):
-        agent.invoke({"messages": [HumanMessage("hello")]})
+    # This should work now via run_in_executor
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    assert result is not None
+    assert "messages" in result
 
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
@@ -2567,13 +2653,21 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         async def abefore_model(self, state, runtime) -> None:
             calls.append("MixedMiddleware.abefore_model")
 
-        def modify_model_request(self, request) -> ModelRequest:
-            calls.append("MixedMiddleware.modify_model_request")
-            return request
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], AIMessage],
+        ) -> AIMessage:
+            calls.append("MixedMiddleware.wrap_model_call")
+            return handler(request)
 
-        async def amodify_model_request(self, request) -> ModelRequest:
-            calls.append("MixedMiddleware.amodify_model_request")
-            return request
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[AIMessage]],
+        ) -> AIMessage:
+            calls.append("MixedMiddleware.awrap_model_call")
+            return await handler(request)
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -2587,5 +2681,5 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
     # In sync mode, only sync methods should be called
     assert calls == [
         "MixedMiddleware.before_model",
-        "MixedMiddleware.modify_model_request",
+        "MixedMiddleware.wrap_model_call",
     ]

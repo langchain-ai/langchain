@@ -3,20 +3,6 @@
 It is more general than a vector store. A retriever does not need to be able to
 store documents, only to return (or retrieve) it. Vector stores can be used as
 the backbone of a retriever, but there are other types of retrievers as well.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseRetriever --> <name>Retriever  # Examples: ArxivRetriever, MergerRetriever
-
-**Main helpers:**
-
-.. code-block::
-
-    RetrieverInput, RetrieverOutput, RetrieverLike, RetrieverOutputLike,
-    Document, Serializable, Callbacks,
-    CallbackManagerForRetrieverRun, AsyncCallbackManagerForRetrieverRun
 """
 
 from __future__ import annotations
@@ -87,48 +73,45 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     Example: A retriever that returns the first 5 documents from a list of documents
 
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
+        from langchain_core.retrievers import BaseRetriever
 
-            from langchain_core.documents import Document
-            from langchain_core.retrievers import BaseRetriever
+        class SimpleRetriever(BaseRetriever):
+            docs: list[Document]
+            k: int = 5
 
-            class SimpleRetriever(BaseRetriever):
-                docs: list[Document]
-                k: int = 5
+            def _get_relevant_documents(self, query: str) -> list[Document]:
+                \"\"\"Return the first k documents from the list of documents\"\"\"
+                return self.docs[:self.k]
 
-                def _get_relevant_documents(self, query: str) -> list[Document]:
-                    \"\"\"Return the first k documents from the list of documents\"\"\"
-                    return self.docs[:self.k]
-
-                async def _aget_relevant_documents(self, query: str) -> list[Document]:
-                    \"\"\"(Optional) async native implementation.\"\"\"
-                    return self.docs[:self.k]
+            async def _aget_relevant_documents(self, query: str) -> list[Document]:
+                \"\"\"(Optional) async native implementation.\"\"\"
+                return self.docs[:self.k]
+        ```
 
     Example: A simple retriever based on a scikit-learn vectorizer
 
-        .. code-block:: python
+        ```python
+        from sklearn.metrics.pairwise import cosine_similarity
 
-            from sklearn.metrics.pairwise import cosine_similarity
 
+        class TFIDFRetriever(BaseRetriever, BaseModel):
+            vectorizer: Any
+            docs: list[Document]
+            tfidf_array: Any
+            k: int = 4
 
-            class TFIDFRetriever(BaseRetriever, BaseModel):
-                vectorizer: Any
-                docs: list[Document]
-                tfidf_array: Any
-                k: int = 4
+            class Config:
+                arbitrary_types_allowed = True
 
-                class Config:
-                    arbitrary_types_allowed = True
-
-                def _get_relevant_documents(self, query: str) -> list[Document]:
-                    # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
-                    query_vec = self.vectorizer.transform([query])
-                    # Op -- (n_docs,1) -- Cosine Sim with each doc
-                    results = cosine_similarity(self.tfidf_array, query_vec).reshape(
-                        (-1,)
-                    )
-                    return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
-
+            def _get_relevant_documents(self, query: str) -> list[Document]:
+                # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
+                query_vec = self.vectorizer.transform([query])
+                # Op -- (n_docs,1) -- Cosine Sim with each doc
+                results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
+                return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
+        ```
     """
 
     model_config = ConfigDict(
@@ -138,14 +121,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
     tags: list[str] | None = None
-    """Optional list of tags associated with the retriever. Defaults to `None`.
+    """Optional list of tags associated with the retriever.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the retriever. Defaults to `None`.
+    """Optional metadata associated with the retriever.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
@@ -224,18 +207,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
-            kwargs: Additional arguments to pass to the retriever.
+            config: Configuration for the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
 
         Examples:
-
-        .. code-block:: python
-
-            retriever.invoke("query")
-
+        ```python
+        retriever.invoke("query")
+        ```
         """
         config = ensure_config(config)
         inheritable_metadata = {
@@ -287,18 +268,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
-            kwargs: Additional arguments to pass to the retriever.
+            config: Configuration for the retriever.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
 
         Examples:
-
-        .. code-block:: python
-
-            await retriever.ainvoke("query")
-
+        ```python
+        await retriever.ainvoke("query")
+        ```
         """
         config = ensure_config(config)
         inheritable_metadata = {
@@ -388,17 +367,17 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             query: string to find relevant documents for.
-            callbacks: Callback manager or list of callbacks. Defaults to `None`.
+            callbacks: Callback manager or list of callbacks.
             tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
+
             metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
-            kwargs: Additional arguments to pass to the retriever.
+
+            run_name: Optional name for the run.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.
@@ -436,13 +415,13 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             tags: Optional list of tags associated with the retriever.
                 These tags will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
+
             metadata: Optional metadata associated with the retriever.
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
-            kwargs: Additional arguments to pass to the retriever.
+
+            run_name: Optional name for the run.
+            **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
             List of relevant documents.

@@ -150,11 +150,11 @@ class Chroma(VectorStore):
     """Chroma vector store integration.
 
     Setup:
-        Install ``chromadb``, ``langchain-chroma`` packages:
+        Install `chromadb`, `langchain-chroma` packages:
 
-        .. code-block:: bash
-
-            pip install -qU chromadb langchain-chroma
+        ```bash
+        pip install -qU chromadb langchain-chroma
+        ```
 
     Key init args — indexing params:
         collection_name: str
@@ -163,136 +163,132 @@ class Chroma(VectorStore):
             Embedding function to use.
 
     Key init args — client params:
-        client: Optional[Client]
+        client: Client | None
             Chroma client to use.
-        client_settings: Optional[chromadb.config.Settings]
+        client_settings: chromadb.config.Settings | None
             Chroma client settings.
-        persist_directory: Optional[str]
+        persist_directory: str | None
             Directory to persist the collection.
-        host: Optional[str]
+        host: str | None
             Hostname of a deployed Chroma server.
-        port: Optional[int]
+        port: int | None
             Connection port for a deployed Chroma server. Default is 8000.
-        ssl: Optional[bool]
+        ssl: bool | None
             Whether to establish an SSL connection with a deployed Chroma server. Default is False.
-        headers: Optional[dict[str, str]]
+        headers: dict[str, str] | None
             HTTP headers to send to a deployed Chroma server.
-        chroma_cloud_api_key: Optional[str]
+        chroma_cloud_api_key: str | None
             Chroma Cloud API key.
-        tenant: Optional[str]
+        tenant: str | None
             Tenant ID. Required for Chroma Cloud connections. Default is 'default_tenant' for local Chroma servers.
-        database: Optional[str]
+        database: str | None
             Database name. Required for Chroma Cloud connections. Default is 'default_database'.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_chroma import Chroma
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_chroma import Chroma
-            from langchain_openai import OpenAIEmbeddings
-
-            vector_store = Chroma(
-                collection_name="foo",
-                embedding_function=OpenAIEmbeddings(),
-                # other params...
-            )
+        vector_store = Chroma(
+            collection_name="foo",
+            embedding_function=OpenAIEmbeddings(),
+            # other params...
+        )
+        ```
 
     Add Documents:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
 
-            from langchain_core.documents import Document
+        document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+        document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+        document_3 = Document(page_content="i will be deleted :(")
 
-            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
-            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
-            document_3 = Document(page_content="i will be deleted :(")
-
-            documents = [document_1, document_2, document_3]
-            ids = ["1", "2", "3"]
-            vector_store.add_documents(documents=documents, ids=ids)
+        documents = [document_1, document_2, document_3]
+        ids = ["1", "2", "3"]
+        vector_store.add_documents(documents=documents, ids=ids)
+        ```
 
     Update Documents:
-        .. code-block:: python
+        ```python
+        updated_document = Document(
+            page_content="qux",
+            metadata={"bar": "baz"},
+        )
 
-            updated_document = Document(
-                page_content="qux",
-                metadata={"bar": "baz"},
-            )
-
-            vector_store.update_documents(ids=["1"], documents=[updated_document])
+        vector_store.update_documents(ids=["1"], documents=[updated_document])
+        ```
 
     Delete Documents:
-        .. code-block:: python
-
-            vector_store.delete(ids=["3"])
+        ```python
+        vector_store.delete(ids=["3"])
+        ```
 
     Search:
-        .. code-block:: python
-
-            results = vector_store.similarity_search(query="thud", k=1)
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            *thud[{"baz": "bar"}]
+        ```python
+        results = vector_store.similarity_search(query="thud", k=1)
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        *thud[{"baz": "bar"}]
+        ```
 
     Search with filter:
-        .. code-block:: python
-
-            results = vector_store.similarity_search(
-                query="thud", k=1, filter={"baz": "bar"}
-            )
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            *foo[{"baz": "bar"}]
+        ```python
+        results = vector_store.similarity_search(
+            query="thud", k=1, filter={"baz": "bar"}
+        )
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        *foo[{"baz": "bar"}]
+        ```
 
     Search with score:
-        .. code-block:: python
-
-            results = vector_store.similarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.000000] qux [{'bar': 'baz', 'baz': 'bar'}]
+        ```python
+        results = vector_store.similarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
+        ```python
+        * [SIM=0.000000] qux [{'bar': 'baz', 'baz': 'bar'}]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        # add documents
+        # await vector_store.aadd_documents(documents=documents, ids=ids)
 
-            # add documents
-            # await vector_store.aadd_documents(documents=documents, ids=ids)
+        # delete documents
+        # await vector_store.adelete(ids=["3"])
 
-            # delete documents
-            # await vector_store.adelete(ids=["3"])
+        # search
+        # results = vector_store.asimilarity_search(query="thud",k=1)
 
-            # search
-            # results = vector_store.asimilarity_search(query="thud",k=1)
+        # search with score
+        results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
 
-            # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.335463] foo [{'baz': 'bar'}]
+        ```python
+        * [SIM=0.335463] foo [{'baz': 'bar'}]
+        ```
 
     Use as Retriever:
-        .. code-block:: python
+        ```python
+        retriever = vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+        )
+        retriever.invoke("thud")
+        ```
 
-            retriever = vector_store.as_retriever(
-                search_type="mmr",
-                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
-            )
-            retriever.invoke("thud")
-
-        .. code-block:: python
-
-            [Document(metadata={"baz": "bar"}, page_content="thud")]
-
+        ```python
+        [Document(metadata={"baz": "bar"}, page_content="thud")]
+        ```
     """  # noqa: E501
 
     _LANGCHAIN_DEFAULT_COLLECTION_NAME = "langchain"
@@ -336,7 +332,7 @@ class Chroma(VectorStore):
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             collection_configuration: Index configuration for the collection.
-                    Defaults to `None`.
+
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
             relevance_score_fn: Function to calculate relevance score from distance.
@@ -691,7 +687,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -718,7 +714,7 @@ class Chroma(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -748,7 +744,7 @@ class Chroma(VectorStore):
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by the documents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -779,7 +775,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -821,7 +817,7 @@ class Chroma(VectorStore):
         Args:
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -904,17 +900,16 @@ class Chroma(VectorStore):
         """Search for similar images based on the given image URI.
 
         Args:
-            uri (str): URI of the image to search for.
-            k (int, optional): Number of results to return. Defaults to ``DEFAULT_K``.
-            filter (Optional[Dict[str, str]], optional): Filter by metadata.
-            **kwargs (Any): Additional arguments to pass to function.
+            uri: URI of the image to search for.
+            k: Number of results to return.
+            filter: Filter by metadata.
+            **kwargs: Additional arguments to pass to function.
 
 
         Returns:
-            List of Images most similar to the provided image.
-            Each element in list is a LangChain Document Object.
-            The page content is b64 encoded image, metadata is default or
-            as defined by user.
+            List of Images most similar to the provided image. Each element in list is a
+            LangChain Document Object. The page content is b64 encoded image, metadata
+            is default or as defined by user.
 
         Raises:
             ValueError: If the embedding function does not support image embeddings.
@@ -946,16 +941,14 @@ class Chroma(VectorStore):
         """Search for similar images based on the given image URI.
 
         Args:
-            uri (str): URI of the image to search for.
-            k (int, optional): Number of results to return.
-            Defaults to DEFAULT_K.
-            filter (Optional[Dict[str, str]], optional): Filter by metadata.
-            **kwargs (Any): Additional arguments to pass to function.
+            uri: URI of the image to search for.
+            k: Number of results to return.
+            filter: Filter by metadata.
+            **kwargs: Additional arguments to pass to function.
 
         Returns:
-            List[Tuple[Document, float]]: List of tuples containing documents similar
-            to the query image and their similarity scores.
-            0th element in each tuple is a LangChain Document Object.
+            List of tuples containing documents similar to the query image and their
+            similarity scores. 0th element in each tuple is a LangChain Document Object.
             The page content is b64 encoded img, metadata is default or defined by user.
 
         Raises:
@@ -1002,7 +995,7 @@ class Chroma(VectorStore):
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -1052,7 +1045,7 @@ class Chroma(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
@@ -1269,15 +1262,15 @@ class Chroma(VectorStore):
                     Default is 'default_tenant' for local Chroma servers.
             database: Database name. Required for Chroma Cloud connections.
                     Default is 'default_database'.
-            embedding: Embedding function. Defaults to `None`.
-            metadatas: List of metadatas. Defaults to `None`.
-            ids: List of document IDs. Defaults to `None`.
+            embedding: Embedding function.
+            metadatas: List of metadatas.
+            ids: List of document IDs.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
-            collection_metadata: Collection configurations. Defaults to `None`.
+            collection_metadata: Collection configurations.
             collection_configuration: Index configuration for the collection.
-                    Defaults to `None`.
+
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
@@ -1368,15 +1361,15 @@ class Chroma(VectorStore):
                     Default is 'default_tenant' for local Chroma servers.
             database: Database name. Required for Chroma Cloud connections.
                     Default is 'default_database'.
-            ids : List of document IDs. Defaults to `None`.
+            ids : List of document IDs.
             documents: List of documents to add to the vectorstore.
-            embedding: Embedding function. Defaults to `None`.
+            embedding: Embedding function.
             client_settings: Chroma client settings.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/python/client
-            collection_metadata: Collection configurations. Defaults to `None`.
+            collection_metadata: Collection configurations.
             collection_configuration: Index configuration for the collection.
-                    Defaults to `None`.
+
             kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:

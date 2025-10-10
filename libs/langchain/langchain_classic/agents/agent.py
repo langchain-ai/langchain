@@ -189,11 +189,10 @@ class BaseSingleActionAgent(BaseModel):
             file_path: Path to file to save the agent to.
 
         Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
-
+        ```python
+        # If working with agent executor
+        agent.agent.save(file_path="path/agent.yaml")
+        ```
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -234,7 +233,7 @@ class BaseMultiActionAgent(BaseModel):
         """Get allowed tools.
 
         Returns:
-            Optional[List[str]]: Allowed tools.
+            list[str] | None: Allowed tools.
         """
         return None
 
@@ -333,11 +332,10 @@ class BaseMultiActionAgent(BaseModel):
             ValueError: If file_path is not json or yaml.
 
         Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
-
+        ```python
+        # If working with agent executor
+        agent.agent.save(file_path="path/agent.yaml")
+        ```
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path

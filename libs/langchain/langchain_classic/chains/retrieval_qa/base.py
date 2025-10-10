@@ -143,11 +143,10 @@ class BaseRetrievalQA(Chain):
         the retrieved documents as well under the key 'source_documents'.
 
         Example:
-        .. code-block:: python
-
-        res = indexqa({'query': 'This is my query'})
-        answer, docs = res['result'], res['source_documents']
-
+        ```python
+        res = indexqa({"query": "This is my query"})
+        answer, docs = res["result"], res["source_documents"]
+        ```
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -188,11 +187,10 @@ class BaseRetrievalQA(Chain):
         the retrieved documents as well under the key 'source_documents'.
 
         Example:
-        .. code-block:: python
-
-        res = indexqa({'query': 'This is my query'})
-        answer, docs = res['result'], res['source_documents']
-
+        ```python
+        res = indexqa({"query": "This is my query"})
+        answer, docs = res["result"], res["source_documents"]
+        ```
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -229,47 +227,46 @@ class RetrievalQA(BaseRetrievalQA):
     This class is deprecated. See below for an example implementation using
     `create_retrieval_chain`:
 
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import create_retrieval_chain
+        from langchain_classic.chains.combine_documents import (
+            create_stuff_documents_chain,
+        )
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_openai import ChatOpenAI
 
-            from langchain_classic.chains import create_retrieval_chain
-            from langchain_classic.chains.combine_documents import (
-                create_stuff_documents_chain,
-            )
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_openai import ChatOpenAI
 
+        retriever = ...  # Your retriever
+        llm = ChatOpenAI()
 
-            retriever = ...  # Your retriever
-            llm = ChatOpenAI()
+        system_prompt = (
+            "Use the given context to answer the question. "
+            "If you don't know the answer, say you don't know. "
+            "Use three sentence maximum and keep the answer concise. "
+            "Context: {context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        chain = create_retrieval_chain(retriever, question_answer_chain)
 
-            system_prompt = (
-                "Use the given context to answer the question. "
-                "If you don't know the answer, say you don't know. "
-                "Use three sentence maximum and keep the answer concise. "
-                "Context: {context}"
-            )
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", system_prompt),
-                    ("human", "{input}"),
-                ]
-            )
-            question_answer_chain = create_stuff_documents_chain(llm, prompt)
-            chain = create_retrieval_chain(retriever, question_answer_chain)
-
-            chain.invoke({"input": query})
+        chain.invoke({"input": query})
+        ```
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_community.llms import OpenAI
+        from langchain_classic.chains import RetrievalQA
+        from langchain_community.vectorstores import FAISS
+        from langchain_core.vectorstores import VectorStoreRetriever
 
-            from langchain_community.llms import OpenAI
-            from langchain_classic.chains import RetrievalQA
-            from langchain_community.vectorstores import FAISS
-            from langchain_core.vectorstores import VectorStoreRetriever
-
-            retriever = VectorStoreRetriever(vectorstore=FAISS(...))
-            retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
-
+        retriever = VectorStoreRetriever(vectorstore=FAISS(...))
+        retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
+        ```
     """
 
     retriever: BaseRetriever = Field(exclude=True)

@@ -73,8 +73,9 @@ def init_chat_model(
 ) -> BaseChatModel | _ConfigurableModel:
     """Initialize a ChatModel from the model name and provider.
 
-    **Note:** Must have the integration package corresponding to the model provider
-    installed.
+    !!! note
+        Must have the integration package corresponding to the model provider
+        installed.
 
     Args:
         model: The name of the model, e.g. "o3-mini", "claude-3-5-sonnet-latest". You can
@@ -128,21 +129,21 @@ def init_chat_model(
 
             Fields are assumed to have config_prefix stripped if there is a
             config_prefix. If model is specified, then defaults to None. If model is
-            not specified, then defaults to ``("model", "model_provider")``.
+            not specified, then defaults to `("model", "model_provider")`.
 
-            ***Security Note***: Setting ``configurable_fields="any"`` means fields like
+            **Security Note**: Setting `configurable_fields="any"` means fields like
             api_key, base_url, etc. can be altered at runtime, potentially redirecting
             model requests to a different service/user. Make sure that if you're
             accepting untrusted configurations that you enumerate the
-            ``configurable_fields=(...)`` explicitly.
+            `configurable_fields=(...)` explicitly.
 
         config_prefix: If config_prefix is a non-empty string then model will be
             configurable at runtime via the
-            ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
+            `config["configurable"]["{config_prefix}_{param}"]` keys. If
             config_prefix is an empty string then model will be configurable via
-            ``config["configurable"]["{param}"]``.
+            `config["configurable"]["{param}"]`.
         kwargs: Additional model-specific keyword args to pass to
-            ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``. Examples
+            `<<selected ChatModel>>.__init__(model=model_name, **kwargs)`. Examples
             include:
                 * temperature: Model temperature.
                 * max_tokens: Max output tokens.
@@ -151,7 +152,7 @@ def init_chat_model(
                 * max_retries: The maximum number of attempts the system will make to resend a
                     request if it fails due to issues like network timeouts or rate limits.
                 * base_url: The URL of the API endpoint where requests are sent.
-                * rate_limiter: A ``BaseRateLimiter`` to space out requests to avoid exceeding
+                * rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
                     rate limits.
 
     Returns:
@@ -165,114 +166,109 @@ def init_chat_model(
 
     ???+ note "Init non-configurable model"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
+        from langchain.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
-            from langchain.chat_models import init_chat_model
+        o3_mini = init_chat_model("openai:o3-mini", temperature=0)
+        claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
+        gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
 
-            o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-            claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
-            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
-
-            o3_mini.invoke("what's your name")
-            claude_sonnet.invoke("what's your name")
-            gemini_2_flash.invoke("what's your name")
-
+        o3_mini.invoke("what's your name")
+        claude_sonnet.invoke("what's your name")
+        gemini_2_flash.invoke("what's your name")
+        ```
 
     ??? note "Partially configurable model with no default"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain.chat_models import init_chat_model
+        # We don't need to specify configurable=True if a model isn't specified.
+        configurable_model = init_chat_model(temperature=0)
 
-            # We don't need to specify configurable=True if a model isn't specified.
-            configurable_model = init_chat_model(temperature=0)
+        configurable_model.invoke("what's your name", config={"configurable": {"model": "gpt-4o"}})
+        # GPT-4o response
 
-            configurable_model.invoke(
-                "what's your name", config={"configurable": {"model": "gpt-4o"}}
-            )
-            # GPT-4o response
-
-            configurable_model.invoke(
-                "what's your name", config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
-            )
-            # claude-3.5 sonnet response
+        configurable_model.invoke(
+            "what's your name", config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
+        )
+        # claude-3.5 sonnet response
+        ```
 
     ??? note "Fully configurable model with a default"
 
-        .. code-block:: python
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain.chat_models import init_chat_model
 
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain.chat_models import init_chat_model
+        configurable_model_with_default = init_chat_model(
+            "openai:gpt-4o",
+            configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+            config_prefix="foo",
+            temperature=0,
+        )
 
-            configurable_model_with_default = init_chat_model(
-                "openai:gpt-4o",
-                configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
-                config_prefix="foo",
-                temperature=0,
-            )
+        configurable_model_with_default.invoke("what's your name")
+        # GPT-4o response with temperature 0
 
-            configurable_model_with_default.invoke("what's your name")
-            # GPT-4o response with temperature 0
-
-            configurable_model_with_default.invoke(
-                "what's your name",
-                config={
-                    "configurable": {
-                        "foo_model": "anthropic:claude-3-5-sonnet-latest",
-                        "foo_temperature": 0.6,
-                    }
-                },
-            )
-            # Claude-3.5 sonnet response with temperature 0.6
+        configurable_model_with_default.invoke(
+            "what's your name",
+            config={
+                "configurable": {
+                    "foo_model": "anthropic:claude-3-5-sonnet-latest",
+                    "foo_temperature": 0.6,
+                }
+            },
+        )
+        # Claude-3.5 sonnet response with temperature 0.6
+        ```
 
     ??? note "Bind tools to a configurable model"
 
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
 
-        .. code-block:: python
-
-            # pip install langchain langchain-openai langchain-anthropic
-            from langchain.chat_models import init_chat_model
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        ```python
+        # pip install langchain langchain-openai langchain-anthropic
+        from langchain.chat_models import init_chat_model
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            configurable_model = init_chat_model(
-                "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
-            )
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-            configurable_model_with_tools = configurable_model.bind_tools(
-                [GetWeather, GetPopulation]
-            )
-            configurable_model_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?"
-            )
-            # GPT-4o response with tool calls
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-            configurable_model_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?",
-                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
-            )
-            # Claude-3.5 sonnet response with tools
+
+        configurable_model = init_chat_model(
+            "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
+        )
+
+        configurable_model_with_tools = configurable_model.bind_tools([GetWeather, GetPopulation])
+        configurable_model_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?"
+        )
+        # GPT-4o response with tool calls
+
+        configurable_model_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?",
+            config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+        )
+        # Claude-3.5 sonnet response with tools
+        ```
 
     !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
-        Support for `configurable_fields` and ``config_prefix`` added.
+        Support for `configurable_fields` and `config_prefix` added.
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added

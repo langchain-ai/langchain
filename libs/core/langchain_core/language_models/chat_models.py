@@ -108,7 +108,7 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
 
 
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
-    """Format messages for tracing in ``on_chat_model_start``.
+    """Format messages for tracing in `on_chat_model_start`.
 
     - Update image content blocks to OpenAI Chat Completions format (backward
     compatibility).
@@ -185,7 +185,7 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ValueError: If no generations are found in the stream.
 
     Returns:
-        ChatResult: Chat result.
+        Chat result.
 
     """
     generation = next(stream, None)
@@ -213,7 +213,7 @@ async def agenerate_from_stream(
         stream: Iterator of `ChatGenerationChunk`.
 
     Returns:
-        ChatResult: Chat result.
+        Chat result.
 
     """
     chunks = [chunk async for chunk in stream]
@@ -342,7 +342,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     )
     """Version of `AIMessage` output format to store in message content.
 
-    `AIMessage.content_blocks` will lazily parse the contents of ``content`` into a
+    `AIMessage.content_blocks` will lazily parse the contents of `content` into a
     standard format. This flag can be used to additionally store the standard format
     in message content, e.g., for serialization purposes.
 
@@ -470,8 +470,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if "stream" in kwargs:
             return kwargs["stream"]
 
-        if getattr(self, "streaming", False):
-            return True
+        if "streaming" in self.model_fields_set:
+            streaming_value = getattr(self, "streaming", None)
+            if isinstance(streaming_value, bool):
+                return streaming_value
 
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
@@ -1531,7 +1533,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 - a `TypedDict` class,
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -1544,104 +1546,104 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
         Raises:
-            ValueError: If there are any unsupported ``kwargs``.
+            ValueError: If there are any unsupported `kwargs`.
             NotImplementedError: If the model does not implement
-                ``with_structured_output()``.
+                `with_structured_output()`.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
-            .. code-block:: python
-
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from pydantic import BaseModel
 
 
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                answer: str
+                justification: str
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            llm = ChatModel(model="model-name", temperature=0)
+            structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+
+            # -> AnswerWithJustification(
+            #     answer='They weigh the same',
+            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+            # )
+            ```
 
         Example: Pydantic schema (include_raw=True):
-            .. code-block:: python
-
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from pydantic import BaseModel
 
 
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            llm = ChatModel(model="model-name", temperature=0)
+            structured_llm = llm.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+            #     'parsing_error': None
+            # }
+            ```
 
         Example: Dict schema (include_raw=False):
-            .. code-block:: python
-
-                from pydantic import BaseModel
-                from langchain_core.utils.function_calling import convert_to_openai_tool
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from pydantic import BaseModel
+            from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
-                dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(dict_schema)
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+                answer: str
+                justification: str
+
+
+            dict_schema = convert_to_openai_tool(AnswerWithJustification)
+            llm = ChatModel(model="model-name", temperature=0)
+            structured_llm = llm.with_structured_output(dict_schema)
+
+            structured_llm.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            # -> {
+            #     'answer': 'They weigh the same',
+            #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+            # }
+            ```
 
         !!! warning "Behavior changed in 0.2.26"
                 Added support for TypedDict class.
@@ -1691,7 +1693,7 @@ class SimpleChatModel(BaseChatModel):
 
     !!! note
         This implementation is primarily here for backwards compatibility. For new
-        implementations, please use ``BaseChatModel`` directly.
+        implementations, please use `BaseChatModel` directly.
 
     """
 

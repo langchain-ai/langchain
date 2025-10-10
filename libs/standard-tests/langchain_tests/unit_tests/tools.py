@@ -105,7 +105,7 @@ class ToolsUnitTests(ToolsTests):
         If this fails, add an `args_schema` to your tool.
 
         See
-        `this guide <https://python.langchain.com/docs/how_to/custom_tools/#subclass-basetool>`_
+        [this guide](https://python.langchain.com/docs/how_to/custom_tools/#subclass-basetool)
         and see how `CalculatorInput` is configured in the
         `CustomCalculatorTool.args_schema` attribute
         """

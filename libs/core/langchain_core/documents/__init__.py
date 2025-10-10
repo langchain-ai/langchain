@@ -2,7 +2,6 @@
 
 **Document** module is a collection of classes that handle documents
 and their transformations.
-
 """
 
 from typing import TYPE_CHECKING

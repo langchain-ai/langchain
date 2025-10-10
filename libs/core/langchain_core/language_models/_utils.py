@@ -92,18 +92,16 @@ def _parse_data_uri(uri: str) -> ParsedDataUri | None:
     If parsing fails, return None. If either MIME type or data is missing, return None.
 
     Example:
+        ```python
+        data_uri = "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+        parsed = _parse_data_uri(data_uri)
 
-        .. code-block:: python
-
-            data_uri = "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
-            parsed = _parse_data_uri(data_uri)
-
-            assert parsed == {
-                "source_type": "base64",
-                "mime_type": "image/jpeg",
-                "data": "/9j/4AAQSkZJRg...",
-            }
-
+        assert parsed == {
+            "source_type": "base64",
+            "mime_type": "image/jpeg",
+            "data": "/9j/4AAQSkZJRg...",
+        }
+        ```
     """
     regex = r"^data:(?P<mime_type>[^;]+);base64,(?P<data>.+)$"
     match = re.match(regex, uri)
@@ -150,48 +148,48 @@ def _normalize_messages(
 
         `URLContentBlock`:
 
-        .. codeblock::
-
-            {
-                mime_type: NotRequired[str]
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['url'],
-                url: str,
-            }
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['image', 'audio', 'file'],
+            source_type: Literal['url'],
+            url: str,
+        }
+        ```
 
         `Base64ContentBlock`:
 
-        .. codeblock::
-
-            {
-                mime_type: NotRequired[str]
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['base64'],
-                data: str,
-            }
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['image', 'audio', 'file'],
+            source_type: Literal['base64'],
+            data: str,
+        }
+        ```
 
         `IDContentBlock`:
 
         (In practice, this was never used)
 
-        .. codeblock::
-
-            {
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['id'],
-                id: str,
-            }
+        ```python
+        {
+            type: Literal["image", "audio", "file"],
+            source_type: Literal["id"],
+            id: str,
+        }
+        ```
 
         `PlainTextContentBlock`:
 
-        .. codeblock::
-
-            {
-                mime_type: NotRequired[str]
-                type: Literal['file'],
-                source_type: Literal['text'],
-                url: str,
-            }
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['file'],
+            source_type: Literal['text'],
+            url: str,
+        }
+        ```
 
     If a v1 message is passed in, it will be returned as-is, meaning it is safe to
     always pass in v1 messages to this function for assurance.
@@ -222,7 +220,7 @@ def _normalize_messages(
         "type": Literal['file'],
         "file": Union[
             {
-                "filename": Optional[str] = "$FILENAME",
+                "filename": str | None = "$FILENAME",
                 "file_data": str = "$BASE64_ENCODED_FILE",
             },
             {
