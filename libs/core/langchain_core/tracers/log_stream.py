@@ -190,7 +190,7 @@ class RunLog(RunLogPatch):
             other: The other `RunLog` to compare to.
 
         Returns:
-            True if the `RunLog`s are equal, False otherwise.
+            `True` if the `RunLog`s are equal, `False` otherwise.
         """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
@@ -288,7 +288,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             *ops: The operations to send to the stream.
 
         Returns:
-            True if the patch was sent successfully, False if the stream is closed.
+            `True` if the patch was sent successfully, False if the stream is closed.
         """
         # We will likely want to wrap this in try / except at some point
         # to handle exceptions that might arise at run time.
@@ -368,7 +368,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             run: The Run to check.
 
         Returns:
-            True if the run should be included, False otherwise.
+            `True` if the run should be included, `False` otherwise.
         """
         if run.id == self.root_id:
             return False

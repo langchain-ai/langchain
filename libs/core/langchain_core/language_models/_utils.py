@@ -35,7 +35,7 @@ def is_openai_data_block(
             different type, this function will return False.
 
     Returns:
-        True if the block is a valid OpenAI data block and matches the filter_
+        `True` if the block is a valid OpenAI data block and matches the filter_
         (if provided).
 
     """

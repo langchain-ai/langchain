@@ -982,8 +982,7 @@ def _run_llm_or_chain(
         input_mapper: Optional function to map the input to the expected format.
 
     Returns:
-        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-          The outputs of the model or chain.
+        The outputs of the model or chain.
     """
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"

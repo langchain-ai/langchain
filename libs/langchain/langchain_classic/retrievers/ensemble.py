@@ -299,8 +299,8 @@ class EnsembleRetriever(BaseRetriever):
             doc_lists: A list of rank lists, where each rank list contains unique items.
 
         Returns:
-            list: The final aggregated list of items sorted by their weighted RRF
-                    scores in descending order.
+            The final aggregated list of items sorted by their weighted RRF
+            scores in descending order.
         """
         if len(doc_lists) != len(self.weights):
             msg = "Number of rank lists must be equal to the number of weights."
