@@ -555,7 +555,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "edited"},
+                        args={"input": "edited"},
                     ),
                 }
             ]
@@ -676,14 +676,14 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="get_forecast",
-                        arguments={"location": "New York"},
+                        args={"location": "New York"},
                     ),
                 },
                 {
                     "type": "edit",
                     "edited_action": Action(
                         name="get_temperature",
-                        arguments={"location": "New York"},
+                        args={"location": "New York"},
                     ),
                 },
             ]
@@ -724,7 +724,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "modified"},
+                        args={"input": "modified"},
                     ),
                 }
             ]
@@ -789,7 +789,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "modified"},
+                        args={"input": "modified"},
                     ),
                 }
             ]
@@ -801,7 +801,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'arguments': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
+            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'args': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
         ):
             middleware.after_model(state, None)
 
@@ -871,7 +871,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert len(captured_request["action_requests"]) == 1
         action_request = captured_request["action_requests"][0]
         assert action_request["name"] == "test_tool"
-        assert action_request["arguments"] == {"input": "test", "location": "SF"}
+        assert action_request["args"] == {"input": "test", "location": "SF"}
         assert "Custom prefix" in action_request["description"]
         assert "Tool: test_tool" in action_request["description"]
         assert "Args: {'input': 'test', 'location': 'SF'}" in action_request["description"]
@@ -912,7 +912,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "edited"},
+                        args={"input": "edited"},
                     ),
                 }
             ]
