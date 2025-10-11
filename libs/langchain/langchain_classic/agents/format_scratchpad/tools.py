@@ -33,6 +33,10 @@ def _create_tool_message(
     """
     if not isinstance(observation, str):
         try:
+            # if observation is already a ToolMessage, just update name and return it
+            if isinstance(observation, ToolMessage):
+                observation.additional_kwargs["name"] = agent_action.tool
+                return observation
             content = json.dumps(observation, ensure_ascii=False)
         except TypeError:
             content = str(observation)
