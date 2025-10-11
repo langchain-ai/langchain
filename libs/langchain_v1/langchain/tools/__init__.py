@@ -8,14 +8,28 @@ from langchain_core.tools import (
     tool,
 )
 
-from langchain.tools.tool_node import InjectedState, InjectedStore, ToolInvocationError
+from langchain.tools.tool_node import (
+    AsyncToolCallHandler,
+    AsyncToolCallWrapper,
+    InjectedState,
+    InjectedStore,
+    ToolCallHandler,
+    ToolCallRequest,
+    ToolCallWrapper,
+    ToolInvocationError,
+)
 
 __all__ = [
+    "AsyncToolCallHandler",
+    "AsyncToolCallWrapper",
     "BaseTool",
     "InjectedState",
     "InjectedStore",
     "InjectedToolArg",
     "InjectedToolCallId",
+    "ToolCallHandler",
+    "ToolCallRequest",
+    "ToolCallWrapper",
     "ToolException",
     "ToolInvocationError",
     "tool",

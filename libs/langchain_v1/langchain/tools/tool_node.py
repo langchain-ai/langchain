@@ -118,25 +118,54 @@ class ToolCallRequest:
     tool_call: ToolCall
     tool: BaseTool
     state: Any
-    runtime: Any
+    runtime: Any  # Runtime[Any] | None, but using Any for simplicity and to avoid circular imports
 
 
-ToolCallWrapper = Callable[
-    [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
-    ToolMessage | Command,
-]
-"""Wrapper for tool call execution with multi-call support.
+ToolCallHandler = Callable[[ToolCallRequest], ToolMessage | Command]
+"""Type alias for the handler callback passed to wrap_tool_call hooks.
 
-Wrapper receives:
-    request: ToolCallRequest with tool_call, tool, state, and runtime.
-    execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
+The handler executes the tool call and returns a ToolMessage or Command. It can be
+called multiple times for retry logic or skipped entirely to short-circuit execution.
+
+Examples:
+    Simple passthrough:
+    ```python
+    def my_wrapper(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
+        return handler(request)
+    ```
+
+    Retry logic:
+    ```python
+    def retry_wrapper(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
+        for attempt in range(3):
+            try:
+                return handler(request)
+            except Exception:
+                if attempt == 2:
+                    raise
+    ```
+"""
+
+AsyncToolCallHandler = Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]
+"""Type alias for the async handler callback passed to wrap_tool_call hooks.
+
+The async handler executes the tool call and returns a ToolMessage or Command. It can
+be called multiple times for retry logic or skipped entirely to short-circuit execution.
+"""
+
+ToolCallWrapper = Callable[[ToolCallRequest, ToolCallHandler], ToolMessage | Command]
+"""Type alias for synchronous tool call wrapper functions.
+
+A wrapper receives a ToolCallRequest and a handler callback. It can modify the request,
+call the handler (potentially multiple times), modify the response, or short-circuit
+entirely.
+
+Args:
+    request: Tool call request with tool_call, tool, state, and runtime.
+    handler: Callback to execute the tool. Can be called multiple times.
 
 Returns:
     ToolMessage or Command (the final result).
-
-The execute callable can be invoked multiple times for retry logic,
-with potentially modified requests each time. Each call to execute
-is independent and stateless.
 
 Note:
     When implementing middleware for `create_agent`, use
@@ -145,55 +174,61 @@ Note:
 
 Examples:
     Passthrough (execute once):
-
-    def handler(request, execute):
-        return execute(request)
+    ```python
+    def passthrough(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
+        return handler(request)
+    ```
 
     Modify request before execution:
-
-    def handler(request, execute):
+    ```python
+    def modify_args(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
         request.tool_call["args"]["value"] *= 2
-        return execute(request)
+        return handler(request)
+    ```
 
     Retry on error (execute multiple times):
-
-    def handler(request, execute):
+    ```python
+    def retry_on_error(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
         for attempt in range(3):
             try:
-                result = execute(request)
+                result = handler(request)
                 if is_valid(result):
                     return result
             except Exception:
                 if attempt == 2:
                     raise
         return result
+    ```
 
-    Conditional retry based on response:
+    Access runtime context:
+    ```python
+    def use_runtime(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
+        if request.runtime is not None:
+            thread_id = request.runtime.context.get("thread_id")
+            # Use runtime context
+        return handler(request)
+    ```
 
-    def handler(request, execute):
-        for attempt in range(3):
-            result = execute(request)
-            if isinstance(result, ToolMessage) and result.status != "error":
-                return result
-            if attempt < 2:
-                continue
-            return result
-
-    Cache/short-circuit without calling execute:
-
-    def handler(request, execute):
+    Cache/short-circuit without calling handler:
+    ```python
+    def with_cache(request: ToolCallRequest, handler: ToolCallHandler) -> ToolMessage | Command:
         if cached := get_cache(request):
             return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
-        result = execute(request)
+        result = handler(request)
         save_cache(request, result)
         return result
+    ```
 """
 
 AsyncToolCallWrapper = Callable[
-    [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
-    Awaitable[ToolMessage | Command],
+    [ToolCallRequest, AsyncToolCallHandler], Awaitable[ToolMessage | Command]
 ]
-"""Async wrapper for tool call execution with multi-call support."""
+"""Type alias for asynchronous tool call wrapper functions.
+
+A wrapper receives a ToolCallRequest and an async handler callback. It can modify the
+request, call the handler (potentially multiple times), modify the response, or
+short-circuit entirely.
+"""
 
 
 class ToolCallWithContext(TypedDict):

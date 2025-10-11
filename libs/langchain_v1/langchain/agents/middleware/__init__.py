@@ -20,7 +20,11 @@ from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
     AgentMiddleware,
     AgentState,
+    ModelCallHandler,
+    ModelCallResult,
+    ModelCallWrapper,
     ModelRequest,
+    ModelResponse,
     after_agent,
     after_model,
     before_agent,
@@ -28,6 +32,7 @@ from .types import (
     dynamic_prompt,
     hook_config,
     wrap_model_call,
+    wrap_tool_call,
 )
 
 __all__ = [
@@ -41,9 +46,13 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "ModelCallHandler",
     "ModelCallLimitMiddleware",
+    "ModelCallResult",
+    "ModelCallWrapper",
     "ModelFallbackMiddleware",
     "ModelRequest",
+    "ModelResponse",
     "PIIDetectionError",
     "PIIMiddleware",
     "PlanningMiddleware",
@@ -56,4 +65,5 @@ __all__ = [
     "dynamic_prompt",
     "hook_config",
     "wrap_model_call",
+    "wrap_tool_call",
 ]
