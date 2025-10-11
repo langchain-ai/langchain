@@ -1,62 +1,62 @@
-"""Converts between AIMessage output formats, governed by ``output_version``.
+"""Converts between AIMessage output formats, governed by `output_version`.
 
-``output_version`` is an attribute on ChatOpenAI.
+`output_version` is an attribute on ChatOpenAI.
 
-Supported values are ``None``, ``'v0'``, and ``'responses/v1'``.
+Supported values are `None`, `'v0'`, and `'responses/v1'`.
 
-``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
-stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
+`'v0'` corresponds to the format as of `ChatOpenAI` v0.3. For the Responses API, it
+stores reasoning and tool outputs in `AIMessage.additional_kwargs`:
 
-.. code-block:: python
-
-    AIMessage(
-        content=[
-            {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
-        ],
-        additional_kwargs={
-            "reasoning": {
-                "type": "reasoning",
-                "id": "rs_123",
-                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
-            },
-            "tool_outputs": [
-                {
-                    "type": "web_search_call",
-                    "id": "websearch_123",
-                    "status": "completed",
-                }
-            ],
-            "refusal": "I cannot assist with that.",
+```python
+AIMessage(
+    content=[
+        {"type": "text", "text": "Hello, world!", "annotations": [{"type": "foo"}]}
+    ],
+    additional_kwargs={
+        "reasoning": {
+            "type": "reasoning",
+            "id": "rs_123",
+            "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
         },
-        response_metadata={"id": "resp_123"},
-        id="msg_123",
-    )
+        "tool_outputs": [
+            {
+                "type": "web_search_call",
+                "id": "websearch_123",
+                "status": "completed",
+            }
+        ],
+        "refusal": "I cannot assist with that.",
+    },
+    response_metadata={"id": "resp_123"},
+    id="msg_123",
+)
+```
 
-``'responses/v1'`` is only applicable to the Responses API. It retains information
+`'responses/v1'` is only applicable to the Responses API. It retains information
 about response item sequencing and accommodates multiple reasoning items by
 representing these items in the content sequence:
 
-.. code-block:: python
-
-    AIMessage(
-        content=[
-            {
-                "type": "reasoning",
-                "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
-                "id": "rs_123",
-            },
-            {
-                "type": "text",
-                "text": "Hello, world!",
-                "annotations": [{"type": "foo"}],
-                "id": "msg_123",
-            },
-            {"type": "refusal", "refusal": "I cannot assist with that."},
-            {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
-        ],
-        response_metadata={"id": "resp_123"},
-        id="resp_123",
-    )
+```python
+AIMessage(
+    content=[
+        {
+            "type": "reasoning",
+            "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
+            "id": "rs_123",
+        },
+        {
+            "type": "text",
+            "text": "Hello, world!",
+            "annotations": [{"type": "foo"}],
+            "id": "msg_123",
+        },
+        {"type": "refusal", "refusal": "I cannot assist with that."},
+        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},
+    ],
+    response_metadata={"id": "resp_123"},
+    id="resp_123",
+)
+```
 
 There are other, small improvements as well-- e.g., we store message IDs on text
 content blocks, rather than on the AIMessage.id, which now stores the response ID.
@@ -69,7 +69,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Iterator
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
@@ -83,7 +83,7 @@ def _convert_to_v03_ai_message(
 ) -> AIMessage:
     """Mutate an `AIMessage` to the old-style v0.3 format."""
     if isinstance(message.content, list):
-        new_content: list[Union[dict, str]] = []
+        new_content: list[dict | str] = []
         for block in message.content:
             if isinstance(block, dict):
                 if block.get("type") == "reasoning":
@@ -187,14 +187,18 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
                 new_ann["title"] = annotation["title"]
             new_ann["type"] = "url_citation"
             new_ann["url"] = annotation["url"]
+
+            if extra_fields := annotation.get("extras"):
+                new_ann.update(dict(extra_fields.items()))
         else:
             # Document citation
             new_ann["type"] = "file_citation"
+
+            if extra_fields := annotation.get("extras"):
+                new_ann.update(dict(extra_fields.items()))
+
             if "title" in annotation:
                 new_ann["filename"] = annotation["title"]
-
-        if extra_fields := annotation.get("extras"):
-            new_ann.update(dict(extra_fields.items()))
 
         return new_ann
 

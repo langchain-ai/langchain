@@ -1,3 +1,5 @@
+"""Standard unit tests for ExaSearchRetriever."""
+
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 

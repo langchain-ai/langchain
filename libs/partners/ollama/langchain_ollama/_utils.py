@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-from typing import Optional
 from urllib.parse import unquote, urlparse
 
 from httpx import ConnectError
@@ -49,8 +48,8 @@ def validate_model(client: Client, model_name: str) -> None:
 
 
 def parse_url_with_auth(
-    url: Optional[str],
-) -> tuple[Optional[str], Optional[dict[str, str]]]:
+    url: str | None,
+) -> tuple[str | None, dict[str, str] | None]:
     """Parse URL and extract `userinfo` credentials for headers.
 
     Handles URLs of the form: `https://user:password@host:port/path`
@@ -59,10 +58,10 @@ def parse_url_with_auth(
         url: The URL to parse.
 
     Returns:
-        A tuple of ``(cleaned_url, headers_dict)`` where:
-        - ``cleaned_url`` is the URL without authentication credentials if any were
+        A tuple of `(cleaned_url, headers_dict)` where:
+        - `cleaned_url` is the URL without authentication credentials if any were
             found. Otherwise, returns the original URL.
-        - ``headers_dict`` contains Authorization header if credentials were found.
+        - `headers_dict` contains Authorization header if credentials were found.
     """
     if not url:
         return None, None
@@ -101,13 +100,13 @@ def parse_url_with_auth(
 
 def merge_auth_headers(
     client_kwargs: dict,
-    auth_headers: Optional[dict[str, str]],
+    auth_headers: dict[str, str] | None,
 ) -> None:
     """Merge authentication headers into client kwargs in-place.
 
     Args:
         client_kwargs: The client kwargs dict to update.
-        auth_headers: Headers to merge (typically from ``parse_url_with_auth``).
+        auth_headers: Headers to merge (typically from `parse_url_with_auth`).
     """
     if auth_headers:
         headers = client_kwargs.get("headers", {})

@@ -42,36 +42,36 @@ class LLMListwiseRerank(BaseDocumentCompressor):
 
     Adapted from: https://arxiv.org/pdf/2305.02156.pdf
 
-    ``LLMListwiseRerank`` uses a language model to rerank a list of documents based on
+    `LLMListwiseRerank` uses a language model to rerank a list of documents based on
     their relevance to a query.
 
-    **NOTE**: requires that underlying model implement ``with_structured_output``.
+    !!! note
+        Requires that underlying model implement `with_structured_output`.
 
     Example usage:
-        .. code-block:: python
+        ```python
+        from langchain_classic.retrievers.document_compressors.listwise_rerank import (
+            LLMListwiseRerank,
+        )
+        from langchain_core.documents import Document
+        from langchain_openai import ChatOpenAI
 
-            from langchain_classic.retrievers.document_compressors.listwise_rerank import (
-                LLMListwiseRerank,
-            )
-            from langchain_core.documents import Document
-            from langchain_openai import ChatOpenAI
+        documents = [
+            Document("Sally is my friend from school"),
+            Document("Steve is my friend from home"),
+            Document("I didn't always like yogurt"),
+            Document("I wonder why it's called football"),
+            Document("Where's waldo"),
+        ]
 
-            documents = [
-                Document("Sally is my friend from school"),
-                Document("Steve is my friend from home"),
-                Document("I didn't always like yogurt"),
-                Document("I wonder why it's called football"),
-                Document("Where's waldo"),
-            ]
-
-            reranker = LLMListwiseRerank.from_llm(
-                llm=ChatOpenAI(model="gpt-3.5-turbo"), top_n=3
-            )
-            compressed_docs = reranker.compress_documents(documents, "Who is steve")
-            assert len(compressed_docs) == 3
-            assert "Steve" in compressed_docs[0].page_content
-
-    """  # noqa: E501
+        reranker = LLMListwiseRerank.from_llm(
+            llm=ChatOpenAI(model="gpt-3.5-turbo"), top_n=3
+        )
+        compressed_docs = reranker.compress_documents(documents, "Who is steve")
+        assert len(compressed_docs) == 3
+        assert "Steve" in compressed_docs[0].page_content
+        ```
+    """
 
     reranker: Runnable[dict, list[Document]]
     """LLM-based reranker to use for filtering documents. Expected to take in a dict
@@ -117,7 +117,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
         """
-        if llm.with_structured_output == BaseLanguageModel.with_structured_output:
+        if type(llm).with_structured_output == BaseLanguageModel.with_structured_output:
             msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )

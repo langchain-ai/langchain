@@ -5,16 +5,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Literal
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.tools import InjectedToolCallId
-
-if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
 
 
 class Todo(TypedDict):
@@ -146,9 +152,9 @@ class PlanningMiddleware(AgentMiddleware):
 
     Args:
         system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default ``WRITE_TODOS_SYSTEM_PROMPT``.
+            If not provided, uses the default `WRITE_TODOS_SYSTEM_PROMPT`.
         tool_description: Custom description for the write_todos tool.
-            If not provided, uses the default ``WRITE_TODOS_TOOL_DESCRIPTION``.
+            If not provided, uses the default `WRITE_TODOS_TOOL_DESCRIPTION`.
     """
 
     state_schema = PlanningState
@@ -186,16 +192,15 @@ class PlanningMiddleware(AgentMiddleware):
 
         self.tools = [write_todos]
 
-    def modify_model_request(
+    def wrap_model_call(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-    ) -> ModelRequest:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt
             if request.system_prompt
             else self.system_prompt
         )
-        return request
+        return handler(request)

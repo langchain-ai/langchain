@@ -55,7 +55,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -90,7 +90,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -125,7 +125,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -160,7 +160,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}

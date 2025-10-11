@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import uuid
-from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 
@@ -34,7 +33,7 @@ async def test_qdrant_aadd_texts_returns_all_ids(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_duplicated_texts(
-    vector_name: Optional[str], qdrant_location: str
+    vector_name: str | None, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient

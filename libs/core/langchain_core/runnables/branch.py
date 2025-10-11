@@ -149,7 +149,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -191,8 +191,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to None.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             The output of the branch that was run.
@@ -301,8 +301,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to None.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the branch that was run.
@@ -385,8 +385,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to None.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the branch that was run.

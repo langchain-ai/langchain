@@ -57,52 +57,51 @@ class Blob(BaseMedia):
 
     Example: Initialize a blob from in-memory data
 
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
+        blob = Blob.from_data("Hello, world!")
 
-            blob = Blob.from_data("Hello, world!")
+        # Read the blob as a string
+        print(blob.as_string())
 
-            # Read the blob as a string
-            print(blob.as_string())
+        # Read the blob as bytes
+        print(blob.as_bytes())
 
-            # Read the blob as bytes
-            print(blob.as_bytes())
-
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
+        # Read the blob as a byte stream
+        with blob.as_bytes_io() as f:
+            print(f.read())
+        ```
 
     Example: Load from memory and specify mime-type and metadata
 
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
-
-            blob = Blob.from_data(
-                data="Hello, world!",
-                mime_type="text/plain",
-                metadata={"source": "https://example.com"},
-            )
+        blob = Blob.from_data(
+            data="Hello, world!",
+            mime_type="text/plain",
+            metadata={"source": "https://example.com"},
+        )
+        ```
 
     Example: Load the blob from a file
 
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
+        blob = Blob.from_path("path/to/file.txt")
 
-            blob = Blob.from_path("path/to/file.txt")
+        # Read the blob as a string
+        print(blob.as_string())
 
-            # Read the blob as a string
-            print(blob.as_string())
+        # Read the blob as bytes
+        print(blob.as_bytes())
 
-            # Read the blob as bytes
-            print(blob.as_bytes())
-
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
-
+        # Read the blob as a byte stream
+        with blob.as_bytes_io() as f:
+            print(f.read())
+        ```
     """
 
     data: bytes | str | None = None
@@ -215,7 +214,7 @@ class Blob(BaseMedia):
             path: path like object to file to be read
             encoding: Encoding to use if decoding the bytes into a string
             mime_type: if provided, will be set as the mime-type of the data
-            guess_type: If True, the mimetype will be guessed from the file extension,
+            guess_type: If `True`, the mimetype will be guessed from the file extension,
                         if a mime-type was not provided
             metadata: Metadata to associate with the blob
 
@@ -278,15 +277,13 @@ class Document(BaseMedia):
     """Class for storing a piece of text and associated metadata.
 
     Example:
+        ```python
+        from langchain_core.documents import Document
 
-        .. code-block:: python
-
-            from langchain_core.documents import Document
-
-            document = Document(
-                page_content="Hello, world!", metadata={"source": "https://example.com"}
-            )
-
+        document = Document(
+            page_content="Hello, world!", metadata={"source": "https://example.com"}
+        )
+        ```
     """
 
     page_content: str

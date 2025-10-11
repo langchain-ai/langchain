@@ -1,8 +1,9 @@
 """Schema definitions for representing agent actions, observations, and return values.
 
-**ATTENTION** The schema definitions are provided for backwards compatibility.
+!!! warning
+    The schema definitions are provided for backwards compatibility.
 
-!!! important
+!!! warning
     New agents should be built using the
     [langgraph library](https://github.com/langchain-ai/langgraph), which provides a
     simpler and more flexible way to define agents.
@@ -16,10 +17,10 @@ Agents use language models to choose a sequence of actions to take.
 A basic agent works in the following manner:
 
 1. Given a prompt an agent uses an LLM to request an action to take
-   (e.g., a tool to run).
+    (e.g., a tool to run).
 2. The agent executes the action (e.g., runs the tool), and receives an observation.
 3. The agent returns the observation to the LLM, which can then be used to generate
-   the next action.
+    the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
 The schemas for the agents themselves are defined in langchain.agents.agent.
@@ -86,7 +87,7 @@ class AgentAction(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "agent"]``
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 
@@ -163,7 +164,7 @@ class AgentFinish(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "agent"]``
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 

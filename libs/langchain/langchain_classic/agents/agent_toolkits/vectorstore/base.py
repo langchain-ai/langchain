@@ -48,50 +48,50 @@ def create_vectorstore_agent(
         This class is deprecated. See below for a replacement that uses tool
         calling methods and LangGraph. Install LangGraph with:
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langgraph
+        ```
 
-            pip install -U langgraph
+        ```python
+        from langchain_core.tools import create_retriever_tool
+        from langchain_core.vectorstores import InMemoryVectorStore
+        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langgraph.prebuilt import create_react_agent
 
-        .. code-block:: python
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-            from langchain_core.tools import create_retriever_tool
-            from langchain_core.vectorstores import InMemoryVectorStore
-            from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-            from langgraph.prebuilt import create_react_agent
+        vector_store = InMemoryVectorStore.from_texts(
+            [
+                "Dogs are great companions, known for their loyalty and friendliness.",
+                "Cats are independent pets that often enjoy their own space.",
+            ],
+            OpenAIEmbeddings(),
+        )
 
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        tool = create_retriever_tool(
+            vector_store.as_retriever(),
+            "pet_information_retriever",
+            "Fetches information about pets.",
+        )
 
-            vector_store = InMemoryVectorStore.from_texts(
-                [
-                    "Dogs are great companions, "
-                    "known for their loyalty and friendliness.",
-                    "Cats are independent pets that often enjoy their own space.",
-                ],
-                OpenAIEmbeddings(),
-            )
+        agent = create_react_agent(model, [tool])
 
-            tool = create_retriever_tool(
-                vector_store.as_retriever(),
-                "pet_information_retriever",
-                "Fetches information about pets.",
-            )
-
-            agent = create_react_agent(llm, [tool])
-
-            for step in agent.stream(
-                {"messages": [("human", "What are dogs known for?")]},
-                stream_mode="values",
-            ):
-                step["messages"][-1].pretty_print()
+        for step in agent.stream(
+            {"messages": [("human", "What are dogs known for?")]},
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+        ```
 
     Args:
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent
-        callback_manager: Object to handle the callback [ Defaults to None. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the agent. If not provided uses default PREFIX.
-        verbose: If you want to see the content of the scratchpad. [ Defaults to False ]
+        verbose: If you want to see the content of the scratchpad.
+            [ Defaults to `False` ]
         agent_executor_kwargs: If there is any other parameter you want to send to the
-            agent. [ Defaults to None ]
+            agent. [ Defaults to `None` ]
         kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:
@@ -146,67 +146,67 @@ def create_vectorstore_router_agent(
         This class is deprecated. See below for a replacement that uses tool calling
         methods and LangGraph. Install LangGraph with:
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langgraph
+        ```
 
-            pip install -U langgraph
+        ```python
+        from langchain_core.tools import create_retriever_tool
+        from langchain_core.vectorstores import InMemoryVectorStore
+        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langgraph.prebuilt import create_react_agent
 
-        .. code-block:: python
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-            from langchain_core.tools import create_retriever_tool
-            from langchain_core.vectorstores import InMemoryVectorStore
-            from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-            from langgraph.prebuilt import create_react_agent
+        pet_vector_store = InMemoryVectorStore.from_texts(
+            [
+                "Dogs are great companions, known for their loyalty and friendliness.",
+                "Cats are independent pets that often enjoy their own space.",
+            ],
+            OpenAIEmbeddings(),
+        )
 
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        food_vector_store = InMemoryVectorStore.from_texts(
+            [
+                "Carrots are orange and delicious.",
+                "Apples are red and delicious.",
+            ],
+            OpenAIEmbeddings(),
+        )
 
-            pet_vector_store = InMemoryVectorStore.from_texts(
-                [
-                    "Dogs are great companions, "
-                    "known for their loyalty and friendliness.",
-                    "Cats are independent pets that often enjoy their own space.",
-                ],
-                OpenAIEmbeddings(),
-            )
+        tools = [
+            create_retriever_tool(
+                pet_vector_store.as_retriever(),
+                "pet_information_retriever",
+                "Fetches information about pets.",
+            ),
+            create_retriever_tool(
+                food_vector_store.as_retriever(),
+                "food_information_retriever",
+                "Fetches information about food.",
+            ),
+        ]
 
-            food_vector_store = InMemoryVectorStore.from_texts(
-                [
-                    "Carrots are orange and delicious.",
-                    "Apples are red and delicious.",
-                ],
-                OpenAIEmbeddings(),
-            )
+        agent = create_react_agent(model, tools)
 
-            tools = [
-                create_retriever_tool(
-                    pet_vector_store.as_retriever(),
-                    "pet_information_retriever",
-                    "Fetches information about pets.",
-                ),
-                create_retriever_tool(
-                    food_vector_store.as_retriever(),
-                    "food_information_retriever",
-                    "Fetches information about food.",
-                ),
-            ]
-
-            agent = create_react_agent(llm, tools)
-
-            for step in agent.stream(
-                {"messages": [("human", "Tell me about carrots.")]},
-                stream_mode="values",
-            ):
-                step["messages"][-1].pretty_print()
+        for step in agent.stream(
+            {"messages": [("human", "Tell me about carrots.")]},
+            stream_mode="values",
+        ):
+            step["messages"][-1].pretty_print()
+        ```
 
     Args:
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent which have routing capability with multiple
             vector stores
-        callback_manager: Object to handle the callback [ Defaults to None. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the router agent.
             If not provided uses default ROUTER_PREFIX.
-        verbose: If you want to see the content of the scratchpad. [ Defaults to False ]
+        verbose: If you want to see the content of the scratchpad.
+            [ Defaults to `False` ]
         agent_executor_kwargs: If there is any other parameter you want to send to the
-            agent. [ Defaults to None ]
+            agent. [ Defaults to `None` ]
         kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:

@@ -78,7 +78,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v1-like.
 
     Returns:
-        True if the given class is a subclass of Pydantic ``BaseModel`` 1.x.
+        `True` if the given class is a subclass of Pydantic `BaseModel` 1.x.
     """
     return issubclass(cls, BaseModelV1)
 
@@ -87,7 +87,7 @@ def is_pydantic_v2_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v2-like.
 
     Returns:
-        True if the given class is a subclass of Pydantic BaseModel 2.x.
+        `True` if the given class is a subclass of Pydantic BaseModel 2.x.
     """
     return issubclass(cls, BaseModel)
 
@@ -101,7 +101,7 @@ def is_basemodel_subclass(cls: type) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
 
     Returns:
-        True if the given class is a subclass of Pydantic ``BaseModel``.
+        `True` if the given class is a subclass of Pydantic `BaseModel`.
     """
     # Before we can use issubclass on the cls we need to check if it is a class
     if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
@@ -119,7 +119,7 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
 
     Returns:
-        True if the given class is an instance of Pydantic ``BaseModel``.
+        `True` if the given class is an instance of Pydantic `BaseModel`.
     """
     return isinstance(obj, (BaseModel, BaseModelV1))
 
@@ -129,10 +129,10 @@ def pre_init(func: Callable) -> Any:
     """Decorator to run a function before model initialization.
 
     Args:
-        func (Callable): The function to run before model initialization.
+        func: The function to run before model initialization.
 
     Returns:
-        Any: The decorated function.
+        The decorated function.
     """
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", category=PydanticDeprecationWarning)
@@ -146,11 +146,11 @@ def pre_init(func: Callable) -> Any:
             """Decorator to run a function before model initialization.
 
             Args:
-                cls (Type[BaseModel]): The model class.
-                values (dict[str, Any]): The values to initialize the model with.
+                cls: The model class.
+                values: The values to initialize the model with.
 
             Returns:
-                dict[str, Any]: The values to initialize the model with.
+                The values to initialize the model with.
             """
             # Insert default values
             fields = cls.model_fields
@@ -206,7 +206,7 @@ def _create_subset_model_v1(
     descriptions: dict | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with only a subset of model's fields."""
+    """Create a Pydantic model with only a subset of model's fields."""
     fields = {}
 
     for field_name in field_names:
@@ -235,7 +235,7 @@ def _create_subset_model_v2(
     descriptions: dict | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with a subset of the model fields."""
+    """Create a Pydantic model with a subset of the model fields."""
     descriptions_ = descriptions or {}
     fields = {}
     for field_name in field_names:
@@ -438,9 +438,9 @@ def create_model(
     /,
     **field_definitions: Any,
 ) -> type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
+    """Create a Pydantic model with the given field definitions.
 
-    Please use create_model_v2 instead of this function.
+    Please use `create_model_v2` instead of this function.
 
     Args:
         model_name: The name of the model.
@@ -449,7 +449,7 @@ def create_model(
         **field_definitions: The field definitions for the model.
 
     Returns:
-        Type[BaseModel]: The created model.
+        The created model.
     """
     kwargs = {}
     if "__root__" in field_definitions:
@@ -511,7 +511,7 @@ def create_model_v2(
     field_definitions: dict[str, Any] | None = None,
     root: Any | None = None,
 ) -> type[BaseModel]:
-    """Create a pydantic model with the given field definitions.
+    """Create a Pydantic model with the given field definitions.
 
     Attention:
         Please do not use outside of langchain packages. This API
@@ -522,10 +522,10 @@ def create_model_v2(
         module_name: The name of the module where the model is defined.
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
-        root: Type for a root model (RootModel)
+        root: Type for a root model (`RootModel`)
 
     Returns:
-        Type[BaseModel]: The created model.
+        The created model.
     """
     field_definitions = field_definitions or {}
 

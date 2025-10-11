@@ -35,13 +35,13 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Returns:
         A tuple of (provider, model_name)
 
-    .. code-block:: python
+    ```python
+    _parse_model_string("openai:text-embedding-3-small")
+    # Returns: ("openai", "text-embedding-3-small")
 
-        _parse_model_string("openai:text-embedding-3-small")
-        # Returns: ("openai", "text-embedding-3-small")
-
-        _parse_model_string("bedrock:amazon.titan-embed-text-v1")
-        # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+    _parse_model_string("bedrock:amazon.titan-embed-text-v1")
+    # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+    ```
 
     Raises:
         ValueError: If the model string is not in the correct format or
@@ -128,8 +128,9 @@ def init_embeddings(
 ) -> Embeddings:
     """Initialize an embeddings model from a model name and optional provider.
 
-    **Note:** Must have the integration package corresponding to the model provider
-    installed.
+    !!! note
+        Must have the integration package corresponding to the model provider
+        installed.
 
     Args:
         model: Name of the model to use. Can be either:
@@ -151,21 +152,20 @@ def init_embeddings(
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    ??? note "Example Usage"
-        :open:
+    ???+ note "Example Usage"
 
-        .. code-block:: python
+        ```python
+        # Using a model string
+        model = init_embeddings("openai:text-embedding-3-small")
+        model.embed_query("Hello, world!")
 
-            # Using a model string
-            model = init_embeddings("openai:text-embedding-3-small")
-            model.embed_query("Hello, world!")
+        # Using explicit provider
+        model = init_embeddings(model="text-embedding-3-small", provider="openai")
+        model.embed_documents(["Hello, world!", "Goodbye, world!"])
 
-            # Using explicit provider
-            model = init_embeddings(model="text-embedding-3-small", provider="openai")
-            model.embed_documents(["Hello, world!", "Goodbye, world!"])
-
-            # With additional parameters
-            model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
+        # With additional parameters
+        model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
+        ```
 
     !!! version-added "Added in version 0.3.9"
 

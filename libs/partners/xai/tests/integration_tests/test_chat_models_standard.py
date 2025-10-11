@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_core.rate_limiters import InMemoryRateLimiter
@@ -52,7 +52,7 @@ def test_reasoning_content() -> None:
     assert response.additional_kwargs["reasoning_content"]
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in chat_model.stream("What is 3^3?"):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)

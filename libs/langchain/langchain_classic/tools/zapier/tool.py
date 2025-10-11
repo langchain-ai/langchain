@@ -33,10 +33,10 @@ def __getattr__(name: str) -> Any:
     at runtime and forward them to their new locations.
 
     Args:
-        name (str): The name of the attribute to import.
+        name: The name of the attribute to import.
 
     Returns:
-        Any: The resolved attribute from the appropriate updated module.
+        The resolved attribute from the appropriate updated module.
     """
     return _import_attribute(name)
 

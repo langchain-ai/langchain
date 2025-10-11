@@ -46,10 +46,10 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
     Args:
         namespace: Prefix that segregates keys from different embedding models.
         algorithm:
-           * ``'sha1'`` - fast but not collision-resistant
-           * ``'blake2b'`` - cryptographically strong, faster than SHA-1
-           * ``'sha256'`` - cryptographically strong, slower than SHA-1
-           * ``'sha512'`` - cryptographically strong, slower than SHA-1
+           * `'sha1'` - fast but not collision-resistant
+           * `'blake2b'` - cryptographically strong, faster than SHA-1
+           * `'sha256'` - cryptographically strong, slower than SHA-1
+           * `'sha512'` - cryptographically strong, slower than SHA-1
 
     Returns:
         A function that encodes a key using the specified algorithm.
@@ -119,24 +119,24 @@ class CacheBackedEmbeddings(Embeddings):
     embeddings too, pass in a query_embedding_store to constructor.
 
     Examples:
-        .. code-block: python
+        ```python
+        from langchain_classic.embeddings import CacheBackedEmbeddings
+        from langchain_classic.storage import LocalFileStore
+        from langchain_community.embeddings import OpenAIEmbeddings
 
-            from langchain_classic.embeddings import CacheBackedEmbeddings
-            from langchain_classic.storage import LocalFileStore
-            from langchain_community.embeddings import OpenAIEmbeddings
+        store = LocalFileStore("./my_cache")
 
-            store = LocalFileStore('./my_cache')
+        underlying_embedder = OpenAIEmbeddings()
+        embedder = CacheBackedEmbeddings.from_bytes_store(
+            underlying_embedder, store, namespace=underlying_embedder.model
+        )
 
-            underlying_embedder = OpenAIEmbeddings()
-            embedder = CacheBackedEmbeddings.from_bytes_store(
-                underlying_embedder, store, namespace=underlying_embedder.model
-            )
+        # Embedding is computed and cached
+        embeddings = embedder.embed_documents(["hello", "goodbye"])
 
-            # Embedding is computed and cached
-            embeddings = embedder.embed_documents(["hello", "goodbye"])
-
-            # Embeddings are retrieved from the cache, no computation is done
-            embeddings = embedder.embed_documents(["hello", "goodbye"])
+        # Embeddings are retrieved from the cache, no computation is done
+        embeddings = embedder.embed_documents(["hello", "goodbye"])
+        ```
     """
 
     def __init__(
@@ -154,7 +154,7 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_store: The store to use for caching document embeddings.
             batch_size: The number of documents to embed between store updates.
             query_embedding_store: The store to use for caching query embeddings.
-                If ``None``, query embeddings are not cached.
+                If `None`, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
@@ -242,7 +242,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to ``True`` when initializing the embedder.
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -265,7 +265,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        ``cache_query`` parameter to ``True`` when initializing the embedder.
+        `cache_query` parameter to `True` when initializing the embedder.
 
         Args:
             text: The text to embed.

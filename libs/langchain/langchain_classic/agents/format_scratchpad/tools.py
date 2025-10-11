@@ -55,7 +55,7 @@ def _create_tool_message(
 def format_to_tool_messages(
     intermediate_steps: Sequence[tuple[AgentAction, str]],
 ) -> list[BaseMessage]:
-    """Convert (AgentAction, tool output) tuples into ToolMessages.
+    """Convert (AgentAction, tool output) tuples into `ToolMessage` objects.
 
     Args:
         intermediate_steps: Steps the LLM has taken to date, along with observations.

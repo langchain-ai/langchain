@@ -84,7 +84,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         return False
 
     def test_openai_pdf_tool_messages(self, model: BaseChatModel) -> None:
-        """Test that the model can process PDF inputs in ToolMessages."""
+        """Test that the model can process PDF inputs in `ToolMessage` objects."""
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 
