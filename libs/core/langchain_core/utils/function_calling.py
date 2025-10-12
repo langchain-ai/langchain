@@ -502,6 +502,9 @@ def convert_to_openai_function(
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
+            # All fields must be `required`
+            fields = oai_function["parameters"].get("properties", {})
+            oai_function["parameters"]["required"] = list(fields.keys())
     return oai_function
 
 
