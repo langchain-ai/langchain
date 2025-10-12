@@ -9,7 +9,7 @@ from langgraph.types import Command
 
 from langchain.tools.tool_node import (
     ToolCallRequest,
-    ToolNode,
+    _ToolNode,
 )
 
 pytestmark = pytest.mark.anyio
@@ -44,7 +44,7 @@ def test_passthrough_handler() -> None:
         """Simple passthrough handler."""
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=passthrough_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=passthrough_handler)
 
     result = tool_node.invoke(
         {
@@ -80,7 +80,7 @@ async def test_passthrough_handler_async() -> None:
         """Simple passthrough handler."""
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=passthrough_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=passthrough_handler)
 
     result = await tool_node.ainvoke(
         {
@@ -119,7 +119,7 @@ def test_modify_arguments() -> None:
 
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=modify_args_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=modify_args_handler)
 
     result = tool_node.invoke(
         {
@@ -154,7 +154,7 @@ def test_handler_validation_no_return() -> None:
         """Handler that executes and returns result."""
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=handler_with_explicit_none)
+    tool_node = _ToolNode([add], wrap_tool_call=handler_with_explicit_none)
 
     result = tool_node.invoke(
         {
@@ -191,7 +191,7 @@ def test_handler_validation_no_yield() -> None:
         # Don't call execute, just return None (invalid)
         return None  # type: ignore[return-value]
 
-    tool_node = ToolNode([add], wrap_tool_call=bad_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=bad_handler)
 
     # This will return None wrapped in messages
     result = tool_node.invoke(
@@ -230,7 +230,7 @@ def test_handler_with_handle_tool_errors_true() -> None:
         assert message.status == "error"
         return message
 
-    tool_node = ToolNode(
+    tool_node = _ToolNode(
         [failing_tool], wrap_tool_call=passthrough_handler, handle_tool_errors=True
     )
 
@@ -269,7 +269,7 @@ def test_multiple_tool_calls_with_handler() -> None:
         call_count += 1
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=counting_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=counting_handler)
 
     result = tool_node.invoke(
         {
@@ -343,7 +343,7 @@ async def test_handler_with_async_execution() -> None:
         request.tool_call["args"]["b"] += 10
         return execute(request)
 
-    tool_node = ToolNode([async_add], wrap_tool_call=modifying_handler)
+    tool_node = _ToolNode([async_add], wrap_tool_call=modifying_handler)
 
     result = await tool_node.ainvoke(
         {
@@ -383,7 +383,7 @@ def test_short_circuit_with_tool_message() -> None:
             name=request.tool_call["name"],
         )
 
-    tool_node = ToolNode([add], wrap_tool_call=short_circuit_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=short_circuit_handler)
 
     result = tool_node.invoke(
         {
@@ -423,7 +423,7 @@ async def test_short_circuit_with_tool_message_async() -> None:
             name=request.tool_call["name"],
         )
 
-    tool_node = ToolNode([add], wrap_tool_call=short_circuit_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=short_circuit_handler)
 
     result = await tool_node.ainvoke(
         {
@@ -470,7 +470,7 @@ def test_conditional_short_circuit() -> None:
         # Odd: execute normally
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=conditional_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=conditional_handler)
 
     # Test with even number (should be cached)
     result1 = tool_node.invoke(
@@ -530,7 +530,7 @@ def test_direct_return_tool_message() -> None:
             name=request.tool_call["name"],
         )
 
-    tool_node = ToolNode([add], wrap_tool_call=direct_return_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=direct_return_handler)
 
     result = tool_node.invoke(
         {
@@ -570,7 +570,7 @@ async def test_direct_return_tool_message_async() -> None:
             name=request.tool_call["name"],
         )
 
-    tool_node = ToolNode([add], wrap_tool_call=direct_return_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=direct_return_handler)
 
     result = await tool_node.ainvoke(
         {
@@ -615,7 +615,7 @@ def test_conditional_direct_return() -> None:
         # Execute tool normally
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=conditional_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=conditional_handler)
 
     # Test with zero (should return directly)
     result1 = tool_node.invoke(
@@ -675,7 +675,7 @@ def test_handler_can_throw_exception() -> None:
             raise TypeError(msg)
         return response
 
-    tool_node = ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=True)
+    tool_node = _ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=True)
 
     result = tool_node.invoke(
         {
@@ -714,7 +714,7 @@ def test_handler_throw_without_handle_errors() -> None:
         msg = "Handler error"
         raise ValueError(msg)
 
-    tool_node = ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=False)
+    tool_node = _ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=False)
 
     with pytest.raises(ValueError, match="Handler error"):
         tool_node.invoke(
@@ -759,7 +759,7 @@ def test_retry_middleware_with_exception() -> None:
         # If we exhausted retries, return last response
         return response
 
-    tool_node = ToolNode([add], wrap_tool_call=retry_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=retry_handler)
 
     result = tool_node.invoke(
         {
@@ -798,7 +798,7 @@ async def test_async_handler_can_throw_exception() -> None:
         msg = "Async handler rejected the request"
         raise ValueError(msg)
 
-    tool_node = ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=True)
+    tool_node = _ToolNode([add], wrap_tool_call=throwing_handler, handle_tool_errors=True)
 
     result = await tool_node.ainvoke(
         {
@@ -838,7 +838,7 @@ def test_handler_cannot_yield_multiple_tool_messages() -> None:
         """Handler that returns once (as all handlers do)."""
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=single_return_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=single_return_handler)
 
     result = tool_node.invoke(
         {
@@ -875,7 +875,7 @@ def test_handler_cannot_yield_request_after_tool_message() -> None:
         # Return cached result (short-circuit)
         return ToolMessage("cached", tool_call_id=request.tool_call["id"], name="add")
 
-    tool_node = ToolNode([add], wrap_tool_call=single_return_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=single_return_handler)
 
     result = tool_node.invoke(
         {
@@ -910,7 +910,7 @@ def test_handler_can_short_circuit_with_command() -> None:
         # Short-circuit with Command instead of executing tool
         return Command(goto="end")
 
-    tool_node = ToolNode([add], wrap_tool_call=command_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=command_handler)
 
     result = tool_node.invoke(
         {
@@ -948,7 +948,7 @@ def test_handler_cannot_yield_multiple_commands() -> None:
         """Handler that returns Command once."""
         return Command(goto="step1")
 
-    tool_node = ToolNode([add], wrap_tool_call=single_command_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=single_command_handler)
 
     result = tool_node.invoke(
         {
@@ -986,7 +986,7 @@ def test_handler_cannot_yield_request_after_command() -> None:
         """Handler that returns Command."""
         return Command(goto="somewhere")
 
-    tool_node = ToolNode([add], wrap_tool_call=command_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=command_handler)
 
     result = tool_node.invoke(
         {
@@ -1027,7 +1027,7 @@ def test_tool_returning_command_sent_to_handler() -> None:
             received_commands.append(result)
         return result
 
-    tool_node = ToolNode([command_tool], wrap_tool_call=command_inspector_handler)
+    tool_node = _ToolNode([command_tool], wrap_tool_call=command_inspector_handler)
 
     result = tool_node.invoke(
         {
@@ -1071,7 +1071,7 @@ def test_handler_can_modify_command_from_tool() -> None:
             return Command(goto=f"modified_{result.goto}")
         return result
 
-    tool_node = ToolNode([command_tool], wrap_tool_call=command_modifier_handler)
+    tool_node = _ToolNode([command_tool], wrap_tool_call=command_modifier_handler)
 
     result = tool_node.invoke(
         {
@@ -1109,7 +1109,7 @@ def test_state_extraction_with_dict_input() -> None:
         state_seen.append(request.state)
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=state_inspector_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=state_inspector_handler)
 
     input_state = {
         "messages": [
@@ -1144,7 +1144,7 @@ def test_state_extraction_with_list_input() -> None:
         state_seen.append(request.state)
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=state_inspector_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=state_inspector_handler)
 
     input_state = [
         AIMessage(
@@ -1178,7 +1178,7 @@ def test_state_extraction_with_tool_call_with_context() -> None:
         state_seen.append(request.state)
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=state_inspector_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=state_inspector_handler)
 
     # Simulate ToolCallWithContext as used by create_agent with Send API
     actual_state = {
@@ -1221,7 +1221,7 @@ async def test_state_extraction_with_tool_call_with_context_async() -> None:
         state_seen.append(request.state)
         return execute(request)
 
-    tool_node = ToolNode([add], wrap_tool_call=state_inspector_handler)
+    tool_node = _ToolNode([add], wrap_tool_call=state_inspector_handler)
 
     # Simulate ToolCallWithContext as used by create_agent with Send API
     actual_state = {

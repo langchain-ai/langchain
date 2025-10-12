@@ -392,7 +392,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
     return (Exception,)
 
 
-class ToolNode(RunnableCallable):
+class _ToolNode(RunnableCallable):
     """A node for executing tools in LangGraph workflows.
 
     Handles tool execution patterns including function calls, state injection,

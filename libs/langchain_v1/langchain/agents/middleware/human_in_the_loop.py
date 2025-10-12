@@ -11,23 +11,23 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState
 
 
 class Action(TypedDict):
-    """Represents an action with a name and arguments."""
+    """Represents an action with a name and args."""
 
     name: str
     """The type or name of action being requested (e.g., "add_numbers")."""
 
-    arguments: dict[str, Any]
-    """Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})."""
+    args: dict[str, Any]
+    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
 
 
 class ActionRequest(TypedDict):
-    """Represents an action request with a name, arguments, and description."""
+    """Represents an action request with a name, args, and description."""
 
     name: str
     """The name of the action being requested."""
 
-    arguments: dict[str, Any]
-    """Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})."""
+    args: dict[str, Any]
+    """Key-value pairs of args needed for the action (e.g., {"a": 1, "b": 2})."""
 
     description: NotRequired[str]
     """The description of the action to be reviewed."""
@@ -45,8 +45,8 @@ class ReviewConfig(TypedDict):
     allowed_decisions: list[DecisionType]
     """The decisions that are allowed for this request."""
 
-    arguments_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the arguments associated with the action, if edits are allowed."""
+    args_schema: NotRequired[dict[str, Any]]
+    """JSON schema for the args associated with the action, if edits are allowed."""
 
 
 class HITLRequest(TypedDict):
@@ -150,8 +150,8 @@ class InterruptOnConfig(TypedDict):
         )
         ```
     """
-    arguments_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the arguments associated with the action, if edits are allowed."""
+    args_schema: NotRequired[dict[str, Any]]
+    """JSON schema for the args associated with the action, if edits are allowed."""
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
@@ -214,12 +214,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Create ActionRequest with description
         action_request = ActionRequest(
             name=tool_name,
-            arguments=tool_args,
+            args=tool_args,
             description=description,
         )
 
         # Create ReviewConfig
-        # eventually can get tool information and populate arguments_schema from there
+        # eventually can get tool information and populate args_schema from there
         review_config = ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
@@ -244,7 +244,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 ToolCall(
                     type="tool_call",
                     name=edited_action["name"],
-                    args=edited_action["arguments"],
+                    args=edited_action["args"],
                     id=tool_call["id"],
                 ),
                 None,

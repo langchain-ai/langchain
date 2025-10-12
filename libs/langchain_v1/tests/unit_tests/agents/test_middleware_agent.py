@@ -54,6 +54,8 @@ from langchain.agents.middleware.types import (
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
+    ModelResponse,
+    ModelCallResult,
 )
 from langchain.agents.factory import create_agent
 from langchain.agents.structured_output import ToolStrategy
@@ -553,7 +555,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "edited"},
+                        args={"input": "edited"},
                     ),
                 }
             ]
@@ -674,14 +676,14 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="get_forecast",
-                        arguments={"location": "New York"},
+                        args={"location": "New York"},
                     ),
                 },
                 {
                     "type": "edit",
                     "edited_action": Action(
                         name="get_temperature",
-                        arguments={"location": "New York"},
+                        args={"location": "New York"},
                     ),
                 },
             ]
@@ -722,7 +724,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "modified"},
+                        args={"input": "modified"},
                     ),
                 }
             ]
@@ -787,7 +789,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "modified"},
+                        args={"input": "modified"},
                     ),
                 }
             ]
@@ -799,7 +801,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'arguments': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
+            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'args': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
         ):
             middleware.after_model(state, None)
 
@@ -869,7 +871,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert len(captured_request["action_requests"]) == 1
         action_request = captured_request["action_requests"][0]
         assert action_request["name"] == "test_tool"
-        assert action_request["arguments"] == {"input": "test", "location": "SF"}
+        assert action_request["args"] == {"input": "test", "location": "SF"}
         assert "Custom prefix" in action_request["description"]
         assert "Tool: test_tool" in action_request["description"]
         assert "Args: {'input': 'test', 'location': 'SF'}" in action_request["description"]
@@ -910,7 +912,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
                     "type": "edit",
                     "edited_action": Action(
                         name="test_tool",
-                        arguments={"input": "edited"},
+                        args={"input": "edited"},
                     ),
                 }
             ]
@@ -2196,20 +2198,28 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
     """Test async invoke with mixed sync and async middleware."""
     calls = []
 
-    class SyncMiddleware(AgentMiddleware):
+    class MostlySyncMiddleware(AgentMiddleware):
         def before_model(self, state, runtime) -> None:
-            calls.append("SyncMiddleware.before_model")
+            calls.append("MostlySyncMiddleware.before_model")
 
         def wrap_model_call(
             self,
             request: ModelRequest,
             handler: Callable[[ModelRequest], AIMessage],
         ) -> AIMessage:
-            calls.append("SyncMiddleware.wrap_model_call")
+            calls.append("MostlySyncMiddleware.wrap_model_call")
             return handler(request)
 
+        async def awrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelCallResult:
+            calls.append("MostlySyncMiddleware.awrap_model_call")
+            return await handler(request)
+
         def after_model(self, state, runtime) -> None:
-            calls.append("SyncMiddleware.after_model")
+            calls.append("MostlySyncMiddleware.after_model")
 
     class AsyncMiddleware(AgentMiddleware):
         async def abefore_model(self, state, runtime) -> None:
@@ -2230,20 +2240,21 @@ async def test_create_agent_mixed_sync_async_middleware() -> None:
         model=FakeToolCallingModel(),
         tools=[],
         system_prompt="You are a helpful assistant.",
-        middleware=[SyncMiddleware(), AsyncMiddleware()],
+        middleware=[MostlySyncMiddleware(), AsyncMiddleware()],
     )
 
-    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+    await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     # In async mode, both sync and async middleware should work
     # Note: Sync wrap_model_call is not called when running in async mode,
     # as the async version is preferred
     assert calls == [
-        "SyncMiddleware.before_model",
+        "MostlySyncMiddleware.before_model",
         "AsyncMiddleware.abefore_model",
+        "MostlySyncMiddleware.awrap_model_call",
         "AsyncMiddleware.awrap_model_call",
         "AsyncMiddleware.aafter_model",
-        "SyncMiddleware.after_model",
+        "MostlySyncMiddleware.after_model",
     ]
 
 
@@ -2638,10 +2649,8 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         middleware=[AsyncOnlyMiddleware()],
     )
 
-    # This should work now via run_in_executor
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert result is not None
-    assert "messages" in result
+    with pytest.raises(NotImplementedError):
+        agent.invoke({"messages": [HumanMessage("hello")]})
 
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
