@@ -339,8 +339,13 @@ if __name__ == "__main__":
 
     dependents = dependents_graph()
 
-    # we now have dirs_by_job
-    # todo: clean this up
+    # 🧩 Skip langchain_community because it is not a standalone package (no pyproject.toml)
+    for job in dirs_to_run:
+        dirs_to_run[job] = {
+            d for d in dirs_to_run[job]
+            if d != "libs/community/langchain_community"
+        }
+
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
