@@ -33,23 +33,13 @@ LANGCHAIN_DIRS = [
 ]
 
 # When set to True, we are ignoring core dependents
-# in order to be able to get CI to pass for each individual
-# package that depends on core
-# e.g. if you touch core, we don't then add textsplitters/etc to CI
 IGNORE_CORE_DEPENDENTS = False
 
-# ignored partners are removed from dependents
-# but still run if directly edited
+# ignored partners are removed from dependents, but still run if directly edited
 IGNORED_PARTNERS = [
-    # remove huggingface from dependents because of CI instability
-    # specifically in huggingface jobs
-    # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
-    # prompty exhibiting issues with numpy for Python 3.13
-    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
     "prompty",
 ]
-
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -58,10 +48,8 @@ def all_package_dirs() -> Set[str]:
         if "libs/cli" not in path and "libs/standard-tests" not in path
     }
 
-
 def dependents_graph() -> dict:
     """Construct a mapping of package -> dependents
-
     Done such that we can run tests on all dependents of a package when a change is made.
     """
     dependents = defaultdict(set)
@@ -93,7 +81,6 @@ def dependents_graph() -> dict:
                 extended_deps = f.read().splitlines()
                 for depline in extended_deps:
                     if depline.startswith("-e "):
-                        # editable dependency
                         assert depline.startswith("-e ../partners/"), (
                             "Extended test deps should only editable install partner packages"
                         )
@@ -111,7 +98,6 @@ def dependents_graph() -> dict:
                 dependents[k].remove(f"libs/partners/{partner}")
     return dependents
 
-
 def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     updated = set()
     for dir_ in dirs_to_eval:
@@ -124,32 +110,26 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
         updated.add(dir_)
     return list(updated)
 
-
 def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.12"]  # 3.13 is not yet supported
+        py_versions = ["3.12"]
     elif dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13"]
-    # custom logic for specific directories
-
     elif dir_ == "libs/langchain" and job == "extended-tests":
         py_versions = ["3.10", "3.13"]
     elif dir_ == "libs/langchain_v1":
         py_versions = ["3.10", "3.13"]
     elif dir_ in {"libs/cli"}:
         py_versions = ["3.10", "3.13"]
-
     elif dir_ == ".":
-        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.10", "3.12"]
     else:
         py_versions = ["3.10", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
-
 
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
@@ -205,7 +185,6 @@ def _get_pydantic_test_configs(
     ]
     return configs
 
-
 def _get_configs_for_multi_dirs(
     job: str, dirs_to_run: Dict[str, Set[str]], dependents: dict
 ) -> List[Dict[str, str]]:
@@ -229,7 +208,6 @@ def _get_configs_for_multi_dirs(
         config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
     ]
 
-
 if __name__ == "__main__":
     files = sys.argv[1:]
 
@@ -242,7 +220,6 @@ if __name__ == "__main__":
     docs_edited = False
 
     if len(files) >= 300:
-        # max diff length is 300 files - there are likely files missing
         dirs_to_run["lint"] = all_package_dirs()
         dirs_to_run["test"] = all_package_dirs()
         dirs_to_run["extended-test"] = set(LANGCHAIN_DIRS)
@@ -257,23 +234,11 @@ if __name__ == "__main__":
                 ".github/scripts/check_diff.py",
             )
         ):
-            # Infrastructure changes (workflows, actions, CI scripts) trigger tests on
-            # all core packages as a safety measure. This ensures that changes to CI/CD
-            # infrastructure don't inadvertently break package testing, even if the change
-            # appears unrelated (e.g., documentation build workflows). This is intentionally
-            # conservative to catch unexpected side effects from workflow modifications.
-            #
-            # Example: A PR modifying .github/workflows/api_doc_build.yml will trigger
-            # lint/test jobs for libs/core, libs/text-splitters, libs/langchain, and
-            # libs/langchain_v1, even though the workflow may only affect documentation.
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
         if file.startswith("libs/core"):
             dirs_to_run["codspeed"].add("libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
-            # add that dir and all dirs after in LANGCHAIN_DIRS
-            # for extended testing
-
             found = False
             for dir_ in LANGCHAIN_DIRS:
                 if dir_ == "libs/core" and IGNORE_CORE_DEPENDENTS:
@@ -284,8 +249,6 @@ if __name__ == "__main__":
                 if found:
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
-            # TODO: update to include all packages that rely on standard-tests (all partner packages)
-            # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
@@ -309,11 +272,15 @@ if __name__ == "__main__":
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+
+        elif file.startswith("libs/community/langchain_community/chat_models/"):
+            # Recognize new chat_models (including google_gemini) as part of langchain_community for tests
+            dirs_to_run["test"].add("libs/community/langchain_community")
+            continue
+
         elif file.startswith("libs/"):
-            # Check if this is a root-level file in libs/ (e.g., libs/README.md)
             file_parts = file.split("/")
             if len(file_parts) == 2:
-                # Root-level file in libs/, skip it (no tests needed)
                 continue
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
@@ -322,13 +289,11 @@ if __name__ == "__main__":
         elif file in [
             "pyproject.toml",
             "uv.lock",
-        ]:  # root uv files
+        ]:
             docs_edited = True
 
     dependents = dependents_graph()
 
-    # we now have dirs_by_job
-    # todo: clean this up
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
