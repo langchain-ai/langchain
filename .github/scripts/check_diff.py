@@ -154,6 +154,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
 ) -> List[Dict[str, str]]:
+    # Skip directories without uv.lock (e.g., community or doc-only packages)
+        if not os.path.exists(f"./{dir_}/uv.lock"):
+        return []
+
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
     for package in core_uv_lock_data["package"]:
