@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -1603,6 +1603,12 @@ xai = [
 ]
 
 [package.dev-dependencies]
+extended-tests = [
+    { name = "langchain-anthropic" },
+    { name = "langchain-fireworks" },
+    { name = "langchain-groq" },
+    { name = "langchain-mistralai" },
+]
 lint = [
     { name = "ruff" },
 ]
@@ -1635,16 +1641,16 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
+    { name = "langchain-anthropic", marker = "extra == 'anthropic'", editable = "../partners/anthropic" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
-    { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
+    { name = "langchain-fireworks", marker = "extra == 'fireworks'", editable = "../partners/fireworks" },
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
-    { name = "langchain-groq", marker = "extra == 'groq'" },
-    { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
+    { name = "langchain-groq", marker = "extra == 'groq'", editable = "../partners/groq" },
+    { name = "langchain-mistralai", marker = "extra == 'mistralai'", editable = "../partners/mistralai" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -1656,6 +1662,12 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
+extended-tests = [
+    { name = "langchain-anthropic", editable = "../partners/anthropic" },
+    { name = "langchain-fireworks", editable = "../partners/fireworks" },
+    { name = "langchain-groq", editable = "../partners/groq" },
+    { name = "langchain-mistralai", editable = "../partners/mistralai" },
+]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
     { name = "langchain-openai", editable = "../partners/openai" },
@@ -1686,16 +1698,47 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.0.0a2"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.0a3"
+source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
     { name = "langchain-core" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/9e/faa1f5efcb72e22068aa6baaaddf18f8a61a84d7d679321571acefad11b9/langchain_anthropic-1.0.0a2.tar.gz", hash = "sha256:7291174599ad35a1f8cd39c9f2913273ab198e622d3b8a151d528d63978182ba", size = 531371, upload-time = "2025-09-30T17:11:45.584Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/81/7a66857c599624f67835c43f7f3c496440ad3b4f8f4621672411e96c697c/langchain_anthropic-1.0.0a2-py3-none-any.whl", hash = "sha256:b44f221b6688baa170977f77650a34f617cc10289f92d3a2f4a891f1ea55a96c", size = 34574, upload-time = "2025-09-30T17:11:44.224Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", specifier = ">=0.69.0,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-timeout", specifier = ">=2.3.1,<3.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "vcrpy", specifier = ">=7.0.0,<8.0.0" },
+]
+test-integration = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "requests", specifier = ">=2.32.3,<3.0.0" },
+]
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.17.1,<2.0.0" },
+    { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
 ]
 
 [[package]]
@@ -1812,7 +1855,7 @@ wheels = [
 [[package]]
 name = "langchain-fireworks"
 version = "1.0.0a1"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../partners/fireworks" }
 dependencies = [
     { name = "aiohttp" },
     { name = "fireworks-ai" },
@@ -1820,9 +1863,35 @@ dependencies = [
     { name = "openai" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/16/dc/7cc1961510d8bae938355f34fccebb95422744143f8b33e38ee32f2058ac/langchain_fireworks-1.0.0a1.tar.gz", hash = "sha256:c78274d47e15f5d89ecacf6864fada1cf60aadad8722aef1ae8e659e758d9a52", size = 20763, upload-time = "2025-10-02T23:15:59.132Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/f2/1f7b4f49a815567a017db4bdba0f1ce70eb72f1ddfb34d6f06287f74815f/langchain_fireworks-1.0.0a1-py3-none-any.whl", hash = "sha256:6b555816da1edab4f6dd2f4176fab1ba1de433611be0a771150c066b1792a994", size = 17463, upload-time = "2025-10-02T23:15:58.001Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
+    { name = "fireworks-ai", specifier = ">=0.13.0,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "openai", specifier = ">=2.0.0,<3.0.0" },
+    { name = "requests", specifier = ">=2.0.0,<3.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+]
+test-integration = []
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.10.0,<2.0.0" },
+    { name = "types-requests", specifier = ">=2.0.0,<3.0.0" },
 ]
 
 [[package]]
@@ -1864,20 +1933,40 @@ wheels = [
 [[package]]
 name = "langchain-groq"
 version = "1.0.0a1"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../partners/groq" }
 dependencies = [
     { name = "groq" },
     { name = "langchain-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9f/1a/5aed1edbf3d3ac5ae491b3cfaffc087dad51ae41f2e21bc845bc8062bf37/langchain_groq-1.0.0a1.tar.gz", hash = "sha256:132b2b8ee645375bc0f61f0ef2d95831258ba8ca368d3d45cf784573221b9c07", size = 25803, upload-time = "2025-10-02T23:21:35.077Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/7c/3bbe58c4da4fd2e86ac35d7305027e1fe9cba49e0d7a9271ae90ea21b47a/langchain_groq-1.0.0a1-py3-none-any.whl", hash = "sha256:2067e25f2be394a5cde6270d047757c2feb622f9f419d704778c355ce8d9d084", size = 17516, upload-time = "2025-10-02T23:21:33.892Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "groq", specifier = ">=0.30.0,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "pytest-retry", specifier = ">=1.7.0,<1.8.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+]
+test-integration = [{ name = "langchain-core", editable = "../core" }]
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.10.0,<2.0.0" },
 ]
 
 [[package]]
 name = "langchain-mistralai"
-version = "0.2.12"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.0a1"
+source = { editable = "../partners/mistralai" }
 dependencies = [
     { name = "httpx" },
     { name = "httpx-sse" },
@@ -1885,9 +1974,30 @@ dependencies = [
     { name = "pydantic" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/b9/c6ee8f2383a63806d55e9426f02d26399dee3acff45c7e6ee04a156542a1/langchain_mistralai-0.2.12.tar.gz", hash = "sha256:c2ecd1460c48adbe497a2d3794052dfcc974a1280ceab4476047e62343d8bbc9", size = 22176, upload-time = "2025-09-18T15:47:40.498Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/fe/a4bf7240beb12ebaf9f1780938ec4402b40e7fa5ffcedc7c25473c2078ed/langchain_mistralai-0.2.12-py3-none-any.whl", hash = "sha256:64a85947776017eec787b586f4bfa092d237c5e95a9ed719b5ff22a81747dedf", size = 16695, upload-time = "2025-09-18T15:47:39.591Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.25.2,<1.0.0" },
+    { name = "httpx-sse", specifier = ">=0.3.1,<1.0.0" },
+    { name = "langchain-core", editable = "../core" },
+    { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
+    { name = "tokenizers", specifier = ">=0.15.1,<1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "langchain-core", editable = "../core" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
+test = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
+]
+test-integration = []
+typing = [
+    { name = "langchain-core", editable = "../core" },
+    { name = "mypy", specifier = ">=1.10.0,<2.0.0" },
 ]
 
 [[package]]

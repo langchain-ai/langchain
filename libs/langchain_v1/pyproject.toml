@@ -58,6 +58,12 @@ test = [
     "langchain-tests",
     "langchain-openai",
 ]
+extended_tests = [
+    "langchain-anthropic",
+    "langchain-fireworks",
+    "langchain-mistralai",
+    "langchain-groq"
+]
 lint = [
     "ruff>=0.12.2,<0.13.0",
 ]
@@ -84,6 +90,10 @@ langchain-core = { path = "../core", editable = true }
 langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
+langchain-anthropic = { path = "../partners/anthropic", editable = true }
+langchain-fireworks = { path = "../partners/fireworks", editable = true }
+langchain-mistralai = { path = "../partners/mistralai", editable = true }
+langchain-groq = { path = "../partners/groq", editable = true }
 
 [tool.ruff]
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
