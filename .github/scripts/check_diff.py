@@ -156,7 +156,7 @@ def _get_pydantic_test_configs(
 ) -> List[Dict[str, str]]:
     # Skip directories without uv.lock (e.g., community or doc-only packages)
         if not os.path.exists(f"./{dir_}/uv.lock"):
-        return []
+            return []
 
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
