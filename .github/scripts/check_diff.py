@@ -293,6 +293,7 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/anthropic")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
+            dirs_to_run["test"].add("libs/community/langchain_community/chat_models/google_gemini.py")
 
         elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
