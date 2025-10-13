@@ -22,10 +22,10 @@ def _load_rapidfuzz() -> Any:
     """Load the RapidFuzz library.
 
     Raises:
-        ImportError: If the rapidfuzz library is not installed.
+        `ImportError`: If the rapidfuzz library is not installed.
 
     Returns:
-        Any: The rapidfuzz.distance module.
+        The `rapidfuzz.distance` module.
     """
     try:
         import rapidfuzz
@@ -42,12 +42,12 @@ class StringDistance(str, Enum):
     """Distance metric to use.
 
     Attributes:
-        DAMERAU_LEVENSHTEIN: The Damerau-Levenshtein distance.
-        LEVENSHTEIN: The Levenshtein distance.
-        JARO: The Jaro distance.
-        JARO_WINKLER: The Jaro-Winkler distance.
-        HAMMING: The Hamming distance.
-        INDEL: The Indel distance.
+        `DAMERAU_LEVENSHTEIN`: The Damerau-Levenshtein distance.
+        `LEVENSHTEIN`: The Levenshtein distance.
+        `JARO`: The Jaro distance.
+        `JARO_WINKLER`: The Jaro-Winkler distance.
+        `HAMMING`: The Hamming distance.
+        `INDEL`: The Indel distance.
     """
 
     DAMERAU_LEVENSHTEIN = "damerau_levenshtein"
@@ -63,7 +63,7 @@ class _RapidFuzzChainMixin(Chain):
 
     distance: StringDistance = Field(default=StringDistance.JARO_WINKLER)
     normalize_score: bool = Field(default=True)
-    """Whether to normalize the score to a value between 0 and 1.
+    """Whether to normalize the score to a value between `0` and `1`.
     Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     @pre_init
@@ -71,10 +71,10 @@ class _RapidFuzzChainMixin(Chain):
         """Validate that the rapidfuzz library is installed.
 
         Args:
-            values (Dict[str, Any]): The input values.
+            values: The input values.
 
         Returns:
-            Dict[str, Any]: The validated values.
+            The validated values.
         """
         _load_rapidfuzz()
         return values
@@ -84,7 +84,7 @@ class _RapidFuzzChainMixin(Chain):
         """Get the output keys.
 
         Returns:
-            List[str]: The output keys.
+            The output keys.
         """
         return ["score"]
 
@@ -92,10 +92,10 @@ class _RapidFuzzChainMixin(Chain):
         """Prepare the output dictionary.
 
         Args:
-            result (Dict[str, Any]): The evaluation results.
+            result: The evaluation results.
 
         Returns:
-            Dict[str, Any]: The prepared output dictionary.
+            The prepared output dictionary.
         """
         result = {"score": result["score"]}
         if RUN_KEY in result:
@@ -111,7 +111,7 @@ class _RapidFuzzChainMixin(Chain):
             normalize_score: Whether to normalize the score.
 
         Returns:
-            Callable: The distance metric function.
+            The distance metric function.
 
         Raises:
             ValueError: If the distance metric is invalid.
@@ -142,7 +142,7 @@ class _RapidFuzzChainMixin(Chain):
         """Get the distance metric function.
 
         Returns:
-            Callable: The distance metric function.
+            The distance metric function.
         """
         return _RapidFuzzChainMixin._get_metric(
             self.distance,
@@ -153,11 +153,11 @@ class _RapidFuzzChainMixin(Chain):
         """Compute the distance between two strings.
 
         Args:
-            a (str): The first string.
-            b (str): The second string.
+            a: The first string.
+            b: The second string.
 
         Returns:
-            float: The distance between the two strings.
+            The distance between the two strings.
         """
         return self.metric(a, b)
 
@@ -199,7 +199,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Get the input keys.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["reference", "prediction"]
 
@@ -208,7 +208,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Get the evaluation name.
 
         Returns:
-            str: The evaluation name.
+            The evaluation name.
         """
         return f"{self.distance.value}_distance"
 
@@ -221,12 +221,11 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Compute the string distance between the prediction and the reference.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (Optional[CallbackManagerForChainRun]):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
@@ -239,12 +238,11 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """Compute the string distance between the prediction and the reference.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (Optional[CallbackManagerForChainRun]):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
@@ -332,7 +330,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         """Get the input keys.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["prediction", "prediction_b"]
 
@@ -341,7 +339,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         """Get the evaluation name.
 
         Returns:
-            str: The evaluation name.
+            The evaluation name.
         """
         return f"pairwise_{self.distance.value}_distance"
 
@@ -354,12 +352,11 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         """Compute the string distance between two predictions.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (CallbackManagerForChainRun , optional):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {
             "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
@@ -374,12 +371,11 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         """Asynchronously compute the string distance between two predictions.
 
         Args:
-            inputs (Dict[str, Any]): The input values.
-            run_manager (AsyncCallbackManagerForChainRun , optional):
-                The callback manager.
+            inputs: The input values.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         return {
             "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),

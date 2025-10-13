@@ -117,7 +117,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
                     "default LLMs on behalf of users."
                     "You can provide a conversation LLM like so:\n"
                     "from langchain_openai import ChatOpenAI\n"
-                    "llm = ChatOpenAI()"
+                    "model = ChatOpenAI()"
                 )
                 raise NotImplementedError(msg)
             _default_chain = ConversationChain(

@@ -1,11 +1,15 @@
 """Anthropic prompt caching middleware."""
 
+from collections.abc import Callable
 from typing import Literal
 from warnings import warn
 
-from langgraph.runtime import Runtime
-
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
@@ -14,7 +18,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     Optimizes API usage by caching conversation prefixes for Anthropic models.
 
     Learn more about Anthropic prompt caching
-    `here <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching>`__.
+    [here](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
     """
 
     def __init__(
@@ -41,12 +45,11 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.min_messages_to_cache = min_messages_to_cache
         self.unsupported_model_behavior = unsupported_model_behavior
 
-    def modify_model_request(
+    def wrap_model_call(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-    ) -> ModelRequest:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Modify the model request to add cache control blocks."""
         try:
             from langchain_anthropic import ChatAnthropic
@@ -73,14 +76,14 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             if self.unsupported_model_behavior == "warn":
                 warn(msg, stacklevel=3)
             else:
-                return request
+                return handler(request)
 
         messages_count = (
             len(request.messages) + 1 if request.system_prompt else len(request.messages)
         )
         if messages_count < self.min_messages_to_cache:
-            return request
+            return handler(request)
 
         request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
 
-        return request
+        return handler(request)

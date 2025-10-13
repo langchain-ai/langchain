@@ -81,7 +81,7 @@ def create_retriever_tool(
             so should be unique and somewhat descriptive.
         description: The description for the tool. This will be passed to the language
             model, so should be descriptive.
-        document_prompt: The prompt to use for the document. Defaults to None.
+        document_prompt: The prompt to use for the document.
         document_separator: The separator to use between documents. Defaults to "\n\n".
         response_format: The tool response format. If "content" then the output of
             the tool is interpreted as the contents of a ToolMessage. If

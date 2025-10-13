@@ -7,7 +7,7 @@ EXPECTED_ALL = {
     "InjectedToolArg",
     "InjectedToolCallId",
     "ToolException",
-    "ToolNode",
+    "ToolInvocationError",
     "tool",
 }
 

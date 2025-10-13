@@ -21,15 +21,15 @@ class ModelLaboratory:
         Args:
             chains: A sequence of chains to experiment with.
                 Each chain must have exactly one input and one output variable.
-            names (Optional[List[str]]): Optional list of names corresponding to each
-                chain. If provided, its length must match the number of chains.
+            names: Optional list of names corresponding to each chain.
+                If provided, its length must match the number of chains.
 
 
         Raises:
-            ValueError: If any chain is not an instance of `Chain`.
-            ValueError: If a chain does not have exactly one input variable.
-            ValueError: If a chain does not have exactly one output variable.
-            ValueError: If the length of `names` does not match the number of chains.
+            `ValueError`: If any chain is not an instance of `Chain`.
+            `ValueError`: If a chain does not have exactly one input variable.
+            `ValueError`: If a chain does not have exactly one output variable.
+            `ValueError`: If the length of `names` does not match the number of chains.
         """
         for chain in chains:
             if not isinstance(chain, Chain):
@@ -67,12 +67,12 @@ class ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 
         Args:
-            llms (List[BaseLLM]): A list of LLMs to experiment with.
-            prompt (Optional[PromptTemplate]): An optional prompt to use with the LLMs.
+            llms: A list of LLMs to experiment with.
+            prompt: An optional prompt to use with the LLMs.
                 If provided, the prompt must contain exactly one input variable.
 
         Returns:
-            ModelLaboratory: An instance of `ModelLaboratory` initialized with LLMs.
+            An instance of `ModelLaboratory` initialized with LLMs.
         """
         if prompt is None:
             prompt = PromptTemplate(input_variables=["_input"], template="{_input}")

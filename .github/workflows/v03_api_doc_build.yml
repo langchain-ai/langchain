@@ -78,7 +78,16 @@ jobs:
               exit 1
             fi
             echo "Checking out $repo to $REPO_NAME"
-            git clone --depth 1 https://github.com/$repo.git $REPO_NAME
+
+            # Special handling for langchain-tavily: checkout by commit hash
+            if [[ "$REPO_NAME" == "langchain-tavily" ]]; then
+              git clone https://github.com/$repo.git $REPO_NAME
+              cd $REPO_NAME
+              git checkout f3515654724a9e87bdfe2c2f509d6cdde646e563
+              cd ..
+            else
+              git clone --depth 1 --branch v0.3 https://github.com/$repo.git $REPO_NAME
+            fi
           done
 
       - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
@@ -106,7 +115,10 @@ jobs:
         working-directory: langchain
         run: |
           # Install all partner packages in editable mode with overrides
-          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          python -m uv pip install $(ls ./libs/partners | grep -v azure-ai | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt --prerelease=allow
+
+          # Install langchain-azure-ai with tools extra
+          python -m uv pip install "./libs/partners/azure-ai[tools]" --overrides ./docs/vercel_overrides.txt --prerelease=allow
 
           # Install core langchain and other main packages
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests

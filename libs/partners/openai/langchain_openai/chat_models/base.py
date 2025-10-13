@@ -20,9 +20,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 from urllib.parse import urlparse
@@ -207,7 +206,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
-    role: Optional[str] = None,
+    role: str | None = None,
 ) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
@@ -301,7 +300,7 @@ def _convert_message_to_dict(
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
 
-        audio: Optional[dict[str, Any]] = None
+        audio: dict[str, Any] | None = None
         for block in message.content:
             if (
                 isinstance(block, dict)
@@ -396,8 +395,8 @@ def _convert_delta_to_message_chunk(
 
 
 def _update_token_usage(
-    overall_token_usage: Union[int, dict], new_usage: Union[int, dict]
-) -> Union[int, dict]:
+    overall_token_usage: int | dict, new_usage: int | dict
+) -> int | dict:
     # Token usage is either ints or dictionaries
     # `reasoning_tokens` is nested inside `completion_tokens_details`
     if isinstance(new_usage, int):
@@ -449,8 +448,8 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
+_DictOrPydantic: TypeAlias = dict | _BM
 
 
 class BaseChatOpenAI(BaseChatModel):
@@ -462,31 +461,31 @@ class BaseChatOpenAI(BaseChatModel):
     root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    openai_api_base: Optional[str] = Field(default=None, alias="base_url")
+    openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
-    openai_organization: Optional[str] = Field(default=None, alias="organization")
-    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
+    openai_organization: str | None = Field(default=None, alias="organization")
+    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
     # to support explicit proxy for OpenAI
-    openai_proxy: Optional[str] = Field(
+    openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
-    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
+    request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
-        None."""
-    stream_usage: Optional[bool] = None
+    """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
+    `None`."""
+    stream_usage: bool | None = None
     """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
 
-    This parameter is enabled unless ``openai_api_base`` is set or the model is
+    This parameter is enabled unless `openai_api_base` is set or the model is
     initialized with a custom client, as many chat completions APIs do not support
     streaming token usage.
 
@@ -495,70 +494,61 @@ class BaseChatOpenAI(BaseChatModel):
     !!! warning "Behavior changed in 0.3.35"
         Enabled for default base URL and client.
     """
-    max_retries: Optional[int] = None
+    max_retries: int | None = None
     """Maximum number of retries to make when generating."""
-    presence_penalty: Optional[float] = None
+    presence_penalty: float | None = None
     """Penalizes repeated tokens."""
-    frequency_penalty: Optional[float] = None
+    frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
-    seed: Optional[int] = None
+    seed: int | None = None
     """Seed for generation"""
-    logprobs: Optional[bool] = None
+    logprobs: bool | None = None
     """Whether to return logprobs."""
-    top_logprobs: Optional[int] = None
-    """Number of most likely tokens to return at each token position, each with
-     an associated log probability. `logprobs` must be set to true
-     if this parameter is used."""
-    logit_bias: Optional[dict[int, int]] = None
+    top_logprobs: int | None = None
+    """Number of most likely tokens to return at each token position, each with an
+    associated log probability. `logprobs` must be set to true if this parameter is
+    used."""
+    logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: Optional[int] = None
+    n: int | None = None
     """Number of chat completions to generate for each prompt."""
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = Field(default=None)
+    max_tokens: int | None = Field(default=None)
     """Maximum number of tokens to generate."""
-    reasoning_effort: Optional[str] = None
+    reasoning_effort: str | None = None
     """Constrains effort on reasoning for reasoning models. For use with the Chat
     Completions API.
 
-    Reasoning models only, like OpenAI o1, o3, and o4-mini.
+    Reasoning models only.
 
-    Currently supported values are ``'minimal'``, ``'low'``, ``'medium'``, and
-    ``'high'``. Reducing reasoning effort can result in faster responses and fewer
+    Currently supported values are `'minimal'`, `'low'`, `'medium'`, and
+    `'high'`. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
-
-    !!! version-added "Added in version 0.2.14"
     """
-    reasoning: Optional[dict[str, Any]] = None
-    """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
-    o4-mini, etc.). For use with the Responses API.
+    reasoning: dict[str, Any] | None = None
+    """Reasoning parameters for reasoning models. For use with the Responses API.
 
-    Example:
-
-    .. code-block:: python
-
-        reasoning={
-            "effort": "medium",  # can be "low", "medium", or "high"
-            "summary": "auto",  # can be "auto", "concise", or "detailed"
-        }
+    ```python
+    reasoning={
+        "effort": "medium",  # Can be "low", "medium", or "high"
+        "summary": "auto",  # Can be "auto", "concise", or "detailed"
+    }
+    ```
 
     !!! version-added "Added in version 0.3.24"
-
     """
-    verbosity: Optional[str] = None
+    verbosity: str | None = None
     """Controls the verbosity level of responses for reasoning models. For use with the
     Responses API.
 
-    Currently supported values are ``'low'``, ``'medium'``, and ``'high'``.
-
-    Controls how detailed the model's responses are.
+    Currently supported values are `'low'`, `'medium'`, and `'high'`.
 
     !!! version-added "Added in version 0.3.28"
-
     """
-    tiktoken_model_name: Optional[str] = None
+    tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
     them to be under a certain limit. By default, when set to None, this will
@@ -568,21 +558,20 @@ class BaseChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
-    default_headers: Union[Mapping[str, str], None] = None
-    default_query: Union[Mapping[str, object], None] = None
+    default_headers: Mapping[str, str] | None = None
+    default_query: Mapping[str, object] | None = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
-    http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
-        ``http_async_client`` as well if you'd like a custom client for async
-        invocations.
+    http_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.Client`. Only used for sync invocations. Must specify
+    `http_async_client` as well if you'd like a custom client for async invocations.
     """
-    http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
-    stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
+    `http_client` as well if you'd like a custom client for sync invocations."""
+    stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    extra_body: Optional[Mapping[str, Any]] = None
+    extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
     providers.
@@ -591,73 +580,72 @@ class BaseChatOpenAI(BaseChatModel):
     OpenAI-compatible API provider but not part of the standard OpenAI API.
 
     Examples:
-        - LM Studio TTL parameter: ``extra_body={"ttl": 300}``
-        - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
+        - [LM Studio](https://lmstudio.ai/) TTL parameter: `extra_body={"ttl": 300}`
+        - [vLLM](https://github.com/vllm-project/vllm) custom parameters:
+            `extra_body={"use_beam_search": True}`
         - Any other provider-specific parameters
 
-    !!! note
-
-        Do NOT use ``model_kwargs`` for custom parameters that are not part of the
+    !!! warning
+        Do not use `model_kwargs` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
-        ``extra_body`` instead.
+        `extra_body` instead.
     """
 
     include_response_headers: bool = False
-    """Whether to include response headers in the output message ``response_metadata``."""  # noqa: E501
-    disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be
+    """Whether to include response headers in the output message `response_metadata`."""
+    disabled_params: dict[str, Any] | None = Field(default=None)
+    """Parameters of the OpenAI client or `chat.completions` endpoint that should be
     disabled for the given model.
 
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
+    Should be specified as `{"param": None | ['val1', 'val2']}` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
 
-    For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls": None}`` can be passed
+    For example, older models may not support the `'parallel_tool_calls'` parameter at
+    all, in which case `disabled_params={"parallel_tool_calls": None}` can be passed
     in.
 
     If a parameter is disabled then it will not be used by default in any methods, e.g.
-    in `langchain_openai.chat_models.base.ChatOpenAI.with_structured_output`.
-    However this does not prevent a user from directly passed in the parameter during
-    invocation.
+    in `with_structured_output`. However this does not prevent a user from directly
+    passed in the parameter during invocation.
     """
 
-    include: Optional[list[str]] = None
+    include: list[str] | None = None
     """Additional fields to include in generations from Responses API.
 
     Supported values:
 
-    - ``'file_search_call.results'``
-    - ``'message.input_image.image_url'``
-    - ``'computer_call_output.output.image_url'``
-    - ``'reasoning.encrypted_content'``
-    - ``'code_interpreter_call.outputs'``
+    - `'file_search_call.results'`
+    - `'message.input_image.image_url'`
+    - `'computer_call_output.output.image_url'`
+    - `'reasoning.encrypted_content'`
+    - `'code_interpreter_call.outputs'`
 
     !!! version-added "Added in version 0.3.24"
     """
 
-    service_tier: Optional[str] = None
-    """Latency tier for request. Options are ``'auto'``, ``'default'``, or ``'flex'``.
+    service_tier: str | None = None
+    """Latency tier for request. Options are `'auto'`, `'default'`, or `'flex'`.
     Relevant for users of OpenAI's scale tier service.
     """
 
-    store: Optional[bool] = None
-    """If True, OpenAI may store response data for future use. Defaults to True
-    for the Responses API and False for the Chat Completions API.
+    store: bool | None = None
+    """If `True`, OpenAI may store response data for future use. Defaults to `True`
+    for the Responses API and `False` for the Chat Completions API.
 
     !!! version-added "Added in version 0.3.24"
     """
 
-    truncation: Optional[str] = None
-    """Truncation strategy (Responses API). Can be ``'auto'`` or ``'disabled'``
-    (default). If ``'auto'``, model may drop input items from the middle of the
-    message sequence to fit the context window.
+    truncation: str | None = None
+    """Truncation strategy (Responses API). Can be `'auto'` or `'disabled'` (default).
+    If `'auto'`, model may drop input items from the middle of the message sequence to
+    fit the context window.
 
     !!! version-added "Added in version 0.3.24"
     """
 
     use_previous_response_id: bool = False
-    """If True, always pass ``previous_response_id`` using the ID of the most recent
+    """If `True`, always pass `previous_response_id` using the ID of the most recent
     response. Responses API only.
 
     Input messages up to the most recent response will be dropped from request
@@ -665,30 +653,29 @@ class BaseChatOpenAI(BaseChatModel):
 
     For example, the following two are equivalent:
 
-    .. code-block:: python
+    ```python
+    model = ChatOpenAI(
+        model="...",
+        use_previous_response_id=True,
+    )
+    model.invoke(
+        [
+            HumanMessage("Hello"),
+            AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+            HumanMessage("How are you?"),
+        ]
+    )
+    ```
 
-        llm = ChatOpenAI(
-            model="o4-mini",
-            use_previous_response_id=True,
-        )
-        llm.invoke(
-            [
-                HumanMessage("Hello"),
-                AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
-                HumanMessage("How are you?"),
-            ]
-        )
-
-    .. code-block:: python
-
-        llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
-        llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
+    ```python
+    model = ChatOpenAI(model="...", use_responses_api=True)
+    model.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
+    ```
 
     !!! version-added "Added in version 0.3.26"
-
     """
 
-    use_responses_api: Optional[bool] = None
+    use_responses_api: bool | None = None
     """Whether to use the Responses API instead of the Chat API.
 
     If not specified then will be inferred based on invocation params.
@@ -696,28 +683,23 @@ class BaseChatOpenAI(BaseChatModel):
     !!! version-added "Added in version 0.3.9"
     """
 
-    output_version: Optional[str] = Field(
+    output_version: str | None = Field(
         default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
-    """Version of AIMessage output format to use.
+    """Version of `AIMessage` output format to use.
 
-    This field is used to roll-out new output formats for chat model AIMessages
-    in a backwards-compatible way.
+    This field is used to roll-out new output formats for chat model `AIMessage`
+    responses in a backwards-compatible way.
 
     Supported values:
 
-    - ``'v0'``: AIMessage format as of langchain-openai 0.3.x.
-    - ``'responses/v1'``: Formats Responses API output
-      items into AIMessage content blocks (Responses API only)
-    - ``"v1"``: v1 of LangChain cross-provider standard.
+    - `'v0'`: `AIMessage` format as of `langchain-openai 0.3.x`.
+    - `'responses/v1'`: Formats Responses API output items into AIMessage content blocks
+        (Responses API only)
+    - `'v1'`: v1 of LangChain cross-provider standard.
 
     !!! warning "Behavior changed in 1.0.0"
-        Default updated to ``"responses/v1"``.
-
-    .. versionchanged:: 1.0.0
-
-        Default updated to ``"responses/v1"``.
-
+        Default updated to `"responses/v1"`.
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -734,9 +716,8 @@ class BaseChatOpenAI(BaseChatModel):
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
         """Validate temperature parameter for different models.
 
-        - o1 models only allow temperature=1
-        - gpt-5 models (excluding gpt-5-chat) only allow temperature=1 or unset
-          (defaults to 1)
+        - gpt-5 models (excluding gpt-5-chat) only allow `temperature=1` or unset
+            (Defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
 
@@ -873,7 +854,7 @@ class BaseChatOpenAI(BaseChatModel):
             "logprobs": self.logprobs,
             "top_logprobs": self.top_logprobs,
             "logit_bias": self.logit_bias,
-            "stop": self.stop or None,  # also exclude empty list for this
+            "stop": self.stop or None,  # Also exclude empty list for this
             "max_tokens": self.max_tokens,
             "extra_body": self.extra_body,
             "n": self.n,
@@ -894,7 +875,7 @@ class BaseChatOpenAI(BaseChatModel):
             **self.model_kwargs,
         }
 
-    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
         for output in llm_outputs:
@@ -923,18 +904,18 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         chunk: dict,
         default_chunk_class: type,
-        base_generation_info: Optional[dict],
-    ) -> Optional[ChatGenerationChunk]:
-        if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
+        base_generation_info: dict | None,
+    ) -> ChatGenerationChunk | None:
+        if chunk.get("type") == "content.delta":  # From beta.chat.completions.stream
             return None
         token_usage = chunk.get("usage")
         choices = (
             chunk.get("choices", [])
-            # from beta.chat.completions.stream
+            # From beta.chat.completions.stream
             or chunk.get("chunk", {}).get("choices", [])
         )
 
-        usage_metadata: Optional[UsageMetadata] = (
+        usage_metadata: UsageMetadata | None = (
             _create_usage_metadata(token_usage) if token_usage else None
         )
         if len(choices) == 0:
@@ -984,8 +965,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _stream_responses(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1037,8 +1018,8 @@ class BaseChatOpenAI(BaseChatModel):
     async def _astream_responses(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1090,12 +1071,12 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
 
     def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
+        self, stream_usage: bool | None = None, **kwargs: Any
     ) -> bool:
         """Determine whether to include usage metadata in streaming output.
 
         For backwards compatibility, we check for `stream_options` passed
-        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        explicitly to kwargs or in the `model_kwargs` and override `self.stream_usage`.
         """
         stream_usage_sources = [  # order of precedence
             stream_usage,
@@ -1111,10 +1092,10 @@ class BaseChatOpenAI(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1181,8 +1162,8 @@ class BaseChatOpenAI(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1251,7 +1232,7 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
@@ -1280,8 +1261,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[dict] = None,
+        response: dict | openai.BaseModel,
+        generation_info: dict | None = None,
     ) -> ChatResult:
         generations = []
 
@@ -1347,10 +1328,10 @@ class BaseChatOpenAI(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
@@ -1421,8 +1402,8 @@ class BaseChatOpenAI(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1486,7 +1467,7 @@ class BaseChatOpenAI(BaseChatModel):
         return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> dict[str, Any]:
         """Get the parameters used to invoke the model."""
         params = {
@@ -1507,7 +1488,7 @@ class BaseChatOpenAI(BaseChatModel):
         return params
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1527,7 +1508,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     @property
     def _llm_type(self) -> str:
-        """Return type of chat model."""
+        """Return type of chat model.
+
+        Will always return `'openai-chat'` regardless of the specific model name.
+        """
         return "openai-chat"
 
     def _get_encoding_model(self) -> tuple[str, tiktoken.Encoding]:
@@ -1561,25 +1545,23 @@ class BaseChatOpenAI(BaseChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: Sequence[BaseMessage],
-        tools: Optional[
-            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
     ) -> int:
-        """Calculate num tokens for ``gpt-3.5-turbo`` and ``gpt-4`` with ``tiktoken`` package.
+        """Calculate num tokens for `gpt-3.5-turbo` and `gpt-4` with `tiktoken` package.
 
-        **Requirements**: You must have the ``pillow`` installed if you want to count
-        image tokens if you are specifying the image as a base64 string, and you must
-        have both ``pillow`` and ``httpx`` installed if you are specifying the image
-        as a URL. If these aren't installed image inputs will be ignored in token
-        counting.
+        !!! warning
+            You must have the `pillow` installed if you want to count image tokens if
+            you are specifying the image as a base64 string, and you must have both
+            `pillow` and `httpx` installed if you are specifying the image as a URL. If
+            these aren't installed image inputs will be ignored in token counting.
 
-        `OpenAI reference <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb>`__
+        [OpenAI reference](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb).
 
         Args:
             messages: The message inputs to tokenize.
-            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
+            tools: If provided, sequence of `dict`, `BaseModel`, function, or `BaseTool`
                 to be converted to tool schemas.
-        """  # noqa: E501
+        """
         # TODO: Count bound tools as part of input.
         if tools is not None:
             warnings.warn(
@@ -1657,13 +1639,11 @@ class BaseChatOpenAI(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required", "any"], bool]  # noqa: PYI051
-        ] = None,
-        strict: Optional[bool] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
@@ -1676,26 +1656,23 @@ class BaseChatOpenAI(BaseChatModel):
                 `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
-                - str of the form ``'<<tool_name>>'``: calls <<tool_name>> tool.
-                - ``'auto'``: automatically selects a tool (including no tool).
-                - ``'none'``: does not call a tool.
-                - ``'any'`` or ``'required'`` or ``True``: force at least one tool to be called.
-                - dict of the form ``{"type": "function", "function": {"name": <<tool_name>>}}``: calls <<tool_name>> tool.
-                - ``False`` or ``None``: no effect, default OpenAI behavior.
-            strict: If True, model output is guaranteed to exactly match the JSON Schema
+                - `str` of the form `'<<tool_name>>'`: calls `<<tool_name>>` tool.
+                - `'auto'`: automatically selects a tool (including no tool).
+                - `'none'`: does not call a tool.
+                - `'any'` or `'required'` or `True`: force at least one tool to be called.
+                - `dict` of the form `{"type": "function", "function": {"name": <<tool_name>>}}`: calls `<<tool_name>>` tool.
+                - `False` or `None`: no effect, default OpenAI behavior.
+            strict: If `True`, model output is guaranteed to exactly match the JSON Schema
                 provided in the tool definition. The input schema will also be validated according to the
-                `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
-                If False, input schema will not be validated and model output will not
-                be validated.
-                If None, ``strict`` argument will not be passed to the model.
-            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
-                Defaults to ``None`` (no specification, which allows parallel tool use).
-            kwargs: Any additional parameters are passed directly to
-                `langchain_openai.chat_models.base.ChatOpenAI.bind`.
+                [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                If `False`, input schema will not be validated and model output will not
+                be validated. If `None`, `strict` argument will not be passed to the model.
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel tool use).
+            kwargs: Any additional parameters are passed directly to `bind`.
 
         !!! warning "Behavior changed in 0.1.21"
-            Support for ``strict`` argument added.
-
+            Support for `strict` argument added.
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
@@ -1741,14 +1718,14 @@ class BaseChatOpenAI(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
-        tools: Optional[list] = None,
+        strict: bool | None = None,
+        tools: list | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -1758,123 +1735,113 @@ class BaseChatOpenAI(BaseChatModel):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class (support added in 0.1.20),
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
-                    Uses OpenAI's tool-calling (formerly called function calling)
-                    `API <https://platform.openai.com/docs/guides/function-calling>`__
-                - ``'json_schema'``:
-                    Uses OpenAI's Structured Output `API <https://platform.openai.com/docs/guides/structured-outputs>`__
-                    Supported for ``'gpt-4o-mini'``, ``'gpt-4o-2024-08-06'``, ``'o1'``, and later
-                    models.
-                - ``'json_mode'``:
-                    Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
+                - `'function_calling'`:
+                    Uses OpenAI's [tool-calling API](https://platform.openai.com/docs/guides/function-calling)
+                    (formerly called function calling)
+                - `'json_schema'`:
+                    Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs)
+                - `'json_mode'`:
+                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs/json-mode).
                     Note that if using JSON mode then you must include instructions for
                     formatting the output into the desired schema into the model call
 
-                Learn more about the differences between the methods and which models
-                support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
-
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
             strict:
 
-                - True:
+                - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
-                - False:
+                    The input schema will also be validated according to the
+                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
-                - None:
-                    ``strict`` argument will not be passed to the model.
+                - `None`:
+                    `strict` argument will not be passed to the model.
 
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 
-                - ``method`` is ``'json_schema'`` (default).
-                - ``strict=True``
-                - ``include_raw=True``
+                - `method` is `'json_schema'` (default).
+                - `strict=True`
+                - `include_raw=True`
 
-                If a model elects to call a
-                tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
+                If a model elects to call a tool, the resulting `AIMessage` in `'raw'`
+                will include tool calls.
 
-                ??? note "Example"
+                ??? example
 
-                    .. code-block:: python
-
-                        from langchain.chat_models import init_chat_model
-                        from pydantic import BaseModel
-
-
-                        class ResponseSchema(BaseModel):
-                            response: str
+                    ```python
+                    from langchain.chat_models import init_chat_model
+                    from pydantic import BaseModel
 
 
-                        def get_weather(location: str) -> str:
-                            \"\"\"Get weather at a location.\"\"\"
-                            pass
+                    class ResponseSchema(BaseModel):
+                        response: str
 
-                        llm = init_chat_model("openai:gpt-4o-mini")
 
-                        structured_llm = llm.with_structured_output(
-                            ResponseSchema,
-                            tools=[get_weather],
-                            strict=True,
-                            include_raw=True,
-                        )
+                    def get_weather(location: str) -> str:
+                        \"\"\"Get weather at a location.\"\"\"
+                        pass
 
-                        structured_llm.invoke("What's the weather in Boston?")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    .. code-block:: python
+                    structured_model = model.with_structured_output(
+                        ResponseSchema,
+                        tools=[get_weather],
+                        strict=True,
+                        include_raw=True,
+                    )
 
-                        {
-                            "raw": AIMessage(content="", tool_calls=[...], ...),
-                            "parsing_error": None,
-                            "parsed": None,
-                        }
+                    structured_model.invoke("What's the weather in Boston?")
+                    ```
+
+                    ```python
+                    {
+                        "raw": AIMessage(content="", tool_calls=[...], ...),
+                        "parsing_error": None,
+                        "parsed": None,
+                    }
+                    ```
 
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a `BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is `False` and `schema` is a Pydantic class, `Runnable`
+            outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if
+            `include_raw` is `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is `True`, then `Runnable` outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
-
-        !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class ``schema``.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for ``strict`` argument added.
-            Support for ``method="json_schema"`` added.
+            - `'raw'`: `BaseMessage`
+            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends
+                on the `schema` as described above.
+            - `'parsing_error'`: `BaseException` or `None`
 
         !!! warning "Behavior changed in 0.3.12"
-            Support for ``tools`` added.
+            Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
-            Pass ``kwargs`` through to the model.
-
+            Pass `kwargs` through to the model.
         """  # noqa: E501
         if strict is not None and method == "json_mode":
             msg = "Argument `strict` is not supported with `method`='json_mode'"
@@ -2041,754 +2008,734 @@ class BaseChatOpenAI(BaseChatModel):
 
 
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
-    r"""OpenAI chat model integration.
+    r"""Interface to OpenAI chat model APIs.
 
-    ??? note "Setup"
-        :open:
+    ???+ info "Setup"
 
-        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+        Install `langchain-openai` and set environment variable `OPENAI_API_KEY`.
 
-        .. code-block:: bash
+        ```bash
+        pip install -U langchain-openai
 
-            pip install -U langchain-openai
-            export OPENAI_API_KEY="your-api-key"
+        # or using uv
+        uv add langchain-openai
+        ```
 
-    ??? note "Key init args — completion params"
+        ```bash
+        export OPENAI_API_KEY="your-api-key"
+        ```
 
-        model: str
-            Name of OpenAI model to use.
-        temperature: float
-            Sampling temperature.
-        max_tokens: Optional[int]
-            Max number of tokens to generate.
-        logprobs: Optional[bool]
-            Whether to return logprobs.
-        stream_options: Dict
-            Configure streaming outputs, like whether to return token usage when
-            streaming (``{"include_usage": True}``).
-        use_responses_api: Optional[bool]
-            Whether to use the responses API.
+    ??? info "Key init args — completion params"
 
-        See full list of supported init args and their descriptions in the params section.
+        | Param               | Type          | Description                                                                                                 |
+        | ------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+        | `model`             | `str`         | Name of OpenAI model to use.                                                                                |
+        | `temperature`       | `float`       | Sampling temperature.                                                                                       |
+        | `max_tokens`        | `int | None`  | Max number of tokens to generate.                                                                           |
+        | `logprobs`          | `bool | None` | Whether to return logprobs.                                                                                 |
+        | `stream_options`    | `dict`        | Configure streaming outputs, like whether to return token usage when streaming (`{"include_usage": True}`). |
+        | `use_responses_api` | `bool | None` | Whether to use the responses API.                                                                           |
 
-    ??? note "Key init args — client params"
+        See full list of supported init args and their descriptions below.
 
-        timeout: Union[float, Tuple[float, float], Any, None]
-            Timeout for requests.
-        max_retries: Optional[int]
-            Max number of retries.
-        api_key: Optional[str]
-            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
-        base_url: Optional[str]
-            Base URL for API requests. Only specify if using a proxy or service
-            emulator.
-        organization: Optional[str]
-            OpenAI organization ID. If not passed in will be read from env
-            var ``OPENAI_ORG_ID``.
+    ??? info "Key init args — client params"
 
-        See full list of supported init args and their descriptions in the params section.
+        | Param          | Type                                       | Description                                                                         |
+        | -------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+        | `timeout`      | `float | Tuple[float, float] | Any | None` | Timeout for requests.                                                               |
+        | `max_retries`  | `int | None`                               | Max number of retries.                                                              |
+        | `api_key`      | `str | None`                               | OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.        |
+        | `base_url`     | `str | None`                               | Base URL for API requests. Only specify if using a proxy or service emulator.       |
+        | `organization` | `str | None`                               | OpenAI organization ID. If not passed in will be read from env var `OPENAI_ORG_ID`. |
 
-    ??? note "Instantiate"
+        See full list of supported init args and their descriptions below.
 
-        .. code-block:: python
+    ??? info "Instantiate"
 
+        Create a model instance with desired params. For example:
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(
+            model="...",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # base_url="...",
+            # organization="...",
+            # other params...
+        )
+        ```
+
+        See all available params below.
+
+        !!! tip "Preserved params"
+            Any param which is not explicitly supported will be passed directly to
+            [`openai.OpenAI.chat.completions.create(...)`](https://platform.openai.com/docs/api-reference/chat/create)
+            every time to the model is invoked. For example:
+
+            ```python
             from langchain_openai import ChatOpenAI
+            import openai
 
-            llm = ChatOpenAI(
-                model="gpt-4o",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # base_url="...",
-                # organization="...",
-                # other params...
-            )
+            ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
 
-        !!! note
-            Any param which is not explicitly supported will be passed directly to the
-            ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
-            invoked. For example:
+            # Results in underlying API call of:
 
-            .. code-block:: python
+            openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
 
-                from langchain_openai import ChatOpenAI
-                import openai
+            # Which is also equivalent to:
 
-                ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
+            ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
+            ```
 
-                # results in underlying API call of:
+    ??? info "Invoke"
 
-                openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
+        Generate a response from the model:
 
-                # which is also equivalent to:
+        ```python
+        messages = [
+            (
+                "system",
+                "You are a helpful translator. Translate the user sentence to French.",
+            ),
+            ("human", "I love programming."),
+        ]
+        model.invoke(messages)
+        ```
 
-                ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
+        Results in an `AIMessage` response:
 
-    ??? note "Invoke"
-
-        .. code-block:: python
-
-            messages = [
-                (
-                    "system",
-                    "You are a helpful translator. Translate the user sentence to French.",
-                ),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: pycon
-
-            AIMessage(
-                content="J'adore la programmation.",
-                response_metadata={
-                    "token_usage": {
-                        "completion_tokens": 5,
-                        "prompt_tokens": 31,
-                        "total_tokens": 36,
-                    },
-                    "model_name": "gpt-4o",
-                    "system_fingerprint": "fp_43dfabdef1",
-                    "finish_reason": "stop",
-                    "logprobs": None,
-                },
-                id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
-                usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
-            )
-
-    ??? note "Stream"
-
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
-
-        .. code-block:: python
-
-            AIMessageChunk(content="", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
-            AIMessageChunk(content="J", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
-            AIMessageChunk(
-                content="'adore", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
-            )
-            AIMessageChunk(content=" la", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
-            AIMessageChunk(
-                content=" programmation", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
-            )
-            AIMessageChunk(content=".", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
-            AIMessageChunk(
-                content="",
-                response_metadata={"finish_reason": "stop"},
-                id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0",
-            )
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            AIMessageChunk(
-                content="J'adore la programmation.",
-                response_metadata={"finish_reason": "stop"},
-                id="run-bf917526-7f58-4683-84f7-36a6b671d140",
-            )
-
-    ??? note "Async"
-
-        .. code-block:: python
-
-            await llm.ainvoke(messages)
-
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
-
-        .. code-block:: python
-
-            AIMessage(
-                content="J'adore la programmation.",
-                response_metadata={
-                    "token_usage": {
-                        "completion_tokens": 5,
-                        "prompt_tokens": 31,
-                        "total_tokens": 36,
-                    },
-                    "model_name": "gpt-4o",
-                    "system_fingerprint": "fp_43dfabdef1",
-                    "finish_reason": "stop",
-                    "logprobs": None,
-                },
-                id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
-                usage_metadata={
-                    "input_tokens": 31,
-                    "output_tokens": 5,
-                    "total_tokens": 36,
-                },
-            )
-
-    ??? note "Tool calling"
-
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
-
-
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
-
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
-
-
-            llm_with_tools = llm.bind_tools(
-                [GetWeather, GetPopulation]
-                # strict = True  # enforce tool args schema is respected
-            )
-            ai_msg = llm_with_tools.invoke(
-                "Which city is hotter today and which is bigger: LA or NY?"
-            )
-            ai_msg.tool_calls
-
-        .. code-block:: python
-
-            [
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
-                },
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "New York, NY"},
-                    "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
-                },
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
-                },
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "New York, NY"},
-                    "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
-                },
-            ]
-
-        !!! note
-            ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
-            that defaults to ``True``. This parameter can be set to ``False`` to
-            disable parallel tool calls:
-
-            .. code-block:: python
-
-                ai_msg = llm_with_tools.invoke(
-                    "What is the weather in LA and NY?", parallel_tool_calls=False
-                )
-                ai_msg.tool_calls
-
-            .. code-block:: python
-
-                [
-                    {
-                        "name": "GetWeather",
-                        "args": {"location": "Los Angeles, CA"},
-                        "id": "call_4OoY0ZR99iEvC7fevsH8Uhtz",
-                    }
-                ]
-
-        Like other runtime parameters, ``parallel_tool_calls`` can be bound to a model
-        using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
-        setting ``model_kwargs``.
-
-        See ``ChatOpenAI.bind_tools()`` method for more.
-
-    ??? note "Built-in tools"
-
-        !!! version-added "Added in version 0.3.9"
-
-        You can access `built-in tools <https://platform.openai.com/docs/guides/tools?api-mode=responses>`_
-        supported by the OpenAI Responses API. See LangChain
-        `docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
-        detail.
-
-        !!! note
-            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
-            AIMessage format when using the Responses API. Setting
-
-            ..  code-block:: python
-
-                llm = ChatOpenAI(model="...", output_version="responses/v1")
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's ``content`` field, rather than
-            ``additional_kwargs``. We recommend this format for new applications.
-
-        .. code-block:: python
-
-            from langchain_openai import ChatOpenAI
-
-            llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
-
-            tool = {"type": "web_search"}
-            llm_with_tools = llm.bind_tools([tool])
-
-            response = llm_with_tools.invoke(
-                "What was a positive news story from today?"
-            )
-            response.content
-
-        .. code-block:: python
-
-            [
-                {
-                    "type": "text",
-                    "text": "Today, a heartwarming story emerged from ...",
-                    "annotations": [
-                        {
-                            "end_index": 778,
-                            "start_index": 682,
-                            "title": "Title of story",
-                            "type": "url_citation",
-                            "url": "<url of story>",
-                        }
-                    ],
-                }
-            ]
-
-    ??? note "Managing conversation state"
-
-        !!! version-added "Added in version 0.3.9"
-
-        OpenAI's Responses API supports management of
-        `conversation state <https://platform.openai.com/docs/guides/conversation-state?api-mode=responses>`_.
-        Passing in response IDs from previous messages will continue a conversational
-        thread. See LangChain
-        `conversation docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
-        detail.
-
-        .. code-block:: python
-
-            from langchain_openai import ChatOpenAI
-
-            llm = ChatOpenAI(
-                model="gpt-4.1-mini",
-                use_responses_api=True,
-                output_version="responses/v1",
-            )
-            response = llm.invoke("Hi, I'm Bob.")
-            response.text
-
-        .. code-block:: python
-
-            "Hi Bob! How can I assist you today?"
-
-        .. code-block:: python
-
-            second_response = llm.invoke(
-                "What is my name?",
-                previous_response_id=response.response_metadata["id"],
-            )
-            second_response.text
-
-        .. code-block:: python
-
-            "Your name is Bob. How can I help you today, Bob?"
-
-        !!! version-added "Added in version 0.3.26"
-
-        You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
-        Input messages up to the most recent response will then be dropped from request
-        payloads, and ``previous_response_id`` will be set using the ID of the most
-        recent response.
-
-        .. code-block:: python
-
-            llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
-
-    ??? note "Reasoning output"
-
-        OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
-        that expose a summary of internal reasoning processes.
-
-        !!! note
-            ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
-            AIMessage format when using the Responses API. Setting
-
-            ..  code-block:: python
-
-                llm = ChatOpenAI(model="...", output_version="responses/v1")
-
-            will format output from reasoning summaries, built-in tool invocations, and
-            other response items into the message's ``content`` field, rather than
-            ``additional_kwargs``. We recommend this format for new applications.
-
-        .. code-block:: python
-
-            from langchain_openai import ChatOpenAI
-
-            reasoning = {
-                "effort": "medium",  # 'low', 'medium', or 'high'
-                "summary": "auto",  # 'detailed', 'auto', or None
-            }
-
-            llm = ChatOpenAI(
-                model="o4-mini", reasoning=reasoning, output_version="responses/v1"
-            )
-            response = llm.invoke("What is 3^3?")
-
-            # Response text
-            print(f"Output: {response.text}")
-
-            # Reasoning summaries
-            for block in response.content:
-                if block["type"] == "reasoning":
-                    for summary in block["summary"]:
-                        print(summary["text"])
-
-        .. code-block::
-
-            Output: 3³ = 27
-            Reasoning: The user wants to know...
-
-    ??? note "Structured output"
-
-        .. code-block:: python
-
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(
-                    description="How funny the joke is, from 1 to 10"
-                )
-
-
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
-
-        .. code-block:: python
-
-            Joke(
-                setup="Why was the cat sitting on the computer?",
-                punchline="To keep an eye on the mouse!",
-                rating=None,
-            )
-
-        See ``ChatOpenAI.with_structured_output()`` for more.
-
-    ??? note "JSON mode"
-
-        .. code-block:: python
-
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke(
-                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
-            )
-            ai_msg.content
-
-        .. code-block:: python
-
-            '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
-
-    ??? note "Image input"
-
-        .. code-block:: python
-
-            import base64
-            import httpx
-            from langchain_core.messages import HumanMessage
-
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": "describe the weather in this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ]
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
-
-        .. code-block:: python
-
-            "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
-
-    ??? note "Token usage"
-
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
-        When streaming, set the ``stream_usage`` kwarg:
-
-        .. code-block:: python
-
-            stream = llm.stream(messages, stream_usage=True)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
-        Alternatively, setting ``stream_usage`` when instantiating the model can be
-        useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
-        methods like ``.with_structured_output``, which generate chains under the
-        hood.
-
-        .. code-block:: python
-
-            llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
-            structured_llm = llm.with_structured_output(...)
-
-    ??? note "Logprobs"
-
-        .. code-block:: python
-
-            logprobs_llm = llm.bind(logprobs=True)
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-            {
-                "content": [
-                    {
-                        "token": "J",
-                        "bytes": [74],
-                        "logprob": -4.9617593e-06,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": "'adore",
-                        "bytes": [39, 97, 100, 111, 114, 101],
-                        "logprob": -0.25202933,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": " la",
-                        "bytes": [32, 108, 97],
-                        "logprob": -0.20141791,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": " programmation",
-                        "bytes": [
-                            32,
-                            112,
-                            114,
-                            111,
-                            103,
-                            114,
-                            97,
-                            109,
-                            109,
-                            97,
-                            116,
-                            105,
-                            111,
-                            110,
-                        ],
-                        "logprob": -1.9361265e-07,
-                        "top_logprobs": [],
-                    },
-                    {
-                        "token": ".",
-                        "bytes": [46],
-                        "logprob": -1.2233183e-05,
-                        "top_logprobs": [],
-                    },
-                ]
-            }
-
-    ??? note "Response metadata"
-
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-            {
+        ```python
+        AIMessage(
+            content="J'adore la programmation.",
+            response_metadata={
                 "token_usage": {
                     "completion_tokens": 5,
-                    "prompt_tokens": 28,
-                    "total_tokens": 33,
+                    "prompt_tokens": 31,
+                    "total_tokens": 36,
                 },
                 "model_name": "gpt-4o",
-                "system_fingerprint": "fp_319be4768e",
+                "system_fingerprint": "fp_43dfabdef1",
                 "finish_reason": "stop",
                 "logprobs": None,
+            },
+            id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
+            usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
+        )
+        ```
+
+    ??? info "Stream"
+
+        Stream a response from the model:
+
+        ```python
+        for chunk in model.stream(messages):
+            print(chunk.text, end="")
+        ```
+
+        Results in a sequence of `AIMessageChunk` objects with partial content:
+
+        ```python
+        AIMessageChunk(content="", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+        AIMessageChunk(content="J", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+        AIMessageChunk(content="'adore", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+        AIMessageChunk(content=" la", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+        AIMessageChunk(
+            content=" programmation", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
+        )
+        AIMessageChunk(content=".", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+        AIMessageChunk(
+            content="",
+            response_metadata={"finish_reason": "stop"},
+            id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0",
+        )
+        ```
+
+        To collect the full message, you can concatenate the chunks:
+
+        ```python
+        stream = model.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        ```
+
+        ```python
+        full = AIMessageChunk(
+            content="J'adore la programmation.",
+            response_metadata={"finish_reason": "stop"},
+            id="run-bf917526-7f58-4683-84f7-36a6b671d140",
+        )
+        ```
+
+    ??? info "Async"
+
+        Asynchronous equivalents of `invoke`, `stream`, and `batch` are also available:
+
+        ```python
+        # Invoke
+        await model.ainvoke(messages)
+
+        # Stream
+        async for chunk in (await model.astream(messages))
+
+        # Batch
+        await model.abatch([messages])
+        ```
+
+        Results in an `AIMessage` response:
+
+        ```python
+        AIMessage(
+            content="J'adore la programmation.",
+            response_metadata={
+                "token_usage": {
+                    "completion_tokens": 5,
+                    "prompt_tokens": 31,
+                    "total_tokens": 36,
+                },
+                "model_name": "gpt-4o",
+                "system_fingerprint": "fp_43dfabdef1",
+                "finish_reason": "stop",
+                "logprobs": None,
+            },
+            id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
+            usage_metadata={
+                "input_tokens": 31,
+                "output_tokens": 5,
+                "total_tokens": 36,
+            },
+        )
+        ```
+
+        For batched calls, results in a `list[AIMessage]`.
+
+    ??? info "Tool calling"
+
+        ```python
+        from pydantic import BaseModel, Field
+
+
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
+
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
+            )
+
+
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
+
+            location: str = Field(
+                ..., description="The city and state, e.g. San Francisco, CA"
+            )
+
+
+        model_with_tools = model.bind_tools(
+            [GetWeather, GetPopulation]
+            # strict = True  # Enforce tool args schema is respected
+        )
+        ai_msg = model_with_tools.invoke(
+            "Which city is hotter today and which is bigger: LA or NY?"
+        )
+        ai_msg.tool_calls
+        ```
+
+        ```python
+        [
+            {
+                "name": "GetWeather",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
+            },
+            {
+                "name": "GetWeather",
+                "args": {"location": "New York, NY"},
+                "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "New York, NY"},
+                "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
+            },
+        ]
+        ```
+
+        !!! note "Parallel tool calls"
+            [`openai >= 1.32`](https://pypi.org/project/openai/) supports a
+            `parallel_tool_calls` parameter that defaults to `True`. This parameter can
+            be set to `False` to disable parallel tool calls:
+
+            ```python
+            ai_msg = model_with_tools.invoke(
+                "What is the weather in LA and NY?", parallel_tool_calls=False
+            )
+            ai_msg.tool_calls
+            ```
+
+            ```python
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_4OoY0ZR99iEvC7fevsH8Uhtz",
+                }
+            ]
+            ```
+
+        Like other runtime parameters, `parallel_tool_calls` can be bound to a model
+        using `model.bind(parallel_tool_calls=False)` or during instantiation by
+        setting `model_kwargs`.
+
+        See `bind_tools` for more.
+
+    ??? info "Built-in (server-side) tools"
+
+        You can access [built-in tools](https://platform.openai.com/docs/guides/tools?api-mode=responses)
+        supported by the OpenAI Responses API. See [LangChain docs](https://docs.langchain.com/oss/python/integrations/chat/openai#responses-api)
+        for more detail.
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="...", output_version="responses/v1")
+
+        tool = {"type": "web_search"}
+        model_with_tools = model.bind_tools([tool])
+
+        response = model_with_tools.invoke("What was a positive news story from today?")
+        response.content
+        ```
+
+        ```python
+        [
+            {
+                "type": "text",
+                "text": "Today, a heartwarming story emerged from ...",
+                "annotations": [
+                    {
+                        "end_index": 778,
+                        "start_index": 682,
+                        "title": "Title of story",
+                        "type": "url_citation",
+                        "url": "<url of story>",
+                    }
+                ],
             }
+        ]
+        ```
 
-    ??? note "Flex processing"
+        !!! version-added "Added in version 0.3.9"
 
-        OpenAI offers a variety of
-        `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+            [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
+            allows users to opt-in to an updated `AIMessage` format when using the
+            Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will
+            format output from reasoning summaries, built-in tool invocations, and other
+            response items into the message's `content` field, rather than
+            `additional_kwargs`. We recommend this format for new applications.
+
+    ??? info "Managing conversation state"
+
+        OpenAI's Responses API supports management of [conversation state](https://platform.openai.com/docs/guides/conversation-state?api-mode=responses).
+        Passing in response IDs from previous messages will continue a conversational
+        thread.
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(
+            model="...",
+            use_responses_api=True,
+            output_version="responses/v1",
+        )
+        response = model.invoke("Hi, I'm Bob.")
+        response.text
+        ```
+
+        ```txt
+        "Hi Bob! How can I assist you today?"
+        ```
+
+        ```python
+        second_response = model.invoke(
+            "What is my name?",
+            previous_response_id=response.response_metadata["id"],
+        )
+        second_response.text
+        ```
+
+        ```txt
+        "Your name is Bob. How can I help you today, Bob?"
+        ```
+
+        !!! version-added "Added in version 0.3.9"
+
+        !!! version-added "Added in version 0.3.26"
+            You can also initialize `ChatOpenAI` with `use_previous_response_id`.
+            Input messages up to the most recent response will then be dropped from request
+            payloads, and `previous_response_id` will be set using the ID of the most
+            recent response.
+
+            ```python
+            model = ChatOpenAI(model="...", use_previous_response_id=True)
+            ```
+
+    ??? info "Reasoning output"
+
+        OpenAI's Responses API supports [reasoning models](https://platform.openai.com/docs/guides/reasoning?api-mode=responses)
+        that expose a summary of internal reasoning processes.
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        reasoning = {
+            "effort": "medium",  # 'low', 'medium', or 'high'
+            "summary": "auto",  # 'detailed', 'auto', or None
+        }
+
+        model = ChatOpenAI(
+            model="...", reasoning=reasoning, output_version="responses/v1"
+        )
+        response = model.invoke("What is 3^3?")
+
+        # Response text
+        print(f"Output: {response.text}")
+
+        # Reasoning summaries
+        for block in response.content:
+            if block["type"] == "reasoning":
+                for summary in block["summary"]:
+                    print(summary["text"])
+        ```
+
+        ```txt
+        Output: 3³ = 27
+        Reasoning: The user wants to know...
+        ```
+
+        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+            [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
+            allows users to opt-in to an updated `AIMessage` format when using the
+            Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will
+            format output from reasoning summaries, built-in tool invocations, and other
+            response items into the message's `content` field, rather than
+            `additional_kwargs`. We recommend this format for new applications.
+
+    ??? info "Structured output"
+
+        ```python
+        from pydantic import BaseModel, Field
+
+
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
+
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(
+                description="How funny the joke is, from 1 to 10"
+            )
+
+
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
+        ```
+
+        ```python
+        Joke(
+            setup="Why was the cat sitting on the computer?",
+            punchline="To keep an eye on the mouse!",
+            rating=None,
+        )
+        ```
+
+        See `with_structured_output` for more info.
+
+    ??? info "JSON mode"
+
+        ```python
+        json_model = model.bind(response_format={"type": "json_object"})
+        ai_msg = json_model.invoke(
+            "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+        )
+        ai_msg.content
+        ```
+
+        ```txt
+        '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
+        ```
+
+    ??? info "Image input"
+
+        ```python
+        import base64
+        import httpx
+        from langchain.messages import HumanMessage
+
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ]
+        )
+
+        ai_msg = model.invoke([message])
+        ai_msg.content
+        ```
+
+        ```txt
+        "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
+        ```
+
+    ??? info "Token usage"
+
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.usage_metadata
+
+        ```txt
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
+
+        When streaming, set the `stream_usage` kwarg:
+
+        ```python
+        stream = model.stream(messages, stream_usage=True)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full.usage_metadata
+        ```
+
+        ```txt
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
+
+    ??? info "Logprobs"
+
+        ```python
+        logprobs_model = model.bind(logprobs=True)
+        ai_msg = logprobs_model.invoke(messages)
+        ai_msg.response_metadata["logprobs"]
+        ```
+
+        ```txt
+        {
+            "content": [
+                {
+                    "token": "J",
+                    "bytes": [74],
+                    "logprob": -4.9617593e-06,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": "'adore",
+                    "bytes": [39, 97, 100, 111, 114, 101],
+                    "logprob": -0.25202933,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": " la",
+                    "bytes": [32, 108, 97],
+                    "logprob": -0.20141791,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": " programmation",
+                    "bytes": [
+                        32,
+                        112,
+                        114,
+                        111,
+                        103,
+                        114,
+                        97,
+                        109,
+                        109,
+                        97,
+                        116,
+                        105,
+                        111,
+                        110,
+                    ],
+                    "logprob": -1.9361265e-07,
+                    "top_logprobs": [],
+                },
+                {
+                    "token": ".",
+                    "bytes": [46],
+                    "logprob": -1.2233183e-05,
+                    "top_logprobs": [],
+                },
+            ]
+        }
+        ```
+
+    ??? info "Response metadata"
+
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.response_metadata
+        ```
+
+        ```txt
+        {
+            "token_usage": {
+                "completion_tokens": 5,
+                "prompt_tokens": 28,
+                "total_tokens": 33,
+            },
+            "model_name": "gpt-4o",
+            "system_fingerprint": "fp_319be4768e",
+            "finish_reason": "stop",
+            "logprobs": None,
+        }
+        ```
+
+    ??? info "Flex processing"
+
+        OpenAI offers a variety of [service tiers](https://platform.openai.com/docs/guides/flex-processing?api-mode=responses).
         The "flex" tier offers cheaper pricing for requests, with the trade-off that
         responses may take longer and resources might not always be available.
         This approach is best suited for non-critical tasks, including model testing,
         data enhancement, or jobs that can be run asynchronously.
 
-        To use it, initialize the model with ``service_tier="flex"``:
+        To use it, initialize the model with `service_tier="flex"`:
 
-        .. code-block:: python
+        ```python
+        from langchain_openai import ChatOpenAI
 
-            from langchain_openai import ChatOpenAI
-
-            llm = ChatOpenAI(model="o4-mini", service_tier="flex")
+        model = ChatOpenAI(model="...", service_tier="flex")
+        ```
 
         Note that this is a beta feature that is only available for a subset of models.
-        See OpenAI `flex processing docs <https://platform.openai.com/docs/guides/flex-processing>`__
+        See OpenAI [flex processing docs](https://platform.openai.com/docs/guides/flex-processing?api-mode=responses)
         for more detail.
 
-    ??? note "OpenAI-compatible APIs"
+    ??? info "OpenAI-compatible APIs"
 
-        ``ChatOpenAI`` can be used with OpenAI-compatible APIs like `LM Studio <https://lmstudio.ai/>`__,
-        `vLLM <https://github.com/vllm-project/vllm>`__,
-        `Ollama <https://ollama.com/>`__, and others.
-        To use custom parameters specific to these providers, use the ``extra_body`` parameter.
+        `ChatOpenAI` can be used with OpenAI-compatible APIs like
+        [LM Studio](https://lmstudio.ai/), [vLLM](https://github.com/vllm-project/vllm),
+        [Ollama](https://ollama.com/), and others.
 
-        **LM Studio example** with TTL (auto-eviction):
+        To use custom parameters specific to these providers, use the `extra_body` parameter.
 
-        .. code-block:: python
+        ```python title="LM Studio example with TTL (auto-eviction)"
+        from langchain_openai import ChatOpenAI
 
-            from langchain_openai import ChatOpenAI
+        model = ChatOpenAI(
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",  # Can be any string
+            model="mlx-community/QwQ-32B-4bit",
+            temperature=0,
+            extra_body={"ttl": 300},  # Auto-evict model after 5 minutes of inactivity
+        )
+        ```
 
-            llm = ChatOpenAI(
-                base_url="http://localhost:1234/v1",
-                api_key="lm-studio",  # Can be any string
-                model="mlx-community/QwQ-32B-4bit",
-                temperature=0,
-                extra_body={
-                    "ttl": 300
-                },  # Auto-evict model after 5 minutes of inactivity
-            )
+        ```python title="vLLM example with custom parameters"
+        model = ChatOpenAI(
+            base_url="http://localhost:8000/v1",
+            api_key="EMPTY",
+            model="meta-llama/Llama-2-7b-chat-hf",
+            extra_body={"use_beam_search": True, "best_of": 4},
+        )
+        ```
 
-        **vLLM example** with custom parameters:
-
-        .. code-block:: python
-
-            llm = ChatOpenAI(
-                base_url="http://localhost:8000/v1",
-                api_key="EMPTY",
-                model="meta-llama/Llama-2-7b-chat-hf",
-                extra_body={"use_beam_search": True, "best_of": 4},
-            )
-
-    ??? note "`model_kwargs` vs `extra_body`"
+    ??? info "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
 
-        **Use ``model_kwargs`` for:**
+        **Use `model_kwargs` for:**
 
         - Standard OpenAI API parameters not explicitly defined as class parameters
         - Parameters that should be flattened into the top-level request payload
-        - Examples: ``max_completion_tokens``, ``stream_options``, ``modalities``, ``audio``
+        - Examples: `max_completion_tokens`, `stream_options`, `modalities`, `audio`
 
-        .. code-block:: python
+        ```python
+        # Standard OpenAI parameters
+        model = ChatOpenAI(
+            model="...",
+            model_kwargs={
+                "stream_options": {"include_usage": True},
+                "max_completion_tokens": 300,
+                "modalities": ["text", "audio"],
+                "audio": {"voice": "alloy", "format": "wav"},
+            },
+        )
+        ```
 
-            # Standard OpenAI parameters
-            llm = ChatOpenAI(
-                model="gpt-4o",
-                model_kwargs={
-                    "stream_options": {"include_usage": True},
-                    "max_completion_tokens": 300,
-                    "modalities": ["text", "audio"],
-                    "audio": {"voice": "alloy", "format": "wav"},
-                },
-            )
+        **Use `extra_body` for:**
 
-        **Use ``extra_body`` for:**
-
-        - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio, etc.)
-        - Parameters that need to be nested under ``extra_body`` in the request
+        - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio,
+            etc.)
+        - Parameters that need to be nested under `extra_body` in the request
         - Any non-standard OpenAI API parameters
 
-        .. code-block:: python
-
-            # Custom provider parameters
-            llm = ChatOpenAI(
-                base_url="http://localhost:8000/v1",
-                model="custom-model",
-                extra_body={
-                    "use_beam_search": True,  # vLLM parameter
-                    "best_of": 4,  # vLLM parameter
-                    "ttl": 300,  # LM Studio parameter
-                },
-            )
+        ```python
+        # Custom provider parameters
+        model = ChatOpenAI(
+            base_url="http://localhost:8000/v1",
+            model="custom-model",
+            extra_body={
+                "use_beam_search": True,  # vLLM parameter
+                "best_of": 4,  # vLLM parameter
+                "ttl": 300,  # LM Studio parameter
+            },
+        )
+        ```
 
         **Key Differences:**
 
-        - ``model_kwargs``: Parameters are **merged into top-level** request payload
-        - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
+        - `model_kwargs`: Parameters are **merged into top-level** request payload
+        - `extra_body`: Parameters are **nested under `extra_body`** key in request
 
-        !!! important
-            Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
-            Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
+        !!! warning
+            Always use `extra_body` for custom parameters, **not** `model_kwargs`.
+            Using `model_kwargs` for non-OpenAI parameters will cause API errors.
 
-    ??? note "Prompt caching optimization"
+    ??? info "Prompt caching optimization"
 
-        For high-volume applications with repetitive prompts, use ``prompt_cache_key``
+        For high-volume applications with repetitive prompts, use `prompt_cache_key`
         per-invocation to improve cache hit rates and reduce costs:
 
-        .. code-block:: python
+        ```python
+        model = ChatOpenAI(model="...")
 
-            llm = ChatOpenAI(model="gpt-4o-mini")
+        response = model.invoke(
+            messages,
+            prompt_cache_key="example-key-a",  # Routes to same machine for cache hits
+        )
 
-            response = llm.invoke(
-                messages,
-                prompt_cache_key="example-key-a",  # Routes to same machine for cache hits
-            )
+        customer_response = model.invoke(messages, prompt_cache_key="example-key-b")
+        support_response = model.invoke(messages, prompt_cache_key="example-key-c")
 
-            customer_response = llm.invoke(messages, prompt_cache_key="example-key-b")
-            support_response = llm.invoke(messages, prompt_cache_key="example-key-c")
-
-            # Dynamic cache keys based on context
-            cache_key = f"example-key-{dynamic_suffix}"
-            response = llm.invoke(messages, prompt_cache_key=cache_key)
+        # Dynamic cache keys based on context
+        cache_key = f"example-key-{dynamic_suffix}"
+        response = model.invoke(messages, prompt_cache_key=cache_key)
+        ```
 
         Cache keys help ensure requests with the same prompt prefix are routed to
         machines with existing cache, providing cost reduction and latency improvement on
         cached tokens.
-
     """  # noqa: E501
 
-    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    max_tokens: int | None = Field(default=None, alias="max_completion_tokens")
     """Maximum number of tokens to generate."""
 
     @property
@@ -2835,7 +2782,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
@@ -2870,11 +2817,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         r"""Model wrapper that returns outputs formatted to match the given schema.
@@ -2883,341 +2830,375 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
-                - a TypedDict class,
+                - a `TypedDict` class,
                 - or a Pydantic class,
                 - an OpenAI function/tool schema.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                schema fields when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
-                - ``'json_schema'``:
-                    Uses OpenAI's `Structured Output API <https://platform.openai.com/docs/guides/structured-outputs>`__.
-                    Supported for ``'gpt-4o-mini'``, ``'gpt-4o-2024-08-06'``, ``'o1'``, and later
-                    models.
-                - ``'function_calling'``:
-                    Uses OpenAI's tool-calling (formerly called function calling)
-                    `API <https://platform.openai.com/docs/guides/function-calling>`__
-                - ``'json_mode'``:
-                    Uses OpenAI's `JSON mode <https://platform.openai.com/docs/guides/structured-outputs/json-mode>`__.
+                - `'json_schema'`:
+                    Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
+                    See the docs for a list of supported models.
+                - `'function_calling'`:
+                    Uses OpenAI's [tool-calling API](https://platform.openai.com/docs/guides/function-calling)
+                    (formerly called function calling).
+                - `'json_mode'`:
+                    Uses OpenAI's [JSON mode](https://platform.openai.com/docs/guides/structured-outputs/json-mode).
                     Note that if using JSON mode then you must include instructions for
-                    formatting the output into the desired schema into the model call
+                    formatting the output into the desired schema into the model call.
 
-                Learn more about the differences between the methods and which models
-                support which methods `here <https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format>`__.
+                Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
             strict:
 
-                - True:
+                - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
-                - False:
+                    The input schema will also be validated according to the
+                    [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
-                - None:
-                    ``strict`` argument will not be passed to the model.
+                - `None`:
+                    `strict` argument will not be passed to the model.
 
-                If schema is specified via TypedDict or JSON schema, ``strict`` is not
-                enabled by default. Pass ``strict=True`` to enable it.
+                If schema is specified via `TypedDict` or JSON schema, `strict` is not
+                enabled by default. Pass `strict=True` to enable it.
 
                 !!! note
-                    ``strict`` can only be non-null if ``method`` is ``'json_schema'`` or ``'function_calling'``.
+                    `strict` can only be non-null if `method` is `'json_schema'` or `'function_calling'`.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 
-                - ``method`` is ``'json_schema'`` (default).
-                - ``strict=True``
-                - ``include_raw=True``
+                - `method` is `'json_schema'` (default).
+                - `strict=True`
+                - `include_raw=True`
 
                 If a model elects to call a
-                tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
+                tool, the resulting `AIMessage` in `'raw'` will include tool calls.
 
-                ??? note "Example"
+                ??? example
 
-                    .. code-block:: python
-
-                        from langchain.chat_models import init_chat_model
-                        from pydantic import BaseModel
-
-
-                        class ResponseSchema(BaseModel):
-                            response: str
+                    ```python
+                    from langchain.chat_models import init_chat_model
+                    from pydantic import BaseModel
 
 
-                        def get_weather(location: str) -> str:
-                            \"\"\"Get weather at a location.\"\"\"
-                            pass
+                    class ResponseSchema(BaseModel):
+                        response: str
 
-                        llm = init_chat_model("openai:gpt-4o-mini")
 
-                        structured_llm = llm.with_structured_output(
-                            ResponseSchema,
-                            tools=[get_weather],
-                            strict=True,
-                            include_raw=True,
-                        )
+                    def get_weather(location: str) -> str:
+                        \"\"\"Get weather at a location.\"\"\"
+                        pass
 
-                        structured_llm.invoke("What's the weather in Boston?")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    .. code-block:: python
+                    structured_model = model.with_structured_output(
+                        ResponseSchema,
+                        tools=[get_weather],
+                        strict=True,
+                        include_raw=True,
+                    )
 
-                        {
-                            "raw": AIMessage(content="", tool_calls=[...], ...),
-                            "parsing_error": None,
-                            "parsed": None,
-                        }
+                    structured_model.invoke("What's the weather in Boston?")
+                    ```
+
+                    ```python
+                    {
+                        "raw": AIMessage(content="", tool_calls=[...], ...),
+                        "parsing_error": None,
+                        "parsed": None,
+                    }
+                    ```
 
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs
+            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
-
-        !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class ``schema``.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for ``strict`` argument added.
-            Support for ``method="json_schema"`` added.
+            - `'raw'`: `BaseMessage`
+            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: `BaseException` or `None`
 
         !!! warning "Behavior changed in 0.3.0"
-            ``method`` default changed from "function_calling" to "json_schema".
+            `method` default changed from `"function_calling"` to `"json_schema"`.
 
         !!! warning "Behavior changed in 0.3.12"
-            Support for ``tools`` added.
+            Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
-            Pass ``kwargs`` through to the model.
+            Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
 
             Note, OpenAI has a number of restrictions on what types of schemas can be
-            provided if ``strict`` = True. When using Pydantic, our model cannot
+            provided if `strict = True`. When using Pydantic, our model cannot
             specify any Field metadata (like min/max constraints) and fields cannot
             have default values.
 
-            See all constraints `here <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas>`__.
+            See [all constraints](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas).
 
-            .. code-block:: python
-
-                from typing import Optional
-
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel, Field
+            ```python
+            from langchain_openai import ChatOpenAI
+            from pydantic import BaseModel, Field
 
 
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Optional[str] = Field(
-                        default=..., description="A justification for the answer."
-                    )
-
-
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
-
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
+                answer: str
+                justification: str | None = Field(
+                    default=..., description="A justification for the answer."
                 )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            ```
+
+            ```python
+            AnswerWithJustification(
+                answer="They weigh the same",
+                justification="Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.",
+            )
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
-            .. code-block:: python
-
-                from typing import Optional
-
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel, Field
+            ```python
+            from langchain_openai import ChatOpenAI
+            from pydantic import BaseModel, Field
 
 
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Optional[str] = Field(
-                        default=..., description="A justification for the answer."
-                    )
-
-
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="function_calling"
+                answer: str
+                justification: str | None = Field(
+                    default=..., description="A justification for the answer."
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
+                AnswerWithJustification, method="function_calling"
+            )
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            ```
+
+            ```python
+            AnswerWithJustification(
+                answer="They weigh the same",
+                justification="Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.",
+            )
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
-            .. code-block:: python
-
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel
-
-
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-
-                    answer: str
-                    justification: str
+            ```python
+            from langchain_openai import ChatOpenAI
+            from pydantic import BaseModel
 
 
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
-                )
+            class AnswerWithJustification(BaseModel):
+                '''An answer to the user question along with justification for the answer.'''
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
+                answer: str
+                justification: str
+
+
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
+                AnswerWithJustification, include_raw=True
+            )
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            ```
+
+            ```python
+            {
+                "raw": AIMessage(
+                    content="",
+                    additional_kwargs={
+                        "tool_calls": [
+                            {
+                                "id": "call_Ao02pnFYXD6GN1yzc0uXPsvF",
+                                "function": {
+                                    "arguments": '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}',
+                                    "name": "AnswerWithJustification",
+                                },
+                                "type": "function",
+                            }
+                        ]
+                    },
+                ),
+                "parsed": AnswerWithJustification(
+                    answer="They weigh the same.",
+                    justification="Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.",
+                ),
+                "parsing_error": None,
+            }
+            ```
 
         ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
-            .. code-block:: python
+            ```python
+            from typing_extensions import Annotated, TypedDict
 
-                # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
-                # from typing_extensions, not from typing.
-                from typing_extensions import Annotated, TypedDict
-
-                from langchain_openai import ChatOpenAI
+            from langchain_openai import ChatOpenAI
 
 
-                class AnswerWithJustification(TypedDict):
-                    '''An answer to the user question along with justification for the answer.'''
+            class AnswerWithJustification(TypedDict):
+                '''An answer to the user question along with justification for the answer.'''
 
-                    answer: str
-                    justification: Annotated[
-                        Optional[str], None, "A justification for the answer."
-                    ]
+                answer: str
+                justification: Annotated[
+                    str | None, None, "A justification for the answer."
+                ]
 
 
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            ```
+
+            ```python
+            {
+                "answer": "They weigh the same",
+                "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.",
+            }
+            ```
 
         ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
-            .. code-block:: python
+            ```python
+            from langchain_openai import ChatOpenAI
 
-                from langchain_openai import ChatOpenAI
-
-                oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+            oai_schema = {
+                "name": "AnswerWithJustification",
+                "description": "An answer to the user question along with justification for the answer.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "answer": {"type": "string"},
+                        "justification": {
+                            "description": "A justification for the answer.",
+                            "type": "string",
                         },
-                       'required': ['answer']
-                   }
-               }
+                    },
+                    "required": ["answer"],
+                },
+            }
 
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(oai_schema)
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
+            ```
+
+            ```python
+            {
+                "answer": "They weigh the same",
+                "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.",
+            }
+            ```
 
         ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
-            .. code-block::
+            ```python
+            from langchain_openai import ChatOpenAI
+            from pydantic import BaseModel
 
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
+            class AnswerWithJustification(BaseModel):
+                answer: str
+                justification: str
 
-                llm = ChatOpenAI(model="gpt-4o", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
+                AnswerWithJustification, method="json_mode", include_raw=True
+            )
+
+            structured_model.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            ```
+
+            ```python
+            {
+                "raw": AIMessage(
+                    content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'
+                ),
+                "parsed": AnswerWithJustification(
+                    answer="They are both the same weight.",
+                    justification="Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.",
+                ),
+                "parsing_error": None,
+            }
+            ```
 
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
-            .. code-block::
+            ```python
+            structured_model = model.with_structured_output(
+                method="json_mode", include_raw=True
+            )
 
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+            structured_model.invoke(
+                "Answer the following question. "
+                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
+                "What's heavier a pound of bricks or a pound of feathers?"
+            )
+            ```
 
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
+            ```python
+            {
+                "raw": AIMessage(
+                    content='{\\n    "answer": "They are both the same weight.",\\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \\n}'
+                ),
+                "parsed": {
+                    "answer": "They are both the same weight.",
+                    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.",
+                },
+                "parsing_error": None,
+            }
+            ```
 
         """  # noqa: E501
         return super().with_structured_output(
@@ -3253,7 +3234,7 @@ def _lc_invalid_tool_call_to_openai_tool_call(
     }
 
 
-def _url_to_size(image_source: str) -> Optional[tuple[int, int]]:
+def _url_to_size(image_source: str) -> tuple[int, int] | None:
     try:
         from PIL import Image  # type: ignore[import]
     except ImportError:
@@ -3325,8 +3306,8 @@ def _resize(width: int, height: int) -> tuple[int, int]:
 
 
 def _convert_to_openai_response_format(
-    schema: Union[dict[str, Any], type], *, strict: Optional[bool] = None
-) -> Union[dict, TypeBaseModel]:
+    schema: dict[str, Any] | type, *, strict: bool | None = None
+) -> dict | TypeBaseModel:
     if isinstance(schema, type) and is_basemodel_subclass(schema):
         return schema
 
@@ -3365,7 +3346,7 @@ def _convert_to_openai_response_format(
 
 def _oai_structured_outputs_parser(
     ai_msg: AIMessage, schema: type[_BM]
-) -> Optional[PydanticBaseModel]:
+) -> PydanticBaseModel | None:
     if parsed := ai_msg.additional_kwargs.get("parsed"):
         if isinstance(parsed, dict):
             return schema(**parsed)
@@ -3401,10 +3382,7 @@ class OpenAIRefusalError(Exception):
     When using OpenAI's Structured Outputs API with user-generated input, the model
     may occasionally refuse to fulfill the request for safety reasons.
 
-    See here for more on refusals:
-    https://platform.openai.com/docs/guides/structured-outputs/refusals
-
-    !!! version-added "Added in version 0.1.21"
+    See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """
 
 
@@ -3488,16 +3466,16 @@ def _use_responses_api(payload: dict) -> bool:
 
 def _get_last_messages(
     messages: Sequence[BaseMessage],
-) -> tuple[Sequence[BaseMessage], Optional[str]]:
-    """Get the last part of the conversation after the most recent AIMessage with an id.
+) -> tuple[Sequence[BaseMessage], str | None]:
+    """Get the last part of the conversation after the last `AIMessage` with an `id`.
 
     Return:
-    1. Every message after the most-recent AIMessage that has a non-empty
-        ``response_metadata["id"]`` (may be an empty list),
-    2. That id.
+    1. Every message after the most-recent `AIMessage` that has a non-empty
+        `response_metadata["id"]` (may be an empty list),
+    2. That `id`.
 
-    If the most-recent AIMessage does not have an id (or there is no
-    AIMessage at all) the entire conversation is returned together with ``None``.
+    If the most-recent `AIMessage` does not have an `id` (or there is no
+    `AIMessage` at all) the entire conversation is returned together with `None`.
     """
     for i in range(len(messages) - 1, -1, -1):
         msg = messages[i]
@@ -3611,10 +3589,28 @@ def _construct_responses_api_payload(
     return payload
 
 
+def _format_annotation_to_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    # langchain-core reserves the `"index"` key for streaming aggregation.
+    # Here we re-name.
+    if annotation.get("type") == "file_citation" and "index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["file_index"] = new_annotation.pop("index")
+        return new_annotation
+    return annotation
+
+
+def _format_annotation_from_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    if annotation.get("type") == "file_citation" and "file_index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["index"] = new_annotation.pop("file_index")
+        return new_annotation
+    return annotation
+
+
 def _convert_chat_completions_blocks_to_responses(
     block: dict[str, Any],
 ) -> dict[str, Any]:
-    """Convert chat completions content blocks to responses API format.
+    """Convert chat completions content blocks to Responses API format.
 
     Only handles text, image, file blocks. Others pass through.
     """
@@ -3637,7 +3633,7 @@ def _convert_chat_completions_blocks_to_responses(
     return block
 
 
-def _ensure_valid_tool_message_content(tool_output: Any) -> Union[str, list[dict]]:
+def _ensure_valid_tool_message_content(tool_output: Any) -> str | list[dict]:
     if isinstance(tool_output, str):
         return tool_output
     if isinstance(tool_output, list) and all(
@@ -3662,8 +3658,8 @@ def _ensure_valid_tool_message_content(tool_output: Any) -> Union[str, list[dict
 
 def _make_computer_call_output_from_message(
     message: ToolMessage,
-) -> Optional[dict[str, Any]]:
-    computer_call_output: Optional[dict[str, Any]] = None
+) -> dict[str, Any] | None:
+    computer_call_output: dict[str, Any] | None = None
     if isinstance(message.content, list):
         for block in message.content:
             if (
@@ -3702,7 +3698,7 @@ def _make_computer_call_output_from_message(
     return computer_call_output
 
 
-def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict]:
+def _make_custom_tool_output_from_message(message: ToolMessage) -> dict | None:
     custom_tool_output = None
     for block in message.content:
         if isinstance(block, dict) and block.get("type") == "custom_tool_call_output":
@@ -3724,7 +3720,7 @@ def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict
 
 
 def _pop_index_and_sub_index(block: dict) -> dict:
-    """When streaming, langchain-core uses ``index`` to aggregate text blocks.
+    """When streaming, `langchain-core` uses `index` to aggregate text blocks.
 
     OpenAI API does not support this key, so we need to remove it.
     """
@@ -3797,7 +3793,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 new_block = {
                                     "type": "output_text",
                                     "text": block["text"],
-                                    "annotations": block.get("annotations") or [],
+                                    "annotations": [
+                                        _format_annotation_from_lc(annotation)
+                                        for annotation in block.get("annotations") or []
+                                    ],
                                 }
                             elif block_type == "refusal":
                                 new_block = {
@@ -3901,7 +3900,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
 
 
 def _get_output_text(response: Response) -> str:
-    """OpenAI SDK deleted response.output_text in 1.99.2."""
+    """Safe output text extraction.
+
+    Context: OpenAI SDK deleted `response.output_text` momentarily in `1.99.2`.
+    """
     if hasattr(response, "output_text"):
         return response.output_text
     texts = [
@@ -3916,11 +3918,11 @@ def _get_output_text(response: Response) -> str:
 
 def _construct_lc_result_from_responses_api(
     response: Response,
-    schema: Optional[type[_BM]] = None,
-    metadata: Optional[dict] = None,
-    output_version: Optional[str] = None,
+    schema: type[_BM] | None = None,
+    metadata: dict | None = None,
+    output_version: str | None = None,
 ) -> ChatResult:
-    """Construct ChatResponse from OpenAI Response API response."""
+    """Construct `ChatResponse` from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
 
@@ -3970,7 +3972,7 @@ def _construct_lc_result_from_responses_api(
                         "type": "text",
                         "text": content.text,
                         "annotations": [
-                            annotation.model_dump()
+                            _format_annotation_to_lc(annotation.model_dump())
                             for annotation in content.annotations
                         ]
                         if isinstance(content.annotations, list)
@@ -4041,7 +4043,7 @@ def _construct_lc_result_from_responses_api(
     #    client = OpenAI()
 
     #    client.responses.parse(
-    #        model="gpt-4o-mini",
+    #        model="...",
     #        input=[{"content": "how are ya", "role": "user"}],
     #        text_format=Foo,
     #        stream=True,  # <-- errors
@@ -4086,45 +4088,44 @@ def _convert_responses_chunk_to_generation_chunk(
     current_index: int,  # index in content
     current_output_index: int,  # index in Response output
     current_sub_index: int,  # index of content block in output item
-    schema: Optional[type[_BM]] = None,
-    metadata: Optional[dict] = None,
+    schema: type[_BM] | None = None,
+    metadata: dict | None = None,
     has_reasoning: bool = False,
-    output_version: Optional[str] = None,
-) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
-    def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
+    output_version: str | None = None,
+) -> tuple[int, int, int, ChatGenerationChunk | None]:
+    def _advance(output_idx: int, sub_idx: int | None = None) -> None:
         """Advance indexes tracked during streaming.
 
         Example: we stream a response item of the form:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "message",  # output_index 0
+            "role": "assistant",
+            "id": "msg_123",
+            "content": [
+                {"type": "output_text", "text": "foo"},  # sub_index 0
+                {"type": "output_text", "text": "bar"},  # sub_index 1
+            ],
+        }
+        ```
 
-            {
-                "type": "message",  # output_index 0
-                "role": "assistant",
-                "id": "msg_123",
-                "content": [
-                    {"type": "output_text", "text": "foo"},  # sub_index 0
-                    {"type": "output_text", "text": "bar"},  # sub_index 1
-                ],
-            }
-
-        This is a single item with a shared ``output_index`` and two sub-indexes, one
+        This is a single item with a shared `output_index` and two sub-indexes, one
         for each content block.
 
-        This will be processed into an AIMessage with two text blocks:
+        This will be processed into an `AIMessage` with two text blocks:
 
-        .. code-block:: python
-
-            AIMessage(
-                [
-                    {"type": "text", "text": "foo", "id": "msg_123"},  # index 0
-                    {"type": "text", "text": "bar", "id": "msg_123"},  # index 1
-                ]
-            )
+        ```python
+        AIMessage(
+            [
+                {"type": "text", "text": "foo", "id": "msg_123"},  # index 0
+                {"type": "text", "text": "bar", "id": "msg_123"},  # index 1
+            ]
+        )
+        ```
 
         This function just identifies updates in output or sub-indexes and increments
         the current index accordingly.
-
         """
         nonlocal current_index, current_output_index, current_sub_index
         if sub_idx is None:
@@ -4148,7 +4149,7 @@ def _convert_responses_chunk_to_generation_chunk(
     response_metadata = metadata or {}
     response_metadata["model_provider"] = "openai"
     usage_metadata = None
-    chunk_position: Optional[Literal["last"]] = None
+    chunk_position: Literal["last"] | None = None
     id = None
     if chunk.type == "response.output_text.delta":
         _advance(chunk.output_index, chunk.content_index)
@@ -4162,7 +4163,11 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
 
         content.append(
-            {"type": "text", "annotations": [annotation], "index": current_index}
+            {
+                "type": "text",
+                "annotations": [_format_annotation_to_lc(annotation)],
+                "index": current_index,
+            }
         )
     elif chunk.type == "response.output_text.done":
         content.append({"type": "text", "id": chunk.item_id, "index": current_index})

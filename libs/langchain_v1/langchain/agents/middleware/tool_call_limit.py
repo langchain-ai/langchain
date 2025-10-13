@@ -18,7 +18,7 @@ def _count_tool_calls_in_messages(messages: list[AnyMessage], tool_name: str | N
     Args:
         messages: List of messages to count tool calls in.
         tool_name: If specified, only count calls to this specific tool.
-            If None, count all tool calls.
+            If `None`, count all tool calls.
 
     Returns:
         The total number of tool calls (optionally filtered by tool_name).
@@ -168,12 +168,12 @@ class ToolCallLimitMiddleware(AgentMiddleware):
         """Initialize the tool call limit middleware.
 
         Args:
-            tool_name: Name of the specific tool to limit. If None, limits apply
-                to all tools. Defaults to None.
+            tool_name: Name of the specific tool to limit. If `None`, limits apply
+                to all tools. Defaults to `None`.
             thread_limit: Maximum number of tool calls allowed per thread.
-                None means no limit. Defaults to None.
+                None means no limit. Defaults to `None`.
             run_limit: Maximum number of tool calls allowed per run.
-                None means no limit. Defaults to None.
+                None means no limit. Defaults to `None`.
             exit_behavior: What to do when limits are exceeded.
                 - "end": Jump to the end of the agent execution and
                     inject an artificial AI message indicating that the limit was exceeded.

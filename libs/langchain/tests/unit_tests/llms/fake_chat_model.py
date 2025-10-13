@@ -58,20 +58,20 @@ class GenericFakeChatModel(BaseChatModel):
     """A generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
-    * Invokes ``on_llm_new_token`` to allow for testing of callback related code for new
-      tokens.
+    * Invokes `on_llm_new_token` to allow for testing of callback related code for new
+        tokens.
     * Includes logic to break messages into message chunk to facilitate testing of
-      streaming.
+        streaming.
     """
 
     messages: Iterator[AIMessage]
     """Get an iterator over messages.
 
-    This can be expanded to accept other types like ``Callables`` / dicts / strings
+    This can be expanded to accept other types like `Callables` / dicts / strings
     to make the interface more generic if needed.
 
     !!! note
-        If you want to pass a list, you can use ``iter`` to convert it to an iterator.
+        If you want to pass a list, you can use `iter` to convert it to an iterator.
 
     !!! warning
         Streaming is not implemented yet. We should try to implement it in the future by

@@ -82,7 +82,7 @@ class _StreamingParser:
             chunk: A chunk of text to parse. This can be a string or a BaseMessage.
 
         Yields:
-            AddableDict: A dictionary representing the parsed XML element.
+            A dictionary representing the parsed XML element.
 
         Raises:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.

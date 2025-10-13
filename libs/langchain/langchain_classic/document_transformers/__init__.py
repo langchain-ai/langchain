@@ -1,19 +1,7 @@
 """**Document Transformers** are classes to transform Documents.
 
 **Document Transformers** usually used to transform a lot of Documents in a single run.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseDocumentTransformer --> <name>  # Examples: DoctranQATransformer, DoctranTextTranslator
-
-**Main helpers:**
-
-.. code-block::
-
-    Document
-"""  # noqa: E501
+"""
 
 from typing import TYPE_CHECKING, Any
 

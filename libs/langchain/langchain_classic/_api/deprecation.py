@@ -13,11 +13,11 @@ AGENT_DEPRECATION_WARNING = (
     "full-featured framework for building agents, including support for "
     "tool-calling, persistence of state, and human-in-the-loop workflows. For "
     "details, refer to the "
-    "`LangGraph documentation <https://langchain-ai.github.io/langgraph/>`_"
+    "[LangGraph documentation](https://langchain-ai.github.io/langgraph/)"
     " as well as guides for "
-    "`Migrating from AgentExecutor <https://python.langchain.com/docs/how_to/migrate_agent/>`_"
+    "[Migrating from AgentExecutor](https://python.langchain.com/docs/how_to/migrate_agent/)"
     " and LangGraph's "
-    "`Pre-built ReAct agent <https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/>`_."
+    "[Pre-built ReAct agent](https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/)."
 )
 
 

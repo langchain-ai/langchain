@@ -218,7 +218,7 @@ def get_query_constructor_prompt(
         examples: Optional list of examples to use for the chain.
         allowed_comparators: Sequence of allowed comparators.
         allowed_operators: Sequence of allowed operators.
-        enable_limit: Whether to enable the limit operator. Defaults to False.
+        enable_limit: Whether to enable the limit operator. Defaults to `False`.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
         kwargs: Additional named params to pass to FewShotPromptTemplate init.
@@ -291,7 +291,7 @@ def load_query_constructor_chain(
         allowed_comparators: Sequence of allowed comparators. Defaults to all
             Comparators.
         allowed_operators: Sequence of allowed operators. Defaults to all Operators.
-        enable_limit: Whether to enable the limit operator. Defaults to False.
+        enable_limit: Whether to enable the limit operator. Defaults to `False`.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
         **kwargs: Arbitrary named params to pass to LLMChain.
@@ -346,7 +346,7 @@ def load_query_constructor_runnable(
         allowed_comparators: Sequence of allowed comparators. Defaults to all
             Comparators.
         allowed_operators: Sequence of allowed operators. Defaults to all Operators.
-        enable_limit: Whether to enable the limit operator. Defaults to False.
+        enable_limit: Whether to enable the limit operator. Defaults to `False`.
         schema_prompt: Prompt for describing query schema. Should have string input
             variables allowed_comparators and allowed_operators.
         fix_invalid: Whether to fix invalid filter directives by ignoring invalid

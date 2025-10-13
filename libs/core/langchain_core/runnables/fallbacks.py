@@ -47,8 +47,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     of a chain of Runnables. Fallbacks are tried in order until one succeeds or
     all fail.
 
-    While you can instantiate a ``RunnableWithFallbacks`` directly, it is usually
-    more convenient to use the ``with_fallbacks`` method on a Runnable.
+    While you can instantiate a `RunnableWithFallbacks` directly, it is usually
+    more convenient to use the `with_fallbacks` method on a Runnable.
 
     Example:
         ```python
@@ -97,7 +97,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
     exception_key: str | None = None
     """If string is specified then handled exceptions will be passed to fallbacks as
-        part of the input under the specified key. If None, exceptions
+        part of the input under the specified key. If `None`, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks
         must accept a dictionary as input."""
 
@@ -146,7 +146,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -594,7 +594,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         Returns:
             If the attribute is anything other than a method that outputs a Runnable,
             returns getattr(self.runnable, name). If the attribute is a method that
-            does return a new Runnable (e.g. llm.bind_tools([...]) outputs a new
+            does return a new Runnable (e.g. model.bind_tools([...]) outputs a new
             RunnableBinding) then self.runnable and each of the runnables in
             self.fallbacks is replaced with getattr(x, name).
 
@@ -605,15 +605,15 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
             gpt_4o = ChatOpenAI(model="gpt-4o")
             claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
-            llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+            model = gpt_4o.with_fallbacks([claude_3_sonnet])
 
-            llm.model_name
+            model.model_name
             # -> "gpt-4o"
 
             # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
             # Equivalent to:
             # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
-            llm.bind_tools([...])
+            model.bind_tools([...])
             # -> RunnableWithFallbacks(
                 runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
                 fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],

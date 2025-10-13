@@ -35,11 +35,11 @@ class ExactMatchStringEvaluator(StringEvaluator):
 
         Args:
             ignore_case: Whether to ignore case when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
             ignore_punctuation: Whether to ignore punctuation when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
             ignore_numbers: Whether to ignore numbers when comparing strings.
-                Defaults to False.
+                Defaults to `False`.
         """
         super().__init__()
         self.ignore_case = ignore_case
@@ -61,7 +61,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """Get the input keys.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["reference", "prediction"]
 
@@ -70,7 +70,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """Get the evaluation name.
 
         Returns:
-            str: The evaluation name.
+            The evaluation name.
         """
         return "exact_match"
 

@@ -139,7 +139,7 @@ def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemp
 
     Args:
         path: Path to the prompt file.
-        encoding: Encoding of the file. Defaults to None.
+        encoding: Encoding of the file.
 
     Returns:
         A PromptTemplate object.

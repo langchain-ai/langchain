@@ -57,7 +57,7 @@ def _content_blocks_equal_ignore_id(
         expected: Expected content to compare against (string or list of blocks).
 
     Returns:
-        True if content matches (excluding `id` fields), False otherwise.
+        True if content matches (excluding `id` fields), `False` otherwise.
 
     """
     if isinstance(actual, str) or isinstance(expected, str):
@@ -364,6 +364,8 @@ class NoStreamingModel(BaseChatModel):
 
 
 class StreamingModel(NoStreamingModel):
+    streaming: bool = False
+
     @override
     def _stream(
         self,
@@ -425,6 +427,13 @@ async def test_disable_streaming_async(
             [], config={"callbacks": [_AstreamEventsCallbackHandler()]}, tools=[{}]
         )
     ).content == expected
+
+
+async def test_streaming_attribute_overrides_streaming_callback() -> None:
+    model = StreamingModel(streaming=False)
+    assert (
+        await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
+    ).content == "invoke"
 
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])

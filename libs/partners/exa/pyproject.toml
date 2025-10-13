@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "exa-py>=1.0.8,<2.0.0"
 ]
 name = "langchain-exa"
@@ -16,9 +16,13 @@ description = "An integration package connecting Exa and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/exa"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-exa%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/exa_search"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/exa"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-exa%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_exa/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -89,21 +93,12 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
-    "D102",    # Missing docstring in public method
-    "D103",    # Missing docstring in public function
-    "D104",    # Missing docstring in public package
-    "D105",    # Missing docstring in magic method
-    "D107",    # Missing docstring in __init__
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -126,4 +121,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]
