@@ -9,6 +9,8 @@ from collections.abc import Awaitable, Callable
 from typing import Literal
 from warnings import warn
 
+from langchain_anthropic.chat_models import ChatAnthropic
+
 try:
     from langchain.agents.middleware.types import (
         AgentMiddleware,
@@ -68,34 +70,16 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Modify the model request to add cache control blocks."""
-        try:
-            from langchain_anthropic import ChatAnthropic
-
-            chat_anthropic_cls: type | None = ChatAnthropic
-        except ImportError:
-            chat_anthropic_cls = None
-
-        msg: str | None = None
-
-        if chat_anthropic_cls is None:
-            msg = (
-                "AnthropicPromptCachingMiddleware caching middleware only supports "
-                "Anthropic models. "
-                "Please install langchain-anthropic."
-            )
-        elif not isinstance(request.model, chat_anthropic_cls):
+        if not isinstance(request.model, ChatAnthropic):
             msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports "
                 f"Anthropic models, not instances of {type(request.model)}"
             )
-
-        if msg is not None:
             if self.unsupported_model_behavior == "raise":
                 raise ValueError(msg)
             if self.unsupported_model_behavior == "warn":
                 warn(msg, stacklevel=3)
-            else:
-                return handler(request)
+            return handler(request)
 
         messages_count = (
             len(request.messages) + 1
@@ -115,34 +99,16 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Modify the model request to add cache control blocks (async version)."""
-        try:
-            from langchain_anthropic import ChatAnthropic
-
-            chat_anthropic_cls: type | None = ChatAnthropic
-        except ImportError:
-            chat_anthropic_cls = None
-
-        msg: str | None = None
-
-        if chat_anthropic_cls is None:
-            msg = (
-                "AnthropicPromptCachingMiddleware caching middleware only supports "
-                "Anthropic models. "
-                "Please install langchain-anthropic."
-            )
-        elif not isinstance(request.model, chat_anthropic_cls):
+        if not isinstance(request.model, ChatAnthropic):
             msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports "
                 f"Anthropic models, not instances of {type(request.model)}"
             )
-
-        if msg is not None:
             if self.unsupported_model_behavior == "raise":
                 raise ValueError(msg)
             if self.unsupported_model_behavior == "warn":
                 warn(msg, stacklevel=3)
-            else:
-                return await handler(request)
+            return await handler(request)
 
         messages_count = (
             len(request.messages) + 1

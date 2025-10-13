@@ -2,6 +2,7 @@
 
 import warnings
 from typing import Any, cast
+from unittest.mock import MagicMock
 
 import pytest
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
@@ -14,6 +15,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.runtime import Runtime
 
+from langchain_anthropic.chat_models import ChatAnthropic
 from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
 
 
@@ -65,8 +67,11 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
 
+    # Create a mock ChatAnthropic instance
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+
     fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model=mock_chat_anthropic,
         messages=[HumanMessage("Hello")],
         system_prompt=None,
         tool_choice=None,
@@ -142,8 +147,11 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
         type="ephemeral", ttl="1h", min_messages_to_cache=5
     )
 
+    # Create a mock ChatAnthropic instance
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+
     fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model=mock_chat_anthropic,
         messages=[HumanMessage("Hello")] * 6,
         system_prompt=None,
         tool_choice=None,
