@@ -5,7 +5,7 @@ Requires:
     - langchain-anthropic: For ChatAnthropic model (already a dependency)
 """
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Literal
 from warnings import warn
 
@@ -108,3 +108,50 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
 
         return handler(request)
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Modify the model request to add cache control blocks (async version)."""
+        try:
+            from langchain_anthropic import ChatAnthropic
+
+            chat_anthropic_cls: type | None = ChatAnthropic
+        except ImportError:
+            chat_anthropic_cls = None
+
+        msg: str | None = None
+
+        if chat_anthropic_cls is None:
+            msg = (
+                "AnthropicPromptCachingMiddleware caching middleware only supports "
+                "Anthropic models. "
+                "Please install langchain-anthropic."
+            )
+        elif not isinstance(request.model, chat_anthropic_cls):
+            msg = (
+                "AnthropicPromptCachingMiddleware caching middleware only supports "
+                f"Anthropic models, not instances of {type(request.model)}"
+            )
+
+        if msg is not None:
+            if self.unsupported_model_behavior == "raise":
+                raise ValueError(msg)
+            if self.unsupported_model_behavior == "warn":
+                warn(msg, stacklevel=3)
+            else:
+                return await handler(request)
+
+        messages_count = (
+            len(request.messages) + 1
+            if request.system_prompt
+            else len(request.messages)
+        )
+        if messages_count < self.min_messages_to_cache:
+            return await handler(request)
+
+        request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
+
+        return await handler(request)
