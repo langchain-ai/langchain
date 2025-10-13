@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import BaseTool, InjectedToolCallId, tool
+from langgraph.config import get_config
 from langgraph.runtime import Runtime, get_runtime
 from langgraph.store.base import BaseStore, Item
 from langgraph.types import Command
@@ -105,11 +106,12 @@ In order to interact with the longterm filesystem, you can use those same tools,
 Remember, to interact with the longterm filesystem, you must prefix the filename with the /memories/ path."""
 
 
-def _get_namespace(runtime: Runtime[Any]) -> tuple[str] | tuple[str, str]:
+def _get_namespace() -> tuple[str] | tuple[str, str]:
     namespace = "filesystem"
-    if runtime.context is None:
+    config = get_config()
+    if config is None:
         return (namespace,)
-    assistant_id = runtime.context.get("assistant_id")
+    assistant_id = config.get("metadata", {}).get("assistant_id")
     if assistant_id is None:
         return (namespace,)
     return (assistant_id, "filesystem")
@@ -186,7 +188,7 @@ def _ls_tool_generator(
             # Add filenames from longterm memory
             runtime = get_runtime()
             store = _get_store(runtime)
-            namespace = _get_namespace(runtime)
+            namespace = _get_namespace()
             longterm_files = store.search(namespace)
             longterm_files_prefixed = [append_memories_prefix(f.key) for f in longterm_files]
             files.extend(longterm_files_prefixed)
@@ -241,7 +243,7 @@ def _read_file_tool_generator(
                 stripped_file_path = strip_memories_prefix(file_path)
                 runtime = get_runtime()
                 store = _get_store(runtime)
-                namespace = _get_namespace(runtime)
+                namespace = _get_namespace()
                 item: Item | None = store.get(namespace, stripped_file_path)
                 if item is None:
                     return f"Error: File '{file_path}' not found"
@@ -310,7 +312,7 @@ def _write_file_tool_generator(
                 stripped_file_path = strip_memories_prefix(file_path)
                 runtime = get_runtime()
                 store = _get_store(runtime)
-                namespace = _get_namespace(runtime)
+                namespace = _get_namespace()
                 if store.get(namespace, stripped_file_path) is not None:
                     return f"Cannot write to {file_path} because it already exists. Read and then make an edit, or write to a new path."
                 new_file_data = create_file_data(content)
@@ -362,7 +364,7 @@ def _edit_file_tool_generator(
                 stripped_file_path = strip_memories_prefix(file_path)
                 runtime = get_runtime()
                 store = _get_store(runtime)
-                namespace = _get_namespace(runtime)
+                namespace = _get_namespace()
                 item: Item | None = store.get(namespace, stripped_file_path)
                 if item is None:
                     return f"Error: File '{file_path}' not found"
