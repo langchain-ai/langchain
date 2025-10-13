@@ -21,6 +21,17 @@ LangChain Text Splitters contains utilities for splitting into chunks a wide var
 
 For full documentation, see the [API reference](https://reference.langchain.com/python/langchain).
 
+## 🛠️ Troubleshooting: `chunk_overlap` seems not to apply
+
+- After header based splitting (e.g., `MarkdownHeaderTextSplitter`), use **`split_documents(docs)`** (not `split_text`) so overlap is applied **within each section** and per section metadata (headers) is preserved on chunks.
+- Overlap appears only when a **single input section** exceeds `chunk_size` and is split into multiple chunks.
+- Overlap **does not cross** section/document boundaries (e.g., `# H1` → `## H2`).
+- If the header becomes a tiny first chunk, there's nothing meaningful to overlap. Consider `strip_headers=True` in `MarkdownHeaderTextSplitter`, or reduce separators so the section forms a longer segment.
+- If your text lacks newlines/spaces, keep a fallback `""` in `separators` so the splitter can still split and apply overlap.
+
+> Looking for examples and API details? See the [Text Splitters how-to](https://python.langchain.com/docs/how_to/#text-splitters) and the [API reference](https://python.langchain.com/api_reference/text_splitters/index.html).
+
+
 ## 📕 Releases & Versioning
 
 See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
