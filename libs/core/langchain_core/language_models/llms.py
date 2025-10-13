@@ -91,13 +91,17 @@ def create_base_retry_decorator(
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # TODO: Fix RUF006 - this task should have a reference
-                        #  and be awaited somewhere
-                        loop.create_task(coro)  # noqa: RUF006
-                    else:
+                    try:
+                        loop = asyncio.get_event_loop()
+                    except RuntimeError:
                         asyncio.run(coro)
+                    else:
+                        if loop.is_running():
+                            # TODO: Fix RUF006 - this task should have a reference
+                            #  and be awaited somewhere
+                            loop.create_task(coro)  # noqa: RUF006
+                        else:
+                            asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:

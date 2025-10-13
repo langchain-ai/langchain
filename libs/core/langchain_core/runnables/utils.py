@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import sys
 import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from contextvars import Context
@@ -141,10 +142,10 @@ def coro_with_context(
     Returns:
         The coroutine with the context.
     """
-    if asyncio_accepts_context():
-        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
+    if sys.version_info >= (3, 11):
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type]
     if create_task:
-        return asyncio.create_task(coro)  # type: ignore[arg-type]
+        return asyncio.create_task(coro)  # type: ignore[arg-type, unused-ignore]
     return coro
 
 
