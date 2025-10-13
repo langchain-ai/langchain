@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.messages import content as types
 
 
 def _convert_from_v1_to_groq(
     content: list[types.ContentBlock],
-    model_provider: Optional[str],
+    model_provider: str | None,
 ) -> tuple[list[dict[str, Any]], dict]:
     new_content: list = []
     new_additional_kwargs: dict = {}
@@ -16,7 +16,11 @@ def _convert_from_v1_to_groq(
         if block["type"] == "text":
             new_content.append({"text": block.get("text", ""), "type": "text"})
 
-        elif block["type"] == "reasoning" and (reasoning := block.get("reasoning")) and model_provider == "groq":
+        elif (
+            block["type"] == "reasoning"
+            and (reasoning := block.get("reasoning"))
+            and model_provider == "groq"
+        ):
             new_additional_kwargs["reasoning_content"] = reasoning
 
         elif block["type"] == "server_tool_call" and model_provider == "groq":
@@ -31,7 +35,7 @@ def _convert_from_v1_to_groq(
                 new_block["type"] = ""
 
             if i < len(content) - 1 and content[i + 1]["type"] == "server_tool_result":
-                result = cast(types.ServerToolResult, content[i + 1])
+                result = cast("types.ServerToolResult", content[i + 1])
                 for k, v in result.get("extras", {}).items():
                     new_block[k] = v
                 if "output" in result:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 import pytest
 from groq import BadRequestError
@@ -674,7 +674,7 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
         "role": "user",
         "content": "Search for the weather in Boston today.",
     }
-    full: Optional[AIMessageChunk] = None
+    full: AIMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         print(chunk.content)
         full = chunk if full is None else full + chunk
@@ -682,16 +682,22 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     assert full.additional_kwargs["reasoning_content"]
     assert full.additional_kwargs["executed_tools"]
     assert [block["type"] for block in full.content_blocks] == [
-        "reasoning", "server_tool_call", "server_tool_result", "text",
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
     ]
 
     next_message = {
         "role": "user",
         "content": "Now search for the weather in San Francisco.",
     }
-    response  = llm.invoke([input_message, full, next_message])
+    response = llm.invoke([input_message, full, next_message])
     assert [block["type"] for block in response.content_blocks] == [
-        "reasoning", "server_tool_call", "server_tool_result", "text",
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
     ]
 
 
