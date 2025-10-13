@@ -54,7 +54,9 @@ def test__convert_dict_to_message_human() -> None:
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
-    expected_output = AIMessage(content="foo")
+    expected_output = AIMessage(
+        content="foo", response_metadata={"model_provider": "groq"}
+    )
     assert result == expected_output
 
 
@@ -80,6 +82,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             )
         ],
+        response_metadata={"model_provider": "groq"},
     )
     assert result == expected_output
 
@@ -124,6 +127,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             ),
         ],
+        response_metadata={"model_provider": "groq"},
     )
     assert result == expected_output
 

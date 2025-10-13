@@ -44,7 +44,6 @@ from langchain.agents.middleware.model_call_limit import (
     ModelCallLimitExceededError,
 )
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -1022,115 +1021,6 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
 
         # Check string description
         assert captured_request["action_requests"][1]["description"] == "Static description"
-
-
-# Tests for AnthropicPromptCachingMiddleware
-def test_anthropic_prompt_caching_middleware_initialization() -> None:
-    """Test AnthropicPromptCachingMiddleware initialization."""
-    # Test with custom values
-    middleware = AnthropicPromptCachingMiddleware(
-        type="ephemeral", ttl="1h", min_messages_to_cache=5
-    )
-    assert middleware.type == "ephemeral"
-    assert middleware.ttl == "1h"
-    assert middleware.min_messages_to_cache == 5
-
-    # Test with default values
-    middleware = AnthropicPromptCachingMiddleware()
-    assert middleware.type == "ephemeral"
-    assert middleware.ttl == "5m"
-    assert middleware.min_messages_to_cache == 0
-
-    fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
-        messages=[HumanMessage("Hello")],
-        system_prompt=None,
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-        state={"messages": [HumanMessage("Hello")]},
-        runtime=cast(Runtime, object()),
-        model_settings={},
-    )
-
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response", **req.model_settings)
-
-    result = middleware.wrap_model_call(fake_request, mock_handler)
-    # Check that model_settings were passed through via the request
-    assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
-
-
-def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
-    """Test AnthropicPromptCachingMiddleware with unsupported model."""
-    from typing import cast
-
-    fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
-        messages=[HumanMessage("Hello")],
-        system_prompt=None,
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-        state={"messages": [HumanMessage("Hello")]},
-        runtime=cast(Runtime, object()),
-        model_settings={},
-    )
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
-
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
-
-    with pytest.raises(
-        ValueError,
-        match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
-    ):
-        middleware.wrap_model_call(fake_request, mock_handler)
-
-    langchain_anthropic = ModuleType("langchain_anthropic")
-
-    class MockChatAnthropic:
-        pass
-
-    langchain_anthropic.ChatAnthropic = MockChatAnthropic
-
-    with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-        with pytest.raises(
-            ValueError,
-            match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
-        ):
-            middleware.wrap_model_call(fake_request, mock_handler)
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
-
-    with warnings.catch_warnings(record=True) as w:
-        result = middleware.wrap_model_call(fake_request, mock_handler)
-        assert len(w) == 1
-        assert (
-            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
-            in str(w[-1].message)
-        )
-        assert isinstance(result, AIMessage)
-
-    with warnings.catch_warnings(record=True) as w:
-        with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.wrap_model_call(fake_request, mock_handler)
-            assert isinstance(result, AIMessage)
-            assert len(w) == 1
-            assert (
-                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
-                in str(w[-1].message)
-            )
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
-
-    result = middleware.wrap_model_call(fake_request, mock_handler)
-    assert isinstance(result, AIMessage)
-
-    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.wrap_model_call(fake_request, mock_handler)
-        assert isinstance(result, AIMessage)
 
 
 # Tests for SummarizationMiddleware

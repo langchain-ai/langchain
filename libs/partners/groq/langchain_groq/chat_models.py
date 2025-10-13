@@ -57,6 +57,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq.version import __version__
 
 
@@ -1187,6 +1188,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            new_content, new_additional_kwargs = _convert_from_v1_to_groq(
+                message.content_blocks, message.response_metadata.get("model_provider")
+            )
+            message = message.model_copy(
+                update={
+                    "content": new_content,
+                    "additional_kwargs": new_additional_kwargs,
+                }
+            )
         message_dict = {"role": "assistant", "content": message.content}
 
         # If content is a list of content blocks, filter out tool_call blocks
@@ -1268,6 +1280,22 @@ def _convert_chunk_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         if reasoning := _dict.get("reasoning"):
             additional_kwargs["reasoning_content"] = reasoning
+        if executed_tools := _dict.get("executed_tools"):
+            additional_kwargs["executed_tools"] = []
+            for executed_tool in executed_tools:
+                if executed_tool.get("output"):
+                    # Tool output duplicates query and other server tool call data
+                    additional_kwargs["executed_tools"].append(
+                        {
+                            k: executed_tool[k]
+                            for k in ("index", "output")
+                            if k in executed_tool
+                        }
+                    )
+                else:
+                    additional_kwargs["executed_tools"].append(
+                        {k: executed_tool[k] for k in executed_tool if k != "output"}
+                    )
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1282,6 +1310,7 @@ def _convert_chunk_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata={"model_provider": "groq"},
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -1313,6 +1342,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: dict = {}
         if reasoning := _dict.get("reasoning"):
             additional_kwargs["reasoning_content"] = reasoning
+        if executed_tools := _dict.get("executed_tools"):
+            additional_kwargs["executed_tools"] = executed_tools
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -1332,6 +1363,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
+            response_metadata={"model_provider": "groq"},
         )
     if role == "system":
         return SystemMessage(content=_dict.get("content", ""))
