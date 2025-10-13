@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -30,7 +30,7 @@ from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -62,6 +62,18 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
+class _ModelRequestOverrides(TypedDict, total=False):
+    """Possible overrides for ModelRequest.override() method."""
+
+    model: BaseChatModel
+    system_prompt: str | None
+    messages: list[AnyMessage]
+    tool_choice: Any | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    model_settings: dict[str, Any]
+
+
 @dataclass
 class ModelRequest:
     """Model request information for the agent."""
@@ -75,6 +87,36 @@ class ModelRequest:
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+        """Replace the request with a new request with the given overrides.
+
+        Returns a new `ModelRequest` instance with the specified attributes replaced.
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override. Supported keys:
+                - model: BaseChatModel instance
+                - system_prompt: Optional system prompt string
+                - messages: List of messages
+                - tool_choice: Tool choice configuration
+                - tools: List of available tools
+                - response_format: Response format specification
+                - model_settings: Additional model settings
+
+        Returns:
+            New ModelRequest instance with specified overrides applied.
+
+        Examples:
+            ```python
+            # Create a new request with different model
+            new_request = request.override(model=different_model)
+
+            # Override multiple attributes
+            new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+            ```
+        """
+        return replace(self, **overrides)
 
 
 @dataclass
