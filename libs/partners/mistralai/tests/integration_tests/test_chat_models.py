@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 import pytest
 from httpx import ReadTimeout
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 from langchain_mistralai.chat_models import ChatMistralAI
 
@@ -44,6 +47,65 @@ async def test_astream() -> None:
     )
     assert isinstance(full.response_metadata["model_name"], str)
     assert full.response_metadata["model_name"]
+
+
+class Book(BaseModel):
+    name: str
+    authors: list[str]
+
+
+class BookDict(TypedDict):
+    name: str
+    authors: list[str]
+
+
+def _check_parsed_result(result: Any, schema: Any) -> None:
+    if schema == Book:
+        assert isinstance(result, Book)
+    else:
+        assert all(key in ["name", "authors"] for key in result)
+
+
+@pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
+def test_structured_output_json_schema(schema: Any) -> None:
+    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    structured_llm = llm.with_structured_output(schema, method="json_schema")
+
+    messages = [
+        {"role": "system", "content": "Extract the book's information."},
+        {
+            "role": "user",
+            "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+        },
+    ]
+    # Test invoke
+    result = structured_llm.invoke(messages)
+    _check_parsed_result(result, schema)
+
+    # Test stream
+    for chunk in structured_llm.stream(messages):
+        _check_parsed_result(chunk, schema)
+
+
+@pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
+async def test_structured_output_json_schema_async(schema: Any) -> None:
+    llm = ChatMistralAI(model="ministral-8b-latest")  # type: ignore[call-arg]
+    structured_llm = llm.with_structured_output(schema, method="json_schema")
+
+    messages = [
+        {"role": "system", "content": "Extract the book's information."},
+        {
+            "role": "user",
+            "content": "I recently read 'To Kill a Mockingbird' by Harper Lee.",
+        },
+    ]
+    # Test invoke
+    result = await structured_llm.ainvoke(messages)
+    _check_parsed_result(result, schema)
+
+    # Test stream
+    async for chunk in structured_llm.astream(messages):
+        _check_parsed_result(chunk, schema)
 
 
 def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
