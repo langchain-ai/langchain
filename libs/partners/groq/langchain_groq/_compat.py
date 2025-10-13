@@ -31,6 +31,8 @@ def _convert_from_v1_to_groq(
                 new_block["index"] = idx
             if block.get("name") == "web_search":
                 new_block["type"] = "search"
+            elif block.get("name") == "code_interpreter":
+                new_block["type"] = "python"
             else:
                 new_block["type"] = ""
 

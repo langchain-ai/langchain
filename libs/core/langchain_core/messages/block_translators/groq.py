@@ -1,6 +1,7 @@
 """Derivations of standard content blocks from Groq content."""
 
 import json
+import re
 from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -26,6 +27,27 @@ def _populate_extras(
     return standard_block
 
 
+def _parse_code_json(s: str) -> dict:
+    """Extract Python code from Groq built-in tool content.
+
+    Extracts the value of the 'code' field from a string of the form:
+    {"code": some_arbitrary_text_with_unescaped_quotes}
+
+    As Groq may not escape quotes in the executed tools, e.g.:
+    ```
+    '{"code": "import math; print("The square root of 101 is: "); print(math.sqrt(101))"}'
+    ```
+    """  # noqa: E501
+    m = re.fullmatch(r'\s*\{\s*"code"\s*:\s*"(.*)"\s*\}\s*', s, flags=re.DOTALL)
+    if not m:
+        msg = (
+            "Could not extract Python code from Groq tool arguments. "
+            "Expected a JSON object with a 'code' field."
+        )
+        raise ValueError(msg)
+    return {"code": m.group(1)}
+
+
 def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
     """Convert groq message content to v1 format."""
     content_blocks: list[types.ContentBlock] = []
@@ -40,11 +62,19 @@ def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
                 try:
                     args = json.loads(arguments)
                 except json.JSONDecodeError:
-                    continue
+                    if executed_tool.get("type") == "python":
+                        try:
+                            args = _parse_code_json(arguments)
+                        except ValueError:
+                            continue
+                    else:
+                        continue
             if isinstance(args, dict):
                 name = ""
                 if executed_tool.get("type") == "search":
                     name = "web_search"
+                elif executed_tool.get("type") == "python":
+                    name = "code_interpreter"
                 server_tool_call: types.ServerToolCall = {
                     "type": "server_tool_call",
                     "name": name,
