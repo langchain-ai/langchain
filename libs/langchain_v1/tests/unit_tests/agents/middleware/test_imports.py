@@ -15,6 +15,7 @@ def test_model_response_import_from_middleware() -> None:
 
     # Verify it's a dataclass
     import dataclasses
+
     assert dataclasses.is_dataclass(ModelResponse)
 
 
@@ -28,6 +29,7 @@ def test_model_request_and_response_both_importable() -> None:
 
     # Verify they're both dataclasses
     import dataclasses
+
     assert dataclasses.is_dataclass(ModelRequest)
     assert dataclasses.is_dataclass(ModelResponse)
 
