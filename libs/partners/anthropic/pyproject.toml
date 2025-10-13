@@ -41,6 +41,7 @@ test = [
     "vcrpy>=7.0.0,<8.0.0",
     "langchain-core",
     "langchain-tests",
+    "langchain",
 ]
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
@@ -55,6 +56,7 @@ typing = [
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
+langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
