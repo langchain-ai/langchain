@@ -78,9 +78,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     )
 
     def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(
-            result=[AIMessage(content="mock response")]
-        )
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     middleware.wrap_model_call(fake_request, mock_handler)
     # Check that model_settings were passed through via the request
@@ -157,9 +155,7 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
     )
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(
-            result=[AIMessage(content="mock response")]
-        )
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
@@ -234,9 +230,7 @@ async def test_anthropic_prompt_caching_middleware_async_min_messages() -> None:
     )
 
     async def mock_handler(req: ModelRequest) -> ModelResponse:
-        return ModelResponse(
-            result=[AIMessage(content="mock response")]
-        )
+        return ModelResponse(result=[AIMessage(content="mock response")])
 
     result = await middleware.awrap_model_call(fake_request, mock_handler)
     assert isinstance(result, ModelResponse)
