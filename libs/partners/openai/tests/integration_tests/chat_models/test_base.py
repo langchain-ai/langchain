@@ -343,6 +343,28 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
+@pytest.mark.parametrize("streaming", [False, True])
+def test_flex_usage_responses(streaming: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",
+        max_retries=3,
+        use_responses_api=True,
+        streaming=streaming,
+    )
+    result = llm.invoke("Hello")
+    assert result.usage_metadata
+    flex_input = result.usage_metadata.get("input_token_details", {}).get("flex")
+    flex_output = result.usage_metadata.get("output_token_details", {}).get("flex")
+    flex_reasoning = result.usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_input, int)
+    assert isinstance(flex_output, int)
+    assert isinstance(flex_reasoning, int)
+    assert flex_output + flex_reasoning == result.usage_metadata.get("output_tokens")
+
+
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI()
