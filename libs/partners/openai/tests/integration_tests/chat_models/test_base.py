@@ -199,18 +199,20 @@ def test_openai_invoke() -> None:
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
     assert usage_metadata is not None
-    assert usage_metadata.get("input_token_details").get("flex") > 0
-    assert usage_metadata.get("input_token_details").get("flex") == usage_metadata.get(
-        "input_tokens"
-    )
-    assert usage_metadata.get("output_token_details").get("flex") > 0
+    flex_input = usage_metadata.get("input_token_details", {}).get("flex")
+    assert isinstance(flex_input, int)
+    assert flex_input > 0
+    assert flex_input == usage_metadata.get("input_tokens")
+    flex_output = usage_metadata.get("output_token_details", {}).get("flex")
+    assert isinstance(flex_output, int)
+    assert flex_output > 0
     # GPT-5-nano/reasoning model specific. Remove if model used in test changes.
-    assert usage_metadata.get("output_token_details").get("flex_reasoning") > 0
-    assert usage_metadata.get("output_token_details").get(
+    flex_reasoning = usage_metadata.get("output_token_details", {}).get(
         "flex_reasoning"
-    ) + usage_metadata.get("output_token_details").get("flex") == usage_metadata.get(
-        "output_tokens"
     )
+    assert isinstance(flex_reasoning, int)
+    assert flex_reasoning > 0
+    assert flex_reasoning + flex_output == usage_metadata.get("output_tokens")
 
 
 @pytest.mark.flaky(retries=3, delay=1)
