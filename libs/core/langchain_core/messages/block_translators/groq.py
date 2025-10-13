@@ -67,13 +67,22 @@ def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
                             args = _parse_code_json(arguments)
                         except ValueError:
                             continue
+                    elif (
+                        executed_tool.get("type") == "function"
+                        and executed_tool.get("name") == "python"
+                    ):
+                        # GPT-OSS
+                        args = {"code": arguments}
                     else:
                         continue
             if isinstance(args, dict):
                 name = ""
                 if executed_tool.get("type") == "search":
                     name = "web_search"
-                elif executed_tool.get("type") == "python":
+                elif executed_tool.get("type") == "python" or (
+                    executed_tool.get("type") == "function"
+                    and executed_tool.get("name") == "python"
+                ):
                     name = "code_interpreter"
                 server_tool_call: types.ServerToolCall = {
                     "type": "server_tool_call",
