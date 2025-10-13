@@ -1,8 +1,7 @@
 """Derivations of standard content blocks from Groq content."""
 
 import json
-from collections.abc import Iterable
-from typing import Any, Optional, Union, cast
+from typing import Any
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -68,7 +67,7 @@ def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
         content_blocks.append({"type": "text", "text": message.content})
 
     for tool_call in message.tool_calls:
-        content_blocks.append(
+        content_blocks.append(  # noqa: PERF401
             {
                 "type": "tool_call",
                 "name": tool_call["name"],
