@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
+from qdrant_client import models
 
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import (
@@ -20,11 +19,9 @@ def test_qdrant_max_marginal_relevance_search(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and MRR search."""
-    from qdrant_client import models
-
     filter_ = models.Filter(
         must=[
             models.FieldCondition(

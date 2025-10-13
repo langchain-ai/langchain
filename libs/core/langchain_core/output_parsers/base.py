@@ -8,9 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import override
@@ -71,7 +69,7 @@ class BaseGenerationOutputParser(
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return str | AnyMessage
 
     @property
     @override
@@ -84,8 +82,8 @@ class BaseGenerationOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -107,9 +105,9 @@ class BaseGenerationOutputParser(
     @override
     async def ainvoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(
@@ -136,33 +134,35 @@ class BaseOutputParser(
     Output parsers help structure language model responses.
 
     Example:
-        .. code-block:: python
+        ```python
+        class BooleanOutputParser(BaseOutputParser[bool]):
+            true_val: str = "YES"
+            false_val: str = "NO"
 
-            class BooleanOutputParser(BaseOutputParser[bool]):
-                true_val: str = "YES"
-                false_val: str = "NO"
+            def parse(self, text: str) -> bool:
+                cleaned_text = text.strip().upper()
+                if cleaned_text not in (
+                    self.true_val.upper(),
+                    self.false_val.upper(),
+                ):
+                    raise OutputParserException(
+                        f"BooleanOutputParser expected output value to either be "
+                        f"{self.true_val} or {self.false_val} (case-insensitive). "
+                        f"Received {cleaned_text}."
+                    )
+                return cleaned_text == self.true_val.upper()
 
-                def parse(self, text: str) -> bool:
-                    cleaned_text = text.strip().upper()
-                    if cleaned_text not in (self.true_val.upper(), self.false_val.upper()):
-                        raise OutputParserException(
-                            f"BooleanOutputParser expected output value to either be "
-                            f"{self.true_val} or {self.false_val} (case-insensitive). "
-                            f"Received {cleaned_text}."
-                        )
-                    return cleaned_text == self.true_val.upper()
-
-                @property
-                def _type(self) -> str:
-                    return "boolean_output_parser"
-
-    """  # noqa: E501
+            @property
+            def _type(self) -> str:
+                return "boolean_output_parser"
+        ```
+    """
 
     @property
     @override
     def InputType(self) -> Any:
         """Return the input type for the parser."""
-        return Union[str, AnyMessage]
+        return str | AnyMessage
 
     @property
     @override
@@ -189,8 +189,8 @@ class BaseOutputParser(
     @override
     def invoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> T:
         if isinstance(input, BaseMessage):
@@ -212,9 +212,9 @@ class BaseOutputParser(
     @override
     async def ainvoke(
         self,
-        input: Union[str, BaseMessage],
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        input: str | BaseMessage,
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> T:
         if isinstance(input, BaseMessage):
             return await self._acall_with_config(

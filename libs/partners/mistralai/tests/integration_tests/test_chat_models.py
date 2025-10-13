@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from httpx import ReadTimeout
@@ -33,7 +33,7 @@ async def test_astream() -> None:
     """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     async for token in llm.astream("Hello"):
@@ -320,6 +320,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
     # Measure start time
     t0 = time.time()
+    logger = logging.getLogger(__name__)
 
     try:
         # Try to get a response
@@ -327,7 +328,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
         # If successful, validate the response
         elapsed_time = time.time() - t0
-        logging.info(f"Request succeeded in {elapsed_time:.2f} seconds")
+        logger.info("Request succeeded in %.2f seconds", elapsed_time)
         # Check that we got a valid response
         assert response.content
         assert isinstance(response.content, str)
@@ -335,9 +336,9 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
     except ReadTimeout:
         elapsed_time = time.time() - t0
-        logging.info(f"Request timed out after {elapsed_time:.2f} seconds")
+        logger.info("Request timed out after %.2f seconds", elapsed_time)
         assert elapsed_time >= 3.0
         pytest.skip("Test timed out as expected with short timeout")
-    except Exception as e:
-        logging.error(f"Unexpected exception: {e}")
+    except Exception:
+        logger.exception("Unexpected exception")
         raise

@@ -1,6 +1,6 @@
 """Module tests interaction of chat model with caching abstraction.."""
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from typing_extensions import override
@@ -12,6 +12,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
+from langchain_core.load import dumps
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
@@ -24,7 +25,7 @@ class InMemoryCache(BaseCache):
         """Initialize with empty cache."""
         self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on prompt and llm_string."""
         return self._cache.get((prompt, llm_string), None)
 
@@ -318,8 +319,6 @@ def test_cache_with_generation_objects() -> None:
     cache = InMemoryCache()
 
     # Create a simple fake chat model that we can control
-    from langchain_core.messages import AIMessage
-
     class SimpleFakeChat:
         """Simple fake chat model for testing."""
 
@@ -332,8 +331,6 @@ def test_cache_with_generation_objects() -> None:
 
         def generate_response(self, prompt: str) -> ChatResult:
             """Simulate the cache lookup and generation logic."""
-            from langchain_core.load import dumps
-
             llm_string = self._get_llm_string()
             prompt_str = dumps([prompt])
 

@@ -1,11 +1,9 @@
-# ruff: noqa: E501
-
 """Test LLMCheckerChain functionality."""
 
 import pytest
 
-from langchain.chains.llm_checker.base import LLMCheckerChain
-from langchain.chains.llm_checker.prompt import (
+from langchain_classic.chains.llm_checker.base import LLMCheckerChain
+from langchain_classic.chains.llm_checker.prompt import (
     _CHECK_ASSERTIONS_TEMPLATE,
     _CREATE_DRAFT_ANSWER_TEMPLATE,
     _LIST_ASSERTIONS_TEMPLATE,
@@ -23,12 +21,20 @@ def fake_llm_checker_chain() -> LLMCheckerChain:
         ): "I don't know which mammal layers the biggest eggs.",
         _LIST_ASSERTIONS_TEMPLATE.format(
             statement="I don't know which mammal layers the biggest eggs.",
-        ): "1) I know that mammals lay eggs.\n2) I know that birds lay eggs.\n3) I know that birds are mammals.",
+        ): "1) I know that mammals lay eggs.\n"
+        "2) I know that birds lay eggs.\n"
+        "3) I know that birds are mammals.",
         _CHECK_ASSERTIONS_TEMPLATE.format(
-            assertions="1) I know that mammals lay eggs.\n2) I know that birds lay eggs.\n3) I know that birds are mammals.",
-        ): "1) I know that mammals lay eggs. TRUE\n2) I know that birds lay eggs. TRUE\n3) I know that birds are mammals. TRUE",
+            assertions="1) I know that mammals lay eggs.\n"
+            "2) I know that birds lay eggs.\n"
+            "3) I know that birds are mammals.",
+        ): "1) I know that mammals lay eggs. TRUE\n"
+        "2) I know that birds lay eggs. TRUE\n"
+        "3) I know that birds are mammals. TRUE",
         _REVISED_ANSWER_TEMPLATE.format(
-            checked_assertions="1) I know that mammals lay eggs. TRUE\n2) I know that birds lay eggs. TRUE\n3) I know that birds are mammals. TRUE",
+            checked_assertions="1) I know that mammals lay eggs. TRUE\n"
+            "2) I know that birds lay eggs. TRUE\n"
+            "3) I know that birds are mammals. TRUE",
             question="Which mammal lays the biggest eggs?",
         ): "I still don't know.",
     }

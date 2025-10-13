@@ -1,3 +1,5 @@
+"""Script to check imports of given Python files."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader
@@ -8,7 +10,7 @@ if __name__ == "__main__":
     for file in files:
         try:
             SourceFileLoader("x", file).load_module()
-        except Exception:  # noqa: PERF203
+        except Exception:  # noqa: PERF203, BLE001
             has_failure = True
             print(file)  # noqa: T201
             traceback.print_exc()

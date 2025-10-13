@@ -1,4 +1,4 @@
-"""Test PandasDataframeParser"""
+"""Test PandasDataframeParser."""
 
 from typing import Any
 
@@ -6,7 +6,9 @@ import pandas as pd
 import pytest
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
+from langchain_classic.output_parsers.pandas_dataframe import (
+    PandasDataFrameOutputParser,
+)
 
 df = pd.DataFrame(
     {
@@ -104,5 +106,8 @@ def test_pandas_output_parser_invalid_special_op() -> None:
 
 
 def test_pandas_output_parser_output_type() -> None:
-    """Test the output type of the pandas dataframe output parser is a pandas dataframe."""  # noqa: E501
+    """Test pandas output parser output type.
+
+    Test the output type of the pandas dataframe output parser is a pandas dataframe.
+    """
     assert parser.OutputType == dict[str, Any]

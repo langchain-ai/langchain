@@ -3,21 +3,7 @@
 One of the most common ways to store and search over unstructured data is to
 embed it and store the resulting embedding vectors, and then query the store
 and retrieve the data that are 'most similar' to the embedded query.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    VectorStore --> <name>  # Examples: Annoy, FAISS, Milvus
-
-    BaseRetriever --> VectorStoreRetriever --> <name>Retriever  # Example: VespaRetriever
-
-**Main helpers:**
-
-.. code-block::
-
-    Embeddings, Document
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -25,19 +11,19 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Optional,
     TypeVar,
 )
 
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
@@ -49,7 +35,6 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +47,9 @@ class VectorStore(ABC):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -85,9 +70,6 @@ class VectorStore(ABC):
             ValueError: If the number of ids does not match the number of texts.
         """
         if type(self).add_documents != VectorStore.add_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
@@ -101,10 +83,10 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
+            ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
             ]
             if ids is not None:
                 # For backward compatibility
@@ -115,7 +97,7 @@ class VectorStore(ABC):
         raise NotImplementedError(msg)
 
     @property
-    def embeddings(self) -> Optional[Embeddings]:
+    def embeddings(self) -> Embeddings | None:
         """Access the query embedding object if available."""
         logger.debug(
             "The embeddings property has not been implemented for %s",
@@ -123,16 +105,15 @@ class VectorStore(ABC):
         )
         return None
 
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
@@ -159,7 +140,7 @@ class VectorStore(ABC):
         Returns:
             List of Documents.
 
-        .. versionadded:: 0.2.11
+        !!! version-added "Added in version 0.2.11"
         """
         msg = f"{self.__class__.__name__} does not yet support get_by_ids."
         raise NotImplementedError(msg)
@@ -187,31 +168,28 @@ class VectorStore(ABC):
         Returns:
             List of Documents.
 
-        .. versionadded:: 0.2.11
+        !!! version-added "Added in version 0.2.11"
         """
         return await run_in_executor(None, self.get_by_ids, ids)
 
-    async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
+    async def adelete(self, ids: list[str] | None = None, **kwargs: Any) -> bool | None:
         """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If None, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all. Default is None.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            Optional[bool]: True if deletion is successful,
-            False otherwise, None if not implemented.
+            True if deletion is successful, False otherwise, None if not implemented.
         """
         return await run_in_executor(None, self.delete, ids, **kwargs)
 
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         """Async run more texts through the embeddings and add to the vectorstore.
@@ -234,9 +212,6 @@ class VectorStore(ABC):
             # For backward compatibility
             kwargs["ids"] = ids
         if type(self).aadd_documents != VectorStore.aadd_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
@@ -250,11 +225,11 @@ class VectorStore(ABC):
                 )
                 raise ValueError(msg)
             metadatas_ = iter(metadatas) if metadatas else cycle([{}])
-            ids_: Iterator[Optional[str]] = iter(ids) if ids else cycle([None])
+            ids_: Iterator[str | None] = iter(ids) if ids else cycle([None])
 
             docs = [
                 Document(id=id_, page_content=text, metadata=metadata_)
-                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_, strict=False)
             ]
             return await self.aadd_documents(docs, **kwargs)
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
@@ -264,15 +239,12 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
                 if kwargs contains ids and documents contain ids,
                 the ids in the kwargs will receive precedence.
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of ids does not match the number of documents.
         """
         if type(self).add_texts != VectorStore.add_texts:
             if "ids" not in kwargs:
@@ -299,13 +271,10 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of IDs does not match the number of documents.
         """
         # If the async method has been overridden, we'll use that.
         if type(self).aadd_texts != VectorStore.aadd_texts:
@@ -435,6 +404,7 @@ class VectorStore(ABC):
         """The 'correct' relevance function.
 
         may differ depending on a few things, including:
+
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
         - embedding dimensionality
@@ -829,10 +799,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -859,10 +829,10 @@ class VectorStore(ABC):
         Args:
             documents: List of Documents to add to the vectorstore.
             embedding: Embedding function to use.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from documents and embeddings.
+            VectorStore initialized from documents and embeddings.
         """
         texts = [d.page_content for d in documents]
         metadatas = [d.metadata for d in documents]
@@ -883,9 +853,9 @@ class VectorStore(ABC):
         cls: type[VST],
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings.
@@ -896,10 +866,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
 
     @classmethod
@@ -907,9 +877,9 @@ class VectorStore(ABC):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> Self:
         """Async return VectorStore initialized from texts and embeddings.
@@ -920,10 +890,10 @@ class VectorStore(ABC):
             metadatas: Optional list of metadatas associated with the texts.
                 Default is None.
             ids: Optional list of IDs associated with the texts.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore: VectorStore initialized from texts and embeddings.
+            VectorStore initialized from texts and embeddings.
         """
         if ids is not None:
             kwargs["ids"] = ids
@@ -944,12 +914,11 @@ class VectorStore(ABC):
         Args:
             **kwargs: Keyword arguments to pass to the search function.
                 Can include:
-                search_type (Optional[str]): Defines the type of search that
-                    the Retriever should perform.
-                    Can be "similarity" (default), "mmr", or
+                search_type: Defines the type of search that the Retriever should
+                    perform. Can be "similarity" (default), "mmr", or
                     "similarity_score_threshold".
-                search_kwargs (Optional[Dict]): Keyword arguments to pass to the
-                    search function. Can include things like:
+                search_kwargs: Keyword arguments to pass to the search function. Can
+                    include things like:
                         k: Amount of documents to return (Default: 4)
                         score_threshold: Minimum relevance threshold
                             for similarity_score_threshold
@@ -960,41 +929,35 @@ class VectorStore(ABC):
                         filter: Filter by document metadata
 
         Returns:
-            VectorStoreRetriever: Retriever class for VectorStore.
+            Retriever class for VectorStore.
 
         Examples:
+        ```python
+        # Retrieve more documents with higher diversity
+        # Useful if your dataset has many similar documents
+        docsearch.as_retriever(
+            search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
+        )
 
-        .. code-block:: python
+        # Fetch more documents for the MMR algorithm to consider
+        # But only return the top 5
+        docsearch.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50})
 
-            # Retrieve more documents with higher diversity
-            # Useful if your dataset has many similar documents
-            docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 6, 'lambda_mult': 0.25}
-            )
+        # Only retrieve documents that have a relevance score
+        # Above a certain threshold
+        docsearch.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"score_threshold": 0.8},
+        )
 
-            # Fetch more documents for the MMR algorithm to consider
-            # But only return the top 5
-            docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 5, 'fetch_k': 50}
-            )
+        # Only get the single most similar document from the dataset
+        docsearch.as_retriever(search_kwargs={"k": 1})
 
-            # Only retrieve documents that have a relevance score
-            # Above a certain threshold
-            docsearch.as_retriever(
-                search_type="similarity_score_threshold",
-                search_kwargs={'score_threshold': 0.8}
-            )
-
-            # Only get the single most similar document from the dataset
-            docsearch.as_retriever(search_kwargs={'k': 1})
-
-            # Use a filter to only retrieve documents from a specific paper
-            docsearch.as_retriever(
-                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
-            )
-
+        # Use a filter to only retrieve documents from a specific paper
+        docsearch.as_retriever(
+            search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
+        )
+        ```
         """
         tags = kwargs.pop("tags", None) or [*self._get_retriever_tags()]
         return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)
@@ -1028,7 +991,7 @@ class VectorStoreRetriever(BaseRetriever):
             values: Values to validate.
 
         Returns:
-            Values: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If search_type is not one of the allowed search types.

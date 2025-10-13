@@ -24,10 +24,10 @@ You are a strict polling bot.
 class TestCase(BaseSchema):
     name: str
     return_direct: bool
-    response_format: Optional[Dict[str, Any]]
+    response_format: dict[str, Any] | None
     expected_tool_calls: int
     expected_last_message: str
-    expected_structured_response: Optional[Dict[str, Any]]
+    expected_structured_response: dict[str, Any] | None
 
 
 TEST_CASES = load_spec("return_direct", as_model=TestCase)
@@ -71,14 +71,14 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
     )
 
     if case.response_format:
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
             prompt=AGENT_PROMPT,
             response_format=ToolStrategy(case.response_format),
         )
     else:
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
             prompt=AGENT_PROMPT,

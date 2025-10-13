@@ -1,15 +1,15 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.70",
-    "tokenizers>=0.19.1",
-    "huggingface-hub>=0.33.4",
+    "langchain-core>=0.3.76,<2.0.0",
+    "tokenizers>=0.19.1,<1.0.0",
+    "huggingface-hub>=0.33.4,<1.0.0",
 ]
 name = "langchain-huggingface"
 version = "0.3.1"
@@ -17,35 +17,45 @@ description = "An integration package connecting Hugging Face and LangChain."
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-huggingface%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-huggingface%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_huggingface/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
+    "transformers>=4.39.0,<5.0.0",
+    "sentence-transformers>=2.6.0,<3.0.0",
 ]
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-socket<1.0.0,>=0.7.0",
-    "scipy<2,>=1; python_version < \"3.12\"",
-    "scipy<2.0.0,>=1.7.0; python_version >= \"3.12\"",
-    "transformers>=4.39.0",
-    "sentence-transformers>=2.6.0",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "scipy>=1.0.0,<2.0.0; python_version < \"3.12\"",
+    "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
+    "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
+    "transformers>=4.39.0,<5.0.0",
+    "sentence-transformers>=2.6.0,<3.0.0",
     "langchain-core",
     "langchain-tests",
     "langchain-community",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<0.13,>=0.12.2"]
-dev = ["ipykernel<7.0.0,>=6.29.2", "langchain-core"]
+lint = ["ruff>=0.13.1,<0.14.0"]
+dev = [
+    "ipykernel>=6.29.2,<7.0.0",
+    "langchain-core"
+]
 test_integration = []
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -54,8 +64,9 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
 
 [tool.ruff.lint]
 select = [
@@ -102,22 +113,18 @@ ignore = [
     "D104",    # pydocstyle: Missing docstring in public package
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
-    "D203",
-    "D213",
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]

@@ -98,7 +98,7 @@ async def test_openai_ainvoke(llm: AzureOpenAI) -> None:
 @pytest.mark.scheduled
 def test_openai_invoke(llm: AzureOpenAI) -> None:
     """Test streaming tokens from AzureOpenAI."""
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
 
 
@@ -145,7 +145,7 @@ def test_openai_streaming_callback() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
@@ -168,7 +168,7 @@ async def test_openai_async_streaming_callback() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     result = await llm.agenerate(["Write me a sentence with 100 words."])

@@ -18,17 +18,15 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable.
-
-        Returns: True.
-        """
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "prompts", "chat"].
+        Returns:
+            `["langchain", "prompts", "chat"]`
         """
         return ["langchain", "prompts", "chat"]
 
@@ -70,7 +68,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.
@@ -90,7 +88,8 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         Returns:
             Combined prompt template.
         """
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        # Import locally to avoid circular import.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Literal, Optional, cast
+from collections.abc import Callable
+from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
@@ -41,9 +42,15 @@ def test_initialization() -> None:
         ),
     ]:
         assert model.model == "claude-instant-1.2"
-        assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
+        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
+    llm = ChatAnthropic(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_anthropic_client_caching() -> None:
@@ -111,6 +118,45 @@ def test_anthropic_proxy_from_environment() -> None:
         assert llm.anthropic_proxy == explicit_proxy
 
 
+def test_set_default_max_tokens() -> None:
+    """Test the set_default_max_tokens function."""
+    # Test claude-opus-4 models
+    llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
+    assert llm.max_tokens == 32000
+
+    # Test claude-sonnet-4 models
+    llm = ChatAnthropic(model="claude-sonnet-4-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-7-sonnet models
+    llm = ChatAnthropic(model="claude-3-7-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-5-sonnet models
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-5-haiku models
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-haiku models (should default to 4096)
+    llm = ChatAnthropic(model="claude-3-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 4096
+
+    # Test that existing max_tokens values are preserved
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test"
+    )
+    assert llm.max_tokens == 2048
+
+    # Test that explicitly set max_tokens values are preserved
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test"
+    )
+    assert llm.max_tokens == 4096
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
@@ -172,6 +218,7 @@ def test__format_output() -> None:
             "total_tokens": 3,
             "input_token_details": {},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
@@ -202,6 +249,7 @@ def test__format_output_cached() -> None:
             "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
 
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
@@ -375,9 +423,9 @@ def test__format_image() -> None:
         _format_image(url)
 
 
-@pytest.fixture()
+@pytest.fixture
 def pydantic() -> type[BaseModel]:
-    class dummy_function(BaseModel):
+    class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
 
         arg1: int = Field(..., description="foo")
@@ -386,7 +434,7 @@ def pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -400,7 +448,7 @@ def function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -417,7 +465,7 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
+@pytest.fixture
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
@@ -435,7 +483,7 @@ def json_schema() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def openai_function() -> dict:
     return {
         "name": "dummy_function",
@@ -593,6 +641,38 @@ def test__format_messages_with_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+    # Check handling of empty AIMessage
+    empty_contents: list[str | list[str | dict]] = ["", []]
+    for empty_content in empty_contents:
+        ## Permit message in final position
+        _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
+        expected_messages = [
+            {"role": "user", "content": "foo"},
+            {"role": "assistant", "content": empty_content},
+        ]
+        assert expected_messages == anthropic_messages
+
+        ## Remove message otherwise
+        _, anthropic_messages = _format_messages(
+            [human, AIMessage(empty_content), human]
+        )
+        expected_messages = [
+            {"role": "user", "content": "foo"},
+            {"role": "user", "content": "foo"},
+        ]
+        assert expected_messages == anthropic_messages
+
+        actual = _format_messages(
+            [system, human, ai, tool, AIMessage(empty_content), human]
+        )
+        assert actual[0] == "fuzz"
+        assert [message["role"] for message in actual[1]] == [
+            "user",
+            "assistant",
+            "user",
+            "user",
+        ]
 
 
 def test__format_tool_use_block() -> None:
@@ -810,7 +890,7 @@ def test__format_messages_with_cache_control() -> None:
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
-    # Test standard multi-modal format
+    # Test standard multi-modal format (v0)
     messages = [
         HumanMessage(
             [
@@ -851,6 +931,183 @@ def test__format_messages_with_cache_control() -> None:
         },
     ]
     assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
+                    "extras": {"cache_control": {"type": "ephemeral"}},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1, unpacked extras)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Also test file inputs
+    ## Images
+    for block in [
+        # v1
+        {
+            "type": "image",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "image",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
+
+    ## Documents
+    for block in [
+        # v1
+        {
+            "type": "file",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "file",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
 
 
 def test__format_messages_with_citations() -> None:
@@ -1007,7 +1264,7 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
         anthropic_api_key="secret-api-key",
     )
     assert (
-        cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
+        cast("SecretStr", chat_model.anthropic_api_key).get_secret_value()
         == "secret-api-key"
     )
 
@@ -1027,7 +1284,7 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         [GetWeather],
         tool_choice={"type": "tool", "name": "GetWeather"},
     )
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
@@ -1035,16 +1292,16 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         [GetWeather],
         tool_choice="GetWeather",
     )
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "auto",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "any",
     }
 
@@ -1062,12 +1319,24 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     """Test that get_num_tokens_from_messages passes kwargs to the model."""
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 
-    with patch.object(anthropic, "Client") as _Client:
+    with patch.object(anthropic, "Client") as _client:
         llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
 
-    assert (
-        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    assert _client.return_value.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")])
+
+    call_args = _client.return_value.beta.messages.count_tokens.call_args.kwargs
+    assert call_args["betas"] == ["context-management-2025-06-27"]
+    assert call_args["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
 
 
 def test_usage_metadata_standardization() -> None:
@@ -1083,14 +1352,14 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 15  # 10 + 3 + 2
     assert result["output_tokens"] == 5
     assert result["total_tokens"] == 20
-    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+    assert result.get("input_token_details") == {"cache_read": 3, "cache_creation": 2}
 
     # Null input and output tokens
     class UsageModelNulls(BaseModel):
-        input_tokens: Optional[int] = None
-        output_tokens: Optional[int] = None
-        cache_read_input_tokens: Optional[int] = None
-        cache_creation_input_tokens: Optional[int] = None
+        input_tokens: int | None = None
+        output_tokens: int | None = None
+        cache_read_input_tokens: int | None = None
+        cache_creation_input_tokens: int | None = None
 
     usage_nulls = UsageModelNulls()
     result = _create_usage_metadata(usage_nulls)
@@ -1110,6 +1379,8 @@ def test_usage_metadata_standardization() -> None:
 
 
 class FakeTracer(BaseTracer):
+    """Fake tracer to capture inputs to `chat_model_start`."""
+
     def __init__(self) -> None:
         super().__init__()
         self.chat_model_start_inputs: list = []
@@ -1213,6 +1484,38 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+
+
+def test_context_management_in_payload() -> None:
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+    )
+    llm_with_tools = llm.bind_tools(
+        [{"type": "web_search_20250305", "name": "web_search"}]
+    )
+    input_message = HumanMessage("Search for recent developments in AI")
+    payload = llm_with_tools._get_request_payload([input_message])  # type: ignore[attr-defined]
+    assert payload["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
+
+
+def test_anthropic_model_params() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "anthropic",
+        "ls_model_type": "chat",
+        "ls_model_name": "claude-3-5-haiku-latest",
+        "ls_max_tokens": 8192,
+        "ls_temperature": None,
+    }
+
+    ls_params = llm._get_ls_params(model="claude-opus-4-1-20250805")
+    assert ls_params.get("ls_model_name") == "claude-opus-4-1-20250805"
 
 
 def test_streaming_cache_token_reporting() -> None:

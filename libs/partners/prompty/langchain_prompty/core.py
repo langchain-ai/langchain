@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Generic, Literal, Optional, TypeVar, Union
+from typing import Any, Generic, Literal, TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, FilePath
@@ -24,7 +24,7 @@ class PropertySettings(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     type: Literal["string", "number", "array", "object", "boolean"]
-    default: Union[str, int, float, list, dict, bool, None] = Field(default=None)
+    default: str | int | float | list | dict | bool | None = Field(default=None)
     description: str = Field(default="")
 
 
@@ -62,7 +62,7 @@ class Prompty(BaseModel):
     tags: list[str] = Field(default=[])
     version: str = Field(default="")
     base: str = Field(default="")
-    basePrompty: Optional[Prompty] = Field(default=None)
+    basePrompty: Prompty | None = Field(default=None)
 
     # Model
     model: ModelSettings = Field(default_factory=ModelSettings)

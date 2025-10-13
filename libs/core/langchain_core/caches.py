@@ -1,31 +1,25 @@
 """Cache classes.
 
-.. warning::
-  Beta Feature!
+!!! warning
+    Beta Feature!
 
 **Cache** provides an optional caching layer for LLMs.
 
 Cache is useful for two reasons:
 
 - It can save you money by reducing the number of API calls you make to the LLM
-  provider if you're often requesting the same completion multiple times.
+    provider if you're often requesting the same completion multiple times.
 - It can speed up your application by reducing the number of API calls you make
-  to the LLM provider.
+    to the LLM provider.
 
 Cache directly competes with Memory. See documentation for Pros and Cons.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -52,7 +46,7 @@ class BaseCache(ABC):
     """
 
     @abstractmethod
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on prompt and llm_string.
 
         A cache implementation is expected to generate a key from the 2-tuple
@@ -97,7 +91,7 @@ class BaseCache(ABC):
     def clear(self, **kwargs: Any) -> None:
         """Clear cache that can take additional keyword arguments."""
 
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    async def alookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Async look up based on prompt and llm_string.
 
         A cache implementation is expected to generate a key from the 2-tuple
@@ -149,12 +143,12 @@ class BaseCache(ABC):
 class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 
-    def __init__(self, *, maxsize: Optional[int] = None) -> None:
+    def __init__(self, *, maxsize: int | None = None) -> None:
         """Initialize with empty cache.
 
         Args:
             maxsize: The maximum number of items to store in the cache.
-                If None, the cache has no maximum size.
+                If `None`, the cache has no maximum size.
                 If the cache exceeds the maximum size, the oldest items are removed.
                 Default is None.
 
@@ -167,7 +161,7 @@ class InMemoryCache(BaseCache):
             raise ValueError(msg)
         self._maxsize = maxsize
 
-    def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Look up based on prompt and llm_string.
 
         Args:
@@ -201,7 +195,7 @@ class InMemoryCache(BaseCache):
         """Clear cache."""
         self._cache = {}
 
-    async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
+    async def alookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """Async look up based on prompt and llm_string.
 
         Args:

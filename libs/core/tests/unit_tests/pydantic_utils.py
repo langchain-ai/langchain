@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -105,7 +105,7 @@ def _remove_additionalproperties_from_untyped_dicts(schema: dict) -> dict[str, A
     """
 
     def _remove_dict_additional_props(
-        obj: Union[dict[str, Any], list[Any]], *, inside_properties: bool = False
+        obj: dict[str, Any] | list[Any], *, inside_properties: bool = False
     ) -> None:
         if isinstance(obj, dict):
             if (
