@@ -332,17 +332,15 @@ class PydanticToolsParser(JsonOutputToolsParser):
             return None if self.first_tool_only else []
 
         json_results = [json_results] if self.first_tool_only else json_results
-        name_dict_v2 = {
-            tool.model_config.get("title", tool.__name__): tool
+        name_dict_v2: dict[str, TypeBaseModel] = {
+            tool.model_config.get("title") or tool.__name__: tool
             for tool in self.tools
             if is_pydantic_v2_subclass(tool)
         }
-        name_dict_v1 = {
-            tool.model_config.get("title", tool.__name__): tool
-            for tool in self.tools
-            if is_pydantic_v1_subclass(tool)
+        name_dict_v1: dict[str, TypeBaseModel] = {
+            tool.__name__: tool for tool in self.tools if is_pydantic_v1_subclass(tool)
         }
-        name_dict = {**name_dict_v2, **name_dict_v1}
+        name_dict: dict[str, TypeBaseModel] = {**name_dict_v2, **name_dict_v1}
         pydantic_objects = []
         for res in json_results:
             if not isinstance(res["args"], dict):
