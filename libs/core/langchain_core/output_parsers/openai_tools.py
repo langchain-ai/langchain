@@ -15,8 +15,11 @@ from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
-from langchain_core.utils.pydantic import TypeBaseModel
-from langchain_core.utils.pydantic import is_pydantic_v2_subclass, is_pydantic_v1_subclass
+from langchain_core.utils.pydantic import (
+    TypeBaseModel,
+    is_pydantic_v1_subclass,
+    is_pydantic_v2_subclass,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -330,11 +333,13 @@ class PydanticToolsParser(JsonOutputToolsParser):
 
         json_results = [json_results] if self.first_tool_only else json_results
         name_dict_v2 = {
-            tool.model_config.get("title", tool.__name__): tool for tool in self.tools
+            tool.model_config.get("title", tool.__name__): tool
+            for tool in self.tools
             if is_pydantic_v2_subclass(tool)
         }
         name_dict_v1 = {
-            tool.model_config.get("title", tool.__name__): tool for tool in self.tools
+            tool.model_config.get("title", tool.__name__): tool
+            for tool in self.tools
             if is_pydantic_v1_subclass(tool)
         }
         name_dict = {**name_dict_v2, **name_dict_v1}
