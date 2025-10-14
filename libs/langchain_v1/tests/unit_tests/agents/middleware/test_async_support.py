@@ -9,10 +9,13 @@ from langchain_core.messages import AIMessage
 
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.planning import PlanningMiddleware
-from langchain.agents.middleware.prompt_caching import (
-    AnthropicPromptCachingMiddleware,
-)
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
+try:
+    from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
+except ImportError:
+    # If langchain_anthropic is not installed, create a mock
+    AnthropicPromptCachingMiddleware = None
 
 
 class TestAsyncMiddlewareSupport:
@@ -43,6 +46,10 @@ class TestAsyncMiddlewareSupport:
         assert result == mock_response
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(
+        AnthropicPromptCachingMiddleware is None,
+        reason="langchain_anthropic not installed"
+    )
     async def test_anthropic_caching_middleware_async(self) -> None:
         """Test that AnthropicPromptCachingMiddleware.awrap_model_call works correctly."""
         middleware = AnthropicPromptCachingMiddleware(
@@ -157,13 +164,16 @@ def test_all_middleware_have_awrap_model_call() -> None:
     planning_method = getattr(planning_middleware.__class__, "awrap_model_call")
     assert "planning" in planning_method.__module__
 
-    # Test AnthropicPromptCachingMiddleware
-    caching_middleware = AnthropicPromptCachingMiddleware()
-    assert hasattr(caching_middleware, "wrap_model_call")
-    assert hasattr(caching_middleware, "awrap_model_call")
-    # Check it's not the base class implementation
-    caching_method = getattr(caching_middleware.__class__, "awrap_model_call")
-    assert "prompt_caching" in caching_method.__module__
+    # Test AnthropicPromptCachingMiddleware (if available)
+    if AnthropicPromptCachingMiddleware is not None:
+        caching_middleware = AnthropicPromptCachingMiddleware()
+        assert hasattr(caching_middleware, "wrap_model_call")
+        assert hasattr(caching_middleware, "awrap_model_call")
+        # Check it's not the base class implementation
+        caching_method = getattr(caching_middleware.__class__, "awrap_model_call")
+        # Updated module check since it moved to langchain_anthropic
+        assert ("anthropic" in caching_method.__module__ or
+                "prompt_caching" in caching_method.__module__)
 
     # Test ModelFallbackMiddleware
     fallback_middleware = ModelFallbackMiddleware(MagicMock())
