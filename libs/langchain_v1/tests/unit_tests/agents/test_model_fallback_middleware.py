@@ -124,11 +124,6 @@ def test_all_models_fail() -> None:
         middleware.wrap_model_call(request, mock_handler)
 
 
-# ==============================================================================
-# Async Tests
-# ==============================================================================
-
-
 async def test_primary_model_succeeds_async() -> None:
     """Test async version - primary model is used when it succeeds."""
     primary_model = GenericFakeChatModel(messages=iter([AIMessage(content="primary response")]))
