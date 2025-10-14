@@ -17,6 +17,5 @@ __all__ = [
     "InjectedToolArg",
     "InjectedToolCallId",
     "ToolException",
-    "ToolInvocationError",
     "tool",
 ]
