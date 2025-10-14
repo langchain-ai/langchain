@@ -730,10 +730,10 @@ class ChatHuggingFace(BaseChatModel):
     def batch(
         self,
         inputs: list[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[BaseMessage]:
         if not inputs:
             return []
