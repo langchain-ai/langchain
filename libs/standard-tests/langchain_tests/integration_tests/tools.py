@@ -14,9 +14,9 @@ class ToolsIntegrationTests(ToolsTests):
 
         If invoked with a ToolCall, the tool should return a valid ToolMessage content.
 
-        If you have followed the `custom tool guide <https://python.langchain.com/docs/how_to/custom_tools/>`_,
+        If you have followed the [custom tool guide](https://python.langchain.com/docs/how_to/custom_tools/),
         this test should always pass because ToolCall inputs are handled by the
-        :class:`langchain_core.tools.BaseTool` class.
+        `langchain_core.tools.BaseTool` class.
 
         If you have not followed this guide, you should ensure that your tool's
         `invoke` method returns a valid ToolMessage content when it receives
@@ -36,17 +36,17 @@ class ToolsIntegrationTests(ToolsTests):
             assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
-        assert isinstance(tool_message.content, (str, list))
+        assert isinstance(tool_message.content, str | list)
         if isinstance(tool_message.content, list):
             # content blocks must be str or dict
-            assert all(isinstance(c, (str, dict)) for c in tool_message.content)
+            assert all(isinstance(c, str | dict) for c in tool_message.content)
 
     async def test_async_invoke_matches_output_schema(self, tool: BaseTool) -> None:
         """Test async invoke matches output schema.
 
         If ainvoked with a ToolCall, the tool should return a valid ToolMessage content.
 
-        For debugging tips, see :meth:`test_invoke_matches_output_schema`.
+        For debugging tips, see `test_invoke_matches_output_schema`.
         """
         tool_call = ToolCall(
             name=tool.name,
@@ -62,10 +62,10 @@ class ToolsIntegrationTests(ToolsTests):
             assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
-        assert isinstance(tool_message.content, (str, list))
+        assert isinstance(tool_message.content, str | list)
         if isinstance(tool_message.content, list):
             # content blocks must be str or dict
-            assert all(isinstance(c, (str, dict)) for c in tool_message.content)
+            assert all(isinstance(c, str | dict) for c in tool_message.content)
 
     def test_invoke_no_tool_call(self, tool: BaseTool) -> None:
         """Test invoke without ToolCall.
@@ -87,6 +87,6 @@ class ToolsIntegrationTests(ToolsTests):
         If ainvoked without a ToolCall, the tool can return anything
         but it shouldn't throw an error.
 
-        For debugging tips, see :meth:`test_invoke_no_tool_call`.
+        For debugging tips, see `test_invoke_no_tool_call`.
         """
         await tool.ainvoke(self.tool_invoke_params_example)

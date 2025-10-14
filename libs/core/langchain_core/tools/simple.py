@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from typing_extensions import override
@@ -34,9 +31,9 @@ class Tool(BaseTool):
     """Tool that takes in function or coroutine directly."""
 
     description: str = ""
-    func: Optional[Callable[..., str]]
+    func: Callable[..., str] | None
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[str]]] = None
+    coroutine: Callable[..., Awaitable[str]] | None = None
     """The asynchronous version of the function."""
 
     # --- Runnable ---
@@ -44,8 +41,8 @@ class Tool(BaseTool):
     @override
     async def ainvoke(
         self,
-        input: Union[str, dict, ToolCall],
-        config: Optional[RunnableConfig] = None,
+        input: str | dict | ToolCall,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         if not self.coroutine:
@@ -64,19 +61,26 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            if isinstance(self.args_schema, dict):
-                json_schema = self.args_schema
-            else:
-                json_schema = self.args_schema.model_json_schema()
-            return json_schema["properties"]
+            return super().args
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
     def _to_args_and_kwargs(
-        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+        self, tool_input: str | dict, tool_call_id: str | None
     ) -> tuple[tuple, dict]:
-        """Convert tool input to pydantic model."""
+        """Convert tool input to Pydantic model.
+
+        Args:
+            tool_input: The input to the tool.
+            tool_call_id: The ID of the tool call.
+
+        Raises:
+            ToolException: If the tool input is invalid.
+
+        Returns:
+            The Pydantic model args and kwargs.
+        """
         args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
@@ -93,10 +97,20 @@ class Tool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -110,10 +124,20 @@ class Tool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -129,7 +153,7 @@ class Tool(BaseTool):
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
-        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
+        self, name: str, func: Callable | None, description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
         super().__init__(name=name, func=func, description=description, **kwargs)
@@ -137,14 +161,13 @@ class Tool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Optional[Callable],
+        func: Callable | None,
         name: str,  # We keep these required to support backwards compatibility
         description: str,
         return_direct: bool = False,  # noqa: FBT001,FBT002
-        args_schema: Optional[ArgsSchema] = None,
-        coroutine: Optional[
-            Callable[..., Awaitable[Any]]
-        ] = None,  # This is last for compatibility, but should be after func
+        args_schema: ArgsSchema | None = None,
+        coroutine: Callable[..., Awaitable[Any]]
+        | None = None,  # This is last for compatibility, but should be after func
         **kwargs: Any,
     ) -> Tool:
         """Initialize tool from a function.
@@ -153,10 +176,10 @@ class Tool(BaseTool):
             func: The function to create the tool from.
             name: The name of the tool.
             description: The description of the tool.
-            return_direct: Whether to return the output directly. Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
-            coroutine: The asynchronous version of the function. Defaults to None.
-            kwargs: Additional arguments to pass to the tool.
+            return_direct: Whether to return the output directly. Defaults to `False`.
+            args_schema: The schema of the tool's input arguments.
+            coroutine: The asynchronous version of the function.
+            **kwargs: Additional arguments to pass to the tool.
 
         Returns:
             The tool.

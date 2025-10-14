@@ -6,6 +6,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration
 
 
 def default(obj: Any) -> Any:
@@ -23,9 +25,6 @@ def default(obj: Any) -> Any:
 
 
 def _dump_pydantic_models(obj: Any) -> Any:
-    from langchain_core.messages import AIMessage
-    from langchain_core.outputs import ChatGeneration
-
     if (
         isinstance(obj, ChatGeneration)
         and isinstance(obj.message, AIMessage)
@@ -46,7 +45,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
         pretty: Whether to pretty print the json. If true, the json will be
             indented with 2 spaces (if no indent is provided as part of kwargs).
             Default is False.
-        kwargs: Additional arguments to pass to json.dumps
+        **kwargs: Additional arguments to pass to json.dumps
 
     Returns:
         A json string representation of the object.
@@ -73,7 +72,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    .. note::
+    !!! note
         Unfortunately this function is not as efficient as it could be because it first
         dumps the object to a json string and then loads it back into a dictionary.
 

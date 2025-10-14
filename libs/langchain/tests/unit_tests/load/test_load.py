@@ -1,11 +1,11 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import pytest
 from langchain_core.load.dump import dumpd, dumps
 from langchain_core.load.load import load, loads
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain.chains.llm import LLMChain
+from langchain_classic.chains.llm import LLMChain
 
 pytest.importorskip("langchain_openai", reason="langchain_openai not installed")
 pytest.importorskip("langchain_community", reason="langchain_community not installed")
@@ -179,7 +179,18 @@ def test_load_llmchain_with_non_serializable_arg() -> None:
 def test_loads_with_missing_secrets() -> None:
     import openai
 
-    llm_string = '{"lc": 1, "type": "constructor", "id": ["langchain", "llms", "openai", "OpenAI"], "kwargs": {"model_name": "davinci", "temperature": 0.5, "max_tokens": 256, "top_p": 0.8, "n": 1, "best_of": 1, "openai_api_key": {"lc": 1, "type": "secret", "id": ["OPENAI_API_KEY"]}, "batch_size": 20, "max_retries": 2, "disallowed_special": "all"}, "name": "OpenAI"}'  # noqa: E501
+    llm_string = (
+        "{"
+        '"lc": 1, '
+        '"type": "constructor", '
+        '"id": ["langchain", "llms", "openai", "OpenAI"], '
+        '"kwargs": {'
+        '"model_name": "davinci", "temperature": 0.5, "max_tokens": 256, "top_p": 0.8, '
+        '"n": 1, "best_of": 1, '
+        '"openai_api_key": {"lc": 1, "type": "secret", "id": ["OPENAI_API_KEY"]}, '
+        '"batch_size": 20, "max_retries": 2, "disallowed_special": "all"}, '
+        '"name": "OpenAI"}'
+    )
     # Should throw on instantiation, not deserialization
     with pytest.raises(openai.OpenAIError):
         loads(llm_string)

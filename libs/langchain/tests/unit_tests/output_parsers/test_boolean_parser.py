@@ -1,6 +1,8 @@
+import re
+
 import pytest
 
-from langchain.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
 
 
 def test_boolean_output_parser_parse() -> None:
@@ -32,19 +34,23 @@ def test_boolean_output_parser_parse() -> None:
 
     # Test ambiguous input
     with pytest.raises(
-        ValueError, match="Ambiguous response. Both YES and NO in received: YES NO."
+        ValueError,
+        match=re.escape("Ambiguous response. Both YES and NO in received: YES NO."),
     ):
         parser.parse("YES NO")
 
     with pytest.raises(
-        ValueError, match="Ambiguous response. Both YES and NO in received: NO YES."
+        ValueError,
+        match=re.escape("Ambiguous response. Both YES and NO in received: NO YES."),
     ):
         parser.parse("NO YES")
     # Bad input
     with pytest.raises(
         ValueError,
-        match="BooleanOutputParser expected output value to include either YES or NO. "
-        "Received BOOM.",
+        match=re.escape(
+            "BooleanOutputParser expected output value to include either YES or NO. "
+            "Received BOOM."
+        ),
     ):
         parser.parse("BOOM")
 

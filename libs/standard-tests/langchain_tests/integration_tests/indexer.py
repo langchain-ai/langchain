@@ -4,8 +4,6 @@ Standard tests for the DocumentIndex abstraction
 
 We don't recommend implementing externally managed DocumentIndex abstractions at this
 time.
-
-:private:
 """
 
 import inspect
@@ -175,7 +173,7 @@ class DocumentIndexerTestSuite(ABC):
 
     def test_delete_no_args(self, index: DocumentIndex) -> None:
         """Test delete with no args raises ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             index.delete()
 
     def test_delete_missing_content(self, index: DocumentIndex) -> None:
@@ -367,7 +365,7 @@ class AsyncDocumentIndexTestSuite(ABC):
 
     async def test_delete_no_args(self, index: DocumentIndex) -> None:
         """Test delete with no args raises ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             await index.adelete()
 
     async def test_delete_missing_content(self, index: DocumentIndex) -> None:

@@ -21,10 +21,8 @@ class TestAzureOpenAIStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "deployment_name": os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-            "model": "gpt-4o-mini",
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
-            "stream_usage": True,
         }
 
     @property
@@ -49,7 +47,6 @@ class TestAzureOpenAIResponses(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "deployment_name": os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-            "model": "gpt-4o-mini",
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
             "use_responses_api": True,
@@ -85,7 +82,6 @@ class TestAzureOpenAIStandardLegacy(ChatModelIntegrationTests):
             "deployment_name": os.environ["AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME"],
             "openai_api_version": OPENAI_API_VERSION,
             "azure_endpoint": OPENAI_API_BASE,
-            "stream_usage": True,
         }
 
     @property

@@ -14,7 +14,7 @@ pytest.importorskip("gritql")
 
 
 def find_issue(current: Folder, expected: Folder) -> str:
-    for current_file, expected_file in zip(current.files, expected.files):
+    for current_file, expected_file in zip(current.files, expected.files, strict=False):
         if current_file != expected_file:
             if current_file.name != expected_file.name:
                 return (

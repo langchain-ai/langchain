@@ -5,7 +5,7 @@ import json
 import operator
 from functools import reduce
 from itertools import cycle
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.agents import (
     AgentAction,
@@ -27,7 +27,7 @@ from langchain_core.tools import Tool, tool
 from langchain_core.tracers import RunLog, RunLogPatch
 from typing_extensions import override
 
-from langchain.agents import (
+from langchain_classic.agents import (
     AgentExecutor,
     AgentType,
     create_openai_functions_agent,
@@ -35,7 +35,7 @@ from langchain.agents import (
     create_tool_calling_agent,
     initialize_agent,
 )
-from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
+from langchain_classic.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import (
@@ -53,8 +53,8 @@ class FakeListLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Increment counter, and then return response in that index."""
@@ -451,7 +451,6 @@ def test_agent_invalid_tool() -> None:
 
 async def test_runnable_agent() -> None:
     """Simple test to verify that an agent built with LCEL works."""
-
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
@@ -464,7 +463,7 @@ async def test_runnable_agent() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
@@ -571,9 +570,9 @@ async def test_runnable_agent_with_function_calls() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
-        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
+        return cast("AgentFinish | AgentAction", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -683,9 +682,9 @@ async def test_runnable_with_multi_action_per_step() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> AgentFinish | AgentAction:
         """A parser."""
-        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
+        return cast("AgentFinish | AgentAction", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -908,8 +907,8 @@ async def test_openai_agent_with_streaming() -> None:
                             "name": "find_pet",
                         },
                     },
+                    "chunk_position": "last",
                     "content": "",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
@@ -947,7 +946,6 @@ async def test_openai_agent_with_streaming() -> None:
                 {
                     "additional_kwargs": {},
                     "content": "The cat is spying from under the bed.",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
@@ -1112,6 +1110,7 @@ async def test_openai_agent_tools_agent() -> None:
                                         },
                                     ],
                                 },
+                                chunk_position="last",
                             ),
                         ],
                         tool_call_id="0",
@@ -1138,6 +1137,7 @@ async def test_openai_agent_tools_agent() -> None:
                                 },
                             ],
                         },
+                        chunk_position="last",
                     ),
                 ],
             },
@@ -1168,6 +1168,7 @@ async def test_openai_agent_tools_agent() -> None:
                                         },
                                     ],
                                 },
+                                chunk_position="last",
                             ),
                         ],
                         tool_call_id="1",
@@ -1194,6 +1195,7 @@ async def test_openai_agent_tools_agent() -> None:
                                 },
                             ],
                         },
+                        chunk_position="last",
                     ),
                 ],
             },
@@ -1231,6 +1233,7 @@ async def test_openai_agent_tools_agent() -> None:
                                             },
                                         ],
                                     },
+                                    chunk_position="last",
                                 ),
                             ],
                             tool_call_id="0",
@@ -1242,7 +1245,8 @@ async def test_openai_agent_tools_agent() -> None:
             {
                 "messages": [
                     FunctionMessage(
-                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        content="check_time is not a valid tool, "
+                        "try one of [find_pet].",
                         name="check_time",
                     ),
                 ],
@@ -1273,6 +1277,7 @@ async def test_openai_agent_tools_agent() -> None:
                                             },
                                         ],
                                     },
+                                    chunk_position="last",
                                 ),
                             ],
                             tool_call_id="1",

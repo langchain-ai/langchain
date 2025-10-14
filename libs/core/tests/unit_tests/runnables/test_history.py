@@ -1,10 +1,10 @@
 import re
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import pytest
 from packaging import version
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -20,6 +20,11 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
+from langchain_core.tracers.root_listeners import (
+    AsyncListener,
+    AsyncRootListenersTracer,
+    RootListenersTracer,
+)
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -27,15 +32,14 @@ from tests.unit_tests.pydantic_utils import _schema
 def test_interfaces() -> None:
     history = InMemoryChatMessageHistory()
     history.add_message(SystemMessage(content="system"))
-    history.add_user_message("human 1")
-    history.add_ai_message("ai")
-    history.add_message(HumanMessage(content="human 2"))
-    assert str(history) == "System: system\nHuman: human 1\nAI: ai\nHuman: human 2"
+    history.add_message(HumanMessage(content="human 1"))
+    history.add_message(AIMessage(content="ai"))
+    assert str(history) == "System: system\nHuman: human 1\nAI: ai"
 
 
 def _get_get_session_history(
     *,
-    store: Optional[dict[str, Any]] = None,
+    store: dict[str, Any] | None = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -258,8 +262,8 @@ class LengthChatModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
@@ -428,7 +432,7 @@ async def test_output_dict_async() -> None:
 
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
-        input: Union[str, BaseMessage, Sequence[BaseMessage]]
+        input: str | BaseMessage | Sequence[BaseMessage]
 
     runnable = RunnableLambda(
         lambda params: {
@@ -499,8 +503,6 @@ def test_get_output_schema() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    from pydantic import RootModel
-
     runnable_with_message_history_input = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
@@ -776,23 +778,19 @@ def test_ignore_session_id() -> None:
 
 
 class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
-    from langchain_core.tracers.root_listeners import AsyncListener
-
     def with_listeners(
         self,
         *,
-        on_start: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
-        on_end: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
-        on_error: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
+        on_start: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
+        on_end: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
+        on_error: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import RootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = RootListenersTracer(
                 config=config,
@@ -813,12 +811,10 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
     def with_alisteners(
         self,
         *,
-        on_start: Optional[AsyncListener] = None,
-        on_end: Optional[AsyncListener] = None,
-        on_error: Optional[AsyncListener] = None,
+        on_start: AsyncListener | None = None,
+        on_end: AsyncListener | None = None,
+        on_error: AsyncListener | None = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = AsyncRootListenersTracer(
                 config=config,

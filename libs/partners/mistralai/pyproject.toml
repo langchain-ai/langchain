@@ -1,41 +1,47 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.68",
-    "tokenizers<1,>=0.15.1",
-    "httpx<1,>=0.25.2",
-    "httpx-sse<1,>=0.3.1",
-    "pydantic<3,>=2",
+    "langchain-core>=1.0.0a7,<2.0.0",
+    "tokenizers>=0.15.1,<1.0.0",
+    "httpx>=0.25.2,<1.0.0",
+    "httpx-sse>=0.3.1,<1.0.0",
+    "pydantic>=2.0.0,<3.0.0",
 ]
 name = "langchain-mistralai"
-version = "0.2.11"
+version = "1.0.0a1"
 description = "An integration package connecting Mistral and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-mistralai%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
     "langchain-core",
     "langchain-tests",
 ]
 test_integration = []
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -44,69 +50,41 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "B",      # flake8-bugbear
-    "ASYNC",  # flake8-async
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D",      # pydocstyle
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "SIM",    # flake8-simplify
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TID",    # flake8-tidy-imports
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
+select = ["ALL"]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D203",    # Messes with the formatter
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "TD",
+    "PLR0912",
+    "C901",
+    "FIX",
+
+    # TODO
+    "TC002",
+    "ANN401",
+    "ARG001",
+    "ARG002",
+    "PT011",
+    "PLC0415",
+    "PLR2004",
+    "BLE001",
+    "D100",
+    "D102",
+    "D104",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -123,4 +101,9 @@ asyncio_mode = "auto"
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "PLR2004",
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]

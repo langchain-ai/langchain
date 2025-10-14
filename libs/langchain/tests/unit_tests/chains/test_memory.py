@@ -1,12 +1,12 @@
 import pytest
 from langchain_core.memory import BaseMemory
 
-from langchain.chains.conversation.memory import (
+from langchain_classic.chains.conversation.memory import (
     ConversationBufferMemory,
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
-from langchain.memory import ReadOnlySharedMemory, SimpleMemory
+from langchain_classic.memory import ReadOnlySharedMemory, SimpleMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

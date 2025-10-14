@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+from langchain_classic.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 
 
 @pytest.fixture

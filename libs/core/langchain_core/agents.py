@@ -1,32 +1,36 @@
 """Schema definitions for representing agent actions, observations, and return values.
 
-**ATTENTION** The schema definitions are provided for backwards compatibility.
+!!! warning
+    The schema definitions are provided for backwards compatibility.
 
-    New agents should be built using the langgraph library
-    (https://github.com/langchain-ai/langgraph)), which provides a simpler
-    and more flexible way to define agents.
+!!! warning
+    New agents should be built using the
+    [langgraph library](https://github.com/langchain-ai/langgraph), which provides a
+    simpler and more flexible way to define agents.
 
-    Please see the migration guide for information on how to migrate existing
-    agents to modern langgraph agents:
-    https://python.langchain.com/docs/how_to/migrate_agent/
+    Please see the
+    [migration guide](https://python.langchain.com/docs/how_to/migrate_agent/) for
+    information on how to migrate existing agents to modern langgraph agents.
 
 Agents use language models to choose a sequence of actions to take.
 
 A basic agent works in the following manner:
 
-1. Given a prompt an agent uses an LLM to request an action to take (e.g., a tool to run).
+1. Given a prompt an agent uses an LLM to request an action to take
+    (e.g., a tool to run).
 2. The agent executes the action (e.g., runs the tool), and receives an observation.
-3. The agent returns the observation to the LLM, which can then be used to generate the next action.
+3. The agent returns the observation to the LLM, which can then be used to generate
+    the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
 The schemas for the agents themselves are defined in langchain.agents.agent.
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import (
@@ -46,7 +50,7 @@ class AgentAction(Serializable):
 
     tool: str
     """The name of the Tool to execute."""
-    tool_input: Union[str, dict]
+    tool_input: str | dict
     """The input to pass in to the Tool."""
     log: str
     """Additional information to log about the action.
@@ -59,9 +63,7 @@ class AgentAction(Serializable):
     type: Literal["AgentAction"] = "AgentAction"
 
     # Override init to support instantiation by position for backward compat.
-    def __init__(
-        self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
-    ):
+    def __init__(self, tool: str, tool_input: str | dict, log: str, **kwargs: Any):
         """Create an AgentAction.
 
         Args:
@@ -84,7 +86,8 @@ class AgentAction(Serializable):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "agent"].
+        Returns:
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 
@@ -153,14 +156,15 @@ class AgentFinish(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "schema", "agent"].
+        Returns:
+            `["langchain", "schema", "agent"]`
         """
         return ["langchain", "schema", "agent"]
 

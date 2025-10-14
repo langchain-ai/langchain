@@ -1,4 +1,4 @@
-from langchain import chat_models
+from langchain_classic import chat_models
 
 EXPECTED_ALL = [
     "init_chat_model",

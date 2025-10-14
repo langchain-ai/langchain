@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 from unittest.mock import MagicMock
 
 from langchain_core.messages import AIMessageChunk, ToolMessage
@@ -15,13 +15,15 @@ from langchain_deepseek.chat_models import ChatDeepSeek
 
 
 class MockOpenAIResponse(BaseModel):
+    """Mock OpenAI response model."""
+
     choices: list
     error: None = None
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
-        mode: Union[Literal["json", "python"], str] = "python",  # noqa: PYI051
+        mode: Literal["json", "python"] | str = "python",  # noqa: PYI051
         include: Any = None,
         exclude: Any = None,
         by_alias: bool = False,
@@ -29,10 +31,11 @@ class MockOpenAIResponse(BaseModel):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: Union[Literal["none", "warn", "error"], bool] = True,
-        context: Union[dict[str, Any], None] = None,
+        warnings: Literal["none", "warn", "error"] | bool = True,
+        context: dict[str, Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
+        """Convert to dictionary, ensuring reasoning_content is included."""
         choices_list = []
         for choice in self.choices:
             if isinstance(choice.message, ChatCompletionMessage):
@@ -58,12 +61,16 @@ class MockOpenAIResponse(BaseModel):
 
 
 class TestChatDeepSeekUnit(ChatModelUnitTests):
+    """Unit tests for `ChatDeepSeek` chat model."""
+
     @property
     def chat_model_class(self) -> type[ChatDeepSeek]:
+        """Chat model class being tested."""
         return ChatDeepSeek
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
+        """Parameters to initialize from environment variables."""
         return (
             {
                 "DEEPSEEK_API_KEY": "api_key",
@@ -80,7 +87,7 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        # These should be parameters used to initialize your integration for testing
+        """Parameters to create chat model instance for testing."""
         return {
             "model": "deepseek-chat",
             "api_key": "api_key",

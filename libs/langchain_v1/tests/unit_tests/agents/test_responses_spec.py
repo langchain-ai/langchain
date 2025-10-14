@@ -24,7 +24,7 @@ class AssertionByInvocation(BaseSchema):
     prompt: str
     tools_with_expected_calls: ToolCalls
     expected_last_message: str
-    expected_structured_response: Optional[Dict[str, Any]]
+    expected_structured_response: dict[str, Any] | None
     llm_request_count: int
 
 
@@ -68,13 +68,13 @@ def test_responses_integration_matrix(case: TestCase) -> None:
             "currently failing due to undefined behavior when model cannot conform to any of the structured response formats."
         )
 
-    def get_employee_role(*, name: str) -> Optional[str]:
+    def get_employee_role(*, name: str) -> str | None:
         for e in EMPLOYEES:
             if e.name == name:
                 return e.role
         return None
 
-    def get_employee_department(*, name: str) -> Optional[str]:
+    def get_employee_department(*, name: str) -> str | None:
         for e in EMPLOYEES:
             if e.name == name:
                 return e.department
@@ -119,7 +119,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
             http_client=http_client,
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[role_tool["tool"], dept_tool["tool"]],
             prompt=AGENT_PROMPT,

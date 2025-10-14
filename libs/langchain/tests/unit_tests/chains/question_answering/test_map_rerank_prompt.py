@@ -1,11 +1,15 @@
-"""Test map_rerank parser"""
+"""Test map_rerank parser."""
 
 import pytest
 
-from langchain.chains.question_answering.map_rerank_prompt import output_parser
+from langchain_classic.chains.question_answering.map_rerank_prompt import output_parser
 
 GOOD_SCORE = "foo bar answer.\nScore: 80"
-SCORE_WITH_EXPLANATION = "foo bar answer.\nScore: 80 (fully answers the question, but could provide more detail on the specific error message)"  # noqa: E501
+SCORE_WITH_EXPLANATION = (
+    "foo bar answer.\n"
+    "Score: 80 (fully answers the question, "
+    "but could provide more detail on the specific error message)"
+)
 
 
 @pytest.mark.parametrize("answer", [GOOD_SCORE, SCORE_WITH_EXPLANATION])

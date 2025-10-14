@@ -30,7 +30,10 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore[assignment]
     """The type of the message (used during serialization).
-    Defaults to "ChatMessageChunk"."""
+
+    Defaults to `'ChatMessageChunk'`.
+
+    """
 
     @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
