@@ -7,7 +7,7 @@ from typing import cast
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 
-from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.todo_list import TodoListMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
 from langgraph.runtime import Runtime
 

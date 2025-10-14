@@ -9,7 +9,7 @@ from typing_extensions import NotRequired
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool, InjectedToolCallId, tool
 from langgraph.config import get_config
 from langgraph.runtime import Runtime, get_runtime
@@ -29,7 +29,12 @@ from langchain.agents._internal.file_utils import (
     update_file_data,
     validate_path,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.tools.tool_node import InjectedState
 
 
@@ -526,8 +531,8 @@ class FilesystemMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
         """Update the system prompt to include instructions on using the filesystem."""
         if self.system_prompt_extension is not None:
             request.system_prompt = (

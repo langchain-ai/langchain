@@ -4,18 +4,22 @@ from collections.abc import Callable, Sequence
 from typing import Annotated, Any, TypedDict, cast
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
 from langgraph.types import Command
 from typing_extensions import NotRequired
 
 from langchain.agents.middleware.filesystem import FilesystemMiddleware
-from langchain.agents.middleware.planning import PlanningMiddleware
-from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.todo_list import TodoListMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
 from langchain.tools import InjectedState, InjectedToolCallId
+
+try:
+    from langchain_anthropic.middleware.prompt_caching import AnthropicPromptCachingMiddleware
+except ImportError:
+    AnthropicPromptCachingMiddleware = None
 
 
 class SubAgent(TypedDict):
@@ -178,15 +182,19 @@ def _get_subagents(
     from langchain.agents.factory import create_agent
 
     default_subagent_middleware = [
-        PlanningMiddleware(),
+        TodoListMiddleware(),
         FilesystemMiddleware(),
         SummarizationMiddleware(
             model=default_subagent_model,
             max_tokens_before_summary=120000,
             messages_to_keep=20,
         ),
-        AnthropicPromptCachingMiddleware(ttl="5m", unsupported_model_behavior="ignore"),
     ]
+
+    if AnthropicPromptCachingMiddleware is not None:
+        default_subagent_middleware.append(
+            AnthropicPromptCachingMiddleware(ttl="5m", unsupported_model_behavior="ignore")
+        )
 
     # Create the general-purpose subagent
     general_purpose_subagent = create_agent(
@@ -351,8 +359,8 @@ class SubAgentMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
         """Update the system prompt to include instructions on using subagents."""
         if self.system_prompt_extension is not None:
             request.system_prompt = (
