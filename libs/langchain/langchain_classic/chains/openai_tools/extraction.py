@@ -3,7 +3,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function as convert_pydantic_to_openai_function,
+)
 from pydantic import BaseModel
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \

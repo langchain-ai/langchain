@@ -28,7 +28,9 @@ async def test_astream() -> None:
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if token.response_metadata:
+        if token.response_metadata and not set(token.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         msg = (
@@ -143,3 +145,51 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
     except Exception:
         logger.exception("Unexpected exception")
         raise
+
+
+def test_reasoning() -> None:
+    model = ChatMistralAI(model="magistral-medium-latest")  # type: ignore[call-arg]
+    input_message = {
+        "role": "user",
+        "content": "Hello, my name is Bob.",
+    }
+    full: AIMessageChunk | None = None
+    for chunk in model.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    thinking_blocks = 0
+    for i, block in enumerate(full.content):
+        if isinstance(block, dict) and block.get("type") == "thinking":
+            thinking_blocks += 1
+            reasoning_block = full.content_blocks[i]
+            assert reasoning_block["type"] == "reasoning"
+            assert isinstance(reasoning_block.get("reasoning"), str)
+    assert thinking_blocks > 0
+
+    next_message = {"role": "user", "content": "What is my name?"}
+    _ = model.invoke([input_message, full, next_message])
+
+
+def test_reasoning_v1() -> None:
+    model = ChatMistralAI(model="magistral-medium-latest", output_version="v1")  # type: ignore[call-arg]
+    input_message = {
+        "role": "user",
+        "content": "Hello, my name is Bob.",
+    }
+    full: AIMessageChunk | None = None
+    chunks = []
+    for chunk in model.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+        chunks.append(chunk)
+    assert isinstance(full, AIMessageChunk)
+    reasoning_blocks = 0
+    for block in full.content:
+        if isinstance(block, dict) and block.get("type") == "reasoning":
+            reasoning_blocks += 1
+            assert isinstance(block.get("reasoning"), str)
+    assert reasoning_blocks > 0
+
+    next_message = {"role": "user", "content": "What is my name?"}
+    _ = model.invoke([input_message, full, next_message])
