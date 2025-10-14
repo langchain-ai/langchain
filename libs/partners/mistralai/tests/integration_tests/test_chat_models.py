@@ -28,7 +28,9 @@ async def test_astream() -> None:
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if token.response_metadata:
+        if token.response_metadata and not set(token.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         msg = (
