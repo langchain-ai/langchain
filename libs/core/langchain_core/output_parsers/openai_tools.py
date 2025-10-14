@@ -16,6 +16,7 @@ from langchain_core.output_parsers.transform import BaseCumulativeTransformOutpu
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import is_pydantic_v2_subclass, is_pydantic_v1_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +329,15 @@ class PydanticToolsParser(JsonOutputToolsParser):
             return None if self.first_tool_only else []
 
         json_results = [json_results] if self.first_tool_only else json_results
-        name_dict = {tool.__name__: tool for tool in self.tools}
+        name_dict_v2 = {
+            tool.model_config.get("title", tool.__name__): tool for tool in self.tools
+            if is_pydantic_v2_subclass(tool)
+        }
+        name_dict_v1 = {
+            tool.model_config.get("title", tool.__name__): tool for tool in self.tools
+            if is_pydantic_v1_subclass(tool)
+        }
+        name_dict = {**name_dict_v2, **name_dict_v1}
         pydantic_objects = []
         for res in json_results:
             if not isinstance(res["args"], dict):
@@ -340,8 +349,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
                 )
                 raise ValueError(msg)
             try:
-                if res["type"] in name_dict:
-                    pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
             except (ValidationError, ValueError):
                 if partial:
                     continue
