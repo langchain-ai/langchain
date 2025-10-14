@@ -81,6 +81,7 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import get_runtime
 from langgraph.types import Command, Send
 from pydantic import BaseModel, ValidationError
+from typing_extensions import Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -104,6 +105,12 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 )
 
 
+class _ToolCallRequestOverrides(TypedDict, total=False):
+    """Possible overrides for ToolCallRequest.override() method."""
+
+    tool_call: ToolCall
+
+
 @dataclass()
 class ToolCallRequest:
     """Tool execution request passed to tool call interceptors.
@@ -119,6 +126,31 @@ class ToolCallRequest:
     tool: BaseTool
     state: Any
     runtime: Any
+
+    def override(self, **overrides: Unpack[_ToolCallRequestOverrides]) -> ToolCallRequest:
+        """Replace the request with a new request with the given overrides.
+
+        Returns a new `ToolCallRequest` instance with the specified attributes replaced.
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override. Supported keys:
+                - tool_call: Tool call dict with name, args, and id
+
+        Returns:
+            New ToolCallRequest instance with specified overrides applied.
+
+        Examples:
+            ```python
+            # Modify tool call arguments without mutating original
+            modified_call = {**request.tool_call, "args": {"value": 10}}
+            new_request = request.override(tool_call=modified_call)
+
+            # Override multiple attributes
+            new_request = request.override(tool_call=modified_call, state=new_state)
+            ```
+        """
+        return replace(self, **overrides)
 
 
 ToolCallWrapper = Callable[
