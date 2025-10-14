@@ -21,12 +21,12 @@ class TransformChain(Chain):
     """Chain that transforms the chain output.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import TransformChain
+        transform_chain = TransformChain(input_variables=["text"],
+         output_variables["entities"], transform=func())
 
-            from langchain_classic.chains import TransformChain
-            transform_chain = TransformChain(input_variables=["text"],
-             output_variables["entities"], transform=func())
-
+        ```
     """
 
     input_variables: list[str]

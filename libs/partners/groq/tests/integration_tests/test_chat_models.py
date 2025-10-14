@@ -111,7 +111,9 @@ async def test_astream() -> None:
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if token.response_metadata:
+        if token.response_metadata and not set(token.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         msg = (
@@ -663,6 +665,146 @@ async def test_setting_service_tier_request_async() -> None:
     response = await chat.ainvoke("Hello!", service_tier="on_demand")
 
     assert response.response_metadata.get("service_tier") == "on_demand"
+
+
+@pytest.mark.vcr
+def test_web_search() -> None:
+    llm = ChatGroq(model="groq/compound")
+    input_message = {
+        "role": "user",
+        "content": "Search for the weather in Boston today.",
+    }
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream([input_message]):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
+    assert full.additional_kwargs["executed_tools"]
+    assert [block["type"] for block in full.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
+
+    next_message = {
+        "role": "user",
+        "content": "Now search for the weather in San Francisco.",
+    }
+    response = llm.invoke([input_message, full, next_message])
+    assert [block["type"] for block in response.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
+
+
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
+@pytest.mark.vcr
+def test_web_search_v1() -> None:
+    llm = ChatGroq(model="groq/compound", output_version="v1")
+    input_message = {
+        "role": "user",
+        "content": "Search for the weather in Boston today.",
+    }
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream([input_message]):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
+    assert full.additional_kwargs["executed_tools"]
+    assert [block["type"] for block in full.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "reasoning",
+        "text",
+    ]
+
+    next_message = {
+        "role": "user",
+        "content": "Now search for the weather in San Francisco.",
+    }
+    response = llm.invoke([input_message, full, next_message])
+    assert [block["type"] for block in response.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
+
+
+@pytest.mark.vcr
+def test_code_interpreter() -> None:
+    llm = ChatGroq(model="groq/compound-mini")
+    input_message = {
+        "role": "user",
+        "content": (
+            "Calculate the square root of 101 and show me the Python code you used."
+        ),
+    }
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream([input_message]):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
+    assert full.additional_kwargs["executed_tools"]
+    assert [block["type"] for block in full.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
+
+    next_message = {
+        "role": "user",
+        "content": "Now do the same for 102.",
+    }
+    response = llm.invoke([input_message, full, next_message])
+    assert [block["type"] for block in response.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
+
+
+@pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
+@pytest.mark.vcr
+def test_code_interpreter_v1() -> None:
+    llm = ChatGroq(model="groq/compound-mini", output_version="v1")
+    input_message = {
+        "role": "user",
+        "content": (
+            "Calculate the square root of 101 and show me the Python code you used."
+        ),
+    }
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream([input_message]):
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
+    assert full.additional_kwargs["executed_tools"]
+    assert [block["type"] for block in full.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "reasoning",
+        "text",
+    ]
+
+    next_message = {
+        "role": "user",
+        "content": "Now do the same for 102.",
+    }
+    response = llm.invoke([input_message, full, next_message])
+    assert [block["type"] for block in response.content_blocks] == [
+        "reasoning",
+        "server_tool_call",
+        "server_tool_result",
+        "text",
+    ]
 
 
 # Groq does not currently support N > 1

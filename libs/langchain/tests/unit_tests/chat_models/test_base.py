@@ -77,18 +77,16 @@ def test_configurable() -> None:
     - Properly resolves to the configured model type when parameters are provided
 
     Example:
+    ```python
+    # This creates a configurable model without specifying which model
+    model = init_chat_model()
 
-    .. code-block:: python
+    # This will FAIL - no model specified yet
+    model.get_num_tokens("hello")  # AttributeError!
 
-        # This creates a configurable model without specifying which model
-        model = init_chat_model()
-
-        # This will FAIL - no model specified yet
-        model.get_num_tokens("hello")  # AttributeError!
-
-        # This works - provides model at runtime
-        response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
-
+    # This works - provides model at runtime
+    response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
+    ```
     """
     model = init_chat_model()
 
@@ -197,29 +195,25 @@ def test_configurable_with_default() -> None:
 
     Verifies that a configurable chat model initialized with default parameters:
     - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
-    - Provides immediate access to non-configurable methods (e.g. ``get_num_tokens``)
-    - Supports model switching through runtime configuration using ``config_prefix``
+    - Provides immediate access to non-configurable methods (e.g. `get_num_tokens`)
+    - Supports model switching through runtime configuration using `config_prefix`
     - Maintains proper model identity and attributes when reconfigured
     - Can be used in chains with different model providers via configuration
 
     Example:
+    ```python
+    # This creates a configurable model with default parameters (model)
+    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
 
-    .. code-block:: python
+    # This works immediately - uses default gpt-4o
+    tokens = model.get_num_tokens("hello")
 
-        # This creates a configurable model with default parameters (model)
-        model = init_chat_model(
-            "gpt-4o", configurable_fields="any", config_prefix="bar"
-        )
-
-        # This works immediately - uses default gpt-4o
-        tokens = model.get_num_tokens("hello")
-
-        # This also works - switches to Claude at runtime
-        response = model.invoke(
-            "Hello",
-            config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}},
-        )
-
+    # This also works - switches to Claude at runtime
+    response = model.invoke(
+        "Hello",
+        config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}},
+    )
+    ```
     """
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (

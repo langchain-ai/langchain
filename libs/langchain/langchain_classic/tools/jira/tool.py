@@ -27,10 +27,10 @@ def __getattr__(name: str) -> Any:
     """Dynamically retrieve attributes from the updated module path.
 
     Args:
-        name (str): The name of the attribute to import.
+        name: The name of the attribute to import.
 
     Returns:
-        Any: The resolved attribute from the updated path.
+        The resolved attribute from the updated path.
     """
     return _import_attribute(name)
 

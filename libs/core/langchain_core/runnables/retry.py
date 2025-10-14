@@ -33,7 +33,7 @@ U = TypeVar("U")
 
 
 class ExponentialJitterParams(TypedDict, total=False):
-    """Parameters for ``tenacity.wait_exponential_jitter``."""
+    """Parameters for `tenacity.wait_exponential_jitter`."""
 
     initial: float
     """Initial wait."""
@@ -125,8 +125,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     """Whether to add jitter to the exponential backoff."""
 
     exponential_jitter_params: ExponentialJitterParams | None = None
-    """Parameters for ``tenacity.wait_exponential_jitter``. Namely: ``initial``,
-    ``max``, ``exp_base``, and ``jitter`` (all float values).
+    """Parameters for `tenacity.wait_exponential_jitter`. Namely: `initial`,
+    `max`, `exp_base`, and `jitter` (all float values).
     """
 
     max_attempt_number: int = 3
