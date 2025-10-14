@@ -6,7 +6,7 @@ from typing import Annotated, Any, TypedDict, cast
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import StructuredTool
 from langgraph.types import Command
 from typing_extensions import NotRequired
 
@@ -14,7 +14,7 @@ from langchain.agents.middleware.filesystem import FilesystemMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.todo_list import TodoListMiddleware
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
-from langchain.tools import InjectedState, InjectedToolCallId
+from langchain.tools import BaseTool, InjectedState, InjectedToolCallId
 
 try:
     from langchain_anthropic.middleware.prompt_caching import AnthropicPromptCachingMiddleware
@@ -234,8 +234,6 @@ def _create_task_tool(
     default_subagent_model: str | BaseChatModel,
     default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]],
     subagents: list[SubAgent | CompiledSubAgent],
-    *,
-    is_async: bool = False,
 ) -> BaseTool:
     subagent_graphs, subagent_descriptions = _get_subagents(
         default_subagent_model, default_subagent_tools, subagents
@@ -254,50 +252,51 @@ def _create_task_tool(
         )
 
     task_tool_description = TASK_TOOL_DESCRIPTION.format(other_agents=subagent_description_str)
-    if is_async:
 
-        @tool(description=task_tool_description)
-        async def task(
-            description: str,
-            subagent_type: str,
-            state: Annotated[dict, InjectedState],
-            tool_call_id: Annotated[str, InjectedToolCallId],
-        ) -> str | Command:
-            if subagent_type not in subagent_graphs:
-                msg = (
-                    f"Error: invoked agent of type {subagent_type}, "
-                    f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
-                )
-                raise ValueError(msg)
-            subagent = subagent_graphs[subagent_type]
-            # Create a new state dict to avoid mutating the original
-            subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
-            subagent_state["messages"] = [HumanMessage(content=description)]
-            result = await subagent.ainvoke(subagent_state)
-            return _return_command_with_state_update(result, tool_call_id)
-    else:
+    def task(
+        description: str,
+        subagent_type: str,
+        state: Annotated[dict, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+    ) -> str | Command:
+        if subagent_type not in subagent_graphs:
+            msg = (
+                f"Error: invoked agent of type {subagent_type}, "
+                f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+            )
+            raise ValueError(msg)
+        subagent = subagent_graphs[subagent_type]
+        # Create a new state dict to avoid mutating the original
+        subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
+        subagent_state["messages"] = [HumanMessage(content=description)]
+        result = subagent.invoke(subagent_state)
+        return _return_command_with_state_update(result, tool_call_id)
 
-        @tool(description=task_tool_description)
-        def task(
-            description: str,
-            subagent_type: str,
-            state: Annotated[dict, InjectedState],
-            tool_call_id: Annotated[str, InjectedToolCallId],
-        ) -> str | Command:
-            if subagent_type not in subagent_graphs:
-                msg = (
-                    f"Error: invoked agent of type {subagent_type}, "
-                    f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
-                )
-                raise ValueError(msg)
-            subagent = subagent_graphs[subagent_type]
-            # Create a new state dict to avoid mutating the original
-            subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
-            subagent_state["messages"] = [HumanMessage(content=description)]
-            result = subagent.invoke(subagent_state)
-            return _return_command_with_state_update(result, tool_call_id)
+    async def atask(
+        description: str,
+        subagent_type: str,
+        state: Annotated[dict, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+    ) -> str | Command:
+        if subagent_type not in subagent_graphs:
+            msg = (
+                f"Error: invoked agent of type {subagent_type}, "
+                f"the only allowed types are {[f'`{k}`' for k in subagent_graphs]}"
+            )
+            raise ValueError(msg)
+        subagent = subagent_graphs[subagent_type]
+        # Create a new state dict to avoid mutating the original
+        subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
+        subagent_state["messages"] = [HumanMessage(content=description)]
+        result = subagent.invoke(subagent_state)
+        return _return_command_with_state_update(result, tool_call_id)
 
-    return task
+    return StructuredTool.from_function(
+        name="task",
+        func=task,
+        coroutine=atask,
+        description=task_tool_description,
+    )
 
 
 class SubAgentMiddleware(AgentMiddleware):
@@ -322,7 +321,6 @@ class SubAgentMiddleware(AgentMiddleware):
         default_subagent_tools: The tools to use for the general-purpose subagent.
         subagents: A list of additional subagents to provide to the agent.
         system_prompt_extension: Additional instructions on how the main agent should use subagents.
-        is_async: Whether the `task` tool should be asynchronous.
 
     Example:
         ```python
@@ -343,7 +341,6 @@ class SubAgentMiddleware(AgentMiddleware):
         default_subagent_tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
         subagents: list[SubAgent | CompiledSubAgent] | None = None,
         system_prompt_extension: str | None = None,
-        is_async: bool = False,
     ) -> None:
         """Initialize the SubAgentMiddleware."""
         super().__init__()
@@ -352,7 +349,6 @@ class SubAgentMiddleware(AgentMiddleware):
             default_subagent_model,
             default_subagent_tools or [],
             subagents or [],
-            is_async=is_async,
         )
         self.tools = [task_tool]
 
