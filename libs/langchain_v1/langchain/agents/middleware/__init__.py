@@ -28,7 +28,7 @@ from .types import (
     dynamic_prompt,
     hook_config,
     wrap_model_call,
-    wrap_tool_call
+    wrap_tool_call,
 )
 
 __all__ = [
