@@ -13,7 +13,7 @@ REASONING_MODEL_NAME = "deepseek-r1:1.5b"
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=False``."""
+    """Test streaming with `reasoning=False`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
     messages = [
         {
@@ -46,7 +46,7 @@ async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=None``."""
+    """Test streaming with `reasoning=None`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
     messages = [
         {
@@ -81,7 +81,7 @@ async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_stream(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=True``."""
+    """Test streaming with `reasoning=True`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
     messages = [
         {
@@ -125,7 +125,7 @@ async def test_reasoning_stream(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=False``."""
+    """Test invoke with `reasoning=False`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -141,7 +141,7 @@ async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=None``."""
+    """Test invoke with `reasoning=None`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -159,7 +159,7 @@ async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_invoke(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=True``."""
+    """Test invoke with `reasoning=True`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -185,15 +185,15 @@ async def test_reasoning_invoke(model: str, use_async: bool) -> None:
 
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 def test_think_tag_stripping_necessity(model: str) -> None:
-    """Test that demonstrates why ``_strip_think_tags`` is necessary.
+    """Test that demonstrates why `_strip_think_tags` is necessary.
 
     DeepSeek R1 models include reasoning/thinking as their default behavior.
-    When ``reasoning=False`` is set, the user explicitly wants no reasoning content,
+    When `reasoning=False` is set, the user explicitly wants no reasoning content,
     but Ollama cannot disable thinking at the API level for these models.
-    Therefore, post-processing is required to strip the ``<think>`` tags.
+    Therefore, post-processing is required to strip the `<think>` tags.
 
     This test documents the specific behavior that necessitates the
-    ``_strip_think_tags`` function in the chat_models.py implementation.
+    `_strip_think_tags` function in the chat_models.py implementation.
     """
     # Test with reasoning=None (default behavior - should include think tags)
     llm_default = ChatOllama(model=model, reasoning=None, num_ctx=2**12)

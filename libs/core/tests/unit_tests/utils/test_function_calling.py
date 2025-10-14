@@ -76,7 +76,7 @@ def function_docstring_annotations() -> Callable:
         """Dummy function.
 
         Args:
-            arg1 (int): foo
+            arg1: foo
             arg2: one of 'bar', 'baz'
         """
 

@@ -486,8 +486,10 @@ def test_provider_warns() -> None:
     # implemented.
     # This test should be removed when all major providers support content block
     # standardization.
-    message = AIMessage("Hello.", response_metadata={"model_provider": "groq"})
-    with pytest.warns(match="not yet fully supported for Groq"):
+    message = AIMessage(
+        "Hello.", response_metadata={"model_provider": "google_vertexai"}
+    )
+    with pytest.warns(match="not yet fully supported for Google VertexAI"):
         content_blocks = message.content_blocks
 
     assert content_blocks == [{"type": "text", "text": "Hello."}]

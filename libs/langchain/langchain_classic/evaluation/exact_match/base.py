@@ -61,7 +61,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """Get the input keys.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["reference", "prediction"]
 
@@ -70,7 +70,7 @@ class ExactMatchStringEvaluator(StringEvaluator):
         """Get the evaluation name.
 
         Returns:
-            str: The evaluation name.
+            The evaluation name.
         """
         return "exact_match"
 

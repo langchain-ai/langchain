@@ -42,8 +42,8 @@ If a property is not present and is not required in the function parameters, do 
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -21,14 +21,16 @@ if TYPE_CHECKING:
 
     from langchain.tools.tool_node import ToolCallRequest
 
-# needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AIMessage, AnyMessage, ToolMessage  # noqa: TC002
+# Needed as top level import for Pydantic schema generation on AgentState
+from typing import TypeAlias
+
+from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -42,6 +44,7 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ModelRequest",
+    "ModelResponse",
     "OmitFromSchema",
     "PublicAgentState",
     "after_agent",
@@ -59,6 +62,18 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
+class _ModelRequestOverrides(TypedDict, total=False):
+    """Possible overrides for ModelRequest.override() method."""
+
+    model: BaseChatModel
+    system_prompt: str | None
+    messages: list[AnyMessage]
+    tool_choice: Any | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    model_settings: dict[str, Any]
+
+
 @dataclass
 class ModelRequest:
     """Model request information for the agent."""
@@ -72,6 +87,61 @@ class ModelRequest:
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+        """Replace the request with a new request with the given overrides.
+
+        Returns a new `ModelRequest` instance with the specified attributes replaced.
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override. Supported keys:
+                - model: BaseChatModel instance
+                - system_prompt: Optional system prompt string
+                - messages: List of messages
+                - tool_choice: Tool choice configuration
+                - tools: List of available tools
+                - response_format: Response format specification
+                - model_settings: Additional model settings
+
+        Returns:
+            New ModelRequest instance with specified overrides applied.
+
+        Examples:
+            ```python
+            # Create a new request with different model
+            new_request = request.override(model=different_model)
+
+            # Override multiple attributes
+            new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+            ```
+        """
+        return replace(self, **overrides)
+
+
+@dataclass
+class ModelResponse:
+    """Response from model execution including messages and optional structured output.
+
+    The result will usually contain a single AIMessage, but may include
+    an additional ToolMessage if the model used a tool for structured output.
+    """
+
+    result: list[BaseMessage]
+    """List of messages from model execution."""
+
+    structured_response: Any = None
+    """Parsed structured output if response_format was specified, None otherwise."""
+
+
+# Type alias for middleware return type - allows returning either full response or just AIMessage
+ModelCallResult: TypeAlias = "ModelResponse | AIMessage"
+"""Type alias for model call handler return value.
+
+Middleware can return either:
+- ModelResponse: Full response with messages and optional structured output
+- AIMessage: Simplified return for simple use cases
+"""
 
 
 @dataclass
@@ -167,23 +237,23 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
-        The handler callback executes the model request and returns an AIMessage.
+        The handler callback executes the model request and returns a ModelResponse.
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Callback that executes the model request and returns AIMessage.
+            handler: Callback that executes the model request and returns ModelResponse.
                      Call this to execute the model. Can be called multiple times
                      for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            Final AIMessage to use (from handler or custom).
+            ModelCallResult
 
         Examples:
             Retry on error:
@@ -200,8 +270,12 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             Rewrite response:
             ```python
             def wrap_model_call(self, request, handler):
-                result = handler(request)
-                return AIMessage(content=f"[{result.content}]")
+                response = handler(request)
+                ai_msg = response.result[0]
+                return ModelResponse(
+                    result=[AIMessage(content=f"[{ai_msg.content}]")],
+                    structured_response=response.structured_response,
+                )
             ```
 
             Error to fallback:
@@ -210,7 +284,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 try:
                     return handler(request)
                 except Exception:
-                    return AIMessage(content="Service unavailable")
+                    return ModelResponse(result=[AIMessage(content="Service unavailable")])
             ```
 
             Cache/short-circuit:
@@ -218,26 +292,51 @@ class AgentMiddleware(Generic[StateT, ContextT]):
             def wrap_model_call(self, request, handler):
                 if cached := get_cache(request):
                     return cached  # Short-circuit with cached result
-                result = handler(request)
-                save_cache(request, result)
-                return result
+                response = handler(request)
+                save_cache(request, response)
+                return response
+            ```
+
+            Simple AIMessage return (converted automatically):
+            ```python
+            def wrap_model_call(self, request, handler):
+                response = handler(request)
+                # Can return AIMessage directly for simple cases
+                return AIMessage(content="Simplified response")
             ```
         """
-        raise NotImplementedError
+        msg = (
+            "Synchronous implementation of wrap_model_call is not available. "
+            "You are likely encountering this error because you defined only the async version "
+            "(awrap_model_call) and invoked your agent in a synchronous context "
+            "(e.g., using `stream()` or `invoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the synchronous wrap_model_call method, "
+            "(2) use the @wrap_model_call decorator on a standalone sync function, or "
+            "(3) invoke your agent asynchronously using `astream()` or `ainvoke()`."
+        )
+        raise NotImplementedError(msg)
 
     async def awrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-    ) -> AIMessage:
-        """Async version of wrap_model_call.
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Intercept and control async model execution via handler callback.
+
+        The handler callback executes the model request and returns a ModelResponse.
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request.
+            handler: Async callback that executes the model request and returns ModelResponse.
+                     Call this to execute the model. Can be called multiple times
+                     for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            Final AIMessage to use (from handler or custom).
+            ModelCallResult
 
         Examples:
             Retry on error:
@@ -251,7 +350,17 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                             raise
             ```
         """
-        raise NotImplementedError
+        msg = (
+            "Asynchronous implementation of awrap_model_call is not available. "
+            "You are likely encountering this error because you defined only the sync version "
+            "(wrap_model_call) and invoked your agent in an asynchronous context "
+            "(e.g., using `astream()` or `ainvoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the asynchronous awrap_model_call method, "
+            "(2) use the @wrap_model_call decorator on a standalone async function, or "
+            "(3) invoke your agent synchronously using `stream()` or `invoke()`."
+        )
+        raise NotImplementedError(msg)
 
     def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
@@ -313,7 +422,77 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         continue
                     return result
         """
-        raise NotImplementedError
+        msg = (
+            "Synchronous implementation of wrap_tool_call is not available. "
+            "You are likely encountering this error because you defined only the async version "
+            "(awrap_tool_call) and invoked your agent in a synchronous context "
+            "(e.g., using `stream()` or `invoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the synchronous wrap_tool_call method, "
+            "(2) use the @wrap_tool_call decorator on a standalone sync function, or "
+            "(3) invoke your agent asynchronously using `astream()` or `ainvoke()`."
+        )
+        raise NotImplementedError(msg)
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
+        """Intercept and control async tool execution via handler callback.
+
+        The handler callback executes the tool call and returns a ToolMessage or Command.
+        Middleware can call the handler multiple times for retry logic, skip calling
+        it to short-circuit, or modify the request/response. Multiple middleware
+        compose with first in list as outermost layer.
+
+        Args:
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+                Access state via request.state and runtime via request.runtime.
+            handler: Async callable to execute the tool and returns ToolMessage or Command.
+                     Call this to execute the tool. Can be called multiple times
+                     for retry logic. Can skip calling it to short-circuit.
+
+        Returns:
+            ToolMessage or Command (the final result).
+
+        The handler callable can be invoked multiple times for retry logic.
+        Each call to handler is independent and stateless.
+
+        Examples:
+            Async retry on error:
+            ```python
+            async def awrap_tool_call(self, request, handler):
+                for attempt in range(3):
+                    try:
+                        result = await handler(request)
+                        if is_valid(result):
+                            return result
+                    except Exception:
+                        if attempt == 2:
+                            raise
+                return result
+            ```
+
+
+            async def awrap_tool_call(self, request, handler):
+                if cached := await get_cache_async(request):
+                    return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
+                result = await handler(request)
+                await save_cache_async(request, result)
+                return result
+        """
+        msg = (
+            "Asynchronous implementation of awrap_tool_call is not available. "
+            "You are likely encountering this error because you defined only the sync version "
+            "(wrap_tool_call) and invoked your agent in an asynchronous context "
+            "(e.g., using `astream()` or `ainvoke()`). "
+            "To resolve this, either: "
+            "(1) subclass AgentMiddleware and implement the asynchronous awrap_tool_call method, "
+            "(2) use the @wrap_tool_call decorator on a standalone async function, or "
+            "(3) invoke your agent synchronously using `stream()` or `invoke()`."
+        )
+        raise NotImplementedError(msg)
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
@@ -337,14 +516,14 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type
 class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
-    Receives handler callback to execute model and returns final AIMessage.
+    Receives handler callback to execute model and returns ModelResponse or AIMessage.
     """
 
     def __call__(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Intercept model execution via handler callback."""
         ...
 
@@ -1037,8 +1216,8 @@ def dynamic_prompt(
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-            ) -> AIMessage:
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> ModelCallResult:
                 prompt = await func(request)  # type: ignore[misc]
                 request.system_prompt = prompt
                 return await handler(request)
@@ -1058,11 +1237,21 @@ def dynamic_prompt(
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             prompt = cast("str", func(request))
             request.system_prompt = prompt
             return handler(request)
+
+        async def async_wrapped_from_sync(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+        ) -> ModelCallResult:
+            # Delegate to sync function
+            prompt = cast("str", func(request))
+            request.system_prompt = prompt
+            return await handler(request)
 
         middleware_name = cast("str", getattr(func, "__name__", "DynamicPromptMiddleware"))
 
@@ -1073,6 +1262,7 @@ def dynamic_prompt(
                 "state_schema": AgentState,
                 "tools": [],
                 "wrap_model_call": wrapped,
+                "awrap_model_call": async_wrapped_from_sync,
             },
         )()
 
@@ -1120,7 +1310,8 @@ def wrap_model_call(
 
     Args:
         func: Function accepting (request, handler) that calls handler(request)
-            to execute the model and returns final AIMessage. Request contains state and runtime.
+            to execute the model and returns ModelResponse or AIMessage.
+            Request contains state and runtime.
         state_schema: Custom state schema. Defaults to AgentState.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
@@ -1157,12 +1348,24 @@ def wrap_model_call(
             return handler(request)
         ```
 
-        Rewrite response content:
+        Rewrite response content (full ModelResponse):
         ```python
         @wrap_model_call
         def uppercase_responses(request, handler):
-            result = handler(request)
-            return AIMessage(content=result.content.upper())
+            response = handler(request)
+            ai_msg = response.result[0]
+            return ModelResponse(
+                result=[AIMessage(content=ai_msg.content.upper())],
+                structured_response=response.structured_response,
+            )
+        ```
+
+        Simple AIMessage return (converted automatically):
+        ```python
+        @wrap_model_call
+        def simple_response(request, handler):
+            # AIMessage is automatically converted to ModelResponse
+            return AIMessage(content="Simple response")
         ```
     """
 
@@ -1176,8 +1379,8 @@ def wrap_model_call(
             async def async_wrapped(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 request: ModelRequest,
-                handler: Callable[[ModelRequest], Awaitable[AIMessage]],
-            ) -> AIMessage:
+                handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+            ) -> ModelCallResult:
                 return await func(request, handler)  # type: ignore[misc, arg-type]
 
             middleware_name = name or cast(
@@ -1197,8 +1400,8 @@ def wrap_model_call(
         def wrapped(
             self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             return func(request, handler)
 
         middleware_name = name or cast("str", getattr(func, "__name__", "WrapModelCallMiddleware"))
@@ -1256,6 +1459,7 @@ def wrap_tool_call(
     Args:
         func: Function accepting (request, handler) that calls
             handler(request) to execute the tool and returns final ToolMessage or Command.
+            Can be sync or async.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
@@ -1263,13 +1467,6 @@ def wrap_tool_call(
         AgentMiddleware instance if func provided, otherwise a decorator.
 
     Examples:
-        Basic passthrough:
-        ```python
-        @wrap_tool_call
-        def passthrough(request, handler):
-            return handler(request)
-        ```
-
         Retry logic:
         ```python
         @wrap_tool_call
@@ -1280,6 +1477,18 @@ def wrap_tool_call(
                     return handler(request)
                 except Exception:
                     if attempt == max_retries - 1:
+                        raise
+        ```
+
+        Async retry logic:
+        ```python
+        @wrap_tool_call
+        async def async_retry(request, handler):
+            for attempt in range(3):
+                try:
+                    return await handler(request)
+                except Exception:
+                    if attempt == 2:
                         raise
         ```
 
@@ -1306,6 +1515,31 @@ def wrap_tool_call(
     def decorator(
         func: _CallableReturningToolResponse,
     ) -> AgentMiddleware:
+        is_async = iscoroutinefunction(func)
+
+        if is_async:
+
+            async def async_wrapped(
+                self: AgentMiddleware,  # noqa: ARG001
+                request: ToolCallRequest,
+                handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+            ) -> ToolMessage | Command:
+                return await func(request, handler)  # type: ignore[arg-type,misc]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "WrapToolCallMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": AgentState,
+                    "tools": tools or [],
+                    "awrap_tool_call": async_wrapped,
+                },
+            )()
+
         def wrapped(
             self: AgentMiddleware,  # noqa: ARG001
             request: ToolCallRequest,

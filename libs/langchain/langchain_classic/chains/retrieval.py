@@ -35,27 +35,26 @@ def create_retrieval_chain(
         least a `context` and `answer` key.
 
     Example:
-        .. code-block:: python
+        ```python
+        # pip install -U langchain langchain-community
 
-            # pip install -U langchain langchain-community
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.chains.combine_documents import (
+            create_stuff_documents_chain,
+        )
+        from langchain_classic.chains import create_retrieval_chain
+        from langchain_classic import hub
 
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.chains.combine_documents import (
-                create_stuff_documents_chain,
-            )
-            from langchain_classic.chains import create_retrieval_chain
-            from langchain_classic import hub
+        retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+        model = ChatOpenAI()
+        retriever = ...
+        combine_docs_chain = create_stuff_documents_chain(
+            model, retrieval_qa_chat_prompt
+        )
+        retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
-            retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-            llm = ChatOpenAI()
-            retriever = ...
-            combine_docs_chain = create_stuff_documents_chain(
-                llm, retrieval_qa_chat_prompt
-            )
-            retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
-
-            retrieval_chain.invoke({"input": "..."})
-
+        retrieval_chain.invoke({"input": "..."})
+        ```
     """
     if not isinstance(retriever, BaseRetriever):
         retrieval_docs: Runnable[dict, RetrieverOutput] = retriever

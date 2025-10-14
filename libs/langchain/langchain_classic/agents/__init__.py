@@ -5,28 +5,7 @@ a language model is used as a reasoning engine to determine which actions
 to take and in which order.
 
 Agents select and use **Tools** and **Toolkits** for actions.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseSingleActionAgent --> LLMSingleActionAgent
-                              OpenAIFunctionsAgent
-                              XMLAgent
-                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
-
-
-    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
-
-
-**Main helpers:**
-
-.. code-block::
-
-    AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
-    AgentAction, AgentFinish
-
-"""  # noqa: E501
+"""
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any

@@ -6,14 +6,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated, Literal
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.tools import InjectedToolCallId
 
 
@@ -120,7 +126,7 @@ def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCall
     )
 
 
-class PlanningMiddleware(AgentMiddleware):
+class TodoListMiddleware(AgentMiddleware):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -133,10 +139,10 @@ class PlanningMiddleware(AgentMiddleware):
 
     Example:
         ```python
-        from langchain.agents.middleware.planning import PlanningMiddleware
+        from langchain.agents.middleware.todo import TodoListMiddleware
         from langchain.agents import create_agent
 
-        agent = create_agent("openai:gpt-4o", middleware=[PlanningMiddleware()])
+        agent = create_agent("openai:gpt-4o", middleware=[TodoListMiddleware()])
 
         # Agent now has access to write_todos tool and todo state tracking
         result = await agent.invoke({"messages": [HumanMessage("Help me refactor my codebase")]})
@@ -146,9 +152,9 @@ class PlanningMiddleware(AgentMiddleware):
 
     Args:
         system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default ``WRITE_TODOS_SYSTEM_PROMPT``.
+            If not provided, uses the default `WRITE_TODOS_SYSTEM_PROMPT`.
         tool_description: Custom description for the write_todos tool.
-            If not provided, uses the default ``WRITE_TODOS_TOOL_DESCRIPTION``.
+            If not provided, uses the default `WRITE_TODOS_TOOL_DESCRIPTION`.
     """
 
     state_schema = PlanningState
@@ -159,7 +165,7 @@ class PlanningMiddleware(AgentMiddleware):
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
     ) -> None:
-        """Initialize the PlanningMiddleware with optional custom prompts.
+        """Initialize the TodoListMiddleware with optional custom prompts.
 
         Args:
             system_prompt: Custom system prompt to guide the agent on using the todo tool.
@@ -189,8 +195,8 @@ class PlanningMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (
             request.system_prompt + "\n\n" + self.system_prompt
@@ -198,3 +204,16 @@ class PlanningMiddleware(AgentMiddleware):
             else self.system_prompt
         )
         return handler(request)
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Update the system prompt to include the todo system prompt (async version)."""
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
+        return await handler(request)

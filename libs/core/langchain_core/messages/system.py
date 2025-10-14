@@ -13,25 +13,23 @@ class SystemMessage(BaseMessage):
     of input messages.
 
     Example:
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
 
-        .. code-block:: python
+        messages = [
+            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+            HumanMessage(content="What is your name?"),
+        ]
 
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                HumanMessage(content="What is your name?"),
-            ]
-
-            # Define a chat model and invoke it with the messages
-            print(model.invoke(messages))
-
+        # Define a chat model and invoke it with the messages
+        print(model.invoke(messages))
+        ```
     """
 
     type: Literal["system"] = "system"
     """The type of the message (used for serialization).
 
-    Defaults to ``'system'``.
+    Defaults to `'system'`.
 
     """
 
@@ -56,7 +54,7 @@ class SystemMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        """Specify `content` as positional arg or `content_blocks` for typing."""
         if content_blocks is not None:
             super().__init__(
                 content=cast("str | list[str | dict]", content_blocks),
@@ -75,6 +73,6 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for serialization).
 
-    Defaults to ``'SystemMessageChunk'``.
+    Defaults to `'SystemMessageChunk'`.
 
     """

@@ -29,15 +29,14 @@ class ElasticsearchDatabaseChain(Chain):
     """Chain for interacting with Elasticsearch Database.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import ElasticsearchDatabaseChain
+        from langchain_community.llms import OpenAI
+        from elasticsearch import Elasticsearch
 
-            from langchain_classic.chains import ElasticsearchDatabaseChain
-            from langchain_community.llms import OpenAI
-            from elasticsearch import Elasticsearch
-
-            database = Elasticsearch("http://localhost:9200")
-            db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
-
+        database = Elasticsearch("http://localhost:9200")
+        db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
+        ```
     """
 
     query_chain: Runnable
