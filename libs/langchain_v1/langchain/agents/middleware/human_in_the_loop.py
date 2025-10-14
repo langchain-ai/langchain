@@ -2,7 +2,8 @@
 
 from typing import Any, Literal, Protocol
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, RemoveMessage, ToolCall, ToolMessage
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
@@ -268,6 +269,42 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             f"Expected one of {allowed_decisions} based on the tool's configuration."
         )
         raise ValueError(msg)
+
+    def before_agent(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+        """Before the agent runs, handle dangling tool calls from the most recent AIMessage."""
+        messages = state["messages"]
+        if not messages or len(messages) == 0:
+            return None
+
+        patched_messages = []
+        # Iterate over the messages and add any dangling tool calls
+        for i, msg in enumerate(messages):
+            patched_messages.append(msg)
+            if msg.type == "ai" and msg.tool_calls:
+                for tool_call in msg.tool_calls:
+                    corresponding_tool_msg = next(
+                        (
+                            msg
+                            for msg in messages[i:]
+                            if msg.type == "tool" and msg.tool_call_id == tool_call["id"]
+                        ),
+                        None,
+                    )
+                    if corresponding_tool_msg is None:
+                        # We have a dangling tool call which needs a ToolMessage
+                        tool_msg = (
+                            f"Tool call {tool_call['name']} with id {tool_call['id']} was "
+                            "cancelled - another message came in before it could be completed."
+                        )
+                        patched_messages.append(
+                            ToolMessage(
+                                content=tool_msg,
+                                name=tool_call["name"],
+                                tool_call_id=tool_call["id"],
+                            )
+                        )
+
+        return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), *patched_messages]}
 
     def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         """Trigger interrupt flows for relevant tool calls after an AIMessage."""
