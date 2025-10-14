@@ -5,13 +5,13 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
+from langchain_core.retrievers import BaseRetriever, RetrieverOutputLike
 
 
 class MergerRetriever(BaseRetriever):
     """Retriever that merges the results of multiple retrievers."""
 
-    retrievers: list[BaseRetriever]
+    retrievers: list[BaseRetriever | RetrieverOutputLike]
     """A list of retrievers to merge."""
 
     def _get_relevant_documents(
@@ -65,13 +65,20 @@ class MergerRetriever(BaseRetriever):
             A list of merged documents.
         """
         # Get the results of all retrievers.
-        retriever_docs = [
-            retriever.invoke(
-                query,
-                config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
-            )
-            for i, retriever in enumerate(self.retrievers)
-        ]
+        retriever_docs = []
+        for i, retriever in enumerate(self.retrievers):
+            if isinstance(retriever, BaseRetriever):
+                docs = retriever.invoke(
+                    query,
+                    config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
+                )
+            else:
+                # Handle RetrieverOutputLike (Runnable)
+                docs = retriever.invoke(
+                    query,
+                    config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
+                )
+            retriever_docs.append(docs)
 
         # Merge the results of the retrievers.
         merged_documents = []
