@@ -47,8 +47,7 @@ class TestAsyncMiddlewareSupport:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        AnthropicPromptCachingMiddleware is None,
-        reason="langchain_anthropic not installed"
+        AnthropicPromptCachingMiddleware is None, reason="langchain_anthropic not installed"
     )
     async def test_anthropic_caching_middleware_async(self) -> None:
         """Test that AnthropicPromptCachingMiddleware.awrap_model_call works correctly."""
@@ -172,8 +171,10 @@ def test_all_middleware_have_awrap_model_call() -> None:
         # Check it's not the base class implementation
         caching_method = getattr(caching_middleware.__class__, "awrap_model_call")
         # Updated module check since it moved to langchain_anthropic
-        assert ("anthropic" in caching_method.__module__ or
-                "prompt_caching" in caching_method.__module__)
+        assert (
+            "anthropic" in caching_method.__module__
+            or "prompt_caching" in caching_method.__module__
+        )
 
     # Test ModelFallbackMiddleware
     fallback_middleware = ModelFallbackMiddleware(MagicMock())
