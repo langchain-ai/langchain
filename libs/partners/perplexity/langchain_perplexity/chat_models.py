@@ -28,7 +28,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata, subtract_usage
+from langchain_core.messages.ai import (
+    UsageMetadata,
+    subtract_usage,
+)
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -52,10 +55,16 @@ def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
-    return UsageMetadata(
+    citation_tokens = token_usage.get("citation_tokens", 0)
+    num_search_queries = token_usage.get("num_search_queries", 0)
+    reasoning_tokens = token_usage.get("reasoning_tokens", 0)
+    return UsageMetadata(  # type: ignore[typeddict-unknown-key]
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        citation_tokens=citation_tokens,
+        num_search_queries=num_search_queries,
+        reasoning_tokens=reasoning_tokens,
     )
 
 
