@@ -132,7 +132,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "codspeed":
         py_versions = ["3.12"]  # 3.13 is not yet supported
     elif dir_ == "libs/core":
-        py_versions = ["3.10", "3.11", "3.12", "3.13"]
+        py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     # custom logic for specific directories
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
