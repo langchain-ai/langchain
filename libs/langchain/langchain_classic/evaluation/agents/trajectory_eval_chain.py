@@ -113,10 +113,10 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         \"\"\"Very helpful answers to geography questions.\"\"\"
         return f"{country}? IDK - We may never know {question}."
 
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
     agent = initialize_agent(
         tools=[geography_answers],
-        llm=llm,
+        llm=model,
         agent=AgentType.OPENAI_FUNCTIONS,
         return_intermediate_steps=True,
     )
@@ -125,7 +125,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     response = agent(question)
 
     eval_chain = TrajectoryEvalChain.from_llm(
-        llm=llm, agent_tools=[geography_answers], return_reasoning=True
+        llm=model, agent_tools=[geography_answers], return_reasoning=True
     )
 
     result = eval_chain.evaluate_agent_trajectory(
@@ -165,7 +165,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         """Get the description of the agent tools.
 
         Returns:
-            str: The description of the agent tools.
+            The description of the agent tools.
         """
         if self.agent_tools is None:
             return ""
@@ -184,10 +184,10 @@ Description: {tool.description}"""
         """Get the agent trajectory as a formatted string.
 
         Args:
-            steps (Union[str, List[Tuple[AgentAction, str]]]): The agent trajectory.
+            steps: The agent trajectory.
 
         Returns:
-            str: The formatted agent trajectory.
+            The formatted agent trajectory.
         """
         if isinstance(steps, str):
             return steps
@@ -240,7 +240,7 @@ The following is the expected answer. Use this to measure correctness:
             **kwargs: Additional keyword arguments.
 
         Returns:
-            TrajectoryEvalChain: The TrajectoryEvalChain object.
+            The `TrajectoryEvalChain` object.
         """
         if not isinstance(llm, BaseChatModel):
             msg = "Only chat models supported by the current trajectory eval"
@@ -259,7 +259,7 @@ The following is the expected answer. Use this to measure correctness:
         """Get the input keys for the chain.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["question", "agent_trajectory", "answer", "reference"]
 
@@ -268,7 +268,7 @@ The following is the expected answer. Use this to measure correctness:
         """Get the output keys for the chain.
 
         Returns:
-            List[str]: The output keys.
+            The output keys.
         """
         return ["score", "reasoning"]
 
@@ -289,7 +289,7 @@ The following is the expected answer. Use this to measure correctness:
             run_manager: The callback manager for the chain run.
 
         Returns:
-            Dict[str, Any]: The output values of the chain.
+            The output values of the chain.
         """
         chain_input = {**inputs}
         if self.agent_tools:
@@ -313,7 +313,7 @@ The following is the expected answer. Use this to measure correctness:
             run_manager: The callback manager for the chain run.
 
         Returns:
-            Dict[str, Any]: The output values of the chain.
+            The output values of the chain.
         """
         chain_input = {**inputs}
         if self.agent_tools:

@@ -982,8 +982,7 @@ def _run_llm_or_chain(
         input_mapper: Optional function to map the input to the expected format.
 
     Returns:
-        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-          The outputs of the model or chain.
+        The outputs of the model or chain.
     """
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
@@ -1396,9 +1395,9 @@ async def arun_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain
@@ -1571,9 +1570,9 @@ def run_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain

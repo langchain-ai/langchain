@@ -827,10 +827,10 @@ class ChatMistralAI(BaseChatModel):
                 )
 
 
-            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -853,12 +853,12 @@ class ChatMistralAI(BaseChatModel):
                 justification: str
 
 
-            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -884,10 +884,10 @@ class ChatMistralAI(BaseChatModel):
                 ]
 
 
-            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -912,10 +912,10 @@ class ChatMistralAI(BaseChatModel):
                     'required': ['answer']
                 }
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(oai_schema)
+                model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_model = model.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
+                structured_model.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
                 )
                 # -> {
@@ -935,12 +935,12 @@ class ChatMistralAI(BaseChatModel):
                 justification: str
 
 
-            llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatMistralAI(model="mistral-large-latest", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -954,11 +954,11 @@ class ChatMistralAI(BaseChatModel):
 
         Example: schema=None, method="json_mode", include_raw=True:
             ```python
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"

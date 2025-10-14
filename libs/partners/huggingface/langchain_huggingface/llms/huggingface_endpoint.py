@@ -36,7 +36,7 @@ class HuggingFaceEndpoint(LLM):
     Example:
         ```python
         # Basic Example (no streaming)
-        llm = HuggingFaceEndpoint(
+        model = HuggingFaceEndpoint(
             endpoint_url="http://localhost:8010/",
             max_new_tokens=512,
             top_k=10,
@@ -46,13 +46,13 @@ class HuggingFaceEndpoint(LLM):
             repetition_penalty=1.03,
             huggingfacehub_api_token="my-api-key",
         )
-        print(llm.invoke("What is Deep Learning?"))
+        print(model.invoke("What is Deep Learning?"))
 
         # Streaming response example
         from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
         callbacks = [StreamingStdOutCallbackHandler()]
-        llm = HuggingFaceEndpoint(
+        model = HuggingFaceEndpoint(
             endpoint_url="http://localhost:8010/",
             max_new_tokens=512,
             top_k=10,
@@ -64,17 +64,17 @@ class HuggingFaceEndpoint(LLM):
             streaming=True,
             huggingfacehub_api_token="my-api-key",
         )
-        print(llm.invoke("What is Deep Learning?"))
+        print(model.invoke("What is Deep Learning?"))
 
         # Basic Example (no streaming) with Mistral-Nemo-Base-2407 model using a third-party provider (Novita).
-        llm = HuggingFaceEndpoint(
+        model = HuggingFaceEndpoint(
             repo_id="mistralai/Mistral-Nemo-Base-2407",
             provider="novita",
             max_new_tokens=100,
             do_sample=False,
             huggingfacehub_api_token="my-api-key",
         )
-        print(llm.invoke("What is Deep Learning?"))
+        print(model.invoke("What is Deep Learning?"))
         ```
     """  # noqa: E501
 

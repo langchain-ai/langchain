@@ -84,8 +84,8 @@ class NatBotChain(Chain):
         """Load with default LLMChain."""
         msg = (
             "This method is no longer implemented. Please use from_llm."
-            "llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
-            "For example, NatBotChain.from_llm(llm, objective)"
+            "model = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
+            "For example, NatBotChain.from_llm(model, objective)"
         )
         raise NotImplementedError(msg)
 

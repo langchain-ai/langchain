@@ -152,11 +152,11 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
         priority: Email priority level (`'low'`, `'normal'`, `'high'`).
 
     Returns:
-        True if email was sent successfully, False otherwise.
+        `True` if email was sent successfully, `False` otherwise.
 
     Raises:
-        InvalidEmailError: If the email address format is invalid.
-        SMTPConnectionError: If unable to connect to email server.
+        `InvalidEmailError`: If the email address format is invalid.
+        `SMTPConnectionError`: If unable to connect to email server.
     """
 ```
 

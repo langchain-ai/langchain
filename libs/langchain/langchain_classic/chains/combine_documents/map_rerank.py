@@ -42,7 +42,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         from langchain_classic.output_parsers.regex import RegexParser
 
         document_variable_name = "context"
-        llm = OpenAI()
+        model = OpenAI()
         # The prompt here should take as an input variable the
         # `document_variable_name`
         # The actual prompt will need to be a lot more complex, this is just
@@ -61,7 +61,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             input_variables=["context"],
             output_parser=output_parser,
         )
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=model, prompt=prompt)
         chain = MapRerankDocumentsChain(
             llm_chain=llm_chain,
             document_variable_name=document_variable_name,

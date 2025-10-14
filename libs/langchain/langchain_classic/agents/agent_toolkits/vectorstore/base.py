@@ -58,7 +58,7 @@ def create_vectorstore_agent(
         from langchain_openai import ChatOpenAI, OpenAIEmbeddings
         from langgraph.prebuilt import create_react_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         vector_store = InMemoryVectorStore.from_texts(
             [
@@ -74,7 +74,7 @@ def create_vectorstore_agent(
             "Fetches information about pets.",
         )
 
-        agent = create_react_agent(llm, [tool])
+        agent = create_react_agent(model, [tool])
 
         for step in agent.stream(
             {"messages": [("human", "What are dogs known for?")]},
@@ -86,7 +86,7 @@ def create_vectorstore_agent(
     Args:
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent
-        callback_manager: Object to handle the callback [ Defaults to `None`. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the agent. If not provided uses default PREFIX.
         verbose: If you want to see the content of the scratchpad.
             [ Defaults to `False` ]
@@ -156,7 +156,7 @@ def create_vectorstore_router_agent(
         from langchain_openai import ChatOpenAI, OpenAIEmbeddings
         from langgraph.prebuilt import create_react_agent
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         pet_vector_store = InMemoryVectorStore.from_texts(
             [
@@ -187,7 +187,7 @@ def create_vectorstore_router_agent(
             ),
         ]
 
-        agent = create_react_agent(llm, tools)
+        agent = create_react_agent(model, tools)
 
         for step in agent.stream(
             {"messages": [("human", "Tell me about carrots.")]},
@@ -200,7 +200,7 @@ def create_vectorstore_router_agent(
         llm: LLM that will be used by the agent
         toolkit: Set of tools for the agent which have routing capability with multiple
             vector stores
-        callback_manager: Object to handle the callback [ Defaults to `None`. ]
+        callback_manager: Object to handle the callback
         prefix: The prefix prompt for the router agent.
             If not provided uses default ROUTER_PREFIX.
         verbose: If you want to see the content of the scratchpad.

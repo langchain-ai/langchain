@@ -47,9 +47,9 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-        chain = RunnableWithMessageHistory(llm, get_session_history)
+        chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(
             "Hi I'm Bob.",
             config={"configurable": {"session_id": "1"}},
@@ -85,9 +85,9 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-        chain = RunnableWithMessageHistory(llm, get_session_history)
+        chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(
             "Hi I'm Bob.",
             config={"configurable": {"session_id": "1"}},

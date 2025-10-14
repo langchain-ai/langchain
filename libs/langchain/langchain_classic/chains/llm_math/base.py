@@ -84,9 +84,9 @@ class LLMMathChain(Chain):
                     )
                 )
 
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
             tools = [calculator]
-            llm_with_tools = llm.bind_tools(tools, tool_choice="any")
+            model_with_tools = model.bind_tools(tools, tool_choice="any")
 
             class ChainState(TypedDict):
                 \"\"\"LangGraph state.\"\"\"
@@ -95,11 +95,11 @@ class LLMMathChain(Chain):
 
             async def acall_chain(state: ChainState, config: RunnableConfig):
                 last_message = state["messages"][-1]
-                response = await llm_with_tools.ainvoke(state["messages"], config)
+                response = await model_with_tools.ainvoke(state["messages"], config)
                 return {"messages": [response]}
 
             async def acall_model(state: ChainState, config: RunnableConfig):
-                response = await llm.ainvoke(state["messages"], config)
+                response = await model.ainvoke(state["messages"], config)
                 return {"messages": [response]}
 
             graph_builder = StateGraph(ChainState)

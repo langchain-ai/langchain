@@ -52,7 +52,7 @@ def is_uuid(value: str) -> bool:
         value: The string to check.
 
     Returns:
-        True if the string is a valid UUID, False otherwise.
+        `True` if the string is a valid UUID, `False` otherwise.
     """
     try:
         UUID(value)
@@ -69,7 +69,7 @@ class Edge(NamedTuple):
     target: str
     """The target node id."""
     data: Stringifiable | None = None
-    """Optional data associated with the edge. Defaults to `None`."""
+    """Optional data associated with the edge. """
     conditional: bool = False
     """Whether the edge is conditional. Defaults to `False`."""
 
@@ -77,8 +77,8 @@ class Edge(NamedTuple):
         """Return a copy of the edge with optional new source and target nodes.
 
         Args:
-            source: The new source node id. Defaults to `None`.
-            target: The new target node id. Defaults to `None`.
+            source: The new source node id.
+            target: The new target node id.
 
         Returns:
             A copy of the edge with the new source and target nodes.
@@ -101,7 +101,7 @@ class Node(NamedTuple):
     data: type[BaseModel] | RunnableType | None
     """The data of the node."""
     metadata: dict[str, Any] | None
-    """Optional metadata for the node. Defaults to `None`."""
+    """Optional metadata for the node. """
 
     def copy(
         self,
@@ -112,8 +112,8 @@ class Node(NamedTuple):
         """Return a copy of the node with optional new id and name.
 
         Args:
-            id: The new node id. Defaults to `None`.
-            name: The new node name. Defaults to `None`.
+            id: The new node id.
+            name: The new node name.
 
         Returns:
             A copy of the node with the new id and name.
@@ -132,7 +132,7 @@ class Branch(NamedTuple):
     condition: Callable[..., str]
     """A callable that returns a string representation of the condition."""
     ends: dict[str, str] | None
-    """Optional dictionary of end node ids for the branches. Defaults to `None`."""
+    """Optional dictionary of end node ids for the branches. """
 
 
 class CurveStyle(Enum):
@@ -321,8 +321,8 @@ class Graph:
 
         Args:
             data: The data of the node.
-            id: The id of the node. Defaults to `None`.
-            metadata: Optional metadata for the node. Defaults to `None`.
+            id: The id of the node.
+            metadata: Optional metadata for the node.
 
         Returns:
             The node that was added to the graph.
@@ -361,7 +361,7 @@ class Graph:
         Args:
             source: The source node of the edge.
             target: The target node of the edge.
-            data: Optional data associated with the edge. Defaults to `None`.
+            data: Optional data associated with the edge.
             conditional: Whether the edge is conditional. Defaults to `False`.
 
         Returns:
@@ -549,8 +549,8 @@ class Graph:
 
         Args:
             output_file_path: The path to save the image to. If `None`, the image
-                is not saved. Defaults to `None`.
-            fontname: The name of the font to use. Defaults to `None`.
+                is not saved.
+            fontname: The name of the font to use.
             labels: Optional labels for nodes and edges in the graph. Defaults to
                 `None`.
 
@@ -592,7 +592,7 @@ class Graph:
                 Defaults to 9.
             frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
-                added to the beginning of the mermaid graph. Defaults to `None`.
+                added to the beginning of the mermaid graph.
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -652,7 +652,7 @@ class Graph:
             wrap_label_n_words: The number of words to wrap the node labels at.
                 Defaults to 9.
             output_file_path: The path to save the image to. If `None`, the image
-                is not saved. Defaults to `None`.
+                is not saved.
             draw_method: The method to use to draw the graph.
                 Defaults to MermaidDrawMethod.API.
             background_color: The color of the background. Defaults to "white".
@@ -663,7 +663,7 @@ class Graph:
                 Defaults to 1.0.
             frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
-                added to the beginning of the mermaid graph. Defaults to `None`.
+                added to the beginning of the mermaid graph.
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -679,7 +679,7 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-                Defaults to `None`.
+
 
         Returns:
             The PNG image as bytes.

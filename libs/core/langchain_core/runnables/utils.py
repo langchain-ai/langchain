@@ -80,7 +80,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        True if the callable accepts a run_manager argument, False otherwise.
+        `True` if the callable accepts a run_manager argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("run_manager") is not None
@@ -95,7 +95,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        True if the callable accepts a config argument, False otherwise.
+        `True` if the callable accepts a config argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("config") is not None
@@ -110,7 +110,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        True if the callable accepts a context argument, False otherwise.
+        `True` if the callable accepts a context argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("context") is not None
@@ -123,7 +123,7 @@ def asyncio_accepts_context() -> bool:
     """Cache the result of checking if asyncio.create_task accepts a `context` arg.
 
     Returns:
-        True if `asyncio.create_task` accepts a context argument, False otherwise.
+        True if `asyncio.create_task` accepts a context argument, `False` otherwise.
     """
     return accepts_context(asyncio.create_task)
 
@@ -552,11 +552,11 @@ class ConfigurableField(NamedTuple):
     id: str
     """The unique identifier of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     annotation: Any | None = None
-    """The annotation of the field. Defaults to `None`."""
+    """The annotation of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -575,9 +575,9 @@ class ConfigurableFieldSingleOption(NamedTuple):
     default: str
     """The default value for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -596,9 +596,9 @@ class ConfigurableFieldMultiOption(NamedTuple):
     default: Sequence[str]
     """The default values for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
 
@@ -620,15 +620,15 @@ class ConfigurableFieldSpec(NamedTuple):
     annotation: Any
     """The annotation of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     default: Any = None
-    """The default value for the field. Defaults to `None`."""
+    """The default value for the field. """
     is_shared: bool = False
     """Whether the field is shared. Defaults to `False`."""
     dependencies: list[str] | None = None
-    """The dependencies of the field. Defaults to `None`."""
+    """The dependencies of the field. """
 
 
 def get_unique_config_specs(
@@ -727,7 +727,7 @@ def is_async_generator(
         func: The function to check.
 
     Returns:
-        True if the function is an async generator, False otherwise.
+        `True` if the function is an async generator, `False` otherwise.
     """
     return inspect.isasyncgenfunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
@@ -744,7 +744,7 @@ def is_async_callable(
         func: The function to check.
 
     Returns:
-        True if the function is async, False otherwise.
+        `True` if the function is async, `False` otherwise.
     """
     return asyncio.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004

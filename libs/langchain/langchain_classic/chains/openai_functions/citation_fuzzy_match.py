@@ -83,12 +83,12 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
         from langchain_classic.chains import create_citation_fuzzy_match_runnable
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        model = ChatOpenAI(model="gpt-4o-mini")
 
         context = "Alice has blue eyes. Bob has brown eyes. Charlie has green eyes."
         question = "What color are Bob's eyes?"
 
-        chain = create_citation_fuzzy_match_runnable(llm)
+        chain = create_citation_fuzzy_match_runnable(model)
         chain.invoke({"question": question, "context": context})
         ```
 

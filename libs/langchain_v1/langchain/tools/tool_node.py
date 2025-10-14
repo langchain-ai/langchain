@@ -38,7 +38,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
 from dataclasses import dataclass, replace
 from types import UnionType
@@ -72,6 +72,7 @@ from langchain_core.tools import BaseTool, InjectedToolArg
 from langchain_core.tools import tool as create_tool
 from langchain_core.tools.base import (
     TOOL_MESSAGE_BLOCK_TYPES,
+    ToolException,
     get_all_basemodel_annotations,
 )
 from langgraph._internal._runnable import RunnableCallable
@@ -80,6 +81,7 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import get_runtime
 from langgraph.types import Command, Send
 from pydantic import BaseModel, ValidationError
+from typing_extensions import Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -103,6 +105,12 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
 )
 
 
+class _ToolCallRequestOverrides(TypedDict, total=False):
+    """Possible overrides for ToolCallRequest.override() method."""
+
+    tool_call: ToolCall
+
+
 @dataclass()
 class ToolCallRequest:
     """Tool execution request passed to tool call interceptors.
@@ -119,14 +127,39 @@ class ToolCallRequest:
     state: Any
     runtime: Any
 
+    def override(self, **overrides: Unpack[_ToolCallRequestOverrides]) -> ToolCallRequest:
+        """Replace the request with a new request with the given overrides.
 
-ToolCallHandler = Callable[
+        Returns a new `ToolCallRequest` instance with the specified attributes replaced.
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override. Supported keys:
+                - tool_call: Tool call dict with name, args, and id
+
+        Returns:
+            New ToolCallRequest instance with specified overrides applied.
+
+        Examples:
+            ```python
+            # Modify tool call arguments without mutating original
+            modified_call = {**request.tool_call, "args": {"value": 10}}
+            new_request = request.override(tool_call=modified_call)
+
+            # Override multiple attributes
+            new_request = request.override(tool_call=modified_call, state=new_state)
+            ```
+        """
+        return replace(self, **overrides)
+
+
+ToolCallWrapper = Callable[
     [ToolCallRequest, Callable[[ToolCallRequest], ToolMessage | Command]],
     ToolMessage | Command,
 ]
-"""Handler-based tool call interceptor with multi-call support.
+"""Wrapper for tool call execution with multi-call support.
 
-Handler receives:
+Wrapper receives:
     request: ToolCallRequest with tool_call, tool, state, and runtime.
     execute: Callable to execute the tool (CAN BE CALLED MULTIPLE TIMES).
 
@@ -188,6 +221,12 @@ Examples:
         return result
 """
 
+AsyncToolCallWrapper = Callable[
+    [ToolCallRequest, Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]]],
+    Awaitable[ToolMessage | Command],
+]
+"""Async wrapper for tool call execution with multi-call support."""
+
 
 class ToolCallWithContext(TypedDict):
     """ToolCall with additional context for graph state.
@@ -239,8 +278,11 @@ def msg_content_output(output: Any) -> str | list[dict]:
         return str(output)
 
 
-class ToolInvocationError(Exception):
-    """Exception raised when a tool invocation fails due to invalid arguments."""
+class ToolInvocationError(ToolException):
+    """An error occurred while invoking a tool due to invalid arguments.
+
+    This exception is only raised when invoking a tool using the ToolNode!
+    """
 
     def __init__(
         self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
@@ -382,7 +424,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
     return (Exception,)
 
 
-class ToolNode(RunnableCallable):
+class _ToolNode(RunnableCallable):
     """A node for executing tools in LangGraph workflows.
 
     Handles tool execution patterns including function calls, state injection,
@@ -499,7 +541,8 @@ class ToolNode(RunnableCallable):
         | type[Exception]
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
-        on_tool_call: ToolCallHandler | None = None,
+        wrap_tool_call: ToolCallWrapper | None = None,
+        awrap_tool_call: AsyncToolCallWrapper | None = None,
     ) -> None:
         """Initialize ToolNode with tools and configuration.
 
@@ -509,10 +552,11 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
-            on_tool_call: Generator handler to intercept tool execution. Receives
-                ToolCallRequest, yields requests, messages, or Commands; receives
-                ToolMessage or Command via .send(). Final result is last value sent to
-                handler. Enables retries, caching, request modification, and control flow.
+            wrap_tool_call: Sync wrapper function to intercept tool execution. Receives
+                ToolCallRequest and execute callable, returns ToolMessage or Command.
+                Enables retries, caching, request modification, and control flow.
+            awrap_tool_call: Async wrapper function to intercept tool execution.
+                If not provided, falls back to wrap_tool_call for async execution.
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -520,7 +564,8 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
-        self._on_tool_call = on_tool_call
+        self._wrap_tool_call = wrap_tool_call
+        self._awrap_tool_call = awrap_tool_call
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -714,7 +759,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call with on_tool_call handler if configured.
+        """Execute single tool call with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -742,8 +787,8 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._on_tool_call is None:
-            # No handler - execute directly
+        if self._wrap_tool_call is None:
+            # No wrapper - execute directly
             return self._execute_tool_sync(tool_request, input_type, config)
 
         # Define execute callable that can be called multiple times
@@ -751,11 +796,11 @@ class ToolNode(RunnableCallable):
             """Execute tool with given request. Can be called multiple times."""
             return self._execute_tool_sync(req, input_type, config)
 
-        # Call handler with request and execute callable
+        # Call wrapper with request and execute callable
         try:
-            return self._on_tool_call(tool_request, execute)
+            return self._wrap_tool_call(tool_request, execute)
         except Exception as e:
-            # Handler threw an exception
+            # Wrapper threw an exception
             if not self._handle_tool_errors:
                 raise
             # Convert to error message
@@ -856,7 +901,7 @@ class ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         runtime: Any,
     ) -> ToolMessage | Command:
-        """Execute single tool call asynchronously with on_tool_call handler if configured.
+        """Execute single tool call asynchronously with awrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
@@ -884,8 +929,8 @@ class ToolNode(RunnableCallable):
             runtime=runtime,
         )
 
-        if self._on_tool_call is None:
-            # No handler - execute directly
+        if self._awrap_tool_call is None and self._wrap_tool_call is None:
+            # No wrapper - execute directly
             return await self._execute_tool_async(tool_request, input_type, config)
 
         # Define async execute callable that can be called multiple times
@@ -893,14 +938,19 @@ class ToolNode(RunnableCallable):
             """Execute tool with given request. Can be called multiple times."""
             return await self._execute_tool_async(req, input_type, config)
 
-        # Call handler with request and execute callable
-        # Note: handler is sync, but execute callable is async
+        def _sync_execute(req: ToolCallRequest) -> ToolMessage | Command:
+            """Sync execute fallback for sync wrapper."""
+            return self._execute_tool_sync(req, input_type, config)
+
+        # Call wrapper with request and execute callable
         try:
-            result = self._on_tool_call(tool_request, execute)  # type: ignore[arg-type]
-            # If result is a coroutine, await it (though handler should be sync)
-            return await result if hasattr(result, "__await__") else result
+            if self._awrap_tool_call is not None:
+                return await self._awrap_tool_call(tool_request, execute)
+            # None check was performed above already
+            self._wrap_tool_call = cast("ToolCallWrapper", self._wrap_tool_call)
+            return self._wrap_tool_call(tool_request, _sync_execute)
         except Exception as e:
-            # Handler threw an exception
+            # Wrapper threw an exception
             if not self._handle_tool_errors:
                 raise
             # Convert to error message
@@ -972,7 +1022,7 @@ class ToolNode(RunnableCallable):
             input: The input which may be raw state or ToolCallWithContext.
 
         Returns:
-            The actual state to pass to on_tool_call handlers.
+            The actual state to pass to wrap_tool_call wrappers.
         """
         if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
             return input["state"]

@@ -58,7 +58,7 @@ class ConstitutionalChain(Chain):
         from langgraph.graph import END, START, StateGraph
         from typing_extensions import Annotated, TypedDict
 
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        model = ChatOpenAI(model="gpt-4o-mini")
 
         class Critique(TypedDict):
             """Generate a critique, if needed."""
@@ -86,9 +86,9 @@ class ConstitutionalChain(Chain):
             "Revision Request: {revision_request}"
         )
 
-        chain = llm | StrOutputParser()
-        critique_chain = critique_prompt | llm.with_structured_output(Critique)
-        revision_chain = revision_prompt | llm | StrOutputParser()
+        chain = model | StrOutputParser()
+        critique_chain = critique_prompt | model.with_structured_output(Critique)
+        revision_chain = revision_prompt | model | StrOutputParser()
 
 
         class State(TypedDict):
@@ -170,16 +170,16 @@ class ConstitutionalChain(Chain):
         from langchain_classic.chains.constitutional_ai.models \
             import ConstitutionalPrinciple
 
-        llm = OpenAI()
+        llmodelm = OpenAI()
 
         qa_prompt = PromptTemplate(
             template="Q: {question} A:",
             input_variables=["question"],
         )
-        qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
+        qa_chain = LLMChain(llm=model, prompt=qa_prompt)
 
         constitutional_chain = ConstitutionalChain.from_llm(
-            llm=llm,
+            llm=model,
             chain=qa_chain,
             constitutional_principles=[
                 ConstitutionalPrinciple(

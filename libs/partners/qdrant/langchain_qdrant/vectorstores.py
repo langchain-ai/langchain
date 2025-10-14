@@ -238,7 +238,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -293,7 +293,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -319,7 +319,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -377,7 +377,7 @@ class Qdrant(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -436,7 +436,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -495,7 +495,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -554,7 +554,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -643,7 +643,7 @@ class Qdrant(VectorStore):
         Args:
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             offset:
                 Offset of the first result to return.
@@ -745,7 +745,7 @@ class Qdrant(VectorStore):
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding to maximum diversity
                 and 1 to minimum diversity.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -810,7 +810,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -875,7 +875,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -940,7 +940,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -1007,7 +1007,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
                 Define a minimal score threshold for the result.
@@ -1099,7 +1099,7 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to `None`.
+            filter: Filter by metadata.
             search_params: Additional search params.
             score_threshold: Define a minimal score threshold for the result.
             consistency: Read consistency of the search.
@@ -1161,7 +1161,7 @@ class Qdrant(VectorStore):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise.
+            True if deletion is successful, `False` otherwise.
 
         """
         result = self.client.delete(
@@ -1179,7 +1179,7 @@ class Qdrant(VectorStore):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise.
+            True if deletion is successful, `False` otherwise.
 
         """
         if self.async_client is None or isinstance(

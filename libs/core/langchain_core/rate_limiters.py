@@ -44,7 +44,7 @@ class BaseRateLimiter(abc.ABC):
                 the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
     @abc.abstractmethod
@@ -63,7 +63,7 @@ class BaseRateLimiter(abc.ABC):
                 the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
 
@@ -210,7 +210,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()
@@ -234,7 +234,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()

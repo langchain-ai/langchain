@@ -314,7 +314,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_metadata: Metadata to associate with new run.
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
-            config: Runnable config. Defaults to `None`.
+            config: Runnable config.
             **kwargs: Additional arguments.
 
         Returns:
@@ -446,7 +446,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 max_completion_tokens: Allow setting max_completion_tokens for this run.
                 max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config. Defaults to `None`.
+            config: Runnable config.
             kwargs: Additional arguments.
 
         Returns:

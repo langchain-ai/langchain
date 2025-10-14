@@ -7,7 +7,6 @@ the backbone of a retriever, but there are other types of retrievers as well.
 
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any
@@ -15,8 +14,6 @@ from typing import TYPE_CHECKING, Any
 from pydantic import ConfigDict
 from typing_extensions import Self, TypedDict, override
 
-from langchain_core._api import deprecated
-from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.documents import Document
 from langchain_core.runnables import (
@@ -121,14 +118,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
     tags: list[str] | None = None
-    """Optional list of tags associated with the retriever. Defaults to `None`.
+    """Optional list of tags associated with the retriever.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the retriever. Defaults to `None`.
+    """Optional metadata associated with the retriever.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its
@@ -138,35 +135,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        # Version upgrade for old retrievers that implemented the public
-        # methods directly.
-        if cls.get_relevant_documents != BaseRetriever.get_relevant_documents:
-            warnings.warn(
-                "Retrievers must implement abstract `_get_relevant_documents` method"
-                " instead of `get_relevant_documents`",
-                DeprecationWarning,
-                stacklevel=4,
-            )
-            swap = cls.get_relevant_documents
-            cls.get_relevant_documents = (  # type: ignore[method-assign]
-                BaseRetriever.get_relevant_documents
-            )
-            cls._get_relevant_documents = swap  # type: ignore[method-assign]
-        if (
-            hasattr(cls, "aget_relevant_documents")
-            and cls.aget_relevant_documents != BaseRetriever.aget_relevant_documents
-        ):
-            warnings.warn(
-                "Retrievers must implement abstract `_aget_relevant_documents` method"
-                " instead of `aget_relevant_documents`",
-                DeprecationWarning,
-                stacklevel=4,
-            )
-            aswap = cls.aget_relevant_documents
-            cls.aget_relevant_documents = (  # type: ignore[method-assign]
-                BaseRetriever.aget_relevant_documents
-            )
-            cls._aget_relevant_documents = aswap  # type: ignore[method-assign]
         parameters = signature(cls._get_relevant_documents).parameters
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
@@ -207,7 +175,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
+            config: Configuration for the retriever.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
@@ -268,7 +236,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
         Args:
             input: The query string.
-            config: Configuration for the retriever. Defaults to `None`.
+            config: Configuration for the retriever.
             **kwargs: Additional arguments to pass to the retriever.
 
         Returns:
@@ -348,91 +316,3 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             query,
             run_manager=run_manager.get_sync(),
         )
-
-    @deprecated(since="0.1.46", alternative="invoke", removal="1.0")
-    def get_relevant_documents(
-        self,
-        query: str,
-        *,
-        callbacks: Callbacks = None,
-        tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        run_name: str | None = None,
-        **kwargs: Any,
-    ) -> list[Document]:
-        """Retrieve documents relevant to a query.
-
-        Users should favor using `.invoke` or `.batch` rather than
-        `get_relevant_documents directly`.
-
-        Args:
-            query: string to find relevant documents for.
-            callbacks: Callback manager or list of callbacks. Defaults to `None`.
-            tags: Optional list of tags associated with the retriever.
-                These tags will be associated with each call to this retriever,
-                and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            metadata: Optional metadata associated with the retriever.
-                This metadata will be associated with each call to this retriever,
-                and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
-            **kwargs: Additional arguments to pass to the retriever.
-
-        Returns:
-            List of relevant documents.
-        """
-        config: RunnableConfig = {}
-        if callbacks:
-            config["callbacks"] = callbacks
-        if tags:
-            config["tags"] = tags
-        if metadata:
-            config["metadata"] = metadata
-        if run_name:
-            config["run_name"] = run_name
-        return self.invoke(query, config, **kwargs)
-
-    @deprecated(since="0.1.46", alternative="ainvoke", removal="1.0")
-    async def aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        callbacks: Callbacks = None,
-        tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        run_name: str | None = None,
-        **kwargs: Any,
-    ) -> list[Document]:
-        """Asynchronously get documents relevant to a query.
-
-        Users should favor using `.ainvoke` or `.abatch` rather than
-        `aget_relevant_documents directly`.
-
-        Args:
-            query: string to find relevant documents for.
-            callbacks: Callback manager or list of callbacks.
-            tags: Optional list of tags associated with the retriever.
-                These tags will be associated with each call to this retriever,
-                and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            metadata: Optional metadata associated with the retriever.
-                This metadata will be associated with each call to this retriever,
-                and passed as arguments to the handlers defined in `callbacks`.
-                Defaults to `None`.
-            run_name: Optional name for the run. Defaults to `None`.
-            **kwargs: Additional arguments to pass to the retriever.
-
-        Returns:
-            List of relevant documents.
-        """
-        config: RunnableConfig = {}
-        if callbacks:
-            config["callbacks"] = callbacks
-        if tags:
-            config["tags"] = tags
-        if metadata:
-            config["metadata"] = metadata
-        if run_name:
-            config["run_name"] = run_name
-        return await self.ainvoke(query, config, **kwargs)

@@ -283,7 +283,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
     retriever = ...  # Your retriever
 
-    llm = ChatOpenAI()
+    model = ChatOpenAI()
 
     # Contextualize question
     contextualize_q_system_prompt = (
@@ -301,7 +301,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         ]
     )
     history_aware_retriever = create_history_aware_retriever(
-        llm, retriever, contextualize_q_prompt
+        model, retriever, contextualize_q_prompt
     )
 
     # Answer question
@@ -324,7 +324,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     # Below we use create_stuff_documents_chain to feed all retrieved context
     # into the LLM. Note that we can also use StuffDocumentsChain and other
     # instances of BaseCombineDocumentsChain.
-    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+    question_answer_chain = create_stuff_documents_chain(model, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
     # Usage:
@@ -371,8 +371,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             "Follow up question: {question}"
         )
         prompt = PromptTemplate.from_template(template)
-        llm = OpenAI()
-        question_generator_chain = LLMChain(llm=llm, prompt=prompt)
+        model = OpenAI()
+        question_generator_chain = LLMChain(llm=model, prompt=prompt)
         chain = ConversationalRetrievalChain(
             combine_docs_chain=combine_docs_chain,
             retriever=retriever,

@@ -107,7 +107,7 @@ def create_openai_fn_chain(
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
 
-        llm = ChatOpenAI(model="gpt-4", temperature=0)
+        model = ChatOpenAI(model="gpt-4", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are a world class algorithm for recording entities."),
@@ -115,7 +115,7 @@ def create_openai_fn_chain(
                 ("human", "Tip: Make sure to answer in the correct format"),
             ]
         )
-        chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
+        chain = create_openai_fn_chain([RecordPerson, RecordDog], model, prompt)
         chain.run("Harry was a chubby brown beagle who loved chicken")
         # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
 
@@ -191,7 +191,7 @@ def create_structured_output_chain(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+        model = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are a world class algorithm for extracting information in structured formats."),
@@ -199,7 +199,7 @@ def create_structured_output_chain(
                 ("human", "Tip: Make sure to answer in the correct format"),
             ]
         )
-        chain = create_structured_output_chain(Dog, llm, prompt)
+        chain = create_structured_output_chain(Dog, model, prompt)
         chain.run("Harry was a chubby brown beagle who loved chicken")
         # -> Dog(name="Harry", color="brown", fav_food="chicken")
 

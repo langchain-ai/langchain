@@ -56,10 +56,10 @@ def resolve_criteria(
     """Resolve the criteria for the pairwise evaluator.
 
     Args:
-        criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
+        criteria: The criteria to use.
 
     Returns:
-        dict: The resolved criteria.
+        The resolved criteria.
 
     """
     if criteria is None:
@@ -156,8 +156,8 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain_classic.evaluation.scoring import ScoreStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
-        >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
+        >>> model = ChatOpenAI(temperature=0, model_name="gpt-4")
+        >>> chain = ScoreStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_strings(
         ...     input="What is the chemical formula for water?",
         ...     prediction="H2O",
@@ -196,7 +196,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return False
@@ -206,7 +206,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires an input.
 
         Returns:
-            bool: True if the chain requires an input, False otherwise.
+            `True` if the chain requires an input, `False` otherwise.
 
         """
         return True
@@ -227,7 +227,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Return the warning to show when reference is ignored.
 
         Returns:
-            str: The warning to show when reference is ignored.
+            The warning to show when reference is ignored.
 
         """
         return (
@@ -424,7 +424,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return True
@@ -442,14 +442,14 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         """Initialize the LabeledScoreStringEvalChain from an LLM.
 
         Args:
-            llm (BaseLanguageModel): The LLM to use.
-            prompt (PromptTemplate, optional): The prompt to use.
-            criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
-            normalize_by (float, optional): The value to normalize the score by.
-            **kwargs (Any): Additional keyword arguments.
+            llm: The LLM to use.
+            prompt: The prompt to use.
+            criteria: The criteria to use.
+            normalize_by: The value to normalize the score by.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            LabeledScoreStringEvalChain: The initialized LabeledScoreStringEvalChain.
+            The initialized LabeledScoreStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.

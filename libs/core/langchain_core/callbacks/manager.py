@@ -79,13 +79,13 @@ def trace_as_chain_group(
 
     Args:
         group_name: The name of the chain group.
-        callback_manager: The callback manager to use. Defaults to `None`.
-        inputs: The inputs to the chain group. Defaults to `None`.
-        project_name: The name of the project. Defaults to `None`.
-        example_id: The ID of the example. Defaults to `None`.
+        callback_manager: The callback manager to use.
+        inputs: The inputs to the chain group.
+        project_name: The name of the project.
+        example_id: The ID of the example.
         run_id: The ID of the run.
-        tags: The inheritable tags to apply to all runs. Defaults to `None`.
-        metadata: The metadata to apply to all runs. Defaults to `None`.
+        tags: The inheritable tags to apply to all runs.
+        metadata: The metadata to apply to all runs.
 
     !!! note
         Must have `LANGCHAIN_TRACING_V2` env var set to true to see the trace in
@@ -155,13 +155,13 @@ async def atrace_as_chain_group(
     Args:
         group_name: The name of the chain group.
         callback_manager: The async callback manager to use,
-            which manages tracing and other callback behavior. Defaults to `None`.
-        inputs: The inputs to the chain group. Defaults to `None`.
-        project_name: The name of the project. Defaults to `None`.
-        example_id: The ID of the example. Defaults to `None`.
+            which manages tracing and other callback behavior.
+        inputs: The inputs to the chain group.
+        project_name: The name of the project.
+        example_id: The ID of the example.
         run_id: The ID of the run.
-        tags: The inheritable tags to apply to all runs. Defaults to `None`.
-        metadata: The metadata to apply to all runs. Defaults to `None`.
+        tags: The inheritable tags to apply to all runs.
+        metadata: The metadata to apply to all runs.
 
     Yields:
         The async callback manager for the chain group.
@@ -462,11 +462,11 @@ class BaseRunManager(RunManagerMixin):
             run_id: The ID of the run.
             handlers: The list of handlers.
             inheritable_handlers: The list of inheritable handlers.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
-            tags: The list of tags. Defaults to `None`.
-            inheritable_tags: The list of inheritable tags. Defaults to `None`.
-            metadata: The metadata. Defaults to `None`.
-            inheritable_metadata: The inheritable metadata. Defaults to `None`.
+            parent_run_id: The ID of the parent run.
+            tags: The list of tags.
+            inheritable_tags: The list of inheritable tags.
+            metadata: The metadata.
+            inheritable_metadata: The inheritable metadata.
 
         """
         self.run_id = run_id
@@ -557,7 +557,7 @@ class ParentRunManager(RunManager):
         """Get a child callback manager.
 
         Args:
-            tag: The tag for the child callback manager. Defaults to `None`.
+            tag: The tag for the child callback manager.
 
         Returns:
             The child callback manager.
@@ -641,7 +641,7 @@ class AsyncParentRunManager(AsyncRunManager):
         """Get a child callback manager.
 
         Args:
-            tag: The tag for the child callback manager. Defaults to `None`.
+            tag: The tag for the child callback manager.
 
         Returns:
             The child callback manager.
@@ -1303,7 +1303,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             prompts: The list of prompts.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1354,7 +1354,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             messages: The list of messages.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1408,7 +1408,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized chain.
             inputs: The inputs to the chain.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1457,8 +1457,8 @@ class CallbackManager(BaseCallbackManager):
             serialized: Serialized representation of the tool.
             input_str: The  input to the tool as a string.
                 Non-string inputs are cast to strings.
-            run_id: ID for the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: ID for the run.
+            parent_run_id: The ID of the parent run.
             inputs: The original input to the tool if provided.
                 Recommended for usage instead of input_str when the original
                 input is needed.
@@ -1512,8 +1512,8 @@ class CallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized retriever.
             query: The query.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1562,7 +1562,7 @@ class CallbackManager(BaseCallbackManager):
         Args:
             name: The name of the adhoc event.
             data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
 
         Raises:
             ValueError: If additional keyword arguments are passed.
@@ -1782,7 +1782,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             prompts: The list of prompts.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1870,7 +1870,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized LLM.
             messages: The list of messages.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1941,7 +1941,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized chain.
             inputs: The inputs to the chain.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -1988,8 +1988,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized tool.
             input_str: The input to the tool.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -2038,7 +2038,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             name: The name of the adhoc event.
             data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to `None`.
+            run_id: The ID of the run.
 
         Raises:
             ValueError: If additional keyword arguments are passed.
@@ -2082,8 +2082,8 @@ class AsyncCallbackManager(BaseCallbackManager):
         Args:
             serialized: The serialized retriever.
             query: The query.
-            run_id: The ID of the run. Defaults to `None`.
-            parent_run_id: The ID of the parent run. Defaults to `None`.
+            run_id: The ID of the run.
+            parent_run_id: The ID of the parent run.
             **kwargs: Additional keyword arguments.
 
         Returns:

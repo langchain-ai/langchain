@@ -101,7 +101,7 @@ def tool(
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to `False`.
         args_schema: optional argument schema for user to specify.
-            Defaults to `None`.
+
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
@@ -397,10 +397,10 @@ def convert_runnable_to_tool(
 
     Args:
         runnable: The runnable to convert.
-        args_schema: The schema for the tool's input arguments. Defaults to `None`.
-        name: The name of the tool. Defaults to `None`.
-        description: The description of the tool. Defaults to `None`.
-        arg_types: The types of the arguments. Defaults to `None`.
+        args_schema: The schema for the tool's input arguments.
+        name: The name of the tool.
+        description: The description of the tool.
+        arg_types: The types of the arguments.
 
     Returns:
         The tool.

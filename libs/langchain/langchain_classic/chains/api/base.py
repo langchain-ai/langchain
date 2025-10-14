@@ -42,7 +42,7 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
         limit_to_domains: The allowed domains.
 
     Returns:
-        True if the URL is in the allowed domains, False otherwise.
+        `True` if the URL is in the allowed domains, `False` otherwise.
     """
     scheme, domain = _extract_scheme_and_domain(url)
 
@@ -143,7 +143,7 @@ try:
                   description: Limit the number of results
         \"\"\"
 
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         toolkit = RequestsToolkit(
             requests_wrapper=TextRequestsWrapper(headers={}),  # no auth required
             allow_dangerous_requests=ALLOW_DANGEROUS_REQUESTS,
@@ -152,7 +152,7 @@ try:
 
         api_request_chain = (
             API_URL_PROMPT.partial(api_docs=api_spec)
-            | llm.bind_tools(tools, tool_choice="any")
+            | model.bind_tools(tools, tool_choice="any")
         )
 
         class ChainState(TypedDict):
@@ -169,7 +169,7 @@ try:
             return {"messages": [response]}
 
         async def acall_model(state: ChainState, config: RunnableConfig):
-            response = await llm.ainvoke(state["messages"], config)
+            response = await model.ainvoke(state["messages"], config)
             return {"messages": [response]}
 
         graph_builder = StateGraph(ChainState)

@@ -38,9 +38,9 @@ def custom_tool(*args: Any, **kwargs: Any) -> Any:
         return "27"
 
 
-    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    model = ChatOpenAI(model="gpt-5", output_version="responses/v1")
 
-    agent = create_react_agent(llm, [execute_code])
+    agent = create_react_agent(model, [execute_code])
 
     input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
     for step in agent.stream(
@@ -79,9 +79,9 @@ def custom_tool(*args: Any, **kwargs: Any) -> Any:
         return "27"
 
 
-    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    model = ChatOpenAI(model="gpt-5", output_version="responses/v1")
 
-    agent = create_react_agent(llm, [do_math])
+    agent = create_react_agent(model, [do_math])
 
     input_message = {"role": "user", "content": "Use the tool to calculate 3^3."}
     for step in agent.stream(

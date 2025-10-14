@@ -8,7 +8,7 @@ with any LangChain chat model.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -22,7 +22,12 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -209,8 +214,8 @@ class ContextEditingMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
         """Apply context edits before invoking the model via handler."""
         if not request.messages:
             return handler(request)
@@ -233,6 +238,34 @@ class ContextEditingMiddleware(AgentMiddleware):
             edit.apply(request.messages, count_tokens=count_tokens)
 
         return handler(request)
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Apply context edits before invoking the model via handler (async version)."""
+        if not request.messages:
+            return await handler(request)
+
+        if self.token_count_method == "approximate":  # noqa: S105
+
+            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+                return count_tokens_approximately(messages)
+        else:
+            system_msg = (
+                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
+            )
+
+            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+                return request.model.get_num_tokens_from_messages(
+                    system_msg + list(messages), request.tools
+                )
+
+        for edit in self.edits:
+            edit.apply(request.messages, count_tokens=count_tokens)
+
+        return await handler(request)
 
 
 __all__ = [

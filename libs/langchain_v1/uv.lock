@@ -1550,7 +1550,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.0a12"
+version = "1.0.0a14"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1610,7 +1610,6 @@ test = [
     { name = "langchain-anthropic" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
-    { name = "langchain-text-splitters" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1663,7 +1662,6 @@ test = [
     { name = "langchain-anthropic" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
-    { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.2,<2.0.0" },
     { name = "pytest-cov", specifier = ">=4.0.0,<8.0.0" },

@@ -193,7 +193,7 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
-        config: The config to ensure. Defaults to `None`.
+        config: The config to ensure.
 
     Returns:
         The ensured config.
@@ -412,7 +412,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -446,7 +446,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -535,7 +535,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         Args:
             fn: The function to map.
             *iterables: The iterables to map over.
-            timeout: The timeout for the map. Defaults to `None`.
+            timeout: The timeout for the map.
             chunksize: The chunksize for the map. Defaults to 1.
 
         Returns:

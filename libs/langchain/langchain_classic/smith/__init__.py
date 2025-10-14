@@ -22,8 +22,8 @@ from langchain_classic.smith import RunEvalConfig, run_on_dataset
 # Chains may have memory. Passing in a constructor function lets the
 # evaluation framework avoid cross-contamination between runs.
 def construct_chain():
-    llm = ChatOpenAI(temperature=0)
-    chain = LLMChain.from_string(llm, "What's the answer to {your_input_key}")
+    model = ChatOpenAI(temperature=0)
+    chain = LLMChain.from_string(model, "What's the answer to {your_input_key}")
     return chain
 
 
