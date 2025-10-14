@@ -52,8 +52,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the general-purpose subagent to get the weather in a city.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[get_weather],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[get_weather],
                 )
             ],
         )
@@ -70,8 +70,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the task tool to call a subagent.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[],
                     subagents=[
                         {
                             "name": "weather",
@@ -96,8 +96,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the task tool to call a subagent.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[],
                     subagents=[
                         {
                             "name": "weather",
@@ -125,8 +125,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the task tool to call a subagent.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[],
                     subagents=[
                         {
                             "name": "weather",
@@ -159,8 +159,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the task tool to call a subagent.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[],
                     subagents=[
                         {
                             "name": "weather",
@@ -199,8 +199,8 @@ class TestSubagentMiddleware:
             system_prompt="Use the task tool to call a subagent.",
             middleware=[
                 SubAgentMiddleware(
-                    default_subagent_model="claude-sonnet-4-20250514",
-                    default_subagent_tools=[],
+                    default_model="claude-sonnet-4-20250514",
+                    default_tools=[],
                     subagents=[
                         {
                             "name": "weather",
