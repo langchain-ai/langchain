@@ -121,11 +121,13 @@ def create_deep_agent(
     if middleware is not None:
         deepagent_middleware.extend(middleware)
 
+    final_system_prompt = BASE_AGENT_PROMPT
+    if system_prompt:
+        final_system_prompt = system_prompt + "\n\n" + BASE_AGENT_PROMPT
+
     return create_agent(
         model,
-        system_prompt=system_prompt + "\n\n" + BASE_AGENT_PROMPT
-        if system_prompt
-        else BASE_AGENT_PROMPT,
+        system_prompt=final_system_prompt,
         tools=tools,
         middleware=deepagent_middleware,
         context_schema=context_schema,

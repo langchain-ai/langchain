@@ -55,6 +55,9 @@ class CompiledSubAgent(TypedDict):
 
 DEFAULT_SUBAGENT_PROMPT = "In order to complete the objective that the user asks of you, you have access to a number of standard tools."  # noqa: E501
 
+# State keys that should be excluded when passing state to subagents
+_EXCLUDED_STATE_KEYS = ("messages", "todos")
+
 TASK_TOOL_DESCRIPTION = """Launch an ephemeral subagent to handle complex, multi-step independent tasks with isolated context windows.
 
 Available agent types and the tools they have access to:
@@ -232,7 +235,7 @@ def _create_task_tool(
     subagent_description_str = "\n".join(subagent_descriptions)
 
     def _return_command_with_state_update(result: dict, tool_call_id: str) -> Command:
-        state_update = {k: v for k, v in result.items() if k not in ["todos", "messages"]}
+        state_update = {k: v for k, v in result.items() if k not in _EXCLUDED_STATE_KEYS}
         return Command(
             update={
                 **state_update,
@@ -259,10 +262,10 @@ def _create_task_tool(
                 )
                 raise ValueError(msg)
             subagent = subagent_graphs[subagent_type]
-            state["messages"] = [HumanMessage(content=description)]
-            if "todos" in state:
-                del state["todos"]
-            result = await subagent.ainvoke(state)
+            # Create a new state dict to avoid mutating the original
+            subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
+            subagent_state["messages"] = [HumanMessage(content=description)]
+            result = await subagent.ainvoke(subagent_state)
             return _return_command_with_state_update(result, tool_call_id)
     else:
 
@@ -280,10 +283,10 @@ def _create_task_tool(
                 )
                 raise ValueError(msg)
             subagent = subagent_graphs[subagent_type]
-            state["messages"] = [HumanMessage(content=description)]
-            if "todos" in state:
-                del state["todos"]
-            result = subagent.invoke(state)
+            # Create a new state dict to avoid mutating the original
+            subagent_state = {k: v for k, v in state.items() if k not in _EXCLUDED_STATE_KEYS}
+            subagent_state["messages"] = [HumanMessage(content=description)]
+            result = subagent.invoke(subagent_state)
             return _return_command_with_state_update(result, tool_call_id)
 
     return task
