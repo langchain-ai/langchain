@@ -126,7 +126,7 @@ def write_todos(todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCall
     )
 
 
-class ToDoMiddleware(AgentMiddleware):
+class TodoListMiddleware(AgentMiddleware):
     """Middleware that provides todo list management capabilities to agents.
 
     This middleware adds a `write_todos` tool that allows agents to create and manage
@@ -139,10 +139,10 @@ class ToDoMiddleware(AgentMiddleware):
 
     Example:
         ```python
-        from langchain.agents.middleware.todo import ToDoMiddleware
+        from langchain.agents.middleware.todo import TodoListMiddleware
         from langchain.agents import create_agent
 
-        agent = create_agent("openai:gpt-4o", middleware=[ToDoMiddleware()])
+        agent = create_agent("openai:gpt-4o", middleware=[TodoListMiddleware()])
 
         # Agent now has access to write_todos tool and todo state tracking
         result = await agent.invoke({"messages": [HumanMessage("Help me refactor my codebase")]})
@@ -165,7 +165,7 @@ class ToDoMiddleware(AgentMiddleware):
         system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
         tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
     ) -> None:
-        """Initialize the ToDoMiddleware with optional custom prompts.
+        """Initialize the TodoListMiddleware with optional custom prompts.
 
         Args:
             system_prompt: Custom system prompt to guide the agent on using the todo tool.
