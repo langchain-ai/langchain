@@ -32,8 +32,8 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.planning import (
-    PlanningMiddleware,
+from langchain.agents.middleware.todo import (
+    ToDoMiddleware,
     PlanningState,
     WRITE_TODOS_SYSTEM_PROMPT,
     write_todos,
@@ -1457,10 +1457,10 @@ def test_jump_to_is_ephemeral() -> None:
     assert "jump_to" not in result
 
 
-# Tests for PlanningMiddleware
+# Tests for ToDoMiddleware
 def test_planning_middleware_initialization() -> None:
-    """Test that PlanningMiddleware initializes correctly."""
-    middleware = PlanningMiddleware()
+    """Test that ToDoMiddleware initializes correctly."""
+    middleware = ToDoMiddleware()
     assert middleware.state_schema == PlanningState
     assert len(middleware.tools) == 1
     assert middleware.tools[0].name == "write_todos"
@@ -1475,7 +1475,7 @@ def test_planning_middleware_initialization() -> None:
 )
 def test_planning_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
     """Test that wrap_model_call handles system prompts correctly."""
-    middleware = PlanningMiddleware()
+    middleware = ToDoMiddleware()
     model = FakeToolCallingModel()
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
@@ -1589,7 +1589,7 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
             [],
         ]
     )
-    middleware = PlanningMiddleware()
+    middleware = ToDoMiddleware()
     agent = create_agent(model=model, middleware=[middleware])
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -1607,9 +1607,9 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
 
 
 def test_planning_middleware_custom_system_prompt() -> None:
-    """Test that PlanningMiddleware can be initialized with custom system prompt."""
+    """Test that ToDoMiddleware can be initialized with custom system prompt."""
     custom_system_prompt = "Custom todo system prompt for testing"
-    middleware = PlanningMiddleware(system_prompt=custom_system_prompt)
+    middleware = ToDoMiddleware(system_prompt=custom_system_prompt)
     model = FakeToolCallingModel()
 
     request = ModelRequest(
@@ -1634,9 +1634,9 @@ def test_planning_middleware_custom_system_prompt() -> None:
 
 
 def test_planning_middleware_custom_tool_description() -> None:
-    """Test that PlanningMiddleware can be initialized with custom tool description."""
+    """Test that ToDoMiddleware can be initialized with custom tool description."""
     custom_tool_description = "Custom tool description for testing"
-    middleware = PlanningMiddleware(tool_description=custom_tool_description)
+    middleware = ToDoMiddleware(tool_description=custom_tool_description)
 
     assert len(middleware.tools) == 1
     tool = middleware.tools[0]
@@ -1644,10 +1644,10 @@ def test_planning_middleware_custom_tool_description() -> None:
 
 
 def test_planning_middleware_custom_system_prompt_and_tool_description() -> None:
-    """Test that PlanningMiddleware can be initialized with both custom prompts."""
+    """Test that ToDoMiddleware can be initialized with both custom prompts."""
     custom_system_prompt = "Custom system prompt"
     custom_tool_description = "Custom tool description"
-    middleware = PlanningMiddleware(
+    middleware = ToDoMiddleware(
         system_prompt=custom_system_prompt,
         tool_description=custom_tool_description,
     )
@@ -1683,8 +1683,8 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
 
 
 def test_planning_middleware_default_prompts() -> None:
-    """Test that PlanningMiddleware uses default prompts when none provided."""
-    middleware = PlanningMiddleware()
+    """Test that ToDoMiddleware uses default prompts when none provided."""
+    middleware = ToDoMiddleware()
 
     # Verify default system prompt
     assert middleware.system_prompt == WRITE_TODOS_SYSTEM_PROMPT
@@ -1698,7 +1698,7 @@ def test_planning_middleware_default_prompts() -> None:
 
 def test_planning_middleware_custom_system_prompt() -> None:
     """Test that custom tool executes correctly in an agent."""
-    middleware = PlanningMiddleware(system_prompt="call the write_todos tool")
+    middleware = ToDoMiddleware(system_prompt="call the write_todos tool")
 
     model = FakeToolCallingModel(
         tool_calls=[

@@ -11,7 +11,7 @@ from .human_in_the_loop import (
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
-from .planning import PlanningMiddleware
+from .todo import ToDoMiddleware
 from .summarization import SummarizationMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
 from .tool_emulator import LLMToolEmulator
@@ -45,7 +45,7 @@ __all__ = [
     "ModelResponse",
     "PIIDetectionError",
     "PIIMiddleware",
-    "PlanningMiddleware",
+    "ToDoMiddleware",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
     "after_agent",
