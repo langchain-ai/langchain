@@ -200,7 +200,8 @@ def test_decorator_with_specified_schema() -> None:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="Pydantic v1 not supported with Python 3.14+"
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
 )
 def test_decorator_with_specified_schema_pydantic_v1() -> None:
     """Test that manually specified schemata are passed through to the tool."""
@@ -355,7 +356,8 @@ def test_structured_tool_types_parsed() -> None:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="Pydantic v1 not supported with Python 3.14+"
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
 )
 def test_structured_tool_types_parsed_pydantic_v1() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
@@ -2092,7 +2094,7 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
 
     if use_v1_namespace:
         if sys.version_info >= (3, 14):
-            pytest.skip("Pydantic v1 is not supported with Python 3.14+")
+            pytest.skip("pydantic.v1 namespace not supported with Python 3.14+")
 
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A

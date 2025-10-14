@@ -142,7 +142,8 @@ def test_fields_pydantic_v2_proper() -> None:
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="Pydantic v1 not supported with Python 3.14+"
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
 )
 def test_fields_pydantic_v1_from_2() -> None:
     class Foo(BaseModelV1):

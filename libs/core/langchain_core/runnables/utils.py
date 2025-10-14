@@ -119,14 +119,13 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         return False
 
 
-@lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a `context` arg.
+    """Check if asyncio.create_task accepts a `context` arg.
 
     Returns:
         True if `asyncio.create_task` accepts a context argument, `False` otherwise.
     """
-    return accepts_context(asyncio.create_task)
+    return sys.version_info >= (3, 11)
 
 
 def coro_with_context(
@@ -142,10 +141,10 @@ def coro_with_context(
     Returns:
         The coroutine with the context.
     """
-    if sys.version_info >= (3, 11):
-        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type]
+    if asyncio_accepts_context():
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
     if create_task:
-        return asyncio.create_task(coro)  # type: ignore[arg-type, unused-ignore]
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
     return coro
 
 

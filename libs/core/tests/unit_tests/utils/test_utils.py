@@ -216,7 +216,8 @@ def test_guard_import_failure(
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="Pydantic v1 not supported with Python 3.14+"
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
 )
 def test_get_pydantic_field_names_v1_in_2() -> None:
     class PydanticV1Model(PydanticV1BaseModel):

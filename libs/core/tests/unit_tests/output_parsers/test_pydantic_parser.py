@@ -23,9 +23,6 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-_FORECAST_MODELS: list[type[BaseModel | V1BaseModel]] = [ForecastV2]
-_FORECAST_MODELS_TYPES = type[ForecastV2]
-
 if sys.version_info < (3, 14):
 
     class ForecastV1(V1BaseModel):
@@ -33,8 +30,11 @@ if sys.version_info < (3, 14):
         f_or_c: Literal["F", "C"]
         forecast: str
 
-    _FORECAST_MODELS_TYPES |= type[ForecastV1]
-    _FORECAST_MODELS.append(ForecastV1)
+    _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
+    _FORECAST_MODELS = [ForecastV2, ForecastV1]
+else:
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
 
 
 @pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
