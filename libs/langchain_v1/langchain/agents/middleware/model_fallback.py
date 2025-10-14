@@ -13,7 +13,7 @@ from langchain.agents.middleware.types import (
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -97,6 +97,41 @@ class ModelFallbackMiddleware(AgentMiddleware):
             request.model = fallback_model
             try:
                 return handler(request)
+            except Exception as e:  # noqa: BLE001
+                last_exception = e
+                continue
+
+        raise last_exception
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Try fallback models in sequence on errors (async version).
+
+        Args:
+            request: Initial model request.
+            handler: Async callback to execute the model.
+
+        Returns:
+            AIMessage from successful model call.
+
+        Raises:
+            Exception: If all models fail, re-raises last exception.
+        """
+        # Try primary model first
+        last_exception: Exception
+        try:
+            return await handler(request)
+        except Exception as e:  # noqa: BLE001
+            last_exception = e
+
+        # Try fallback models
+        for fallback_model in self.models:
+            request.model = fallback_model
+            try:
+                return await handler(request)
             except Exception as e:  # noqa: BLE001
                 last_exception = e
                 continue
