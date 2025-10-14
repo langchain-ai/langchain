@@ -180,14 +180,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
-        for tool_name, tool_config in interrupt_on.items():
-            if isinstance(tool_config, bool):
-                if tool_config is True:
+        for tool_name, interrupt_on_config in interrupt_on.items():
+            if isinstance(interrupt_on_config, bool):
+                if interrupt_on_config is True:
                     resolved_configs[tool_name] = InterruptOnConfig(
                         allowed_decisions=["approve", "edit", "reject"]
                     )
-            elif tool_config.get("allowed_decisions"):
-                resolved_configs[tool_name] = tool_config
+            elif interrupt_on_config.get("allowed_decisions"):
+                resolved_configs[tool_name] = interrupt_on_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
 
