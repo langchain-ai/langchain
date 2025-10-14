@@ -58,10 +58,10 @@ def parse_url_with_auth(
         url: The URL to parse.
 
     Returns:
-        A tuple of ``(cleaned_url, headers_dict)`` where:
-        - ``cleaned_url`` is the URL without authentication credentials if any were
+        A tuple of `(cleaned_url, headers_dict)` where:
+        - `cleaned_url` is the URL without authentication credentials if any were
             found. Otherwise, returns the original URL.
-        - ``headers_dict`` contains Authorization header if credentials were found.
+        - `headers_dict` contains Authorization header if credentials were found.
     """
     if not url:
         return None, None
@@ -106,7 +106,7 @@ def merge_auth_headers(
 
     Args:
         client_kwargs: The client kwargs dict to update.
-        auth_headers: Headers to merge (typically from ``parse_url_with_auth``).
+        auth_headers: Headers to merge (typically from `parse_url_with_auth`).
     """
     if auth_headers:
         headers = client_kwargs.get("headers", {})

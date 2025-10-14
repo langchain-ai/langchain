@@ -76,14 +76,13 @@ class LLMCheckerChain(Chain):
     """Chain for question-answering with self-verification.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_community.llms import OpenAI
+        from langchain_classic.chains import LLMCheckerChain
 
-            from langchain_community.llms import OpenAI
-            from langchain_classic.chains import LLMCheckerChain
-
-            llm = OpenAI(temperature=0.7)
-            checker_chain = LLMCheckerChain.from_llm(llm)
-
+        model = OpenAI(temperature=0.7)
+        checker_chain = LLMCheckerChain.from_llm(model)
+        ```
     """
 
     question_to_checked_assertions_chain: SequentialChain

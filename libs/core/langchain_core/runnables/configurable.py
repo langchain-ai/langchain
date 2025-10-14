@@ -75,7 +75,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -123,11 +123,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Prepare the Runnable for invocation.
 
         Args:
-            config: The configuration to use. Defaults to `None`.
+            config: The configuration to use.
 
         Returns:
-            tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
-            configuration.
+            The prepared Runnable and configuration.
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
@@ -384,7 +383,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         """Get the configuration specs for the RunnableConfigurableFields.
 
         Returns:
-            list[ConfigurableFieldSpec]: The configuration specs.
+            The configuration specs.
         """
         config_specs = []
 
@@ -656,7 +655,7 @@ def prefix_config_spec(
         prefix: The prefix to add.
 
     Returns:
-        ConfigurableFieldSpec: The prefixed ConfigurableFieldSpec.
+        The prefixed ConfigurableFieldSpec.
     """
     return (
         ConfigurableFieldSpec(

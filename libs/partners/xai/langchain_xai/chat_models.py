@@ -26,17 +26,16 @@ _DictOrPydantic: TypeAlias = dict | BaseModel
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     r"""ChatXAI chat model.
 
-    Refer to `xAI's documentation <https://docs.x.ai/docs/api-reference#chat-completions>`__
+    Refer to [xAI's documentation](https://docs.x.ai/docs/api-reference#chat-completions)
     for more nuanced details on the API's behavior and supported parameters.
 
     Setup:
         Install `langchain-xai` and set environment variable `XAI_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-xai
-            export XAI_API_KEY="your-api-key"
-
+        ```bash
+        pip install -U langchain-xai
+        export XAI_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
         model: str
@@ -46,7 +45,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             while lower values (like `0.2`) mean more focused and deterministic completions.
             (Default: `1`.)
         max_tokens: int | None
-            Max number of tokens to generate. Refer to your `model's documentation <https://docs.x.ai/docs/models#model-pricing>`__
+            Max number of tokens to generate. Refer to your [model's documentation](https://docs.x.ai/docs/models#model-pricing)
             for the maximum number of tokens it can generate.
         logprobs: bool | None
             Whether to return logprobs.
@@ -60,175 +59,175 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             xAI API key. If not passed in will be read from env var `XAI_API_KEY`.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_xai import ChatXAI
 
-            from langchain_xai import ChatXAI
-
-            llm = ChatXAI(
-                model="grok-4",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
+        model = ChatXAI(
+            model="grok-4",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        messages = [
+            (
+                "system",
+                "You are a helpful translator. Translate the user sentence to French.",
+            ),
+            ("human", "I love programming."),
+        ]
+        model.invoke(messages)
+        ```
 
-            messages = [
-                (
-                    "system",
-                    "You are a helpful translator. Translate the user sentence to French.",
-                ),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(
-                content="J'adore la programmation.",
-                response_metadata={
-                    "token_usage": {
-                        "completion_tokens": 9,
-                        "prompt_tokens": 32,
-                        "total_tokens": 41,
-                    },
-                    "model_name": "grok-4",
-                    "system_fingerprint": None,
-                    "finish_reason": "stop",
-                    "logprobs": None,
-                },
-                id="run-168dceca-3b8b-4283-94e3-4c739dbc1525-0",
-                usage_metadata={
-                    "input_tokens": 32,
-                    "output_tokens": 9,
+        ```python
+        AIMessage(
+            content="J'adore la programmation.",
+            response_metadata={
+                "token_usage": {
+                    "completion_tokens": 9,
+                    "prompt_tokens": 32,
                     "total_tokens": 41,
                 },
-            )
+                "model_name": "grok-4",
+                "system_fingerprint": None,
+                "finish_reason": "stop",
+                "logprobs": None,
+            },
+            id="run-168dceca-3b8b-4283-94e3-4c739dbc1525-0",
+            usage_metadata={
+                "input_tokens": 32,
+                "output_tokens": 9,
+                "total_tokens": 41,
+            },
+        )
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in model.stream(messages):
+            print(chunk.text, end="")
+        ```
 
-            for chunk in llm.stream(messages):
-                print(chunk.text, end="")
+        ```python
+        content='J' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content="'" id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content='ad' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content='ore' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content=' la' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content=' programm' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content='ation' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content='.' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
+        content='' response_metadata={'finish_reason': 'stop', 'model_name': 'grok-4'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
 
-        .. code-block:: python
-
-            content='J' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content="'" id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='ad' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='ore' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content=' la' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content=' programm' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='ation' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='.' id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-            content='' response_metadata={'finish_reason': 'stop', 'model_name': 'grok-4'} id='run-1bc996b5-293f-4114-96a1-e0f755c05eb9'
-
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await model.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await model.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
+        # batch:
+        # await model.abatch([messages])
+        ```
 
-            # batch:
-            # await llm.abatch([messages])
-
-        .. code-block:: python
-
-            AIMessage(
-                content="J'adore la programmation.",
-                response_metadata={
-                    "token_usage": {
-                        "completion_tokens": 9,
-                        "prompt_tokens": 32,
-                        "total_tokens": 41,
-                    },
-                    "model_name": "grok-4",
-                    "system_fingerprint": None,
-                    "finish_reason": "stop",
-                    "logprobs": None,
-                },
-                id="run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0",
-                usage_metadata={
-                    "input_tokens": 32,
-                    "output_tokens": 9,
+        ```python
+        AIMessage(
+            content="J'adore la programmation.",
+            response_metadata={
+                "token_usage": {
+                    "completion_tokens": 9,
+                    "prompt_tokens": 32,
                     "total_tokens": 41,
                 },
-            )
+                "model_name": "grok-4",
+                "system_fingerprint": None,
+                "finish_reason": "stop",
+                "logprobs": None,
+            },
+            id="run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0",
+            usage_metadata={
+                "input_tokens": 32,
+                "output_tokens": 9,
+                "total_tokens": 41,
+            },
+        )
+        ```
 
     Reasoning:
-        `Certain xAI models <https://docs.x.ai/docs/models#model-pricing>`__ support reasoning,
+        [Certain xAI models](https://docs.x.ai/docs/models#model-pricing) support reasoning,
         which allows the model to provide reasoning content along with the response.
 
-        If provided, reasoning content is returned under the ``additional_kwargs`` field of the
+        If provided, reasoning content is returned under the `additional_kwargs` field of the
         AIMessage or AIMessageChunk.
 
         If supported, reasoning effort can be specified in the model constructor's `extra_body`
         argument, which will control the amount of reasoning the model does. The value can be one of
         `'low'` or `'high'`.
 
-        .. code-block:: python
-
-            model = ChatXAI(
-                model="grok-3-mini",
-                extra_body={"reasoning_effort": "high"},
-            )
-
-        !!! note
-            As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
-            `Grok 3 Mini <https://docs.x.ai/docs/models/grok-3-mini>`__.
+        ```python
+        model = ChatXAI(
+            model="grok-3-mini",
+            extra_body={"reasoning_effort": "high"},
+        )
+        ```
 
         !!! note
-            Note that in `Grok 4 <https://docs.x.ai/docs/models/grok-4-0709>`__, as of 2025-07-10,
-            reasoning is not exposed in ``reasoning_content`` (other than initial ``'Thinking...'`` text),
-            reasoning cannot be disabled, and the ``reasoning_effort`` cannot be specified.
+            As of 2025-07-10, `reasoning_content` is only returned in Grok 3 models, such as
+            [Grok 3 Mini](https://docs.x.ai/docs/models/grok-3-mini).
+
+        !!! note
+            Note that in [Grok 4](https://docs.x.ai/docs/models/grok-4-0709), as of 2025-07-10,
+            reasoning is not exposed in `reasoning_content` (other than initial `'Thinking...'` text),
+            reasoning cannot be disabled, and the `reasoning_effort` cannot be specified.
 
     Tool calling / function calling:
-        .. code-block:: python
+        ```python
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
-
-            llm = ChatXAI(model="grok-4")
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        model = ChatXAI(model="grok-4")
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is bigger: LA or NY?")
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-        .. code-block:: python
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-            [
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "NY"},
-                    "id": "call_m5tstyn2004pre9bfuxvom8x",
-                    "type": "tool_call",
-                },
-                {
-                    "name": "GetPopulation",
-                    "args": {"location": "LA"},
-                    "id": "call_0vjgq455gq1av5sp9eb1pw6a",
-                    "type": "tool_call",
-                },
-            ]
+
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
+
+        ```python
+        [
+            {
+                "name": "GetPopulation",
+                "args": {"location": "NY"},
+                "id": "call_m5tstyn2004pre9bfuxvom8x",
+                "type": "tool_call",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "LA"},
+                "id": "call_0vjgq455gq1av5sp9eb1pw6a",
+                "type": "tool_call",
+            },
+        ]
+        ```
 
         !!! note
             With stream response, the tool / function call will be returned in whole in a
@@ -236,59 +235,59 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         Tool choice can be controlled by setting the `tool_choice` parameter in the model
         constructor's `extra_body` argument. For example, to disable tool / function calling:
-        .. code-block:: python
 
-            llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
+        ```python
+        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
+        ```
+        To require that the model always calls a tool / function, set `tool_choice` to `'required'`:
 
-        To require that the model always calls a tool / function, set `tool_choice` to ``'required'``:
-
-        .. code-block:: python
-
-            llm = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
+        ```python
+        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
+        ```
 
         To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
 
-        .. code-block:: python
+        ```python
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
+        model = ChatXAI(
+            model="grok-4",
+            extra_body={
+                "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
+            },
+        )
 
-            llm = ChatXAI(
-                model="grok-4",
-                extra_body={
-                    "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
-                },
-            )
+        class GetWeather(BaseModel):
+            \"\"\"Get the current weather in a given location\"\"\"
 
-            class GetWeather(BaseModel):
-                \"\"\"Get the current weather in a given location\"\"\"
-
-                location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
-
-
-            class GetPopulation(BaseModel):
-                \"\"\"Get the current population in a given location\"\"\"
-
-                location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+            location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke(
-                "Which city is bigger: LA or NY?",
-            )
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            \"\"\"Get the current population in a given location\"\"\"
+
+            location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+
+
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke(
+            "Which city is bigger: LA or NY?",
+        )
+        ai_msg.tool_calls
+        ```
 
         The resulting tool call would be:
 
-        .. code-block:: python
-
-            [
-                {
-                    "name": "GetWeather",
-                    "args": {"location": "Los Angeles, CA"},
-                    "id": "call_81668711",
-                    "type": "tool_call",
-                }
-            ]
+        ```python
+        [
+            {
+                "name": "GetWeather",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "call_81668711",
+                "type": "tool_call",
+            }
+        ]
+        ```
 
     Parallel tool calling / parallel function calling:
         By default, parallel tool / function calling is enabled, so you can process
@@ -296,104 +295,103 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         are required, all of the tool call requests will be included in the response body.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+        from pydantic import BaseModel, Field
 
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-        .. code-block:: python
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
-            Joke(
-                setup="Why was the cat sitting on the computer?",
-                punchline="To keep an eye on the mouse!",
-                rating=7,
-            )
+
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
+        ```
+
+        ```python
+        Joke(
+            setup="Why was the cat sitting on the computer?",
+            punchline="To keep an eye on the mouse!",
+            rating=7,
+        )
+        ```
 
     Live Search:
-        xAI supports a `Live Search <https://docs.x.ai/docs/guides/live-search>`__
+        xAI supports a [Live Search](https://docs.x.ai/docs/guides/live-search)
         feature that enables Grok to ground its answers using results from web searches.
 
-        .. code-block:: python
+        ```python
+        from langchain_xai import ChatXAI
 
-            from langchain_xai import ChatXAI
+        model = ChatXAI(
+            model="grok-4",
+            search_parameters={
+                "mode": "auto",
+                # Example optional parameters below:
+                "max_search_results": 3,
+                "from_date": "2025-05-26",
+                "to_date": "2025-05-27",
+            },
+        )
 
-            llm = ChatXAI(
-                model="grok-4",
-                search_parameters={
-                    "mode": "auto",
-                    # Example optional parameters below:
-                    "max_search_results": 3,
-                    "from_date": "2025-05-26",
-                    "to_date": "2025-05-27",
-                },
-            )
-
-            llm.invoke("Provide me a digest of world news in the last 24 hours.")
+        model.invoke("Provide me a digest of world news in the last 24 hours.")
+        ```
 
         !!! note
-            `Citations <https://docs.x.ai/docs/guides/live-search#returning-citations>`__
-            are only available in `Grok 3 <https://docs.x.ai/docs/models/grok-3>`__.
+            [Citations](https://docs.x.ai/docs/guides/live-search#returning-citations)
+            are only available in [Grok 3](https://docs.x.ai/docs/models/grok-3).
 
     Token usage:
-        .. code-block:: python
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.usage_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 37, "output_tokens": 6, "total_tokens": 43}
+        ```python
+        {"input_tokens": 37, "output_tokens": 6, "total_tokens": 43}
+        ```
 
     Logprobs:
-        .. code-block:: python
+        ```python
+        logprobs_model = model.bind(logprobs=True)
+        messages = [("human", "Say Hello World! Do not return anything else.")]
+        ai_msg = logprobs_model.invoke(messages)
+        ai_msg.response_metadata["logprobs"]
+        ```
 
-            logprobs_llm = llm.bind(logprobs=True)
-            messages = [("human", "Say Hello World! Do not return anything else.")]
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-            {
-                "content": None,
-                "token_ids": [22557, 3304, 28808, 2],
-                "tokens": [" Hello", " World", "!", "</s>"],
-                "token_logprobs": [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047],
-            }
+        ```python
+        {
+            "content": None,
+            "token_ids": [22557, 3304, 28808, 2],
+            "tokens": [" Hello", " World", "!", "</s>"],
+            "token_logprobs": [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047],
+        }
+        ```
 
     Response metadata
-        .. code-block:: python
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.response_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-            {
-                "token_usage": {
-                    "completion_tokens": 4,
-                    "prompt_tokens": 19,
-                    "total_tokens": 23,
-                },
-                "model_name": "grok-4",
-                "system_fingerprint": None,
-                "finish_reason": "stop",
-                "logprobs": None,
-            }
-
+        ```python
+        {
+            "token_usage": {
+                "completion_tokens": 4,
+                "prompt_tokens": 19,
+                "total_tokens": 23,
+            },
+            "model_name": "grok-4",
+            "system_fingerprint": None,
+            "finish_reason": "stop",
+            "logprobs": None,
+        }
+        ```
     """  # noqa: E501
 
     model_name: str = Field(default="grok-4", alias="model")
@@ -409,7 +407,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     xai_api_base: str = Field(default="https://api.x.ai/v1/")
     """Base URL path for API requests."""
     search_parameters: dict[str, Any] | None = None
-    """Parameters for search requests. Example: ``{"mode": "auto"}``."""
+    """Parameters for search requests. Example: `{"mode": "auto"}`."""
 
     openai_api_key: SecretStr | None = None
     openai_api_base: str | None = None
@@ -422,7 +420,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example, ``{"xai_api_key": "XAI_API_KEY"}``
+        For example, `{"xai_api_key": "XAI_API_KEY"}`
         """
         return {"xai_api_key": "XAI_API_KEY"}
 
@@ -594,7 +592,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 - a `TypedDict` class (support added in 0.1.20),
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
                 dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
@@ -603,11 +601,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
-                    Uses xAI's `tool-calling features <https://docs.x.ai/docs/guides/function-calling>`__.
-                - ``'json_schema'``:
-                    Uses xAI's `structured output feature <https://docs.x.ai/docs/guides/structured-outputs>`__.
-                - ``'json_mode'``:
+                - `'function_calling'`:
+                    Uses xAI's [tool-calling features](https://docs.x.ai/docs/guides/function-calling).
+                - `'json_schema'`:
+                    Uses xAI's [structured output feature](https://docs.x.ai/docs/guides/structured-outputs).
+                - `'json_mode'`:
                     Uses xAI's JSON mode feature.
 
             include_raw:
@@ -616,30 +614,30 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
             strict:
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the `supported schemas <https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas>`__.
+                    The input schema will also be validated according to the [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.
                 - `None`:
-                    ``strict`` argument will not be passed to the model.
+                    `strict` argument will not be passed to the model.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If ``include_raw`` is `False` and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is `False` then Runnable outputs a dict.
+            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then Runnable outputs a dict.
 
-            If ``include_raw`` is `True`, then Runnable outputs a dict with keys:
+            If `include_raw` is `True`, then Runnable outputs a dict with keys:
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
+            - `'raw'`: BaseMessage
+            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
+            - `'parsing_error'`: BaseException | None
 
         """  # noqa: E501
         # Some applications require that incompatible parameters (e.g., unsupported

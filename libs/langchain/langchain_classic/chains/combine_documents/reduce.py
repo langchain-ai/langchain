@@ -155,51 +155,50 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     as are allowed.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import (
+            StuffDocumentsChain,
+            LLMChain,
+            ReduceDocumentsChain,
+        )
+        from langchain_core.prompts import PromptTemplate
+        from langchain_community.llms import OpenAI
 
-            from langchain_classic.chains import (
-                StuffDocumentsChain,
-                LLMChain,
-                ReduceDocumentsChain,
-            )
-            from langchain_core.prompts import PromptTemplate
-            from langchain_community.llms import OpenAI
-
-            # This controls how each document will be formatted. Specifically,
-            # it will be passed to `format_document` - see that function for more
-            # details.
-            document_prompt = PromptTemplate(
-                input_variables=["page_content"], template="{page_content}"
-            )
-            document_variable_name = "context"
-            llm = OpenAI()
-            # The prompt here should take as an input variable the
-            # `document_variable_name`
-            prompt = PromptTemplate.from_template("Summarize this content: {context}")
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            combine_documents_chain = StuffDocumentsChain(
-                llm_chain=llm_chain,
-                document_prompt=document_prompt,
-                document_variable_name=document_variable_name,
-            )
-            chain = ReduceDocumentsChain(
-                combine_documents_chain=combine_documents_chain,
-            )
-            # If we wanted to, we could also pass in collapse_documents_chain
-            # which is specifically aimed at collapsing documents BEFORE
-            # the final call.
-            prompt = PromptTemplate.from_template("Collapse this content: {context}")
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            collapse_documents_chain = StuffDocumentsChain(
-                llm_chain=llm_chain,
-                document_prompt=document_prompt,
-                document_variable_name=document_variable_name,
-            )
-            chain = ReduceDocumentsChain(
-                combine_documents_chain=combine_documents_chain,
-                collapse_documents_chain=collapse_documents_chain,
-            )
-
+        # This controls how each document will be formatted. Specifically,
+        # it will be passed to `format_document` - see that function for more
+        # details.
+        document_prompt = PromptTemplate(
+            input_variables=["page_content"], template="{page_content}"
+        )
+        document_variable_name = "context"
+        model = OpenAI()
+        # The prompt here should take as an input variable the
+        # `document_variable_name`
+        prompt = PromptTemplate.from_template("Summarize this content: {context}")
+        llm_chain = LLMChain(llm=model, prompt=prompt)
+        combine_documents_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_prompt=document_prompt,
+            document_variable_name=document_variable_name,
+        )
+        chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_documents_chain,
+        )
+        # If we wanted to, we could also pass in collapse_documents_chain
+        # which is specifically aimed at collapsing documents BEFORE
+        # the final call.
+        prompt = PromptTemplate.from_template("Collapse this content: {context}")
+        llm_chain = LLMChain(llm=model, prompt=prompt)
+        collapse_documents_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_prompt=document_prompt,
+            document_variable_name=document_variable_name,
+        )
+        chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_documents_chain,
+            collapse_documents_chain=collapse_documents_chain,
+        )
+        ```
     """
 
     combine_documents_chain: BaseCombineDocumentsChain

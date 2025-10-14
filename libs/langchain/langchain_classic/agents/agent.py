@@ -124,7 +124,7 @@ class BaseSingleActionAgent(BaseModel):
                 along with observations.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not supported.
@@ -155,7 +155,7 @@ class BaseSingleActionAgent(BaseModel):
             kwargs: Additional arguments.
 
         Returns:
-            BaseSingleActionAgent: Agent object.
+            Agent object.
         """
         raise NotImplementedError
 
@@ -169,7 +169,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return dictionary representation of agent.
 
         Returns:
-            Dict: Dictionary representation of agent.
+            Dictionary representation of agent.
         """
         _dict = super().model_dump()
         try:
@@ -189,11 +189,10 @@ class BaseSingleActionAgent(BaseModel):
             file_path: Path to file to save the agent to.
 
         Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
-
+        ```python
+        # If working with agent executor
+        agent.agent.save(file_path="path/agent.yaml")
+        ```
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -234,7 +233,7 @@ class BaseMultiActionAgent(BaseModel):
         """Get allowed tools.
 
         Returns:
-            list[str] | None: Allowed tools.
+            Allowed tools.
         """
         return None
 
@@ -298,7 +297,7 @@ class BaseMultiActionAgent(BaseModel):
                 along with observations.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not supported.
@@ -333,11 +332,10 @@ class BaseMultiActionAgent(BaseModel):
             ValueError: If file_path is not json or yaml.
 
         Example:
-        .. code-block:: python
-
-            # If working with agent executor
-            agent.agent.save(file_path="path/agent.yaml")
-
+        ```python
+        # If working with agent executor
+        agent.agent.save(file_path="path/agent.yaml")
+        ```
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -390,8 +388,7 @@ class MultiActionAgentOutputParser(
             text: Text to parse.
 
         Returns:
-            Union[List[AgentAction], AgentFinish]:
-                List of agent actions or agent finish.
+            List of agent actions or agent finish.
         """
 
 
@@ -814,7 +811,7 @@ class Agent(BaseSingleActionAgent):
             **kwargs: User inputs.
 
         Returns:
-            Dict[str, Any]: Full inputs for the LLMChain.
+            Full inputs for the LLMChain.
         """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
@@ -836,7 +833,7 @@ class Agent(BaseSingleActionAgent):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
@@ -877,7 +874,7 @@ class Agent(BaseSingleActionAgent):
             tools: Tools to use.
 
         Returns:
-            BasePromptTemplate: Prompt template.
+            Prompt template.
         """
 
     @classmethod
@@ -912,7 +909,7 @@ class Agent(BaseSingleActionAgent):
             kwargs: Additional arguments.
 
         Returns:
-            Agent: Agent object.
+            Agent object.
         """
         cls._validate_tools(tools)
         llm_chain = LLMChain(
@@ -944,7 +941,7 @@ class Agent(BaseSingleActionAgent):
             **kwargs: User inputs.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not in ['force', 'generate'].
@@ -1084,7 +1081,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Returns:
-            AgentExecutor: Agent executor object.
+            Agent executor object.
         """
         return cls(
             agent=agent,
@@ -1101,7 +1098,7 @@ class AgentExecutor(Chain):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If allowed tools are different than provided tools.
@@ -1128,7 +1125,7 @@ class AgentExecutor(Chain):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
         """
         agent = values.get("agent")
         if agent and isinstance(agent, Runnable):
@@ -1211,7 +1208,7 @@ class AgentExecutor(Chain):
             async_: Whether to run async. (Ignored)
 
         Returns:
-            AgentExecutorIterator: Agent executor iterator object.
+            Agent executor iterator object.
         """
         return AgentExecutorIterator(
             self,
@@ -1246,7 +1243,7 @@ class AgentExecutor(Chain):
             name: Name of tool.
 
         Returns:
-            BaseTool: Tool object.
+            Tool object.
         """
         return {tool.name: tool for tool in self.tools}[name]
 
@@ -1761,7 +1758,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Yields:
-            AddableDict: Addable dictionary.
+            Addable dictionary.
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
@@ -1792,7 +1789,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Yields:
-            AddableDict: Addable dictionary.
+            Addable dictionary.
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(

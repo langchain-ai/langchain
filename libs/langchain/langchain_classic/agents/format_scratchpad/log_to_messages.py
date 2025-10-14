@@ -14,7 +14,7 @@ def format_log_to_messages(
              Defaults to "{observation}".
 
     Returns:
-        List[BaseMessage]: The scratchpad.
+        The scratchpad.
     """
     thoughts: list[BaseMessage] = []
     for action, observation in intermediate_steps:

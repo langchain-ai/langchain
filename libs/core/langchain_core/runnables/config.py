@@ -131,7 +131,7 @@ def _set_config_context(
     """Set the child Runnable config + tracing context.
 
     Args:
-        config (RunnableConfig): The config to set.
+        config: The config to set.
 
     Returns:
         The token to reset the config and the previous tracing context.
@@ -165,7 +165,7 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     """Set the child Runnable config + tracing context.
 
     Args:
-        config (RunnableConfig): The config to set.
+        config: The config to set.
 
     Yields:
         The config context.
@@ -193,10 +193,10 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
-        config: The config to ensure. Defaults to `None`.
+        config: The config to ensure.
 
     Returns:
-        RunnableConfig: The ensured config.
+        The ensured config.
     """
     empty = RunnableConfig(
         tags=[],
@@ -254,7 +254,7 @@ def get_config_list(
         length: The length of the list.
 
     Returns:
-        list[RunnableConfig]: The list of configs.
+        The list of configs.
 
     Raises:
         ValueError: If the length of the list is not equal to the length of the inputs.
@@ -308,7 +308,7 @@ def patch_config(
         configurable: The configurable to set.
 
     Returns:
-        RunnableConfig: The patched config.
+        The patched config.
     """
     config = ensure_config(config)
     if callbacks is not None:
@@ -337,7 +337,7 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
         *configs: The configs to merge.
 
     Returns:
-        RunnableConfig: The merged config.
+        The merged config.
     """
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
@@ -412,7 +412,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -446,7 +446,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -466,10 +466,10 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
     """Get a callback manager for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Returns:
-        CallbackManager: The callback manager.
+        The callback manager.
     """
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
@@ -484,10 +484,10 @@ def get_async_callback_manager_for_config(
     """Get an async callback manager for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Returns:
-        AsyncCallbackManager: The async callback manager.
+        The async callback manager.
     """
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
@@ -512,12 +512,12 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         """Submit a function to the executor.
 
         Args:
-            func (Callable[..., T]): The function to submit.
-            *args (Any): The positional arguments to the function.
-            **kwargs (Any): The keyword arguments to the function.
+            func: The function to submit.
+            *args: The positional arguments to the function.
+            **kwargs: The keyword arguments to the function.
 
         Returns:
-            Future[T]: The future for the function.
+            The future for the function.
         """
         return super().submit(
             cast("Callable[..., T]", partial(copy_context().run, func, *args, **kwargs))
@@ -533,14 +533,13 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         """Map a function to multiple iterables.
 
         Args:
-            fn (Callable[..., T]): The function to map.
-            *iterables (Iterable[Any]): The iterables to map over.
-            timeout (float | None, optional): The timeout for the map.
-                Defaults to `None`.
-            chunksize (int, optional): The chunksize for the map. Defaults to 1.
+            fn: The function to map.
+            *iterables: The iterables to map over.
+            timeout: The timeout for the map.
+            chunksize: The chunksize for the map. Defaults to 1.
 
         Returns:
-            Iterator[T]: The iterator for the mapped function.
+            The iterator for the mapped function.
         """
         contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
 
@@ -562,10 +561,10 @@ def get_executor_for_config(
     """Get an executor for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Yields:
-        Generator[Executor, None, None]: The executor.
+        The executor.
     """
     config = config or {}
     with ContextThreadPoolExecutor(
@@ -584,12 +583,12 @@ async def run_in_executor(
 
     Args:
         executor_or_config: The executor or config to run in.
-        func (Callable[P, Output]): The function.
-        *args (Any): The positional arguments to the function.
-        **kwargs (Any): The keyword arguments to the function.
+        func: The function.
+        *args: The positional arguments to the function.
+        **kwargs: The keyword arguments to the function.
 
     Returns:
-        Output: The output of the function.
+        The output of the function.
     """
 
     def wrapper() -> T:

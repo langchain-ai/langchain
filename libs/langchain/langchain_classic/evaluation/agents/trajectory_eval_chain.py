@@ -57,14 +57,14 @@ class TrajectoryOutputParser(BaseOutputParser):
         """Parse the output text and extract the score and reasoning.
 
         Args:
-            text (str): The output text to parse.
+            text: The output text to parse.
 
         Returns:
-            TrajectoryEval: A named tuple containing the normalized score and reasoning.
+            A named tuple containing the normalized score and reasoning.
 
         Raises:
-            OutputParserException: If the score is not found in the output text or
-                if the LLM's score is not a digit in the range 1-5.
+            If the score is not found in the output text or if the LLM's score is not a
+            digit in the range 1-5.
         """
         if "Score:" not in text:
             msg = f"Could not find score in model eval output: {text}"
@@ -102,43 +102,42 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     (https://arxiv.org/abs/2210.03629)
 
     Example:
+    ```python
+    from langchain_classic.agents import AgentType, initialize_agent
+    from langchain_community.chat_models import ChatOpenAI
+    from langchain_classic.evaluation import TrajectoryEvalChain
+    from langchain_classic.tools import tool
 
-    .. code-block:: python
+    @tool
+    def geography_answers(country: str, question: str) -> str:
+        \"\"\"Very helpful answers to geography questions.\"\"\"
+        return f"{country}? IDK - We may never know {question}."
 
-        from langchain_classic.agents import AgentType, initialize_agent
-        from langchain_community.chat_models import ChatOpenAI
-        from langchain_classic.evaluation import TrajectoryEvalChain
-        from langchain_classic.tools import tool
+    model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    agent = initialize_agent(
+        tools=[geography_answers],
+        llm=model,
+        agent=AgentType.OPENAI_FUNCTIONS,
+        return_intermediate_steps=True,
+    )
 
-        @tool
-        def geography_answers(country: str, question: str) -> str:
-            \"\"\"Very helpful answers to geography questions.\"\"\"
-            return f"{country}? IDK - We may never know {question}."
+    question = "How many dwell in the largest minor region in Argentina?"
+    response = agent(question)
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent = initialize_agent(
-            tools=[geography_answers],
-            llm=llm,
-            agent=AgentType.OPENAI_FUNCTIONS,
-            return_intermediate_steps=True,
-        )
+    eval_chain = TrajectoryEvalChain.from_llm(
+        llm=model, agent_tools=[geography_answers], return_reasoning=True
+    )
 
-        question = "How many dwell in the largest minor region in Argentina?"
-        response = agent(question)
+    result = eval_chain.evaluate_agent_trajectory(
+        input=question,
+        agent_trajectory=response["intermediate_steps"],
+        prediction=response["output"],
+        reference="Paris",
+    )
+    print(result["score"])  # noqa: T201
+    # 0
 
-        eval_chain = TrajectoryEvalChain.from_llm(
-            llm=llm, agent_tools=[geography_answers], return_reasoning=True
-        )
-
-        result = eval_chain.evaluate_agent_trajectory(
-            input=question,
-            agent_trajectory=response["intermediate_steps"],
-            prediction=response["output"],
-            reference="Paris",
-        )
-        print(result["score"])  # noqa: T201
-        # 0
-
+    ```
     """
 
     agent_tools: list[BaseTool] | None = None
@@ -166,7 +165,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         """Get the description of the agent tools.
 
         Returns:
-            str: The description of the agent tools.
+            The description of the agent tools.
         """
         if self.agent_tools is None:
             return ""
@@ -185,10 +184,10 @@ Description: {tool.description}"""
         """Get the agent trajectory as a formatted string.
 
         Args:
-            steps (Union[str, List[Tuple[AgentAction, str]]]): The agent trajectory.
+            steps: The agent trajectory.
 
         Returns:
-            str: The formatted agent trajectory.
+            The formatted agent trajectory.
         """
         if isinstance(steps, str):
             return steps
@@ -208,10 +207,10 @@ Tool output: {output}"""
         """Format the reference text.
 
         Args:
-            reference (str): The reference text.
+            reference: The reference text.
 
         Returns:
-            str: The formatted reference text.
+            The formatted reference text.
         """
         if not reference:
             return ""
@@ -241,7 +240,7 @@ The following is the expected answer. Use this to measure correctness:
             **kwargs: Additional keyword arguments.
 
         Returns:
-            TrajectoryEvalChain: The TrajectoryEvalChain object.
+            The `TrajectoryEvalChain` object.
         """
         if not isinstance(llm, BaseChatModel):
             msg = "Only chat models supported by the current trajectory eval"
@@ -260,7 +259,7 @@ The following is the expected answer. Use this to measure correctness:
         """Get the input keys for the chain.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["question", "agent_trajectory", "answer", "reference"]
 
@@ -269,7 +268,7 @@ The following is the expected answer. Use this to measure correctness:
         """Get the output keys for the chain.
 
         Returns:
-            List[str]: The output keys.
+            The output keys.
         """
         return ["score", "reasoning"]
 
@@ -290,7 +289,7 @@ The following is the expected answer. Use this to measure correctness:
             run_manager: The callback manager for the chain run.
 
         Returns:
-            Dict[str, Any]: The output values of the chain.
+            The output values of the chain.
         """
         chain_input = {**inputs}
         if self.agent_tools:
@@ -314,7 +313,7 @@ The following is the expected answer. Use this to measure correctness:
             run_manager: The callback manager for the chain run.
 
         Returns:
-            Dict[str, Any]: The output values of the chain.
+            The output values of the chain.
         """
         chain_input = {**inputs}
         if self.agent_tools:

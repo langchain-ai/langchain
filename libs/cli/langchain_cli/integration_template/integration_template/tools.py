@@ -27,42 +27,42 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
 
     Setup:
         # TODO: Replace with relevant packages, env vars.
-        Install ``__package_name__`` and set environment variable
-        ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     Instantiation:
-        .. code-block:: python
-
-            tool = __ModuleName__Tool(
-                # TODO: init params
-            )
+        ```python
+        tool = __ModuleName__Tool(
+            # TODO: init params
+        )
+        ```
 
     Invocation with args:
-        .. code-block:: python
+        ```python
+        # TODO: invoke args
+        tool.invoke({...})
+        ```
 
-            # TODO: invoke args
-            tool.invoke({...})
-
-        .. code-block:: python
-
-            # TODO: output of invocation
+        ```python
+        # TODO: output of invocation
+        ```
 
     Invocation with ToolCall:
 
-        .. code-block:: python
+        ```python
+        # TODO: invoke args
+        tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call"})
+        ```
 
-            # TODO: invoke args
-            tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call"})
+        ```python
+        # TODO: output of invocation
 
-        .. code-block:: python
-
-            # TODO: output of invocation
-
+        ```
     """  # noqa: E501
 
     # TODO: Set tool name and description

@@ -123,7 +123,6 @@ class BaseLanguageModel(
     * If instance of `BaseCache`, will use the provided cache.
 
     Caching is not currently supported for streaming methods of models.
-
     """
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
@@ -146,7 +145,7 @@ class BaseLanguageModel(
     def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
         """If verbose is `None`, set it.
 
-        This allows users to pass in None as verbose to access the global setting.
+        This allows users to pass in `None` as verbose to access the global setting.
 
         Args:
             verbose: The verbosity setting to use.
@@ -186,12 +185,12 @@ class BaseLanguageModel(
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of PromptValues. A PromptValue is an object that can be
-                converted to match the format of any language model (string for pure
-                text generation models and BaseMessages for chat models).
+            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
+                can be converted to match the format of any language model (string for
+                pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
@@ -200,8 +199,8 @@ class BaseLanguageModel(
                 to the model provider API call.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-            prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generation` objects for
+            each input prompt and additional model provider-specific output.
 
         """
 
@@ -223,12 +222,12 @@ class BaseLanguageModel(
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of PromptValues. A PromptValue is an object that can be
-                converted to match the format of any language model (string for pure
-                text generation models and BaseMessages for chat models).
+            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
+                can be converted to match the format of any language model (string for
+                pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
@@ -237,8 +236,8 @@ class BaseLanguageModel(
                 to the model provider API call.
 
         Returns:
-            An `LLMResult`, which contains a list of candidate Generations for each
-            input prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generation` objects for
+            each input prompt and additional model provider-specific output.
 
         """
 

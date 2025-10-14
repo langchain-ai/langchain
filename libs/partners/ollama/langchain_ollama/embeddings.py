@@ -16,52 +16,52 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Ollama embedding model integration.
 
     Set up a local Ollama instance:
-        `Install the Ollama package <https://github.com/ollama/ollama>`__ and set up a
+        [Install the Ollama package](https://github.com/ollama/ollama) and set up a
         local Ollama instance.
 
         You will need to choose a model to serve.
 
-        You can view a list of available models via `the model library <https://ollama.com/library>`__.
+        You can view a list of available models via [the model library](https://ollama.com/library).
 
-        To fetch a model from the Ollama model library use ``ollama pull <name-of-model>``.
+        To fetch a model from the Ollama model library use `ollama pull <name-of-model>`.
 
         For example, to pull the llama3 model:
 
-        .. code-block:: bash
-
-            ollama pull llama3
+        ```bash
+        ollama pull llama3
+        ```
 
         This will download the default tagged version of the model.
         Typically, the default points to the latest, smallest sized-parameter model.
 
-        * On Mac, the models will be downloaded to ``~/.ollama/models``
-        * On Linux (or WSL), the models will be stored at ``/usr/share/ollama/.ollama/models``
+        * On Mac, the models will be downloaded to `~/.ollama/models`
+        * On Linux (or WSL), the models will be stored at `/usr/share/ollama/.ollama/models`
 
         You can specify the exact version of the model of interest
-        as such ``ollama pull vicuna:13b-v1.5-16k-q4_0``.
+        as such `ollama pull vicuna:13b-v1.5-16k-q4_0`.
 
         To view pulled models:
 
-        .. code-block:: bash
-
-            ollama list
+        ```bash
+        ollama list
+        ```
 
         To start serving:
 
-        .. code-block:: bash
-
-            ollama serve
+        ```bash
+        ollama serve
+        ```
 
         View the Ollama documentation for more commands.
 
-        .. code-block:: bash
+        ```bash
+        ollama help
+        ```
 
-            ollama help
-
-    Install the langchain-ollama integration package:
-        .. code-block:: bash
-
-            pip install -U langchain_ollama
+    Install the `langchain-ollama` integration package:
+        ```bash
+        pip install -U langchain_ollama
+        ```
 
     Key init args — completion params:
         model: str
@@ -72,50 +72,49 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_ollama import OllamaEmbeddings
 
-            from langchain_ollama import OllamaEmbeddings
-
-            embed = OllamaEmbeddings(model="llama3")
+        embed = OllamaEmbeddings(model="llama3")
+        ```
 
     Embed single text:
-        .. code-block:: python
+        ```python
+        input_text = "The meaning of life is 42"
+        vector = embed.embed_query(input_text)
+        print(vector[:3])
+        ```
 
-            input_text = "The meaning of life is 42"
-            vector = embed.embed_query(input_text)
-            print(vector[:3])
-
-        .. code-block:: python
-
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Embed multiple texts:
-        .. code-block:: python
+        ```python
+        input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
+        ```
 
-            input_texts = ["Document 1...", "Document 2..."]
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
-        .. code-block:: python
-
-            2
-            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```python
+        2
+        [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        vector = await embed.aembed_query(input_text)
+        print(vector[:3])
 
-            vector = await embed.aembed_query(input_text)
-            print(vector[:3])
+        # multiple:
+        # await embed.aembed_documents(input_texts)
+        ```
 
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
-
+        ```python
+        [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+        ```
     """  # noqa: E501
 
     model: str
@@ -155,7 +154,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     These arguments are passed to both synchronous and async clients.
 
-    Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
+    Use `sync_client_kwargs` and `async_client_kwargs` to pass different arguments
     to synchronous and asynchronous clients.
     """
 
@@ -164,7 +163,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     These are clients unique to the async client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
     sync_client_kwargs: dict | None = {}
@@ -172,7 +171,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     These are clients unique to the sync client; for shared args use `client_kwargs`.
 
-    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
     _client: Client | None = PrivateAttr(default=None)
@@ -189,16 +188,16 @@ class OllamaEmbeddings(BaseModel, Embeddings):
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: ``0.1``)"""
+    the algorithm more responsive. (Default: `0.1`)"""
 
     mirostat_tau: float | None = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
-    coherent text. (Default: ``5.0``)"""
+    coherent text. (Default: `5.0`)"""
 
     num_ctx: int | None = None
     """Sets the size of the context window used to generate the
-    next token. (Default: ``2048``)	"""
+    next token. (Default: `2048`)	"""
 
     num_gpu: int | None = None
     """The number of GPUs to use. On macOS it defaults to `1` to
@@ -206,7 +205,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     keep_alive: int | None = None
     """Controls how long the model will stay loaded into memory
-    following the request (default: ``5m``)
+    following the request (default: `5m`)
     """
 
     num_thread: int | None = None
@@ -217,34 +216,34 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
     repeat_last_n: int | None = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, `0` = disabled, ``-1`` = ``num_ctx``)"""
+    repetition. (Default: `64`, `0` = disabled, `-1` = `num_ctx`)"""
 
     repeat_penalty: float | None = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
-    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
-    will be more lenient. (Default: ``1.1``)"""
+    """Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`)
+    will penalize repetitions more strongly, while a lower value (e.g., `0.9`)
+    will be more lenient. (Default: `1.1`)"""
 
     temperature: float | None = None
     """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: ``0.8``)"""
+    make the model answer more creatively. (Default: `0.8`)"""
 
     stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
     tfs_z: float | None = None
     """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
-    impact more, while a value of ``1.0`` disables this setting. (default: `1`)"""
+    tokens from the output. A higher value (e.g., `2.0`) will reduce the
+    impact more, while a value of `1.0` disables this setting. (default: `1`)"""
 
     top_k: int | None = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
-    will give more diverse answers, while a lower value (e.g. ``10``)
-    will be more conservative. (Default: ``40``)"""
+    """Reduces the probability of generating nonsense. A higher value (e.g. `100`)
+    will give more diverse answers, while a lower value (e.g. `10`)
+    will be more conservative. (Default: `40`)"""
 
     top_p: float | None = None
-    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
-    to more diverse text, while a lower value (e.g., ``0.5``) will
-    generate more focused and conservative text. (Default: ``0.9``)"""
+    """Works together with top-k. A higher value (e.g., `0.95`) will lead
+    to more diverse text, while a lower value (e.g., `0.5`) will
+    generate more focused and conservative text. (Default: `0.9`)"""
 
     model_config = ConfigDict(
         extra="forbid",

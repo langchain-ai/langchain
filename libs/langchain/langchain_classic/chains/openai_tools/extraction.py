@@ -3,7 +3,9 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function as convert_pydantic_to_openai_function,
+)
 from pydantic import BaseModel
 
 _EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned \
@@ -42,8 +44,8 @@ If a property is not present and is not required in the function parameters, do 
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),

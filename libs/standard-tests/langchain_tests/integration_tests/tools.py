@@ -14,7 +14,7 @@ class ToolsIntegrationTests(ToolsTests):
 
         If invoked with a ToolCall, the tool should return a valid ToolMessage content.
 
-        If you have followed the `custom tool guide <https://python.langchain.com/docs/how_to/custom_tools/>`_,
+        If you have followed the [custom tool guide](https://python.langchain.com/docs/how_to/custom_tools/),
         this test should always pass because ToolCall inputs are handled by the
         `langchain_core.tools.BaseTool` class.
 
