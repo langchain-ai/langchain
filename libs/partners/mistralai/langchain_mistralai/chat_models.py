@@ -69,6 +69,8 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from contextlib import AbstractAsyncContextManager
@@ -155,6 +157,7 @@ def _convert_mistral_chat_message_to_message(
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
+        response_metadata={"model_provider": "mistralai"},
     )
 
 
@@ -226,12 +229,18 @@ async def acompletion_with_retry(
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: dict, default_class: type[BaseMessageChunk], index: int, index_type: str
+    chunk: dict,
+    default_class: type[BaseMessageChunk],
+    index: int,
+    index_type: str,
+    output_version: str | None,
 ) -> tuple[BaseMessageChunk, int, str]:
     _choice = chunk["choices"][0]
     _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
+    if output_version == "v1" and isinstance(content, str):
+        content = [{"type": "text", "text": content}]
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict):
@@ -291,7 +300,7 @@ def _convert_chunk_to_message_chunk(
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 usage_metadata=usage_metadata,  # type: ignore[arg-type]
-                response_metadata=response_metadata,
+                response_metadata={"model_provider": "mistralai", **response_metadata},
             ),
             index,
             index_type,
@@ -331,12 +340,16 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
     return result
 
 
-def _clean_block(block):
+def _clean_block(block: dict) -> dict:
     # Remove "index" key added for message aggregation in langchain-core
     new_block = {k: v for k, v in block.items() if k != "index"}
     if block.get("type") == "thinking" and isinstance(block.get("thinking"), list):
         new_block["thinking"] = [
-            ({k: v for k, v in sb.items() if k != "index"} if isinstance(sb, dict) and "index" in sb else sb)
+            (
+                {k: v for k, v in sb.items() if k != "index"}
+                if isinstance(sb, dict) and "index" in sb
+                else sb
+            )
             for sb in block["thinking"]
         ]
     return new_block
@@ -382,18 +395,26 @@ def _convert_message_to_mistral_chat_message(
             message_dict["tool_calls"] = tool_calls
 
         # Message content
-        if tool_calls and message.content:
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            content = _convert_from_v1_to_mistral(
+                message.content_blocks, message.response_metadata.get("model_provider")
+            )
+        else:
+            content = message.content
+
+        if tool_calls and content:
             # Assistant message must have either content or tool_calls, but not both.
             # Some providers may not support tool_calls in the same message as content.
             # This is done to ensure compatibility with messages from other providers.
             content = ""
 
-        elif isinstance(message.content, list):
+        elif isinstance(content, list):
             content = [
                 _clean_block(block)
                 if isinstance(block, dict) and "index" in block
                 else block
-                for block in message.content
+                for block in content
             ]
         else:
             content = message.content
@@ -671,7 +692,7 @@ class ChatMistralAI(BaseChatModel):
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(
-                chunk, default_chunk_class, index, index_type
+                chunk, default_chunk_class, index, index_type, self.output_version
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
@@ -701,7 +722,7 @@ class ChatMistralAI(BaseChatModel):
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(
-                chunk, default_chunk_class, index, index_type
+                chunk, default_chunk_class, index, index_type, self.output_version
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
