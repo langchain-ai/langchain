@@ -1,18 +1,9 @@
 """Middleware plugins for agents."""
 
-from .anthropic_tools import (
-    AnthropicToolsState,
-    FileData,
-    FilesystemClaudeMemoryMiddleware,
-    FilesystemClaudeTextEditorMiddleware,
-    StateClaudeMemoryMiddleware,
-    StateClaudeTextEditorMiddleware,
-)
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
-from .file_search import FilesystemFileSearchMiddleware, StateFileSearchMiddleware
 from .filesystem import FilesystemMiddleware
 from .human_in_the_loop import HumanInTheLoopMiddleware
 from .model_call_limit import ModelCallLimitMiddleware
@@ -42,13 +33,8 @@ __all__ = [
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
-    "AnthropicToolsState",
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
-    "FileData",
-    "FilesystemClaudeMemoryMiddleware",
-    "FilesystemClaudeTextEditorMiddleware",
-    "FilesystemFileSearchMiddleware",
     "FilesystemMiddleware",
     "HumanInTheLoopMiddleware",
     "LLMToolSelectorMiddleware",
@@ -58,9 +44,6 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "PlanningMiddleware",
-    "StateClaudeMemoryMiddleware",
-    "StateClaudeTextEditorMiddleware",
-    "StateFileSearchMiddleware",
     "SubAgentMiddleware",
     "SummarizationMiddleware",
     "ToolCallLimitMiddleware",
