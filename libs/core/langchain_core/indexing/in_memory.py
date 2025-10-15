@@ -3,7 +3,7 @@
 import operator
 import uuid
 from collections.abc import Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from pydantic import Field
 from typing_extensions import override
@@ -60,7 +60,7 @@ class InMemoryDocumentIndex(DocumentIndex):
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
     @override
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs.
 
         Args:

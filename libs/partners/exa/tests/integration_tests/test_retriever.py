@@ -1,3 +1,5 @@
+"""Integration tests for `ExaSearchRetriever`."""
+
 from langchain_core.documents import (
     Document,  # type: ignore[import-not-found, import-not-found]
 )
@@ -6,6 +8,7 @@ from langchain_exa import ExaSearchRetriever
 
 
 def test_exa_retriever() -> None:
+    """Test basic functionality of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever()
     res = retriever.invoke("best time to visit japan")
     print(res)  # noqa: T201
@@ -15,6 +18,7 @@ def test_exa_retriever() -> None:
 
 
 def test_exa_retriever_highlights() -> None:
+    """Test highlights feature of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever(highlights=True)
     res = retriever.invoke("best time to visit japan")
     print(res)  # noqa: T201
@@ -29,6 +33,7 @@ def test_exa_retriever_highlights() -> None:
 
 
 def test_exa_retriever_advanced_features() -> None:
+    """Test advanced features of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever(
         k=3, text_contents_options={"max_characters": 1000}, summary=True, type="auto"
     )

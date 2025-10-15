@@ -1,14 +1,12 @@
 {
   "python.analysis.include": [
     "libs/**",
-    "cookbook/**"
   ],
   "python.analysis.exclude": [
     "**/node_modules",
     "**/__pycache__",
     "**/.pytest_cache",
     "**/.*",
-    "_dist/**",
   ],
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",

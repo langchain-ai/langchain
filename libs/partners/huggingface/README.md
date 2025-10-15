@@ -2,10 +2,4 @@
 
 This package contains the LangChain integrations for huggingface related classes.
 
-## Installation and Setup
-
-- Install the LangChain partner package
-
-```bash
-pip install langchain-huggingface
-```
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/groq) for more details.

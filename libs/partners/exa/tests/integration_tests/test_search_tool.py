@@ -1,9 +1,12 @@
+"""Integration tests for Exa search tool."""
+
 from langchain_exa import (
     ExaSearchResults,  # type: ignore[import-not-found, import-not-found]
 )
 
 
 def test_search_tool() -> None:
+    """Test that the Exa search tool works."""
     tool = ExaSearchResults()
     res = tool.invoke({"query": "best time to visit japan", "num_results": 5})
     print(res)  # noqa: T201
@@ -11,6 +14,7 @@ def test_search_tool() -> None:
 
 
 def test_search_tool_advanced_features() -> None:
+    """Test advanced features of the Exa search tool."""
     tool = ExaSearchResults()
     res = tool.invoke(
         {

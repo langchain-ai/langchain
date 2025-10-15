@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from langchain_core.language_models._utils import (
     _parse_data_uri,
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
+    """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions."""
     if "url" in block:
         return {
             "type": "image_url",
@@ -156,11 +156,11 @@ def _convert_to_v1_from_chat_completions_input(
     """Convert OpenAI Chat Completions format blocks to v1 format.
 
     During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
-    block as a ``'non_standard'`` block with the original block stored in the ``value``
+    block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any blocks that
     might be OpenAI format to v1 ContentBlocks.
 
-    If conversion fails, the block is left as a ``'non_standard'`` block.
+    If conversion fails, the block is left as a `'non_standard'` block.
 
     Args:
         content: List of content blocks to process.
@@ -263,7 +263,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
-    """Convert v0 AIMessage into ``output_version="responses/v1"`` format."""
+    """Convert v0 AIMessage into `output_version="responses/v1"` format."""
     from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
     # Only update ChatOpenAI v0.3 AIMessages
@@ -401,7 +401,7 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
 
 def _convert_openai_format_to_data_block(
     block: dict,
-) -> Union[types.ContentBlock, dict[Any, Any]]:
+) -> types.ContentBlock | dict[Any, Any]:
     """Convert OpenAI image/audio/file content block to respective v1 multimodal block.
 
     We expect that the incoming block is verified to be in OpenAI Chat Completions
@@ -677,9 +677,9 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 yield cast("types.ImageContentBlock", new_block)
 
             elif block_type == "function_call":
-                tool_call_block: Optional[
-                    Union[types.ToolCall, types.InvalidToolCall, types.ToolCallChunk]
-                ] = None
+                tool_call_block: (
+                    types.ToolCall | types.InvalidToolCall | types.ToolCallChunk | None
+                ) = None
                 call_id = block.get("call_id", "")
 
                 from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
@@ -726,7 +726,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if "index" in block:
                     web_search_call["index"] = f"lc_wsc_{block['index']}"
 
-                sources: Optional[dict[str, Any]] = None
+                sources: dict[str, Any] | None = None
                 if "action" in block and isinstance(block["action"], dict):
                     if "sources" in block["action"]:
                         sources = block["action"]["sources"]
