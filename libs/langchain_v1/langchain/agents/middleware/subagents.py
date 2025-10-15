@@ -19,7 +19,7 @@ except ImportError:
     AnthropicPromptCachingMiddleware = None
 
 
-class AgentSpec(TypedDict):
+class SubAgent(TypedDict):
     """Specification for an agent.
 
     When specifying custom agents, the `default_middleware` from `SubAgentMiddleware`
@@ -47,7 +47,7 @@ class AgentSpec(TypedDict):
     """Additional middleware to append after `default_middleware`."""
 
 
-class CompiledAgentSpec(TypedDict):
+class CompiledSubAgent(TypedDict):
     """A pre-compiled agent spec."""
 
     name: str
@@ -183,7 +183,7 @@ DEFAULT_GENERAL_PURPOSE_DESCRIPTION = "General-purpose agent for researching com
 def _get_subagents(
     default_model: str | BaseChatModel,
     default_tools: Sequence[BaseTool | Callable | dict[str, Any]],
-    subagents: list[AgentSpec | CompiledAgentSpec],
+    subagents: list[SubAgent | CompiledSubAgent],
     *,
     default_middleware: list[AgentMiddleware] | None = None,
     general_purpose_agent: bool = True,
@@ -226,7 +226,7 @@ def _get_subagents(
     for _agent in subagents:
         subagent_descriptions.append(f"- {_agent['name']}: {_agent['description']}")
         if "runnable" in _agent:
-            custom_agent = cast("CompiledAgentSpec", _agent)
+            custom_agent = cast("CompiledSubAgent", _agent)
             agents[custom_agent["name"]] = custom_agent["runnable"]
             continue
         _tools = _agent.get("tools", list(default_tools))
@@ -251,7 +251,7 @@ def _get_subagents(
 def _create_task_tool(
     default_model: str | BaseChatModel,
     default_tools: Sequence[BaseTool | Callable | dict[str, Any]],
-    subagents: list[AgentSpec | CompiledAgentSpec],
+    subagents: list[SubAgent | CompiledSubAgent],
     *,
     default_middleware: list[AgentMiddleware] | None = None,
     general_purpose_agent: bool = True,
@@ -413,7 +413,7 @@ class SubAgentMiddleware(AgentMiddleware):
         *,
         default_model: str | BaseChatModel,
         default_tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
-        subagents: list[AgentSpec | CompiledAgentSpec] | None = None,
+        subagents: list[SubAgent | CompiledSubAgent] | None = None,
         system_prompt: str | None = None,
         default_middleware: list[AgentMiddleware] | None = None,
         general_purpose_agent: bool = True,
