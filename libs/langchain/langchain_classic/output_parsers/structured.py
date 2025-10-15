@@ -96,7 +96,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
         # ```
 
         Args:
-            only_json (bool): If `True`, only the json in the Markdown code snippet
+            only_json: If `True`, only the json in the Markdown code snippet
                 will be returned, without the introducing text. Defaults to `False`.
         """
         schema_str = "\n".join(

@@ -56,22 +56,17 @@ def draw_mermaid(
     """Draws a Mermaid graph using the provided graph data.
 
     Args:
-        nodes (dict[str, str]): List of node ids.
-        edges (list[Edge]): List of edges, object with a source,
-            target and data.
-        first_node (str, optional): Id of the first node. Defaults to `None`.
-        last_node (str, optional): Id of the last node. Defaults to `None`.
-        with_styles (bool, optional): Whether to include styles in the graph.
-            Defaults to `True`.
-        curve_style (CurveStyle, optional): Curve style for the edges.
-            Defaults to CurveStyle.LINEAR.
-        node_styles (NodeStyles, optional): Node colors for different types.
-            Defaults to NodeStyles().
-        wrap_label_n_words (int, optional): Words to wrap the edge labels.
-            Defaults to 9.
-        frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+        nodes: List of node ids.
+        edges: List of edges, object with a source, target and data.
+        first_node: Id of the first node.
+        last_node: Id of the last node.
+        with_styles: Whether to include styles in the graph. Defaults to `True`.
+        curve_style: Curve style for the edges. Defaults to CurveStyle.LINEAR.
+        node_styles: Node colors for different types. Defaults to NodeStyles().
+        wrap_label_n_words: Words to wrap the edge labels. Defaults to 9.
+        frontmatter_config: Mermaid frontmatter config.
             Can be used to customize theme and styles. Will be converted to YAML and
-            added to the beginning of the mermaid graph. Defaults to `None`.
+            added to the beginning of the mermaid graph.
 
             See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -87,7 +82,7 @@ def draw_mermaid(
             }
             ```
     Returns:
-        str: Mermaid graph syntax.
+        Mermaid graph syntax.
 
     """
     # Initialize Mermaid graph configuration
@@ -290,23 +285,17 @@ def draw_mermaid_png(
     """Draws a Mermaid graph as PNG using provided syntax.
 
     Args:
-        mermaid_syntax (str): Mermaid graph syntax.
-        output_file_path (str, optional): Path to save the PNG image.
-            Defaults to `None`.
-        draw_method (MermaidDrawMethod, optional): Method to draw the graph.
-            Defaults to MermaidDrawMethod.API.
-        background_color (str, optional): Background color of the image.
-            Defaults to "white".
-        padding (int, optional): Padding around the image. Defaults to 10.
-        max_retries (int, optional): Maximum number of retries (MermaidDrawMethod.API).
-            Defaults to 1.
-        retry_delay (float, optional): Delay between retries (MermaidDrawMethod.API).
-            Defaults to 1.0.
-        base_url (str, optional): Base URL for the Mermaid.ink API.
-            Defaults to `None`.
+        mermaid_syntax: Mermaid graph syntax.
+        output_file_path: Path to save the PNG image.
+        draw_method: Method to draw the graph. Defaults to MermaidDrawMethod.API.
+        background_color: Background color of the image. Defaults to "white".
+        padding: Padding around the image. Defaults to 10.
+        max_retries: Maximum number of retries (MermaidDrawMethod.API). Defaults to 1.
+        retry_delay: Delay between retries (MermaidDrawMethod.API). Defaults to 1.0.
+        base_url: Base URL for the Mermaid.ink API.
 
     Returns:
-        bytes: PNG image bytes.
+        PNG image bytes.
 
     Raises:
         ValueError: If an invalid draw method is provided.

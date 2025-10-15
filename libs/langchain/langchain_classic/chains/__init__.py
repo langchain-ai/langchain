@@ -7,14 +7,8 @@ The Chain interface makes it easy to create apps that are:
 
     - **Stateful:** add Memory to any Chain to give it state,
     - **Observable:** pass Callbacks to a Chain to execute additional functionality,
-      like logging, outside the main sequence of component calls,
+        like logging, outside the main sequence of component calls,
     - **Composable:** combine Chains with other components, including other Chains.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
 from typing import Any

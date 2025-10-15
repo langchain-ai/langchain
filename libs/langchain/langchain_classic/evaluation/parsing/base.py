@@ -21,11 +21,11 @@ class JsonValidityEvaluator(StringEvaluator):
         require any input or reference.
 
     Attributes:
-        requires_input (bool): Whether this evaluator requires an input
+        requires_input: Whether this evaluator requires an input
             string. Always False.
-        requires_reference (bool): Whether this evaluator requires a
+        requires_reference: Whether this evaluator requires a
             reference string. Always False.
-        evaluation_name (str): The name of the evaluation metric.
+        evaluation_name: The name of the evaluation metric.
             Always "json".
 
     Examples:
@@ -71,10 +71,11 @@ class JsonValidityEvaluator(StringEvaluator):
             **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: A dictionary containing the evaluation score. The score is 1 if
-            the prediction is valid JSON, and 0 otherwise.
-                If the prediction is not valid JSON, the dictionary also contains
-                a "reasoning" field with the error message.
+            A dictionary containing the evaluation score. The score is `1` if
+            the prediction is valid JSON, and `0` otherwise.
+
+            If the prediction is not valid JSON, the dictionary also contains
+            a `reasoning` field with the error message.
 
         """
         try:
@@ -98,11 +99,11 @@ class JsonEqualityEvaluator(StringEvaluator):
     which is also parsed as JSON. It does not require an input string.
 
     Attributes:
-        requires_input (bool): Whether this evaluator requires an
+        requires_input: Whether this evaluator requires an
             input string. Always False.
-        requires_reference (bool): Whether this evaluator requires
+        requires_reference: Whether this evaluator requires
             a reference string. Always True.
-        evaluation_name (str): The name of the evaluation metric.
+        evaluation_name: The name of the evaluation metric.
             Always "parsed_equality".
 
     Examples:

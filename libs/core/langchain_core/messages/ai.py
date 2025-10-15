@@ -40,13 +40,13 @@ class InputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full input token count. Does *not* need to have all keys.
 
     Example:
-        .. code-block:: python
-
-            {
-                "audio": 10,
-                "cache_creation": 200,
-                "cache_read": 100,
-            }
+        ```python
+        {
+            "audio": 10,
+            "cache_creation": 200,
+            "cache_read": 100,
+        }
+        ```
 
     !!! version-added "Added in version 0.3.9"
 
@@ -76,12 +76,12 @@ class OutputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full output token count. Does *not* need to have all keys.
 
     Example:
-        .. code-block:: python
-
-            {
-                "audio": 10,
-                "reasoning": 200,
-            }
+        ```python
+        {
+            "audio": 10,
+            "reasoning": 200,
+        }
+        ```
 
     !!! version-added "Added in version 0.3.9"
 
@@ -104,22 +104,22 @@ class UsageMetadata(TypedDict):
     This is a standard representation of token usage that is consistent across models.
 
     Example:
-        .. code-block:: python
-
-            {
-                "input_tokens": 350,
-                "output_tokens": 240,
-                "total_tokens": 590,
-                "input_token_details": {
-                    "audio": 10,
-                    "cache_creation": 200,
-                    "cache_read": 100,
-                },
-                "output_token_details": {
-                    "audio": 10,
-                    "reasoning": 200,
-                },
-            }
+        ```python
+        {
+            "input_tokens": 350,
+            "output_tokens": 240,
+            "total_tokens": 590,
+            "input_token_details": {
+                "audio": 10,
+                "cache_creation": 200,
+                "cache_read": 100,
+            },
+            "output_token_details": {
+                "audio": 10,
+                "reasoning": 200,
+            },
+        }
+        ```
 
     !!! warning "Behavior changed in 0.3.9"
         Added `input_token_details` and `output_token_details`.
@@ -193,12 +193,12 @@ class AIMessage(BaseMessage):
     ) -> None:
         """Initialize `AIMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
             content: The content of the message.
             content_blocks: Typed standard content.
-            kwargs: Additional arguments to pass to the parent class.
+            **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
             # If there are tool calls in content_blocks, but not in tool_calls, add them
@@ -335,7 +335,7 @@ class AIMessage(BaseMessage):
 
         Args:
             html: Whether to return an HTML-formatted string.
-                 Defaults to `False`.
+                Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -380,7 +380,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for deserialization).
 
-    Defaults to ``AIMessageChunk``.
+    Defaults to `AIMessageChunk`.
 
     """
 
@@ -390,8 +390,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     chunk_position: Literal["last"] | None = None
     """Optional span represented by an aggregated AIMessageChunk.
 
-    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
-    ``tool_call_chunks`` in message content will be parsed into `tool_calls`.
+    If a chunk with `chunk_position="last"` is aggregated into a stream,
+    `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
 
     @property
@@ -545,6 +545,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     and call_id in id_to_tc
                 ):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
+                    if "extras" in block:
+                        # mypy does not account for instance check for dict above
+                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
 
         return self
 
@@ -596,14 +599,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple ``AIMessageChunk``s together.
+    """Add multiple `AIMessageChunk`s together.
 
     Args:
-        left: The first ``AIMessageChunk``.
-        *others: Other ``AIMessageChunk``s to add.
+        left: The first `AIMessageChunk`.
+        *others: Other `AIMessageChunk`s to add.
 
     Returns:
-        The resulting ``AIMessageChunk``.
+        The resulting `AIMessageChunk`.
 
     """
     content = merge_content(left.content, *(o.content for o in others))
@@ -681,43 +684,42 @@ def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageM
     """Recursively add two UsageMetadata objects.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.messages.ai import add_usage
 
-            from langchain_core.messages.ai import add_usage
+        left = UsageMetadata(
+            input_tokens=5,
+            output_tokens=0,
+            total_tokens=5,
+            input_token_details=InputTokenDetails(cache_read=3),
+        )
+        right = UsageMetadata(
+            input_tokens=0,
+            output_tokens=10,
+            total_tokens=10,
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
 
-            left = UsageMetadata(
-                input_tokens=5,
-                output_tokens=0,
-                total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3),
-            )
-            right = UsageMetadata(
-                input_tokens=0,
-                output_tokens=10,
-                total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
-            add_usage(left, right)
+        add_usage(left, right)
+        ```
 
         results in
 
-        .. code-block:: python
-
-            UsageMetadata(
-                input_tokens=5,
-                output_tokens=10,
-                total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
+        ```python
+        UsageMetadata(
+            input_tokens=5,
+            output_tokens=10,
+            total_tokens=15,
+            input_token_details=InputTokenDetails(cache_read=3),
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
+        ```
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The sum of the two ``UsageMetadata`` objects.
+        The sum of the two `UsageMetadata` objects.
 
     """
     if not (left or right):
@@ -740,48 +742,47 @@ def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageM
 def subtract_usage(
     left: UsageMetadata | None, right: UsageMetadata | None
 ) -> UsageMetadata:
-    """Recursively subtract two ``UsageMetadata`` objects.
+    """Recursively subtract two `UsageMetadata` objects.
 
-    Token counts cannot be negative so the actual operation is ``max(left - right, 0)``.
+    Token counts cannot be negative so the actual operation is `max(left - right, 0)`.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.messages.ai import subtract_usage
 
-            from langchain_core.messages.ai import subtract_usage
+        left = UsageMetadata(
+            input_tokens=5,
+            output_tokens=10,
+            total_tokens=15,
+            input_token_details=InputTokenDetails(cache_read=4),
+        )
+        right = UsageMetadata(
+            input_tokens=3,
+            output_tokens=8,
+            total_tokens=11,
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
 
-            left = UsageMetadata(
-                input_tokens=5,
-                output_tokens=10,
-                total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4),
-            )
-            right = UsageMetadata(
-                input_tokens=3,
-                output_tokens=8,
-                total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
-            subtract_usage(left, right)
+        subtract_usage(left, right)
+        ```
 
         results in
 
-        .. code-block:: python
-
-            UsageMetadata(
-                input_tokens=2,
-                output_tokens=2,
-                total_tokens=4,
-                input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0),
-            )
-
+        ```python
+        UsageMetadata(
+            input_tokens=2,
+            output_tokens=2,
+            total_tokens=4,
+            input_token_details=InputTokenDetails(cache_read=4),
+            output_token_details=OutputTokenDetails(reasoning=0),
+        )
+        ```
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The resulting ``UsageMetadata`` after subtraction.
+        The resulting `UsageMetadata` after subtraction.
 
     """
     if not (left or right):

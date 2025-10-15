@@ -16,10 +16,10 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class YamlOutputParser(BaseOutputParser[T]):
-    """Parse YAML output using a pydantic model."""
+    """Parse YAML output using a Pydantic model."""
 
     pydantic_object: type[T]
-    """The pydantic model to parse."""
+    """The Pydantic model to parse."""
     pattern: re.Pattern = re.compile(
         r"^```(?:ya?ml)?(?P<yaml>[^`]*)",
         re.MULTILINE | re.DOTALL,

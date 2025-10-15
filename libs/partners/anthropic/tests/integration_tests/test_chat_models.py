@@ -278,6 +278,53 @@ def test_system_invoke() -> None:
     assert isinstance(result.content, str)
 
 
+def test_handle_empty_aimessage() -> None:
+    # Anthropic can generate empty AIMessages, which are not valid unless in the last
+    # message in a sequence.
+    llm = ChatAnthropic(model=MODEL_NAME)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage([]),
+        HumanMessage("My name is Bob."),
+    ]
+    _ = llm.invoke(messages)
+
+    # Test tool call sequence
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "name": "get_weather",
+                "description": "Get weather report for a city",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                },
+            },
+        ],
+    )
+    _ = llm_with_tools.invoke(
+        [
+            HumanMessage("What's the weather in Boston?"),
+            AIMessage(
+                content=[],
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "Boston"},
+                        "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                content="It's sunny.", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"
+            ),
+            AIMessage([]),
+            HumanMessage("Thanks!"),
+        ]
+    )
+
+
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]

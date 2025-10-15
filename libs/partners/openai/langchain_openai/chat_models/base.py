@@ -654,11 +654,11 @@ class BaseChatOpenAI(BaseChatModel):
     For example, the following two are equivalent:
 
     ```python
-    llm = ChatOpenAI(
+    model = ChatOpenAI(
         model="...",
         use_previous_response_id=True,
     )
-    llm.invoke(
+    model.invoke(
         [
             HumanMessage("Hello"),
             AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
@@ -668,8 +668,8 @@ class BaseChatOpenAI(BaseChatModel):
     ```
 
     ```python
-    llm = ChatOpenAI(model="...", use_responses_api=True)
-    llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
+    model = ChatOpenAI(model="...", use_responses_api=True)
+    model.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
     ```
 
     !!! version-added "Added in version 0.3.26"
@@ -1801,16 +1801,16 @@ class BaseChatOpenAI(BaseChatModel):
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    llm = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    structured_llm = llm.with_structured_output(
+                    structured_model = model.with_structured_output(
                         ResponseSchema,
                         tools=[get_weather],
                         strict=True,
                         include_raw=True,
                     )
 
-                    structured_llm.invoke("What's the weather in Boston?")
+                    structured_model.invoke("What's the weather in Boston?")
                     ```
 
                     ```python
@@ -2057,7 +2057,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             model="...",
             temperature=0,
             max_tokens=None,
@@ -2104,7 +2104,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         Results in an `AIMessage` response:
@@ -2133,7 +2133,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Stream a response from the model:
 
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -2158,7 +2158,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         To collect the full message, you can concatenate the chunks:
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -2178,13 +2178,13 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         ```python
         # Invoke
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # Stream
-        async for chunk in (await llm.astream(messages))
+        async for chunk in (await model.astream(messages))
 
         # Batch
-        await llm.abatch([messages])
+        await model.abatch([messages])
         ```
 
         Results in an `AIMessage` response:
@@ -2236,11 +2236,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
 
-        llm_with_tools = llm.bind_tools(
+        model_with_tools = model.bind_tools(
             [GetWeather, GetPopulation]
             # strict = True  # Enforce tool args schema is respected
         )
-        ai_msg = llm_with_tools.invoke(
+        ai_msg = model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
         ai_msg.tool_calls
@@ -2277,7 +2277,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             be set to `False` to disable parallel tool calls:
 
             ```python
-            ai_msg = llm_with_tools.invoke(
+            ai_msg = model_with_tools.invoke(
                 "What is the weather in LA and NY?", parallel_tool_calls=False
             )
             ai_msg.tool_calls
@@ -2294,7 +2294,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ```
 
         Like other runtime parameters, `parallel_tool_calls` can be bound to a model
-        using `llm.bind(parallel_tool_calls=False)` or during instantiation by
+        using `model.bind(parallel_tool_calls=False)` or during instantiation by
         setting `model_kwargs`.
 
         See `bind_tools` for more.
@@ -2308,12 +2308,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="...", output_version="responses/v1")
+        model = ChatOpenAI(model="...", output_version="responses/v1")
 
         tool = {"type": "web_search"}
-        llm_with_tools = llm.bind_tools([tool])
+        model_with_tools = model.bind_tools([tool])
 
-        response = llm_with_tools.invoke("What was a positive news story from today?")
+        response = model_with_tools.invoke("What was a positive news story from today?")
         response.content
         ```
 
@@ -2354,12 +2354,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             model="...",
             use_responses_api=True,
             output_version="responses/v1",
         )
-        response = llm.invoke("Hi, I'm Bob.")
+        response = model.invoke("Hi, I'm Bob.")
         response.text
         ```
 
@@ -2368,7 +2368,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```
 
         ```python
-        second_response = llm.invoke(
+        second_response = model.invoke(
             "What is my name?",
             previous_response_id=response.response_metadata["id"],
         )
@@ -2388,7 +2388,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             recent response.
 
             ```python
-            llm = ChatOpenAI(model="...", use_previous_response_id=True)
+            model = ChatOpenAI(model="...", use_previous_response_id=True)
             ```
 
     ??? info "Reasoning output"
@@ -2404,10 +2404,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             "summary": "auto",  # 'detailed', 'auto', or None
         }
 
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             model="...", reasoning=reasoning, output_version="responses/v1"
         )
-        response = llm.invoke("What is 3^3?")
+        response = model.invoke("What is 3^3?")
 
         # Response text
         print(f"Output: {response.text}")
@@ -2448,8 +2448,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             )
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         ```python
@@ -2465,8 +2465,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     ??? info "JSON mode"
 
         ```python
-        json_llm = llm.bind(response_format={"type": "json_object"})
-        ai_msg = json_llm.invoke(
+        json_model = model.bind(response_format={"type": "json_object"})
+        ai_msg = json_model.invoke(
             "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
         )
         ai_msg.content
@@ -2495,7 +2495,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             ]
         )
 
-        ai_msg = llm.invoke([message])
+        ai_msg = model.invoke([message])
         ai_msg.content
         ```
 
@@ -2506,7 +2506,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     ??? info "Token usage"
 
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
 
         ```txt
@@ -2516,7 +2516,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         When streaming, set the `stream_usage` kwarg:
 
         ```python
-        stream = llm.stream(messages, stream_usage=True)
+        stream = model.stream(messages, stream_usage=True)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -2530,8 +2530,8 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     ??? info "Logprobs"
 
         ```python
-        logprobs_llm = llm.bind(logprobs=True)
-        ai_msg = logprobs_llm.invoke(messages)
+        logprobs_model = model.bind(logprobs=True)
+        ai_msg = logprobs_model.invoke(messages)
         ai_msg.response_metadata["logprobs"]
         ```
 
@@ -2590,7 +2590,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     ??? info "Response metadata"
 
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
@@ -2621,7 +2621,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="...", service_tier="flex")
+        model = ChatOpenAI(model="...", service_tier="flex")
         ```
 
         Note that this is a beta feature that is only available for a subset of models.
@@ -2639,7 +2639,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```python title="LM Studio example with TTL (auto-eviction)"
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             base_url="http://localhost:1234/v1",
             api_key="lm-studio",  # Can be any string
             model="mlx-community/QwQ-32B-4bit",
@@ -2649,7 +2649,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ```
 
         ```python title="vLLM example with custom parameters"
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             base_url="http://localhost:8000/v1",
             api_key="EMPTY",
             model="meta-llama/Llama-2-7b-chat-hf",
@@ -2669,7 +2669,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         ```python
         # Standard OpenAI parameters
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             model="...",
             model_kwargs={
                 "stream_options": {"include_usage": True},
@@ -2689,7 +2689,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         ```python
         # Custom provider parameters
-        llm = ChatOpenAI(
+        model = ChatOpenAI(
             base_url="http://localhost:8000/v1",
             model="custom-model",
             extra_body={
@@ -2715,19 +2715,19 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         per-invocation to improve cache hit rates and reduce costs:
 
         ```python
-        llm = ChatOpenAI(model="...")
+        model = ChatOpenAI(model="...")
 
-        response = llm.invoke(
+        response = model.invoke(
             messages,
             prompt_cache_key="example-key-a",  # Routes to same machine for cache hits
         )
 
-        customer_response = llm.invoke(messages, prompt_cache_key="example-key-b")
-        support_response = llm.invoke(messages, prompt_cache_key="example-key-c")
+        customer_response = model.invoke(messages, prompt_cache_key="example-key-b")
+        support_response = model.invoke(messages, prompt_cache_key="example-key-c")
 
         # Dynamic cache keys based on context
         cache_key = f"example-key-{dynamic_suffix}"
-        response = llm.invoke(messages, prompt_cache_key=cache_key)
+        response = model.invoke(messages, prompt_cache_key=cache_key)
         ```
 
         Cache keys help ensure requests with the same prompt prefix are routed to
@@ -2905,16 +2905,16 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    llm = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    structured_llm = llm.with_structured_output(
+                    structured_model = model.with_structured_output(
                         ResponseSchema,
                         tools=[get_weather],
                         strict=True,
                         include_raw=True,
                     )
 
-                    structured_llm.invoke("What's the weather in Boston?")
+                    structured_model.invoke("What's the weather in Boston?")
                     ```
 
                     ```python
@@ -2971,10 +2971,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 )
 
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
@@ -3002,12 +3002,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 )
 
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="function_calling"
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
@@ -3033,12 +3033,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 justification: str
 
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
@@ -3085,10 +3085,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 ]
 
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
@@ -3121,10 +3121,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             }
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(oai_schema)
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(oai_schema)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             ```
@@ -3148,12 +3148,12 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 justification: str
 
 
-            llm = ChatOpenAI(model="...", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOpenAI(model="...", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -3176,11 +3176,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             ```python
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -3589,6 +3589,24 @@ def _construct_responses_api_payload(
     return payload
 
 
+def _format_annotation_to_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    # langchain-core reserves the `"index"` key for streaming aggregation.
+    # Here we re-name.
+    if annotation.get("type") == "file_citation" and "index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["file_index"] = new_annotation.pop("index")
+        return new_annotation
+    return annotation
+
+
+def _format_annotation_from_lc(annotation: dict[str, Any]) -> dict[str, Any]:
+    if annotation.get("type") == "file_citation" and "file_index" in annotation:
+        new_annotation = annotation.copy()
+        new_annotation["index"] = new_annotation.pop("file_index")
+        return new_annotation
+    return annotation
+
+
 def _convert_chat_completions_blocks_to_responses(
     block: dict[str, Any],
 ) -> dict[str, Any]:
@@ -3775,7 +3793,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                                 new_block = {
                                     "type": "output_text",
                                     "text": block["text"],
-                                    "annotations": block.get("annotations") or [],
+                                    "annotations": [
+                                        _format_annotation_from_lc(annotation)
+                                        for annotation in block.get("annotations") or []
+                                    ],
                                 }
                             elif block_type == "refusal":
                                 new_block = {
@@ -3951,7 +3972,7 @@ def _construct_lc_result_from_responses_api(
                         "type": "text",
                         "text": content.text,
                         "annotations": [
-                            annotation.model_dump()
+                            _format_annotation_to_lc(annotation.model_dump())
                             for annotation in content.annotations
                         ]
                         if isinstance(content.annotations, list)
@@ -4142,7 +4163,11 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
 
         content.append(
-            {"type": "text", "annotations": [annotation], "index": current_index}
+            {
+                "type": "text",
+                "annotations": [_format_annotation_to_lc(annotation)],
+                "index": current_index,
+            }
         )
     elif chunk.type == "response.output_text.done":
         content.append({"type": "text", "id": chunk.item_id, "index": current_index})

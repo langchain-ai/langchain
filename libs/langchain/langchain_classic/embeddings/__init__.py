@@ -4,12 +4,6 @@
 from different APIs and services.
 
 Embedding models can be LLMs or not.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    Embeddings --> <name>Embeddings  # Examples: OpenAIEmbeddings, HuggingFaceEmbeddings
 """
 
 import logging

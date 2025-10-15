@@ -31,7 +31,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore[assignment]
     """The type of the message (used during serialization).
 
-    Defaults to ``'ChatMessageChunk'``.
+    Defaults to `'ChatMessageChunk'`.
 
     """
 
