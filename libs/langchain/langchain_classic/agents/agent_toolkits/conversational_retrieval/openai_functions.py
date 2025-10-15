@@ -10,7 +10,7 @@ from langchain_classic.agents.openai_functions_agent.agent_token_buffer_memory i
     AgentTokenBufferMemory,
 )
 from langchain_classic.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.token_buffer import ConversationTokenBufferMemory
 
 

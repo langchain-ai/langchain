@@ -9,8 +9,8 @@ from langchain_core.language_models import LLM
 from langchain_core.prompts.prompt import PromptTemplate
 from typing_extensions import override
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.chains.conversation.base import ConversationChain
-from langchain_classic.memory.base import BaseMemory
 from langchain_classic.memory.buffer import ConversationBufferMemory
 from langchain_classic.memory.buffer_window import ConversationBufferWindowMemory
 from langchain_classic.memory.summary import ConversationSummaryMemory

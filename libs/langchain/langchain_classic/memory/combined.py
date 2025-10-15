@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import field_validator
 
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.chat_memory import BaseChatMemory
 
 

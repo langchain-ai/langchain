@@ -37,7 +37,7 @@ from pydantic import (
 )
 from typing_extensions import override
 
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.schema import RUN_KEY
 
 logger = logging.getLogger(__name__)

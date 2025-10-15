@@ -1,6 +1,6 @@
 from typing import Any
 
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 
 
 class ReadOnlySharedMemory(BaseMemory):

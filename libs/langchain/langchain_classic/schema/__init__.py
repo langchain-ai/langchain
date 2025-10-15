@@ -35,7 +35,7 @@ from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
 
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 
 RUN_KEY = "__run"
 

@@ -2,7 +2,7 @@ from typing import Any
 
 from typing_extensions import override
 
-from langchain_classic.memory.base import BaseMemory
+from langchain_classic.base_memory import BaseMemory
 
 
 class SimpleMemory(BaseMemory):

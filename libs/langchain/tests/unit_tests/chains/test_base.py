@@ -9,8 +9,8 @@ from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.tracers.context import collect_runs
 from typing_extensions import override
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.chains.base import Chain
-from langchain_classic.memory.base import BaseMemory
 from langchain_classic.schema import RUN_KEY
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 

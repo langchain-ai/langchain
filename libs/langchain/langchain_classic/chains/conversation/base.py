@@ -5,9 +5,9 @@ from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.chains.conversation.prompt import PROMPT
 from langchain_classic.chains.llm import LLMChain
-from langchain_classic.memory.base import BaseMemory
 from langchain_classic.memory.buffer import ConversationBufferMemory
 
 
