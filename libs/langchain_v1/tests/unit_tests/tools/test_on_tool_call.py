@@ -1,10 +1,13 @@
 """Unit tests for tool call interceptor in ToolNode."""
 
 from collections.abc import Callable
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
+from langgraph.store.base import BaseStore
 from langgraph.types import Command
 
 from langchain.tools.tool_node import (
@@ -13,6 +16,18 @@ from langchain.tools.tool_node import (
 )
 
 pytestmark = pytest.mark.anyio
+
+
+def _create_mock_runtime(store: BaseStore | None = None) -> Mock:
+    mock_runtime = Mock()
+    mock_runtime.store = store
+    mock_runtime.context = None
+    mock_runtime.stream_writer = lambda _: None
+    return mock_runtime
+
+
+def _create_config_with_runtime(store: BaseStore | None = None) -> RunnableConfig:
+    return {"configurable": {"__pregel_runtime": _create_mock_runtime(store)}}
 
 
 @tool
@@ -60,7 +75,8 @@ def test_passthrough_handler() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -96,7 +112,8 @@ async def test_passthrough_handler_async() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -135,7 +152,8 @@ def test_modify_arguments() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -170,7 +188,8 @@ def test_handler_validation_no_return() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     assert isinstance(result, dict)
@@ -208,7 +227,8 @@ def test_handler_validation_no_yield() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Result contains None in messages (bad handler behavior)
@@ -248,7 +268,8 @@ def test_handler_with_handle_tool_errors_true() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -295,7 +316,8 @@ def test_multiple_tool_calls_with_handler() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Handler should be called once for each tool call
@@ -359,7 +381,8 @@ async def test_handler_with_async_execution() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -399,7 +422,8 @@ def test_short_circuit_with_tool_message() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -439,7 +463,8 @@ async def test_short_circuit_with_tool_message_async() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -487,7 +512,8 @@ def test_conditional_short_circuit() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message1 = result1["messages"][-1]
@@ -508,7 +534,8 @@ def test_conditional_short_circuit() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message2 = result2["messages"][-1]
@@ -546,7 +573,8 @@ def test_direct_return_tool_message() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -586,7 +614,8 @@ async def test_direct_return_tool_message_async() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message = result["messages"][-1]
@@ -632,7 +661,8 @@ def test_conditional_direct_return() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message1 = result1["messages"][-1]
@@ -653,7 +683,8 @@ def test_conditional_direct_return() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message2 = result2["messages"][-1]
@@ -691,7 +722,8 @@ def test_handler_can_throw_exception() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should get error message due to handle_tool_errors=True
@@ -731,7 +763,8 @@ def test_handler_throw_without_handle_errors() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
 
@@ -775,7 +808,8 @@ def test_retry_middleware_with_exception() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should succeed after 1 attempt
@@ -814,7 +848,8 @@ async def test_async_handler_can_throw_exception() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should get error message due to handle_tool_errors=True
@@ -854,7 +889,8 @@ def test_handler_cannot_yield_multiple_tool_messages() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should succeed - handlers can only return once
@@ -891,7 +927,8 @@ def test_handler_cannot_yield_request_after_tool_message() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should succeed with cached result
@@ -926,7 +963,8 @@ def test_handler_can_short_circuit_with_command() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should get Command in result list
@@ -964,7 +1002,8 @@ def test_handler_cannot_yield_multiple_commands() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should succeed - handlers naturally return once
@@ -1002,7 +1041,8 @@ def test_handler_cannot_yield_request_after_command() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should succeed with Command
@@ -1043,7 +1083,8 @@ def test_tool_returning_command_sent_to_handler() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Handler should have received the Command
@@ -1087,7 +1128,8 @@ def test_handler_can_modify_command_from_tool() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Final result should be the modified Command in result list
@@ -1121,7 +1163,7 @@ def test_state_extraction_with_dict_input() -> None:
         "other_field": "value",
     }
 
-    tool_node.invoke(input_state)
+    tool_node.invoke(input_state, config=_create_config_with_runtime())
 
     # State should be the dict we passed in
     assert len(state_seen) == 1
@@ -1153,7 +1195,7 @@ def test_state_extraction_with_list_input() -> None:
         )
     ]
 
-    tool_node.invoke(input_state)
+    tool_node.invoke(input_state, config=_create_config_with_runtime())
 
     # State should be the list we passed in
     assert len(state_seen) == 1
@@ -1194,7 +1236,7 @@ def test_state_extraction_with_tool_call_with_context() -> None:
         "state": actual_state,
     }
 
-    tool_node.invoke(tool_call_with_context)
+    tool_node.invoke(tool_call_with_context, config=_create_config_with_runtime())
 
     # State should be the extracted state from ToolCallWithContext, not the wrapper
     assert len(state_seen) == 1
@@ -1236,7 +1278,7 @@ async def test_state_extraction_with_tool_call_with_context_async() -> None:
         "state": actual_state,
     }
 
-    await tool_node.ainvoke(tool_call_with_context)
+    await tool_node.ainvoke(tool_call_with_context, config=_create_config_with_runtime())
 
     # State should be the extracted state from ToolCallWithContext
     assert len(state_seen) == 1

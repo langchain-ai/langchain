@@ -48,7 +48,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Optional,
     TypedDict,
     TypeVar,
     Union,
@@ -108,10 +107,6 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
     " {error}\n"
     " Please fix the error and try again."
 )
-
-
-def _no_op_stream_writer(*args: Any, **kwargs: Any) -> None:
-    """No-op stream writer for when runtime is not available."""
 
 
 class _ToolCallRequestOverrides(TypedDict, total=False):
@@ -595,8 +590,6 @@ class _ToolNode(RunnableCallable):
         self,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
-        *,
-        store: Optional[BaseStore],  # noqa: UP045
         runtime: Runtime,
     ) -> Any:
         tool_calls, input_type = self._parse_input(input)
@@ -606,8 +599,8 @@ class _ToolNode(RunnableCallable):
         tool_runtimes = []
         for call, cfg in zip(tool_calls, config_list, strict=False):
             state = self._extract_state(input)
-            runtime_store = runtime.store if runtime else store
-            stream_writer = runtime.stream_writer if runtime else _no_op_stream_writer
+            runtime_store = runtime.store
+            stream_writer = runtime.stream_writer
             tool_runtime = ToolRuntime(
                 state=state,
                 tool_call_id=call.get("id") or "",
@@ -638,8 +631,6 @@ class _ToolNode(RunnableCallable):
         self,
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
-        *,
-        store: Optional[BaseStore],  # noqa: UP045
         runtime: Runtime,
     ) -> Any:
         tool_calls, input_type = self._parse_input(input)
@@ -649,8 +640,8 @@ class _ToolNode(RunnableCallable):
         tool_runtimes = []
         for call, cfg in zip(tool_calls, config_list, strict=False):
             state = self._extract_state(input)
-            runtime_store = runtime.store if runtime else store
-            stream_writer = runtime.stream_writer if runtime else _no_op_stream_writer
+            runtime_store = runtime.store
+            stream_writer = runtime.stream_writer
             tool_runtime = ToolRuntime(
                 state=state,
                 tool_call_id=call.get("id") or "",
