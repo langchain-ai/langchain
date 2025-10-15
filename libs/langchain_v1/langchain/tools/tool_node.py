@@ -620,7 +620,7 @@ class _ToolNode(RunnableCallable):
 
         # Inject tool arguments (including runtime)
         tool_calls = [
-            self._inject_tool_args(call, input, store, tool_runtime)
+            self._inject_tool_args(call, tool_runtime)
             for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False)
         ]
 
@@ -663,7 +663,7 @@ class _ToolNode(RunnableCallable):
 
         # Inject tool arguments (including runtime)
         tool_calls = [
-            self._inject_tool_args(call, input, store, tool_runtime)
+            self._inject_tool_args(call, tool_runtime)
             for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False)
         ]
 
@@ -1081,15 +1081,16 @@ class _ToolNode(RunnableCallable):
     def _inject_state(
         self,
         tool_call: ToolCall,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        state: list[AnyMessage] | dict[str, Any] | BaseModel,
     ) -> ToolCall:
         state_args = self._tool_to_state_args[tool_call["name"]]
-        if state_args and isinstance(input, list):
+
+        if state_args and isinstance(state, list):
             required_fields = list(state_args.values())
             if (
                 len(required_fields) == 1 and required_fields[0] == self._messages_key
             ) or required_fields[0] is None:
-                input = {self._messages_key: input}
+                state = {self._messages_key: state}
             else:
                 err_msg = (
                     f"Invalid input to ToolNode. Tool {tool_call['name']} requires "
@@ -1099,12 +1100,6 @@ class _ToolNode(RunnableCallable):
                     required_fields_str = ", ".join(f for f in required_fields if f)
                     err_msg += f" State should contain fields {required_fields_str}."
                 raise ValueError(err_msg)
-
-        # Extract state from ToolCallWithContext if present
-        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
-            state = input["state"]
-        else:
-            state = input
 
         if isinstance(state, dict):
             tool_state_args = {
@@ -1141,12 +1136,9 @@ class _ToolNode(RunnableCallable):
         }
         return tool_call
 
-
     def _inject_tool_args(
         self,
         tool_call: ToolCall,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
-        store: BaseStore | None,
         tool_runtime: ToolRuntime,
     ) -> ToolCall:
         """Inject graph state, store, and runtime into tool call arguments.
@@ -1164,11 +1156,8 @@ class _ToolNode(RunnableCallable):
         Args:
             tool_call: The tool call dictionary to augment with injected arguments.
                 Must contain 'name', 'args', 'id', and 'type' fields.
-            input: The current graph state to inject into tools requiring state access.
-                Can be a message list, state dictionary, or BaseModel instance.
-            store: The persistent store instance to inject into tools requiring storage.
-                Will be None if no store is configured for the graph.
-            tool_runtime: The ToolRuntime instance to inject into tools requiring runtime.
+            tool_runtime: The ToolRuntime instance containing all runtime context
+                (state, config, store, context, stream_writer) to inject into tools.
 
         Returns:
             A new ToolCall dictionary with the same structure as the input but with
@@ -1186,8 +1175,8 @@ class _ToolNode(RunnableCallable):
             return tool_call
 
         tool_call_copy: ToolCall = copy(tool_call)
-        tool_call_with_state = self._inject_state(tool_call_copy, input)
-        tool_call_with_store = self._inject_store(tool_call_with_state, store)
+        tool_call_with_state = self._inject_state(tool_call_copy, tool_runtime.state)
+        tool_call_with_store = self._inject_store(tool_call_with_state, tool_runtime.store)
 
         # Always inject runtime
         runtime_arg = self._tool_to_runtime_arg.get(tool_call["name"])
