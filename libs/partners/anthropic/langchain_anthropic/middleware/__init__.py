@@ -1,8 +1,6 @@
 """Middleware for Anthropic models."""
 
 from langchain_anthropic.middleware.anthropic_tools import (
-    AnthropicToolsState,
-    FileData,
     FilesystemClaudeMemoryMiddleware,
     FilesystemClaudeTextEditorMiddleware,
     StateClaudeMemoryMiddleware,
@@ -18,8 +16,6 @@ from langchain_anthropic.middleware.prompt_caching import (
 
 __all__ = [
     "AnthropicPromptCachingMiddleware",
-    "AnthropicToolsState",
-    "FileData",
     "FilesystemClaudeMemoryMiddleware",
     "FilesystemClaudeTextEditorMiddleware",
     "FilesystemFileSearchMiddleware",
