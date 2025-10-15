@@ -7,7 +7,6 @@ from typing import (
     Any,
     NoReturn,
     TypeVar,
-    Union,
 )
 
 import pytest

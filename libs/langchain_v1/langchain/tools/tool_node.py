@@ -596,8 +596,8 @@ class _ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: Optional[BaseStore] = None,  # noqa: UP045
-        runtime: Optional[Runtime] = None,  # noqa: UP045
+        store: Optional[BaseStore],  # noqa: UP045
+        runtime: Runtime,
     ) -> Any:
         tool_calls, input_type = self._parse_input(input)
         config_list = get_config_list(config, len(tool_calls))
@@ -639,8 +639,8 @@ class _ToolNode(RunnableCallable):
         input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
-        store: Optional[BaseStore] = None,  # noqa: UP045
-        runtime: Optional[Runtime] = None,  # noqa: UP045
+        store: Optional[BaseStore],  # noqa: UP045
+        runtime: Runtime,
     ) -> Any:
         tool_calls, input_type = self._parse_input(input)
         config_list = get_config_list(config, len(tool_calls))
@@ -1346,7 +1346,7 @@ def tools_condition(
 class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
     """Runtime context automatically injected into tools.
 
-    When a tool function has a parameter named 'runtime' with type hint
+    When a tool function has a parameter named 'tool_runtime' with type hint
     'ToolRuntime', the tool execution system will automatically inject
     an instance containing:
 
@@ -1357,7 +1357,7 @@ class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
     - store: BaseStore instance for persistent storage (from langgraph Runtime)
     - stream_writer: StreamWriter for streaming output (from langgraph Runtime)
 
-    No `Annotated` wrapper is needed - just use `runtime: ToolRuntime`
+    No `Annotated` wrapper is needed - just use `tool_runtime: ToolRuntime`
     as a parameter.
 
     Example:
@@ -1366,25 +1366,25 @@ class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
         from langchain.tools import ToolRuntime
 
         @tool
-        def my_tool(x: int, runtime: ToolRuntime) -> str:
+        def my_tool(x: int, tool_runtime: ToolRuntime) -> str:
             \"\"\"Tool that accesses runtime context.\"\"\"
             # Access state
-            messages = runtime.state["messages"]
+            messages = tool_runtime.state["messages"]
 
             # Access tool_call_id
-            print(f"Tool call ID: {runtime.tool_call_id}")
+            print(f"Tool call ID: {tool_runtime.tool_call_id}")
 
             # Access config
-            print(f"Run ID: {runtime.config.get('run_id')}")
+            print(f"Run ID: {tool_runtime.config.get('run_id')}")
 
             # Access runtime context
-            user_id = runtime.context.get("user_id")
+            user_id = tool_runtime.context.get("user_id")
 
             # Access store
-            runtime.store.put(("metrics",), "count", 1)
+            tool_runtime.store.put(("metrics",), "count", 1)
 
             # Stream output
-            runtime.stream_writer.write("Processing...")
+            tool_runtime.stream_writer.write("Processing...")
 
             return f"Processed {x}"
         ```
