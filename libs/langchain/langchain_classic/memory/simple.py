@@ -1,7 +1,8 @@
 from typing import Any
 
-from langchain_core.memory import BaseMemory
 from typing_extensions import override
+
+from langchain_classic.memory.base import BaseMemory
 
 
 class SimpleMemory(BaseMemory):

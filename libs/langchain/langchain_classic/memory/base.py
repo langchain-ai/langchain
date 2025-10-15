@@ -10,10 +10,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic import ConfigDict
-
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
+from pydantic import ConfigDict
 
 
 class BaseMemory(Serializable, ABC):

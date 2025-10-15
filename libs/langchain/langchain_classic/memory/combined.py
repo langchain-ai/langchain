@@ -1,9 +1,9 @@
 import warnings
 from typing import Any
 
-from langchain_core.memory import BaseMemory
 from pydantic import field_validator
 
+from langchain_classic.memory.base import BaseMemory
 from langchain_classic.memory.chat_memory import BaseChatMemory
 
 
