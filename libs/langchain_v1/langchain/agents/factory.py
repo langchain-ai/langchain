@@ -537,13 +537,12 @@ def create_agent(  # noqa: PLR0915
             (e.g., `"openai:gpt-4"`), a chat model instance (e.g., `ChatOpenAI()`).
         tools: A list of tools, dicts, or callables. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
-        system_prompt: An optional system prompt for the LLM. If provided as a string,
-            it will be converted to a SystemMessage and added to the beginning
-            of the message list.
+        system_prompt: An optional system prompt for the LLM. Prompts are converted to a
+        `SystemMessage` and added to the beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
             Middleware can intercept and modify agent behavior at various stages.
         response_format: An optional configuration for structured responses.
-            Can be a ToolStrategy, ProviderStrategy, or a Pydantic model class.
+            Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
             If provided, the agent will handle structured output during the
             conversation flow. Raw schemas will be wrapped in an appropriate strategy
             based on model capabilities.
@@ -560,14 +559,14 @@ def create_agent(  # noqa: PLR0915
             This is useful if you want to return directly or run additional processing
             on an output.
         debug: A flag indicating whether to enable debug mode.
-        name: An optional name for the CompiledStateGraph.
+        name: An optional name for the `CompiledStateGraph`.
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
-        cache: An optional BaseCache instance to enable caching of graph execution.
+        cache: An optional `BaseCache` instance to enable caching of graph execution.
 
     Returns:
-        A compiled StateGraph that can be used for chat interactions.
+        A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
     the system prompt). If the resulting AIMessage contains `tool_calls`, the graph will
