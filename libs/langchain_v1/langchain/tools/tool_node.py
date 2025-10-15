@@ -40,7 +40,7 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
@@ -597,17 +597,15 @@ class _ToolNode(RunnableCallable):
 
         # Construct ToolRuntime instances at the top level for each tool call
         tool_runtimes = []
-        for call, cfg in zip(tool_calls, config_list):
+        for call, cfg in zip(tool_calls, config_list, strict=False):
             state = self._extract_state(input)
-            runtime_store = runtime.store
-            stream_writer = runtime.stream_writer
             tool_runtime = ToolRuntime(
                 state=state,
-                tool_call_id=call.get("id") or "",
+                tool_call_id=call["id"],
                 config=cfg,
-                context=runtime.context if runtime else None,
-                store=runtime_store,
-                stream_writer=stream_writer,
+                context=runtime.context,
+                store=runtime.store,
+                stream_writer=runtime.stream_writer,
             )
             tool_runtimes.append(tool_runtime)
 
@@ -615,7 +613,7 @@ class _ToolNode(RunnableCallable):
 
         injected_tool_calls = []
         input_types = [input_type] * len(tool_calls)
-        for call, tool_runtime in zip(tool_calls, tool_runtimes):
+        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
             injected_call = self._inject_tool_args(call, tool_runtime)
             injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
@@ -636,23 +634,21 @@ class _ToolNode(RunnableCallable):
 
         # Construct ToolRuntime instances at the top level for each tool call
         tool_runtimes = []
-        for call, cfg in zip(tool_calls, config_list):
+        for call, cfg in zip(tool_calls, config_list, strict=False):
             state = self._extract_state(input)
-            runtime_store = runtime.store
-            stream_writer = runtime.stream_writer
             tool_runtime = ToolRuntime(
                 state=state,
-                tool_call_id=call.get("id") or "",
+                tool_call_id=call["id"],
                 config=cfg,
-                context=runtime.context if runtime else None,
-                store=runtime_store,
-                stream_writer=stream_writer,
+                context=runtime.context,
+                store=runtime.store,
+                stream_writer=runtime.stream_writer,
             )
             tool_runtimes.append(tool_runtime)
 
         injected_tool_calls = []
         coros = []
-        for call, tool_runtime in zip(tool_calls, tool_runtimes):
+        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
             injected_call = self._inject_tool_args(call, tool_runtime)
             injected_tool_calls.append(injected_call)
             coros.append(self._arun_one(injected_call, input_type, tool_runtime))
@@ -1380,11 +1376,11 @@ class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
     """
 
     state: StateT
+    context: ContextT
     config: RunnableConfig
-    tool_call_id: str
     stream_writer: StreamWriter
-    context: ContextT = field(default=None)  # type: ignore[assignment]
-    store: BaseStore | None = field(default=None)
+    tool_call_id: str | None
+    store: BaseStore | None
 
 
 class InjectedState(InjectedToolArg):
