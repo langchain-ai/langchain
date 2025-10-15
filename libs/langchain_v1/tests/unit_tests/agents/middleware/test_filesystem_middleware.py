@@ -11,14 +11,14 @@ from langgraph.runtime import Runtime
 
 class TestFilesystem:
     def test_init_local(self):
-        middleware = FilesystemMiddleware(use_longterm_memory=False)
-        assert middleware.use_longterm_memory is False
+        middleware = FilesystemMiddleware(long_term_memory=False)
+        assert middleware.long_term_memory is False
         assert middleware.system_prompt_extension == FILESYSTEM_SYSTEM_PROMPT
         assert len(middleware.tools) == 4
 
     def test_init_longterm(self):
-        middleware = FilesystemMiddleware(use_longterm_memory=True)
-        assert middleware.use_longterm_memory is True
+        middleware = FilesystemMiddleware(long_term_memory=True)
+        assert middleware.long_term_memory is True
         assert middleware.system_prompt_extension == (
             FILESYSTEM_SYSTEM_PROMPT + FILESYSTEM_SYSTEM_PROMPT_LONGTERM_SUPPLEMENT
         )
@@ -26,34 +26,34 @@ class TestFilesystem:
 
     def test_init_custom_system_prompt_shortterm(self):
         middleware = FilesystemMiddleware(
-            use_longterm_memory=False, system_prompt_extension="Custom system prompt"
+            long_term_memory=False, system_prompt_extension="Custom system prompt"
         )
-        assert middleware.use_longterm_memory is False
+        assert middleware.long_term_memory is False
         assert middleware.system_prompt_extension == "Custom system prompt"
         assert len(middleware.tools) == 4
 
     def test_init_custom_system_prompt_longterm(self):
         middleware = FilesystemMiddleware(
-            use_longterm_memory=True, system_prompt_extension="Custom system prompt"
+            long_term_memory=True, system_prompt_extension="Custom system prompt"
         )
-        assert middleware.use_longterm_memory is True
+        assert middleware.long_term_memory is True
         assert middleware.system_prompt_extension == "Custom system prompt"
         assert len(middleware.tools) == 4
 
     def test_init_custom_tool_descriptions_shortterm(self):
         middleware = FilesystemMiddleware(
-            use_longterm_memory=False, custom_tool_descriptions={"ls": "Custom ls tool description"}
+            long_term_memory=False, custom_tool_descriptions={"ls": "Custom ls tool description"}
         )
-        assert middleware.use_longterm_memory is False
+        assert middleware.long_term_memory is False
         assert middleware.system_prompt_extension == FILESYSTEM_SYSTEM_PROMPT
         ls_tool = next(tool for tool in middleware.tools if tool.name == "ls")
         assert ls_tool.description == "Custom ls tool description"
 
     def test_init_custom_tool_descriptions_longterm(self):
         middleware = FilesystemMiddleware(
-            use_longterm_memory=True, custom_tool_descriptions={"ls": "Custom ls tool description"}
+            long_term_memory=True, custom_tool_descriptions={"ls": "Custom ls tool description"}
         )
-        assert middleware.use_longterm_memory is True
+        assert middleware.long_term_memory is True
         assert middleware.system_prompt_extension == (
             FILESYSTEM_SYSTEM_PROMPT + FILESYSTEM_SYSTEM_PROMPT_LONGTERM_SUPPLEMENT
         )
@@ -76,7 +76,7 @@ class TestFilesystem:
                 ),
             },
         )
-        middleware = FilesystemMiddleware(use_longterm_memory=False)
+        middleware = FilesystemMiddleware(long_term_memory=False)
         ls_tool = next(tool for tool in middleware.tools if tool.name == "ls")
         result = ls_tool.invoke({"state": state})
         assert result == ["test.txt", "test2.txt"]
@@ -107,7 +107,7 @@ class TestFilesystem:
                 ),
             },
         )
-        middleware = FilesystemMiddleware(use_longterm_memory=False)
+        middleware = FilesystemMiddleware(long_term_memory=False)
         ls_tool = next(tool for tool in middleware.tools if tool.name == "ls")
         result = ls_tool.invoke({"state": state, "path": "pokemon/"})
         assert "/pokemon/test2.txt" in result
