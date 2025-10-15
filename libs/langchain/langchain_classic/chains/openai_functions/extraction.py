@@ -69,7 +69,7 @@ Passage:
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
@@ -139,7 +139,7 @@ def create_extraction_chain(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
