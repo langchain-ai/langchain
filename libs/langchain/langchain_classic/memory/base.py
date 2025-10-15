@@ -12,19 +12,10 @@ from typing import Any
 
 from pydantic import ConfigDict
 
-from langchain_core._api import deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
 
 
-@deprecated(
-    since="0.3.3",
-    removal="1.0.0",
-    message=(
-        "Please see the migration guide at: "
-        "https://python.langchain.com/docs/versions/migrating_memory/"
-    ),
-)
 class BaseMemory(Serializable, ABC):
     """Abstract base class for memory in Chains.
 
