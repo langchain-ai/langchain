@@ -37,7 +37,7 @@ def create_conversational_retrieval_agent(
     """A convenience method for creating a conversational retrieval agent.
 
     Args:
-        llm: The language model to use, should be ChatOpenAI
+        llm: The language model to use, should be `ChatOpenAI`
         tools: A list of tools the agent has access to
         remember_intermediate_steps: Whether the agent should remember intermediate
             steps or not. Intermediate steps refer to prior action/observation
@@ -47,11 +47,9 @@ def create_conversational_retrieval_agent(
         memory_key: The name of the memory key in the prompt.
         system_message: The system message to use. By default, a basic one will
             be used.
-        verbose: Whether or not the final AgentExecutor should be verbose or not,
-            defaults to False.
+        verbose: Whether or not the final AgentExecutor should be verbose or not.
         max_token_limit: The max number of tokens to keep around in memory.
-            Defaults to 2000.
-        **kwargs: Additional keyword arguments to pass to the AgentExecutor.
+        **kwargs: Additional keyword arguments to pass to the `AgentExecutor`.
 
     Returns:
         An agent executor initialized appropriately

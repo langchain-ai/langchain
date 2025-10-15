@@ -148,7 +148,7 @@ class UsageMetadata(TypedDict):
 class AIMessage(BaseMessage):
     """Message from an AI.
 
-    AIMessage is returned from a chat model as a response to a prompt.
+    `AIMessage` is returned from a chat model as a response to a prompt.
 
     This message represents the output of the model and consists of both
     the raw output as returned by the model together standardized fields
@@ -168,7 +168,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization). Defaults to "ai"."""
+    """The type of the message (used for deserialization)."""
 
     @overload
     def __init__(
@@ -191,7 +191,7 @@ class AIMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `AIMessage`.
+        """Initializes an `AIMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 
@@ -335,7 +335,6 @@ class AIMessage(BaseMessage):
 
         Args:
             html: Whether to return an HTML-formatted string.
-                Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -378,17 +377,13 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for deserialization).
-
-    Defaults to `AIMessageChunk`.
-
-    """
+    """The type of the message (used for deserialization)."""
 
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
-    """Optional span represented by an aggregated AIMessageChunk.
+    """Optional span represented by an aggregated `AIMessageChunk`.
 
     If a chunk with `chunk_position="last"` is aggregated into a stream,
     `tool_call_chunks` in message content will be parsed into `tool_calls`.
@@ -553,7 +548,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
-        """Parse server_tool_call_chunks."""
+        """Parse `server_tool_call_chunks`."""
         if (
             self.chunk_position == "last"
             and self.response_metadata.get("output_version") == "v1"

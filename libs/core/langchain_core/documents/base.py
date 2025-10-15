@@ -57,51 +57,51 @@ class Blob(BaseMedia):
 
     Example: Initialize a blob from in-memory data
 
-        ```python
-        from langchain_core.documents import Blob
+    ```python
+    from langchain_core.documents import Blob
 
-        blob = Blob.from_data("Hello, world!")
+    blob = Blob.from_data("Hello, world!")
 
-        # Read the blob as a string
-        print(blob.as_string())
+    # Read the blob as a string
+    print(blob.as_string())
 
-        # Read the blob as bytes
-        print(blob.as_bytes())
+    # Read the blob as bytes
+    print(blob.as_bytes())
 
-        # Read the blob as a byte stream
-        with blob.as_bytes_io() as f:
-            print(f.read())
-        ```
+    # Read the blob as a byte stream
+    with blob.as_bytes_io() as f:
+        print(f.read())
+    ```
 
     Example: Load from memory and specify mime-type and metadata
 
-        ```python
-        from langchain_core.documents import Blob
+    ```python
+    from langchain_core.documents import Blob
 
-        blob = Blob.from_data(
-            data="Hello, world!",
-            mime_type="text/plain",
-            metadata={"source": "https://example.com"},
-        )
-        ```
+    blob = Blob.from_data(
+        data="Hello, world!",
+        mime_type="text/plain",
+        metadata={"source": "https://example.com"},
+    )
+    ```
 
     Example: Load the blob from a file
 
-        ```python
-        from langchain_core.documents import Blob
+    ```python
+    from langchain_core.documents import Blob
 
-        blob = Blob.from_path("path/to/file.txt")
+    blob = Blob.from_path("path/to/file.txt")
 
-        # Read the blob as a string
-        print(blob.as_string())
+    # Read the blob as a string
+    print(blob.as_string())
 
-        # Read the blob as bytes
-        print(blob.as_bytes())
+    # Read the blob as bytes
+    print(blob.as_bytes())
 
-        # Read the blob as a byte stream
-        with blob.as_bytes_io() as f:
-            print(f.read())
-        ```
+    # Read the blob as a byte stream
+    with blob.as_bytes_io() as f:
+        print(f.read())
+    ```
     """
 
     data: bytes | str | None = None
@@ -111,7 +111,7 @@ class Blob(BaseMedia):
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
-    Use utf-8 as default encoding, if decoding to string.
+    Use `utf-8` as default encoding, if decoding to string.
     """
     path: PathLike | None = None
     """Location where the original content was found."""
@@ -127,7 +127,7 @@ class Blob(BaseMedia):
 
         If a path is associated with the blob, it will default to the path location.
 
-        Unless explicitly set via a metadata field called "source", in which
+        Unless explicitly set via a metadata field called `"source"`, in which
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
@@ -184,7 +184,7 @@ class Blob(BaseMedia):
         """Read data as a byte stream.
 
         Raises:
-            NotImplementedError: If the blob cannot be represented as a byte stream.
+            `NotImplementedError`: If the blob cannot be represented as a byte stream.
 
         Yields:
             The data as a byte stream.
@@ -211,11 +211,11 @@ class Blob(BaseMedia):
         """Load the blob from a path like object.
 
         Args:
-            path: path like object to file to be read
+            path: Path-like object to file to be read
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
+            mime_type: If provided, will be set as the mime-type of the data
             guess_type: If `True`, the mimetype will be guessed from the file extension,
-                        if a mime-type was not provided
+                if a mime-type was not provided
             metadata: Metadata to associate with the blob
 
         Returns:
@@ -248,10 +248,10 @@ class Blob(BaseMedia):
         """Initialize the blob from in-memory data.
 
         Args:
-            data: the in-memory data associated with the blob
+            data: The in-memory data associated with the blob
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
-            path: if provided, will be set as the source from which the data came
+            mime_type: If provided, will be set as the mime-type of the data
+            path: If provided, will be set as the source from which the data came
             metadata: Metadata to associate with the blob
 
         Returns:
@@ -303,7 +303,7 @@ class Document(BaseMedia):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             ["langchain", "schema", "document"]

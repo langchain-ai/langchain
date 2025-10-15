@@ -132,7 +132,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             text: The text to write to the file.
             color: Optional color for the text. Defaults to `self.color`.
-            end: String appended after the text. Defaults to `""`.
+            end: String appended after the text.
             file: Optional file to write to. Defaults to `self.file`.
 
         Raises:
@@ -239,7 +239,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             text: The text to write.
             color: Color override for this specific output. If `None`, uses
                 `self.color`.
-            end: String appended after the text. Defaults to `""`.
+            end: String appended after the text.
             **kwargs: Additional keyword arguments.
 
         """

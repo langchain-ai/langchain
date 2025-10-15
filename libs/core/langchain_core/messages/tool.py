@@ -60,7 +60,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         ```
 
     The `tool_call_id` field is used to associate the tool call request with the
-    tool call response. This is useful in situations where a chat model is able
+    tool call response. Useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
     """
@@ -69,11 +69,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
-    """The type of the message (used for serialization).
-
-    Defaults to `'tool'`.
-
-    """
+    """The type of the message (used for serialization)."""
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
@@ -164,7 +160,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `ToolMessage`.
+        """Initialize a `ToolMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 

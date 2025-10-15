@@ -572,7 +572,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
     @property

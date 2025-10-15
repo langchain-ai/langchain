@@ -237,7 +237,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -292,7 +292,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             **kwargs: Additional keyword arguments.
 
@@ -318,7 +318,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -376,7 +376,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -435,7 +435,7 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -494,7 +494,7 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -553,7 +553,7 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -642,7 +642,7 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             search_params: Additional search params
             offset:
@@ -740,7 +740,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding to maximum diversity
@@ -804,12 +804,11 @@ class Qdrant(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                        of diversity among the results with `0` corresponding
+                        to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -822,19 +821,20 @@ class Qdrant(VectorStore):
                 Read consistency of the search. Defines how many replicas should be
                 queried before returning the result.
                 Values:
-                - int - number of replicas to query, values should present in all
+                - `int` - number of replicas to query, values should present in all
                         queried replicas
-                - 'majority' - query all replicas, but return values present in the
+                - `'majority'` - query all replicas, but return values present in the
                     majority of replicas
-                - 'quorum' - query the majority of replicas, return values present in
+                - `'quorum'` - query the majority of replicas, return values present in
                     all of them
-                - 'all' - query all replicas, and return values present in all replicas
+                - `'all'` - query all replicas, and return values present in all
+                    replicas
             **kwargs:
                 Any other named arguments to pass through to
-                AsyncQdrantClient.Search().
+                `AsyncQdrantClient.Search()`.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         query_embedding = await self._aembed_query(query)
@@ -869,12 +869,11 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                        of diversity among the results with `0` corresponding
+                        to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -882,23 +881,24 @@ class Qdrant(VectorStore):
                 If defined, less similar results will not be returned.
                 Score of the returned result might be higher or smaller than the
                 threshold depending on the Distance function used.
-                E.g. for cosine similarity only higher scores will be returned.
+                e.g. for cosine similarity only higher scores will be returned.
             consistency:
                 Read consistency of the search. Defines how many replicas should be
                 queried before returning the result.
                 Values:
-                - int - number of replicas to query, values should present in all
+                - `int` - number of replicas to query, values should present in all
                         queried replicas
-                - 'majority' - query all replicas, but return values present in the
+                - `'majority'` - query all replicas, but return values present in the
                     majority of replicas
-                - 'quorum' - query the majority of replicas, return values present in
+                - `'quorum'` - query the majority of replicas, return values present in
                     all of them
-                - 'all' - query all replicas, and return values present in all replicas
+                - `'all'` - query all replicas, and return values present in all
+                    replicas
             **kwargs:
-                Any other named arguments to pass through to QdrantClient.search()
+                Any other named arguments to pass through to `QdrantClient.search()`
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
@@ -934,12 +934,11 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` to fetch to pass to MMR algorithm.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                        of diversity among the results with `0` corresponding
+                        to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -952,20 +951,21 @@ class Qdrant(VectorStore):
                 Read consistency of the search. Defines how many replicas should be
                 queried before returning the result.
                 Values:
-                - int - number of replicas to query, values should present in all
+                - `int` - number of replicas to query, values should present in all
                         queried replicas
-                - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
-                - 'quorum' - query the majority of replicas, return values present in
-                             all of them
-                - 'all' - query all replicas, and return values present in all replicas
+                - `'majority'` - query all replicas, but return values present in the
+                    majority of replicas
+                - `'quorum'` - query the majority of replicas, return values present in
+                    all of them
+                - `'all'` - query all replicas, and return values present in all
+                    replicas
             **kwargs:
                 Any other named arguments to pass through to
-                AsyncQdrantClient.Search().
+                `AsyncQdrantClient.Search()`.
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
+            List of `Document` objects selected by maximal marginal relevance and
+            distance for each.
 
         """
         results = await self.amax_marginal_relevance_search_with_score_by_vector(
@@ -1000,13 +1000,11 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Defaults to 20.
-            lambda_mult: Number between 0 and 1 that determines the degree
+            lambda_mult: Number between `0` and `1` that determines the degree
                         of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                        to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -1092,13 +1090,11 @@ class Qdrant(VectorStore):
 
         Args:
             embedding: Embedding vector to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                     Defaults to 20.
-            lambda_mult: Number between 0 and 1 that determines the degree
+            lambda_mult: Number between `0` and `1` that determines the degree
                         of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                        to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params.
             score_threshold: Define a minimal score threshold for the result.
@@ -1983,7 +1979,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: input text
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
@@ -2007,7 +2003,7 @@ class Qdrant(VectorStore):
 
         Args:
             query: input text
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs

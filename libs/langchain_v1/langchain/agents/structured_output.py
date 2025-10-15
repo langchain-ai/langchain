@@ -186,7 +186,7 @@ class ToolStrategy(Generic[SchemaT]):
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
     )
-    """Error handling strategy for structured output via ToolStrategy. Default is True.
+    """Error handling strategy for structured output via ToolStrategy.
 
     - True: Catch all errors with default error template
     - str: Catch all errors with this custom message

@@ -1,4 +1,8 @@
-"""Chat models."""
+"""Entrypoint to using [chat models](https://docs.langchain.com/oss/python/langchain/models) in LangChain.
+
+See [the docs](https://docs.langchain.com/oss/python/langchain/models) for more
+details.
+"""  # noqa: E501
 
 from langchain_core.language_models import BaseChatModel
 

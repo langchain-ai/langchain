@@ -109,7 +109,7 @@ class VectorStore(ABC):
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If `None`, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
@@ -176,7 +176,7 @@ class VectorStore(ABC):
         """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If `None`, delete all. Default is None.
+            ids: List of ids to delete. If `None`, delete all.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
@@ -197,7 +197,6 @@ class VectorStore(ABC):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-                Default is None.
             ids: Optional list
             **kwargs: vectorstore specific parameters.
 
@@ -365,7 +364,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -462,7 +461,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
@@ -489,7 +488,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
@@ -513,7 +512,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs.
@@ -562,7 +561,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: kwargs to be passed to similarity search. Should include:
                 score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs
@@ -606,7 +605,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -624,7 +623,7 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -639,7 +638,7 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -667,13 +666,11 @@ class VectorStore(ABC):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -696,13 +693,11 @@ class VectorStore(ABC):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -736,13 +731,11 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -765,13 +758,11 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             lambda_mult: Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -864,7 +855,6 @@ class VectorStore(ABC):
             texts: Texts to add to the vectorstore.
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
-                Default is None.
             ids: Optional list of IDs associated with the texts.
             **kwargs: Additional keyword arguments.
 
@@ -888,7 +878,6 @@ class VectorStore(ABC):
             texts: Texts to add to the vectorstore.
             embedding: Embedding function to use.
             metadatas: Optional list of metadatas associated with the texts.
-                Default is None.
             ids: Optional list of IDs associated with the texts.
             **kwargs: Additional keyword arguments.
 

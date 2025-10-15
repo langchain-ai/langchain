@@ -1963,7 +1963,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -2340,7 +2340,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -3085,7 +3085,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -3364,7 +3364,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -3804,7 +3804,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -4568,7 +4568,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -4859,7 +4859,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -5299,7 +5299,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -6063,7 +6063,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -6292,7 +6292,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -6669,7 +6669,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -7414,7 +7414,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -7735,7 +7735,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -8175,7 +8175,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -8939,7 +8939,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -9213,7 +9213,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -9590,7 +9590,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -10335,7 +10335,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -10564,7 +10564,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -11004,7 +11004,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -11779,7 +11779,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -12020,7 +12020,7 @@
         'description': '''
           Message from an AI.
           
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
           
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -12460,7 +12460,7 @@
           do not contain the `tool_call_id` field.
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({
@@ -13224,7 +13224,7 @@
               ```
           
           The `tool_call_id` field is used to associate the tool call request with the
-          tool call response. This is useful in situations where a chat model is able
+          tool call response. Useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
         'properties': dict({

@@ -535,10 +535,10 @@ def create_agent(  # noqa: PLR0915
     Args:
         model: The language model for the agent. Can be a string identifier
             (e.g., `"openai:gpt-4"`), a chat model instance (e.g., `ChatOpenAI()`).
-        tools: A list of tools, dicts, or callables. If `None` or an empty list,
+        tools: A list of tools, `dicts`, or `Callable`. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. Prompts are converted to a
-        `SystemMessage` and added to the beginning of the message list.
+            `SystemMessage` and added to the beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
             Middleware can intercept and modify agent behavior at various stages.
         response_format: An optional configuration for structured responses.
@@ -553,12 +553,15 @@ def create_agent(  # noqa: PLR0915
         store: An optional store object. This is used for persisting data
             across multiple threads (e.g., multiple conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
-            This is useful if you want to add a user confirmation or other interrupt
+            Useful if you want to add a user confirmation or other interrupt
             before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
-            This is useful if you want to return directly or run additional processing
+            Useful if you want to return directly or run additional processing
             on an output.
-        debug: A flag indicating whether to enable debug mode.
+        debug: Whether to enable verbose logging for graph execution. When enabled,
+            prints detailed information about each node execution, state updates,
+            and transitions during agent runtime. Useful for debugging middleware
+            behavior and understanding agent execution flow.
         name: An optional name for the `CompiledStateGraph`.
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building
@@ -569,8 +572,8 @@ def create_agent(  # noqa: PLR0915
         A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting AIMessage contains `tool_calls`, the graph will
-    then call the tools. The tools node executes the tools and adds the responses
+    the system prompt). If the resulting `AIMessage` contains `tool_calls`, the graph
+    will then call the tools. The tools node executes the tools and adds the responses
     to the messages list as `ToolMessage` objects. The agent node then calls the
     language model again. The process repeats until no more `tool_calls` are
     present in the response. The agent then returns the full list of messages.
@@ -586,7 +589,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-3-7-sonnet-latest",
+            model="anthropic:claude-sonnet-4-5-20250929",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )

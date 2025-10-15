@@ -96,7 +96,7 @@ class BasePromptTemplate(
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "prompt_template"]`
@@ -343,9 +343,9 @@ class BasePromptTemplate(
             file_path: Path to directory to save prompt to.
 
         Raises:
-            ValueError: If the prompt has partial variables.
-            ValueError: If the file path is not json or yaml.
-            NotImplementedError: If the prompt type is not implemented.
+            `ValueError`: If the prompt has partial variables.
+            `ValueError`: If the file path is not json or yaml.
+            `NotImplementedError`: If the prompt type is not implemented.
 
         Example:
         ```python

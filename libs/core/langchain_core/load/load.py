@@ -67,12 +67,9 @@ class Reviver:
             valid_namespaces: A list of additional namespaces (modules)
                 to allow to be deserialized.
             secrets_from_env: Whether to load secrets from the environment.
-                Defaults to `True`.
             additional_import_mappings: A dictionary of additional namespace mappings
                 You can use this to override default mappings or add new mappings.
-
             ignore_unserializable_fields: Whether to ignore unserializable fields.
-                Defaults to `False`.
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
@@ -103,10 +100,10 @@ class Reviver:
             The revived value.
 
         Raises:
-            ValueError: If the namespace is invalid.
-            ValueError: If trying to deserialize something that cannot
+            `ValueError`: If the namespace is invalid.
+            `ValueError`: If trying to deserialize something that cannot
                 be deserialized in the current version of langchain-core.
-            NotImplementedError: If the object is not implemented and
+            `NotImplementedError`: If the object is not implemented and
                 `ignore_unserializable_fields` is False.
         """
         if (
@@ -204,12 +201,9 @@ def loads(
         valid_namespaces: A list of additional namespaces (modules)
             to allow to be deserialized.
         secrets_from_env: Whether to load secrets from the environment.
-            Defaults to `True`.
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
-
         ignore_unserializable_fields: Whether to ignore unserializable fields.
-            Defaults to `False`.
 
     Returns:
         Revived LangChain objects.
@@ -249,12 +243,9 @@ def load(
         valid_namespaces: A list of additional namespaces (modules)
             to allow to be deserialized.
         secrets_from_env: Whether to load secrets from the environment.
-            Defaults to `True`.
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
-
         ignore_unserializable_fields: Whether to ignore unserializable fields.
-            Defaults to `False`.
 
     Returns:
         Revived LangChain objects.

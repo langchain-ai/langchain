@@ -89,7 +89,8 @@ class ParsedDataUri(TypedDict):
 def _parse_data_uri(uri: str) -> ParsedDataUri | None:
     """Parse a data URI into its components.
 
-    If parsing fails, return None. If either MIME type or data is missing, return None.
+    If parsing fails, return `None`. If either MIME type or data is missing, return
+    `None`.
 
     Example:
         ```python

@@ -24,8 +24,8 @@ from langchain_core.messages import (
 class PromptValue(Serializable, ABC):
     """Base abstract class for inputs to any language model.
 
-    PromptValues can be converted to both LLM (pure text-generation) inputs and
-    ChatModel inputs.
+    `PromptValues` can be converted to both LLM (pure text-generation) inputs and
+    chat model inputs.
     """
 
     @classmethod
@@ -35,7 +35,7 @@ class PromptValue(Serializable, ABC):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         This is used to determine the namespace of the object when serializing.
 
@@ -62,7 +62,7 @@ class StringPromptValue(PromptValue):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         This is used to determine the namespace of the object when serializing.
 
@@ -99,7 +99,7 @@ class ChatPromptValue(PromptValue):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         This is used to determine the namespace of the object when serializing.
 
@@ -113,11 +113,11 @@ class ImageURL(TypedDict, total=False):
     """Image URL."""
 
     detail: Literal["auto", "low", "high"]
-    """Specifies the detail level of the image. Defaults to `'auto'`.
+    """Specifies the detail level of the image.
+
     Can be `'auto'`, `'low'`, or `'high'`.
 
     This follows OpenAI's Chat Completion API's image URL format.
-
     """
 
     url: str

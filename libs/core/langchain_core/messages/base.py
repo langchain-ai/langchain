@@ -92,7 +92,7 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of a `ChatModel`.
+    Messages are the inputs and outputs of a chat model.
     """
 
     content: str | list[str | dict]
@@ -159,7 +159,7 @@ class BaseMessage(Serializable):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `BaseMessage`.
+        """Initialize a `BaseMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 
@@ -184,7 +184,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "messages"]`
@@ -307,7 +307,7 @@ class BaseMessage(Serializable):
 
         Args:
             html: Whether to format the message as HTML. If `True`, the message will be
-                formatted with HTML tags. Default is False.
+                formatted with HTML tags.
 
         Returns:
             A pretty representation of the message.
@@ -464,7 +464,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title. Default is False.
+        bold: Whether to bold the title.
 
     Returns:
         The title representation.

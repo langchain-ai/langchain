@@ -96,9 +96,7 @@ def get_buffer_string(
     Args:
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of `HumanMessage`s.
-            Default is `'Human'`.
-        ai_prefix: The prefix to prepend to contents of `AIMessage`. Default is
-            `'AI'`.
+        ai_prefix: The prefix to prepend to contents of `AIMessage`.
 
     Returns:
         A single string concatenation of all input messages.
@@ -227,10 +225,10 @@ def _create_message_from_message_type(
     Args:
         message_type: (str) the type of the message (e.g., `'human'`, `'ai'`, etc.).
         content: (str) the content string.
-        name: (str) the name of the message. Default is None.
-        tool_call_id: (str) the tool call id. Default is None.
-        tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
-        id: (str) the id of the message. Default is None.
+        name: (str) the name of the message.
+        tool_call_id: (str) the tool call id.
+        tool_calls: (list[dict[str, Any]]) the tool calls.
+        id: (str) the id of the message.
         additional_kwargs: (dict[str, Any]) additional keyword arguments.
 
     Returns:
@@ -319,11 +317,11 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         message: a representation of a message in one of the supported formats.
 
     Returns:
-        an instance of a message or a message template.
+        An instance of a message or a message template.
 
     Raises:
-        NotImplementedError: if the message type is not supported.
-        ValueError: if the message dict does not contain the required keys.
+        `NotImplementedError`: if the message type is not supported.
+        `ValueError`: if the message dict does not contain the required keys.
 
     """
     if isinstance(message, BaseMessage):
@@ -425,19 +423,19 @@ def filter_messages(
 
     Args:
         messages: Sequence Message-like objects to filter.
-        include_names: Message names to include. Default is None.
-        exclude_names: Messages names to exclude. Default is None.
+        include_names: Message names to include.
+        exclude_names: Messages names to exclude.
         include_types: Message types to include. Can be specified as string names
             (e.g. `'system'`, `'human'`, `'ai'`, ...) or as `BaseMessage`
             classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`, ...).
-            Default is None.
+
         exclude_types: Message types to exclude. Can be specified as string names
             (e.g. `'system'`, `'human'`, `'ai'`, ...) or as `BaseMessage`
             classes (e.g. `SystemMessage`, `HumanMessage`, `AIMessage`, ...).
-            Default is None.
-        include_ids: Message IDs to include. Default is None.
-        exclude_ids: Message IDs to exclude. Default is None.
-        exclude_tool_calls: Tool call IDs to exclude. Default is None.
+
+        include_ids: Message IDs to include.
+        exclude_ids: Message IDs to exclude.
+        exclude_tool_calls: Tool call IDs to exclude.
             Can be one of the following:
             - `True`: all `AIMessage`s with tool calls and all
                 `ToolMessage` objects will be excluded.
@@ -568,7 +566,6 @@ def merge_message_runs(
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-            Defaults to `'\n'`.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -745,12 +742,10 @@ def trim_messages(
         strategy: Strategy for trimming.
             - `'first'`: Keep the first `<= n_count` tokens of the messages.
             - `'last'`: Keep the last `<= n_count` tokens of the messages.
-            Default is `'last'`.
         allow_partial: Whether to split a message if only part of the message can be
             included. If `strategy='last'` then the last partial contents of a message
             are included. If `strategy='first'` then the first partial contents of a
             message are included.
-            Default is False.
         end_on: The message type to end on. If specified then every message after the
             last occurrence of this type is ignored. If `strategy='last'` then this
             is done before we attempt to get the last `max_tokens`. If
@@ -759,7 +754,7 @@ def trim_messages(
             `'human'`, `'ai'`, ...) or as `BaseMessage` classes (e.g.
             `SystemMessage`, `HumanMessage`, `AIMessage`, ...). Can be a single
             type or a list of types.
-            Default is None.
+
         start_on: The message type to start on. Should only be specified if
             `strategy='last'`. If specified then every message before
             the first occurrence of this type is ignored. This is done after we trim
@@ -768,10 +763,9 @@ def trim_messages(
             specified as string names (e.g. `'system'`, `'human'`, `'ai'`, ...) or
             as `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`,
             `AIMessage`, ...). Can be a single type or a list of types.
-            Default is None.
+
         include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if `strategy="last"`.
-            Default is False.
         text_splitter: Function or `langchain_text_splitters.TextSplitter` for
             splitting the string contents of a message. Only used if
             `allow_partial=True`. If `strategy='last'` then the last split tokens
@@ -1683,11 +1677,11 @@ def count_tokens_approximately(
     Args:
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
-            Default is 4 (one token corresponds to ~4 chars for common English text).
+            One token corresponds to ~4 chars for common English text.
             You can also specify float values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
-        extra_tokens_per_message: Number of extra tokens to add per message.
-            Default is 3 (special tokens, including beginning/end of message).
+        extra_tokens_per_message: Number of extra tokens to add per message, e.g.
+            special tokens, including beginning/end of message.
             You can also specify float values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.

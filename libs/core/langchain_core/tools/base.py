@@ -248,7 +248,7 @@ def _function_annotations_are_pydantic_v1(
         True if all Pydantic annotations are from V1, `False` otherwise.
 
     Raises:
-        NotImplementedError: If the function contains mixed V1 and V2 annotations.
+        `NotImplementedError`: If the function contains mixed V1 and V2 annotations.
     """
     any_v1_annotations = any(
         _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")
@@ -293,10 +293,9 @@ def create_schema_from_function(
         filter_args: Optional list of arguments to exclude from the schema.
             Defaults to `FILTERED_ARGS`.
         parse_docstring: Whether to parse the function's docstring for descriptions
-            for each argument. Defaults to `False`.
+            for each argument.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
-            Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
             Defaults to `True`, since we want to include them in the schema
             when *validating* tool inputs.
@@ -481,11 +480,11 @@ class ChildTool(BaseTool):
     """Handle the content of the ValidationError thrown."""
 
     response_format: Literal["content", "content_and_artifact"] = "content"
-    """The tool response format. Defaults to 'content'.
+    """The tool response format.
 
-    If "content" then the output of the tool is interpreted as the contents of a
-    ToolMessage. If "content_and_artifact" then the output is expected to be a
-    two-tuple corresponding to the (content, artifact) of a ToolMessage.
+    If `"content"` then the output of the tool is interpreted as the contents of a
+    ToolMessage. If `"content_and_artifact"` then the output is expected to be a
+    two-tuple corresponding to the (content, artifact) of a `ToolMessage`.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -768,8 +767,8 @@ class ChildTool(BaseTool):
         Args:
             tool_input: The input to the tool.
             verbose: Whether to log the tool's progress.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
             callbacks: Callbacks to be called during tool execution.
             tags: Optional list of tags associated with the tool.
             metadata: Optional metadata associated with the tool.
@@ -880,8 +879,8 @@ class ChildTool(BaseTool):
         Args:
             tool_input: The input to the tool.
             verbose: Whether to log the tool's progress.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
             callbacks: Callbacks to be called during tool execution.
             tags: Optional list of tags associated with the tool.
             metadata: Optional metadata associated with the tool.
