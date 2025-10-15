@@ -6,7 +6,6 @@ import abc
 import asyncio
 import threading
 import time
-from typing import Optional
 
 
 class BaseRateLimiter(abc.ABC):
@@ -40,12 +39,12 @@ class BaseRateLimiter(abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
     @abc.abstractmethod
@@ -59,12 +58,12 @@ class BaseRateLimiter(abc.ABC):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
 
@@ -91,36 +90,34 @@ class InMemoryRateLimiter(BaseRateLimiter):
     Current limitations:
 
     - The rate limiter is not designed to work across different processes. It is
-      an in-memory rate limiter, but it is thread safe.
+        an in-memory rate limiter, but it is thread safe.
     - The rate limiter only supports time-based rate limiting. It does not take
-      into account the size of the request or any other factors.
+        into account the size of the request or any other factors.
 
     Example:
+        ```python
+        import time
 
-        .. code-block:: python
+        from langchain_core.rate_limiters import InMemoryRateLimiter
 
-            import time
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=0.1,  # <-- Can only make a request once every 10 seconds!!
+            check_every_n_seconds=0.1,  # Wake up every 100 ms to check whether allowed to make a request,
+            max_bucket_size=10,  # Controls the maximum burst size.
+        )
 
-            from langchain_core.rate_limiters import InMemoryRateLimiter
+        from langchain_anthropic import ChatAnthropic
 
-            rate_limiter = InMemoryRateLimiter(
-                requests_per_second=0.1,  # <-- Can only make a request once every 10 seconds!!
-                check_every_n_seconds=0.1,  # Wake up every 100 ms to check whether allowed to make a request,
-                max_bucket_size=10,  # Controls the maximum burst size.
-            )
+        model = ChatAnthropic(
+            model_name="claude-3-opus-20240229", rate_limiter=rate_limiter
+        )
 
-            from langchain_anthropic import ChatAnthropic
-
-            model = ChatAnthropic(
-                model_name="claude-3-opus-20240229", rate_limiter=rate_limiter
-            )
-
-            for _ in range(5):
-                tic = time.time()
-                model.invoke("hello")
-                toc = time.time()
-                print(toc - tic)
-
+        for _ in range(5):
+            tic = time.time()
+            model.invoke("hello")
+            toc = time.time()
+            print(toc - tic)
+        ```
 
     !!! version-added "Added in version 0.2.24"
 
@@ -163,7 +160,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         # at a given time.
         self._consume_lock = threading.Lock()
         # The last time we tried to consume tokens.
-        self.last: Optional[float] = None
+        self.last: float | None = None
         self.check_every_n_seconds = check_every_n_seconds
 
     def _consume(self) -> bool:
@@ -208,12 +205,12 @@ class InMemoryRateLimiter(BaseRateLimiter):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()
@@ -232,12 +229,12 @@ class InMemoryRateLimiter(BaseRateLimiter):
         of the attempt to acquire the tokens.
 
         Args:
-            blocking: If True, the method will block until the tokens are available.
-                If False, the method will return immediately with the result of
-                the attempt. Defaults to True.
+            blocking: If `True`, the method will block until the tokens are available.
+                If `False`, the method will return immediately with the result of
+                the attempt. Defaults to `True`.
 
         Returns:
-           True if the tokens were successfully acquired, False otherwise.
+           `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()

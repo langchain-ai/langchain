@@ -1,7 +1,7 @@
 """Custom **exceptions** for LangChain."""
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class LangChainException(Exception):  # noqa: N818
@@ -24,8 +24,8 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
     def __init__(
         self,
         error: Any,
-        observation: Optional[str] = None,
-        llm_output: Optional[str] = None,
+        observation: str | None = None,
+        llm_output: str | None = None,
         send_to_llm: bool = False,  # noqa: FBT001,FBT002
     ):
         """Create an OutputParserException.
@@ -33,19 +33,19 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         Args:
             error: The error that's being re-raised or an error message.
             observation: String explanation of error which can be passed to a
-                model to try and remediate the issue. Defaults to None.
+                model to try and remediate the issue.
             llm_output: String model output which is error-ing.
-                Defaults to None.
+
             send_to_llm: Whether to send the observation and llm_output back to an Agent
                 after an OutputParserException has been raised.
                 This gives the underlying model driving the agent the context that the
                 previous output was improperly structured, in the hopes that it will
                 update the output to the correct format.
-                Defaults to False.
+                Defaults to `False`.
 
         Raises:
-            ValueError: If ``send_to_llm`` is True but either observation or
-                ``llm_output`` are not provided.
+            ValueError: If `send_to_llm` is True but either observation or
+                `llm_output` are not provided.
         """
         if isinstance(error, str):
             error = create_message(

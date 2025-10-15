@@ -11,7 +11,7 @@ pip install langchain-core
 
 ## What is it?
 
-LangChain Core contains the base abstractions that power the the LangChain ecosystem.
+LangChain Core contains the base abstractions that power the LangChain ecosystem.
 
 These abstractions are designed to be as modular and simple as possible.
 

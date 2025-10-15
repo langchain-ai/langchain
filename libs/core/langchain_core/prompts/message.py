@@ -26,7 +26,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Get the namespace of the langchain object.
 
         Returns:
-            ``["langchain", "prompts", "chat"]``
+            `["langchain", "prompts", "chat"]`
         """
         return ["langchain", "prompts", "chat"]
 
@@ -68,7 +68,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML. Defaults to `False`.
 
         Returns:
             Human-readable representation.

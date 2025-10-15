@@ -40,7 +40,7 @@ class PromptValue(Serializable, ABC):
         This is used to determine the namespace of the object when serializing.
 
         Returns:
-            ``["langchain", "schema", "prompt"]``
+            `["langchain", "schema", "prompt"]`
         """
         return ["langchain", "schema", "prompt"]
 
@@ -67,7 +67,7 @@ class StringPromptValue(PromptValue):
         This is used to determine the namespace of the object when serializing.
 
         Returns:
-            ``["langchain", "prompts", "base"]``
+            `["langchain", "prompts", "base"]`
         """
         return ["langchain", "prompts", "base"]
 
@@ -104,7 +104,7 @@ class ChatPromptValue(PromptValue):
         This is used to determine the namespace of the object when serializing.
 
         Returns:
-            ``["langchain", "prompts", "chat"]``
+            `["langchain", "prompts", "chat"]`
         """
         return ["langchain", "prompts", "chat"]
 
@@ -113,8 +113,8 @@ class ImageURL(TypedDict, total=False):
     """Image URL."""
 
     detail: Literal["auto", "low", "high"]
-    """Specifies the detail level of the image. Defaults to ``'auto'``.
-    Can be ``'auto'``, ``'low'``, or ``'high'``.
+    """Specifies the detail level of the image. Defaults to `'auto'`.
+    Can be `'auto'`, `'low'`, or `'high'`.
 
     This follows OpenAI's Chat Completion API's image URL format.
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -728,7 +728,7 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
 
     mock_client.responses.create = mock_create
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks = []
     with patch.object(llm, "root_client", mock_client):
         for chunk in llm.stream("test"):

@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Iterable
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -32,11 +32,11 @@ def _convert_to_v1_from_anthropic_input(
     """Convert Anthropic format blocks to v1 format.
 
     During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
-    block as a ``'non_standard'`` block with the original block stored in the ``value``
+    block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any blocks that
     might be Anthropic format to v1 ContentBlocks.
 
-    If conversion fails, the block is left as a ``'non_standard'`` block.
+    If conversion fails, the block is left as a `'non_standard'` block.
 
     Args:
         content: List of content blocks to process.
@@ -200,7 +200,7 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Anthropic message content to v1 format."""
     if isinstance(message.content, str):
-        content: list[Union[str, dict]] = [{"type": "text", "text": message.content}]
+        content: list[str | dict] = [{"type": "text", "text": message.content}]
     else:
         content = message.content
 
@@ -252,7 +252,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         tool_call_chunk["type"] = "tool_call_chunk"
                     yield tool_call_chunk
                 else:
-                    tool_call_block: Optional[types.ToolCall] = None
+                    tool_call_block: types.ToolCall | None = None
                     # Non-streaming or gathered chunk
                     if len(message.tool_calls) == 1:
                         tool_call_block = {

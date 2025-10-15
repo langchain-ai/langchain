@@ -1,13 +1,13 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
     "tokenizers>=0.15.1,<1.0.0",
     "httpx>=0.25.2,<1.0.0",
     "httpx-sse>=0.3.1,<1.0.0",
@@ -19,9 +19,13 @@ description = "An integration package connecting Mistral and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-mistralai%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
+docs = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -34,7 +38,10 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -55,8 +62,6 @@ ignore = [
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
     "TD",
     "PLR0912",
     "C901",

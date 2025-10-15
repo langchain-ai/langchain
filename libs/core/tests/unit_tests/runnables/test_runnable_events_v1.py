@@ -62,7 +62,7 @@ async def _collect_events(events: AsyncIterator[StreamEvent]) -> list[StreamEven
 def _assert_events_equal_allow_superset_metadata(events: list, expected: list) -> None:
     """Assert that the events are equal."""
     assert len(events) == len(expected)
-    for i, (event, expected_event) in enumerate(zip(events, expected)):
+    for i, (event, expected_event) in enumerate(zip(events, expected, strict=False)):
         # we want to allow a superset of metadata on each
         event_with_edited_metadata = {
             k: (
