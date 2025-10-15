@@ -1,7 +1,7 @@
 """Helper class to draw a state graph into a PNG file."""
 
 from itertools import groupby
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -167,7 +167,7 @@ class PngDrawer:
         self,
         viz: Any,
         nodes: list[list[str]],
-        parent_prefix: Optional[list[str]] = None,
+        parent_prefix: list[str] | None = None,
     ) -> None:
         """Add subgraphs to the graph.
 
