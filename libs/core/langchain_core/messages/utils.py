@@ -317,11 +317,11 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         message: a representation of a message in one of the supported formats.
 
     Returns:
-        an instance of a message or a message template.
+        An instance of a message or a message template.
 
     Raises:
-        NotImplementedError: if the message type is not supported.
-        ValueError: if the message dict does not contain the required keys.
+        `NotImplementedError`: if the message type is not supported.
+        `ValueError`: if the message dict does not contain the required keys.
 
     """
     if isinstance(message, BaseMessage):

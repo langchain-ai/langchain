@@ -1353,7 +1353,8 @@ class Runnable(ABC, Generic[Input, Output]):
         ).with_config({"run_name": "my_template", "tags": ["my_template"]})
         ```
 
-        Example:
+        For instance:
+
         ```python
         from langchain_core.runnables import RunnableLambda
 
@@ -1447,7 +1448,7 @@ class Runnable(ABC, Generic[Input, Output]):
             An async stream of `StreamEvent`.
 
         Raises:
-            NotImplementedError: If the version is not `'v1'` or `'v2'`.
+            `NotImplementedError`: If the version is not `'v1'` or `'v2'`.
 
         """  # noqa: E501
         if version == "v2":

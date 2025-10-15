@@ -100,10 +100,10 @@ class Reviver:
             The revived value.
 
         Raises:
-            ValueError: If the namespace is invalid.
-            ValueError: If trying to deserialize something that cannot
+            `ValueError`: If the namespace is invalid.
+            `ValueError`: If trying to deserialize something that cannot
                 be deserialized in the current version of langchain-core.
-            NotImplementedError: If the object is not implemented and
+            `NotImplementedError`: If the object is not implemented and
                 `ignore_unserializable_fields` is False.
         """
         if (

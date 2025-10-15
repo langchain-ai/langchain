@@ -33,9 +33,9 @@ class BaseRateLimiter(abc.ABC):
         """Attempt to acquire the necessary tokens for the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
-        is set to True.
+        is set to `True`.
 
-        If `blocking` is set to False, the method will immediately return the result
+        If `blocking` is set to `False`, the method will immediately return the result
         of the attempt to acquire the tokens.
 
         Args:
@@ -52,9 +52,9 @@ class BaseRateLimiter(abc.ABC):
         """Attempt to acquire the necessary tokens for the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
-        is set to True.
+        is set to `True`.
 
-        If `blocking` is set to False, the method will immediately return the result
+        If `blocking` is set to `False`, the method will immediately return the result
         of the attempt to acquire the tokens.
 
         Args:
@@ -84,7 +84,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
     not enough tokens in the bucket, the request is blocked until there are
     enough tokens.
 
-    These *tokens* have NOTHING to do with LLM tokens. They are just
+    These tokens have nothing to do with LLM tokens. They are just
     a way to keep track of how many requests can be made at a given time.
 
     Current limitations:
@@ -109,7 +109,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model_name="claude-3-opus-20240229", rate_limiter=rate_limiter
+            model_name="claude-sonnet-4-5-20250929", rate_limiter=rate_limiter
         )
 
         for _ in range(5):
@@ -132,7 +132,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
     ) -> None:
         """A rate limiter based on a token bucket.
 
-        These *tokens* have NOTHING to do with LLM tokens. They are just
+        These tokens have nothing to do with LLM tokens. They are just
         a way to keep track of how many requests can be made at a given time.
 
         This rate limiter is designed to work in a threaded environment.
@@ -145,11 +145,11 @@ class InMemoryRateLimiter(BaseRateLimiter):
         Args:
             requests_per_second: The number of tokens to add per second to the bucket.
                 The tokens represent "credit" that can be used to make requests.
-            check_every_n_seconds: check whether the tokens are available
+            check_every_n_seconds: Check whether the tokens are available
                 every this many seconds. Can be a float to represent
                 fractions of a second.
             max_bucket_size: The maximum number of tokens that can be in the bucket.
-                Must be at least 1. Used to prevent bursts of requests.
+                Must be at least `1`. Used to prevent bursts of requests.
         """
         # Number of requests that we can make per second.
         self.requests_per_second = requests_per_second
@@ -199,9 +199,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
         """Attempt to acquire a token from the rate limiter.
 
         This method blocks until the required tokens are available if `blocking`
-        is set to True.
+        is set to `True`.
 
-        If `blocking` is set to False, the method will immediately return the result
+        If `blocking` is set to `False`, the method will immediately return the result
         of the attempt to acquire the tokens.
 
         Args:
@@ -223,9 +223,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
         """Attempt to acquire a token from the rate limiter. Async version.
 
         This method blocks until the required tokens are available if `blocking`
-        is set to True.
+        is set to `True`.
 
-        If `blocking` is set to False, the method will immediately return the result
+        If `blocking` is set to `False`, the method will immediately return the result
         of the attempt to acquire the tokens.
 
         Args:

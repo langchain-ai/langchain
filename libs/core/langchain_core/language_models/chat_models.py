@@ -1525,8 +1525,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
         Raises:
-            ValueError: If there are any unsupported `kwargs`.
-            NotImplementedError: If the model does not implement
+            `ValueError`: If there are any unsupported `kwargs`.
+            `NotImplementedError`: If the model does not implement
                 `with_structured_output()`.
 
         Returns:

@@ -130,7 +130,7 @@ class Serializable(BaseModel, ABC):
         """Get the namespace of the LangChain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
             The namespace.
