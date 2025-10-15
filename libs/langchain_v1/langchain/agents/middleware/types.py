@@ -1303,21 +1303,21 @@ def wrap_model_call(
     ]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Create middleware with wrap_model_call hook from a function.
+    """Create middleware with `wrap_model_call` hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     model calls, implement retry logic, handle errors, and rewrite responses.
 
     Args:
         func: Function accepting (request, handler) that calls handler(request)
-            to execute the model and returns ModelResponse or AIMessage.
+            to execute the model and returns `ModelResponse` or `AIMessage`.
             Request contains state and runtime.
-        state_schema: Custom state schema. Defaults to AgentState.
+        state_schema: Custom state schema. Defaults to `AgentState`.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
     Returns:
-        AgentMiddleware instance if func provided, otherwise a decorator.
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
         Basic retry logic:
@@ -1451,20 +1451,20 @@ def wrap_tool_call(
     ]
     | AgentMiddleware
 ):
-    """Create middleware with wrap_tool_call hook from a function.
+    """Create middleware with `wrap_tool_call` hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     tool calls, implement retry logic, monitor execution, and modify responses.
 
     Args:
         func: Function accepting (request, handler) that calls
-            handler(request) to execute the tool and returns final ToolMessage or Command.
-            Can be sync or async.
+            handler(request) to execute the tool and returns final `ToolMessage` or
+            `Command`. Can be sync or async.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
     Returns:
-        AgentMiddleware instance if func provided, otherwise a decorator.
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
         Retry logic:
