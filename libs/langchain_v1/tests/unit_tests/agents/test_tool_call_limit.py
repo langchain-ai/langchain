@@ -150,8 +150,8 @@ def test_middleware_unit_functionality():
                 tool_calls=[{"name": "search", "args": {}, "id": "1"}],
             ),
         ],
-        "thread_tool_call_count": 0,
-        "run_tool_call_count": 0,
+        "thread_tool_call_count": {},
+        "run_tool_call_count": {},
     }
     result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
     assert result is None
@@ -175,8 +175,8 @@ def test_middleware_unit_functionality():
                 tool_calls=[{"name": "search", "args": {}, "id": "3"}],
             ),
         ],
-        "thread_tool_call_count": 3,  # 2 from first AI message + 1 from second
-        "run_tool_call_count": 1,  # 1 from second AI message (after HumanMessage)
+        "thread_tool_call_count": {"__all__": 3},  # 2 from first AI message + 1 from second
+        "run_tool_call_count": {"__all__": 1},  # 1 from second AI message (after HumanMessage)
     }
     result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
@@ -197,8 +197,8 @@ def test_middleware_unit_functionality():
                 ],
             ),
         ],
-        "thread_tool_call_count": 2,
-        "run_tool_call_count": 2,  # 2 tool calls in current run
+        "thread_tool_call_count": {"__all__": 2},
+        "run_tool_call_count": {"__all__": 2},  # 2 tool calls in current run
     }
     result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
@@ -225,8 +225,8 @@ def test_middleware_with_specific_tool():
                 ],
             ),
         ],
-        "thread_tool_call_count": 1,  # 1 search call
-        "run_tool_call_count": 1,  # 1 search call in current run
+        "thread_tool_call_count": {"search": 1},  # 1 search call
+        "run_tool_call_count": {"search": 1},  # 1 search call in current run
     }
     # Run limit for search is 1, should be exceeded
     result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
@@ -246,8 +246,8 @@ def test_middleware_with_specific_tool():
                 ],
             ),
         ],
-        "thread_tool_call_count": 0,  # 0 search calls
-        "run_tool_call_count": 0,  # 0 search calls
+        "thread_tool_call_count": {},  # 0 search calls
+        "run_tool_call_count": {},  # 0 search calls
     }
     result = middleware.before_model(state, runtime)  # type: ignore[arg-type]
     assert result is None
@@ -267,8 +267,8 @@ def test_middleware_error_behavior():
             ToolMessage("Result", tool_call_id="1"),
             AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "2"}]),
         ],
-        "thread_tool_call_count": 2,  # 2 tool calls total
-        "run_tool_call_count": 1,  # 1 tool call in current run
+        "thread_tool_call_count": {"__all__": 2},  # 2 tool calls total
+        "run_tool_call_count": {"__all__": 1},  # 1 tool call in current run
     }
     with pytest.raises(ToolCallLimitExceededError) as exc_info:
         middleware.before_model(state, runtime)  # type: ignore[arg-type]
@@ -283,8 +283,8 @@ def test_middleware_error_behavior():
             HumanMessage("Question"),
             AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
         ],
-        "thread_tool_call_count": 1,
-        "run_tool_call_count": 1,  # 1 tool call in current run
+        "thread_tool_call_count": {"__all__": 1},
+        "run_tool_call_count": {"__all__": 1},  # 1 tool call in current run
     }
     with pytest.raises(ToolCallLimitExceededError) as exc_info:
         middleware.before_model(state, runtime)  # type: ignore[arg-type]
@@ -412,8 +412,8 @@ def test_exception_error_messages():
             ToolMessage("Result", tool_call_id="2"),
             AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
-        "thread_tool_call_count": 3,  # 3 tool calls total
-        "run_tool_call_count": 2,  # 2 tool calls in current run
+        "thread_tool_call_count": {"__all__": 3},  # 3 tool calls total
+        "run_tool_call_count": {"__all__": 2},  # 2 tool calls in current run
     }
 
     with pytest.raises(ToolCallLimitExceededError) as exc_info:
@@ -440,8 +440,10 @@ def test_exception_error_messages():
             ToolMessage("Result", tool_call_id="2"),
             AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
-        "thread_tool_call_count": 2,  # 2 search calls total (calculator calls don't count)
-        "run_tool_call_count": 1,  # 1 search call in current run
+        "thread_tool_call_count": {
+            "search": 2
+        },  # 2 search calls total (calculator calls don't count)
+        "run_tool_call_count": {"search": 1},  # 1 search call in current run
     }
 
     with pytest.raises(ToolCallLimitExceededError) as exc_info:

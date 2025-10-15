@@ -23,10 +23,14 @@ class ToolCallLimitState(AgentState):
     """State schema for ToolCallLimitMiddleware.
 
     Extends AgentState with tool call tracking fields.
+
+    The count fields are dictionaries mapping tool names to execution counts.
+    This allows multiple middleware instances to track different tools independently.
+    The special key "__all__" is used for tracking all tool calls globally.
     """
 
-    thread_tool_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
-    run_tool_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
+    thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
+    run_tool_call_count: NotRequired[Annotated[dict[str, int], UntrackedValue, PrivateStateAttr]]
 
 
 def _count_tool_calls_in_messages(messages: list[AnyMessage], tool_name: str | None = None) -> int:
@@ -245,8 +249,14 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
             ToolCallLimitExceededError: If limits are exceeded and exit_behavior
                 is "error".
         """
-        thread_count = state.get("thread_tool_call_count", 0)
-        run_count = state.get("run_tool_call_count", 0)
+        # Get the count key for this middleware instance
+        count_key = self.tool_name if self.tool_name else "__all__"
+
+        thread_counts = state.get("thread_tool_call_count", {})
+        run_counts = state.get("run_tool_call_count", {})
+
+        thread_count = thread_counts.get(count_key, 0)
+        run_count = run_counts.get(count_key, 0)
 
         # Check if any limits are exceeded
         thread_limit_exceeded = self.thread_limit is not None and thread_count >= self.thread_limit
@@ -306,8 +316,18 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
         if tool_call_count == 0:
             return None
 
-        # Increment counts
+        # Get the count key for this middleware instance
+        count_key = self.tool_name if self.tool_name else "__all__"
+
+        # Get current counts
+        thread_counts = state.get("thread_tool_call_count", {}).copy()
+        run_counts = state.get("run_tool_call_count", {}).copy()
+
+        # Increment counts for this key
+        thread_counts[count_key] = thread_counts.get(count_key, 0) + tool_call_count
+        run_counts[count_key] = run_counts.get(count_key, 0) + tool_call_count
+
         return {
-            "thread_tool_call_count": state.get("thread_tool_call_count", 0) + tool_call_count,
-            "run_tool_call_count": state.get("run_tool_call_count", 0) + tool_call_count,
+            "thread_tool_call_count": thread_counts,
+            "run_tool_call_count": run_counts,
         }
