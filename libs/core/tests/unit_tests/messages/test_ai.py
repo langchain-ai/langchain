@@ -358,6 +358,8 @@ def test_content_blocks() -> None:
 
     # test v1 content
     chunk_1.content = cast("str | list[str | dict]", chunk_1.content_blocks)
+    assert len(chunk_1.content) == 1
+    chunk_1.content[0]["extras"] = {"baz": "qux"}  # type: ignore[index]
     chunk_1.response_metadata["output_version"] = "v1"
     chunk_2.content = cast("str | list[str | dict]", chunk_2.content_blocks)
 
@@ -368,6 +370,7 @@ def test_content_blocks() -> None:
             "name": "foo",
             "args": {"foo": "bar"},
             "id": "abc_123",
+            "extras": {"baz": "qux"},
         }
     ]
 

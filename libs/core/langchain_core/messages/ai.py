@@ -545,6 +545,9 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     and call_id in id_to_tc
                 ):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
+                    if "extras" in block:
+                        # mypy does not account for instance check for dict above
+                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
 
         return self
 
