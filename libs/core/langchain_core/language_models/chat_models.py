@@ -533,9 +533,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                                 index = index + 1
                             if "index" not in block:
                                 block["index"] = index
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+
+                    if isinstance(chunk.message.content, list):
+                        run_manager.on_llm_new_token(
+                            json.dumps(chunk.message.content), chunk=chunk
+                        )
+                    else:
+                        run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
                     yielded = True
@@ -665,9 +669,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index = index + 1
                         if "index" not in block:
                             block["index"] = index
-                await run_manager.on_llm_new_token(
-                    cast("str", chunk.message.content), chunk=chunk
-                )
+                if isinstance(chunk.message.content, list):
+                    await run_manager.on_llm_new_token(
+                        json.dumps(chunk.message.content), chunk=chunk
+                    )
+                else:
+                    await run_manager.on_llm_new_token(
+                        chunk.message.content, chunk=chunk
+                    )
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
                 yielded = True
@@ -1166,9 +1175,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    if isinstance(chunk.message.content, list):
+                        run_manager.on_llm_new_token(
+                            json.dumps(chunk.message.content), chunk=chunk
+                        )
+                    else:
+                        run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
 
@@ -1284,9 +1296,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    await run_manager.on_llm_new_token(
-                        cast("str", chunk.message.content), chunk=chunk
-                    )
+                    if isinstance(chunk.message.content, list):
+                        await run_manager.on_llm_new_token(
+                            json.dumps(chunk.message.content), chunk=chunk
+                        )
+                    else:
+                        await run_manager.on_llm_new_token(
+                            chunk.message.content, chunk=chunk
+                        )
                 chunks.append(chunk)
                 yielded = True
 
