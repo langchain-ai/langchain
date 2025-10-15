@@ -12,7 +12,7 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-anthropic"
-version = "1.0.0a4"
+version = "1.0.0a5"
 description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
 readme = "README.md"
 
