@@ -147,7 +147,6 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             optional: If `True` format_messages can be called with no arguments and will
                 return an empty list. If `False` then a named argument with name
                 `variable_name` must be passed in, even if the value is an empty list.
-                Defaults to `False`.]
         """
         # mypy can't detect the init which is defined in the parent class
         # b/c these are BaseModel classes.
@@ -195,7 +194,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -235,7 +234,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
         Args:
             template: a template.
-            template_format: format of the template. Defaults to "f-string".
+            template_format: format of the template.
             partial_variables: A dictionary of variables that can be used to partially
                 fill in the template. For example, if the template is
                 `"{variable1} {variable2}"`, and `partial_variables` is
@@ -330,7 +329,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -412,7 +411,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Args:
             template: a template.
             template_format: format of the template.
-                Options are: 'f-string', 'mustache', 'jinja2'. Defaults to "f-string".
+                Options are: 'f-string', 'mustache', 'jinja2'.
             partial_variables: A dictionary of variables that can be used too partially.
 
             **kwargs: keyword arguments to pass to the constructor.
@@ -637,7 +636,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -750,7 +749,7 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -905,7 +904,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 (message type, template); e.g., ("human", "{user_input}"),
                 (4) 2-tuple of (message class, template), (5) a string which is
                 shorthand for ("human", template); e.g., "{user_input}".
-            template_format: format of the template. Defaults to "f-string".
+            template_format: format of the template.
             input_variables: A list of the names of the variables whose values are
                 required as inputs to the prompt.
             optional_variables: A list of the names of the variables for placeholder
@@ -1128,7 +1127,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 (message type, template); e.g., ("human", "{user_input}"),
                 (4) 2-tuple of (message class, template), (5) a string which is
                 shorthand for ("human", template); e.g., "{user_input}".
-            template_format: format of the template. Defaults to "f-string".
+            template_format: format of the template.
 
         Returns:
             a chat prompt template.
@@ -1287,7 +1286,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.
@@ -1306,7 +1305,7 @@ def _create_template_from_message_type(
     Args:
         message_type: str the type of the message template (e.g., "human", "ai", etc.)
         template: str the template string.
-        template_format: format of the template. Defaults to "f-string".
+        template_format: format of the template.
 
     Returns:
         a message prompt template of the appropriate type.
@@ -1383,7 +1382,7 @@ def _convert_to_message_template(
 
     Args:
         message: a representation of a message in one of the supported formats.
-        template_format: format of the template. Defaults to "f-string".
+        template_format: format of the template.
 
     Returns:
         an instance of a message or a message template.

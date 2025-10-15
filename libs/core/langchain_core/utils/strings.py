@@ -57,7 +57,7 @@ def sanitize_for_postgres(text: str, replacement: str = "") -> str:
 
     Args:
         text: The text to sanitize.
-        replacement: String to replace NUL bytes with. Defaults to empty string.
+        replacement: String to replace NUL bytes with.
 
     Returns:
         The sanitized text with NUL bytes removed or replaced.

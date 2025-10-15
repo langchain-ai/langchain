@@ -21,8 +21,8 @@ class BaseRateLimiter(abc.ABC):
     Current limitations:
 
     - Rate limiting information is not surfaced in tracing or callbacks. This means
-      that the total time it takes to invoke a chat model will encompass both
-      the time spent waiting for tokens and the time spent making the request.
+        that the total time it takes to invoke a chat model will encompass both
+        the time spent waiting for tokens and the time spent making the request.
 
 
     !!! version-added "Added in version 0.2.24"
@@ -41,10 +41,10 @@ class BaseRateLimiter(abc.ABC):
         Args:
             blocking: If `True`, the method will block until the tokens are available.
                 If `False`, the method will return immediately with the result of
-                the attempt. Defaults to `True`.
+                the attempt.
 
         Returns:
-           `True` if the tokens were successfully acquired, `False` otherwise.
+            `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
     @abc.abstractmethod
@@ -60,10 +60,10 @@ class BaseRateLimiter(abc.ABC):
         Args:
             blocking: If `True`, the method will block until the tokens are available.
                 If `False`, the method will return immediately with the result of
-                the attempt. Defaults to `True`.
+                the attempt.
 
         Returns:
-           `True` if the tokens were successfully acquired, `False` otherwise.
+            `True` if the tokens were successfully acquired, `False` otherwise.
         """
 
 
@@ -207,10 +207,10 @@ class InMemoryRateLimiter(BaseRateLimiter):
         Args:
             blocking: If `True`, the method will block until the tokens are available.
                 If `False`, the method will return immediately with the result of
-                the attempt. Defaults to `True`.
+                the attempt.
 
         Returns:
-           `True` if the tokens were successfully acquired, `False` otherwise.
+            `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()
@@ -231,10 +231,10 @@ class InMemoryRateLimiter(BaseRateLimiter):
         Args:
             blocking: If `True`, the method will block until the tokens are available.
                 If `False`, the method will return immediately with the result of
-                the attempt. Defaults to `True`.
+                the attempt.
 
         Returns:
-           `True` if the tokens were successfully acquired, `False` otherwise.
+            `True` if the tokens were successfully acquired, `False` otherwise.
         """
         if not blocking:
             return self._consume()

@@ -624,22 +624,22 @@ def before_model(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the before_model hook.
+    """Decorator used to dynamically create a middleware with the `before_model` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
         state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+            `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function it is wrapping.
+        Either an `AgentMiddleware` instance (if func is provided directly) or a
+        decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -766,22 +766,22 @@ def after_model(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the after_model hook.
+    """Decorator used to dynamically create a middleware with the `after_model` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+        function that can be applied to a function.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -897,22 +897,22 @@ def before_agent(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the before_agent hook.
+    """Decorator used to dynamically create a middleware with the `before_agent` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function it is wrapping.
+        Either an `AgentMiddleware` instance (if func is provided directly) or a
+        decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -1039,22 +1039,22 @@ def after_agent(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the after_agent hook.
+    """Decorator used to dynamically create a middleware with the `after_agent` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+        function that can be applied to a function.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state

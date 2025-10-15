@@ -168,7 +168,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization). Defaults to "ai"."""
+    """The type of the message (used for deserialization)."""
 
     @overload
     def __init__(
@@ -335,7 +335,6 @@ class AIMessage(BaseMessage):
 
         Args:
             html: Whether to return an HTML-formatted string.
-                Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -378,11 +377,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for deserialization).
-
-    Defaults to `AIMessageChunk`.
-
-    """
+    """The type of the message (used for deserialization)."""
 
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""

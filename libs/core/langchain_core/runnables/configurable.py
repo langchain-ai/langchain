@@ -540,7 +540,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to `'default'`."""
+    """The enum value to use for the default option."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace

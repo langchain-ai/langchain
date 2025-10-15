@@ -1,4 +1,8 @@
-"""Middleware plugins for agents."""
+"""Middleware plugins for agents.
+
+See [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for more
+details.
+"""
 
 from .context_editing import (
     ClearToolUsesEdit,

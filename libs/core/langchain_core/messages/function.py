@@ -28,7 +28,7 @@ class FunctionMessage(BaseMessage):
     """The name of the function that was executed."""
 
     type: Literal["function"] = "function"
-    """The type of the message (used for serialization). Defaults to `'function'`."""
+    """The type of the message (used for serialization)."""
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
@@ -38,11 +38,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization).
-
-    Defaults to `'FunctionMessageChunk'`.
-
-    """
+    """The type of the message (used for serialization)."""
 
     @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]

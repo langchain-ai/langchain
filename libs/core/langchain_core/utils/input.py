@@ -66,7 +66,7 @@ def print_text(
     Args:
         text: The text to print.
         color: The color to use.
-        end: The end character to use. Defaults to "".
+        end: The end character to use.
         file: The file to write to.
     """
     text_to_print = get_colored_text(text, color) if color else text

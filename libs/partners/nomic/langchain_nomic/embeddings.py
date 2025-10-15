@@ -72,7 +72,7 @@ class NomicEmbeddings(Embeddings):
             dimensionality: The embedding dimension, for use with Matryoshka-capable
                 models. Defaults to full-size.
             inference_mode: How to generate embeddings. One of `'remote'`, `'local'`
-                (Embed4All), or `'dynamic'` (automatic). Defaults to `'remote'`.
+                (Embed4All), or `'dynamic'` (automatic).
             device: The device to use for local embeddings. Choices include
                 `'cpu'`, `'gpu'`, `'nvidia'`, `'amd'`, or a specific device
                 name. See the docstring for `GPT4All.__init__` for more info.

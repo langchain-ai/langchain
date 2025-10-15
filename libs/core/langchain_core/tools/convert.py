@@ -99,24 +99,20 @@ def tool(
                 (used only if `description` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
-            than continuing the agent loop. Defaults to `False`.
+            than continuing the agent loop.
         args_schema: optional argument schema for user to specify.
 
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
-            Defaults to `True`.
         response_format: The tool response format. If "content" then the output of
             the tool is interpreted as the contents of a ToolMessage. If
             "content_and_artifact" then the output is expected to be a two-tuple
             corresponding to the (content, artifact) of a ToolMessage.
-            Defaults to "content".
         parse_docstring: if `infer_schema` and `parse_docstring`, will attempt to
             parse parameter descriptions from Google Style function docstrings.
-            Defaults to `False`.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
-            Defaults to `True`.
 
     Raises:
         ValueError: If too many positional arguments are provided.

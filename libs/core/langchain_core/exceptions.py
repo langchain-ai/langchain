@@ -41,7 +41,6 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
                 This gives the underlying model driving the agent the context that the
                 previous output was improperly structured, in the hopes that it will
                 update the output to the correct format.
-                Defaults to `False`.
 
         Raises:
             ValueError: If `send_to_llm` is True but either observation or

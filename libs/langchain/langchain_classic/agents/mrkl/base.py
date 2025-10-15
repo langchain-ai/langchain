@@ -93,10 +93,9 @@ class ZeroShotAgent(Agent):
         Args:
             tools: List of tools the agent will have access to, used to format the
                 prompt.
-            prefix: String to put before the list of tools. Defaults to PREFIX.
-            suffix: String to put after the list of tools. Defaults to SUFFIX.
+            prefix: String to put before the list of tools.
+            suffix: String to put after the list of tools.
             format_instructions: Instructions on how to use the tools.
-                Defaults to FORMAT_INSTRUCTIONS
             input_variables: List of input variables the final prompt will expect.
 
 
@@ -131,10 +130,9 @@ class ZeroShotAgent(Agent):
             tools: The tools to use.
             callback_manager: The callback manager to use.
             output_parser: The output parser to use.
-            prefix: The prefix to use. Defaults to PREFIX.
-            suffix: The suffix to use. Defaults to SUFFIX.
+            prefix: The prefix to use.
+            suffix: The suffix to use.
             format_instructions: The format instructions to use.
-                Defaults to FORMAT_INSTRUCTIONS.
             input_variables: The input variables to use.
             kwargs: Additional parameters to pass to the agent.
         """

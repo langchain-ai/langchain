@@ -27,11 +27,7 @@ class HumanMessage(BaseMessage):
     """
 
     type: Literal["human"] = "human"
-    """The type of the message (used for serialization).
-
-    Defaults to `'human'`.
-
-    """
+    """The type of the message (used for serialization)."""
 
     @overload
     def __init__(
@@ -71,5 +67,4 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization).
-    Defaults to "HumanMessageChunk"."""
+    """The type of the message (used for serialization)."""

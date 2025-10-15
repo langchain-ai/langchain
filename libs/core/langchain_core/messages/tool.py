@@ -69,11 +69,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
-    """The type of the message (used for serialization).
-
-    Defaults to `'tool'`.
-
-    """
+    """The type of the message (used for serialization)."""
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.

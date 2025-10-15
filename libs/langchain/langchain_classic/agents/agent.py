@@ -1053,9 +1053,9 @@ class AgentExecutor(Chain):
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
     If a string, the string itself will be sent to the LLM as an observation.
-    If a callable function, the function will be called with the exception
-     as an argument, and the result of that function will be passed to the agent
-      as an observation.
+    If a callable function, the function will be called with the exception as an
+    argument, and the result of that function will be passed to the agent as an
+    observation.
     """
     trim_intermediate_steps: (
         int | Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]]

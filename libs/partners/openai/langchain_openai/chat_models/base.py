@@ -630,8 +630,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     store: bool | None = None
-    """If `True`, OpenAI may store response data for future use. Defaults to `True`
-    for the Responses API and `False` for the Chat Completions API.
+    """If `True`, OpenAI may store response data for future use.
+
+    Defaults to `True` for the Responses API and `False` for the Chat Completions API.
 
     !!! version-added "Added in version 0.3.24"
     """

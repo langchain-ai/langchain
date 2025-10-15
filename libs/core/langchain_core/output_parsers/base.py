@@ -34,10 +34,10 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -49,10 +49,10 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """Async parse a list of candidate model Generations into a specific format.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -240,10 +240,10 @@ class BaseOutputParser(
             is assumed to be the highest-likelihood Generation.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -270,10 +270,10 @@ class BaseOutputParser(
             is assumed to be the highest-likelihood Generation.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.

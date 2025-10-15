@@ -307,7 +307,7 @@ class BaseMessage(Serializable):
 
         Args:
             html: Whether to format the message as HTML. If `True`, the message will be
-                formatted with HTML tags. Default is False.
+                formatted with HTML tags.
 
         Returns:
             A pretty representation of the message.
@@ -464,7 +464,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title. Default is False.
+        bold: Whether to bold the title.
 
     Returns:
         The title representation.

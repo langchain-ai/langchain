@@ -538,7 +538,7 @@ def create_agent(  # noqa: PLR0915
         tools: A list of tools, dicts, or callables. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. Prompts are converted to a
-        `SystemMessage` and added to the beginning of the message list.
+            `SystemMessage` and added to the beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
             Middleware can intercept and modify agent behavior at various stages.
         response_format: An optional configuration for structured responses.
@@ -569,8 +569,8 @@ def create_agent(  # noqa: PLR0915
         A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting AIMessage contains `tool_calls`, the graph will
-    then call the tools. The tools node executes the tools and adds the responses
+    the system prompt). If the resulting `AIMessage` contains `tool_calls`, the graph
+    will then call the tools. The tools node executes the tools and adds the responses
     to the messages list as `ToolMessage` objects. The agent node then calls the
     language model again. The process repeats until no more `tool_calls` are
     present in the response. The agent then returns the full list of messages.
@@ -586,7 +586,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-3-7-sonnet-latest",
+            model="anthropic:claude-sonnet-4-5-20250929",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )

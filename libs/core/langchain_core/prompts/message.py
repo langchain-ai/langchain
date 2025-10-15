@@ -68,7 +68,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to `False`.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.

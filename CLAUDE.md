@@ -163,6 +163,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 **Documentation Guidelines:**
 
 - Types go in function signatures, NOT in docstrings
+  - If a default is present, DO NOT repeat it in the docstring unless there is post-processing or it is set conditionally.
 - Focus on "why" rather than "what" in descriptions
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear

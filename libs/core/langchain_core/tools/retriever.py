@@ -82,12 +82,12 @@ def create_retriever_tool(
         description: The description for the tool. This will be passed to the language
             model, so should be descriptive.
         document_prompt: The prompt to use for the document.
-        document_separator: The separator to use between documents. Defaults to "\n\n".
+        document_separator: The separator to use between documents.
         response_format: The tool response format. If "content" then the output of
             the tool is interpreted as the contents of a ToolMessage. If
             "content_and_artifact" then the output is expected to be a two-tuple
             corresponding to the (content, artifact) of a ToolMessage (artifact
-            being a list of documents in this case). Defaults to "content".
+            being a list of documents in this case).
 
     Returns:
         Tool class to pass to an agent.

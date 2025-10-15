@@ -29,7 +29,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         """Parse a list of candidate model Generations into a specific format.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: (Not used) Whether the result is a partial result. If `True`, the
                 parser may return a partial result, which may not be complete or valid.
