@@ -18,7 +18,9 @@ pip install langchain-classic
 
 ## 🤔 What is this?
 
-TODO
+Legacy chains, `langchain-community` re-exports, indexing API, deprecated functionality, and more.
+
+In most cases, you should be using the main [`langchain`](https://pypi.org/project/langchain/) package.
 
 ## 📖 Documentation
 
