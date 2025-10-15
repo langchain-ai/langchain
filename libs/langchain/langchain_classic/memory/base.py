@@ -10,11 +10,20 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
+from langchain_core._api import deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
 from pydantic import ConfigDict
 
 
+@deprecated(
+    since="0.3.3",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class BaseMemory(Serializable, ABC):
     """Abstract base class for memory in Chains.
 
