@@ -19,7 +19,7 @@ class FunctionMessage(BaseMessage):
     do not contain the `tool_call_id` field.
 
     The `tool_call_id` field is used to associate the tool call request with the
-    tool call response. This is useful in situations where a chat model is able
+    tool call response. Useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
     """

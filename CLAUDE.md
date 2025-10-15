@@ -167,6 +167,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Focus on "why" rather than "what" in descriptions
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
+- Ensure American English spelling (e.g., "behavior", not "behaviour")
 
 📌 *Tip:* Keep descriptions concise but clear. Only document return values if non-obvious.
 

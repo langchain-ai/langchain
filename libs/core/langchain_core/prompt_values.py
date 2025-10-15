@@ -24,8 +24,8 @@ from langchain_core.messages import (
 class PromptValue(Serializable, ABC):
     """Base abstract class for inputs to any language model.
 
-    PromptValues can be converted to both LLM (pure text-generation) inputs and
-    ChatModel inputs.
+    `PromptValues` can be converted to both LLM (pure text-generation) inputs and
+    chat model inputs.
     """
 
     @classmethod

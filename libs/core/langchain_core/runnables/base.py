@@ -5753,7 +5753,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
     `bind`: Bind kwargs to pass to the underlying `Runnable` when running it.
 
         ```python
-        # Create a Runnable binding that invokes the ChatModel with the
+        # Create a Runnable binding that invokes the chat model with the
         # additional kwarg `stop=['-']` when running it.
         from langchain_community.chat_models import ChatOpenAI
 

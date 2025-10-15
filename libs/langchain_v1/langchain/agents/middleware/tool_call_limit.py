@@ -181,7 +181,7 @@ class ToolCallLimitMiddleware(AgentMiddleware):
                 Defaults to "end".
 
         Raises:
-            ValueError: If both limits are None or if exit_behavior is invalid.
+            ValueError: If both limits are `None` or if `exit_behavior` is invalid.
         """
         super().__init__()
 

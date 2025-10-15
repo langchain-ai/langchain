@@ -112,7 +112,7 @@ class AgentActionMessageLog(AgentAction):
     if (tool, tool_input) cannot be used to fully recreate the LLM
     prediction, and you need that LLM prediction (for future agent iteration).
     Compared to `log`, this is useful when the underlying LLM is a
-    ChatModel (and therefore returns messages rather than a string)."""
+    chat model (and therefore returns messages rather than a string)."""
     # Ignoring type because we're overriding the type from AgentAction.
     # And this is the correct thing to do in this case.
     # The type literal is used for serialization purposes.

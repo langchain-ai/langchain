@@ -37,7 +37,7 @@ For detailed information on how to contribute, see the [Contributing Guide](http
 
 ## Usage
 
-To add standard tests to an integration package (e.g., for a ChatModel), you need to create
+To add standard tests to an integration package (e.g., for a chat model), you need to create
 
 1. A unit test class that inherits from `ChatModelUnitTests`
 2. An integration test class that inherits from `ChatModelIntegrationTests`

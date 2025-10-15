@@ -535,7 +535,7 @@ def create_agent(  # noqa: PLR0915
     Args:
         model: The language model for the agent. Can be a string identifier
             (e.g., `"openai:gpt-4"`), a chat model instance (e.g., `ChatOpenAI()`).
-        tools: A list of tools, dicts, or callables. If `None` or an empty list,
+        tools: A list of tools, `dicts`, or `Callable`. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. Prompts are converted to a
             `SystemMessage` and added to the beginning of the message list.
@@ -553,12 +553,15 @@ def create_agent(  # noqa: PLR0915
         store: An optional store object. This is used for persisting data
             across multiple threads (e.g., multiple conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
-            This is useful if you want to add a user confirmation or other interrupt
+            Useful if you want to add a user confirmation or other interrupt
             before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
-            This is useful if you want to return directly or run additional processing
+            Useful if you want to return directly or run additional processing
             on an output.
-        debug: A flag indicating whether to enable debug mode.
+        debug: Whether to enable verbose logging for graph execution. When enabled,
+            prints detailed information about each node execution, state updates,
+            and transitions during agent runtime. Useful for debugging middleware
+            behavior and understanding agent execution flow.
         name: An optional name for the `CompiledStateGraph`.
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building

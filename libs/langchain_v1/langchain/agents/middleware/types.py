@@ -382,7 +382,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
         Args:
             request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
-                Access state via request.state and runtime via request.runtime.
+                Access state via `request.state` and runtime via `request.runtime`.
             handler: Callable to execute the tool (can be called multiple times).
 
         Returns:
@@ -480,13 +480,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return result
             ```
 
-
+            ```python
             async def awrap_tool_call(self, request, handler):
                 if cached := await get_cache_async(request):
                     return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
                 result = await handler(request)
                 await save_cache_async(request, result)
                 return result
+            ```
         """
         msg = (
             "Asynchronous implementation of awrap_tool_call is not available. "

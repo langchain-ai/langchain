@@ -1,8 +1,8 @@
-"""Middleware plugins for agents.
+"""Entrypoint to using [Middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents).
 
 See [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for more
 details.
-"""
+"""  # noqa: E501
 
 from .context_editing import (
     ClearToolUsesEdit,

@@ -134,7 +134,7 @@ def init_embeddings(
 
     Args:
         model: Name of the model to use. Can be either:
-            - A model string like "openai:text-embedding-3-small"
+            - A model string like `"openai:text-embedding-3-small"`
             - Just the model name if provider is specified
         provider: Optional explicit provider name. If not specified,
             will attempt to parse from the model string. Supported providers
