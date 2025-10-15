@@ -1963,7 +1963,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -3364,7 +3364,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -4859,7 +4859,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -6292,7 +6292,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -7735,7 +7735,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -9213,7 +9213,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -10564,7 +10564,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields
@@ -12020,7 +12020,7 @@
         'description': '''
           Message from an AI.
 
-          AIMessage is returned from a chat model as a response to a prompt.
+          `AIMessage` is returned from a chat model as a response to a prompt.
 
           This message represents the output of the model and consists of both
           the raw output as returned by the model together standardized fields

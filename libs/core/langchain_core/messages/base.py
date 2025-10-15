@@ -159,7 +159,7 @@ class BaseMessage(Serializable):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `BaseMessage`.
+        """Initialize a `BaseMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 
@@ -184,7 +184,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "messages"]`

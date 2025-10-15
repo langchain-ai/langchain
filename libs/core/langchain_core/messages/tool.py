@@ -160,7 +160,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `ToolMessage`.
+        """Initialize a `ToolMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 

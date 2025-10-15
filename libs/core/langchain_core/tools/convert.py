@@ -81,7 +81,7 @@ def tool(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
 ) -> BaseTool | Callable[[Callable | Runnable], BaseTool]:
-    """Make tools out of functions, can be used with or without arguments.
+    """Make tools out of Python functions, can be used with or without arguments.
 
     Args:
         name_or_callable: Optional name of the tool or the callable to be
@@ -93,26 +93,26 @@ def tool(
 
             - `description` argument
                 (used even if docstring and/or `args_schema` are provided)
-            - tool function docstring
+            - Tool function docstring
                 (used even if `args_schema` is provided)
             - `args_schema` description
                 (used only if `description` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop.
-        args_schema: optional argument schema for user to specify.
+        args_schema: Optional argument schema for user to specify.
 
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
-        response_format: The tool response format. If "content" then the output of
-            the tool is interpreted as the contents of a ToolMessage. If
-            "content_and_artifact" then the output is expected to be a two-tuple
-            corresponding to the (content, artifact) of a ToolMessage.
+        response_format: The tool response format. If `"content"` then the output of
+            the tool is interpreted as the contents of a `ToolMessage`. If
+            `"content_and_artifact"` then the output is expected to be a two-tuple
+            corresponding to the `(content, artifact)` of a `ToolMessage`.
         parse_docstring: if `infer_schema` and `parse_docstring`, will attempt to
             parse parameter descriptions from Google Style function docstrings.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
-            whether to raise ValueError on invalid Google Style docstrings.
+            whether to raise `ValueError` on invalid Google Style docstrings.
 
     Raises:
         ValueError: If too many positional arguments are provided.
@@ -120,8 +120,8 @@ def tool(
         ValueError: If the first argument is not a string or callable with
             a `__name__` attribute.
         ValueError: If the function does not have a docstring and description
-            is not provided and `infer_schema` is False.
-        ValueError: If `parse_docstring` is True and the function has an invalid
+            is not provided and `infer_schema` is `False`.
+        ValueError: If `parse_docstring` is `True` and the function has an invalid
             Google-style docstring and `error_on_invalid_docstring` is True.
         ValueError: If a Runnable is provided that does not have an object schema.
 
@@ -129,7 +129,7 @@ def tool(
         The tool.
 
     Requires:
-        - Function must be of type (str) -> str
+        - Function must be of type `(str) -> str`
         - Function must have a docstring
 
     Examples:
@@ -193,7 +193,7 @@ def tool(
         Note that parsing by default will raise `ValueError` if the docstring
         is considered invalid. A docstring is considered invalid if it contains
         arguments not in the function signature, or is unable to be parsed into
-        a summary and "Args:" blocks. Examples below:
+        a summary and `"Args:"` blocks. Examples below:
 
         ```python
         # No args section

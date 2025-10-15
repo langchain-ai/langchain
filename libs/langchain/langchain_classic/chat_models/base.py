@@ -117,7 +117,7 @@ def init_chat_model(
             - `xai`                 -> `langchain-xai`
             - `perplexity`          -> `langchain-perplexity`
 
-            Will attempt to infer model_provider from model if not specified. The
+            Will attempt to infer `model_provider` from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
             - `gpt-...` | `o1...` | `o3...`       -> `openai`
@@ -132,12 +132,12 @@ def init_chat_model(
             - `sonar...`                         -> `perplexity`
         configurable_fields: Which model parameters are configurable:
 
-            - None: No configurable fields.
+            - `None`: No configurable fields.
             - `'any'`: All fields are configurable. **See Security Note below.**
-            - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
+            - `list[str] | Tuple[str, ...]`: Specified fields are configurable.
 
-            Fields are assumed to have config_prefix stripped if there is a
-            config_prefix. If model is specified, then defaults to None. If model is
+            Fields are assumed to have `config_prefix` stripped if there is a
+            `config_prefix`. If model is specified, then defaults to `None`. If model is
             not specified, then defaults to `("model", "model_provider")`.
 
             **Security Note**: Setting `configurable_fields="any"` means fields like
@@ -165,7 +165,7 @@ def init_chat_model(
 
     Returns:
         A `BaseChatModel` corresponding to the `model_name` and `model_provider`
-            specified if configurability is inferred to be False. If configurable, a
+            specified if configurability is inferred to be `False`. If configurable, a
             chat model emulator that initializes the underlying model at runtime once a
             config is passed in.
 
@@ -210,7 +210,6 @@ def init_chat_model(
             "what's your name",
             config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
-        # claude-3.5 sonnet response
         ```
 
     ??? note "Fully configurable model with a default"
@@ -221,7 +220,7 @@ def init_chat_model(
 
         configurable_model_with_default = init_chat_model(
             "openai:gpt-4o",
-            configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+            configurable_fields="any",  # This allows us to configure other params like temperature, max_tokens, etc at runtime.
             config_prefix="foo",
             temperature=0,
         )
@@ -238,7 +237,6 @@ def init_chat_model(
                 }
             },
         )
-        # Claude-3.5 sonnet response with temperature 0.6
         ```
 
     ??? note "Bind tools to a configurable model"
@@ -281,13 +279,11 @@ def init_chat_model(
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
-        # GPT-4o response with tool calls
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
             config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
-        # Claude-3.5 sonnet response with tools
         ```
 
     !!! version-added "Added in version 0.2.7"

@@ -482,9 +482,9 @@ class ChildTool(BaseTool):
     response_format: Literal["content", "content_and_artifact"] = "content"
     """The tool response format.
 
-    If "content" then the output of the tool is interpreted as the contents of a
-    ToolMessage. If "content_and_artifact" then the output is expected to be a
-    two-tuple corresponding to the (content, artifact) of a ToolMessage.
+    If `"content"` then the output of the tool is interpreted as the contents of a
+    ToolMessage. If `"content_and_artifact"` then the output is expected to be a
+    two-tuple corresponding to the (content, artifact) of a `ToolMessage`.
     """
 
     def __init__(self, **kwargs: Any) -> None:

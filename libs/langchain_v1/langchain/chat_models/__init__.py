@@ -1,4 +1,4 @@
-"""Entrypoint to using [Chat Models](https://docs.langchain.com/oss/python/langchain/models) in LangChain.
+"""Entrypoint to using [chat models](https://docs.langchain.com/oss/python/langchain/models) in LangChain.
 
 See [the docs](https://docs.langchain.com/oss/python/langchain/models) for more
 details.
