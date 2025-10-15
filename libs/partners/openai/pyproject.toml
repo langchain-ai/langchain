@@ -40,6 +40,7 @@ test = [
     "vcrpy>=7.0.0,<8.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "langchain",
     "langchain-core",
     "langchain-tests",
 ]
@@ -60,6 +61,7 @@ typing = [
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
+langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
