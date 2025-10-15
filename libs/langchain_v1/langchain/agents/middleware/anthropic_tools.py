@@ -11,11 +11,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ModelRequest,
+    ModelResponse,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -182,8 +187,8 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
         """Inject tool and optional system prompt."""
         # Add tool
         tools = list(request.tools or [])
@@ -610,8 +615,8 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
     def wrap_model_call(
         self,
         request: ModelRequest,
-        handler: Callable[[ModelRequest], AIMessage],
-    ) -> AIMessage:
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelResponse:
         """Inject tool and optional system prompt."""
         # Add tool
         tools = list(request.tools or [])

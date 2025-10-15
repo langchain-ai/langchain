@@ -21,6 +21,70 @@ from langchain.agents.middleware.anthropic_tools import AnthropicToolsState
 from langchain.agents.middleware.types import AgentMiddleware
 
 
+def _expand_include_patterns(pattern: str) -> list[str] | None:
+    """Expand brace patterns like ``*.{py,pyi}`` into a list of globs."""
+    if "}" in pattern and "{" not in pattern:
+        return None
+
+    expanded: list[str] = []
+
+    def _expand(current: str) -> None:
+        start = current.find("{")
+        if start == -1:
+            expanded.append(current)
+            return
+
+        end = current.find("}", start)
+        if end == -1:
+            raise ValueError
+
+        prefix = current[:start]
+        suffix = current[end + 1 :]
+        inner = current[start + 1 : end]
+        if not inner:
+            raise ValueError
+
+        for option in inner.split(","):
+            _expand(prefix + option + suffix)
+
+    try:
+        _expand(pattern)
+    except ValueError:
+        return None
+
+    return expanded
+
+
+def _is_valid_include_pattern(pattern: str) -> bool:
+    """Validate glob pattern used for include filters."""
+    if not pattern:
+        return False
+
+    if any(char in pattern for char in ("\x00", "\n", "\r")):
+        return False
+
+    expanded = _expand_include_patterns(pattern)
+    if expanded is None:
+        return False
+
+    try:
+        for candidate in expanded:
+            re.compile(fnmatch.translate(candidate))
+    except re.error:
+        return False
+
+    return True
+
+
+def _match_include_pattern(basename: str, pattern: str) -> bool:
+    """Return True if the basename matches the include pattern."""
+    expanded = _expand_include_patterns(pattern)
+    if not expanded:
+        return False
+
+    return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
+
+
 class StateFileSearchMiddleware(AgentMiddleware):
     """Provides Glob and Grep search over state-based files.
 
@@ -159,6 +223,9 @@ class StateFileSearchMiddleware(AgentMiddleware):
             except re.error as e:
                 return f"Invalid regex pattern: {e}"
 
+            if include and not _is_valid_include_pattern(include):
+                return "Invalid include pattern"
+
             # Search files
             files = cast("dict[str, Any]", state.get(self.state_key, {}))
             results: dict[str, list[tuple[int, str]]] = {}
@@ -170,7 +237,7 @@ class StateFileSearchMiddleware(AgentMiddleware):
                 # Check include filter
                 if include:
                     basename = Path(file_path).name
-                    if not self._match_include(basename, include):
+                    if not _match_include_pattern(basename, include):
                         continue
 
                 # Search file content
@@ -189,23 +256,6 @@ class StateFileSearchMiddleware(AgentMiddleware):
         self.glob_search = glob_search
         self.grep_search = grep_search
         self.tools = [glob_search, grep_search]
-
-    def _match_include(self, basename: str, pattern: str) -> bool:
-        """Match filename against include pattern."""
-        # Handle brace expansion {a,b,c}
-        if "{" in pattern and "}" in pattern:
-            start = pattern.index("{")
-            end = pattern.index("}")
-            prefix = pattern[:start]
-            suffix = pattern[end + 1 :]
-            alternatives = pattern[start + 1 : end].split(",")
-
-            for alt in alternatives:
-                expanded = prefix + alt + suffix
-                if fnmatch.fnmatch(basename, expanded):
-                    return True
-            return False
-        return fnmatch.fnmatch(basename, pattern)
 
     def _format_grep_results(
         self,
@@ -355,6 +405,9 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
             except re.error as e:
                 return f"Invalid regex pattern: {e}"
 
+            if include and not _is_valid_include_pattern(include):
+                return "Invalid include pattern"
+
             # Try ripgrep first if enabled
             results = None
             if self.use_ripgrep:
@@ -416,11 +469,13 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
             return {}
 
         # Build ripgrep command
-        cmd = ["rg", "--json", pattern, str(base_full)]
+        cmd = ["rg", "--json"]
 
         if include:
             # Convert glob pattern to ripgrep glob
             cmd.extend(["--glob", include])
+
+        cmd.extend(["--", pattern, str(base_full)])
 
         try:
             result = subprocess.run(  # noqa: S603
@@ -475,7 +530,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
                 continue
 
             # Check include filter
-            if include and not self._match_include(file_path.name, include):
+            if include and not _match_include_pattern(file_path.name, include):
                 continue
 
             # Skip files that are too large
@@ -496,23 +551,6 @@ class FilesystemFileSearchMiddleware(AgentMiddleware):
                     results[virtual_path].append((line_num, line))
 
         return results
-
-    def _match_include(self, basename: str, pattern: str) -> bool:
-        """Match filename against include pattern."""
-        # Handle brace expansion {a,b,c}
-        if "{" in pattern and "}" in pattern:
-            start = pattern.index("{")
-            end = pattern.index("}")
-            prefix = pattern[:start]
-            suffix = pattern[end + 1 :]
-            alternatives = pattern[start + 1 : end].split(",")
-
-            for alt in alternatives:
-                expanded = prefix + alt + suffix
-                if fnmatch.fnmatch(basename, expanded):
-                    return True
-            return False
-        return fnmatch.fnmatch(basename, pattern)
 
     def _format_grep_results(
         self,
