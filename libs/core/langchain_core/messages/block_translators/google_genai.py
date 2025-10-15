@@ -453,9 +453,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "status": status,  # type: ignore[typeddict-item]
                     "output": item.get("code_execution_result", ""),
                 }
+                server_tool_result_block["extras"] = {"block_type": item_type}
                 # Preserve original outcome in extras
                 if outcome is not None:
-                    server_tool_result_block["extras"] = {"outcome": outcome}
+                    server_tool_result_block["extras"]["outcome"] = outcome
                 converted_blocks.append(server_tool_result_block)
             else:
                 # Unknown type, preserve as non-standard

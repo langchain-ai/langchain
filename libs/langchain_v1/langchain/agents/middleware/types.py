@@ -26,7 +26,6 @@ from typing import TypeAlias
 
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
-from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
@@ -171,8 +170,6 @@ class AgentState(TypedDict, Generic[ResponseT]):
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
-    thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
-    run_model_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):

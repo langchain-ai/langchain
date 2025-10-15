@@ -64,12 +64,18 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.min_messages_to_cache = min_messages_to_cache
         self.unsupported_model_behavior = unsupported_model_behavior
 
-    def wrap_model_call(
-        self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
-        """Modify the model request to add cache control blocks."""
+    def _should_apply_caching(self, request: ModelRequest) -> bool:
+        """Check if caching should be applied to the request.
+
+        Args:
+            request: The model request to check.
+
+        Returns:
+            True if caching should be applied, False otherwise.
+
+        Raises:
+            ValueError: If model is unsupported and behavior is set to "raise".
+        """
         if not isinstance(request.model, ChatAnthropic):
             msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports "
@@ -79,18 +85,41 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
                 raise ValueError(msg)
             if self.unsupported_model_behavior == "warn":
                 warn(msg, stacklevel=3)
-            return handler(request)
+            return False
 
         messages_count = (
             len(request.messages) + 1
             if request.system_prompt
             else len(request.messages)
         )
-        if messages_count < self.min_messages_to_cache:
-            return handler(request)
+        return messages_count >= self.min_messages_to_cache
 
+    def _apply_cache_control(self, request: ModelRequest) -> None:
+        """Apply cache control settings to the request.
+
+        Args:
+            request: The model request to modify.
+        """
         request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
 
+    def wrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        """Modify the model request to add cache control blocks.
+
+        Args:
+            request: The model request to potentially modify.
+            handler: The handler to execute the model request.
+
+        Returns:
+            The model response from the handler.
+        """
+        if not self._should_apply_caching(request):
+            return handler(request)
+
+        self._apply_cache_control(request)
         return handler(request)
 
     async def awrap_model_call(
@@ -98,26 +127,17 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         request: ModelRequest,
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
-        """Modify the model request to add cache control blocks (async version)."""
-        if not isinstance(request.model, ChatAnthropic):
-            msg = (
-                "AnthropicPromptCachingMiddleware caching middleware only supports "
-                f"Anthropic models, not instances of {type(request.model)}"
-            )
-            if self.unsupported_model_behavior == "raise":
-                raise ValueError(msg)
-            if self.unsupported_model_behavior == "warn":
-                warn(msg, stacklevel=3)
+        """Modify the model request to add cache control blocks (async version).
+
+        Args:
+            request: The model request to potentially modify.
+            handler: The async handler to execute the model request.
+
+        Returns:
+            The model response from the handler.
+        """
+        if not self._should_apply_caching(request):
             return await handler(request)
 
-        messages_count = (
-            len(request.messages) + 1
-            if request.system_prompt
-            else len(request.messages)
-        )
-        if messages_count < self.min_messages_to_cache:
-            return await handler(request)
-
-        request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
-
+        self._apply_cache_control(request)
         return await handler(request)

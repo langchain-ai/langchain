@@ -1034,11 +1034,7 @@ def create_agent(  # noqa: PLR0915
         if response.structured_response is not None:
             state_updates["structured_response"] = response.structured_response
 
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **state_updates,
-        }
+        return state_updates
 
     async def _execute_model_async(request: ModelRequest) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1089,11 +1085,7 @@ def create_agent(  # noqa: PLR0915
         if response.structured_response is not None:
             state_updates["structured_response"] = response.structured_response
 
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **state_updates,
-        }
+        return state_updates
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
