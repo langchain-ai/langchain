@@ -241,19 +241,19 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
-        The handler callback executes the model request and returns a ModelResponse.
+        The handler callback executes the model request and returns a `ModelResponse`.
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Callback that executes the model request and returns ModelResponse.
-                     Call this to execute the model. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            handler: Callback that executes the model request and returns
+                `ModelResponse`. Call this to execute the model. Can be called multiple
+                times for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            ModelCallResult
+            `ModelCallResult`
 
         Examples:
             Retry on error:
@@ -324,16 +324,16 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
-        The handler callback executes the model request and returns a ModelResponse.
+        The handler callback executes the model request and returns a `ModelResponse`.
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns ModelResponse.
-                     Call this to execute the model. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`. Call this to execute the model. Can be called multiple
+                times for retry logic. Can skip calling it to short-circuit.
 
         Returns:
             ModelCallResult
@@ -378,15 +378,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Intercept tool execution for retries, monitoring, or modification.
 
         Multiple middleware compose automatically (first defined = outermost).
-        Exceptions propagate unless handle_tool_errors is configured on ToolNode.
+        Exceptions propagate unless `handle_tool_errors` is configured on `ToolNode`.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
+            request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
                 Access state via request.state and runtime via request.runtime.
             handler: Callable to execute the tool (can be called multiple times).
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
 
         The handler callable can be invoked multiple times for retry logic.
         Each call to handler is independent and stateless.
@@ -394,12 +394,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Modify request before execution:
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 request.tool_call["args"]["value"] *= 2
                 return handler(request)
+            ```
 
             Retry on error (call handler multiple times):
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -410,9 +413,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         if attempt == 2:
                             raise
                 return result
+            ```
 
             Conditional retry based on response:
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     result = handler(request)
@@ -421,6 +426,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     if attempt < 2:
                         continue
                     return result
+            ```
         """
         msg = (
             "Synchronous implementation of wrap_tool_call is not available. "
@@ -441,20 +447,20 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ToolMessage | Command:
         """Intercept and control async tool execution via handler callback.
 
-        The handler callback executes the tool call and returns a ToolMessage or Command.
-        Middleware can call the handler multiple times for retry logic, skip calling
-        it to short-circuit, or modify the request/response. Multiple middleware
+        The handler callback executes the tool call and returns a `ToolMessage` or
+        `Command`. Middleware can call the handler multiple times for retry logic, skip
+        calling it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
-                Access state via request.state and runtime via request.runtime.
-            handler: Async callable to execute the tool and returns ToolMessage or Command.
-                     Call this to execute the tool. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+                Access state via `request.state` and runtime via `request.runtime`.
+            handler: Async callable to execute the tool and returns `ToolMessage` or
+                `Command`. Call this to execute the tool. Can be called multiple times
+                for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
 
         The handler callable can be invoked multiple times for retry logic.
         Each call to handler is independent and stateless.
@@ -496,7 +502,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with AgentState and Runtime as arguments."""
+    """Callable with `AgentState` and `Runtime` as arguments."""
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
@@ -506,7 +512,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 
 
 class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable that returns a prompt string given ModelRequest (contains state and runtime)."""
+    """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
 
     def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
         """Generate a system prompt string based on the request."""
@@ -516,7 +522,8 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type
 class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
-    Receives handler callback to execute model and returns ModelResponse or AIMessage.
+    Receives handler callback to execute model and returns `ModelResponse` or
+    `AIMessage`.
     """
 
     def __call__(
@@ -531,7 +538,8 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 class _CallableReturningToolResponse(Protocol):
     """Callable for tool call interception with handler callback.
 
-    Receives handler callback to execute tool and returns final ToolMessage or Command.
+    Receives handler callback to execute tool and returns final `ToolMessage` or
+    `Command`.
     """
 
     def __call__(

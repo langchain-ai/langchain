@@ -183,12 +183,15 @@ Examples:
 
     Modify request before execution:
 
+    ```python
     def handler(request, execute):
         request.tool_call["args"]["value"] *= 2
         return execute(request)
+    ```
 
     Retry on error (execute multiple times):
 
+    ```python
     def handler(request, execute):
         for attempt in range(3):
             try:
@@ -199,9 +202,11 @@ Examples:
                 if attempt == 2:
                     raise
         return result
+    ```
 
     Conditional retry based on response:
 
+    ```python
     def handler(request, execute):
         for attempt in range(3):
             result = execute(request)
@@ -210,15 +215,18 @@ Examples:
             if attempt < 2:
                 continue
             return result
+    ```
 
     Cache/short-circuit without calling execute:
 
+    ```python
     def handler(request, execute):
         if cached := get_cache(request):
             return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
         result = execute(request)
         save_cache(request, result)
         return result
+    ```
 """
 
 AsyncToolCallWrapper = Callable[
