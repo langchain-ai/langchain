@@ -80,7 +80,7 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.types import Command, Send
+from langgraph.types import Command, Send, StreamWriter
 from pydantic import BaseModel, ValidationError
 from typing_extensions import Unpack
 
@@ -1371,9 +1371,9 @@ class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
     state: StateT
     config: RunnableConfig
     tool_call_id: str
+    stream_writer: StreamWriter
     context: ContextT = field(default=None)  # type: ignore[assignment]
-    store: Any = field(default=None)
-    stream_writer: Any = field(default=None)
+    store: BaseStore | None = field(default=None)
 
 
 class InjectedState(InjectedToolArg):
