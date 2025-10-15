@@ -6,17 +6,10 @@
     guides, tutorials, and examples on using Middleware.
 """  # noqa: E501
 
-from .anthropic_tools import (
-    FilesystemClaudeMemoryMiddleware,
-    FilesystemClaudeTextEditorMiddleware,
-    StateClaudeMemoryMiddleware,
-    StateClaudeTextEditorMiddleware,
-)
 from .context_editing import (
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
-from .file_search import FilesystemFileSearchMiddleware, StateFileSearchMiddleware
 from .human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
@@ -50,9 +43,6 @@ __all__ = [
     "AgentState",
     "ClearToolUsesEdit",
     "ContextEditingMiddleware",
-    "FilesystemClaudeMemoryMiddleware",
-    "FilesystemClaudeTextEditorMiddleware",
-    "FilesystemFileSearchMiddleware",
     "HumanInTheLoopMiddleware",
     "InterruptOnConfig",
     "LLMToolEmulator",
@@ -63,9 +53,6 @@ __all__ = [
     "ModelResponse",
     "PIIDetectionError",
     "PIIMiddleware",
-    "StateClaudeMemoryMiddleware",
-    "StateClaudeTextEditorMiddleware",
-    "StateFileSearchMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
