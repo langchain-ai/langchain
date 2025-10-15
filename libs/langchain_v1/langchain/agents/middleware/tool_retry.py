@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from langgraph.types import Command
 
+    from langchain.tools import BaseTool
     from langchain.tools.tool_node import ToolCallRequest
 
 
@@ -75,6 +76,23 @@ class ToolRetryMiddleware(AgentMiddleware):
         )
         ```
 
+        Apply to specific tools using BaseTool instances:
+        ```python
+        from langchain_core.tools import tool
+
+
+        @tool
+        def search_database(query: str) -> str:
+            '''Search the database.'''
+            return results
+
+
+        retry = ToolRetryMiddleware(
+            max_retries=4,
+            tools=[search_database],  # Pass BaseTool instance
+        )
+        ```
+
         Constant backoff (no exponential growth):
         ```python
         retry = ToolRetryMiddleware(
@@ -97,7 +115,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         self,
         *,
         max_retries: int = 2,
-        tools: list[str] | None = None,
+        tools: list[BaseTool | str] | None = None,
         retry_on: tuple[type[Exception], ...] | Callable[[Exception], bool] = (Exception,),
         on_failure: (
             Literal["raise", "return_message"] | Callable[[Exception], str]
@@ -112,8 +130,9 @@ class ToolRetryMiddleware(AgentMiddleware):
         Args:
             max_retries: Maximum number of retry attempts after the initial call.
                 Default is 2 retries (3 total attempts). Must be >= 0.
-            tools: Optional list of tool names to apply retry logic to. If `None`,
-                applies to all tools. Default is `None`.
+            tools: Optional list of tools or tool names to apply retry logic to.
+                Can be a list of `BaseTool` instances or tool name strings.
+                If `None`, applies to all tools. Default is `None`.
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
                 Default is to retry on all exceptions.
@@ -136,8 +155,29 @@ class ToolRetryMiddleware(AgentMiddleware):
             ValueError: If max_retries < 0 or delays are negative.
         """
         super().__init__()
+
+        # Validate parameters
+        if max_retries < 0:
+            msg = "max_retries must be >= 0"
+            raise ValueError(msg)
+        if initial_delay < 0:
+            msg = "initial_delay must be >= 0"
+            raise ValueError(msg)
+        if max_delay < 0:
+            msg = "max_delay must be >= 0"
+            raise ValueError(msg)
+        if backoff_factor < 0:
+            msg = "backoff_factor must be >= 0"
+            raise ValueError(msg)
+
         self.max_retries = max_retries
-        self._tool_filter = tools  # Tool names to filter on (None means all tools)
+
+        # Extract tool names from BaseTool instances or strings
+        if tools is not None:
+            self._tool_filter = [tool.name if not isinstance(tool, str) else tool for tool in tools]
+        else:
+            self._tool_filter = None
+
         self.tools = []  # No additional tools registered by this middleware
         self.retry_on = retry_on
         self.on_failure = on_failure
