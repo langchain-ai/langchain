@@ -80,6 +80,7 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.store.base import BaseStore  # noqa: TC002
 from langgraph.types import Command, Send, StreamWriter
 from pydantic import BaseModel, ValidationError
 from typing_extensions import Unpack
@@ -88,7 +89,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from langgraph.runtime import Runtime
-    from langgraph.store.base import BaseStore
 
 StateT = TypeVar("StateT")
 ContextT = TypeVar("ContextT")
