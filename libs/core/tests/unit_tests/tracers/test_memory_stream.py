@@ -120,7 +120,7 @@ def test_send_to_closed_stream() -> None:
 
     We may want to handle this in a better way in the future.
     """
-    event_loop = asyncio.get_event_loop_policy().new_event_loop()
+    event_loop = asyncio.new_event_loop()
     channel = _MemoryStream[str](event_loop)
     writer = channel.get_send_stream()
     # send with an open even loop
