@@ -129,7 +129,7 @@ class ToolCallRequest:
     tool_call: ToolCall
     tool: BaseTool
     state: Any
-    runtime: Any
+    runtime: ToolRuntime
 
     def override(self, **overrides: Unpack[_ToolCallRequestOverrides]) -> ToolCallRequest:
         """Replace the request with a new request with the given overrides.
@@ -612,18 +612,16 @@ class _ToolNode(RunnableCallable):
             tool_runtimes.append(tool_runtime)
 
         # Inject tool arguments (including runtime)
-        tool_calls = [
-            self._inject_tool_args(call, tool_runtime)
-            for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False)
-        ]
 
+        injected_tool_calls = []
         input_types = [input_type] * len(tool_calls)
-        inputs = [input] * len(tool_calls)
-        runtimes = [runtime] * len(tool_calls)
+        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
+            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
-            outputs = [
-                *executor.map(self._run_one, tool_calls, input_types, config_list, inputs, runtimes)
-            ]
+            outputs = list(
+                executor.map(self._run_one, injected_tool_calls, input_types, tool_runtimes)
+            )
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -652,18 +650,13 @@ class _ToolNode(RunnableCallable):
             )
             tool_runtimes.append(tool_runtime)
 
-        # Inject tool arguments (including runtime)
-        tool_calls = [
-            self._inject_tool_args(call, tool_runtime)
-            for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False)
-        ]
-
-        outputs = await asyncio.gather(
-            *(
-                self._arun_one(call, input_type, cfg, input, runtime)
-                for call, cfg in zip(tool_calls, config_list, strict=False)
-            )
-        )
+        injected_tool_calls = []
+        coros = []
+        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
+            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_tool_calls.append(injected_call)
+            coros.append(self._arun_one(injected_call, input_type, tool_runtime))
+        outputs = await asyncio.gather(*coros)
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -795,18 +788,14 @@ class _ToolNode(RunnableCallable):
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
-        config: RunnableConfig,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
-        runtime: Any,
+        tool_runtime: ToolRuntime,
     ) -> ToolMessage | Command:
         """Execute single tool call with wrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
             input_type: Input format.
-            config: Runnable configuration.
-            input: Agent state.
-            runtime: LangGraph runtime or None.
+            tool_runtime: Tool runtime.
 
         Returns:
             ToolMessage or Command.
@@ -816,16 +805,15 @@ class _ToolNode(RunnableCallable):
 
         tool = self.tools_by_name[call["name"]]
 
-        # Extract state from ToolCallWithContext if present
-        state = self._extract_state(input)
-
         # Create the tool request with state and runtime
         tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
-            state=state,
-            runtime=runtime,
+            state=tool_runtime.state,
+            runtime=tool_runtime,
         )
+
+        config = tool_runtime.config
 
         if self._wrap_tool_call is None:
             # No wrapper - execute directly
@@ -938,18 +926,14 @@ class _ToolNode(RunnableCallable):
         self,
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
-        config: RunnableConfig,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
-        runtime: Any,
+        tool_runtime: ToolRuntime,
     ) -> ToolMessage | Command:
         """Execute single tool call asynchronously with awrap_tool_call wrapper if configured.
 
         Args:
             call: Tool call dict.
             input_type: Input format.
-            config: Runnable configuration.
-            input: Agent state.
-            runtime: LangGraph runtime or None.
+            tool_runtime: Tool runtime.
 
         Returns:
             ToolMessage or Command.
@@ -959,16 +943,15 @@ class _ToolNode(RunnableCallable):
 
         tool = self.tools_by_name[call["name"]]
 
-        # Extract state from ToolCallWithContext if present
-        state = self._extract_state(input)
-
         # Create the tool request with state and runtime
         tool_request = ToolCallRequest(
             tool_call=call,
             tool=tool,
-            state=state,
-            runtime=runtime,
+            state=tool_runtime.state,
+            runtime=tool_runtime,
         )
+
+        config = tool_runtime.config
 
         if self._awrap_tool_call is None and self._wrap_tool_call is None:
             # No wrapper - execute directly

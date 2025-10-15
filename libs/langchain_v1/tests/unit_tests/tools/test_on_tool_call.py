@@ -338,7 +338,7 @@ def test_tool_call_request_dataclass() -> None:
     state: dict = {"messages": []}
     runtime = None
 
-    request = ToolCallRequest(tool_call=tool_call, tool=add, state=state, runtime=runtime)
+    request = ToolCallRequest(tool_call=tool_call, tool=add, state=state, runtime=runtime)  # type: ignore[arg-type]
 
     assert request.tool_call == tool_call
     assert request.tool == add
