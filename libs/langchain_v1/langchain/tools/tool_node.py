@@ -1110,6 +1110,26 @@ class _ToolNode(RunnableCallable):
         }
         return tool_call
 
+    def _inject_runtime(self, tool_call: ToolCall, tool_runtime: ToolRuntime) -> ToolCall:
+        """Inject ToolRuntime into tool call arguments.
+
+        Args:
+            tool_call: The tool call to inject runtime into.
+            tool_runtime: The ToolRuntime instance to inject.
+
+        Returns:
+            The tool call with runtime injected if needed.
+        """
+        runtime_arg = self._tool_to_runtime_arg.get(tool_call["name"])
+        if not runtime_arg:
+            return tool_call
+
+        tool_call["args"] = {
+            **tool_call["args"],
+            runtime_arg: tool_runtime,
+        }
+        return tool_call
+
     def _inject_tool_args(
         self,
         tool_call: ToolCall,
@@ -1151,16 +1171,7 @@ class _ToolNode(RunnableCallable):
         tool_call_copy: ToolCall = copy(tool_call)
         tool_call_with_state = self._inject_state(tool_call_copy, tool_runtime.state)
         tool_call_with_store = self._inject_store(tool_call_with_state, tool_runtime.store)
-
-        # Always inject runtime
-        runtime_arg = self._tool_to_runtime_arg.get(tool_call["name"])
-        if runtime_arg:
-            tool_call_with_store["args"] = {
-                **tool_call_with_store["args"],
-                runtime_arg: tool_runtime,
-            }
-
-        return tool_call_with_store
+        return self._inject_runtime(tool_call_with_store, tool_runtime)
 
     def _validate_tool_command(
         self,
