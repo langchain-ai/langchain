@@ -453,7 +453,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.0a14"
+version = "1.0.0a15"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -514,7 +514,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.0.0a4"
+version = "1.0.0a5"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
