@@ -59,7 +59,6 @@ __all__ = [
     "StateClaudeMemoryMiddleware",
     "StateClaudeTextEditorMiddleware",
     "StateFileSearchMiddleware",
-    "StateTextEditorToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
