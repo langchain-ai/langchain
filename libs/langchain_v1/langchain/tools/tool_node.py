@@ -597,7 +597,7 @@ class _ToolNode(RunnableCallable):
 
         # Construct ToolRuntime instances at the top level for each tool call
         tool_runtimes = []
-        for call, cfg in zip(tool_calls, config_list, strict=False):
+        for call, cfg in zip(tool_calls, config_list):
             state = self._extract_state(input)
             runtime_store = runtime.store
             stream_writer = runtime.stream_writer
@@ -615,7 +615,7 @@ class _ToolNode(RunnableCallable):
 
         injected_tool_calls = []
         input_types = [input_type] * len(tool_calls)
-        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
+        for call, tool_runtime in zip(tool_calls, tool_runtimes):
             injected_call = self._inject_tool_args(call, tool_runtime)
             injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
@@ -636,7 +636,7 @@ class _ToolNode(RunnableCallable):
 
         # Construct ToolRuntime instances at the top level for each tool call
         tool_runtimes = []
-        for call, cfg in zip(tool_calls, config_list, strict=False):
+        for call, cfg in zip(tool_calls, config_list):
             state = self._extract_state(input)
             runtime_store = runtime.store
             stream_writer = runtime.stream_writer
@@ -652,7 +652,7 @@ class _ToolNode(RunnableCallable):
 
         injected_tool_calls = []
         coros = []
-        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
+        for call, tool_runtime in zip(tool_calls, tool_runtimes):
             injected_call = self._inject_tool_args(call, tool_runtime)
             injected_tool_calls.append(injected_call)
             coros.append(self._arun_one(injected_call, input_type, tool_runtime))
