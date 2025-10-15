@@ -40,15 +40,17 @@ import inspect
 import json
 from collections.abc import Awaitable, Callable
 from copy import copy, deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    Generic,
     Literal,
     Optional,
     TypedDict,
+    TypeVar,
     Union,
     cast,
     get_args,
@@ -89,6 +91,9 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
     from langgraph.store.base import BaseStore
 
+StateT = TypeVar("StateT")
+ContextT = TypeVar("ContextT")
+
 INVALID_TOOL_NAME_ERROR_TEMPLATE = (
     "Error: {requested_tool} is not a valid tool, try one of [{available_tools}]."
 )
@@ -103,6 +108,10 @@ TOOL_INVOCATION_ERROR_TEMPLATE = (
     " {error}\n"
     " Please fix the error and try again."
 )
+
+
+def _no_op_stream_writer(*args: Any, **kwargs: Any) -> None:
+    """No-op stream writer for when runtime is not available."""
 
 
 class _ToolCallRequestOverrides(TypedDict, total=False):
@@ -562,6 +571,7 @@ class _ToolNode(RunnableCallable):
         self._tools_by_name: dict[str, BaseTool] = {}
         self._tool_to_state_args: dict[str, dict[str, str | None]] = {}
         self._tool_to_store_arg: dict[str, str | None] = {}
+        self._tool_to_runtime_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
         self._wrap_tool_call = wrap_tool_call
@@ -574,6 +584,7 @@ class _ToolNode(RunnableCallable):
             self._tools_by_name[tool_.name] = tool_
             self._tool_to_state_args[tool_.name] = _get_state_args(tool_)
             self._tool_to_store_arg[tool_.name] = _get_store_arg(tool_)
+            self._tool_to_runtime_arg[tool_.name] = _get_runtime_arg(tool_)
 
     @property
     def tools_by_name(self) -> dict[str, BaseTool]:
@@ -691,6 +702,33 @@ class _ToolNode(RunnableCallable):
         """
         call = request.tool_call
         tool = request.tool
+
+        # Inject runtime if needed
+        runtime_arg = self._tool_to_runtime_arg.get(call["name"])
+        if runtime_arg:
+            # Get store from runtime if available, otherwise None
+            store = request.runtime.store if request.runtime else None
+
+            # Construct ToolRuntime instance
+            stream_writer = (
+                request.runtime.stream_writer if request.runtime else _no_op_stream_writer
+            )
+            tool_runtime = ToolRuntime(
+                state=request.state,
+                tool_call_id=call.get("id") or "",
+                config=config,
+                context=request.runtime.context if request.runtime else None,
+                store=store,
+                stream_writer=stream_writer,
+            )
+
+            # Add runtime to call args
+            call = copy(call)
+            call["args"] = {
+                **call["args"],
+                runtime_arg: tool_runtime,
+            }
+
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -833,6 +871,33 @@ class _ToolNode(RunnableCallable):
         """
         call = request.tool_call
         tool = request.tool
+
+        # Inject runtime if needed
+        runtime_arg = self._tool_to_runtime_arg.get(call["name"])
+        if runtime_arg:
+            # Get store from runtime if available, otherwise None
+            store = request.runtime.store if request.runtime else None
+
+            # Construct ToolRuntime instance
+            stream_writer = (
+                request.runtime.stream_writer if request.runtime else _no_op_stream_writer
+            )
+            tool_runtime = ToolRuntime(
+                state=request.state,
+                tool_call_id=call.get("id") or "",
+                config=config,
+                context=request.runtime.context if request.runtime else None,
+                store=store,
+                stream_writer=stream_writer,
+            )
+
+            # Add runtime to call args
+            call = copy(call)
+            call["args"] = {
+                **call["args"],
+                runtime_arg: tool_runtime,
+            }
+
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -1290,6 +1355,66 @@ def tools_condition(
     return "__end__"
 
 
+@dataclass
+class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
+    """Runtime context automatically injected into tools.
+
+    When a tool function has a parameter named 'runtime' with type hint
+    'ToolRuntime', the tool execution system will automatically inject
+    an instance containing:
+
+    - state: The current graph state
+    - tool_call_id: The ID of the current tool call
+    - config: RunnableConfig for the current execution
+    - context: Runtime context (from langgraph Runtime)
+    - store: BaseStore instance for persistent storage (from langgraph Runtime)
+    - stream_writer: StreamWriter for streaming output (from langgraph Runtime)
+
+    No `Annotated` wrapper is needed - just use `runtime: ToolRuntime`
+    as a parameter.
+
+    Example:
+        ```python
+        from langchain_core.tools import tool
+        from langchain.tools import ToolRuntime
+
+        @tool
+        def my_tool(x: int, runtime: ToolRuntime) -> str:
+            \"\"\"Tool that accesses runtime context.\"\"\"
+            # Access state
+            messages = runtime.state["messages"]
+
+            # Access tool_call_id
+            print(f"Tool call ID: {runtime.tool_call_id}")
+
+            # Access config
+            print(f"Run ID: {runtime.config.get('run_id')}")
+
+            # Access runtime context
+            user_id = runtime.context.get("user_id")
+
+            # Access store
+            runtime.store.put(("metrics",), "count", 1)
+
+            # Stream output
+            runtime.stream_writer.write("Processing...")
+
+            return f"Processed {x}"
+        ```
+
+    Note:
+        This is a marker class used for type checking and detection.
+        The actual runtime object will be constructed during tool execution.
+    """
+
+    state: StateT
+    config: RunnableConfig
+    tool_call_id: str
+    context: ContextT = field(default=None)  # type: ignore[assignment]
+    store: Any = field(default=None)
+    stream_writer: Any = field(default=None)
+
+
 class InjectedState(InjectedToolArg):
     """Annotation for injecting graph state into tool arguments.
 
@@ -1441,7 +1566,10 @@ class InjectedStore(InjectedToolArg):
     """
 
 
-def _is_injection(type_arg: Any, injection_type: type[InjectedState | InjectedStore]) -> bool:
+def _is_injection(
+    type_arg: Any,
+    injection_type: type[InjectedState | InjectedStore | ToolRuntime],
+) -> bool:
     """Check if a type argument represents an injection annotation.
 
     This utility function determines whether a type annotation indicates that
@@ -1528,6 +1656,40 @@ def _get_store_arg(tool: BaseTool) -> str | None:
         if len(injections) > 1:
             msg = (
                 "A tool argument should not be annotated with InjectedStore more than "
+                f"once. Received arg {name} with annotations {injections}."
+            )
+            raise ValueError(msg)
+        if len(injections) == 1:
+            return name
+
+    return None
+
+
+def _get_runtime_arg(tool: BaseTool) -> str | None:
+    """Extract runtime injection argument from tool annotations.
+
+    This function analyzes a tool's input schema to identify the argument that
+    should be injected with the ToolRuntime instance. Only one runtime argument
+    is supported per tool.
+
+    Args:
+        tool: The tool to analyze for runtime injection requirements.
+
+    Returns:
+        The name of the argument that should receive the runtime injection, or None
+        if no runtime injection is required.
+
+    Raises:
+        ValueError: If a tool argument has multiple ToolRuntime annotations.
+    """
+    full_schema = tool.get_input_schema()
+    for name, type_ in get_all_basemodel_annotations(full_schema).items():
+        injections = [
+            type_arg for type_arg in get_args(type_) if _is_injection(type_arg, ToolRuntime)
+        ]
+        if len(injections) > 1:
+            msg = (
+                "A tool argument should not be annotated with ToolRuntime more than "
                 f"once. Received arg {name} with annotations {injections}."
             )
             raise ValueError(msg)

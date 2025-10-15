@@ -8,7 +8,7 @@ from langchain_core.tools import (
     tool,
 )
 
-from langchain.tools.tool_node import InjectedState, InjectedStore
+from langchain.tools.tool_node import InjectedState, InjectedStore, ToolRuntime
 
 __all__ = [
     "BaseTool",
@@ -17,5 +17,6 @@ __all__ = [
     "InjectedToolArg",
     "InjectedToolCallId",
     "ToolException",
+    "ToolRuntime",
     "tool",
 ]
