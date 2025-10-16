@@ -7,11 +7,10 @@ memory tools using schema-less tool definitions and tool call interception.
 from __future__ import annotations
 
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
-
-import shutil
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
