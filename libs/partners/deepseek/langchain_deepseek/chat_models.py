@@ -263,6 +263,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         if not isinstance(response, openai.BaseModel):
             return rtn
 
+        for generation in rtn.generations:
+            if generation.message.response_metadata is None:
+                generation.message.response_metadata = {}
+            generation.message.response_metadata["model_provider"] = "deepseek"
+
         choices = getattr(response, "choices", None)
         if choices and hasattr(choices[0].message, "reasoning_content"):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
@@ -294,6 +299,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
+                generation_chunk.message.response_metadata = {
+                    **generation_chunk.message.response_metadata,
+                    "model_provider": "deepseek",
+                }
                 if (
                     reasoning_content := top.get("delta", {}).get("reasoning_content")
                 ) is not None:
