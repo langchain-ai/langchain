@@ -910,30 +910,35 @@ def create_agent(  # noqa: PLR0915
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat | None
+        model_name: str = cast(
+            "str",
+            (
+                request.model
+                if isinstance(request.model, str)
+                else getattr(request.model, "model_name", "")
+            ),
+        )
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(model_name):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
                 # Model doesn't support provider strategy - use ToolStrategy
                 effective_response_format = ToolStrategy(schema=request.response_format.schema)
-        else:
-            # User explicitly specified a strategy - preserve it
+        elif isinstance(request.response_format, ProviderStrategy):
+            if not _supports_provider_strategy(model_name):
+                msg = (
+                    f"Cannot use ProviderStrategy with {model_name}. "
+                    "Supported models: OpenAI (gpt-5, gpt-4.1, gpt-oss, o3-pro, o3-mini), "
+                    "X.AI (Grok). "
+                    "Consider using a raw schema (which auto-selects the best strategy) or "
+                    "explicitly use `ToolStrategy` for unsupported providers."
+                )
+                raise ValueError(msg)
             effective_response_format = request.response_format
-
-        # Validate ProviderStrategy is used with supported model
-        if isinstance(
-            effective_response_format, ProviderStrategy
-        ) and not _supports_provider_strategy(request.model):
-            msg = (
-                "ProviderStrategy does not support this model. "
-                "Supported providers: OpenAI (gpt-5, gpt-4.1, gpt-oss, o3-pro, o3-mini), "
-                "X.AI (Grok). "
-                "Consider using a raw schema (which auto-selects the best strategy) or "
-                "explicitly use ToolStrategy for unsupported providers."
-            )
-            raise ValueError(msg)
+        else:
+            effective_response_format = request.response_format
 
         # Build final tools list including structured output tools
         # request.tools now only contains BaseTool instances (converted from callables)
@@ -947,11 +952,10 @@ def create_agent(  # noqa: PLR0915
         # Bind model based on effective response format
         if isinstance(effective_response_format, ProviderStrategy):
             # Use provider-specific structured output
-            kwargs = effective_response_format.to_model_kwargs(model=request.model)
-            return (
-                request.model.bind_tools(final_tools, **kwargs, **request.model_settings),
-                effective_response_format,
-            )
+            kwargs = effective_response_format.to_model_kwargs()
+            return request.model.bind_tools(
+                final_tools, **kwargs, **request.model_settings
+            ), effective_response_format
 
         if isinstance(effective_response_format, ToolStrategy):
             # Current implementation requires that tools used for structured output
