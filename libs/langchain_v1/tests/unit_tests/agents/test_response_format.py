@@ -632,6 +632,78 @@ class TestResponseFormatAsProviderStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
         assert len(response["messages"]) == 4
 
+    def test_unsupported_model_raises_error(self) -> None:
+        """Test that ProviderStrategy raises ValueError for unsupported models."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        # Use a model name that doesn't support provider strategy
+        model = FakeToolCallingModel[WeatherBaseModel](
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="claude-3-5-sonnet",
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"Cannot use ProviderStrategy with claude-3-5-sonnet\. "
+                r"Supported models: OpenAI \(gpt-5, gpt-4\.1, gpt-oss, o3-pro, o3-mini\), "
+                r"X\.AI \(Grok\)\. "
+                r"Consider using a raw schema \(which auto-selects the best strategy\) or "
+                r"explicitly use `ToolStrategy` for unsupported providers\."
+            ),
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_supported_openai_models(self) -> None:
+        """Test that ProviderStrategy works with all supported OpenAI model variants."""
+        supported_models = ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"]
+
+        for model_name in supported_models:
+            tool_calls = [
+                [{"args": {}, "id": "1", "name": "get_weather"}],
+            ]
+
+            model = FakeToolCallingModel[WeatherBaseModel](
+                tool_calls=tool_calls,
+                structured_response=EXPECTED_WEATHER_PYDANTIC,
+                model_name=model_name,
+            )
+
+            agent = create_agent(
+                model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+            )
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+            assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+            assert len(response["messages"]) == 4
+
+    def test_supported_grok_model(self) -> None:
+        """Test that ProviderStrategy works with Grok models."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        model = FakeToolCallingModel[WeatherBaseModel](
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="grok-beta",
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert len(response["messages"]) == 4
+
     def test_dataclass(self) -> None:
         """Test response_format as ProviderStrategy with dataclass."""
         tool_calls = [
