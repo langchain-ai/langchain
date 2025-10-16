@@ -35,7 +35,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     Requires both 'langchain' and 'langchain-anthropic' packages to be installed.
 
     Learn more about Anthropic prompt caching
-    [here](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
+    [here](https://docs.claude.com/en/docs/build-with-claude/prompt-caching).
     """
 
     def __init__(

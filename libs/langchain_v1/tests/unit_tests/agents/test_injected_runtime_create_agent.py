@@ -16,6 +16,8 @@ configurations.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
@@ -34,14 +36,14 @@ def test_tool_runtime_basic_injection() -> None:
     injected_data = {}
 
     @tool
-    def runtime_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def runtime_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that accesses runtime context."""
-        injected_data["state"] = tool_runtime.state
-        injected_data["tool_call_id"] = tool_runtime.tool_call_id
-        injected_data["config"] = tool_runtime.config
-        injected_data["context"] = tool_runtime.context
-        injected_data["store"] = tool_runtime.store
-        injected_data["stream_writer"] = tool_runtime.stream_writer
+        injected_data["state"] = runtime.state
+        injected_data["tool_call_id"] = runtime.tool_call_id
+        injected_data["config"] = runtime.config
+        injected_data["context"] = runtime.context
+        injected_data["store"] = runtime.store
+        injected_data["stream_writer"] = runtime.stream_writer
         return f"Processed {x}"
 
     agent = create_agent(
@@ -80,11 +82,11 @@ async def test_tool_runtime_async_injection() -> None:
     injected_data = {}
 
     @tool
-    async def async_runtime_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    async def async_runtime_tool(x: int, runtime: ToolRuntime) -> str:
         """Async tool that accesses runtime context."""
-        injected_data["state"] = tool_runtime.state
-        injected_data["tool_call_id"] = tool_runtime.tool_call_id
-        injected_data["config"] = tool_runtime.config
+        injected_data["state"] = runtime.state
+        injected_data["tool_call_id"] = runtime.tool_call_id
+        injected_data["config"] = runtime.config
         return f"Async processed {x}"
 
     agent = create_agent(
@@ -118,9 +120,9 @@ def test_tool_runtime_state_access() -> None:
     """Test that tools can access and use state via ToolRuntime."""
 
     @tool
-    def state_aware_tool(query: str, tool_runtime: ToolRuntime) -> str:
+    def state_aware_tool(query: str, runtime: ToolRuntime) -> str:
         """Tool that uses state to provide context-aware responses."""
-        messages = tool_runtime.state.get("messages", [])
+        messages = runtime.state.get("messages", [])
         msg_count = len(messages)
         return f"Query: {query}, Message count: {msg_count}"
 
@@ -147,22 +149,22 @@ def test_tool_runtime_state_access() -> None:
 def test_tool_runtime_with_store() -> None:
     """Test ToolRuntime provides access to store."""
     # Note: create_agent doesn't currently expose a store parameter,
-    # so tool_runtime.store will be None in this test.
+    # so runtime.store will be None in this test.
     # This test demonstrates the runtime injection works correctly.
 
     @tool
-    def store_tool(key: str, value: str, tool_runtime: ToolRuntime) -> str:
+    def store_tool(key: str, value: str, runtime: ToolRuntime) -> str:
         """Tool that uses store."""
-        if tool_runtime.store is None:
+        if runtime.store is None:
             return f"No store (key={key}, value={value})"
-        tool_runtime.store.put(("test",), key, {"data": value})
+        runtime.store.put(("test",), key, {"data": value})
         return f"Stored {key}={value}"
 
     @tool
-    def check_runtime_tool(tool_runtime: ToolRuntime) -> str:
+    def check_runtime_tool(runtime: ToolRuntime) -> str:
         """Tool that checks runtime availability."""
-        has_store = tool_runtime.store is not None
-        has_context = tool_runtime.context is not None
+        has_store = runtime.store is not None
+        has_context = runtime.context is not None
         return f"Runtime: store={has_store}, context={has_context}"
 
     agent = create_agent(
@@ -195,15 +197,15 @@ def test_tool_runtime_with_multiple_tools() -> None:
     call_log = []
 
     @tool
-    def tool_a(x: int, tool_runtime: ToolRuntime) -> str:
+    def tool_a(x: int, runtime: ToolRuntime) -> str:
         """First tool."""
-        call_log.append(("tool_a", tool_runtime.tool_call_id, x))
+        call_log.append(("tool_a", runtime.tool_call_id, x))
         return f"A: {x}"
 
     @tool
-    def tool_b(y: str, tool_runtime: ToolRuntime) -> str:
+    def tool_b(y: str, runtime: ToolRuntime) -> str:
         """Second tool."""
-        call_log.append(("tool_b", tool_runtime.tool_call_id, y))
+        call_log.append(("tool_b", runtime.tool_call_id, y))
         return f"B: {y}"
 
     agent = create_agent(
@@ -242,15 +244,15 @@ def test_tool_runtime_config_access() -> None:
     config_data = {}
 
     @tool
-    def config_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def config_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that accesses config."""
-        config_data["config_exists"] = tool_runtime.config is not None
+        config_data["config_exists"] = runtime.config is not None
         config_data["has_configurable"] = (
-            "configurable" in tool_runtime.config if tool_runtime.config else False
+            "configurable" in runtime.config if runtime.config else False
         )
         # Config may have run_id or other fields depending on execution context
-        if tool_runtime.config:
-            config_data["config_keys"] = list(tool_runtime.config.keys())
+        if runtime.config:
+            config_data["config_keys"] = list(runtime.config.keys())
         return f"Config accessed for {x}"
 
     agent = create_agent(
@@ -288,9 +290,9 @@ def test_tool_runtime_with_custom_state() -> None:
     runtime_state = {}
 
     @tool
-    def custom_state_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def custom_state_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that accesses custom state."""
-        runtime_state["custom_field"] = tool_runtime.state.get("custom_field", "not found")
+        runtime_state["custom_field"] = runtime.state.get("custom_field", "not found")
         return f"Custom: {x}"
 
     class CustomMiddleware(AgentMiddleware):
@@ -330,9 +332,9 @@ def test_tool_runtime_no_runtime_parameter() -> None:
         return f"Regular: {x}"
 
     @tool
-    def runtime_tool(y: int, tool_runtime: ToolRuntime) -> str:
+    def runtime_tool(y: int, runtime: ToolRuntime) -> str:
         """Tool with runtime."""
-        return f"Runtime: {y}, call_id: {tool_runtime.tool_call_id}"
+        return f"Runtime: {y}, call_id: {runtime.tool_call_id}"
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -362,15 +364,15 @@ async def test_tool_runtime_parallel_execution() -> None:
     execution_log = []
 
     @tool
-    async def parallel_tool_1(x: int, tool_runtime: ToolRuntime) -> str:
+    async def parallel_tool_1(x: int, runtime: ToolRuntime) -> str:
         """First parallel tool."""
-        execution_log.append(("tool_1", tool_runtime.tool_call_id, x))
+        execution_log.append(("tool_1", runtime.tool_call_id, x))
         return f"Tool1: {x}"
 
     @tool
-    async def parallel_tool_2(y: int, tool_runtime: ToolRuntime) -> str:
+    async def parallel_tool_2(y: int, runtime: ToolRuntime) -> str:
         """Second parallel tool."""
-        execution_log.append(("tool_2", tool_runtime.tool_call_id, y))
+        execution_log.append(("tool_2", runtime.tool_call_id, y))
         return f"Tool2: {y}"
 
     agent = create_agent(
@@ -409,10 +411,10 @@ def test_tool_runtime_error_handling() -> None:
     """Test error handling with ToolRuntime injection."""
 
     @tool
-    def error_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def error_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that may error."""
         # Access runtime to ensure it's injected even during errors
-        _ = tool_runtime.tool_call_id
+        _ = runtime.tool_call_id
         if x == 0:
             msg = "Cannot process zero"
             raise ValueError(msg)
@@ -421,7 +423,7 @@ def test_tool_runtime_error_handling() -> None:
     # create_agent uses default error handling which doesn't catch ValueError
     # So we need to handle this differently
     @tool
-    def safe_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
         try:
             if x == 0:
@@ -474,9 +476,9 @@ def test_tool_runtime_with_middleware() -> None:
             return {}
 
     @tool
-    def middleware_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def middleware_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool with runtime in middleware agent."""
-        runtime_calls.append(("middleware_tool", tool_runtime.tool_call_id))
+        runtime_calls.append(("middleware_tool", runtime.tool_call_id))
         return f"Middleware result: {x}"
 
     agent = create_agent(
@@ -513,14 +515,14 @@ def test_tool_runtime_type_hints() -> None:
 
     # Use ToolRuntime without generic type hints to avoid forward reference issues
     @tool
-    def typed_runtime_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def typed_runtime_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool with runtime access."""
         # Access state dict - verify we can access standard state fields
-        if isinstance(tool_runtime.state, dict):
+        if isinstance(runtime.state, dict):
             # Count messages in state
-            typed_runtime["message_count"] = len(tool_runtime.state.get("messages", []))
+            typed_runtime["message_count"] = len(runtime.state.get("messages", []))
         else:
-            typed_runtime["message_count"] = len(getattr(tool_runtime.state, "messages", []))
+            typed_runtime["message_count"] = len(getattr(runtime.state, "messages", []))
         return f"Typed: {x}"
 
     agent = create_agent(
@@ -542,3 +544,48 @@ def test_tool_runtime_type_hints() -> None:
     tool_message = result["messages"][2]
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.content == "Typed: 3"
+
+
+def test_tool_runtime_name_based_injection() -> None:
+    """Test that parameter named 'runtime' gets injected without type annotation."""
+    injected_data = {}
+
+    @tool
+    def name_based_tool(x: int, runtime: Any) -> str:
+        """Tool with 'runtime' parameter without ToolRuntime type annotation."""
+        # Even though type is Any, runtime should still be injected as ToolRuntime
+        injected_data["is_tool_runtime"] = isinstance(runtime, ToolRuntime)
+        injected_data["has_state"] = hasattr(runtime, "state")
+        injected_data["has_tool_call_id"] = hasattr(runtime, "tool_call_id")
+        if hasattr(runtime, "tool_call_id"):
+            injected_data["tool_call_id"] = runtime.tool_call_id
+        if hasattr(runtime, "state"):
+            injected_data["state"] = runtime.state
+        return f"Processed {x}"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {"x": 42}, "id": "name_call_123", "name": "name_based_tool"}],
+                [],
+            ]
+        ),
+        tools=[name_based_tool],
+        system_prompt="You are a helpful assistant.",
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Test")]})
+
+    # Verify tool executed
+    assert len(result["messages"]) == 4
+    tool_message = result["messages"][2]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "Processed 42"
+
+    # Verify runtime was injected based on parameter name
+    assert injected_data["is_tool_runtime"] is True
+    assert injected_data["has_state"] is True
+    assert injected_data["has_tool_call_id"] is True
+    assert injected_data["tool_call_id"] == "name_call_123"
+    assert injected_data["state"] is not None
+    assert "messages" in injected_data["state"]

@@ -21,6 +21,7 @@ from .summarization import SummarizationMiddleware
 from .todo import TodoListMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
 from .tool_emulator import LLMToolEmulator
+from .tool_retry import ToolRetryMiddleware
 from .tool_selection import LLMToolSelectorMiddleware
 from .types import (
     AgentMiddleware,
@@ -55,6 +56,7 @@ __all__ = [
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
+    "ToolRetryMiddleware",
     "after_agent",
     "after_model",
     "before_agent",
