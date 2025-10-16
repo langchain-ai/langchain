@@ -10,6 +10,8 @@ from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_deepseek.chat_models import ChatDeepSeek
 
+MODEL_NAME = "deepseek-chat"
+
 
 class TestChatDeepSeek(ChatModelIntegrationTests):
     """Test `ChatDeepSeek` chat model."""
@@ -23,7 +25,7 @@ class TestChatDeepSeek(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         """Parameters to create chat model instance for testing."""
         return {
-            "model": "deepseek-chat",
+            "model": MODEL_NAME,
             "temperature": 0,
         }
 
