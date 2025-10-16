@@ -55,7 +55,7 @@ class ExaSearchRetriever(BaseRetriever):
     """The end date for when the document was published (in YYYY-MM-DD format)."""
     use_autoprompt: bool | None = None
     """Whether to use autoprompt for the search."""
-    type: str = "neural"
+    search_type: str = "neural"
     """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
     highlights: HighlightsContentsOptions | bool | None = None
     """Whether to set the page content to the highlights of the results."""
@@ -96,7 +96,7 @@ class ExaSearchRetriever(BaseRetriever):
             use_autoprompt=self.use_autoprompt,
             livecrawl=self.livecrawl,
             summary=self.summary,
-            type=self.type,
+            type=self.search_type,
         )  # type: ignore[call-overload, misc]
 
         results = response.results

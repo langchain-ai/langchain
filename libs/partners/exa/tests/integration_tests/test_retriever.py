@@ -35,7 +35,10 @@ def test_exa_retriever_highlights() -> None:
 def test_exa_retriever_advanced_features() -> None:
     """Test advanced features of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever(
-        k=3, text_contents_options={"max_characters": 1000}, summary=True, type="auto"
+        k=3,
+        text_contents_options={"max_characters": 1000},
+        summary=True,
+        search_type="auto",
     )
     res = retriever.invoke("best time to visit japan")
     print(res)  # noqa: T201

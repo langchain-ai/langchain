@@ -116,10 +116,9 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         use_autoprompt: bool | None = None,  # noqa: FBT001
         livecrawl: Literal["always", "fallback", "never"] | None = None,
         summary: bool | dict[str, str] | None = None,  # noqa: FBT001
-        type: Literal["neural", "keyword", "auto"] | None = None,  # noqa: A002
+        search_type: Literal["neural", "keyword", "auto"] | None = None,
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> list[dict] | str:
-        # TODO: rename `type` to something else, as it is a reserved keyword
         """Use the tool.
 
         Args:
@@ -136,7 +135,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
             use_autoprompt: Whether to use autoprompt for the search.
             livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
-            type: The type of search, 'keyword', 'neural', or 'auto'.
+            search_type: The type of search, 'keyword', 'neural', or 'auto'.
             run_manager: The run manager for callbacks.
 
         """  # noqa: E501
@@ -155,7 +154,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
                 use_autoprompt=use_autoprompt,
                 livecrawl=livecrawl,
                 summary=summary,
-                type=type,
+                type=search_type,
             )  # type: ignore[call-overload, misc]
         except Exception as e:
             return repr(e)
