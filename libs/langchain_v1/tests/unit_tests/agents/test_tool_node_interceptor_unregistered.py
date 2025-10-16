@@ -1,15 +1,41 @@
 """Test tool node interceptor handling of unregistered tools."""
 
 from collections.abc import Awaitable, Callable
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import tool as dec_tool
+from langgraph.store.base import BaseStore
 from langgraph.types import Command
 
 from langchain.tools.tool_node import ToolCallRequest, _ToolNode
 
 pytestmark = pytest.mark.anyio
+
+
+def _create_mock_runtime(store: BaseStore | None = None) -> Mock:
+    """Create a mock Runtime object for testing ToolNode outside of graph context.
+
+    This helper is needed because ToolNode._func expects a Runtime parameter
+    which is injected by RunnableCallable from config["configurable"]["__pregel_runtime"].
+    When testing ToolNode directly (outside a graph), we need to provide this manually.
+    """
+    mock_runtime = Mock()
+    mock_runtime.store = store
+    mock_runtime.context = None
+    mock_runtime.stream_writer = lambda *args, **kwargs: None
+    return mock_runtime
+
+
+def _create_config_with_runtime(store: BaseStore | None = None) -> RunnableConfig:
+    """Create a RunnableConfig with mock Runtime for testing ToolNode.
+
+    Returns:
+        RunnableConfig with __pregel_runtime in configurable dict.
+    """
+    return {"configurable": {"__pregel_runtime": _create_mock_runtime(store)}}
 
 
 @dec_tool
@@ -52,7 +78,8 @@ def test_interceptor_can_handle_unregistered_tool_sync() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result[0].content == "Result: 42"
     assert result[0].tool_call_id == "1"
@@ -71,7 +98,8 @@ def test_interceptor_can_handle_unregistered_tool_sync() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result[0].content == "Handled by interceptor"
     assert result[0].tool_call_id == "2"
@@ -112,7 +140,8 @@ async def test_interceptor_can_handle_unregistered_tool_async() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result[0].content == "Result: 42"
     assert result[0].tool_call_id == "1"
@@ -131,7 +160,8 @@ async def test_interceptor_can_handle_unregistered_tool_async() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result[0].content == "Handled by async interceptor"
     assert result[0].tool_call_id == "2"
@@ -165,7 +195,8 @@ def test_unregistered_tool_error_when_interceptor_calls_execute() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result[0].content == "Result: 42"
 
@@ -183,7 +214,8 @@ def test_unregistered_tool_error_when_interceptor_calls_execute() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     # Should get validation error message
     assert result[0].status == "error"
@@ -235,7 +267,8 @@ def test_interceptor_handles_mix_of_registered_and_unregistered() -> None:
                     },
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     # All tools should execute successfully
@@ -284,7 +317,8 @@ def test_interceptor_command_for_unregistered_tool() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     # Should get Command back
@@ -325,7 +359,8 @@ def test_interceptor_exception_with_unregistered_tool() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     assert len(result) == 1
@@ -352,7 +387,8 @@ def test_interceptor_exception_with_unregistered_tool() -> None:
                         }
                     ],
                 )
-            ]
+            ],
+            config=_create_config_with_runtime(),
         )
 
 
@@ -387,7 +423,8 @@ async def test_async_interceptor_exception_with_unregistered_tool() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     assert len(result) == 1
@@ -414,7 +451,8 @@ async def test_async_interceptor_exception_with_unregistered_tool() -> None:
                         }
                     ],
                 )
-            ]
+            ],
+            config=_create_config_with_runtime(),
         )
 
 
@@ -452,7 +490,8 @@ def test_interceptor_with_dict_input_format() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     # Should return dict format output
@@ -500,7 +539,8 @@ def test_interceptor_verifies_tool_is_none_for_unregistered() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     assert len(captured_requests) == 1
@@ -522,7 +562,8 @@ def test_interceptor_verifies_tool_is_none_for_unregistered() -> None:
                     }
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     assert len(captured_requests) == 1
