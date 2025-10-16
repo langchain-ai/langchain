@@ -1,7 +1,5 @@
 from typing import cast
 
-import pytest
-
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
