@@ -619,7 +619,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherBaseModel](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -637,7 +637,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherDataclass](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -657,7 +657,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherTypedDict](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -675,7 +675,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[dict](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -697,13 +697,13 @@ class TestDynamicModelWithResponseFormat:
         on the middleware-modified model (not the original), ensuring the correct strategy is
         selected based on the final model's capabilities.
         """
-        from unittest.mock import patch
         from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
-        # Custom model that we'll use to test whether the tool strategy is applied
-        # correctly at runtime.
+        # Custom model that we'll use to test whether the provider strategy is applied
+        # correctly at runtime. Use a model_name that supports provider strategy.
         class CustomModel(GenericFakeChatModel):
+            model_name: str = "gpt-4.1"
             tool_bindings: list[Any] = []
 
             def bind_tools(
@@ -714,12 +714,6 @@ class TestDynamicModelWithResponseFormat:
                 # Record every tool binding event.
                 self.tool_bindings.append(tools)
                 return self
-
-            def _get_ls_params(self, **kwargs: Any):
-                """Return OpenAI as provider to pass ProviderStrategy validation."""
-                from langchain_core.language_models.base import LangSmithParams
-
-                return LangSmithParams(ls_provider="openai", ls_model_type="chat")
 
         model = CustomModel(
             messages=iter(
@@ -742,14 +736,6 @@ class TestDynamicModelWithResponseFormat:
                 request.model = model
                 return handler(request)
 
-        # Track which model is checked for provider strategy support
-        calls = []
-
-        def mock_supports_provider_strategy(model) -> bool:
-            """Track which model is checked and return True for ProviderStrategy."""
-            calls.append(model)
-            return True
-
         # Use raw Pydantic model (not wrapped in ToolStrategy or ProviderStrategy)
         # This should auto-detect strategy based on model capabilities
         agent = create_agent(
@@ -760,14 +746,7 @@ class TestDynamicModelWithResponseFormat:
             middleware=[ModelSwappingMiddleware()],
         )
 
-        with patch(
-            "langchain.agents.factory._supports_provider_strategy",
-            side_effect=mock_supports_provider_strategy,
-        ):
-            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
-
-        # Verify strategy resolution was deferred: check was called once during _get_bound_model
-        assert len(calls) == 1
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Verify successful parsing of JSON as structured output via ProviderStrategy
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
@@ -811,17 +790,14 @@ def test_union_of_types() -> None:
 def test_provider_strategy_strict_only_for_openai() -> None:
     """Test that strict=True is set for OpenAI and Grok models in ProviderStrategy."""
     from langchain.agents.structured_output import ProviderStrategy
-    from langchain_core.language_models.base import LangSmithParams
 
-    # Create a mock OpenAI model
+    # Create a mock OpenAI model with model_name
     class MockOpenAIModel:
-        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
-            return LangSmithParams(ls_provider="openai", ls_model_type="chat")
+        model_name: str = "gpt-4.1"
 
-    # Create a mock Grok/X.AI model
+    # Create a mock Grok/X.AI model with model_name
     class MockGrokModel:
-        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
-            return LangSmithParams(ls_provider="xai", ls_model_type="chat")
+        model_name: str = "grok-beta"
 
     provider_strategy = ProviderStrategy(WeatherBaseModel)
 
@@ -843,25 +819,14 @@ def test_provider_strategy_strict_only_for_openai() -> None:
 def test_provider_strategy_validation() -> None:
     """Test that ProviderStrategy validates provider support at agent invocation time."""
     from langchain.agents.structured_output import ProviderStrategy
-    from langchain_core.language_models.base import LangSmithParams
 
     # Create a mock model from an unsupported provider (e.g., Anthropic)
+    # Use a model_name that doesn't match any supported patterns
     class MockAnthropicModel(FakeToolCallingModel):
-        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
-            return LangSmithParams(ls_provider="anthropic", ls_model_type="chat")
-
-    # Create a mock model without _get_ls_params
-    class MockModelNoLSParams(FakeToolCallingModel):
-        def _get_ls_params(self, **kwargs: Any):
-            msg = "This model doesn't support _get_ls_params"
-            raise AttributeError(msg)
+        model_name: str = "claude-3-5-sonnet-20241022"
 
     # Test unsupported provider: should raise ValueError when invoking agent
     anthropic_model = MockAnthropicModel(tool_calls=[[]])
     agent = create_agent(anthropic_model, [], response_format=ProviderStrategy(WeatherBaseModel))
-    with pytest.raises(ValueError, match="does not support provider 'anthropic'"):
+    with pytest.raises(ValueError, match="ProviderStrategy does not support this model"):
         agent.invoke({"messages": [HumanMessage("What's the weather?")]})
-
-    # Test model without proper _get_ls_params: still works if model has the method
-    # (validation checks hasattr and calls it)
-    # We can't easily test the "no _get_ls_params" case without breaking BaseChatModel

@@ -23,12 +23,37 @@ from typing_extensions import Self, is_typeddict
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
+    from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.messages import AIMessage
 
 # Supported schema types: Pydantic models, dataclasses, TypedDict, JSON schema dicts
 SchemaT = TypeVar("SchemaT")
 
 SchemaKind = Literal["pydantic", "dataclass", "typeddict", "json_schema"]
+
+
+def _supports_provider_strategy(model: str | Any) -> bool:
+    """Check if a model supports provider-specific structured output.
+
+    Args:
+        model: Model name string or `BaseChatModel` instance.
+
+    Returns:
+        `True` if the model supports provider-specific structured output, `False` otherwise.
+    """
+    model_name: str | None = None
+    if isinstance(model, str):
+        model_name = model
+    else:
+        # Try to get model_name attribute from model instance
+        model_name = getattr(model, "model_name", None)
+
+    return (
+        "grok" in model_name.lower()
+        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
+        if model_name
+        else False
+    )
 
 
 class StructuredOutputError(Exception):
@@ -329,11 +354,10 @@ class ProviderStrategy(Generic[SchemaT]):
         # Both providers require strict=True for structured output
         kwargs: dict[str, Any] = {"response_format": response_format}
 
-        if model is not None and hasattr(model, "_get_ls_params"):
-            ls_params = model._get_ls_params()
-            provider = ls_params.get("ls_provider", "").lower()
-            if provider in ("openai", "xai"):
-                kwargs["strict"] = True
+        # Use _supports_provider_strategy to determine if we should set strict=True
+        # This checks model name patterns for OpenAI and Grok models
+        if model is not None and _supports_provider_strategy(model):
+            kwargs["strict"] = True
 
         return kwargs
 

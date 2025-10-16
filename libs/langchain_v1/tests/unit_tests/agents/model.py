@@ -31,6 +31,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
     ls_provider: str = "openai"
+    model_name: str = "fake-model"
 
     def _generate(
         self,
@@ -54,6 +55,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
             tool_calls = []
 
         if is_native and not tool_calls:
+            content_obj = {}
             if isinstance(self.structured_response, BaseModel):
                 content_obj = self.structured_response.model_dump()
             elif is_dataclass(self.structured_response):

@@ -42,6 +42,7 @@ from langchain.agents.structured_output import (
     ResponseFormat,
     StructuredOutputValidationError,
     ToolStrategy,
+    _supports_provider_strategy,
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
@@ -345,29 +346,6 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         return async_method.__can_jump_to__
 
     return []
-
-
-def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
-    """Check if a model supports provider-specific structured output.
-
-    Args:
-        model: Model name string or `BaseChatModel` instance.
-
-    Returns:
-        `True` if the model supports provider-specific structured output, `False` otherwise.
-    """
-    model_name: str | None = None
-    if isinstance(model, str):
-        model_name = model
-    elif isinstance(model, BaseChatModel):
-        model_name = getattr(model, "model_name", None)
-
-    return (
-        "grok" in model_name.lower()
-        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
-        if model_name
-        else False
-    )
 
 
 def _handle_structured_output_error(
