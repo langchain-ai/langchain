@@ -173,6 +173,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         self.max_retries = max_retries
 
         # Extract tool names from BaseTool instances or strings
+        self._tool_filter: list[str] | None
         if tools is not None:
             self._tool_filter = [tool.name if not isinstance(tool, str) else tool for tool in tools]
         else:
