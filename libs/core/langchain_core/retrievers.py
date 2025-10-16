@@ -70,45 +70,45 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
     Example: A retriever that returns the first 5 documents from a list of documents
 
-        ```python
-        from langchain_core.documents import Document
-        from langchain_core.retrievers import BaseRetriever
+    ```python
+    from langchain_core.documents import Document
+    from langchain_core.retrievers import BaseRetriever
 
-        class SimpleRetriever(BaseRetriever):
-            docs: list[Document]
-            k: int = 5
+    class SimpleRetriever(BaseRetriever):
+        docs: list[Document]
+        k: int = 5
 
-            def _get_relevant_documents(self, query: str) -> list[Document]:
-                \"\"\"Return the first k documents from the list of documents\"\"\"
-                return self.docs[:self.k]
+        def _get_relevant_documents(self, query: str) -> list[Document]:
+            \"\"\"Return the first k documents from the list of documents\"\"\"
+            return self.docs[:self.k]
 
-            async def _aget_relevant_documents(self, query: str) -> list[Document]:
-                \"\"\"(Optional) async native implementation.\"\"\"
-                return self.docs[:self.k]
-        ```
+        async def _aget_relevant_documents(self, query: str) -> list[Document]:
+            \"\"\"(Optional) async native implementation.\"\"\"
+            return self.docs[:self.k]
+    ```
 
     Example: A simple retriever based on a scikit-learn vectorizer
 
-        ```python
-        from sklearn.metrics.pairwise import cosine_similarity
+    ```python
+    from sklearn.metrics.pairwise import cosine_similarity
 
 
-        class TFIDFRetriever(BaseRetriever, BaseModel):
-            vectorizer: Any
-            docs: list[Document]
-            tfidf_array: Any
-            k: int = 4
+    class TFIDFRetriever(BaseRetriever, BaseModel):
+        vectorizer: Any
+        docs: list[Document]
+        tfidf_array: Any
+        k: int = 4
 
-            class Config:
-                arbitrary_types_allowed = True
+        class Config:
+            arbitrary_types_allowed = True
 
-            def _get_relevant_documents(self, query: str) -> list[Document]:
-                # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
-                query_vec = self.vectorizer.transform([query])
-                # Op -- (n_docs,1) -- Cosine Sim with each doc
-                results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
-                return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
-        ```
+        def _get_relevant_documents(self, query: str) -> list[Document]:
+            # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
+            query_vec = self.vectorizer.transform([query])
+            # Op -- (n_docs,1) -- Cosine Sim with each doc
+            results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
+            return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
+    ```
     """
 
     model_config = ConfigDict(

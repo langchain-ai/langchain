@@ -92,7 +92,7 @@ def _chain_model_call_handlers(
         handlers: List of handlers. First handler wraps all others.
 
     Returns:
-        Composed handler, or None if handlers empty.
+        Composed handler, or `None` if handlers empty.
 
     Example:
         ```python
@@ -195,13 +195,13 @@ def _chain_async_model_call_handlers(
     ]
     | None
 ):
-    """Compose multiple async wrap_model_call handlers into single middleware stack.
+    """Compose multiple async `wrap_model_call` handlers into single middleware stack.
 
     Args:
         handlers: List of async handlers. First handler wraps all others.
 
     Returns:
-        Composed async handler, or None if handlers empty.
+        Composed async handler, or `None` if handlers empty.
     """
     if not handlers:
         return None
@@ -267,12 +267,13 @@ def _chain_async_model_call_handlers(
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
-    """Resolve schema by merging schemas and optionally respecting OmitFromSchema annotations.
+    """Resolve schema by merging schemas and optionally respecting `OmitFromSchema` annotations.
 
     Args:
         schemas: List of schema types to merge
-        schema_name: Name for the generated TypedDict
-        omit_flag: If specified, omit fields with this flag set ('input' or 'output')
+        schema_name: Name for the generated `TypedDict`
+        omit_flag: If specified, omit fields with this flag set (`'input'` or
+            `'output'`)
     """
     all_annotations = {}
 
@@ -312,11 +313,11 @@ def _extract_metadata(type_: type) -> list:
 
 
 def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> list[JumpTo]:
-    """Get the can_jump_to list from either sync or async hook methods.
+    """Get the `can_jump_to` list from either sync or async hook methods.
 
     Args:
         middleware: The middleware instance to inspect.
-        hook_name: The name of the hook ('before_model' or 'after_model').
+        hook_name: The name of the hook (`'before_model'` or `'after_model'`).
 
     Returns:
         List of jump destinations, or empty list if not configured.
@@ -350,7 +351,7 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     """Check if a model supports provider-specific structured output.
 
     Args:
-        model: Model name string or BaseChatModel instance.
+        model: Model name string or `BaseChatModel` instance.
 
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
@@ -373,7 +374,7 @@ def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat,
 ) -> tuple[bool, str]:
-    """Handle structured output error. Returns (should_retry, retry_tool_message)."""
+    """Handle structured output error. Returns `(should_retry, retry_tool_message)`."""
     if not isinstance(response_format, ToolStrategy):
         return False, ""
 
@@ -408,7 +409,7 @@ def _chain_tool_call_wrappers(
         wrappers: Wrappers in middleware order.
 
     Returns:
-        Composed wrapper, or None if empty.
+        Composed wrapper, or `None` if empty.
 
     Example:
         wrapper = _chain_tool_call_wrappers([auth, cache, retry])
@@ -465,7 +466,7 @@ def _chain_async_tool_call_wrappers(
         wrappers: Async wrappers in middleware order.
 
     Returns:
-        Composed async wrapper, or None if empty.
+        Composed async wrapper, or `None` if empty.
     """
     if not wrappers:
         return None
@@ -534,11 +535,13 @@ def create_agent(  # noqa: PLR0915
 
     Args:
         model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`), a chat model instance (e.g., `ChatOpenAI()`).
-        tools: A list of tools, dicts, or callables. If `None` or an empty list,
+            (e.g., `"openai:gpt-4"`) or a chat model instance (e.g., `ChatOpenAI()`).
+            For a full list of supported model strings, see
+            [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
+        tools: A list of tools, `dicts`, or `Callable`. If `None` or an empty list,
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. Prompts are converted to a
-        `SystemMessage` and added to the beginning of the message list.
+            `SystemMessage` and added to the beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
             Middleware can intercept and modify agent behavior at various stages.
         response_format: An optional configuration for structured responses.
@@ -553,12 +556,15 @@ def create_agent(  # noqa: PLR0915
         store: An optional store object. This is used for persisting data
             across multiple threads (e.g., multiple conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
-            This is useful if you want to add a user confirmation or other interrupt
+            Useful if you want to add a user confirmation or other interrupt
             before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
-            This is useful if you want to return directly or run additional processing
+            Useful if you want to return directly or run additional processing
             on an output.
-        debug: A flag indicating whether to enable debug mode.
+        debug: Whether to enable verbose logging for graph execution. When enabled,
+            prints detailed information about each node execution, state updates,
+            and transitions during agent runtime. Useful for debugging middleware
+            behavior and understanding agent execution flow.
         name: An optional name for the `CompiledStateGraph`.
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building
@@ -569,8 +575,8 @@ def create_agent(  # noqa: PLR0915
         A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting AIMessage contains `tool_calls`, the graph will
-    then call the tools. The tools node executes the tools and adds the responses
+    the system prompt). If the resulting `AIMessage` contains `tool_calls`, the graph
+    will then call the tools. The tools node executes the tools and adds the responses
     to the messages list as `ToolMessage` objects. The agent node then calls the
     language model again. The process repeats until no more `tool_calls` are
     present in the response. The agent then returns the full list of messages.
@@ -586,7 +592,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-3-7-sonnet-latest",
+            model="anthropic:claude-sonnet-4-5-20250929",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )
@@ -878,8 +884,9 @@ def create_agent(  # noqa: PLR0915
             request: The model request containing model, tools, and response format.
 
         Returns:
-            Tuple of (bound_model, effective_response_format) where `effective_response_format`
-            is the actual strategy used (may differ from initial if auto-detected).
+            Tuple of `(bound_model, effective_response_format)` where
+            `effective_response_format` is the actual strategy used (may differ from
+            initial if auto-detected).
         """
         # Validate ONLY client-side tools that need to exist in tool_node
         # Build map of available client-side tools from the ToolNode
@@ -985,7 +992,7 @@ def create_agent(  # noqa: PLR0915
     def _execute_model_sync(request: ModelRequest) -> ModelResponse:
         """Execute model and return response.
 
-        This is the core model execution logic wrapped by wrap_model_call handlers.
+        This is the core model execution logic wrapped by `wrap_model_call` handlers.
         Raises any exceptions that occur during model invocation.
         """
         # Get the bound model (with auto-detection if needed)
@@ -1031,16 +1038,14 @@ def create_agent(  # noqa: PLR0915
         if response.structured_response is not None:
             state_updates["structured_response"] = response.structured_response
 
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **state_updates,
-        }
+        return state_updates
 
     async def _execute_model_async(request: ModelRequest) -> ModelResponse:
         """Execute model asynchronously and return response.
 
-        This is the core async model execution logic wrapped by wrap_model_call handlers.
+        This is the core async model execution logic wrapped by `wrap_model_call`
+        handlers.
+
         Raises any exceptions that occur during model invocation.
         """
         # Get the bound model (with auto-detection if needed)
@@ -1086,11 +1091,7 @@ def create_agent(  # noqa: PLR0915
         if response.structured_response is not None:
             state_updates["structured_response"] = response.structured_response
 
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **state_updates,
-        }
+        return state_updates
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))

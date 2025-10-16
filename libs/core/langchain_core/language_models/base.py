@@ -96,9 +96,16 @@ def _get_token_ids_default_method(text: str) -> list[int]:
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
+"""Input to a language model."""
+
 LanguageModelOutput = BaseMessage | str
+"""Output from a language model."""
+
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
+"""Input/output interface for a language model."""
+
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
+"""Type variable for the output of a language model."""
 
 
 def _get_verbosity() -> bool:

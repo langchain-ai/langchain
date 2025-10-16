@@ -75,7 +75,7 @@ class ChatPerplexity(BaseChatModel):
             model: str
                 Name of the model to use. e.g. "sonar"
             temperature: float
-                Sampling temperature to use. Default is 0.7
+                Sampling temperature to use.
             max_tokens: int | None
                 Maximum number of tokens to generate.
             streaming: bool
@@ -83,9 +83,9 @@ class ChatPerplexity(BaseChatModel):
 
         Key init args - client params:
             pplx_api_key: str | None
-                API key for PerplexityChat API. Default is None.
+                API key for PerplexityChat API.
             request_timeout: float | Tuple[float, float] | None
-                Timeout for requests to PerplexityChat completion API. Default is None.
+                Timeout for requests to PerplexityChat completion API.
             max_retries: int
                 Maximum number of retries to make when generating.
 
@@ -159,7 +159,7 @@ class ChatPerplexity(BaseChatModel):
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: float | tuple[float, float] | None = Field(None, alias="timeout")
-    """Timeout for requests to PerplexityChat completion API. Default is None."""
+    """Timeout for requests to PerplexityChat completion API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False

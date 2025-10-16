@@ -113,6 +113,15 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["id"] is not None
     assert tool_call.get("type") == "tool_call"
 
+    content_tool_calls = [
+        block for block in message.content_blocks if block["type"] == "tool_call"
+    ]
+    assert len(content_tool_calls) == 1
+    content_tool_call = content_tool_calls[0]
+    assert content_tool_call["name"] == "magic_function"
+    assert content_tool_call["args"] == {"input": 3}
+    assert content_tool_call["id"] is not None
+
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
@@ -292,6 +301,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`supports_image_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested by inputting an
@@ -325,7 +335,9 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`supports_image_urls`"
 
         Boolean property indicating whether the chat model supports image inputs from
-        URLs. Defaults to `False`.
+        URLs.
+
+        Defaults to `False`.
 
         If set to `True`, the chat model will be tested using content blocks of the
         form
@@ -348,6 +360,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested by inputting a
@@ -372,6 +385,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`supports_audio_inputs`"
 
         Boolean property indicating whether the chat model supports audio inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested by inputting an
@@ -396,12 +410,15 @@ class ChatModelIntegrationTests(ChatModelTests):
     ??? note "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
+
         Defaults to `False`. No current tests are written for this feature.
 
     ??? note "`returns_usage_metadata`"
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses. Defaults to `True`.
+        on invoke and streaming responses.
+
+        Defaults to `True`.
 
         `usage_metadata` is an optional dict attribute on `AIMessage`s that track input
         and output tokens.
@@ -1325,6 +1342,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_tool_calling(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls.
 

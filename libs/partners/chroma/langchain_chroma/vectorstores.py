@@ -110,11 +110,10 @@ def maximal_marginal_relevance(
     Args:
         query_embedding: Query embedding.
         embedding_list: List of embeddings to select from.
-        lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
-        k: Number of Documents to return. Defaults to 4.
+        lambda_mult: Number between `0` and `1` that determines the degree
+            of diversity among the results with `0` corresponding
+            to maximum diversity and `1` to minimum diversity.
+        k: Number of Documents to return.
 
     Returns:
         List of indices of embeddings selected by maximal marginal relevance.
@@ -455,7 +454,7 @@ class Chroma(VectorStore):
         Args:
             query_texts: List of query texts.
             query_embeddings: List of query embeddings.
-            n_results: Number of results to return. Defaults to 4.
+            n_results: Number of results to return.
             where: dict used to filter results by metadata.
                     E.g. {"color" : "red"}.
             where_document: dict used to filter by the document contents.
@@ -686,7 +685,7 @@ class Chroma(VectorStore):
 
         Args:
             query: Query text to search for.
-            k: Number of results to return. Defaults to 4.
+            k: Number of results to return.
             filter: Filter by metadata.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
@@ -713,7 +712,7 @@ class Chroma(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
@@ -743,7 +742,7 @@ class Chroma(VectorStore):
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             filter: Filter by metadata.
             where_document: dict used to filter by the documents.
                     E.g. {"$contains": "hello"}.
@@ -774,7 +773,7 @@ class Chroma(VectorStore):
 
         Args:
             query: Query text to search for.
-            k: Number of results to return. Defaults to 4.
+            k: Number of results to return.
             filter: Filter by metadata.
             where_document: dict used to filter by document contents.
                     E.g. {"$contains": "hello"}.
@@ -816,7 +815,7 @@ class Chroma(VectorStore):
 
         Args:
             query: Query text to search for.
-            k: Number of results to return. Defaults to 4.
+            k: Number of results to return.
             filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
                     E.g. {"$contains": "hello"}.
@@ -988,16 +987,14 @@ class Chroma(VectorStore):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to
-                20.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
-                    E.g. {"$contains": "hello"}.
+                e.g. `{"$contains": "hello"}`.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -1039,15 +1036,14 @@ class Chroma(VectorStore):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
+            k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             where_document: dict used to filter by the document contents.
-                    E.g. {"$contains": "hello"}.
+                e.g. `{"$contains": "hello"}`.
             kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
@@ -1354,7 +1350,6 @@ class Chroma(VectorStore):
             host: Hostname of a deployed Chroma server.
             port: Connection port for a deployed Chroma server. Default is 8000.
             ssl: Whether to establish an SSL connection with a deployed Chroma server.
-                    Default is False.
             headers: HTTP headers to send to a deployed Chroma server.
             chroma_cloud_api_key: Chroma Cloud API key.
             tenant: Tenant ID. Required for Chroma Cloud connections.

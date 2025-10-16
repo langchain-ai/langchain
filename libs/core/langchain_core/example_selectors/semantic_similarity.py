@@ -154,7 +154,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -198,7 +198,7 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -285,9 +285,8 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
@@ -333,9 +332,8 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.

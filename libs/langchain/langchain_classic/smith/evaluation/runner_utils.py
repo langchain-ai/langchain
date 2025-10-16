@@ -1371,7 +1371,7 @@ async def arun_on_dataset(
         dataset_version: Optional version of the dataset.
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to `{dataset_name}-{chain class name}-{datetime}`.
         project_metadata: Optional metadata to add to the project.
             Useful for storing information the test variant.
             (prompt version, model version, etc.)
@@ -1546,7 +1546,7 @@ def run_on_dataset(
         dataset_version: Optional version of the dataset.
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to `{dataset_name}-{chain class name}-{datetime}`.
         project_metadata: Optional metadata to add to the project.
             Useful for storing information the test variant.
             (prompt version, model version, etc.)
