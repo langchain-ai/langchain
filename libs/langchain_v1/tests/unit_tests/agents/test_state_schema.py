@@ -59,9 +59,9 @@ def test_state_schema_with_tool_runtime() -> None:
     runtime_data = {}
 
     @tool
-    def counter_tool(x: int, tool_runtime: ToolRuntime) -> str:
+    def counter_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that accesses custom state field."""
-        runtime_data["counter"] = tool_runtime.state.get("counter", 0)
+        runtime_data["counter"] = runtime.state.get("counter", 0)
         return f"Counter is {runtime_data['counter']}, x is {x}"
 
     agent = create_agent(
