@@ -1250,6 +1250,14 @@ def _is_injected_arg_type(
         `True` if the type is an injected argument, `False` otherwise.
     """
     injected_type = injected_type or InjectedToolArg
+
+    origin = get_origin(type_)
+    if origin is not None and isinstance(origin, type) and issubclass(origin, injected_type):
+        return True
+
+    if isinstance(type_, type) and issubclass(type_, injected_type):
+        return True
+
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
