@@ -1346,7 +1346,7 @@ class ToolRuntime(InjectedToolArg, Generic[ContextT, StateT]):
     - store: BaseStore instance for persistent storage (from langgraph Runtime)
     - stream_writer: StreamWriter for streaming output (from langgraph Runtime)
 
-    No `Annotated` wrapper is needed - just use `tool_runtime: ToolRuntime`
+    No `Annotated` wrapper is needed - just use `runtime: ToolRuntime`
     as a parameter.
 
     Example:
@@ -1355,7 +1355,7 @@ class ToolRuntime(InjectedToolArg, Generic[ContextT, StateT]):
         from langchain.tools import ToolRuntime
 
         @tool
-        def my_tool(x: int, tool_runtime: ToolRuntime) -> str:
+        def my_tool(x: int, runtime: ToolRuntime) -> str:
             \"\"\"Tool that accesses runtime context.\"\"\"
             # Access state
             messages = tool_runtime.state["messages"]
@@ -1660,6 +1660,9 @@ def _get_runtime_arg(tool: BaseTool) -> str | None:
     """
     full_schema = tool.get_input_schema()
     for name, type_ in get_all_basemodel_annotations(full_schema).items():
+        # Check if the parameter name is "runtime" (regardless of type)
+        if name == "runtime":
+            return name
         # Check if the type itself is ToolRuntime (direct usage)
         if _is_injection(type_, ToolRuntime):
             return name
