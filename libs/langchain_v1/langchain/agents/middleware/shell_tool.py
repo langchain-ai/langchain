@@ -16,12 +16,13 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import BaseTool, ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
+from typing_extensions import NotRequired
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
