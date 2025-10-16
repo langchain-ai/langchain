@@ -1,7 +1,5 @@
 from typing import cast
 
-import pytest
-
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -482,20 +480,6 @@ def test_content_blocks() -> None:
             "extras": {"foo": "bar"},
         }
     ]
-
-
-def test_provider_warns() -> None:
-    # Test that major providers warn if content block standardization is not yet
-    # implemented.
-    # This test should be removed when all major providers support content block
-    # standardization.
-    message = AIMessage(
-        "Hello.", response_metadata={"model_provider": "google_vertexai"}
-    )
-    with pytest.warns(match="not yet fully supported for Google VertexAI"):
-        content_blocks = message.content_blocks
-
-    assert content_blocks == [{"type": "text", "text": "Hello."}]
 
 
 def test_content_blocks_reasoning_extraction() -> None:
