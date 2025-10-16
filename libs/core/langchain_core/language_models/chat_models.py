@@ -264,21 +264,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         This table provides a brief overview of the main declarative methods. Please see the reference for each method for full documentation.
 
-        | Method                       | Description                                                                                  |
-        | ---------------------------- | -------------------------------------------------------------------------------------------- |
-        | `bind_tools`                 | Create chat model that can call tools.                                                        |
-        | `with_structured_output`     | Create wrapper that structures model output using schema.                                    |
-        | `with_retry`                 | Create wrapper that retries model calls on failure.                                          |
-        | `with_fallbacks`             | Create wrapper that falls back to other models on failure.                                   |
-        | `configurable_fields`        | Specify init args of the model that can be configured at runtime via the `RunnableConfig`.     |
-        | `configurable_alternatives`  | Specify alternative models which can be swapped in at runtime via the `RunnableConfig`.        |
+        | Method                       | Description                                                                                |
+        | ---------------------------- | ------------------------------------------------------------------------------------------ |
+        | `bind_tools`                 | Create chat model that can call tools.                                                     |
+        | `with_structured_output`     | Create wrapper that structures model output using schema.                                  |
+        | `with_retry`                 | Create wrapper that retries model calls on failure.                                        |
+        | `with_fallbacks`             | Create wrapper that falls back to other models on failure.                                 |
+        | `configurable_fields`        | Specify init args of the model that can be configured at runtime via the `RunnableConfig`. |
+        | `configurable_alternatives`  | Specify alternative models which can be swapped in at runtime via the `RunnableConfig`.    |
 
     Creating custom chat model:
         Custom chat model implementations should inherit from this class.
         Please reference the table below for information about which
         methods and properties are required or optional for implementations.
 
-        | Method/Property                  | Description                                                        | Required/Optional |
+        | Method/Property                  | Description                                                        | Required          |
         | -------------------------------- | ------------------------------------------------------------------ | ----------------- |
         | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
         | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
@@ -286,9 +286,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         | `_stream`                        | Use to implement streaming                                         | Optional          |
         | `_agenerate`                     | Use to implement a native async method                             | Optional          |
         | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-
-        Follow the guide for more information on how to implement a custom chat model:
-        [Guide](https://python.langchain.com/docs/how_to/custom_chat_model/).
 
     """  # noqa: E501
 
@@ -325,11 +322,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Supported values:
 
     - `'v0'`: provider-specific format in content (can lazily-parse with
-        `.content_blocks`)
-    - `'v1'`: standardized format in content (consistent with `.content_blocks`)
+        `content_blocks`)
+    - `'v1'`: standardized format in content (consistent with `content_blocks`)
 
-    Partner packages (e.g., `langchain-openai`) can also use this field to roll out
-    new content formats in a backward-compatible way.
+    Partner packages (e.g.,
+    [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
+    field to roll out new content formats in a backward-compatible way.
 
     !!! version-added "Added in version 1.0"
 
@@ -1525,8 +1523,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
 
         Raises:
-            `ValueError`: If there are any unsupported `kwargs`.
-            `NotImplementedError`: If the model does not implement
+            ValueError: If there are any unsupported `kwargs`.
+            NotImplementedError: If the model does not implement
                 `with_structured_output()`.
 
         Returns:

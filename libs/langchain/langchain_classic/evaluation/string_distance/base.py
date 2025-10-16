@@ -22,7 +22,7 @@ def _load_rapidfuzz() -> Any:
     """Load the RapidFuzz library.
 
     Raises:
-        `ImportError`: If the rapidfuzz library is not installed.
+        ImportError: If the rapidfuzz library is not installed.
 
     Returns:
         The `rapidfuzz.distance` module.

@@ -152,7 +152,7 @@ class BaseChatMessageHistory(ABC):
             message: A BaseMessage object to store.
 
         Raises:
-            `NotImplementedError`: If the sub-class has not implemented an efficient
+            NotImplementedError: If the sub-class has not implemented an efficient
                 `add_messages` method.
         """
         if type(self).add_messages != BaseChatMessageHistory.add_messages:

@@ -105,7 +105,7 @@ def _convert_to_v1_from_genai_input(
     Called when message isn't an `AIMessage` or `model_provider` isn't set on
     `response_metadata`.
 
-    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
+    During the `content_blocks` parsing process, we wrap blocks not recognized as a v1
     block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any blocks that
     might be GenAI format to v1 ContentBlocks.

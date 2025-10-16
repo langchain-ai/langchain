@@ -96,7 +96,7 @@ class BaseMessage(Serializable):
     """
 
     content: str | list[str | dict]
-    """The string contents of the message."""
+    """The contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
@@ -164,7 +164,7 @@ class BaseMessage(Serializable):
         Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
             content_blocks: Typed standard content.
             **kwargs: Additional arguments to pass to the parent class.
         """
@@ -262,7 +262,7 @@ class BaseMessage(Serializable):
         Can be used as both property (`message.text`) and method (`message.text()`).
 
         !!! deprecated
-            As of langchain-core 1.0.0, calling `.text()` as a method is deprecated.
+            As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
             Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:

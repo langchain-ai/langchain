@@ -143,7 +143,7 @@ class Citation(TypedDict):
         not the source text. This means that the indices are relative to the model's
         response, not the original document (as specified in the `url`).
 
-    !!! note
+    !!! note "Factory function"
         `create_citation` may also be used as a factory to create a `Citation`.
         Benefits include:
 
@@ -214,6 +214,7 @@ class NonStandardAnnotation(TypedDict):
 
 
 Annotation = Citation | NonStandardAnnotation
+"""A union of all defined `Annotation` types."""
 
 
 class TextContentBlock(TypedDict):
@@ -222,7 +223,7 @@ class TextContentBlock(TypedDict):
     This typically represents the main text content of a message, such as the response
     from a language model or the text of a user message.
 
-    !!! note
+    !!! note "Factory function"
         `create_text_block` may also be used as a factory to create a
         `TextContentBlock`. Benefits include:
 
@@ -258,7 +259,7 @@ class TextContentBlock(TypedDict):
 
 
 class ToolCall(TypedDict):
-    """Represents a request to call a tool.
+    """Represents an AI's request to call a tool.
 
     Example:
         ```python
@@ -268,7 +269,7 @@ class ToolCall(TypedDict):
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
 
-    !!! note
+    !!! note "Factory function"
         `create_tool_call` may also be used as a factory to create a
         `ToolCall`. Benefits include:
 
@@ -303,7 +304,7 @@ class ToolCall(TypedDict):
 
 
 class ToolCallChunk(TypedDict):
-    """A chunk of a tool call (e.g., as part of a stream).
+    """A chunk of a tool call (yielded when streaming).
 
     When merging `ToolCallChunks` (e.g., via `AIMessageChunk.__add__`),
     all string attributes are concatenated. Chunks are only merged if their
@@ -385,7 +386,10 @@ class InvalidToolCall(TypedDict):
 
 
 class ServerToolCall(TypedDict):
-    """Tool call that is executed server-side."""
+    """Tool call that is executed server-side.
+
+    For example: code execution, web search, etc.
+    """
 
     type: Literal["server_tool_call"]
     """Used for discrimination."""
@@ -407,7 +411,7 @@ class ServerToolCall(TypedDict):
 
 
 class ServerToolCallChunk(TypedDict):
-    """A chunk of a tool call (as part of a stream)."""
+    """A chunk of a server-side tool call (yielded when streaming)."""
 
     type: Literal["server_tool_call_chunk"]
     """Used for discrimination."""
@@ -456,7 +460,7 @@ class ServerToolResult(TypedDict):
 class ReasoningContentBlock(TypedDict):
     """Reasoning output from a LLM.
 
-    !!! note
+    !!! note "Factory function"
         `create_reasoning_block` may also be used as a factory to create a
         `ReasoningContentBlock`. Benefits include:
 
@@ -499,7 +503,7 @@ class ReasoningContentBlock(TypedDict):
 class ImageContentBlock(TypedDict):
     """Image data.
 
-    !!! note
+    !!! note "Factory function"
         `create_image_block` may also be used as a factory to create a
         `ImageContentBlock`. Benefits include:
 
@@ -547,7 +551,7 @@ class ImageContentBlock(TypedDict):
 class VideoContentBlock(TypedDict):
     """Video data.
 
-    !!! note
+    !!! note "Factory function"
         `create_video_block` may also be used as a factory to create a
         `VideoContentBlock`. Benefits include:
 
@@ -595,7 +599,7 @@ class VideoContentBlock(TypedDict):
 class AudioContentBlock(TypedDict):
     """Audio data.
 
-    !!! note
+    !!! note "Factory function"
         `create_audio_block` may also be used as a factory to create an
         `AudioContentBlock`. Benefits include:
         * Automatic ID generation (when not provided)
@@ -652,7 +656,7 @@ class PlainTextContentBlock(TypedDict):
         Title and context are optional fields that may be passed to the model. See
         Anthropic [example](https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content).
 
-    !!! note
+    !!! note "Factory function"
         `create_plaintext_block` may also be used as a factory to create a
         `PlainTextContentBlock`. Benefits include:
 
@@ -703,7 +707,7 @@ class PlainTextContentBlock(TypedDict):
 
 
 class FileContentBlock(TypedDict):
-    """File data that doesn't fit into other multimodal blocks.
+    """File data that doesn't fit into other multimodal block types.
 
     This block is intended for files that are not images, audio, or plaintext. For
     example, it can be used for PDFs, Word documents, etc.
@@ -712,7 +716,7 @@ class FileContentBlock(TypedDict):
     content block type (e.g., `ImageContentBlock`, `AudioContentBlock`,
     `PlainTextContentBlock`).
 
-    !!! note
+    !!! note "Factory function"
         `create_file_block` may also be used as a factory to create a
         `FileContentBlock`. Benefits include:
 
@@ -775,7 +779,7 @@ class NonStandardContentBlock(TypedDict):
     Has no `extras` field, as provider-specific data should be included in the
     `value` field.
 
-    !!! note
+    !!! note "Factory function"
         `create_non_standard_block` may also be used as a factory to create a
         `NonStandardContentBlock`. Benefits include:
 
@@ -812,6 +816,7 @@ DataContentBlock = (
     | PlainTextContentBlock
     | FileContentBlock
 )
+"""A union of all defined multimodal data `ContentBlock` types."""
 
 ToolContentBlock = (
     ToolCall | ToolCallChunk | ServerToolCall | ServerToolCallChunk | ServerToolResult
@@ -825,6 +830,7 @@ ContentBlock = (
     | DataContentBlock
     | ToolContentBlock
 )
+"""A union of all defined `ContentBlock` types and aliases."""
 
 
 KNOWN_BLOCK_TYPES = {

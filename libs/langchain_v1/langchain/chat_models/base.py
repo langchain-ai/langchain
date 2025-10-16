@@ -83,63 +83,66 @@ def init_chat_model(
         for supported model parameters.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`. You can
-            also specify model and model provider in a single argument using
-            `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
-        model_provider: The model provider if not specified as part of model arg (see
-            above). Supported model_provider values and the corresponding integration
-            package are:
+        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
 
-            - `openai`              -> `langchain-openai`
-            - `anthropic`           -> `langchain-anthropic`
-            - `azure_openai`        -> `langchain-openai`
-            - `azure_ai`            -> `langchain-azure-ai`
-            - `google_vertexai`     -> `langchain-google-vertexai`
-            - `google_genai`        -> `langchain-google-genai`
-            - `bedrock`             -> `langchain-aws`
-            - `bedrock_converse`    -> `langchain-aws`
-            - `cohere`              -> `langchain-cohere`
-            - `fireworks`           -> `langchain-fireworks`
-            - `together`            -> `langchain-together`
-            - `mistralai`           -> `langchain-mistralai`
-            - `huggingface`         -> `langchain-huggingface`
-            - `groq`                -> `langchain-groq`
-            - `ollama`              -> `langchain-ollama`
-            - `google_anthropic_vertex`    -> `langchain-google-vertexai`
-            - `deepseek`            -> `langchain-deepseek`
-            - `ibm`                 -> `langchain-ibm`
-            - `nvidia`              -> `langchain-nvidia-ai-endpoints`
-            - `xai`                 -> `langchain-xai`
-            - `perplexity`          -> `langchain-perplexity`
+            You can also specify model and model provider in a single argument using:
+
+            `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
+        model_provider: The model provider if not specified as part of the model arg
+            (see above). Supported `model_provider` values and the corresponding
+            integration package are:
+
+            - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `anthropic`               -> [`langchain-anthropic`](https://docs.langchain.com/oss/python/integrations/providers/anthropic)
+            - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
+            - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `bedrock_converse`        -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
+            - `fireworks`               -> [`langchain-fireworks`](https://docs.langchain.com/oss/python/integrations/providers/fireworks)
+            - `together`                -> [`langchain-together`](https://docs.langchain.com/oss/python/integrations/providers/together)
+            - `mistralai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
+            - `groq`                    -> [`langchain-groq`](https://docs.langchain.com/oss/python/integrations/providers/groq)
+            - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
+            - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
+            - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
+            - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
 
             Will attempt to infer `model_provider` from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
             - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                        -> `anthropic`
-            - `amazon...`                        -> `bedrock`
-            - `gemini...`                        -> `google_vertexai`
-            - `command...`                       -> `cohere`
-            - `accounts/fireworks...`            -> `fireworks`
-            - `mistral...`                       -> `mistralai`
-            - `deepseek...`                      -> `deepseek`
-            - `grok...`                          -> `xai`
-            - `sonar...`                         -> `perplexity`
+            - `claude...`                         -> `anthropic`
+            - `amazon...`                         -> `bedrock`
+            - `gemini...`                         -> `google_vertexai`
+            - `command...`                        -> `cohere`
+            - `accounts/fireworks...`             -> `fireworks`
+            - `mistral...`                        -> `mistralai`
+            - `deepseek...`                       -> `deepseek`
+            - `grok...`                           -> `xai`
+            - `sonar...`                          -> `perplexity`
         configurable_fields: Which model parameters are configurable:
 
             - `None`: No configurable fields.
-            - `'any'`: All fields are configurable. **See Security Note below.**
+            - `'any'`: All fields are configurable. **See security note below.**
             - `list[str] | Tuple[str, ...]`: Specified fields are configurable.
 
             Fields are assumed to have `config_prefix` stripped if there is a
             `config_prefix`. If model is specified, then defaults to `None`. If model is
             not specified, then defaults to `("model", "model_provider")`.
 
-            **Security Note**: Setting `configurable_fields="any"` means fields like
-            `api_key`, `base_url`, etc. can be altered at runtime, potentially redirecting
-            model requests to a different service/user. Make sure that if you're
-            accepting untrusted configurations that you enumerate the
-            `configurable_fields=(...)` explicitly.
+            !!! warning "Security note"
+                Setting `configurable_fields="any"` means fields like `api_key`,
+                `base_url`, etc. can be altered at runtime, potentially redirecting
+                model requests to a different service/user. Make sure that if you're
+                accepting untrusted configurations that you enumerate the
+                `configurable_fields=(...)` explicitly.
 
         config_prefix: If `'config_prefix'` is a non-empty string then model will be
             configurable at runtime via the
@@ -165,10 +168,10 @@ def init_chat_model(
             config is passed in.
 
     Raises:
-        `ValueError`: If `model_provider` cannot be inferred or isn't supported.
-        `ImportError`: If the model provider integration package is not installed.
+        ValueError: If `model_provider` cannot be inferred or isn't supported.
+        ImportError: If the model provider integration package is not installed.
 
-    ???+ note "Init non-configurable model"
+    ???+ note "Initialize a non-configurable model"
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
@@ -231,7 +234,7 @@ def init_chat_model(
     ??? note "Bind tools to a configurable model"
 
         You can call any chat model declarative methods on a configurable model in the
-        same way that you would with a normal model.
+        same way that you would with a normal model:
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic

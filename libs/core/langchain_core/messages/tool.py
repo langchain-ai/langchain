@@ -31,33 +31,31 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
 
     Example: A `ToolMessage` representing a result of `42` from a tool call with id
 
-        ```python
-        from langchain_core.messages import ToolMessage
+    ```python
+    from langchain_core.messages import ToolMessage
 
-        ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
-        ```
+    ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+    ```
 
     Example: A `ToolMessage` where only part of the tool output is sent to the model
-        and the full output is passed in to artifact.
+    and the full output is passed in to artifact.
 
-        !!! version-added "Added in version 0.2.17"
+    ```python
+    from langchain_core.messages import ToolMessage
 
-        ```python
-        from langchain_core.messages import ToolMessage
+    tool_output = {
+        "stdout": "From the graph we can see that the correlation between "
+        "x and y is ...",
+        "stderr": None,
+        "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+    }
 
-        tool_output = {
-            "stdout": "From the graph we can see that the correlation between "
-            "x and y is ...",
-            "stderr": None,
-            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-        }
-
-        ToolMessage(
-            content=tool_output["stdout"],
-            artifact=tool_output,
-            tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-        )
-        ```
+    ToolMessage(
+        content=tool_output["stdout"],
+        artifact=tool_output,
+        tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+    )
+    ```
 
     The `tool_call_id` field is used to associate the tool call request with the
     tool call response. Useful in situations where a chat model is able
@@ -78,21 +76,15 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
 
-    !!! version-added "Added in version 0.2.17"
-
     """
 
     status: Literal["success", "error"] = "success"
-    """Status of the tool invocation.
-
-    !!! version-added "Added in version 0.2.24"
-
-    """
+    """Status of the tool invocation."""
 
     additional_kwargs: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
     response_metadata: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
     @classmethod
@@ -165,7 +157,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
             content_blocks: Typed standard content.
             **kwargs: Additional fields.
         """
@@ -211,7 +203,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
 
 
 class ToolCall(TypedDict):
-    """Represents a request to call a tool.
+    """Represents an AI's request to call a tool.
 
     Example:
         ```python
@@ -257,7 +249,7 @@ def tool_call(
 
 
 class ToolCallChunk(TypedDict):
-    """A chunk of a tool call (e.g., as part of a stream).
+    """A chunk of a tool call (yielded when streaming).
 
     When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
     all string attributes are concatenated. Chunks are only merged if their

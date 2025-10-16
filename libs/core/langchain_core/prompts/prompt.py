@@ -140,9 +140,9 @@ class PromptTemplate(StringPromptTemplate):
         """Override the + operator to allow for combining prompt templates.
 
         Raises:
-            `ValueError`: If the template formats are not f-string or if there are
+            ValueError: If the template formats are not f-string or if there are
                 conflicting partial variables.
-            `NotImplementedError`: If the other object is not a `PromptTemplate` or str.
+            NotImplementedError: If the other object is not a `PromptTemplate` or str.
 
         Returns:
             A new `PromptTemplate` that is the combination of the two.
