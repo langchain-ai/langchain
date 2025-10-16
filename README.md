@@ -34,7 +34,6 @@
   </a>
 </p>
 
-> **Beginner Tip**: First time contributing? Start with documentation fixes or adding simple examples! Check out [Good First Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) to get started.
 
 LangChain is a framework for building LLM-powered applications. It helps you chain together interoperable components and third-party integrations to simplify AI application development —  all while future-proofing decisions as the underlying technology evolves.
 
@@ -75,5 +74,6 @@ To improve your LLM application development, pair LangChain with:
 - [Learn](https://docs.langchain.com/oss/python/learn): Use cases, conceptual overviews, and more.
 - [API Reference](https://reference.langchain.com/python): Detailed reference on
 navigating base packages and integrations for LangChain.
+- [Contributing Guide](https://github.com/langchain-ai/langchain/blob/main/CONTRIBUTING.md): Learn how to contribute to LangChain and find good first issues.
 - [LangChain Forum](https://forum.langchain.com): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [Chat LangChain](https://chat.langchain.com): Ask questions & chat with our documentation.
