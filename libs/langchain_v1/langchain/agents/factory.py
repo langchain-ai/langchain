@@ -1491,15 +1491,10 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        # Check that at least one tool has return_direct=True before evaluating all()
-        tools_with_return_direct = [
-            c
+        if all(
+            tool_node.tools_by_name[c["name"]].return_direct
             for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
-            and tool_node.tools_by_name[c["name"]].return_direct
-        ]
-        if tools_with_return_direct and len(tools_with_return_direct) == len(
-            [c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name]
         ):
             return end_destination
 
