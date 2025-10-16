@@ -1332,7 +1332,7 @@ def tools_condition(
 
 
 @dataclass
-class ToolRuntime(InjectedToolArg, Generic[StateT, ContextT]):
+class ToolRuntime(InjectedToolArg, Generic[ContextT, StateT]):
     """Runtime context automatically injected into tools.
 
     When a tool function has a parameter named 'tool_runtime' with type hint
