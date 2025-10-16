@@ -1225,15 +1225,6 @@ def create_agent(  # noqa: PLR0915
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
-        # Only include exit_node in destinations if any tool has return_direct=True
-        # or if there are structured output tools
-        tools_to_model_destinations = [loop_entry_node]
-        if (
-            any(tool.return_direct for tool in tool_node.tools_by_name.values())
-            or structured_output_tools
-        ):
-            tools_to_model_destinations.append(exit_node)
-
         graph.add_conditional_edges(
             "tools",
             _make_tools_to_model_edge(
@@ -1242,7 +1233,7 @@ def create_agent(  # noqa: PLR0915
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
             ),
-            tools_to_model_destinations,
+            [loop_entry_node, exit_node],
         )
 
         # base destinations are tools and exit_node
