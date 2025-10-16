@@ -1251,9 +1251,13 @@ def _is_injected_arg_type(
     """
     injected_type = injected_type or InjectedToolArg
 
-    # if the type is a generic alias, check if the origin is a subclass of the injected type
+    # if the type is a generic alias, check if the origin is a subclass of inj type
     origin = get_origin(type_)
-    if origin is not None and isinstance(origin, type) and issubclass(origin, injected_type):
+    if (
+        origin is not None
+        and isinstance(origin, type)
+        and issubclass(origin, injected_type)
+    ):
         return True
 
     # check if the type is a subclass of the injected type
