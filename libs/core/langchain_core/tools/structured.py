@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import textwrap
 from collections.abc import Awaitable, Callable
 from inspect import signature
@@ -218,7 +219,9 @@ class StructuredTool(BaseTool):
                 raise TypeError(msg)
 
         if description_ is None:
-            if is_basemodel_subclass(source_function):
+            if inspect.isclass(source_function) and is_basemodel_subclass(
+                source_function
+            ):
                 description_ = ""
             else:
                 msg = "Function must have a docstring if description not provided."

@@ -192,6 +192,9 @@ def _infer_arg_descriptions(
 ) -> tuple[str | None, dict]:
     """Infer argument descriptions from function docstring and annotations."""
     annotations = typing.get_type_hints(fn, include_extras=True)
+    description: str | None
+    arg_descriptions: dict
+
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
