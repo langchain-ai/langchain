@@ -11,16 +11,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
-from langchain_core.messages import ToolMessage
-from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
-
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
     ModelResponse,
 )
+from langchain_core.messages import ToolMessage
+from langgraph.types import Command
+from typing_extensions import NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -211,7 +210,9 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         return handler(request)
 
     def wrap_tool_call(
-        self, request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command]
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Intercept tool calls."""
         tool_call = request.tool_call
@@ -411,7 +412,9 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         new_lines = text_to_insert.split("\n")
 
         # Insert after insert_line (0-indexed)
-        updated_lines = lines_content[:insert_line] + new_lines + lines_content[insert_line:]
+        updated_lines = (
+            lines_content[:insert_line] + new_lines + lines_content[insert_line:]
+        )
 
         # Update file
         now = datetime.now(timezone.utc).isoformat()
@@ -438,7 +441,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
     def _handle_delete(
         self,
         args: dict,
-        state: AnthropicToolsState,  # noqa: ARG002
+        state: AnthropicToolsState,
         tool_call_id: str | None,
     ) -> Command:
         """Handle delete command."""
@@ -466,8 +469,12 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         old_path = args["old_path"]
         new_path = args["new_path"]
 
-        normalized_old = _validate_path(old_path, allowed_prefixes=self.allowed_prefixes)
-        normalized_new = _validate_path(new_path, allowed_prefixes=self.allowed_prefixes)
+        normalized_old = _validate_path(
+            old_path, allowed_prefixes=self.allowed_prefixes
+        )
+        normalized_new = _validate_path(
+            new_path, allowed_prefixes=self.allowed_prefixes
+        )
 
         # Read file
         files = cast("dict[str, Any]", state.get(self.state_key, {}))
@@ -639,7 +646,9 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
         return handler(request)
 
     def wrap_tool_call(
-        self, request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command]
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command],
     ) -> ToolMessage | Command:
         """Intercept tool calls."""
         tool_call = request.tool_call

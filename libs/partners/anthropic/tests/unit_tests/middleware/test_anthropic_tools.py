@@ -1,14 +1,15 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
 import pytest
+from langchain_core.messages import ToolMessage
+from langgraph.types import Command
+
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
     _validate_path,
 )
-from langchain_core.messages import ToolMessage
-from langgraph.types import Command
 
 
 class TestPathValidation:
@@ -45,7 +46,9 @@ class TestPathValidation:
             _validate_path("/etc/passwd", allowed_prefixes=["/workspace"])
 
         with pytest.raises(ValueError, match="Path must start with"):
-            _validate_path("/workspacemalicious/file.txt", allowed_prefixes=["/workspace/"])
+            _validate_path(
+                "/workspacemalicious/file.txt", allowed_prefixes=["/workspace/"]
+            )
 
     def test_memories_prefix(self) -> None:
         """Test /memories prefix validation for memory tools."""
@@ -70,7 +73,9 @@ class TestTextEditorMiddleware:
         assert middleware.state_key == "text_editor_files"
 
         # With path restrictions
-        middleware = StateClaudeTextEditorMiddleware(allowed_path_prefixes=["/workspace"])
+        middleware = StateClaudeTextEditorMiddleware(
+            allowed_path_prefixes=["/workspace"]
+        )
         assert middleware.allowed_prefixes == ["/workspace"]
 
 
@@ -139,7 +144,9 @@ class TestFileOperations:
 
     def test_path_prefix_enforcement(self) -> None:
         """Test that path prefixes are enforced."""
-        middleware = StateClaudeTextEditorMiddleware(allowed_path_prefixes=["/workspace"])
+        middleware = StateClaudeTextEditorMiddleware(
+            allowed_path_prefixes=["/workspace"]
+        )
 
         state: AnthropicToolsState = {"messages": []}
 
@@ -148,7 +155,8 @@ class TestFileOperations:
 
         try:
             middleware._handle_create(args, state, "test_id")
-            assert False, "Should have raised ValueError"
+            msg = "Should have raised ValueError"
+            raise AssertionError(msg)
         except ValueError as e:
             assert "Path must start with" in str(e)
 
@@ -163,7 +171,8 @@ class TestFileOperations:
 
         try:
             middleware._handle_create(args, state, "test_id")
-            assert False, "Should have raised ValueError"
+            msg = "Should have raised ValueError"
+            raise AssertionError(msg)
         except ValueError as e:
             assert "/memories" in str(e)
 

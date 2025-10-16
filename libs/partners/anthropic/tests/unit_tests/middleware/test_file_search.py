@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
 from langchain_anthropic.middleware.anthropic_tools import AnthropicToolsState
 from langchain_anthropic.middleware.file_search import (
     FilesystemFileSearchMiddleware,
     StateFileSearchMiddleware,
 )
-from langchain_core.messages import ToolMessage
 
 
 class TestSearchMiddlewareInitialization:
@@ -115,7 +115,9 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="**/*.py", path="/src", state=state)
+        result = middleware.glob_search.func(
+            pattern="**/*.py", path="/src", state=state
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -220,7 +222,9 @@ class TestGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"def", include="*.{py", state=state)
+        result = middleware.grep_search.func(
+            pattern=r"def", include="*.{py", state=state
+        )
 
         assert result == "Invalid include pattern"
 
@@ -233,7 +237,9 @@ class TestFilesystemGrepSearch:
 
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
-        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+        middleware = FilesystemFileSearchMiddleware(
+            root_path=str(tmp_path), use_ripgrep=False
+        )
 
         result = middleware.grep_search.func(pattern="print", include="*.{py")
 
@@ -246,7 +252,9 @@ class TestFilesystemGrepSearch:
 
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
-        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=True)
+        middleware = FilesystemFileSearchMiddleware(
+            root_path=str(tmp_path), use_ripgrep=True
+        )
 
         captured: dict[str, list[str]] = {}
 
@@ -258,7 +266,9 @@ class TestFilesystemGrepSearch:
             captured["cmd"] = cmd
             return DummyResult()
 
-        monkeypatch.setattr("langchain_anthropic.middleware.file_search.subprocess.run", fake_run)
+        monkeypatch.setattr(
+            "langchain_anthropic.middleware.file_search.subprocess.run", fake_run
+        )
 
         middleware._ripgrep_search("--pattern", "/", None)
 
@@ -314,7 +324,9 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"TODO", output_mode="count", state=state)
+        result = middleware.grep_search.func(
+            pattern=r"TODO", output_mode="count", state=state
+        )
 
         assert isinstance(result, str)
         lines = result.split("\n")
@@ -341,7 +353,9 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern="import", include="*.py", state=state)
+        result = middleware.grep_search.func(
+            pattern="import", include="*.py", state=state
+        )
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -372,7 +386,9 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern="const", include="*.{ts,tsx}", state=state)
+        result = middleware.grep_search.func(
+            pattern="const", include="*.{ts,tsx}", state=state
+        )
 
         assert isinstance(result, str)
         assert "/src/main.ts" in result
