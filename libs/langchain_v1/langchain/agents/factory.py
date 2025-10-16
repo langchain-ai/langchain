@@ -13,7 +13,6 @@ from typing import (
     get_type_hints,
 )
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
@@ -50,6 +49,7 @@ from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
+    from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph

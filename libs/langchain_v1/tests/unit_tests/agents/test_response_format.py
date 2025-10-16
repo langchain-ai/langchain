@@ -619,7 +619,9 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherBaseModel](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC, model_name="gpt-4.1"
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="gpt-4.1",
         )
 
         agent = create_agent(
@@ -637,7 +639,9 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherDataclass](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS, model_name="gpt-4.1"
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_DATACLASS,
+            model_name="gpt-4.1",
         )
 
         agent = create_agent(

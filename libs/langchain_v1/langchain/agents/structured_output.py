@@ -23,7 +23,6 @@ from typing_extensions import Self, is_typeddict
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.messages import AIMessage
 
 # Supported schema types: Pydantic models, dataclasses, TypedDict, JSON schema dicts
@@ -41,12 +40,7 @@ def _supports_provider_strategy(model: str | Any) -> bool:
     Returns:
         `True` if the model supports provider-specific structured output, `False` otherwise.
     """
-    model_name: str | None = None
-    if isinstance(model, str):
-        model_name = model
-    else:
-        # Try to get model_name attribute from model instance
-        model_name = getattr(model, "model_name", None)
+    model_name: str | None = model if isinstance(model, str) else getattr(model, "model_name", None)
 
     return (
         "grok" in model_name.lower()
