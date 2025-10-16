@@ -2757,3 +2757,18 @@ def test_tool_args_schema_with_annotated_type() -> None:
             "type": "array",
         }
     }
+
+
+def test_child_tool_does_not_inherit_docstring() -> None:
+    """Test that a tool subclass does not inherit its parent's docstring."""
+
+    class MyTool(BaseModel):
+        """Parent Tool."""
+
+        foo: str
+
+    @tool
+    class ChildTool(MyTool):
+        bar: str
+
+    assert ChildTool.description == ""  # type: ignore[attr-defined]

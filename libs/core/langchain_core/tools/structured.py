@@ -129,10 +129,10 @@ class StructuredTool(BaseTool):
         coroutine: Callable[..., Awaitable[Any]] | None = None,
         name: str | None = None,
         description: str | None = None,
-        return_direct: bool = False,  # noqa: FBT001,FBT002
-        args_schema: ArgsSchema | None = None,
-        infer_schema: bool = True,  # noqa: FBT001,FBT002
         *,
+        return_direct: bool = False,
+        args_schema: ArgsSchema | None = None,
+        infer_schema: bool = True,
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
         error_on_invalid_docstring: bool = False,
@@ -189,7 +189,6 @@ class StructuredTool(BaseTool):
             raise ValueError(msg)
         name = name or source_function.__name__
         if args_schema is None and infer_schema:
-            # schema name is appended within function
             args_schema = create_schema_from_function(
                 name,
                 source_function,
@@ -197,6 +196,7 @@ class StructuredTool(BaseTool):
                 error_on_invalid_docstring=error_on_invalid_docstring,
                 filter_args=_filter_schema_args(source_function),
             )
+
         description_ = description
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
@@ -213,20 +213,20 @@ class StructuredTool(BaseTool):
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:
-                msg = (
-                    "Invalid args_schema: expected BaseModel or dict, "
-                    f"got {args_schema}"
-                )
+                msg = f"""Invalid args_schema: expected BaseModel or
+                    dict, got {args_schema}"""
                 raise TypeError(msg)
+
         if description_ is None:
-            msg = "Function must have a docstring if description not provided."
-            raise ValueError(msg)
+            if is_basemodel_subclass(source_function):
+                description_ = ""
+            else:
+                msg = "Function must have a docstring if description not provided."
+                raise ValueError(msg)
+
         if description is None:
-            # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
 
-        # Description example:
-        # search_api(query: str) - Searches the API for the query.
         description_ = f"{description_.strip()}"
         return cls(
             name=name,

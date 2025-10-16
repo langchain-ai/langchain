@@ -189,25 +189,23 @@ def _infer_arg_descriptions(
     *,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
-) -> tuple[str, dict]:
-    """Infer argument descriptions from function docstring and annotations.
-
-    Args:
-        fn: The function to infer descriptions from.
-        parse_docstring: Whether to parse the docstring for descriptions.
-        error_on_invalid_docstring: Whether to raise error on invalid docstring.
-
-    Returns:
-        A tuple containing the function description and argument descriptions.
-    """
+) -> tuple[str | None, dict]:
+    """Infer argument descriptions from function docstring and annotations."""
     annotations = typing.get_type_hints(fn, include_extras=True)
     if parse_docstring:
         description, arg_descriptions = _parse_python_function_docstring(
             fn, annotations, error_on_invalid_docstring=error_on_invalid_docstring
         )
     else:
-        description = inspect.getdoc(fn) or ""
+        description = inspect.getdoc(fn)
         arg_descriptions = {}
+
+        if inspect.isclass(fn) and description:
+            for parent in fn.__bases__:
+                if inspect.getdoc(parent) == description:
+                    description = None
+                    break
+
     if parse_docstring:
         _validate_docstring_args_against_annotations(arg_descriptions, annotations)
     for arg, arg_type in annotations.items():
