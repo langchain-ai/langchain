@@ -9,7 +9,7 @@ from langchain_anthropic import ChatAnthropic
 
 
 class TestAnthropicStandard(ChatModelUnitTests):
-    """Use the standard ChatModel unit tests against the ChatAnthropic class."""
+    """Use the standard chat model unit tests against the `ChatAnthropic` class."""
 
     @property
     def chat_model_class(self) -> type[BaseChatModel]:

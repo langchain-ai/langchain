@@ -148,27 +148,26 @@ class UsageMetadata(TypedDict):
 class AIMessage(BaseMessage):
     """Message from an AI.
 
-    AIMessage is returned from a chat model as a response to a prompt.
+    An `AIMessage` is returned from a chat model as a response to a prompt.
 
     This message represents the output of the model and consists of both
-    the raw output as returned by the model together standardized fields
+    the raw output as returned by the model and standardized fields
     (e.g., tool calls, usage metadata) added by the LangChain framework.
 
     """
 
     tool_calls: list[ToolCall] = []
-    """If provided, tool calls associated with the message."""
+    """If present, tool calls associated with the message."""
     invalid_tool_calls: list[InvalidToolCall] = []
-    """If provided, tool calls with parsing errors associated with the message."""
+    """If present, tool calls with parsing errors associated with the message."""
     usage_metadata: UsageMetadata | None = None
-    """If provided, usage metadata for a message, such as token counts.
+    """If present, usage metadata for a message, such as token counts.
 
     This is a standard representation of token usage that is consistent across models.
-
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization). Defaults to "ai"."""
+    """The type of the message (used for deserialization)."""
 
     @overload
     def __init__(
@@ -191,7 +190,7 @@ class AIMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `AIMessage`.
+        """Initialize an `AIMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 
@@ -217,7 +216,11 @@ class AIMessage(BaseMessage):
 
     @property
     def lc_attributes(self) -> dict:
-        """Attrs to be serialized even if they are derived from other init args."""
+        """Attributes to be serialized.
+
+        Includes all attributes, even if they are derived from other initialization
+        arguments.
+        """
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -225,7 +228,7 @@ class AIMessage(BaseMessage):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return content blocks of the message.
+        """Return standard, typed `ContentBlock` dicts from the message.
 
         If the message has a known model provider, use the provider-specific translator
         first before falling back to best-effort parsing. For details, see the property
@@ -331,11 +334,10 @@ class AIMessage(BaseMessage):
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
-        """Return a pretty representation of the message.
+        """Return a pretty representation of the message for display.
 
         Args:
             html: Whether to return an HTML-formatted string.
-                Defaults to `False`.
 
         Returns:
             A pretty representation of the message.
@@ -372,23 +374,19 @@ class AIMessage(BaseMessage):
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
-    """Message chunk from an AI."""
+    """Message chunk from an AI (yielded when streaming)."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for deserialization).
-
-    Defaults to `AIMessageChunk`.
-
-    """
+    """The type of the message (used for deserialization)."""
 
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     chunk_position: Literal["last"] | None = None
-    """Optional span represented by an aggregated AIMessageChunk.
+    """Optional span represented by an aggregated `AIMessageChunk`.
 
     If a chunk with `chunk_position="last"` is aggregated into a stream,
     `tool_call_chunks` in message content will be parsed into `tool_calls`.
@@ -396,7 +394,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @property
     def lc_attributes(self) -> dict:
-        """Attrs to be serialized even if they are derived from other init args."""
+        """Attributes to be serialized, even if they are derived from other initialization args."""  # noqa: E501
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -404,7 +402,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return content blocks of the message."""
+        """Return standard, typed `ContentBlock` dicts from the message."""
         if self.response_metadata.get("output_version") == "v1":
             return cast("list[types.ContentBlock]", self.content)
 
@@ -553,7 +551,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
-        """Parse server_tool_call_chunks."""
+        """Parse `server_tool_call_chunks`."""
         if (
             self.chunk_position == "last"
             and self.response_metadata.get("output_version") == "v1"

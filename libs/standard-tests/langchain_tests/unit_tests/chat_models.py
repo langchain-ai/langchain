@@ -407,6 +407,7 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`supports_image_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested using the LangChain
@@ -441,7 +442,9 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`supports_image_urls`"
 
         Boolean property indicating whether the chat model supports image inputs from
-        URLs. Defaults to `False`.
+        URLs.
+
+        Defaults to `False`.
 
         If set to `True`, the chat model will be tested using content blocks of the
         form.
@@ -465,6 +468,7 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested using the LangChain
@@ -490,6 +494,7 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`supports_audio_inputs`"
 
         Boolean property indicating whether the chat model supports audio inputs.
+
         Defaults to `False`.
 
         If set to `True`, the chat model will be tested using the LangChain
@@ -514,12 +519,15 @@ class ChatModelUnitTests(ChatModelTests):
     ??? note "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
+
         Defaults to `False`. No current tests are written for this feature.
 
     ??? note "`returns_usage_metadata`"
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses. Defaults to `True`.
+        on invoke and streaming responses.
+
+        Defaults to `True`.
 
         `usage_metadata` is an optional dict attribute on `AIMessage`s that track
         input and output tokens.

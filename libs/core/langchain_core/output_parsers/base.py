@@ -31,13 +31,13 @@ class BaseLLMOutputParser(ABC, Generic[T]):
 
     @abstractmethod
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
-        """Parse a list of candidate model Generations into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
+            result: A list of `Generation` to be parsed. The `Generation` objects are
+                assumed to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -46,17 +46,17 @@ class BaseLLMOutputParser(ABC, Generic[T]):
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model Generations into a specific format.
+        """Async parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
+            result: A list of `Generation` to be parsed. The Generations are assumed
                 to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
-        """
+        """  # noqa: E501
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
 
@@ -172,7 +172,7 @@ class BaseOutputParser(
         This property is inferred from the first type argument of the class.
 
         Raises:
-            TypeError: If the class doesn't have an inferable OutputType.
+            TypeError: If the class doesn't have an inferable `OutputType`.
         """
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
@@ -234,16 +234,16 @@ class BaseOutputParser(
 
     @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
-        """Parse a list of candidate model Generations into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
-        The return value is parsed from only the first Generation in the result, which
-            is assumed to be the highest-likelihood Generation.
+        The return value is parsed from only the first `Generation` in the result, which
+            is assumed to be the highest-likelihood `Generation`.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
+            result: A list of `Generation` to be parsed. The `Generation` objects are
+                assumed to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -264,20 +264,20 @@ class BaseOutputParser(
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model Generations into a specific format.
+        """Async parse a list of candidate model `Generation` objects into a specific format.
 
-        The return value is parsed from only the first Generation in the result, which
-            is assumed to be the highest-likelihood Generation.
+        The return value is parsed from only the first `Generation` in the result, which
+            is assumed to be the highest-likelihood `Generation`.
 
         Args:
-            result: A list of Generations to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
+            result: A list of `Generation` to be parsed. The `Generation` objects are
+                assumed to be different candidate outputs for a single model input.
             partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results. Default is False.
+                for parsers that can parse partial results.
 
         Returns:
             Structured output.
-        """
+        """  # noqa: E501
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:
@@ -299,13 +299,13 @@ class BaseOutputParser(
     ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
 
-        The prompt is largely provided in the event the OutputParser wants
+        The prompt is largely provided in the event the `OutputParser` wants
         to retry or fix the output in some way, and needs information from
         the prompt to do so.
 
         Args:
             completion: String output of a language model.
-            prompt: Input PromptValue.
+            prompt: Input `PromptValue`.
 
         Returns:
             Structured output.

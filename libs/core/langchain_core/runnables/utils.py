@@ -136,7 +136,7 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task. Defaults to `False`.
+        create_task: Whether to create a task.
 
     Returns:
         The coroutine with the context.
@@ -558,7 +558,7 @@ class ConfigurableField(NamedTuple):
     annotation: Any | None = None
     """The annotation of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -579,7 +579,7 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: str | None = None
     """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -600,7 +600,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: str | None = None
     """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -626,7 +626,7 @@ class ConfigurableFieldSpec(NamedTuple):
     default: Any = None
     """The default value for the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
     dependencies: list[str] | None = None
     """The dependencies of the field. """
 

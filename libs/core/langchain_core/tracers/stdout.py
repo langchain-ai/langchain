@@ -49,8 +49,7 @@ class FunctionCallbackHandler(BaseTracer):
     """Tracer that calls a function with a single str parameter."""
 
     name: str = "function_callback_handler"
-    """The name of the tracer. This is used to identify the tracer in the logs.
-    Default is "function_callback_handler"."""
+    """The name of the tracer. This is used to identify the tracer in the logs."""
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
         """Create a FunctionCallbackHandler.

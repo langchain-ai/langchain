@@ -74,8 +74,8 @@ def create_base_retry_decorator(
 
     Args:
         error_types: List of error types to retry on.
-        max_retries: Number of retries. Default is 1.
-        run_manager: Callback manager for the run. Default is None.
+        max_retries: Number of retries.
+        run_manager: Callback manager for the run.
 
     Returns:
         A retry decorator.
@@ -153,7 +153,7 @@ def get_prompts(
     Args:
         params: Dictionary of parameters.
         prompts: List of prompts.
-        cache: Cache object. Default is None.
+        cache: Cache object.
 
     Returns:
         A tuple of existing prompts, llm_string, missing prompt indexes,
@@ -189,7 +189,7 @@ async def aget_prompts(
     Args:
         params: Dictionary of parameters.
         prompts: List of prompts.
-        cache: Cache object. Default is None.
+        cache: Cache object.
 
     Returns:
         A tuple of existing prompts, llm_string, missing prompt indexes,
