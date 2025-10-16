@@ -10,20 +10,16 @@ MODEL_NAME = "grok-4-fast-reasoning"
 
 
 def test_reasoning() -> None:
-    """Test reasoning features."""
+    """Test reasoning features.
+
+    Note: `grok-4` does not return `reasoning_content`, but may optionally return
+    encrypted reasoning content if `use_encrypted_content` is set to True.
+    """
     # Test reasoning effort
     chat_model = ChatXAI(
         # grok-4 doesn't support reasoning_effort
         model="grok-3-mini",
         reasoning_effort="low",
-    )
-    response = chat_model.invoke("What is 3^3?")
-    assert response.content
-    assert response.additional_kwargs["reasoning_content"]
-
-    # Test default reasoning
-    chat_model = ChatXAI(
-        model=MODEL_NAME,
     )
     response = chat_model.invoke("What is 3^3?")
     assert response.content
