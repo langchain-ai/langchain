@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
+import shutil
+
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -714,7 +716,6 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 if request.system_prompt
                 else self.system_prompt
             )
-
         return handler(request)
 
     async def awrap_model_call(
@@ -1031,8 +1032,6 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
     def _handle_delete(self, args: dict, tool_call_id: str | None) -> Command:
         """Handle delete command."""
-        import shutil
-
         path = args["path"]
         full_path = self._validate_and_resolve_path(path)
 
