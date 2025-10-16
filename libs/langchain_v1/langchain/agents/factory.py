@@ -1209,6 +1209,12 @@ def create_agent(  # noqa: PLR0915
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
+        # Only include exit_node in destinations if any tool has return_direct=True
+        # or if there are structured output tools
+        tools_to_model_destinations = [loop_entry_node]
+        if any(tool.return_direct for tool in tool_node.tools_by_name.values()) or structured_output_tools:
+            tools_to_model_destinations.append(exit_node)
+
         graph.add_conditional_edges(
             "tools",
             _make_tools_to_model_edge(
@@ -1217,7 +1223,7 @@ def create_agent(  # noqa: PLR0915
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
             ),
-            [loop_entry_node, exit_node],
+            tools_to_model_destinations,
         )
 
         # base destinations are tools and exit_node
@@ -1482,11 +1488,15 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        if all(
-            tool_node.tools_by_name[c["name"]].return_direct
+        # Check that at least one tool has return_direct=True before evaluating all()
+        tools_with_return_direct = [
+            c
             for c in last_ai_message.tool_calls
-            if c["name"] in tool_node.tools_by_name
-        ):
+            if c["name"] in tool_node.tools_by_name and tool_node.tools_by_name[c["name"]].return_direct
+        ]
+        if tools_with_return_direct and len(tools_with_return_direct) == len([
+            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        ]):
             return end_destination
 
         # 2. Exit condition: A structured output tool was executed

@@ -20,7 +20,6 @@
   	__start__ --> NoopZero\2ebefore_agent;
   	model -.-> NoopTwo\2eafter_agent;
   	model -.-> tools;
-  	tools -.-> NoopTwo\2eafter_agent;
   	tools -.-> model;
   	NoopOne\2eafter_agent --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
@@ -343,139 +342,6 @@
   	__start__ --> NoopSeven\2ebefore_model;
   	model --> NoopEight\2eafter_model;
   	tools -.-> NoopSeven\2ebefore_model;
-  	tools -.-> __end__;
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
-# name: test_create_agent_jump[postgres]
-  '''
-  ---
-  config:
-    flowchart:
-      curve: linear
-  ---
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	model(model)
-  	tools(tools)
-  	NoopSeven\2ebefore_model(NoopSeven.before_model)
-  	NoopSeven\2eafter_model(NoopSeven.after_model)
-  	NoopEight\2ebefore_model(NoopEight.before_model)
-  	NoopEight\2eafter_model(NoopEight.after_model)
-  	__end__([<p>__end__</p>]):::last
-  	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model;
-  	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
-  	NoopSeven\2eafter_model -.-> __end__;
-  	NoopSeven\2eafter_model -.-> tools;
-  	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
-  	__start__ --> NoopSeven\2ebefore_model;
-  	model --> NoopEight\2eafter_model;
-  	tools -.-> NoopSeven\2ebefore_model;
-  	tools -.-> __end__;
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
-# name: test_create_agent_jump[postgres_pipe]
-  '''
-  ---
-  config:
-    flowchart:
-      curve: linear
-  ---
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	model(model)
-  	tools(tools)
-  	NoopSeven\2ebefore_model(NoopSeven.before_model)
-  	NoopSeven\2eafter_model(NoopSeven.after_model)
-  	NoopEight\2ebefore_model(NoopEight.before_model)
-  	NoopEight\2eafter_model(NoopEight.after_model)
-  	__end__([<p>__end__</p>]):::last
-  	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model;
-  	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
-  	NoopSeven\2eafter_model -.-> __end__;
-  	NoopSeven\2eafter_model -.-> tools;
-  	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
-  	__start__ --> NoopSeven\2ebefore_model;
-  	model --> NoopEight\2eafter_model;
-  	tools -.-> NoopSeven\2ebefore_model;
-  	tools -.-> __end__;
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
-# name: test_create_agent_jump[postgres_pool]
-  '''
-  ---
-  config:
-    flowchart:
-      curve: linear
-  ---
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	model(model)
-  	tools(tools)
-  	NoopSeven\2ebefore_model(NoopSeven.before_model)
-  	NoopSeven\2eafter_model(NoopSeven.after_model)
-  	NoopEight\2ebefore_model(NoopEight.before_model)
-  	NoopEight\2eafter_model(NoopEight.after_model)
-  	__end__([<p>__end__</p>]):::last
-  	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model;
-  	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
-  	NoopSeven\2eafter_model -.-> __end__;
-  	NoopSeven\2eafter_model -.-> tools;
-  	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
-  	__start__ --> NoopSeven\2ebefore_model;
-  	model --> NoopEight\2eafter_model;
-  	tools -.-> NoopSeven\2ebefore_model;
-  	tools -.-> __end__;
-  	classDef default fill:#f2f0ff,line-height:1.2
-  	classDef first fill-opacity:0
-  	classDef last fill:#bfb6fc
-  
-  '''
-# ---
-# name: test_create_agent_jump[sqlite]
-  '''
-  ---
-  config:
-    flowchart:
-      curve: linear
-  ---
-  graph TD;
-  	__start__([<p>__start__</p>]):::first
-  	model(model)
-  	tools(tools)
-  	NoopSeven\2ebefore_model(NoopSeven.before_model)
-  	NoopSeven\2eafter_model(NoopSeven.after_model)
-  	NoopEight\2ebefore_model(NoopEight.before_model)
-  	NoopEight\2eafter_model(NoopEight.after_model)
-  	__end__([<p>__end__</p>]):::last
-  	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model -.-> __end__;
-  	NoopEight\2ebefore_model -.-> model;
-  	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
-  	NoopSeven\2eafter_model -.-> __end__;
-  	NoopSeven\2eafter_model -.-> tools;
-  	NoopSeven\2ebefore_model --> NoopEight\2ebefore_model;
-  	__start__ --> NoopSeven\2ebefore_model;
-  	model --> NoopEight\2eafter_model;
-  	tools -.-> NoopSeven\2ebefore_model;
-  	tools -.-> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -497,7 +363,6 @@
   	__start__ --> model;
   	model -.-> __end__;
   	model -.-> tools;
-  	tools -.-> __end__;
   	tools -.-> model;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
