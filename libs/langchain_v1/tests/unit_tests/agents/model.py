@@ -11,6 +11,7 @@ from typing import (
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
+from langchain_core.language_models.base import LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -29,6 +30,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
+    ls_provider: str = "openai"
 
     def _generate(
         self,
@@ -72,6 +74,10 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     @property
     def _llm_type(self) -> str:
         return "fake-tool-call-model"
+
+    def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
+        """Get LangSmith parameters for this model."""
+        return LangSmithParams(ls_provider=self.ls_provider, ls_model_type="chat")
 
     def bind_tools(
         self,

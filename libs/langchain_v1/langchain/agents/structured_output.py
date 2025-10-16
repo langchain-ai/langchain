@@ -238,7 +238,56 @@ class ToolStrategy(Generic[SchemaT]):
 
 @dataclass(init=False)
 class ProviderStrategy(Generic[SchemaT]):
-    """Use the model provider's native structured output method."""
+    """Use the model provider's native structured output method.
+
+    `ProviderStrategy` uses provider-specific structured output APIs that enforce
+    JSON schema validation at the model level. This provides stronger guarantees
+    than tool-based approaches but is only supported by certain providers.
+
+    Supported Providers:
+        - **OpenAI**: All models that support structured outputs (requires `strict=True`)
+        - **X.AI (Grok)**: All models that support structured outputs (requires `strict=True`)
+
+    Important:
+        When using `ProviderStrategy`, the agent will validate at runtime that the
+        model provider is supported. If you're using an unsupported provider, consider:
+
+        - Using a **raw schema** (recommended): Automatically selects the best strategy
+          based on model capabilities
+        - Using **`ToolStrategy`**: Explicitly use tool-based structured output for any
+          provider
+
+    Example:
+        ```python
+        from langchain.agents import create_agent
+        from langchain.agents.structured_output import ProviderStrategy
+        from pydantic import BaseModel
+
+
+        class WeatherResponse(BaseModel):
+            temperature: float
+            condition: str
+
+
+        # Explicitly use provider strategy (only for OpenAI/Grok)
+        agent = create_agent(
+            model="openai:gpt-4", tools=[], response_format=ProviderStrategy(WeatherResponse)
+        )
+
+        # Or use raw schema for automatic strategy selection (recommended)
+        # This will auto-select ProviderStrategy for OpenAI/Grok, ToolStrategy for others
+        agent = create_agent(
+            model="openai:gpt-4",
+            tools=[],
+            response_format=WeatherResponse,  # Auto-selects best strategy
+        )
+        ```
+
+    Note:
+        `ProviderStrategy` can be used with middleware that changes the model at runtime.
+        Validation occurs after the model is resolved, allowing dynamic model selection
+        while ensuring provider compatibility.
+    """
 
     schema: type[SchemaT]
     """Schema for native mode."""
@@ -266,7 +315,8 @@ class ProviderStrategy(Generic[SchemaT]):
         # Provider-specific structured output:
         # - OpenAI: https://platform.openai.com/docs/guides/structured-outputs
         #   - Uses strict=True for schema validation
-        # - X.AI (Grok): Similar to OpenAI format but doesn't support strict parameter
+        # - X.AI (Grok): https://docs.x.ai/docs/guides/structured-outputs
+        #   - Uses strict=True for schema validation (required)
         response_format = {
             "type": "json_schema",
             "json_schema": {
@@ -275,14 +325,14 @@ class ProviderStrategy(Generic[SchemaT]):
             },
         }
 
-        # Only set strict=True for OpenAI models
-        # Other providers (like X.AI/Grok) don't support/require the strict parameter
+        # Set strict=True for OpenAI and X.AI (Grok) models
+        # Both providers require strict=True for structured output
         kwargs: dict[str, Any] = {"response_format": response_format}
 
         if model is not None and hasattr(model, "_get_ls_params"):
             ls_params = model._get_ls_params()
             provider = ls_params.get("ls_provider", "").lower()
-            if provider == "openai":
+            if provider in ("openai", "xai"):
                 kwargs["strict"] = True
 
         return kwargs

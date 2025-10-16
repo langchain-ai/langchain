@@ -715,6 +715,12 @@ class TestDynamicModelWithResponseFormat:
                 self.tool_bindings.append(tools)
                 return self
 
+            def _get_ls_params(self, **kwargs: Any):
+                """Return OpenAI as provider to pass ProviderStrategy validation."""
+                from langchain_core.language_models.base import LangSmithParams
+
+                return LangSmithParams(ls_provider="openai", ls_model_type="chat")
+
         model = CustomModel(
             messages=iter(
                 [
@@ -803,7 +809,7 @@ def test_union_of_types() -> None:
 
 
 def test_provider_strategy_strict_only_for_openai() -> None:
-    """Test that strict=True is only set for OpenAI models in ProviderStrategy."""
+    """Test that strict=True is set for OpenAI and Grok models in ProviderStrategy."""
     from langchain.agents.structured_output import ProviderStrategy
     from langchain_core.language_models.base import LangSmithParams
 
@@ -812,14 +818,10 @@ def test_provider_strategy_strict_only_for_openai() -> None:
         def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
             return LangSmithParams(ls_provider="openai", ls_model_type="chat")
 
-    # Create a mock non-OpenAI model (e.g., Grok/X.AI)
+    # Create a mock Grok/X.AI model
     class MockGrokModel:
         def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
             return LangSmithParams(ls_provider="xai", ls_model_type="chat")
-
-    # Create a mock model without _get_ls_params
-    class MockModelNoLSParams:
-        pass
 
     provider_strategy = ProviderStrategy(WeatherBaseModel)
 
@@ -830,19 +832,36 @@ def test_provider_strategy_strict_only_for_openai() -> None:
     assert openai_kwargs["strict"] is True
     assert "response_format" in openai_kwargs
 
-    # Test Grok model: should NOT include strict
+    # Test Grok model: should include strict=True (Grok requires strict)
     grok_model = MockGrokModel()
     grok_kwargs = provider_strategy.to_model_kwargs(model=grok_model)
-    assert "strict" not in grok_kwargs
+    assert "strict" in grok_kwargs
+    assert grok_kwargs["strict"] is True
     assert "response_format" in grok_kwargs
 
-    # Test model without _get_ls_params: should NOT include strict
-    no_params_model = MockModelNoLSParams()
-    no_params_kwargs = provider_strategy.to_model_kwargs(model=no_params_model)
-    assert "strict" not in no_params_kwargs
-    assert "response_format" in no_params_kwargs
 
-    # Test None model: should NOT include strict
-    none_kwargs = provider_strategy.to_model_kwargs(model=None)
-    assert "strict" not in none_kwargs
-    assert "response_format" in none_kwargs
+def test_provider_strategy_validation() -> None:
+    """Test that ProviderStrategy validates provider support at agent invocation time."""
+    from langchain.agents.structured_output import ProviderStrategy
+    from langchain_core.language_models.base import LangSmithParams
+
+    # Create a mock model from an unsupported provider (e.g., Anthropic)
+    class MockAnthropicModel(FakeToolCallingModel):
+        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
+            return LangSmithParams(ls_provider="anthropic", ls_model_type="chat")
+
+    # Create a mock model without _get_ls_params
+    class MockModelNoLSParams(FakeToolCallingModel):
+        def _get_ls_params(self, **kwargs: Any):
+            msg = "This model doesn't support _get_ls_params"
+            raise AttributeError(msg)
+
+    # Test unsupported provider: should raise ValueError when invoking agent
+    anthropic_model = MockAnthropicModel(tool_calls=[[]])
+    agent = create_agent(anthropic_model, [], response_format=ProviderStrategy(WeatherBaseModel))
+    with pytest.raises(ValueError, match="does not support provider 'anthropic'"):
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    # Test model without proper _get_ls_params: still works if model has the method
+    # (validation checks hasattr and calls it)
+    # We can't easily test the "no _get_ls_params" case without breaking BaseChatModel

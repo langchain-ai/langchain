@@ -944,6 +944,19 @@ def create_agent(  # noqa: PLR0915
             # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
 
+        # Validate ProviderStrategy is used with supported model
+        if isinstance(
+            effective_response_format, ProviderStrategy
+        ) and not _supports_provider_strategy(request.model):
+            msg = (
+                "ProviderStrategy does not support this model. "
+                "Supported providers: OpenAI (gpt-5, gpt-4.1, gpt-oss, o3-pro, o3-mini), "
+                "X.AI (Grok). "
+                "Consider using a raw schema (which auto-selects the best strategy) or "
+                "explicitly use ToolStrategy for unsupported providers."
+            )
+            raise ValueError(msg)
+
         # Build final tools list including structured output tools
         # request.tools now only contains BaseTool instances (converted from callables)
         # and dicts (built-ins)
