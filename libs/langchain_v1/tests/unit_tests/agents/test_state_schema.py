@@ -26,27 +26,11 @@ def simple_tool(x: int) -> str:
     return f"Result: {x}"
 
 
-@pytest.mark.parametrize(
-    ("state_fields", "input_values", "expected_in_output"),
-    [
-        # Single custom field
-        ({"custom_field": str}, {"custom_field": "test_value"}, {"custom_field": "test_value"}),
-        # Multiple custom fields
-        (
-            {"user_id": str, "session_id": str, "context": str},
-            {"user_id": "user_123", "session_id": "session_456", "context": "test_ctx"},
-            {"user_id": "user_123", "session_id": "session_456", "context": "test_ctx"},
-        ),
-    ],
-)
-def test_state_schema_field_preservation(
-    state_fields: dict[str, type],
-    input_values: dict[str, Any],
-    expected_in_output: dict[str, Any],
-) -> None:
-    """Test that custom state fields are preserved through agent execution."""
-    # Create dynamic state class with specified fields
-    CustomState = type("CustomState", (AgentState,), {"__annotations__": state_fields})
+def test_state_schema_single_custom_field() -> None:
+    """Test that a single custom state field is preserved through agent execution."""
+
+    class CustomState(AgentState):
+        custom_field: str
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -56,11 +40,40 @@ def test_state_schema_field_preservation(
         state_schema=CustomState,
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test")], **input_values})
+    result = agent.invoke({"messages": [HumanMessage("Test")], "custom_field": "test_value"})
 
-    # Verify all expected fields are preserved and messages were added
-    for key, value in expected_in_output.items():
-        assert result[key] == value
+    assert result["custom_field"] == "test_value"
+    assert len(result["messages"]) == 4
+
+
+def test_state_schema_multiple_custom_fields() -> None:
+    """Test that multiple custom state fields are preserved through agent execution."""
+
+    class CustomState(AgentState):
+        user_id: str
+        session_id: str
+        context: str
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[{"args": {"x": 1}, "id": "call_1", "name": "simple_tool"}], []]
+        ),
+        tools=[simple_tool],
+        state_schema=CustomState,
+    )
+
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("Test")],
+            "user_id": "user_123",
+            "session_id": "session_456",
+            "context": "test_ctx",
+        }
+    )
+
+    assert result["user_id"] == "user_123"
+    assert result["session_id"] == "session_456"
+    assert result["context"] == "test_ctx"
     assert len(result["messages"]) == 4
 
 
