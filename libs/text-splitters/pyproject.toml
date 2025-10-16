@@ -1,34 +1,43 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.75,<2.0.0",
+    "langchain-core>=1.0.0a7,<2.0.0",
 ]
 name = "langchain-text-splitters"
-version = "0.3.11"
+version = "1.0.0a1"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+homepage = "https://docs.langchain.com/"
+repository = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-text-splitters%22"
+twitter = "https://x.com/LangChainAI"
+slack = "https://www.langchain.com/join-community"
+reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.13.1,<0.14.0", "langchain-core"]
+lint = [
+    "ruff>=0.13.1,<0.14.0",
+    "langchain-core"
+]
 typing = [
     "mypy>=1.18.1,<1.19.0",
     "lxml-stubs>=0.5.1,<1.0.0",
     "types-requests>=2.31.0.20240218,<3.0.0.0",
-    "tiktoken>=0.11.0,<1.0.0",
+    "tiktoken>=0.8.0,<1.0.0",
     "beautifulsoup4>=4.13.5,<5.0.0",
 ]
-dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "langchain-core"
+]
 test = [
     "pytest>=8.0.0,<9.0.0",
     "freezegun>=1.2.2,<2.0.0",
@@ -65,9 +74,6 @@ warn_unreachable = true
 module = ["konlpy", "nltk",]
 ignore_missing_imports = true
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.format]
 docstring-code-format = true
 
@@ -76,6 +82,7 @@ select = [ "ALL",]
 ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -96,7 +103,6 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

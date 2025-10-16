@@ -16,6 +16,7 @@ from langchain_core.messages.utils import count_tokens_approximately, trim_messa
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
+from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel, init_chat_model
@@ -80,7 +81,7 @@ class SummarizationMiddleware(AgentMiddleware):
         Args:
             model: The language model to use for generating summaries.
             max_tokens_before_summary: Token threshold to trigger summarization.
-                If None, summarization is disabled.
+                If `None`, summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
@@ -98,7 +99,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
 
-    def before_model(self, state: AgentState) -> dict[str, Any] | None:  # type: ignore[override]
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)

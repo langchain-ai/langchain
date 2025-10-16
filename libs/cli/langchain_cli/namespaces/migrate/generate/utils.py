@@ -65,7 +65,7 @@ def is_subclass(class_obj: type, classes_: list[type]) -> bool:
         classes_: A list of classes to check against.
 
     Returns:
-        True if `class_obj` is a subclass of any class in `classes_`, False otherwise.
+        True if `class_obj` is a subclass of any class in `classes_`, `False` otherwise.
     """
     return any(
         issubclass(class_obj, kls)

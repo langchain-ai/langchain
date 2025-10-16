@@ -3,12 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    Union,
-)
+from typing import Any, Literal
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -20,47 +15,47 @@ from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
 from typing_extensions import Self
 
-from ._utils import validate_model
+from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 
 class OllamaLLM(BaseLLM):
     """Ollama large language models.
 
     Setup:
-        Install ``langchain-ollama`` and install/run the Ollama server locally:
+        Install `langchain-ollama` and install/run the Ollama server locally:
 
-        .. code-block:: bash
-
-            pip install -U langchain-ollama
-            # Visit https://ollama.com/download to download and install Ollama
-            # (Linux users): start the server with ``ollama serve``
+        ```bash
+        pip install -U langchain-ollama
+        # Visit https://ollama.com/download to download and install Ollama
+        # (Linux users): start the server with `ollama serve`
+        ```
 
         Download a model to use:
 
-        .. code-block:: bash
-
-            ollama pull llama3.1
+        ```bash
+        ollama pull llama3.1
+        ```
 
     Key init args — generation params:
         model: str
-            Name of the Ollama model to use (e.g. ``'llama4'``).
-        temperature: Optional[float]
+            Name of the Ollama model to use (e.g. `'llama4'`).
+        temperature: float | None
             Sampling temperature. Higher values make output more creative.
-        num_predict: Optional[int]
+        num_predict: int | None
             Maximum number of tokens to predict.
-        top_k: Optional[int]
+        top_k: int | None
             Limits the next token selection to the K most probable tokens.
-        top_p: Optional[float]
+        top_p: float | None
             Nucleus sampling parameter. Higher values lead to more diverse text.
-        mirostat: Optional[int]
+        mirostat: int | None
             Enable Mirostat sampling for controlling perplexity.
-        seed: Optional[int]
+        seed: int | None
             Random number seed for generation reproducibility.
 
     Key init args — client params:
-        base_url: Optional[str]
+        base_url: str | None
             Base URL where Ollama server is hosted.
-        keep_alive: Optional[Union[int, str]]
+        keep_alive: int | str | None
             How long the model stays loaded into memory.
         format: Literal["", "json"]
             Specify the format of the output.
@@ -68,189 +63,204 @@ class OllamaLLM(BaseLLM):
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_ollama import OllamaLLM
 
-            from langchain_ollama import OllamaLLM
-
-            llm = OllamaLLM(
-                model="llama3.1",
-                temperature=0.7,
-                num_predict=256,
-                # base_url="http://localhost:11434",
-                # other params...
-            )
+        model = OllamaLLM(
+            model="llama3.1",
+            temperature=0.7,
+            num_predict=256,
+            # base_url="http://localhost:11434",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            input_text = "The meaning of life is "
-            response = llm.invoke(input_text)
-            print(response)
-
-        .. code-block::
-
-            "a philosophical question that has been contemplated by humans for
-            centuries..."
+        ```python
+        input_text = "The meaning of life is "
+        response = model.invoke(input_text)
+        print(response)
+        ```
+        ```txt
+        "a philosophical question that has been contemplated by humans for
+        centuries..."
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(input_text):
-                print(chunk, end="")
-
-        .. code-block::
-
-            a philosophical question that has been contemplated by humans for
-            centuries...
+        ```python
+        for chunk in model.stream(input_text):
+            print(chunk, end="")
+        ```
+        ```txt
+        a philosophical question that has been contemplated by humans for
+        centuries...
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        response = await model.ainvoke(input_text)
 
-            response = await llm.ainvoke(input_text)
-
-            # stream:
-            # async for chunk in llm.astream(input_text):
-            #     print(chunk, end="")
-
+        # stream:
+        # async for chunk in model.astream(input_text):
+        #     print(chunk, end="")
+        ```
     """
 
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = None
+    reasoning: bool | None = None
     """Controls the reasoning/thinking mode for
-    `supported models <https://ollama.com/search?c=thinking>`__.
+    [supported models](https://ollama.com/search?c=thinking).
 
-    - ``True``: Enables reasoning mode. The model's reasoning process will be
-      captured and returned separately in the ``additional_kwargs`` of the
-      response message, under ``reasoning_content``. The main response
-      content will not include the reasoning tags.
-    - ``False``: Disables reasoning mode. The model will not perform any reasoning,
-      and the response will not include any reasoning content.
-    - ``None`` (Default): The model will use its default reasoning behavior. If
-      the model performs reasoning, the ``<think>`` and ``</think>`` tags will
-      be present directly within the main response content."""
+    - `True`: Enables reasoning mode. The model's reasoning process will be
+        captured and returned separately in the `additional_kwargs` of the
+        response message, under `reasoning_content`. The main response
+        content will not include the reasoning tags.
+    - `False`: Disables reasoning mode. The model will not perform any reasoning,
+        and the response will not include any reasoning content.
+    - `None` (Default): The model will use its default reasoning behavior. If
+        the model performs reasoning, the `<think>` and `</think>` tags will
+        be present directly within the main response content."""
 
     validate_model_on_init: bool = False
     """Whether to validate the model exists in ollama locally on initialization.
 
-    .. versionadded:: 0.3.4
+    !!! version-added "Added in version 0.3.4"
     """
 
-    mirostat: Optional[int] = None
+    mirostat: int | None = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+    (default: `0`, `0` = disabled, `1` = Mirostat, `2` = Mirostat 2.0)"""
 
-    mirostat_eta: Optional[float] = None
+    mirostat_eta: float | None = None
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: ``0.1``)"""
+    the algorithm more responsive. (Default: `0.1`)"""
 
-    mirostat_tau: Optional[float] = None
+    mirostat_tau: float | None = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
-    coherent text. (Default: ``5.0``)"""
+    coherent text. (Default: `5.0`)"""
 
-    num_ctx: Optional[int] = None
+    num_ctx: int | None = None
     """Sets the size of the context window used to generate the
-    next token. (Default: ``2048``)"""
+    next token. (Default: `2048`)"""
 
-    num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to ``1`` to
-    enable metal support, ``0`` to disable."""
+    num_gpu: int | None = None
+    """The number of GPUs to use. On macOS it defaults to `1` to
+    enable metal support, `0` to disable."""
 
-    num_thread: Optional[int] = None
+    num_thread: int | None = None
     """Sets the number of threads to use during computation.
     By default, Ollama will detect this for optimal performance.
     It is recommended to set this value to the number of physical
     CPU cores your system has (as opposed to the logical number of cores)."""
 
-    num_predict: Optional[int] = None
+    num_predict: int | None = None
     """Maximum number of tokens to predict when generating text.
-    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)"""
+    (Default: `128`, `-1` = infinite generation, `-2` = fill context)"""
 
-    repeat_last_n: Optional[int] = None
+    repeat_last_n: int | None = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
+    repetition. (Default: `64`, `0` = disabled, `-1` = `num_ctx`)"""
 
-    repeat_penalty: Optional[float] = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
-    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
-    will be more lenient. (Default: ``1.1``)"""
+    repeat_penalty: float | None = None
+    """Sets how strongly to penalize repetitions. A higher value (e.g., `1.5`)
+    will penalize repetitions more strongly, while a lower value (e.g., `0.9`)
+    will be more lenient. (Default: `1.1`)"""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: ``0.8``)"""
+    make the model answer more creatively. (Default: `0.8`)"""
 
-    seed: Optional[int] = None
+    seed: int | None = None
     """Sets the random number seed to use for generation. Setting this
     to a specific number will make the model generate the same text for
     the same prompt."""
 
-    stop: Optional[list[str]] = None
+    stop: list[str] | None = None
     """Sets the stop tokens to use."""
 
-    tfs_z: Optional[float] = None
+    tfs_z: float | None = None
     """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
-    impact more, while a value of 1.0 disables this setting. (default: ``1``)"""
+    tokens from the output. A higher value (e.g., `2.0`) will reduce the
+    impact more, while a value of 1.0 disables this setting. (default: `1`)"""
 
-    top_k: Optional[int] = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
-    will give more diverse answers, while a lower value (e.g. ``10``)
-    will be more conservative. (Default: ``40``)"""
+    top_k: int | None = None
+    """Reduces the probability of generating nonsense. A higher value (e.g. `100`)
+    will give more diverse answers, while a lower value (e.g. `10`)
+    will be more conservative. (Default: `40`)"""
 
-    top_p: Optional[float] = None
-    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
-    to more diverse text, while a lower value (e.g., ``0.5``) will
-    generate more focused and conservative text. (Default: ``0.9``)"""
+    top_p: float | None = None
+    """Works together with top-k. A higher value (e.g., `0.95`) will lead
+    to more diverse text, while a lower value (e.g., `0.5`) will
+    generate more focused and conservative text. (Default: `0.9`)"""
 
     format: Literal["", "json"] = ""
-    """Specify the format of the output (options: ``'json'``)"""
+    """Specify the format of the output (options: `'json'`)"""
 
-    keep_alive: Optional[Union[int, str]] = None
+    keep_alive: int | str | None = None
     """How long the model will stay loaded into memory."""
 
-    base_url: Optional[str] = None
-    """Base url the model is hosted under."""
+    base_url: str | None = None
+    """Base url the model is hosted under.
 
-    client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients.
+    If none, defaults to the Ollama client default.
+
+    Supports `userinfo` auth in the format `http://username:password@localhost:11434`.
+    Useful if your Ollama server is behind a proxy.
+
+    !!! warning
+        `userinfo` is not secure and should only be used for local testing or
+        in secure environments. Avoid using it in production or over unsecured
+        networks.
+
+    !!! note
+        If using `userinfo`, ensure that the Ollama server is configured to
+        accept and validate these credentials.
+
+    !!! note
+        `userinfo` headers are passed to both sync and async clients.
+
+    """
+
+    client_kwargs: dict | None = {}
+    """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
 
-    Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
+    Use `sync_client_kwargs` and `async_client_kwargs` to pass different arguments
     to synchronous and asynchronous clients.
-
     """
 
-    async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before passing to the HTTPX
-    AsyncClient.
+    async_client_kwargs: dict | None = {}
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#asyncclient>`__.
+    These are clients unique to the async client; for shared args use `client_kwargs`.
 
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#asyncclient).
     """
 
-    sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before
-    passing to the HTTPX Client.
+    sync_client_kwargs: dict | None = {}
+    """Additional kwargs to merge with `client_kwargs` before passing to httpx client.
 
-    For a full list of the params, see the `HTTPX documentation <https://www.python-httpx.org/api/#client>`__.
+    These are clients unique to the sync client; for shared args use `client_kwargs`.
 
+    For a full list of the params, see the [httpx documentation](https://www.python-httpx.org/api/#client).
     """
 
-    _client: Optional[Client] = PrivateAttr(default=None)
+    _client: Client | None = PrivateAttr(default=None)
     """The client to use for making requests."""
 
-    _async_client: Optional[AsyncClient] = PrivateAttr(default=None)
+    _async_client: AsyncClient | None = PrivateAttr(default=None)
     """The async client to use for making requests."""
 
     def _generate_params(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         if self.stop is not None and stop is not None:
@@ -297,7 +307,7 @@ class OllamaLLM(BaseLLM):
         return "ollama-llm"
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self, stop: list[str] | None = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -310,6 +320,9 @@ class OllamaLLM(BaseLLM):
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
 
+        cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
+        merge_auth_headers(client_kwargs, auth_headers)
+
         sync_client_kwargs = client_kwargs
         if self.sync_client_kwargs:
             sync_client_kwargs = {**sync_client_kwargs, **self.sync_client_kwargs}
@@ -318,8 +331,8 @@ class OllamaLLM(BaseLLM):
         if self.async_client_kwargs:
             async_client_kwargs = {**async_client_kwargs, **self.async_client_kwargs}
 
-        self._client = Client(host=self.base_url, **sync_client_kwargs)
-        self._async_client = AsyncClient(host=self.base_url, **async_client_kwargs)
+        self._client = Client(host=cleaned_url, **sync_client_kwargs)
+        self._async_client = AsyncClient(host=cleaned_url, **async_client_kwargs)
         if self.validate_model_on_init:
             validate_model(self._client, self.model)
         return self
@@ -327,9 +340,9 @@ class OllamaLLM(BaseLLM):
     async def _acreate_generate_stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
+    ) -> AsyncIterator[Mapping[str, Any] | str]:
         if self._async_client:
             async for part in await self._async_client.generate(
                 **self._generate_params(prompt, stop=stop, **kwargs)
@@ -339,9 +352,9 @@ class OllamaLLM(BaseLLM):
     def _create_generate_stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
-    ) -> Iterator[Union[Mapping[str, Any], str]]:
+    ) -> Iterator[Mapping[str, Any] | str]:
         if self._client:
             yield from self._client.generate(
                 **self._generate_params(prompt, stop=stop, **kwargs)
@@ -350,9 +363,9 @@ class OllamaLLM(BaseLLM):
     async def _astream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
@@ -392,9 +405,9 @@ class OllamaLLM(BaseLLM):
     def _stream_with_aggregation(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
@@ -434,8 +447,8 @@ class OllamaLLM(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         generations = []
@@ -453,8 +466,8 @@ class OllamaLLM(BaseLLM):
     async def _agenerate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         generations = []
@@ -472,8 +485,8 @@ class OllamaLLM(BaseLLM):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         reasoning = kwargs.get("reasoning", self.reasoning)
@@ -503,8 +516,8 @@ class OllamaLLM(BaseLLM):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         reasoning = kwargs.get("reasoning", self.reasoning)

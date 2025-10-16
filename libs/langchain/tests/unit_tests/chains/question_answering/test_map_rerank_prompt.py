@@ -2,7 +2,7 @@
 
 import pytest
 
-from langchain.chains.question_answering.map_rerank_prompt import output_parser
+from langchain_classic.chains.question_answering.map_rerank_prompt import output_parser
 
 GOOD_SCORE = "foo bar answer.\nScore: 80"
 SCORE_WITH_EXPLANATION = (

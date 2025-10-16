@@ -1,4 +1,4 @@
-from langchain.schema.prompt import __all__
+from langchain_classic.schema.prompt import __all__
 
 EXPECTED_ALL = ["PromptValue"]
 

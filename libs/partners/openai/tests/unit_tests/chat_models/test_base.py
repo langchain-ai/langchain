@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from functools import partial
 from types import TracebackType
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -22,14 +22,18 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -46,6 +50,7 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import Self, TypedDict
@@ -53,7 +58,8 @@ from typing_extensions import Self, TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
@@ -81,6 +87,12 @@ def test_openai_model_param() -> None:
     assert llm.max_tokens == 10
     llm = ChatOpenAI(max_completion_tokens=10)
     assert llm.max_tokens == 10
+
+
+@pytest.mark.parametrize("async_api", [True, False])
+def test_streaming_attribute_should_stream(async_api: bool) -> None:
+    llm = ChatOpenAI(model="foo", streaming=True)
+    assert llm._should_stream(async_api=async_api)
 
 
 def test_openai_client_caching() -> None:
@@ -204,7 +216,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": [raw_tool_call]},
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
@@ -238,7 +249,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": raw_tool_calls},
         invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
@@ -281,9 +291,9 @@ class MockAsyncContextManager:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -309,9 +319,9 @@ class MockSyncContextManager:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -360,7 +370,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -385,7 +395,7 @@ def test_glm4_stream(mock_glm4_completion: list) -> None:
     mock_client.create = mock_create
     usage_chunk = mock_glm4_completion[-1]
 
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -440,7 +450,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -464,7 +474,7 @@ def test_deepseek_stream(mock_deepseek_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_deepseek_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -500,7 +510,8 @@ def mock_openai_completion() -> list[dict]:
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name)
+    assert llm.stream_usage
     mock_client = AsyncMock()
 
     async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
@@ -508,7 +519,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "async_client", mock_client):
         async for chunk in llm.astream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
@@ -524,26 +535,49 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
 def test_openai_stream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name)
+    assert llm.stream_usage
     mock_client = MagicMock()
 
+    call_kwargs = []
+
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        call_kwargs.append(kwargs)
         return MockSyncContextManager(mock_openai_completion)
 
     mock_client.create = mock_create
     usage_chunk = mock_openai_completion[-1]
-    usage_metadata: Optional[UsageMetadata] = None
+    usage_metadata: UsageMetadata | None = None
     with patch.object(llm, "client", mock_client):
         for chunk in llm.stream("你的名字叫什么？只回答名字"):
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 usage_metadata = chunk.usage_metadata
 
+    assert call_kwargs[-1]["stream_options"] == {"include_usage": True}
     assert usage_metadata is not None
-
     assert usage_metadata["input_tokens"] == usage_chunk["usage"]["prompt_tokens"]
     assert usage_metadata["output_tokens"] == usage_chunk["usage"]["completion_tokens"]
     assert usage_metadata["total_tokens"] == usage_chunk["usage"]["total_tokens"]
+
+    # Verify no streaming outside of default base URL or clients
+    for param, value in {
+        "stream_usage": False,
+        "openai_proxy": "http://localhost:7890",
+        "openai_api_base": "https://example.com/v1",
+        "base_url": "https://example.com/v1",
+        "client": mock_client,
+        "root_client": mock_client,
+        "async_client": mock_client,
+        "root_async_client": mock_client,
+        "http_client": httpx.Client(),
+        "http_async_client": httpx.AsyncClient(),
+    }.items():
+        llm = ChatOpenAI(model=llm_name, **{param: value})  # type: ignore[arg-type]
+        assert not llm.stream_usage
+        with patch.object(llm, "client", mock_client):
+            _ = list(llm.stream("..."))
+        assert "stream_options" not in call_kwargs[-1]
 
 
 @pytest.fixture
@@ -731,17 +765,22 @@ def test_format_message_content() -> None:
     assert _format_message_content(content) == [{"type": "text", "text": "hello"}]
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "image",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "image/png",
-        }
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -749,16 +788,23 @@ def test_format_message_content() -> None:
             "image_url": {"url": "data:image/png;base64,<base64 data>"},
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "file",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
     ]
     expected = [
         {
@@ -769,11 +815,32 @@ def test_format_message_content() -> None:
             },
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    # Test warn if PDF is missing a filename
+    pdf_block = {
+        "type": "file",
+        "base64": "<base64 data>",
+        "mime_type": "application/pdf",
+    }
+    expected = [
+        # N.B. this format is invalid for OpenAI
+        {
+            "type": "file",
+            "file": {"file_data": "data:application/pdf;base64,<base64 data>"},
+        }
+    ]
+    with pytest.warns(match="filename"):
+        assert expected == _format_message_content([pdf_block])
+
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
 
 class GenerateUsername(BaseModel):
@@ -806,7 +873,7 @@ class MakeASandwich(BaseModel):
     ],
 )
 @pytest.mark.parametrize("strict", [True, False, None])
-def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> None:
+def test_bind_tools_tool_choice(tool_choice: Any, strict: bool | None) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.bind_tools(
@@ -821,10 +888,10 @@ def test_bind_tools_tool_choice(tool_choice: Any, strict: Optional[bool]) -> Non
 @pytest.mark.parametrize("include_raw", [True, False])
 @pytest.mark.parametrize("strict", [True, False, None])
 def test_with_structured_output(
-    schema: Union[type, dict[str, Any], None],
+    schema: type | dict[str, Any] | None,
     method: Literal["function_calling", "json_mode", "json_schema"],
     include_raw: bool,
-    strict: Optional[bool],
+    strict: bool | None,
 ) -> None:
     """Test passing in manually construct tool call message."""
     if method == "json_mode":
@@ -1021,7 +1088,7 @@ def test__convert_to_openai_response_format() -> None:
 @pytest.mark.parametrize("method", ["function_calling", "json_schema"])
 @pytest.mark.parametrize("strict", [True, None])
 def test_structured_output_strict(
-    method: Literal["function_calling", "json_schema"], strict: Optional[bool]
+    method: Literal["function_calling", "json_schema"], strict: bool | None
 ) -> None:
     """Test to verify structured output with strict=True."""
 
@@ -1161,9 +1228,6 @@ def test_minimal_reasoning_effort_payload(
         **kwargs,
     }
 
-    if use_responses_api:
-        init_kwargs["output_version"] = "responses/v1"
-
     llm = ChatOpenAI(**init_kwargs)
 
     messages = [
@@ -1189,14 +1253,14 @@ def test_minimal_reasoning_effort_payload(
             assert payload["max_completion_tokens"] == 100
 
 
+def test_output_version_compat() -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    assert llm._use_responses_api({}) is True
+
+
 def test_verbosity_parameter_payload() -> None:
     """Test verbosity parameter is included in request payload for Responses API."""
-    llm = ChatOpenAI(
-        model="gpt-5",
-        verbosity="high",
-        use_responses_api=True,
-        output_version="responses/v1",
-    )
+    llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
 
     messages = [{"role": "user", "content": "hello"}]
     payload = llm._get_request_payload(messages, stop=None)
@@ -1231,7 +1295,7 @@ def test_structured_outputs_parser() -> None:
     serialized = dumps(llm_output)
     deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
@@ -1288,7 +1352,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert isinstance(result, ChatResult)
     assert len(result.generations) == 1
@@ -1306,9 +1370,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
     ]
@@ -1344,7 +1406,7 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert len(result.generations[0].message.content) == 2
     assert result.generations[0].message.content == [
@@ -1391,7 +1453,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": []},
@@ -1407,9 +1469,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     assert result.generations[0].message.id == "msg_234"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
@@ -1449,16 +1509,14 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.additional_kwargs["refusal"] == (
         "I cannot assist with that request."
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "refusal",
@@ -1490,7 +1548,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.tool_calls) == 1
@@ -1507,9 +1565,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.tool_calls
     assert msg.content == [
@@ -1545,7 +1601,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.invalid_tool_calls) == 1
@@ -1599,7 +1655,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1628,9 +1684,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     assert result.generations[0].message.response_metadata["user"] == "user_123"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.response_metadata["metadata"] == {"key1": "value1", "key2": "value2"}
     assert msg.content == [
@@ -1706,7 +1760,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1724,9 +1778,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "web_search_call",
@@ -1767,7 +1819,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1808,9 +1860,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "file_search_call",
@@ -1877,7 +1927,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1908,9 +1958,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     assert file_search["results"][0]["filename"] == "example.py"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "text",
@@ -2276,9 +2324,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert messages_copy == messages
 
     # Test dict messages
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     message_dicts: list = [
         {"role": "developer", "content": "This is a developer message."},
         {
@@ -2380,7 +2426,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2439,6 +2485,178 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    ("message_v1", "expected"),
+    [
+        (
+            AIMessage(
+                content_blocks=[
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "server_tool_call",
+                        "name": "file_search",
+                        "id": "fs_123",
+                        "args": {"queries": ["query for file search"]},
+                    },
+                    {
+                        "type": "server_tool_result",
+                        "tool_call_id": "fs_123",
+                        "output": [{"file_id": "file-123"}],
+                        "status": "success",
+                    },
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {
+                    "type": "file_search_call",
+                    "id": "fs_123",
+                    "queries": ["query for file search"],
+                    "results": [{"file_id": "file-123"}],
+                    "status": "completed",
+                },
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: list[dict[str, Any]]
+) -> None:
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
 
 
 def test_get_last_messages() -> None:

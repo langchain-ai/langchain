@@ -11,8 +11,8 @@ from freezegun import freeze_time
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
-from langchain.chains.transform import TransformChain
-from langchain.smith.evaluation.runner_utils import (
+from langchain_classic.chains.transform import TransformChain
+from langchain_classic.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompt,
@@ -318,7 +318,7 @@ async def test_arun_on_dataset() -> None:
         mock.patch.object(Client, "read_dataset", new=mock_read_dataset),
         mock.patch.object(Client, "list_examples", new=mock_list_examples),
         mock.patch(
-            "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
+            "langchain_classic.smith.evaluation.runner_utils._arun_llm_or_chain",
             new=mock_arun_chain,
         ),
         mock.patch.object(Client, "create_project", new=mock_create_project),
@@ -333,7 +333,7 @@ async def test_arun_on_dataset() -> None:
             project_name="test_project",
             client=client,
         )
-        expected = {
+        expected: dict[str, Any] = {
             str(example.id): {
                 "output": {
                     "result": f"Result for example {uuid.UUID(str(example.id))}",
