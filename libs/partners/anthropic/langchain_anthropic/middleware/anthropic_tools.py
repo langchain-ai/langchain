@@ -22,7 +22,7 @@ from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Awaitable, Callable, Sequence
 
     from langchain.tools.tool_node import ToolCallRequest
 
@@ -209,6 +209,32 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
 
         return handler(request)
 
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        """Inject tool and optional system prompt (async version)."""
+        # Add tool
+        tools = list(request.tools or [])
+        tools.append(
+            {
+                "type": self.tool_type,
+                "name": self.tool_name,
+            }
+        )
+        request.tools = tools
+
+        # Inject system prompt if provided
+        if self.system_prompt:
+            request.system_prompt = (
+                request.system_prompt + "\n\n" + self.system_prompt
+                if request.system_prompt
+                else self.system_prompt
+            )
+
+        return await handler(request)
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
@@ -220,6 +246,52 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
 
         if tool_name != self.tool_name:
             return handler(request)
+
+        # Handle tool call
+        try:
+            args = tool_call.get("args", {})
+            command = args.get("command")
+            state = request.state
+
+            if command == "view":
+                return self._handle_view(args, state, tool_call["id"])
+            if command == "create":
+                return self._handle_create(args, state, tool_call["id"])
+            if command == "str_replace":
+                return self._handle_str_replace(args, state, tool_call["id"])
+            if command == "insert":
+                return self._handle_insert(args, state, tool_call["id"])
+            if command == "delete":
+                return self._handle_delete(args, state, tool_call["id"])
+            if command == "rename":
+                return self._handle_rename(args, state, tool_call["id"])
+
+            msg = f"Unknown command: {command}"
+            return ToolMessage(
+                content=msg,
+                tool_call_id=tool_call["id"],
+                name=tool_name,
+                status="error",
+            )
+        except (ValueError, FileNotFoundError) as e:
+            return ToolMessage(
+                content=str(e),
+                tool_call_id=tool_call["id"],
+                name=tool_name,
+                status="error",
+            )
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
+        """Intercept tool calls (async version)."""
+        tool_call = request.tool_call
+        tool_name = tool_call.get("name")
+
+        if tool_name != self.tool_name:
+            return await handler(request)
 
         # Handle tool call
         try:
@@ -645,6 +717,32 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         return handler(request)
 
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelResponse:
+        """Inject tool and optional system prompt (async version)."""
+        # Add tool
+        tools = list(request.tools or [])
+        tools.append(
+            {
+                "type": self.tool_type,
+                "name": self.tool_name,
+            }
+        )
+        request.tools = tools
+
+        # Inject system prompt if provided
+        if self.system_prompt:
+            request.system_prompt = (
+                request.system_prompt + "\n\n" + self.system_prompt
+                if request.system_prompt
+                else self.system_prompt
+            )
+
+        return await handler(request)
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
@@ -656,6 +754,51 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         if tool_name != self.tool_name:
             return handler(request)
+
+        # Handle tool call
+        try:
+            args = tool_call.get("args", {})
+            command = args.get("command")
+
+            if command == "view":
+                return self._handle_view(args, tool_call["id"])
+            if command == "create":
+                return self._handle_create(args, tool_call["id"])
+            if command == "str_replace":
+                return self._handle_str_replace(args, tool_call["id"])
+            if command == "insert":
+                return self._handle_insert(args, tool_call["id"])
+            if command == "delete":
+                return self._handle_delete(args, tool_call["id"])
+            if command == "rename":
+                return self._handle_rename(args, tool_call["id"])
+
+            msg = f"Unknown command: {command}"
+            return ToolMessage(
+                content=msg,
+                tool_call_id=tool_call["id"],
+                name=tool_name,
+                status="error",
+            )
+        except (ValueError, FileNotFoundError) as e:
+            return ToolMessage(
+                content=str(e),
+                tool_call_id=tool_call["id"],
+                name=tool_name,
+                status="error",
+            )
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
+    ) -> ToolMessage | Command:
+        """Intercept tool calls (async version)."""
+        tool_call = request.tool_call
+        tool_name = tool_call.get("name")
+
+        if tool_name != self.tool_name:
+            return await handler(request)
 
         # Handle tool call
         try:
