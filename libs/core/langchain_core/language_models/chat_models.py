@@ -1517,7 +1517,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
@@ -1530,16 +1530,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Returns:
             A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object).
+                If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
+                an instance of `schema` (i.e., a Pydantic object).
 
-            Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                Otherwise, if `include_raw` is False then Runnable outputs a dict.
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
+                If `include_raw` is True, then Runnable outputs a dict with keys:
 
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
+                - `'raw'`: BaseMessage
+                - `'parsed'`: None if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: BaseException | None
 
         Example: Pydantic schema (include_raw=False):
             ```python
@@ -1620,7 +1621,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             ```
 
         !!! warning "Behavior changed in 0.2.26"
-                Added support for TypedDict class.
+            Added support for TypedDict class.
 
         """  # noqa: E501
         _ = kwargs.pop("method", None)
