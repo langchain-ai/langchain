@@ -30,7 +30,6 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
-    ls_provider: str = "openai"
     model_name: str = "fake-model"
 
     def _generate(
@@ -55,7 +54,6 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
             tool_calls = []
 
         if is_native and not tool_calls:
-            content_obj = {}
             if isinstance(self.structured_response, BaseModel):
                 content_obj = self.structured_response.model_dump()
             elif is_dataclass(self.structured_response):
@@ -76,10 +74,6 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     @property
     def _llm_type(self) -> str:
         return "fake-tool-call-model"
-
-    def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
-        """Get LangSmith parameters for this model."""
-        return LangSmithParams(ls_provider=self.ls_provider, ls_model_type="chat")
 
     def bind_tools(
         self,
