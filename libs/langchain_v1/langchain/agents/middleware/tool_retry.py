@@ -299,7 +299,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         Returns:
             ToolMessage or Command (the final result).
         """
-        tool_name = request.tool.name
+        tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
         # Check if retry should apply to this tool
         if not self._should_retry_tool(tool_name):
@@ -348,7 +348,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         Returns:
             ToolMessage or Command (the final result).
         """
-        tool_name = request.tool.name
+        tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
         # Check if retry should apply to this tool
         if not self._should_retry_tool(tool_name):
