@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Sequence,
     Tuple,
     Type,
@@ -169,7 +168,7 @@ class __ModuleName__VectorStore(VectorStore):
     @classmethod
     def from_texts(
         cls: Type[__ModuleName__VectorStore],
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
         metadatas: list[dict] | None = None,
         **kwargs: Any,
@@ -184,7 +183,7 @@ class __ModuleName__VectorStore(VectorStore):
     # @classmethod
     # async def afrom_texts(
     #     cls: Type[VST],
-    #     texts: List[str],
+    #     texts: list[str],
     #     embedding: Embeddings,
     #     metadatas: list[dict] | None = None,
     #     **kwargs: Any,
@@ -199,10 +198,10 @@ class __ModuleName__VectorStore(VectorStore):
 
     def add_documents(
         self,
-        documents: List[Document],
+        documents: list[Document],
         ids: list[str] | None = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
@@ -236,10 +235,10 @@ class __ModuleName__VectorStore(VectorStore):
     # optional: add custom async implementations
     # async def aadd_documents(
     #     self,
-    #     documents: List[Document],
+    #     documents: list[Document],
     #     ids: list[str] | None = None,
     #     **kwargs: Any,
-    # ) -> List[str]:
+    # ) -> list[str]:
     #     raise NotImplementedError
 
     def delete(self, ids: list[str] | None = None, **kwargs: Any) -> None:
@@ -284,11 +283,11 @@ class __ModuleName__VectorStore(VectorStore):
     # storage. It is optional and not a part of the vector store interface.
     def _similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         filter: Callable[[Document], bool] | None = None,
         **kwargs: Any,
-    ) -> List[tuple[Document, float, List[float]]]:
+    ) -> list[tuple[Document, float, list[float]]]:
         # get all docs with fixed order in list
         docs = list(self._database.values())
 
@@ -327,7 +326,7 @@ class __ModuleName__VectorStore(VectorStore):
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         embedding = self.embedding.embed_query(query)
         return [
             doc
@@ -339,7 +338,7 @@ class __ModuleName__VectorStore(VectorStore):
     # optional: add custom async implementations
     # async def asimilarity_search(
     #     self, query: str, k: int = 4, **kwargs: Any
-    # ) -> List[Document]:
+    # ) -> list[Document]:
     #     # This is a temporary workaround to make the similarity search
     #     # asynchronous. The proper solution is to make the similarity search
     #     # asynchronous in the vector store implementations.
@@ -348,7 +347,7 @@ class __ModuleName__VectorStore(VectorStore):
 
     def similarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[Tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
         return [
             (doc, similarity)
@@ -360,7 +359,7 @@ class __ModuleName__VectorStore(VectorStore):
     # optional: add custom async implementations
     # async def asimilarity_search_with_score(
     #     self, *args: Any, **kwargs: Any
-    # ) -> List[Tuple[Document, float]]:
+    # ) -> list[Tuple[Document, float]]:
     #     # This is a temporary workaround to make the similarity search
     #     # asynchronous. The proper solution is to make the similarity search
     #     # asynchronous in the vector store implementations.
@@ -370,14 +369,14 @@ class __ModuleName__VectorStore(VectorStore):
     ### ADDITIONAL OPTIONAL SEARCH METHODS BELOW ###
 
     # def similarity_search_by_vector(
-    #     self, embedding: List[float], k: int = 4, **kwargs: Any
-    # ) -> List[Document]:
+    #     self, embedding: list[float], k: int = 4, **kwargs: Any
+    # ) -> list[Document]:
     #     raise NotImplementedError
 
     # optional: add custom async implementations
     # async def asimilarity_search_by_vector(
-    #     self, embedding: List[float], k: int = 4, **kwargs: Any
-    # ) -> List[Document]:
+    #     self, embedding: list[float], k: int = 4, **kwargs: Any
+    # ) -> list[Document]:
     #     # This is a temporary workaround to make the similarity search
     #     # asynchronous. The proper solution is to make the similarity search
     #     # asynchronous in the vector store implementations.
@@ -391,7 +390,7 @@ class __ModuleName__VectorStore(VectorStore):
     #     fetch_k: int = 20,
     #     lambda_mult: float = 0.5,
     #     **kwargs: Any,
-    # ) -> List[Document]:
+    # ) -> list[Document]:
     #     raise NotImplementedError
 
     # optional: add custom async implementations
@@ -402,7 +401,7 @@ class __ModuleName__VectorStore(VectorStore):
     #     fetch_k: int = 20,
     #     lambda_mult: float = 0.5,
     #     **kwargs: Any,
-    # ) -> List[Document]:
+    # ) -> list[Document]:
     #     # This is a temporary workaround to make the similarity search
     #     # asynchronous. The proper solution is to make the similarity search
     #     # asynchronous in the vector store implementations.
@@ -418,21 +417,21 @@ class __ModuleName__VectorStore(VectorStore):
 
     # def max_marginal_relevance_search_by_vector(
     #     self,
-    #     embedding: List[float],
+    #     embedding: list[float],
     #     k: int = 4,
     #     fetch_k: int = 20,
     #     lambda_mult: float = 0.5,
     #     **kwargs: Any,
-    # ) -> List[Document]:
+    # ) -> list[Document]:
     #     raise NotImplementedError
 
     # optional: add custom async implementations
     # async def amax_marginal_relevance_search_by_vector(
     #     self,
-    #     embedding: List[float],
+    #     embedding: list[float],
     #     k: int = 4,
     #     fetch_k: int = 20,
     #     lambda_mult: float = 0.5,
     #     **kwargs: Any,
-    # ) -> List[Document]:
+    # ) -> list[Document]:
     #     raise NotImplementedError

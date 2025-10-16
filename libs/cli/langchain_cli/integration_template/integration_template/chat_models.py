@@ -1,6 +1,6 @@
 """__ModuleName__ chat models."""
 
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -299,7 +299,7 @@ class Chat__ModuleName__(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
@@ -345,7 +345,7 @@ class Chat__ModuleName__(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
@@ -407,7 +407,7 @@ class Chat__ModuleName__(BaseChatModel):
     # TODO: Implement if Chat__ModuleName__ supports async streaming. Otherwise delete.
     # async def _astream(
     #     self,
-    #     messages: List[BaseMessage],
+    #     messages: list[BaseMessage],
     #     stop: list[str] | None = None,
     #     run_manager: AsyncCallbackManagerForLLMRun | None = None,
     #     **kwargs: Any,
@@ -416,7 +416,7 @@ class Chat__ModuleName__(BaseChatModel):
     # TODO: Implement if Chat__ModuleName__ supports async generation. Otherwise delete.
     # async def _agenerate(
     #     self,
-    #     messages: List[BaseMessage],
+    #     messages: list[BaseMessage],
     #     stop: list[str] | None = None,
     #     run_manager: AsyncCallbackManagerForLLMRun | None = None,
     #     **kwargs: Any,

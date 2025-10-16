@@ -45,7 +45,7 @@ class ConstitutionalChain(Chain):
         ```
 
         ```python
-        from typing import List, Optional, Tuple
+        from typing Optional, Tuple
 
         from langchain_classic.chains.constitutional_ai.prompts import (
             CRITIQUE_PROMPT,
@@ -93,9 +93,9 @@ class ConstitutionalChain(Chain):
 
         class State(TypedDict):
             query: str
-            constitutional_principles: List[ConstitutionalPrinciple]
+            constitutional_principles: list[ConstitutionalPrinciple]
             initial_response: str
-            critiques_and_revisions: List[Tuple[str, str]]
+            critiques_and_revisions: list[Tuple[str, str]]
             response: str
 
 

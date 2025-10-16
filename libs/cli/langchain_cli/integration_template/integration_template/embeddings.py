@@ -1,5 +1,3 @@
-from typing import List
-
 from langchain_core.embeddings import Embeddings
 
 
@@ -74,11 +72,11 @@ class __ModuleName__Embeddings(Embeddings):
     def __init__(self, model: str):
         self.model = model
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         return [[0.5, 0.6, 0.7] for _ in texts]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]
 
@@ -87,10 +85,10 @@ class __ModuleName__Embeddings(Embeddings):
     # use the default implementation, which calls the sync
     # version in an async executor:
 
-    # async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    # async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
     #     """Asynchronous Embed search docs."""
     #     ...
 
-    # async def aembed_query(self, text: str) -> List[float]:
+    # async def aembed_query(self, text: str) -> list[float]:
     #     """Asynchronous Embed query text."""
     #     ...

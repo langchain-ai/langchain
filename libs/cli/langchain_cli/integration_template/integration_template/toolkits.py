@@ -1,7 +1,5 @@
 """__ModuleName__ toolkits."""
 
-from typing import List
-
 from langchain_core.tools import BaseTool, BaseToolkit
 
 
@@ -69,5 +67,5 @@ class __ModuleName__Toolkit(BaseToolkit):
     """
 
     # TODO: This method must be implemented to list tools.
-    def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> list[BaseTool]:
         raise NotImplementedError()

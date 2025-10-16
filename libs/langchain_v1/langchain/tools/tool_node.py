@@ -1407,7 +1407,6 @@ class InjectedState(InjectedToolArg):
 
     Example:
         ```python
-        from typing import List
         from typing_extensions import Annotated, TypedDict
 
         from langchain_core.messages import BaseMessage, AIMessage
@@ -1415,7 +1414,7 @@ class InjectedState(InjectedToolArg):
 
 
         class AgentState(TypedDict):
-            messages: List[BaseMessage]
+            messages: list[BaseMessage]
             foo: str
 
 

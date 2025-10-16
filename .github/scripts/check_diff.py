@@ -19,7 +19,7 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 import tomllib
 from get_min_versions import get_min_version_from_toml
@@ -112,7 +112,7 @@ def dependents_graph() -> dict:
     return dependents
 
 
-def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
+def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> list[str]:
     updated = set()
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
@@ -125,7 +125,7 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     return list(updated)
 
 
-def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
+def _get_configs_for_single_dir(job: str, dir_: str) -> list[Dict[str, str]]:
     if job == "test-pydantic":
         return _get_pydantic_test_configs(dir_)
 
@@ -153,7 +153,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
-) -> List[Dict[str, str]]:
+) -> list[Dict[str, str]]:
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
     for package in core_uv_lock_data["package"]:
@@ -208,7 +208,7 @@ def _get_pydantic_test_configs(
 
 def _get_configs_for_multi_dirs(
     job: str, dirs_to_run: Dict[str, Set[str]], dependents: dict
-) -> List[Dict[str, str]]:
+) -> list[Dict[str, str]]:
     if job == "lint":
         dirs = add_dependents(
             dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],

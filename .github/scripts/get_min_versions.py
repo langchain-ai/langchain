@@ -10,7 +10,6 @@ else:
     import tomli as tomllib
 
 import re
-from typing import List
 
 import requests
 from packaging.requirements import Requirement
@@ -34,7 +33,7 @@ SKIP_IF_PULL_REQUEST = [
 ]
 
 
-def get_pypi_versions(package_name: str) -> List[str]:
+def get_pypi_versions(package_name: str) -> list[str]:
     """Fetch all available versions for a package from PyPI.
 
     Args:

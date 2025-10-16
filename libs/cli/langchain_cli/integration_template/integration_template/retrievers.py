@@ -1,6 +1,6 @@
 """__ModuleName__ retrievers."""
 
-from typing import Any, List
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -91,7 +91,7 @@ class __ModuleName__Retriever(BaseRetriever):
     # TODO: This method must be implemented to retrieve documents.
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         k = kwargs.get("k", self.k)
         return [
             Document(page_content=f"Result {i} for query: {query}") for i in range(k)
@@ -104,4 +104,4 @@ class __ModuleName__Retriever(BaseRetriever):
     #     *,
     #     run_manager: AsyncCallbackManagerForRetrieverRun,
     #     **kwargs: Any,
-    # ) -> List[Document]: ...
+    # ) -> list[Document]: ...
