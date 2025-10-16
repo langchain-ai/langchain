@@ -800,3 +800,49 @@ def test_union_of_types() -> None:
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
+
+
+def test_provider_strategy_strict_only_for_openai() -> None:
+    """Test that strict=True is only set for OpenAI models in ProviderStrategy."""
+    from langchain.agents.structured_output import ProviderStrategy
+    from langchain_core.language_models.base import LangSmithParams
+
+    # Create a mock OpenAI model
+    class MockOpenAIModel:
+        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
+            return LangSmithParams(ls_provider="openai", ls_model_type="chat")
+
+    # Create a mock non-OpenAI model (e.g., Grok/X.AI)
+    class MockGrokModel:
+        def _get_ls_params(self, **kwargs: Any) -> LangSmithParams:
+            return LangSmithParams(ls_provider="xai", ls_model_type="chat")
+
+    # Create a mock model without _get_ls_params
+    class MockModelNoLSParams:
+        pass
+
+    provider_strategy = ProviderStrategy(WeatherBaseModel)
+
+    # Test OpenAI model: should include strict=True
+    openai_model = MockOpenAIModel()
+    openai_kwargs = provider_strategy.to_model_kwargs(model=openai_model)
+    assert "strict" in openai_kwargs
+    assert openai_kwargs["strict"] is True
+    assert "response_format" in openai_kwargs
+
+    # Test Grok model: should NOT include strict
+    grok_model = MockGrokModel()
+    grok_kwargs = provider_strategy.to_model_kwargs(model=grok_model)
+    assert "strict" not in grok_kwargs
+    assert "response_format" in grok_kwargs
+
+    # Test model without _get_ls_params: should NOT include strict
+    no_params_model = MockModelNoLSParams()
+    no_params_kwargs = provider_strategy.to_model_kwargs(model=no_params_model)
+    assert "strict" not in no_params_kwargs
+    assert "response_format" in no_params_kwargs
+
+    # Test None model: should NOT include strict
+    none_kwargs = provider_strategy.to_model_kwargs(model=None)
+    assert "strict" not in none_kwargs
+    assert "response_format" in none_kwargs

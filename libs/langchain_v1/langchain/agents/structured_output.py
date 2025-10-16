@@ -254,10 +254,19 @@ class ProviderStrategy(Generic[SchemaT]):
         self.schema = schema
         self.schema_spec = _SchemaSpec(schema)
 
-    def to_model_kwargs(self) -> dict[str, Any]:
-        """Convert to kwargs to bind to a model to force structured output."""
-        # OpenAI:
-        # - see https://platform.openai.com/docs/guides/structured-outputs
+    def to_model_kwargs(self, model: Any | None = None) -> dict[str, Any]:
+        """Convert to kwargs to bind to a model to force structured output.
+
+        Args:
+            model: The model instance to check provider for conditional `strict` param.
+
+        Returns:
+            Model kwargs with `response_format` and optionally `strict`.
+        """
+        # Provider-specific structured output:
+        # - OpenAI: https://platform.openai.com/docs/guides/structured-outputs
+        #   - Uses strict=True for schema validation
+        # - X.AI (Grok): Similar to OpenAI format but doesn't support strict parameter
         response_format = {
             "type": "json_schema",
             "json_schema": {
@@ -265,7 +274,18 @@ class ProviderStrategy(Generic[SchemaT]):
                 "schema": self.schema_spec.json_schema,
             },
         }
-        return {"response_format": response_format}
+
+        # Only set strict=True for OpenAI models
+        # Other providers (like X.AI/Grok) don't support/require the strict parameter
+        kwargs: dict[str, Any] = {"response_format": response_format}
+
+        if model is not None and hasattr(model, "_get_ls_params"):
+            ls_params = model._get_ls_params()
+            provider = ls_params.get("ls_provider", "").lower()
+            if provider == "openai":
+                kwargs["strict"] = True
+
+        return kwargs
 
 
 @dataclass
