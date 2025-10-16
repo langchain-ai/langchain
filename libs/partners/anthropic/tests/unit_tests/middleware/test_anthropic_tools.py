@@ -153,12 +153,8 @@ class TestFileOperations:
         # Should fail with /etc/passwd
         args = {"command": "create", "path": "/etc/passwd", "file_text": "test"}
 
-        try:
+        with pytest.raises(ValueError, match="Path must start with"):
             middleware._handle_create(args, state, "test_id")
-            msg = "Should have raised ValueError"
-            raise AssertionError(msg)
-        except ValueError as e:
-            assert "Path must start with" in str(e)
 
     def test_memories_prefix_enforcement(self) -> None:
         """Test that /memories prefix is enforced for memory middleware."""
@@ -169,12 +165,8 @@ class TestFileOperations:
         # Should fail with /other/path
         args = {"command": "create", "path": "/other/path.txt", "file_text": "test"}
 
-        try:
+        with pytest.raises(ValueError, match="/memories"):
             middleware._handle_create(args, state, "test_id")
-            msg = "Should have raised ValueError"
-            raise AssertionError(msg)
-        except ValueError as e:
-            assert "/memories" in str(e)
 
     def test_str_replace_operation(self) -> None:
         """Test str_replace command execution."""
@@ -200,6 +192,7 @@ class TestFileOperations:
         result = middleware._handle_str_replace(args, state, "test_id")
 
         assert isinstance(result, Command)
+        assert result.update is not None
         files = result.update.get("text_editor_files", {})
         # Should only replace first occurrence
         assert files["/test.txt"]["content"] == ["Hello universe", "Goodbye world"]
@@ -228,6 +221,7 @@ class TestFileOperations:
         result = middleware._handle_insert(args, state, "test_id")
 
         assert isinstance(result, Command)
+        assert result.update is not None
         files = result.update.get("text_editor_files", {})
         assert files["/test.txt"]["content"] == ["inserted", "line1", "line2"]
 
@@ -250,6 +244,7 @@ class TestFileOperations:
         result = middleware._handle_delete(args, state, "test_id")
 
         assert isinstance(result, Command)
+        assert result.update is not None
         files = result.update.get("memory_files", {})
         # Deleted files are marked as None in state
         assert files.get("/memories/test.txt") is None
@@ -277,6 +272,7 @@ class TestFileOperations:
         result = middleware._handle_rename(args, state, "test_id")
 
         assert isinstance(result, Command)
+        assert result.update is not None
         files = result.update.get("memory_files", {})
         # Old path is marked as None (deleted)
         assert files.get("/memories/old.txt") is None

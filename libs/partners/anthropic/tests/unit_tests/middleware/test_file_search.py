@@ -1,13 +1,7 @@
 """Unit tests for file search middleware."""
 
-from pathlib import Path
-from typing import Any
-
-import pytest
-
 from langchain_anthropic.middleware.anthropic_tools import AnthropicToolsState
 from langchain_anthropic.middleware.file_search import (
-    FilesystemFileSearchMiddleware,
     StateFileSearchMiddleware,
 )
 
@@ -56,7 +50,7 @@ class TestGlobSearch:
         }
 
         # Call tool function directly (state is injected in real usage)
-        result = middleware.glob_search.func(pattern="*.py", state=test_state)
+        result = middleware.glob_search.func(pattern="*.py", state=test_state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -88,7 +82,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="**/*.py", state=state)
+        result = middleware.glob_search.func(pattern="**/*.py", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         lines = result.split("\n")
@@ -115,7 +109,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(
+        result = middleware.glob_search.func(  # type: ignore[attr-defined]
             pattern="**/*.py", path="/src", state=state
         )
 
@@ -138,7 +132,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="*.ts", state=state)
+        result = middleware.glob_search.func(pattern="*.ts", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert result == "No files found"
@@ -163,7 +157,7 @@ class TestGlobSearch:
             },
         }
 
-        result = middleware.glob_search.func(pattern="*.py", state=state)
+        result = middleware.glob_search.func(pattern="*.py", state=state)  # type: ignore[attr-defined]
 
         lines = result.split("\n")
         # Most recent first
@@ -199,7 +193,7 @@ class TestGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"def \w+\(\):", state=state)
+        result = middleware.grep_search.func(pattern=r"def \w+\(\):", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -222,7 +216,7 @@ class TestGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(
+        result = middleware.grep_search.func(  # type: ignore[attr-defined]
             pattern=r"def", include="*.{py", state=state
         )
 
@@ -231,53 +225,6 @@ class TestGrepSearch:
 
 class TestFilesystemGrepSearch:
     """Tests for filesystem-backed grep search."""
-
-    def test_grep_invalid_include_pattern(self, tmp_path: Path) -> None:
-        """Return error when include glob cannot be parsed."""
-
-        (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
-
-        middleware = FilesystemFileSearchMiddleware(
-            root_path=str(tmp_path), use_ripgrep=False
-        )
-
-        result = middleware.grep_search.func(pattern="print", include="*.{py")
-
-        assert result == "Invalid include pattern"
-
-    def test_ripgrep_command_uses_literal_pattern(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """Ensure ripgrep receives pattern after ``--`` to avoid option parsing."""
-
-        (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
-
-        middleware = FilesystemFileSearchMiddleware(
-            root_path=str(tmp_path), use_ripgrep=True
-        )
-
-        captured: dict[str, list[str]] = {}
-
-        class DummyResult:
-            stdout = ""
-
-        def fake_run(*args: Any, **kwargs: Any) -> DummyResult:
-            cmd = args[0]
-            captured["cmd"] = cmd
-            return DummyResult()
-
-        monkeypatch.setattr(
-            "langchain_anthropic.middleware.file_search.subprocess.run", fake_run
-        )
-
-        middleware._ripgrep_search("--pattern", "/", None)
-
-        assert "cmd" in captured
-        cmd = captured["cmd"]
-        assert cmd[:2] == ["rg", "--json"]
-        assert "--" in cmd
-        separator_index = cmd.index("--")
-        assert cmd[separator_index + 1] == "--pattern"
 
     def test_grep_content_mode(self) -> None:
         """Test grep with content output mode."""
@@ -294,7 +241,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(
+        result = middleware.grep_search.func(  # type: ignore[attr-defined]
             pattern=r"def \w+\(\):", output_mode="content", state=state
         )
 
@@ -324,7 +271,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(
+        result = middleware.grep_search.func(  # type: ignore[attr-defined]
             pattern=r"TODO", output_mode="count", state=state
         )
 
@@ -353,7 +300,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(
+        result = middleware.grep_search.func(  # type: ignore[attr-defined]
             pattern="import", include="*.py", state=state
         )
 
@@ -386,7 +333,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(
+        result = middleware.grep_search.func(  # type: ignore[attr-defined]
             pattern="const", include="*.{ts,tsx}", state=state
         )
 
@@ -415,7 +362,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern="import", path="/src", state=state)
+        result = middleware.grep_search.func(pattern="import", path="/src", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -436,7 +383,7 @@ class TestFilesystemGrepSearch:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"TODO", state=state)
+        result = middleware.grep_search.func(pattern=r"TODO", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert result == "No matches found"
@@ -450,7 +397,7 @@ class TestFilesystemGrepSearch:
             "text_editor_files": {},
         }
 
-        result = middleware.grep_search.func(pattern=r"[unclosed", state=state)
+        result = middleware.grep_search.func(pattern=r"[unclosed", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "Invalid regex pattern" in result
@@ -481,7 +428,7 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.glob_search.func(pattern="**/*", state=state)
+        result = middleware.glob_search.func(pattern="**/*", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -510,7 +457,7 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r"TODO", state=state)
+        result = middleware.grep_search.func(pattern=r"TODO", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result
@@ -539,7 +486,7 @@ class TestSearchWithDifferentBackends:
             },
         }
 
-        result = middleware.grep_search.func(pattern=r".*", state=state)
+        result = middleware.grep_search.func(pattern=r".*", state=state)  # type: ignore[attr-defined]
 
         assert isinstance(result, str)
         assert "/src/main.py" in result

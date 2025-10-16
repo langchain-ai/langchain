@@ -7,7 +7,6 @@ from langchain_anthropic.middleware.anthropic_tools import (
     StateClaudeTextEditorMiddleware,
 )
 from langchain_anthropic.middleware.file_search import (
-    FilesystemFileSearchMiddleware,
     StateFileSearchMiddleware,
 )
 from langchain_anthropic.middleware.prompt_caching import (
@@ -18,7 +17,6 @@ __all__ = [
     "AnthropicPromptCachingMiddleware",
     "FilesystemClaudeMemoryMiddleware",
     "FilesystemClaudeTextEditorMiddleware",
-    "FilesystemFileSearchMiddleware",
     "StateClaudeMemoryMiddleware",
     "StateClaudeTextEditorMiddleware",
     "StateFileSearchMiddleware",

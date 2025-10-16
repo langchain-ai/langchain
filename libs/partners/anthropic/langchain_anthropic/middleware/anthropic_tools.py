@@ -748,7 +748,8 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         # Check file size
         if full_path.stat().st_size > self.max_file_size_bytes:
-            msg = f"File too large: {path} exceeds {self.max_file_size_bytes / 1024 / 1024}MB"
+            max_mb = self.max_file_size_bytes / 1024 / 1024
+            msg = f"File too large: {path} exceeds {max_mb}MB"
             raise ValueError(msg)
 
         # Read file
@@ -971,7 +972,8 @@ class FilesystemClaudeTextEditorMiddleware(_FilesystemClaudeFileToolMiddleware):
 
         Args:
             root_path: Root directory for file operations.
-            allowed_prefixes: Optional list of allowed virtual path prefixes (default: ["/"]).
+            allowed_prefixes: Optional list of allowed virtual path prefixes
+                (default: ["/"]).
             max_file_size_mb: Maximum file size in MB (default: 10).
         """
         super().__init__(

@@ -9,7 +9,10 @@ from __future__ import annotations
 import fnmatch
 import re
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Literal, cast
+
+if TYPE_CHECKING:
+    from typing import Any
 
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.tools import InjectedToolArg, tool
@@ -166,7 +169,8 @@ class StateFileSearchMiddleware(AgentMiddleware):
 
                     # Match against pattern
                     # Handle ** pattern which requires special care
-                    # PurePosixPath.match doesn't match single-level paths against **/pattern
+                    # PurePosixPath.match doesn't match single-level paths
+                    # against **/pattern
                     is_match = PurePosixPath(relative).match(pattern)
                     if not is_match and pattern.startswith("**/"):
                         # Also try matching without the **/ prefix for files in base dir
