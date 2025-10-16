@@ -77,7 +77,7 @@ _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 def _default_max_tokens_for(model: str | None) -> int:
     """Return the default max output tokens for an Anthropic model (with fallback).
 
-    Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
+    See the Claude docs for [Max Tokens limits](https://docs.claude.com/en/docs/about-claude/models/overview#model-comparison-table).
     """
     if not model:
         return _FALLBACK_MAX_OUTPUT_TOKENS
@@ -100,7 +100,7 @@ class AnthropicTool(TypedDict):
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
 
-    https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    [Claude docs for built-in tools](https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview)
     """
     if not isinstance(tool, dict):
         return False
@@ -569,8 +569,8 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
 
-    See [Anthropic's docs](https://docs.anthropic.com/en/docs/about-claude/models/overview) for a
-    list of the latest models.
+    See [Anthropic's docs](https://docs.claude.com/en/docs/about-claude/models/overview)
+    for a list of the latest models.
 
     Setup:
         Install `langchain-anthropic` and set environment variable `ANTHROPIC_API_KEY`.
@@ -852,7 +852,7 @@ class ChatAnthropic(BaseChatModel):
         ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
-            [Files API](https://docs.anthropic.com/en/docs/build-with-claude/files):
+            [Files API](https://docs.claude.com/en/docs/build-with-claude/files):
 
             ```python
             from langchain_anthropic import ChatAnthropic
@@ -915,7 +915,7 @@ class ChatAnthropic(BaseChatModel):
         ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
-            [Files API](https://docs.anthropic.com/en/docs/build-with-claude/files):
+            [Files API](https://docs.claude.com/en/docs/build-with-claude/files):
 
             ```python
             from langchain_anthropic import ChatAnthropic
@@ -941,12 +941,13 @@ class ChatAnthropic(BaseChatModel):
             ```
 
     Extended thinking:
-        Claude 3.7 Sonnet supports an
-        [extended thinking](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking)
+        Certain [Claude models](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#supported-models)
+        support an [extended thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)
         feature, which will output the step-by-step reasoning process that led to its
         final answer.
 
         To use it, specify the `thinking` parameter when initializing `ChatAnthropic`.
+
         It can also be passed in as a kwarg during invocation.
 
         You will need to specify a token budget to use this feature. See usage example:
@@ -975,12 +976,15 @@ class ChatAnthropic(BaseChatModel):
         ]
         ```
 
+        !!! warning "Differences in thinking across model versions"
+            The Claude Messages API handles thinking differently across Claude Sonnet
+            3.7 and Claude 4 models. Refer to [their docs](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#differences-in-thinking-across-model-versions)
+            for more info.
+
     Citations:
-        Anthropic supports a
-        [citations](https://docs.anthropic.com/en/docs/build-with-claude/citations)
+        Anthropic supports a [citations](https://docs.claude.com/en/docs/build-with-claude/citations)
         feature that lets Claude attach context to its answers based on source
-        documents supplied by the user. When
-        [document content blocks](https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types)
+        documents supplied by the user. When [document content blocks](https://docs.claude.com/en/docs/build-with-claude/citations#document-types)
         with `"citations": {"enabled": True}` are included in a query, Claude may
         generate citations in its response.
 
@@ -1082,7 +1086,7 @@ class ChatAnthropic(BaseChatModel):
 
         !!! note
             Only certain models support prompt caching.
-            See the [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models)
+            See the [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#supported-models)
             for a full list.
 
         ```python
@@ -1179,7 +1183,7 @@ class ChatAnthropic(BaseChatModel):
             }
             ```
 
-            See [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
+            See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
             for detail.
 
     Extended context windows (beta):
@@ -1213,7 +1217,7 @@ class ChatAnthropic(BaseChatModel):
         response = model.invoke(messages)
         ```
 
-        See [Claude documentation](https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window)
+        See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/context-windows#1m-token-context-window)
         for detail.
 
 
@@ -2398,7 +2402,7 @@ class ChatAnthropic(BaseChatModel):
             ```
 
         !!! warning "Behavior changed in 0.3.0"
-                Uses Anthropic's [token counting API](https://docs.anthropic.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
+                Uses Anthropic's [token counting API](https://docs.claude.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
         """  # noqa: D214,E501
         formatted_system, formatted_messages = _format_messages(messages)
@@ -2646,7 +2650,7 @@ def _make_message_chunk_from_anthropic_event(
             # Mark final Anthropic stream chunk
             message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
-    # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
+    # https://docs.claude.com/en/docs/build-with-claude/streaming#other-events
     else:
         pass
 
