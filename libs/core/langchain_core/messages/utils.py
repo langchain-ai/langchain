@@ -86,6 +86,7 @@ AnyMessage = Annotated[
     | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
+""""A type representing any defined `Message` or `MessageChunk` type."""
 
 
 def get_buffer_string(
@@ -209,6 +210,7 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
 MessageLikeRepresentation = (
     BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
 )
+"""A type representing the various ways a message can be represented."""
 
 
 def _create_message_from_message_type(
@@ -320,8 +322,8 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         An instance of a message or a message template.
 
     Raises:
-        `NotImplementedError`: if the message type is not supported.
-        `ValueError`: if the message dict does not contain the required keys.
+        NotImplementedError: if the message type is not supported.
+        ValueError: if the message dict does not contain the required keys.
 
     """
     if isinstance(message, BaseMessage):
@@ -700,7 +702,7 @@ def trim_messages(
     r"""Trim messages to be below a token count.
 
     `trim_messages` can be used to reduce the size of a chat history to a specified
-    token count or specified message count.
+    token or message count.
 
     In either case, if passing the trimmed chat history back into a chat model
     directly, the resulting chat history should usually satisfy the following
@@ -711,8 +713,6 @@ def trim_messages(
         followed by a `HumanMessage`. To achieve this, set `start_on='human'`.
         In addition, generally a `ToolMessage` can only appear after an `AIMessage`
         that involved a tool call.
-        Please see the following link for more information about messages:
-        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
         To achieve this set the `strategy='last'`.
     3. Usually, the new chat history should include the `SystemMessage` if it
@@ -764,8 +764,8 @@ def trim_messages(
             as `BaseMessage` classes (e.g. `SystemMessage`, `HumanMessage`,
             `AIMessage`, ...). Can be a single type or a list of types.
 
-        include_system: Whether to keep the SystemMessage if there is one at index 0.
-            Should only be specified if `strategy="last"`.
+        include_system: Whether to keep the `SystemMessage` if there is one at index
+            `0`. Should only be specified if `strategy="last"`.
         text_splitter: Function or `langchain_text_splitters.TextSplitter` for
             splitting the string contents of a message. Only used if
             `allow_partial=True`. If `strategy='last'` then the last split tokens
@@ -776,7 +776,7 @@ def trim_messages(
             newlines.
 
     Returns:
-        list of trimmed `BaseMessage`.
+        List of trimmed `BaseMessage`.
 
     Raises:
         ValueError: if two incompatible arguments are specified or an unrecognized

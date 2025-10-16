@@ -421,7 +421,7 @@ class PIIMiddleware(AgentMiddleware):
         - `credit_card`: Credit card numbers (validated with Luhn algorithm)
         - `ip`: IP addresses (validated with stdlib)
         - `mac_address`: MAC addresses
-        - `url`: URLs (both http/https and bare URLs)
+        - `url`: URLs (both `http`/`https` and bare URLs)
 
     Strategies:
         - `block`: Raise an exception when PII is detected
@@ -431,12 +431,12 @@ class PIIMiddleware(AgentMiddleware):
 
     Strategy Selection Guide:
 
-        | Strategy | Preserves Identity? | Best For                                |
-        | -------- | ------------------- | --------------------------------------- |
-        | `block`  | N/A                 | Avoid PII completely                    |
-        | `redact` | No                  | General compliance, log sanitization    |
-        | `mask`   | No                  | Human readability, customer service UIs |
-        | `hash`   | Yes (pseudonymous)  | Analytics, debugging                    |
+    | Strategy | Preserves Identity? | Best For                                |
+    | -------- | ------------------- | --------------------------------------- |
+    | `block`  | N/A                 | Avoid PII completely                    |
+    | `redact` | No                  | General compliance, log sanitization    |
+    | `mask`   | No                  | Human readability, customer service UIs |
+    | `hash`   | Yes (pseudonymous)  | Analytics, debugging                    |
 
     Example:
         ```python

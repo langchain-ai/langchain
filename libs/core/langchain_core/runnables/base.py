@@ -1448,7 +1448,7 @@ class Runnable(ABC, Generic[Input, Output]):
             An async stream of `StreamEvent`.
 
         Raises:
-            `NotImplementedError`: If the version is not `'v1'` or `'v2'`.
+            NotImplementedError: If the version is not `'v1'` or `'v2'`.
 
         """  # noqa: E501
         if version == "v2":

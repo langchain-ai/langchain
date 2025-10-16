@@ -248,7 +248,7 @@ def _function_annotations_are_pydantic_v1(
         True if all Pydantic annotations are from V1, `False` otherwise.
 
     Raises:
-        `NotImplementedError`: If the function contains mixed V1 and V2 annotations.
+        NotImplementedError: If the function contains mixed V1 and V2 annotations.
     """
     any_v1_annotations = any(
         _is_pydantic_annotation(parameter.annotation, pydantic_version="v1")

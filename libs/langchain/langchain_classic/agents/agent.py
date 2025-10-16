@@ -328,8 +328,8 @@ class BaseMultiActionAgent(BaseModel):
             file_path: Path to file to save the agent to.
 
         Raises:
-            `NotImplementedError`: If agent does not support saving.
-            `ValueError`: If `file_path` is not json or yaml.
+            NotImplementedError: If agent does not support saving.
+            ValueError: If `file_path` is not json or yaml.
 
         Example:
         ```python

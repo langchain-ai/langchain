@@ -184,7 +184,7 @@ class Blob(BaseMedia):
         """Read data as a byte stream.
 
         Raises:
-            `NotImplementedError`: If the blob cannot be represented as a byte stream.
+            NotImplementedError: If the blob cannot be represented as a byte stream.
 
         Yields:
             The data as a byte stream.

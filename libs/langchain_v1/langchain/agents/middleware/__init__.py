@@ -1,7 +1,9 @@
 """Entrypoint to using [Middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents).
 
-See [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for more
-details.
+!!! warning "Reference docs"
+    This page contains **reference documentation** for Middleware. See
+    [the docs](https://docs.langchain.com/oss/python/langchain/middleware) for conceptual
+    guides, tutorials, and examples on using Middleware.
 """  # noqa: E501
 
 from .context_editing import (

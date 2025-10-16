@@ -23,9 +23,6 @@ class BaseRateLimiter(abc.ABC):
     - Rate limiting information is not surfaced in tracing or callbacks. This means
         that the total time it takes to invoke a chat model will encompass both
         the time spent waiting for tokens and the time spent making the request.
-
-
-    !!! version-added "Added in version 0.2.24"
     """
 
     @abc.abstractmethod
@@ -118,9 +115,6 @@ class InMemoryRateLimiter(BaseRateLimiter):
             toc = time.time()
             print(toc - tic)
         ```
-
-    !!! version-added "Added in version 0.2.24"
-
     """  # noqa: E501
 
     def __init__(

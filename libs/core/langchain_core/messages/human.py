@@ -7,9 +7,9 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class HumanMessage(BaseMessage):
-    """Message from a human.
+    """Message from the user.
 
-    `HumanMessage`s are messages that are passed in from a human to the model.
+    A `HumanMessage` is a message that is passed in from a user to the model.
 
     Example:
         ```python

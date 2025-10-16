@@ -1,6 +1,9 @@
 """Entrypoint to building [Agents](https://docs.langchain.com/oss/python/langchain/agents) with LangChain.
 
-See [the docs](https://docs.langchain.com/oss/python/langchain/agents) for more details.
+!!! warning "Reference docs"
+    This page contains **reference documentation** for Agents. See
+    [the docs](https://docs.langchain.com/oss/python/langchain/agents) for conceptual
+    guides, tutorials, and examples on using Agents.
 """  # noqa: E501
 
 from langchain.agents.factory import create_agent
