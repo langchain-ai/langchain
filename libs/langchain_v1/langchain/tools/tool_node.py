@@ -121,13 +121,16 @@ class ToolCallRequest:
 
     Attributes:
         tool_call: Tool call dict with name, args, and id from model output.
-        tool: BaseTool instance to be invoked.
+        tool: BaseTool instance to be invoked, or None if tool is not
+            registered with the ToolNode. When tool is None, interceptors can
+            handle the request without validation. If the interceptor calls execute(),
+            validation will occur and raise an error for unregistered tools.
         state: Agent state (dict, list, or BaseModel).
         runtime: LangGraph runtime context (optional, None if outside graph).
     """
 
     tool_call: ToolCall
-    tool: BaseTool
+    tool: BaseTool | None
     state: Any
     runtime: ToolRuntime
 
@@ -728,6 +731,14 @@ class _ToolNode(RunnableCallable):
         call = request.tool_call
         tool = request.tool
 
+        # Validate tool exists when we actually need to execute it
+        if tool is None:
+            if invalid_tool_message := self._validate_tool_call(call):
+                return invalid_tool_message
+            # This should never happen if validation works correctly
+            msg = f"Tool {call['name']} is not registered with ToolNode"
+            raise TypeError(msg)
+
         call_args = {**call, "type": "tool_call"}
 
         try:
@@ -804,10 +815,9 @@ class _ToolNode(RunnableCallable):
         Returns:
             ToolMessage or Command.
         """
-        if invalid_tool_message := self._validate_tool_call(call):
-            return invalid_tool_message
-
-        tool = self.tools_by_name[call["name"]]
+        # Validation is deferred to _execute_tool_sync to allow interceptors
+        # to short-circuit requests for unregistered tools
+        tool = self.tools_by_name.get(call["name"])
 
         # Create the tool request with state and runtime
         tool_request = ToolCallRequest(
@@ -865,6 +875,14 @@ class _ToolNode(RunnableCallable):
         """
         call = request.tool_call
         tool = request.tool
+
+        # Validate tool exists when we actually need to execute it
+        if tool is None:
+            if invalid_tool_message := self._validate_tool_call(call):
+                return invalid_tool_message
+            # This should never happen if validation works correctly
+            msg = f"Tool {call['name']} is not registered with ToolNode"
+            raise TypeError(msg)
 
         call_args = {**call, "type": "tool_call"}
 
@@ -942,10 +960,9 @@ class _ToolNode(RunnableCallable):
         Returns:
             ToolMessage or Command.
         """
-        if invalid_tool_message := self._validate_tool_call(call):
-            return invalid_tool_message
-
-        tool = self.tools_by_name[call["name"]]
+        # Validation is deferred to _execute_tool_async to allow interceptors
+        # to short-circuit requests for unregistered tools
+        tool = self.tools_by_name.get(call["name"])
 
         # Create the tool request with state and runtime
         tool_request = ToolCallRequest(
