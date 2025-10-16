@@ -554,6 +554,8 @@ def create_agent(  # noqa: PLR0915
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
+            Generally, it's recommended to use state_schema extensions via middleware
+            to keep relevant extensions scoped to corresponding hooks / tools.
             The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object. This is used for persisting
