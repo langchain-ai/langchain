@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 
 import pytest
 from langchain_core.messages import AIMessage
@@ -10,6 +10,7 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
     ChatModelIntegrationTests,  # type: ignore[import-not-found]
 )
+from typing_extensions import override
 
 from langchain_xai import ChatXAI
 
