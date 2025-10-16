@@ -958,9 +958,7 @@ def create_agent(  # noqa: PLR0915
             # Use provider-specific structured output
             kwargs = effective_response_format.to_model_kwargs(model=request.model)
             return (
-                request.model.bind_tools(
-                    final_tools, **kwargs, **request.model_settings
-                ),
+                request.model.bind_tools(final_tools, **kwargs, **request.model_settings),
                 effective_response_format,
             )
 
