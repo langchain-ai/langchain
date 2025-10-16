@@ -123,7 +123,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Extract tool information for emulation
         tool_args = request.tool_call["args"]
-        tool_description = request.tool.description
+        tool_description = request.tool.description if request.tool else "No description available"
 
         # Build prompt for emulator LLM
         prompt = (
@@ -175,7 +175,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Extract tool information for emulation
         tool_args = request.tool_call["args"]
-        tool_description = request.tool.description
+        tool_description = request.tool.description if request.tool else "No description available"
 
         # Build prompt for emulator LLM
         prompt = (
