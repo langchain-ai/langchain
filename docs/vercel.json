@@ -3313,6 +3313,1654 @@
     {
       "source": "/en/latest/use_cases/apis.html/",
       "destination": "/v0.1/docs/use_cases/apis/"
+    },
+    {
+      "source": "/v0.1/docs/additional_resources/tutorials",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/additional_resources/youtube",
+      "destination": "https://docs.langchain.com/oss/python/langchain/academy"
+    },
+    {
+      "source": "/v0.1/docs/contributing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/contributing/code",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/contributing/testing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/expression_language",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/cookbook/multiple_chains",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/get_started",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/how_to/decorator",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/how_to/inspect",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/how_to/message_history",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/how_to/routing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/runtime"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/interface",
+      "destination": "https://docs.langchain.com/oss/python/langchain/runtime"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/assign",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/binding",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/configure",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/functions",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/parallel",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/passthrough",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/primitives/sequence",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/streaming",
+      "destination": "https://docs.langchain.com/oss/python/langchain/streaming"
+    },
+    {
+      "source": "/v0.1/docs/expression_language/why",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/get_started/installation",
+      "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    },
+    {
+      "source": "/v0.1/docs/get_started/introduction",
+      "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    },
+    {
+      "source": "/v0.1/docs/get_started/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
+    },
+    {
+      "source": "/v0.1/docs/guides",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/guides/development",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/guides/development/debugging",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/development/extending_langchain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/guides/development/local_llms",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/guides/development/pydantic_compatibility",
+      "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization",
+      "destination": "https://docs.langchain.com/oss/python/langchain/deploy"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/deployments",
+      "destination": "https://docs.langchain.com/oss/python/langchain/deploy"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/deployments/template_repos",
+      "destination": "https://docs.langchain.com/oss/python/langchain/deploy"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/comparison",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/comparison/pairwise_string",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/examples/comparisons",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/string",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/string/criteria_eval_chain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/string/embedding_distance",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/string/scoring_eval_chain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/string/string_distance",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/trajectory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/evaluation/trajectory/trajectory_eval",
+      "destination": "https://docs.langchain.com/oss/python/langchain/test"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/fallbacks",
+      "destination": "https://docs.langchain.com/oss/python/langchain/runtime"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/amazon_comprehend_chain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/constitutional_chain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/hugging_face_prompt_injection",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/logical_fallacy_chain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/moderation",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/presidio_data_anonymization",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/presidio_data_anonymization/qa_privacy_protection",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/guides/productionization/safety/presidio_data_anonymization/reversible",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/integrations/adapters",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/callbacks",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/integrations/callbacks/context",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/integrations/callbacks/streamlit",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/integrations/callbacks/uptrain",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/anthropic",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/azure_chat_openai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/bedrock",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/gigachat",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/google_generative_ai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/groq",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/huggingface",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/mistralai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/nvidia_ai_endpoints",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/ollama",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/ollama_functions",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/openai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/sparkllm",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/tongyi",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat/zhipuai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/chat_loaders",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/components",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/airtable",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/amazon_textract",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/aws_s3_file",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/csv",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/google_drive",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/source_code",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/spider",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/unstructured_file",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/upstage",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/wikipedia",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_loaders/youtube_transcript",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_transformers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_transformers/cross_encoder_reranker",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_transformers/openvino_rerank",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/document_transformers/voyageai-reranker",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/amazon_neptune_open_cypher",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/diffbot",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/hugegraph",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/memgraph",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/nebula_graph",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/neo4j_cypher",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/graphs/ontotext",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/ai21",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/azure_openai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/baidu_qianfan_endpoint",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/bedrock",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/friendli",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/google_vertex_ai_palm",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/huggingface_endpoint",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/jsonformer_experimental",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/llamacpp",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/llm_caching",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/ollama",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/openvino",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/llms/tongyi",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/integrations/memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/integrations/memory/aws_dynamodb",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/integrations/memory/momento_chat_message_history",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/integrations/memory/tidb_chat_message_history",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/anthropic",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/aws",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/google",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/huggingface",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/microsoft",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/platforms/openai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/ainetwork",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/datadog",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/dspy",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/exa_search",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/facebook",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/jina",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/mongodb_atlas",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/nvidia",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/pgvector",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/pinecone",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/providers/unstructured",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/bedrock",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/bm25",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/cohere",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/cohere-reranker",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/docarray_retriever",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/elasticsearch_retriever",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/flashrank-reranker",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/self_query",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/retrievers/tavily",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/stores",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/bedrock",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/google_generative_ai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/jina",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/ollama",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/openai",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/text_embedding/openvino",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/cogniswitch",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/csv",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/document_comparison_toolkit",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/pandas",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/playwright",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/powerbi",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/python",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/toolkits/sql_database",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools/awslambda",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools/ddg",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools/python",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools/search_tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/tools/sql_database",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/azure_cosmos_db",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/chroma",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/elasticsearch",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/faiss",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/hippo",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/milvus",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/mongodb_atlas",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/neo4jvector",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/opensearch",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/pathway",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/pgembedding",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/pgvector",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/pinecone",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/integrations/vectorstores/tidb_vector",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/langserve",
+      "destination": "https://docs.langchain.com/oss/python/langchain/deploy"
+    },
+    {
+      "source": "/v0.1/docs/langsmith",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/langsmith/walkthrough",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/modules",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/json_agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/openai_assistants",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/openai_functions_agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/openai_tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/react",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/self_ask_with_search",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/structured_chat",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/tool_calling",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/agent_types/xml_agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/concepts",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/agent_iter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/agent_structured",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/custom_agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/handle_parsing_errors",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/intermediate_steps",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/max_iterations",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/max_time_limit",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/how_to/streaming",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/agents/quick_start",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/modules/callbacks",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/modules/callbacks/token_counting",
+      "destination": "https://docs.langchain.com/oss/python/langchain/observability"
+    },
+    {
+      "source": "/v0.1/docs/modules/chains",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/modules/composition",
+      "destination": "https://docs.langchain.com/oss/python/langchain/middleware"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/csv",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/custom",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/file_directory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/html",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/json",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/markdown",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/office_file",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_loaders/pdf",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/HTML_header_metadata",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/HTML_section_aware_splitter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/character_text_splitter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/code_splitter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/markdown_header_metadata",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/recursive_json_splitter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/recursive_text_splitter",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/semantic-chunker",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/document_transformers/split_by_token",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/indexing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/MultiQueryRetriever",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/contextual_compression",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/custom_retriever",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/ensemble",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/long_context_reorder",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/multi_vector",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/parent_document_retriever",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/self_query",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/time_weighted_vectorstore",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/retrievers/vectorstore",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/text_embedding",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/text_embedding/caching_embeddings",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/data_connection/vectorstores",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/adding_memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/agent_with_memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/agent_with_memory_in_db",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/chat_messages",
+      "destination": "https://docs.langchain.com/oss/python/langchain/messages"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/conversational_customization",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/custom_memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/buffer",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/buffer_window",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/entity_summary_memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/kg",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/summary",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/summary_buffer",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/token_buffer",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/memory/types/vectorstore_retriever_memory",
+      "destination": "https://docs.langchain.com/oss/python/langchain/long-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/chat_model_caching",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/custom_chat_model",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/function_calling",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/message_types",
+      "destination": "https://docs.langchain.com/oss/python/langchain/messages"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/quick_start",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/streaming",
+      "destination": "https://docs.langchain.com/oss/python/langchain/streaming"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/structured_output",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/chat/token_usage_tracking",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms/custom_llm",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms/llm_caching",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms/quick_start",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms/streaming_llm",
+      "destination": "https://docs.langchain.com/oss/python/langchain/streaming"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/llms/token_usage_tracking",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/custom",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/quick_start",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/csv",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/json",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/openai_tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/output_fixing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/pydantic",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/output_parsers/types/structured",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/composition",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/example_selectors",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/example_selectors/length_based",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/example_selectors/mmr",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/example_selectors/ngram_overlap",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/example_selectors/similarity",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/few_shot_examples",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/few_shot_examples_chat",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/partial",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/model_io/prompts/quick_start",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/modules/tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/modules/tools/custom_tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/modules/tools/toolkits",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/modules/tools/tools_as_openai_functions",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/packages",
+      "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    },
+    {
+      "source": "/v0.1/docs/people",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/security",
+      "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    },
+    {
+      "source": "/v0.1/docs/templates",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/chain-of-note-wiki",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/chat-bot-feedback",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/csv-agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/elastic-query-generator",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/gemini-functions-agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/guardrails-output-parser",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/hybrid-search-weaviate",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/hyde",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/neo4j-advanced-rag",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/neo4j-cypher",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/neo4j-cypher-ft",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/neo4j-semantic-layer",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/neo4j-semantic-ollama",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/openai-functions-agent",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/openai-functions-agent-gmail",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/pirate-speak",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/propositional-retrieval",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-azure-search",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-chroma",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-chroma-private",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-conversation",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-fusion",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-gemini-multi-modal",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-gpt-crawler",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-multi-index-router",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-multi-modal-local",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-opensearch",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-pinecone-rerank",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-semi-structured",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rag-supabase",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/research-assistant",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/rewrite-retrieve-read",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/self-query-supabase",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/skeleton-of-thought",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/sql-llama2",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/sql-ollama",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/templates/stepback-qa-prompting",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/use_cases",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/chatbots",
+      "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/chatbots/memory_management",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/chatbots/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/chatbots/retrieval",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/chatbots/tool_usage",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/code_understanding",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/data_generation",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/guidelines",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/how_to/examples",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/how_to/handle_files",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/how_to/handle_long_text",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/how_to/parse",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/extraction/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph/constructing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph/mapping",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph/prompting",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/graph/semantic",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/constructing-filters",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/few_shot",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/high_cardinality",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/multiple_queries",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/multiple_retrievers",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/how_to/no_queries",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/decomposition",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/expansion",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/hyde",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/routing",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/step_back",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/query_analysis/techniques/structuring",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/chat_history",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/citations",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/conversational_retrieval_agents",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/hybrid",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/local_retrieval_qa",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/per_user",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/sources",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/question_answering/streaming",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/agents",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/csv",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/large_db",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/prompting",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/query_checking",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/sql/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/summarization",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tagging",
+      "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/agents",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/human_in_the_loop",
+      "destination": "https://docs.langchain.com/oss/python/langchain/human-in-the-loop"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/multiple_tools",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/parallel",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/prompting",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/quickstart",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/tool_use/tool_error_handling",
+      "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+    },
+    {
+      "source": "/v0.1/docs/use_cases/web_scraping",
+      "destination": "https://docs.langchain.com/oss/python/langchain/retrieval"
     }
   ]
 }
