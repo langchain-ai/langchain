@@ -84,7 +84,7 @@
     },
     {
       "source": "/docs/langsmith(/?)",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/langgraph(/?)",
@@ -308,139 +308,139 @@
     },
     {
       "source": "/docs/guides/productionization/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/deployments/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/deployments/template_repos/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/comparison/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/comparison/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/comparison/pairwise_embedding_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/comparison/pairwise_string/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/examples/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/examples/comparisons/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/criteria_eval_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/embedding_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/exact_match/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/json/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/regex_match/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/scoring_eval_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/string/string_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/trajectory/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/trajectory/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/evaluation/trajectory/trajectory_eval/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/fallbacks/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/amazon_comprehend_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/constitutional_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/hugging_face_prompt_injection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/layerup_security/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/logical_fallacy_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/moderation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/presidio_data_anonymization/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/presidio_data_anonymization/multi_language/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/presidio_data_anonymization/qa_privacy_protection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/productionization/safety/presidio_data_anonymization/reversible/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/integrations/chat/ollama_functions/",
@@ -600,11 +600,11 @@
     },
     {
       "source": "/docs/langsmith/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/langsmith/walkthrough/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/modules/",
@@ -1988,175 +1988,175 @@
     },
     {
       "source": "/docs/guides/deployments/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/deployments/template_repos/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/comparison/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/comparison/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/comparison/pairwise_embedding_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/comparison/pairwise_string/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/examples/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/examples/comparisons/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/criteria_eval_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/embedding_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/exact_match/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/json/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/regex_match/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/scoring_eval_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/string/string_distance/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/trajectory/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/trajectory/custom/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/evaluation/trajectory/trajectory_eval/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/amazon_comprehend_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/constitutional_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/hugging_face_prompt_injection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/layerup_security/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/logical_fallacy_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/moderation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/presidio_data_anonymization/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/presidio_data_anonymization/multi_language/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/presidio_data_anonymization/qa_privacy_protection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/privacy/presidio_data_anonymization/reversible/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/amazon_comprehend_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/constitutional_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/hugging_face_prompt_injection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/layerup_security/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/logical_fallacy_chain/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/moderation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/presidio_data_anonymization/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/presidio_data_anonymization/multi_language/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/presidio_data_anonymization/qa_privacy_protection/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/safety/presidio_data_anonymization/reversible/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/integrations/llms/titan_takeoff_pro/",
@@ -2396,11 +2396,11 @@
     },
     {
       "source": "/docs/guides/langsmith/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/langsmith/walkthrough/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/use_cases/qa_structured/integrations/sqlite/",
@@ -2748,7 +2748,7 @@
     },
     {
       "source": "/docs/expression_language/how_to/fallbacks/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/expression_language/cookbook/retrieval/",
@@ -2780,7 +2780,7 @@
     },
     {
       "source": "/docs/expression_language/cookbook/moderation/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/expression_language/cookbook/embedding_router/",
@@ -2808,11 +2808,11 @@
     },
     {
       "source": "/docs/guides/fallbacks/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/model_laboratory/",
-      "destination": "https://docs.smith.langchain.com/"
+      "destination": "https://docs.langchain.com/langsmith/home"
     },
     {
       "source": "/docs/guides/pydantic_compatibility/",
