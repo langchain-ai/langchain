@@ -342,7 +342,7 @@ class ProviderStrategy(Generic[SchemaT]):
             },
         }
 
-        return {"response_format", response_format, "strict": True}
+        return {"response_format": response_format, "strict": True}
 
 
 @dataclass
