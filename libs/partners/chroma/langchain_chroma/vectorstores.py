@@ -1356,7 +1356,7 @@ class Chroma(VectorStore):
                     Default is 'default_tenant' for local Chroma servers.
             database: Database name. Required for Chroma Cloud connections.
                     Default is 'default_database'.
-            ids : List of document IDs.
+            ids: List of document IDs.
             documents: List of documents to add to the vectorstore.
             embedding: Embedding function.
             client_settings: Chroma client settings.
