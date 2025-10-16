@@ -31,10 +31,9 @@ def parse_tool_call(
 
     Args:
         raw_tool_call: The raw tool call to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool call.
@@ -105,10 +104,9 @@ def parse_tool_calls(
 
     Args:
         raw_tool_calls: The raw tool calls to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool calls.
@@ -165,7 +163,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
                 If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
-                Default is False.
 
         Returns:
             The parsed tool calls.
@@ -229,7 +226,6 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
-                Default is False.
 
         Raises:
             OutputParserException: If the generation is not a chat generation.
@@ -313,7 +309,6 @@ class PydanticToolsParser(JsonOutputToolsParser):
                 If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
-                Default is False.
 
         Returns:
             The parsed Pydantic objects.

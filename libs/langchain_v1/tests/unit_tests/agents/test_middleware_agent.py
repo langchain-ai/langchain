@@ -32,8 +32,8 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.planning import (
-    PlanningMiddleware,
+from langchain.agents.middleware.todo import (
+    TodoListMiddleware,
     PlanningState,
     WRITE_TODOS_SYSTEM_PROMPT,
     write_todos,
@@ -44,7 +44,6 @@ from langchain.agents.middleware.model_call_limit import (
     ModelCallLimitExceededError,
 )
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -1024,115 +1023,6 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
         assert captured_request["action_requests"][1]["description"] == "Static description"
 
 
-# Tests for AnthropicPromptCachingMiddleware
-def test_anthropic_prompt_caching_middleware_initialization() -> None:
-    """Test AnthropicPromptCachingMiddleware initialization."""
-    # Test with custom values
-    middleware = AnthropicPromptCachingMiddleware(
-        type="ephemeral", ttl="1h", min_messages_to_cache=5
-    )
-    assert middleware.type == "ephemeral"
-    assert middleware.ttl == "1h"
-    assert middleware.min_messages_to_cache == 5
-
-    # Test with default values
-    middleware = AnthropicPromptCachingMiddleware()
-    assert middleware.type == "ephemeral"
-    assert middleware.ttl == "5m"
-    assert middleware.min_messages_to_cache == 0
-
-    fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
-        messages=[HumanMessage("Hello")],
-        system_prompt=None,
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-        state={"messages": [HumanMessage("Hello")]},
-        runtime=cast(Runtime, object()),
-        model_settings={},
-    )
-
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response", **req.model_settings)
-
-    result = middleware.wrap_model_call(fake_request, mock_handler)
-    # Check that model_settings were passed through via the request
-    assert fake_request.model_settings == {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
-
-
-def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
-    """Test AnthropicPromptCachingMiddleware with unsupported model."""
-    from typing import cast
-
-    fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
-        messages=[HumanMessage("Hello")],
-        system_prompt=None,
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-        state={"messages": [HumanMessage("Hello")]},
-        runtime=cast(Runtime, object()),
-        model_settings={},
-    )
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
-
-    def mock_handler(req: ModelRequest) -> AIMessage:
-        return AIMessage(content="mock response")
-
-    with pytest.raises(
-        ValueError,
-        match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
-    ):
-        middleware.wrap_model_call(fake_request, mock_handler)
-
-    langchain_anthropic = ModuleType("langchain_anthropic")
-
-    class MockChatAnthropic:
-        pass
-
-    langchain_anthropic.ChatAnthropic = MockChatAnthropic
-
-    with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-        with pytest.raises(
-            ValueError,
-            match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
-        ):
-            middleware.wrap_model_call(fake_request, mock_handler)
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
-
-    with warnings.catch_warnings(record=True) as w:
-        result = middleware.wrap_model_call(fake_request, mock_handler)
-        assert len(w) == 1
-        assert (
-            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
-            in str(w[-1].message)
-        )
-        assert isinstance(result, AIMessage)
-
-    with warnings.catch_warnings(record=True) as w:
-        with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.wrap_model_call(fake_request, mock_handler)
-            assert isinstance(result, AIMessage)
-            assert len(w) == 1
-            assert (
-                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
-                in str(w[-1].message)
-            )
-
-    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
-
-    result = middleware.wrap_model_call(fake_request, mock_handler)
-    assert isinstance(result, AIMessage)
-
-    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.wrap_model_call(fake_request, mock_handler)
-        assert isinstance(result, AIMessage)
-
-
 # Tests for SummarizationMiddleware
 def test_summarization_middleware_initialization() -> None:
     """Test SummarizationMiddleware initialization."""
@@ -1567,10 +1457,10 @@ def test_jump_to_is_ephemeral() -> None:
     assert "jump_to" not in result
 
 
-# Tests for PlanningMiddleware
-def test_planning_middleware_initialization() -> None:
-    """Test that PlanningMiddleware initializes correctly."""
-    middleware = PlanningMiddleware()
+# Tests for TodoListMiddleware
+def test_todo_middleware_initialization() -> None:
+    """Test that TodoListMiddleware initializes correctly."""
+    middleware = TodoListMiddleware()
     assert middleware.state_schema == PlanningState
     assert len(middleware.tools) == 1
     assert middleware.tools[0].name == "write_todos"
@@ -1583,9 +1473,9 @@ def test_planning_middleware_initialization() -> None:
         (None, "## `write_todos`"),
     ],
 )
-def test_planning_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
+def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) -> None:
     """Test that wrap_model_call handles system prompts correctly."""
-    middleware = PlanningMiddleware()
+    middleware = TodoListMiddleware()
     model = FakeToolCallingModel()
 
     state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
@@ -1636,7 +1526,7 @@ def test_planning_middleware_on_model_call(original_prompt, expected_prompt_pref
         ),
     ],
 )
-def test_planning_middleware_write_todos_tool_execution(todos, expected_message) -> None:
+def test_todo_middleware_write_todos_tool_execution(todos, expected_message) -> None:
     """Test that the write_todos tool executes correctly."""
     tool_call = {
         "args": {"todos": todos},
@@ -1656,7 +1546,7 @@ def test_planning_middleware_write_todos_tool_execution(todos, expected_message)
         [{"status": "pending"}],
     ],
 )
-def test_planning_middleware_write_todos_tool_validation_errors(invalid_todos) -> None:
+def test_todo_middleware_write_todos_tool_validation_errors(invalid_todos) -> None:
     """Test that the write_todos tool rejects invalid input."""
     tool_call = {
         "args": {"todos": invalid_todos},
@@ -1668,7 +1558,7 @@ def test_planning_middleware_write_todos_tool_validation_errors(invalid_todos) -
         write_todos.invoke(tool_call)
 
 
-def test_planning_middleware_agent_creation_with_middleware() -> None:
+def test_todo_middleware_agent_creation_with_middleware() -> None:
     """Test that an agent can be created with the planning middleware."""
     model = FakeToolCallingModel(
         tool_calls=[
@@ -1699,7 +1589,7 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
             [],
         ]
     )
-    middleware = PlanningMiddleware()
+    middleware = TodoListMiddleware()
     agent = create_agent(model=model, middleware=[middleware])
 
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -1716,11 +1606,13 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
     assert len(result["messages"]) == 8
 
 
-def test_planning_middleware_custom_system_prompt() -> None:
-    """Test that PlanningMiddleware can be initialized with custom system prompt."""
+def test_todo_middleware_custom_system_prompt() -> None:
+    """Test that TodoListMiddleware can be initialized with custom system prompt."""
     custom_system_prompt = "Custom todo system prompt for testing"
-    middleware = PlanningMiddleware(system_prompt=custom_system_prompt)
+    middleware = TodoListMiddleware(system_prompt=custom_system_prompt)
     model = FakeToolCallingModel()
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
 
     request = ModelRequest(
         model=model,
@@ -1730,9 +1622,9 @@ def test_planning_middleware_custom_system_prompt() -> None:
         tools=[],
         response_format=None,
         model_settings={},
+        state=state,
+        runtime=cast(Runtime, object()),
     )
-
-    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
 
     def mock_handler(req: ModelRequest) -> AIMessage:
         return AIMessage(content="mock response")
@@ -1743,21 +1635,21 @@ def test_planning_middleware_custom_system_prompt() -> None:
     assert request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
 
 
-def test_planning_middleware_custom_tool_description() -> None:
-    """Test that PlanningMiddleware can be initialized with custom tool description."""
+def test_todo_middleware_custom_tool_description() -> None:
+    """Test that TodoListMiddleware can be initialized with custom tool description."""
     custom_tool_description = "Custom tool description for testing"
-    middleware = PlanningMiddleware(tool_description=custom_tool_description)
+    middleware = TodoListMiddleware(tool_description=custom_tool_description)
 
     assert len(middleware.tools) == 1
     tool = middleware.tools[0]
     assert tool.description == custom_tool_description
 
 
-def test_planning_middleware_custom_system_prompt_and_tool_description() -> None:
-    """Test that PlanningMiddleware can be initialized with both custom prompts."""
+def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
+    """Test that TodoListMiddleware can be initialized with both custom prompts."""
     custom_system_prompt = "Custom system prompt"
     custom_tool_description = "Custom tool description"
-    middleware = PlanningMiddleware(
+    middleware = TodoListMiddleware(
         system_prompt=custom_system_prompt,
         tool_description=custom_tool_description,
     )
@@ -1792,9 +1684,9 @@ def test_planning_middleware_custom_system_prompt_and_tool_description() -> None
     assert tool.description == custom_tool_description
 
 
-def test_planning_middleware_default_prompts() -> None:
-    """Test that PlanningMiddleware uses default prompts when none provided."""
-    middleware = PlanningMiddleware()
+def test_todo_middleware_default_prompts() -> None:
+    """Test that TodoListMiddleware uses default prompts when none provided."""
+    middleware = TodoListMiddleware()
 
     # Verify default system prompt
     assert middleware.system_prompt == WRITE_TODOS_SYSTEM_PROMPT
@@ -1806,9 +1698,9 @@ def test_planning_middleware_default_prompts() -> None:
     assert tool.description == WRITE_TODOS_TOOL_DESCRIPTION
 
 
-def test_planning_middleware_custom_system_prompt() -> None:
+def test_todo_middleware_custom_system_prompt_in_agent() -> None:
     """Test that custom tool executes correctly in an agent."""
-    middleware = PlanningMiddleware(system_prompt="call the write_todos tool")
+    middleware = TodoListMiddleware(system_prompt="call the write_todos tool")
 
     model = FakeToolCallingModel(
         tool_calls=[

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -26,11 +26,10 @@ from typing import TypeAlias
 
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
-from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -62,6 +61,18 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
+class _ModelRequestOverrides(TypedDict, total=False):
+    """Possible overrides for ModelRequest.override() method."""
+
+    model: BaseChatModel
+    system_prompt: str | None
+    messages: list[AnyMessage]
+    tool_choice: Any | None
+    tools: list[BaseTool | dict]
+    response_format: ResponseFormat | None
+    model_settings: dict[str, Any]
+
+
 @dataclass
 class ModelRequest:
     """Model request information for the agent."""
@@ -75,6 +86,36 @@ class ModelRequest:
     state: AgentState
     runtime: Runtime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
+
+    def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
+        """Replace the request with a new request with the given overrides.
+
+        Returns a new `ModelRequest` instance with the specified attributes replaced.
+        This follows an immutable pattern, leaving the original request unchanged.
+
+        Args:
+            **overrides: Keyword arguments for attributes to override. Supported keys:
+                - model: BaseChatModel instance
+                - system_prompt: Optional system prompt string
+                - messages: List of messages
+                - tool_choice: Tool choice configuration
+                - tools: List of available tools
+                - response_format: Response format specification
+                - model_settings: Additional model settings
+
+        Returns:
+            New ModelRequest instance with specified overrides applied.
+
+        Examples:
+            ```python
+            # Create a new request with different model
+            new_request = request.override(model=different_model)
+
+            # Override multiple attributes
+            new_request = request.override(system_prompt="New instructions", tool_choice="auto")
+            ```
+        """
+        return replace(self, **overrides)
 
 
 @dataclass
@@ -129,8 +170,6 @@ class AgentState(TypedDict, Generic[ResponseT]):
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
-    thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
-    run_model_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):
@@ -199,19 +238,19 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ModelCallResult:
         """Intercept and control model execution via handler callback.
 
-        The handler callback executes the model request and returns a ModelResponse.
+        The handler callback executes the model request and returns a `ModelResponse`.
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Callback that executes the model request and returns ModelResponse.
-                     Call this to execute the model. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            handler: Callback that executes the model request and returns
+                `ModelResponse`. Call this to execute the model. Can be called multiple
+                times for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            ModelCallResult
+            `ModelCallResult`
 
         Examples:
             Retry on error:
@@ -282,16 +321,16 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ModelCallResult:
         """Intercept and control async model execution via handler callback.
 
-        The handler callback executes the model request and returns a ModelResponse.
+        The handler callback executes the model request and returns a `ModelResponse`.
         Middleware can call the handler multiple times for retry logic, skip calling
         it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
             request: Model request to execute (includes state and runtime).
-            handler: Async callback that executes the model request and returns ModelResponse.
-                     Call this to execute the model. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`. Call this to execute the model. Can be called multiple
+                times for retry logic. Can skip calling it to short-circuit.
 
         Returns:
             ModelCallResult
@@ -336,15 +375,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Intercept tool execution for retries, monitoring, or modification.
 
         Multiple middleware compose automatically (first defined = outermost).
-        Exceptions propagate unless handle_tool_errors is configured on ToolNode.
+        Exceptions propagate unless `handle_tool_errors` is configured on `ToolNode`.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
-                Access state via request.state and runtime via request.runtime.
+            request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+                Access state via `request.state` and runtime via `request.runtime`.
             handler: Callable to execute the tool (can be called multiple times).
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
 
         The handler callable can be invoked multiple times for retry logic.
         Each call to handler is independent and stateless.
@@ -352,12 +391,15 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         Examples:
             Modify request before execution:
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 request.tool_call["args"]["value"] *= 2
                 return handler(request)
+            ```
 
             Retry on error (call handler multiple times):
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     try:
@@ -368,9 +410,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                         if attempt == 2:
                             raise
                 return result
+            ```
 
             Conditional retry based on response:
 
+            ```python
             def wrap_tool_call(self, request, handler):
                 for attempt in range(3):
                     result = handler(request)
@@ -379,6 +423,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                     if attempt < 2:
                         continue
                     return result
+            ```
         """
         msg = (
             "Synchronous implementation of wrap_tool_call is not available. "
@@ -399,20 +444,20 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> ToolMessage | Command:
         """Intercept and control async tool execution via handler callback.
 
-        The handler callback executes the tool call and returns a ToolMessage or Command.
-        Middleware can call the handler multiple times for retry logic, skip calling
-        it to short-circuit, or modify the request/response. Multiple middleware
+        The handler callback executes the tool call and returns a `ToolMessage` or
+        `Command`. Middleware can call the handler multiple times for retry logic, skip
+        calling it to short-circuit, or modify the request/response. Multiple middleware
         compose with first in list as outermost layer.
 
         Args:
-            request: Tool call request with call dict, BaseTool, state, and runtime.
-                Access state via request.state and runtime via request.runtime.
-            handler: Async callable to execute the tool and returns ToolMessage or Command.
-                     Call this to execute the tool. Can be called multiple times
-                     for retry logic. Can skip calling it to short-circuit.
+            request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
+                Access state via `request.state` and runtime via `request.runtime`.
+            handler: Async callable to execute the tool and returns `ToolMessage` or
+                `Command`. Call this to execute the tool. Can be called multiple times
+                for retry logic. Can skip calling it to short-circuit.
 
         Returns:
-            ToolMessage or Command (the final result).
+            `ToolMessage` or `Command` (the final result).
 
         The handler callable can be invoked multiple times for retry logic.
         Each call to handler is independent and stateless.
@@ -432,13 +477,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
                 return result
             ```
 
-
+            ```python
             async def awrap_tool_call(self, request, handler):
                 if cached := await get_cache_async(request):
                     return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
                 result = await handler(request)
                 await save_cache_async(request, result)
                 return result
+            ```
         """
         msg = (
             "Asynchronous implementation of awrap_tool_call is not available. "
@@ -454,7 +500,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with AgentState and Runtime as arguments."""
+    """Callable with `AgentState` and `Runtime` as arguments."""
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
@@ -464,7 +510,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 
 
 class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
-    """Callable that returns a prompt string given ModelRequest (contains state and runtime)."""
+    """Callable that returns a prompt string given `ModelRequest` (contains state and runtime)."""
 
     def __call__(self, request: ModelRequest) -> str | Awaitable[str]:
         """Generate a system prompt string based on the request."""
@@ -474,7 +520,8 @@ class _CallableReturningPromptString(Protocol[StateT_contra, ContextT]):  # type
 class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # type: ignore[misc]
     """Callable for model call interception with handler callback.
 
-    Receives handler callback to execute model and returns ModelResponse or AIMessage.
+    Receives handler callback to execute model and returns `ModelResponse` or
+    `AIMessage`.
     """
 
     def __call__(
@@ -489,7 +536,8 @@ class _CallableReturningModelResponse(Protocol[StateT_contra, ContextT]):  # typ
 class _CallableReturningToolResponse(Protocol):
     """Callable for tool call interception with handler callback.
 
-    Receives handler callback to execute tool and returns final ToolMessage or Command.
+    Receives handler callback to execute tool and returns final `ToolMessage` or
+    `Command`.
     """
 
     def __call__(
@@ -582,22 +630,22 @@ def before_model(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the before_model hook.
+    """Decorator used to dynamically create a middleware with the `before_model` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
         state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+            `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function it is wrapping.
+        Either an `AgentMiddleware` instance (if func is provided directly) or a
+        decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -724,22 +772,22 @@ def after_model(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the after_model hook.
+    """Decorator used to dynamically create a middleware with the `after_model` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+        function that can be applied to a function.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -855,22 +903,22 @@ def before_agent(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the before_agent hook.
+    """Decorator used to dynamically create a middleware with the `before_agent` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided directly) or a decorator function
-        that can be applied to a function it is wrapping.
+        Either an `AgentMiddleware` instance (if func is provided directly) or a
+        decorator function that can be applied to a function it is wrapping.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -997,22 +1045,22 @@ def after_agent(
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the after_agent hook.
+    """Decorator used to dynamically create a middleware with the `after_agent` hook.
 
     Args:
         func: The function to be decorated. Must accept:
             `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
-        state_schema: Optional custom state schema type. If not provided, uses the default
-            AgentState schema.
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
         can_jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "end"
+            Valid values are: `"tools"`, `"model"`, `"end"`
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
     Returns:
-        Either an AgentMiddleware instance (if func is provided) or a decorator function
-        that can be applied to a function.
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+        function that can be applied to a function.
 
     The decorated function should return:
         - `dict[str, Any]` - State updates to merge into the agent state
@@ -1261,21 +1309,21 @@ def wrap_model_call(
     ]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Create middleware with wrap_model_call hook from a function.
+    """Create middleware with `wrap_model_call` hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     model calls, implement retry logic, handle errors, and rewrite responses.
 
     Args:
         func: Function accepting (request, handler) that calls handler(request)
-            to execute the model and returns ModelResponse or AIMessage.
+            to execute the model and returns `ModelResponse` or `AIMessage`.
             Request contains state and runtime.
-        state_schema: Custom state schema. Defaults to AgentState.
+        state_schema: Custom state schema. Defaults to `AgentState`.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
     Returns:
-        AgentMiddleware instance if func provided, otherwise a decorator.
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
         Basic retry logic:
@@ -1409,20 +1457,20 @@ def wrap_tool_call(
     ]
     | AgentMiddleware
 ):
-    """Create middleware with wrap_tool_call hook from a function.
+    """Create middleware with `wrap_tool_call` hook from a function.
 
     Converts a function with handler callback into middleware that can intercept
     tool calls, implement retry logic, monitor execution, and modify responses.
 
     Args:
         func: Function accepting (request, handler) that calls
-            handler(request) to execute the tool and returns final ToolMessage or Command.
-            Can be sync or async.
+            handler(request) to execute the tool and returns final `ToolMessage` or
+            `Command`. Can be sync or async.
         tools: Additional tools to register with this middleware.
         name: Middleware class name. Defaults to function name.
 
     Returns:
-        AgentMiddleware instance if func provided, otherwise a decorator.
+        `AgentMiddleware` instance if func provided, otherwise a decorator.
 
     Examples:
         Retry logic:

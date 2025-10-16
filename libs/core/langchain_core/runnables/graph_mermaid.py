@@ -60,10 +60,10 @@ def draw_mermaid(
         edges: List of edges, object with a source, target and data.
         first_node: Id of the first node.
         last_node: Id of the last node.
-        with_styles: Whether to include styles in the graph. Defaults to `True`.
-        curve_style: Curve style for the edges. Defaults to CurveStyle.LINEAR.
-        node_styles: Node colors for different types. Defaults to NodeStyles().
-        wrap_label_n_words: Words to wrap the edge labels. Defaults to 9.
+        with_styles: Whether to include styles in the graph.
+        curve_style: Curve style for the edges.
+        node_styles: Node colors for different types.
+        wrap_label_n_words: Words to wrap the edge labels.
         frontmatter_config: Mermaid frontmatter config.
             Can be used to customize theme and styles. Will be converted to YAML and
             added to the beginning of the mermaid graph.
@@ -287,11 +287,11 @@ def draw_mermaid_png(
     Args:
         mermaid_syntax: Mermaid graph syntax.
         output_file_path: Path to save the PNG image.
-        draw_method: Method to draw the graph. Defaults to MermaidDrawMethod.API.
-        background_color: Background color of the image. Defaults to "white".
-        padding: Padding around the image. Defaults to 10.
-        max_retries: Maximum number of retries (MermaidDrawMethod.API). Defaults to 1.
-        retry_delay: Delay between retries (MermaidDrawMethod.API). Defaults to 1.0.
+        draw_method: Method to draw the graph.
+        background_color: Background color of the image.
+        padding: Padding around the image.
+        max_retries: Maximum number of retries (MermaidDrawMethod.API).
+        retry_delay: Delay between retries (MermaidDrawMethod.API).
         base_url: Base URL for the Mermaid.ink API.
 
     Returns:

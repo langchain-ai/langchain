@@ -104,7 +104,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
         Args:
             text: The text to print.
             color: The color to use for the text.
-            end: The end character to use. Defaults to "".
+            end: The end character to use.
             **kwargs: Additional keyword arguments.
         """
         print_text(text, color=color or self.color, end=end)

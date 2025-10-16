@@ -230,8 +230,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     skip_empty: bool = False
-    """Whether to skip empty strings when embedding or raise an error.
-    Defaults to not skipping."""
+    """Whether to skip empty strings when embedding or raise an error."""
     default_headers: Mapping[str, str] | None = None
     default_query: Mapping[str, object] | None = None
     # Configure a custom httpx client. See the

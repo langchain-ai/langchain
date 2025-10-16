@@ -76,71 +76,78 @@ def init_chat_model(
     config_prefix: str | None = None,
     **kwargs: Any,
 ) -> BaseChatModel | _ConfigurableModel:
-    """Initialize a ChatModel in a single line using the model's name and provider.
+    """Initialize a chat model in a single line using the model's name and provider.
 
     !!! note
-        Must have the integration package corresponding to the model provider installed.
-        You should look at the [provider integration's API reference](https://docs.langchain.com/oss/python/integrations/providers)
-        to see what parameters are supported by the model.
+        Requires the integration package for your model provider to be installed.
+
+        See the `model_provider` parameter below for specific package names
+        (e.g., `pip install langchain-openai`).
+
+        Refer to the [provider integration's API reference](https://docs.langchain.com/oss/python/integrations/providers)
+        for supported model parameters.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-3-5-sonnet-latest'`. You can
-            also specify model and model provider in a single argument using
+        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
+
+            You can also specify model and model provider in a single argument using:
+
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
-        model_provider: The model provider if not specified as part of model arg (see
-            above). Supported model_provider values and the corresponding integration
-            package are:
+        model_provider: The model provider if not specified as part of the model arg
+            (see above). Supported `model_provider` values and the corresponding
+            integration package are:
 
-            - `openai`              -> `langchain-openai`
-            - `anthropic`           -> `langchain-anthropic`
-            - `azure_openai`        -> `langchain-openai`
-            - `azure_ai`            -> `langchain-azure-ai`
-            - `google_vertexai`     -> `langchain-google-vertexai`
-            - `google_genai`        -> `langchain-google-genai`
-            - `bedrock`             -> `langchain-aws`
-            - `bedrock_converse`    -> `langchain-aws`
-            - `cohere`              -> `langchain-cohere`
-            - `fireworks`           -> `langchain-fireworks`
-            - `together`            -> `langchain-together`
-            - `mistralai`           -> `langchain-mistralai`
-            - `huggingface`         -> `langchain-huggingface`
-            - `groq`                -> `langchain-groq`
-            - `ollama`              -> `langchain-ollama`
-            - `google_anthropic_vertex`    -> `langchain-google-vertexai`
-            - `deepseek`            -> `langchain-deepseek`
-            - `ibm`                 -> `langchain-ibm`
-            - `nvidia`              -> `langchain-nvidia-ai-endpoints`
-            - `xai`                 -> `langchain-xai`
-            - `perplexity`          -> `langchain-perplexity`
+            - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `anthropic`               -> [`langchain-anthropic`](https://docs.langchain.com/oss/python/integrations/providers/anthropic)
+            - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
+            - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `bedrock_converse`        -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
+            - `fireworks`               -> [`langchain-fireworks`](https://docs.langchain.com/oss/python/integrations/providers/fireworks)
+            - `together`                -> [`langchain-together`](https://docs.langchain.com/oss/python/integrations/providers/together)
+            - `mistralai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
+            - `groq`                    -> [`langchain-groq`](https://docs.langchain.com/oss/python/integrations/providers/groq)
+            - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
+            - `google_anthropic_vertex` -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `deepseek`                -> [`langchain-deepseek`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `ibm`                     -> [`langchain-ibm`](https://docs.langchain.com/oss/python/integrations/providers/deepseek)
+            - `nvidia`                  -> [`langchain-nvidia-ai-endpoints`](https://docs.langchain.com/oss/python/integrations/providers/nvidia)
+            - `xai`                     -> [`langchain-xai`](https://docs.langchain.com/oss/python/integrations/providers/xai)
+            - `perplexity`              -> [`langchain-perplexity`](https://docs.langchain.com/oss/python/integrations/providers/perplexity)
 
-            Will attempt to infer model_provider from model if not specified. The
+            Will attempt to infer `model_provider` from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
             - `gpt-...` | `o1...` | `o3...`       -> `openai`
-            - `claude...`                        -> `anthropic`
-            - `amazon...`                        -> `bedrock`
-            - `gemini...`                        -> `google_vertexai`
-            - `command...`                       -> `cohere`
-            - `accounts/fireworks...`            -> `fireworks`
-            - `mistral...`                       -> `mistralai`
-            - `deepseek...`                      -> `deepseek`
-            - `grok...`                          -> `xai`
-            - `sonar...`                         -> `perplexity`
+            - `claude...`                         -> `anthropic`
+            - `amazon...`                         -> `bedrock`
+            - `gemini...`                         -> `google_vertexai`
+            - `command...`                        -> `cohere`
+            - `accounts/fireworks...`             -> `fireworks`
+            - `mistral...`                        -> `mistralai`
+            - `deepseek...`                       -> `deepseek`
+            - `grok...`                           -> `xai`
+            - `sonar...`                          -> `perplexity`
         configurable_fields: Which model parameters are configurable:
 
-            - None: No configurable fields.
-            - `'any'`: All fields are configurable. **See Security Note below.**
-            - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
+            - `None`: No configurable fields.
+            - `'any'`: All fields are configurable. **See security note below.**
+            - `list[str] | Tuple[str, ...]`: Specified fields are configurable.
 
-            Fields are assumed to have config_prefix stripped if there is a
-            config_prefix. If model is specified, then defaults to None. If model is
+            Fields are assumed to have `config_prefix` stripped if there is a
+            `config_prefix`. If model is specified, then defaults to `None`. If model is
             not specified, then defaults to `("model", "model_provider")`.
 
-            ***Security Note***: Setting `configurable_fields="any"` means fields like
-            `api_key`, `base_url`, etc. can be altered at runtime, potentially redirecting
-            model requests to a different service/user. Make sure that if you're
-            accepting untrusted configurations that you enumerate the
-            `configurable_fields=(...)` explicitly.
+            !!! warning "Security note"
+                Setting `configurable_fields="any"` means fields like `api_key`,
+                `base_url`, etc. can be altered at runtime, potentially redirecting
+                model requests to a different service/user. Make sure that if you're
+                accepting untrusted configurations that you enumerate the
+                `configurable_fields=(...)` explicitly.
 
         config_prefix: If `'config_prefix'` is a non-empty string then model will be
             configurable at runtime via the
@@ -157,18 +164,19 @@ def init_chat_model(
         rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
             rate limits.
         kwargs: Additional model-specific keyword args to pass to
-            `<<selected ChatModel>>.__init__(model=model_name, **kwargs)`.
+            `<<selected chat model>>.__init__(model=model_name, **kwargs)`.
 
     Returns:
-        A BaseChatModel corresponding to the model_name and model_provider specified if
-        configurability is inferred to be False. If configurable, a chat model emulator
-        that initializes the underlying model at runtime once a config is passed in.
+        A `BaseChatModel` corresponding to the `model_name` and `model_provider`
+            specified if configurability is inferred to be `False`. If configurable, a
+            chat model emulator that initializes the underlying model at runtime once a
+            config is passed in.
 
     Raises:
-        ValueError: If model_provider cannot be inferred or isn't supported.
+        ValueError: If `model_provider` cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    ???+ note "Init non-configurable model"
+    ???+ note "Initialize a non-configurable model"
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
@@ -176,7 +184,7 @@ def init_chat_model(
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
         claude_sonnet = init_chat_model(
-            "anthropic:claude-3-5-sonnet-latest", temperature=0
+            "anthropic:claude-sonnet-4-5-20250929", temperature=0
         )
         gemini_2_flash = init_chat_model(
             "google_vertexai:gemini-2.5-flash", temperature=0
@@ -203,9 +211,8 @@ def init_chat_model(
 
         configurable_model.invoke(
             "what's your name",
-            config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
-        # claude-3.5 sonnet response
         ```
 
     ??? note "Fully configurable model with a default"
@@ -216,7 +223,7 @@ def init_chat_model(
 
         configurable_model_with_default = init_chat_model(
             "openai:gpt-4o",
-            configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+            configurable_fields="any",  # This allows us to configure other params like temperature, max_tokens, etc at runtime.
             config_prefix="foo",
             temperature=0,
         )
@@ -228,18 +235,17 @@ def init_chat_model(
             "what's your name",
             config={
                 "configurable": {
-                    "foo_model": "anthropic:claude-3-5-sonnet-latest",
+                    "foo_model": "anthropic:claude-sonnet-4-5-20250929",
                     "foo_temperature": 0.6,
                 }
             },
         )
-        # Claude-3.5 sonnet response with temperature 0.6
         ```
 
     ??? note "Bind tools to a configurable model"
 
-        You can call any ChatModel declarative methods on a configurable model in the
-        same way that you would with a normal model.
+        You can call any chat model declarative methods on a configurable model in the
+        same way that you would with a normal model:
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic
@@ -276,13 +282,11 @@ def init_chat_model(
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
-        # GPT-4o response with tool calls
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
-            config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
+            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
-        # Claude-3.5 sonnet response with tools
         ```
 
     !!! version-added "Added in version 0.2.7"
@@ -292,12 +296,12 @@ def init_chat_model(
 
     !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
-        (langchain_ollama.ChatOllama). Previously,
+        (`langchain_ollama.ChatOllama`). Previously,
         the now-deprecated langchain-community version of Ollama was imported
-        (langchain_community.chat_models.ChatOllama).
+        (`langchain_community.chat_models.ChatOllama`).
 
         Support for AWS Bedrock models via the Converse API added
-        (model_provider="bedrock_converse").
+        (`model_provider="bedrock_converse"`).
 
     !!! warning "Behavior changed in 0.3.5"
         Out of beta.

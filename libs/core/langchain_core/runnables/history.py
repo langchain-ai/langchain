@@ -296,9 +296,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 ```
 
             input_messages_key: Must be specified if the base runnable accepts a dict
-                as input. Default is None.
+                as input.
             output_messages_key: Must be specified if the base runnable returns a dict
-                as output. Default is None.
+                as output.
             history_messages_key: Must be specified if the base runnable accepts a dict
                 as input and expects a separate key for historical messages.
             history_factory_config: Configure fields that should be passed to the

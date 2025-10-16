@@ -47,9 +47,9 @@ def _load_stuff_chain(
     Args:
         llm: Language Model to use in the chain.
         prompt: Prompt template that controls how the documents are formatted and
-            passed into the LLM. Defaults to `stuff_prompt.PROMPT`.
+            passed into the LLM.
         document_variable_name: Variable name in the prompt template where the
-            document text will be inserted. Defaults to "text".
+            document text will be inserted.
         verbose: Whether to log progress and intermediate steps.
         **kwargs: Additional keyword arguments passed to the StuffDocumentsChain.
 
@@ -104,22 +104,19 @@ def _load_map_reduce_chain(
     Args:
         llm: Language Model to use for map and reduce steps.
         map_prompt: Prompt used to summarize each documnet in the map step.
-            Defaults to `map_reduce_prompt.PROMPT`.
         combine_prompt: Prompt used to combine summaries in the reduce step.
-            Defaults to `map_reduce_prompt.PROMPT`.
         combine_document_variable_name: Variable name in the `combine_prompt` where
-            the mapped summaries are inserted. Defaults to "text".
+            the mapped summaries are inserted.
         map_reduce_document_variable_name: Variable name in the `map_prompt`
-            where document text is inserted. Defaults to "text".
+            where document text is inserted.
         collapse_prompt: Optional prompt used to collapse intermediate summaries
             if they exceed the token limit (`token_max`).
-        reduce_llm: Optional separate LLM for the reduce step. Defaults to `None`,
+        reduce_llm: Optional separate LLM for the reduce step.
             which uses the same model as the map step.
-        collapse_llm: Optional separate LLM for the collapse step. Defaults to `None`,
+        collapse_llm: Optional separate LLM for the collapse step.
             which uses the same model as the map step.
         verbose: Whether to log progess and intermediate steps.
         token_max: Token threshold that triggers the collapse step during reduction.
-            Defaults to 3000.
         callbacks: Optional callbacks for logging and tracing.
         collapse_max_retries: Maximum retries for the collapse step if it fails.
 

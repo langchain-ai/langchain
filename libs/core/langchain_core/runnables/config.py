@@ -536,7 +536,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             fn: The function to map.
             *iterables: The iterables to map over.
             timeout: The timeout for the map.
-            chunksize: The chunksize for the map. Defaults to 1.
+            chunksize: The chunksize for the map.
 
         Returns:
             The iterator for the mapped function.

@@ -26,7 +26,7 @@ def _fake_runnable(
 
 
 class FakeStructuredChatModel(FakeListChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake chat model for testing purposes."""
 
     @override
     def with_structured_output(
