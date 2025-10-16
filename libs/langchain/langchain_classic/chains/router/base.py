@@ -73,8 +73,7 @@ class MultiRouteChain(Chain):
     default_chain: Chain
     """Default chain to use when none of the destination chains are suitable."""
     silent_errors: bool = False
-    """If `True`, use default_chain when an invalid destination name is provided.
-    Defaults to `False`."""
+    """If `True`, use default_chain when an invalid destination name is provided."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

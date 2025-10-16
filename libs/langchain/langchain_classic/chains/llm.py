@@ -88,8 +88,8 @@ class LLMChain(Chain):
     Defaults to one that takes the most likely string but does not change it
     otherwise."""
     return_final_only: bool = True
-    """Whether to return only the final parsed result. Defaults to `True`.
-    If false, will return a bunch of extra information about the generation."""
+    """Whether to return only the final parsed result.
+    If `False`, will return a bunch of extra information about the generation."""
     llm_kwargs: dict = Field(default_factory=dict)
 
     model_config = ConfigDict(

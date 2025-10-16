@@ -183,12 +183,15 @@ Examples:
 
     Modify request before execution:
 
+    ```python
     def handler(request, execute):
         request.tool_call["args"]["value"] *= 2
         return execute(request)
+    ```
 
     Retry on error (execute multiple times):
 
+    ```python
     def handler(request, execute):
         for attempt in range(3):
             try:
@@ -199,9 +202,11 @@ Examples:
                 if attempt == 2:
                     raise
         return result
+    ```
 
     Conditional retry based on response:
 
+    ```python
     def handler(request, execute):
         for attempt in range(3):
             result = execute(request)
@@ -210,15 +215,18 @@ Examples:
             if attempt < 2:
                 continue
             return result
+    ```
 
     Cache/short-circuit without calling execute:
 
+    ```python
     def handler(request, execute):
         if cached := get_cache(request):
             return ToolMessage(content=cached, tool_call_id=request.tool_call["id"])
         result = execute(request)
         save_cache(request, result)
         return result
+    ```
 """
 
 AsyncToolCallWrapper = Callable[
@@ -1294,7 +1302,7 @@ class InjectedState(InjectedToolArg):
     """Annotation for injecting graph state into tool arguments.
 
     This annotation enables tools to access graph state without exposing state
-    management details to the language model. Tools annotated with InjectedState
+    management details to the language model. Tools annotated with `InjectedState`
     receive state data automatically during execution while remaining invisible
     to the model's tool-calling interface.
 
@@ -1352,9 +1360,9 @@ class InjectedState(InjectedToolArg):
         ```
 
     Note:
-        - InjectedState arguments are automatically excluded from tool schemas
+        - `InjectedState` arguments are automatically excluded from tool schemas
             presented to language models
-        - ToolNode handles the injection process during execution
+        - `ToolNode` handles the injection process during execution
         - Tools can mix regular arguments (controlled by the model) with injected
             arguments (controlled by the system)
         - State injection occurs after the model generates tool calls but before
@@ -1362,7 +1370,7 @@ class InjectedState(InjectedToolArg):
     """
 
     def __init__(self, field: str | None = None) -> None:
-        """Initialize the InjectedState annotation."""
+        """Initialize the `InjectedState` annotation."""
         self.field = field
 
 
@@ -1407,7 +1415,7 @@ class InjectedStore(InjectedToolArg):
             return result.value if result else "Not found"
         ```
 
-        Usage with ToolNode and graph compilation:
+        Usage with `ToolNode` and graph compilation:
 
         ```python
         from langgraph.graph import StateGraph
@@ -1432,9 +1440,9 @@ class InjectedStore(InjectedToolArg):
         ```
 
     Note:
-        - InjectedStore arguments are automatically excluded from tool schemas
+        - `InjectedStore` arguments are automatically excluded from tool schemas
             presented to language models
-        - The store instance is automatically injected by ToolNode during execution
+        - The store instance is automatically injected by `ToolNode` during execution
         - Tools can access namespaced storage using the store's get/put methods
         - Store injection requires the graph to be compiled with a store instance
         - Multiple tools can share the same store instance for data consistency

@@ -225,19 +225,19 @@ def execute(
     raw: bool = False,
     connection: str = "default",
 ) -> Any:
-    """Execute a prompty.
+    """Execute a `Prompty`.
 
     Args:
         prompt: The prompt to execute.
-            Can be a path to a prompty file or a Prompty object.
-        configuration: The configuration to use. Defaults to `{}`.
-        parameters: The parameters to use. Defaults to `{}`.
-        inputs: The inputs to the prompty. Defaults to `{}`.
-        raw: Whether to return the raw output. Defaults to `False`.
-        connection: The connection to use. Defaults to `'default'`.
+            Can be a path to a prompty file or a `Prompty` object.
+        configuration: The configuration to use.
+        parameters: The parameters to use.
+        inputs: The inputs to the `Prompty`.
+        raw: Whether to return the raw output.
+        connection: The connection to use.
 
     Returns:
-        The result of executing the prompty.
+        The result of executing the `Prompty`.
     """
 
     if isinstance(prompt, str):

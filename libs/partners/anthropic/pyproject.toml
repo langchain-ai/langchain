@@ -12,7 +12,7 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-anthropic"
-version = "1.0.0a4"
+version = "1.0.0a5"
 description = "Integration package connecting Claude (Anthropic) APIs and LangChain"
 readme = "README.md"
 
@@ -39,6 +39,7 @@ test = [
     "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist>=3.8.0,<4.0.0",
     "vcrpy>=7.0.0,<8.0.0",
+    "langgraph-prebuilt>=0.7.0a2",  # set explicitly until we have a stable version
     "langchain-core",
     "langchain-tests",
     "langchain",

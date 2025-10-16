@@ -7,10 +7,10 @@ from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
 )
-from langchain_core.memory import BaseMemory
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import Field
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.utils import get_prompt_input_key
 
 
