@@ -342,11 +342,7 @@ class ProviderStrategy(Generic[SchemaT]):
             },
         }
 
-        # Set strict=True for OpenAI and X.AI (Grok) models
-        # Both providers require strict=True for structured output
-        kwargs: dict[str, Any] = {"response_format": response_format, "strict": True}
-
-        return kwargs
+        return {"response_format", response_format, "strict": True}
 
 
 @dataclass
