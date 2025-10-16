@@ -16,14 +16,7 @@ from io import BytesIO
 from json import JSONDecodeError
 from math import ceil
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeAlias,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 from urllib.parse import urlparse
 
 import certifi
@@ -34,10 +27,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-)
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -96,13 +86,7 @@ from langchain_core.utils.pydantic import (
     is_basemodel_subclass,
 )
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
@@ -465,8 +449,11 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: SecretStr | None = Field(
-        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
+    openai_api_key: SecretStr | None | Callable[[], str] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            ["OPENAI_API_KEY", "AZURE_OPENAI_API_KEY"], default=None
+        ),
     )
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
@@ -776,10 +763,16 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             self.stream_usage = True
 
+        # Resolve API key from SecretStr or Callable
+        api_key_value = None
+        if self.openai_api_key is not None:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            elif callable(self.openai_api_key):
+                api_key_value = self.openai_api_key()
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
