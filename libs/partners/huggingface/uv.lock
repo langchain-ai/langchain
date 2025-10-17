@@ -904,7 +904,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0rc3"
+version = "1.0.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -962,7 +962,7 @@ typing = [
 
 [[package]]
 name = "langchain-huggingface"
-version = "1.0.0a1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -1040,7 +1040,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0rc1"
+version = "1.0.0"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
