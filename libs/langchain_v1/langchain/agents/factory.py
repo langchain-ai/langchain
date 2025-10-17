@@ -318,7 +318,7 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
 
     Args:
         middleware: The middleware instance to inspect.
-        hook_name: The name of the hook (`'before_model'` or `'after_model'`).
+        hook_name: The name of the hook ('before_model', 'after_model', 'before_tool', 'after_tool').
 
     Returns:
         List of jump destinations, or empty list if not configured.
@@ -738,6 +738,20 @@ def create_agent(  # noqa: PLR0915
         for m in middleware
         if m.__class__.after_agent is not AgentMiddleware.after_agent
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
+    ]
+    # Collect middleware with before_tool or abefore_tool hooks
+    middleware_w_before_tool = [
+        m
+        for m in middleware
+        if m.__class__.before_tool is not AgentMiddleware.before_tool
+        or m.__class__.abefore_tool is not AgentMiddleware.abefore_tool
+    ]
+    # Collect middleware with after_tool or aafter_tool hooks
+    middleware_w_after_tool = [
+        m
+        for m in middleware
+        if m.__class__.after_tool is not AgentMiddleware.after_tool
+        or m.__class__.aafter_tool is not AgentMiddleware.aafter_tool
     ]
     # Collect middleware with wrap_model_call or awrap_model_call hooks
     # Include middleware with either implementation to ensure NotImplementedError is raised
@@ -1195,6 +1209,44 @@ def create_agent(  # noqa: PLR0915
                 f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
             )
 
+        if (
+            m.__class__.before_tool is not AgentMiddleware.before_tool
+            or m.__class__.abefore_tool is not AgentMiddleware.abefore_tool
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_before_tool = (
+                m.before_tool
+                if m.__class__.before_tool is not AgentMiddleware.before_tool
+                else None
+            )
+            async_before_tool = (
+                m.abefore_tool
+                if m.__class__.abefore_tool is not AgentMiddleware.abefore_tool
+                else None
+            )
+            before_tool_node = RunnableCallable(sync_before_tool, async_before_tool, trace=False)
+            graph.add_node(f"{m.name}.before_tool", before_tool_node, input_schema=resolved_state_schema)
+
+        if (
+            m.__class__.after_tool is not AgentMiddleware.after_tool
+            or m.__class__.aafter_tool is not AgentMiddleware.aafter_tool
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_after_tool = (
+                m.after_tool
+                if m.__class__.after_tool is not AgentMiddleware.after_tool
+                else None
+            )
+            async_after_tool = (
+                m.aafter_tool
+                if m.__class__.aafter_tool is not AgentMiddleware.aafter_tool
+                else None
+            )
+            after_tool_node = RunnableCallable(sync_after_tool, async_after_tool, trace=False)
+            graph.add_node(f"{m.name}.after_tool", after_tool_node, input_schema=resolved_state_schema)
+
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
     if middleware_w_before_agent:
         entry_node = f"{middleware_w_before_agent[0].name}.before_agent"
@@ -1246,6 +1298,10 @@ def create_agent(  # noqa: PLR0915
             tools_to_model_destinations,
         )
 
+        # Determine if we have tool hooks
+        has_before_tool = bool(middleware_w_before_tool)
+        has_after_tool = bool(middleware_w_after_tool)
+
         # base destinations are tools and exit_node
         # we add the loop_entry node to edge destinations if:
         # - there is an after model hook(s) -- allows jump_to to model
@@ -1256,12 +1312,34 @@ def create_agent(  # noqa: PLR0915
         if response_format or loop_exit_node != "model":
             model_to_tools_destinations.append(loop_entry_node)
 
+        # If we have before_tool hooks, route through them instead of directly to tools
+        if has_before_tool:
+            # Replace "tools" in destinations with first before_tool hook
+            model_to_tools_destinations = [
+                dest if dest != "tools" else f"{middleware_w_before_tool[0].name}.before_tool"
+                for dest in model_to_tools_destinations
+            ]
+            # Add after_tool as a destination after tools
+            if has_after_tool:
+                model_to_tools_destinations.append(f"{middleware_w_after_tool[-1].name}.after_tool")
+            # Add loop_entry_node as a destination from after_tool
+            model_to_tools_destinations.append(loop_entry_node)
+        elif has_after_tool:
+            # No before_tool but we have after_tool - add it as destination after tools
+            model_to_tools_destinations.append(f"{middleware_w_after_tool[-1].name}.after_tool")
+            # Add loop_entry_node as a destination from after_tool
+            model_to_tools_destinations.append(loop_entry_node)
+
         graph.add_conditional_edges(
             loop_exit_node,
             _make_model_to_tools_edge(
                 model_destination=loop_entry_node,
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
+                has_before_tool=has_before_tool,
+                has_after_tool=has_after_tool,
+                middleware_w_before_tool=middleware_w_before_tool if has_before_tool else None,
+                middleware_w_after_tool=middleware_w_after_tool if has_after_tool else None,
             ),
             model_to_tools_destinations,
         )
@@ -1372,6 +1450,56 @@ def create_agent(  # noqa: PLR0915
             can_jump_to=_get_can_jump_to(middleware_w_after_agent[0], "after_agent"),
         )
 
+    # Add before_tool middleware edges (chain before_tool -> tools)
+    if middleware_w_before_tool:
+        for m1, m2 in itertools.pairwise(middleware_w_before_tool):
+            _add_middleware_edge(
+                graph,
+                name=f"{m1.name}.before_tool",
+                default_destination=f"{m2.name}.before_tool",
+                model_destination=loop_entry_node,
+                end_destination=exit_node,
+                can_jump_to=_get_can_jump_to(m1, "before_tool"),
+            )
+        # Connect last before_tool to tools
+        _add_middleware_edge(
+            graph,
+            name=f"{middleware_w_before_tool[-1].name}.before_tool",
+            default_destination="tools",
+            model_destination=loop_entry_node,
+            end_destination=exit_node,
+            can_jump_to=_get_can_jump_to(middleware_w_before_tool[-1], "before_tool"),
+        )
+
+    # Add after_tool middleware edges (chain after_tool -> loop_entry_node)
+    if middleware_w_after_tool:
+        # Connect tools to first after_tool if we have after_tool hooks
+        if tool_node is not None:
+            graph.add_edge("tools", f"{middleware_w_after_tool[0].name}.after_tool")
+
+        # Chain after_tool middleware
+        for idx in range(len(middleware_w_after_tool) - 1, 0, -1):
+            m1 = middleware_w_after_tool[idx]
+            m2 = middleware_w_after_tool[idx - 1]
+            _add_middleware_edge(
+                graph,
+                name=f"{m1.name}.after_tool",
+                default_destination=f"{m2.name}.after_tool",
+                model_destination=loop_entry_node,
+                end_destination=exit_node,
+                can_jump_to=_get_can_jump_to(m1, "after_tool"),
+            )
+
+        # Connect last after_tool to loop_entry_node
+        _add_middleware_edge(
+            graph,
+            name=f"{middleware_w_after_tool[0].name}.after_tool",
+            default_destination=loop_entry_node,
+            model_destination=loop_entry_node,
+            end_destination=exit_node,
+            can_jump_to=_get_can_jump_to(middleware_w_after_tool[0], "after_tool"),
+        )
+
     return graph.compile(
         checkpointer=checkpointer,
         store=store,
@@ -1388,13 +1516,14 @@ def _resolve_jump(
     *,
     model_destination: str,
     end_destination: str,
+    tools_destination: str = "tools",
 ) -> str | None:
     if jump_to == "model":
         return model_destination
     if jump_to == "end":
         return end_destination
     if jump_to == "tools":
-        return "tools"
+        return tools_destination
     return None
 
 
@@ -1419,16 +1548,26 @@ def _make_model_to_tools_edge(
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
+    has_before_tool: bool = False,
+    has_after_tool: bool = False,
+    middleware_w_before_tool: list[AgentMiddleware[Any, Any]] | None = None,
+    middleware_w_after_tool: list[AgentMiddleware[Any, Any]] | None = None,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(
         state: dict[str, Any],
     ) -> str | list[Send] | None:
+        # Determine the correct tools destination based on hook configuration
+        tools_destination = "tools"
+        if has_before_tool and middleware_w_before_tool:
+            tools_destination = f"{middleware_w_before_tool[0].name}.before_tool"
+
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(
                 jump_to,
                 model_destination=model_destination,
                 end_destination=end_destination,
+                tools_destination=tools_destination,
             )
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
@@ -1445,11 +1584,14 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. if there are pending tool calls, jump to the tool node
+        # 3. if there are pending tool calls, jump to the tool node (or before_tool hooks)
         if pending_tool_calls:
+            # If we have before_tool hooks, route to the first before_tool hook
+            # and let the middleware chain handle routing to tools
+            target_destination = tools_destination
             return [
                 Send(
-                    "tools",
+                    target_destination,
                     ToolCallWithContext(
                         __type="tool_call_with_context",
                         tool_call=tool_call,

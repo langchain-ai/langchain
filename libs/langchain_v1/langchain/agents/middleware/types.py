@@ -47,8 +47,10 @@ __all__ = [
     "OmitFromSchema",
     "after_agent",
     "after_model",
+    "after_tool",
     "before_agent",
     "before_model",
+    "before_tool",
     "dynamic_prompt",
     "hook_config",
     "wrap_tool_call",
@@ -369,6 +371,72 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
 
+    def before_tool(
+        self, state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest
+    ) -> dict[str, Any] | None:
+        """Logic to run before a tool is called.
+
+        Args:
+            state: Current agent state.
+            runtime: LangGraph runtime context.
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+
+        Returns:
+            Optional state updates to merge into the agent state.
+        """
+
+    async def abefore_tool(
+        self, state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest
+    ) -> dict[str, Any] | None:
+        """Async logic to run before a tool is called.
+
+        Args:
+            state: Current agent state.
+            runtime: LangGraph runtime context.
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+
+        Returns:
+            Optional state updates to merge into the agent state.
+        """
+
+    def after_tool(
+        self,
+        state: StateT,
+        runtime: Runtime[ContextT],
+        request: ToolCallRequest,
+        response: ToolMessage | Command,
+    ) -> dict[str, Any] | None:
+        """Logic to run after a tool is called.
+
+        Args:
+            state: Current agent state.
+            runtime: LangGraph runtime context.
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+            response: Result from the tool execution.
+
+        Returns:
+            Optional state updates to merge into the agent state.
+        """
+
+    async def aafter_tool(
+        self,
+        state: StateT,
+        runtime: Runtime[ContextT],
+        request: ToolCallRequest,
+        response: ToolMessage | Command,
+    ) -> dict[str, Any] | None:
+        """Async logic to run after a tool is called.
+
+        Args:
+            state: Current agent state.
+            runtime: LangGraph runtime context.
+            request: Tool call request with call dict, BaseTool, state, and runtime.
+            response: Result from the tool execution.
+
+        Returns:
+            Optional state updates to merge into the agent state.
+        """
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
@@ -551,6 +619,30 @@ class _CallableReturningToolResponse(Protocol):
         ...
 
 
+class _CallableWithStateRuntimeAndToolRequest(Protocol[StateT_contra, ContextT]):
+    """Callable with `AgentState`, `Runtime`, and `ToolCallRequest` as arguments."""
+
+    def __call__(
+        self, state: StateT_contra, runtime: Runtime[ContextT], request: ToolCallRequest
+    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
+        """Perform some logic with the state, runtime, and tool request."""
+        ...
+
+
+class _CallableWithStateRuntimeToolRequestAndResponse(Protocol[StateT_contra, ContextT]):
+    """Callable with `AgentState`, `Runtime`, `ToolCallRequest`, and response as arguments."""
+
+    def __call__(
+        self,
+        state: StateT_contra,
+        runtime: Runtime[ContextT],
+        request: ToolCallRequest,
+        response: ToolMessage | Command,
+    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
+        """Perform some logic with the state, runtime, tool request, and response."""
+        ...
+
+
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 
 
@@ -560,9 +652,9 @@ def hook_config(
 ) -> Callable[[CallableT], CallableT]:
     """Decorator to configure hook behavior in middleware methods.
 
-    Use this decorator on `before_model` or `after_model` methods in middleware classes
-    to configure their behavior. Currently supports specifying which destinations they
-    can jump to, which establishes conditional edges in the agent graph.
+    Use this decorator on `before_model`, `after_model`, `before_tool`, or `after_tool`
+    methods in middleware classes to configure their behavior. Currently supports specifying
+    which destinations they can jump to, which establishes conditional edges in the agent graph.
 
     Args:
         can_jump_to: Optional list of valid jump destinations. Can be:
@@ -591,6 +683,22 @@ def hook_config(
             if should_exit(state):
                 return {"jump_to": "end"}
             return None
+        ```
+
+        Using with tool hooks:
+        ```python
+        class ToolMiddleware(AgentMiddleware):
+            @hook_config(can_jump_to=["end"])
+            def before_tool(self, state, runtime, request) -> dict[str, Any] | None:
+                if should_skip_tool(request):
+                    return {"jump_to": "end"}
+                return None
+
+            @hook_config(can_jump_to=["model"])
+            def after_tool(self, state, runtime, request, response) -> dict[str, Any] | None:
+                if is_error_response(response):
+                    return {"jump_to": "model"}
+                return None
         ```
     """
 
@@ -1564,6 +1672,303 @@ def wrap_tool_call(
                 "state_schema": AgentState,
                 "tools": tools or [],
                 "wrap_tool_call": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def before_tool(
+    func: _CallableWithStateRuntimeAndToolRequest[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def before_tool(
+    func: None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableWithStateRuntimeAndToolRequest[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
+]: ...
+
+
+def before_tool(
+    func: _CallableWithStateRuntimeAndToolRequest[StateT, ContextT] | None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableWithStateRuntimeAndToolRequest[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Decorator used to dynamically create a middleware with the `before_tool` hook.
+
+    Args:
+        func: The function to be decorated. Must accept:
+            `state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest`
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
+        tools: Optional list of additional tools to register with this middleware.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
+            Valid values are: `"tools"`, `"model"`, `"end"`
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
+
+    Returns:
+        Either an `AgentMiddleware` instance (if func is provided directly) or a
+        decorator function that can be applied to a function it is wrapping.
+
+    The decorated function should return:
+        - `dict[str, Any]` - State updates to merge into the agent state
+        - `Command` - A command to control flow (e.g., jump to different node)
+        - `None` - No state updates or flow control
+
+    Examples:
+        Basic usage for logging tool calls:
+        ```python
+        @before_tool
+        def log_tool_call(state: AgentState, runtime: Runtime, request: ToolCallRequest) -> None:
+            print(f"Calling tool: {request.tool_call['name']}")
+        ```
+
+        With conditional jumping:
+        ```python
+        @before_tool(can_jump_to=["end"])
+        def conditional_before_tool(state: AgentState, runtime: Runtime, request: ToolCallRequest) -> dict[str, Any] | None:
+            if should_skip_tool(request):
+                return {"jump_to": "end"}
+            return None
+        ```
+
+        With custom state schema:
+        ```python
+        @before_tool(state_schema=MyCustomState)
+        def custom_before_tool(state: MyCustomState, runtime: Runtime, request: ToolCallRequest) -> dict[str, Any]:
+            return {"tool_call_count": state.get("tool_call_count", 0) + 1}
+        ```
+    """
+
+    def decorator(
+        func: _CallableWithStateRuntimeAndToolRequest[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        is_async = iscoroutinefunction(func)
+
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
+
+        if is_async:
+
+            async def async_wrapped(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+                runtime: Runtime[ContextT],
+                request: ToolCallRequest,
+            ) -> dict[str, Any] | Command | None:
+                return await func(state, runtime, request)  # type: ignore[misc]
+
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "BeforeToolMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "abefore_tool": async_wrapped,
+                },
+            )()
+
+        def wrapped(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            state: StateT,
+            runtime: Runtime[ContextT],
+            request: ToolCallRequest,
+        ) -> dict[str, Any] | Command | None:
+            return func(state, runtime, request)  # type: ignore[return-value]
+
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+        # Use function name as default if no name provided
+        middleware_name = name or cast("str", getattr(func, "__name__", "BeforeToolMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": state_schema or AgentState,
+                "tools": tools or [],
+                "before_tool": wrapped,
+            },
+        )()
+
+    if func is not None:
+        return decorator(func)
+    return decorator
+
+
+@overload
+def after_tool(
+    func: _CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
+
+
+@overload
+def after_tool(
+    func: None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
+    name: str | None = None,
+) -> Callable[
+    [_CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
+]: ...
+
+
+def after_tool(
+    func: _CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT] | None = None,
+    *,
+    state_schema: type[StateT] | None = None,
+    tools: list[BaseTool] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
+    name: str | None = None,
+) -> (
+    Callable[
+        [_CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT]],
+        AgentMiddleware[StateT, ContextT],
+    ]
+    | AgentMiddleware[StateT, ContextT]
+):
+    """Decorator used to dynamically create a middleware with the `after_tool` hook.
+
+    Args:
+        func: The function to be decorated. Must accept:
+            `state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest, response: ToolMessage | Command`
+        state_schema: Optional custom state schema type. If not provided, uses the
+            default `AgentState` schema.
+        tools: Optional list of additional tools to register with this middleware.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
+            Valid values are: `"tools"`, `"model"`, `"end"`
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
+
+    Returns:
+        Either an `AgentMiddleware` instance (if func is provided) or a decorator
+        function that can be applied to a function.
+
+    The decorated function should return:
+        - `dict[str, Any]` - State updates to merge into the agent state
+        - `Command` - A command to control flow (e.g., jump to different node)
+        - `None` - No state updates or flow control
+
+    Examples:
+        Basic usage for logging tool results:
+        ```python
+        @after_tool
+        def log_tool_result(state: AgentState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> None:
+            print(f"Tool {request.tool_call['name']} returned: {response.content}")
+        ```
+
+        With conditional jumping based on result:
+        ```python
+        @after_tool(can_jump_to=["model"])
+        def retry_on_failure(state: AgentState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> dict[str, Any] | None:
+            if isinstance(response, ToolMessage) and response.status == "error":
+                return {"jump_to": "model"}  # Go back to model for retry
+            return None
+        ```
+
+        With custom state schema:
+        ```python
+        @after_tool(state_schema=MyCustomState)
+        def track_tool_usage(state: MyCustomState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> dict[str, Any]:
+            usage_count = state.get("tool_usage_count", {})
+            tool_name = request.tool_call["name"]
+            usage_count[tool_name] = usage_count.get(tool_name, 0) + 1
+            return {"tool_usage_count": usage_count}
+        ```
+    """
+
+    def decorator(
+        func: _CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
+        is_async = iscoroutinefunction(func)
+
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
+
+        if is_async:
+
+            async def async_wrapped(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+                runtime: Runtime[ContextT],
+                request: ToolCallRequest,
+                response: ToolMessage | Command,
+            ) -> dict[str, Any] | Command | None:
+                return await func(state, runtime, request, response)  # type: ignore[misc]
+
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+            middleware_name = name or cast("str", getattr(func, "__name__", "AfterToolMiddleware"))
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "aafter_tool": async_wrapped,
+                },
+            )()
+
+        def wrapped(
+            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            state: StateT,
+            runtime: Runtime[ContextT],
+            request: ToolCallRequest,
+            response: ToolMessage | Command,
+        ) -> dict[str, Any] | Command | None:
+            return func(state, runtime, request, response)  # type: ignore[return-value]
+
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+        # Use function name as default if no name provided
+        middleware_name = name or cast("str", getattr(func, "__name__", "AfterToolMiddleware"))
+
+        return type(
+            middleware_name,
+            (AgentMiddleware,),
+            {
+                "state_schema": state_schema or AgentState,
+                "tools": tools or [],
+                "after_tool": wrapped,
             },
         )()
 
