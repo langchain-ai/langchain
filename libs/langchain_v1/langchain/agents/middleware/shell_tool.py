@@ -381,6 +381,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
     When no policy is provided the middleware defaults to ``HostExecutionPolicy``.
     """
 
+    state_schema = ShellToolState
+
     def __init__(
         self,
         workspace_root: str | Path | None = None,
