@@ -13,6 +13,8 @@ from pydantic import SecretStr
 
 from langchain_deepseek.chat_models import ChatDeepSeek
 
+MODEL_NAME = "deepseek-chat"
+
 
 class MockOpenAIResponse(BaseModel):
     """Mock OpenAI response model."""
@@ -35,7 +37,7 @@ class MockOpenAIResponse(BaseModel):
         context: dict[str, Any] | None = None,
         serialize_as_any: bool = False,
     ) -> dict[str, Any]:
-        """Convert to dictionary, ensuring reasoning_content is included."""
+        """Convert to dictionary, ensuring `reasoning_content` is included."""
         choices_list = []
         for choice in self.choices:
             if isinstance(choice.message, ChatCompletionMessage):
@@ -61,7 +63,7 @@ class MockOpenAIResponse(BaseModel):
 
 
 class TestChatDeepSeekUnit(ChatModelUnitTests):
-    """Unit tests for `ChatDeepSeek` chat model."""
+    """Standard unit tests for `ChatDeepSeek` chat model."""
 
     @property
     def chat_model_class(self) -> type[ChatDeepSeek]:
@@ -77,7 +79,7 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
                 "DEEPSEEK_API_BASE": "api_base",
             },
             {
-                "model": "deepseek-chat",
+                "model": MODEL_NAME,
             },
             {
                 "api_key": "api_key",
@@ -89,7 +91,7 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
     def chat_model_params(self) -> dict:
         """Parameters to create chat model instance for testing."""
         return {
-            "model": "deepseek-chat",
+            "model": MODEL_NAME,
             "api_key": "api_key",
         }
 
@@ -103,7 +105,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_create_chat_result_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from response."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         mock_message = MagicMock()
         mock_message.content = "Main content"
         mock_message.reasoning_content = "This is the reasoning content"
@@ -120,8 +122,8 @@ class TestChatDeepSeekCustomUnit:
         )
 
     def test_create_chat_result_with_model_extra_reasoning(self) -> None:
-        """Test that reasoning is properly extracted from model_extra."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        """Test that reasoning is properly extracted from `model_extra`."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         mock_message = MagicMock(spec=ChatCompletionMessage)
         mock_message.content = "Main content"
         mock_message.role = "assistant"
@@ -143,7 +145,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_convert_chunk_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from streaming chunk."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         chunk: dict[str, Any] = {
             "choices": [
                 {
@@ -170,7 +172,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_convert_chunk_with_reasoning(self) -> None:
         """Test that reasoning is properly extracted from streaming chunk."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         chunk: dict[str, Any] = {
             "choices": [
                 {
@@ -197,7 +199,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_convert_chunk_without_reasoning(self) -> None:
         """Test that chunk without reasoning fields works correctly."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         chunk: dict[str, Any] = {"choices": [{"delta": {"content": "Main content"}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
@@ -212,7 +214,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_convert_chunk_with_empty_delta(self) -> None:
         """Test that chunk with empty delta works correctly."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
         chunk: dict[str, Any] = {"choices": [{"delta": {}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
@@ -227,7 +229,7 @@ class TestChatDeepSeekCustomUnit:
 
     def test_get_request_payload(self) -> None:
         """Test that tool message content is converted from list to string."""
-        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
 
         tool_message = ToolMessage(content=[], tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
@@ -240,3 +242,72 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_create_chat_result_with_model_provider(self) -> None:
+        """Test that `model_provider` is added to `response_metadata`."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message = MagicMock()
+        mock_message.content = "Main content"
+        mock_message.role = "assistant"
+        mock_response = MockOpenAIResponse(
+            choices=[MagicMock(message=mock_message)],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        assert (
+            result.generations[0].message.response_metadata.get("model_provider")
+            == "deepseek"
+        )
+
+    def test_convert_chunk_with_model_provider(self) -> None:
+        """Test that `model_provider` is added to `response_metadata` for chunks."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        chunk: dict[str, Any] = {
+            "choices": [
+                {
+                    "delta": {
+                        "content": "Main content",
+                    },
+                },
+            ],
+        }
+
+        chunk_result = chat_model._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+        if chunk_result is None:
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
+        assert (
+            chunk_result.message.response_metadata.get("model_provider") == "deepseek"
+        )
+
+    def test_create_chat_result_with_model_provider_multiple_generations(
+        self,
+    ) -> None:
+        """Test that `model_provider` is added to all generations when `n > 1`."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        mock_message_1 = MagicMock()
+        mock_message_1.content = "First response"
+        mock_message_1.role = "assistant"
+        mock_message_2 = MagicMock()
+        mock_message_2.content = "Second response"
+        mock_message_2.role = "assistant"
+
+        mock_response = MockOpenAIResponse(
+            choices=[
+                MagicMock(message=mock_message_1),
+                MagicMock(message=mock_message_2),
+            ],
+            error=None,
+        )
+
+        result = chat_model._create_chat_result(mock_response)
+        assert len(result.generations) == 2  # noqa: PLR2004
+        for generation in result.generations:
+            assert (
+                generation.message.response_metadata.get("model_provider") == "deepseek"
+            )

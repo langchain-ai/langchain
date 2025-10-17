@@ -112,7 +112,9 @@ def test_prompty_used_in_agent() -> None:
         input: str
         chat_history: list[tuple[str, str]] = Field(
             ...,
-            extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
+            json_schema_extra={
+                "widget": {"type": "chat", "input": "input", "output": "output"}
+            },
         )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(

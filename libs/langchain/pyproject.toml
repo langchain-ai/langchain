@@ -7,8 +7,8 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a7,<2.0.0",
-    "langchain-text-splitters>=1.0.0a1,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-text-splitters>=1.0.0,<2.0.0",
     "langsmith>=0.1.17,<1.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "SQLAlchemy>=1.4.0,<3.0.0",
@@ -17,7 +17,7 @@ dependencies = [
     "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
 ]
 name = "langchain-classic"
-version = "1.0.0a1"
+version = "1.0.0"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -33,7 +33,7 @@ fireworks = ["langchain-fireworks"]
 ollama = ["langchain-ollama"]
 together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
-#huggingface = ["langchain-huggingface"]
+huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
