@@ -1,0 +1,19 @@
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "I",      # isort
+    "T201",   # print statements
+    "UP",     # pyupgrade
+]
+
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["T201"]  # Allow print in tests
+"scripts/*" = ["T201"]  # Allow print in scripts
+
+[lint.isort]
+known-first-party = ["langchain_sarvam"]
