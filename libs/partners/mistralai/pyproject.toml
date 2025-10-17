@@ -19,13 +19,13 @@ description = "An integration package connecting Mistral and LangChain"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
-docs = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_mistralai/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-mistralai%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [

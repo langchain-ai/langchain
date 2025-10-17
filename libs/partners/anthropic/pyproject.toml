@@ -17,13 +17,13 @@ description = "Integration package connecting Claude (Anthropic) APIs and LangCh
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
-docs = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_anthropic/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-anthropic%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
