@@ -693,9 +693,6 @@ class ChatFireworks(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or `TypedDict` class.
 
-                !!! warning "Behavior changed in 0.1.7"
-                    Added support for TypedDict class.
-
             method: The method for steering model generation, one of:
 
                 - `'function_calling'`:
@@ -711,7 +708,7 @@ class ChatFireworks(BaseChatModel):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
