@@ -42,7 +42,6 @@ test_integration = []
 typing = [
     "mypy>=1.10.0,<2.0.0",
     "langchain-core",
-    "pydantic>2.0.0,<2.10.0", # TODO: support 2.10
 ]
 
 
