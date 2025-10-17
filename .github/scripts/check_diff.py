@@ -136,9 +136,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     # custom logic for specific directories
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.10", "3.13", "3.14"]
+        py_versions = ["3.10", "3.13"]
     elif dir_ == "libs/langchain":
-        py_versions = ["3.10", "3.13", "3.14"]
+        py_versions = ["3.10", "3.13"]
     elif dir_ == "libs/langchain_v1":
         py_versions = ["3.10", "3.13", "3.14"]
     elif dir_ in {"libs/cli"}:
