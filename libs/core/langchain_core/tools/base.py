@@ -1214,6 +1214,18 @@ class _DirectlyInjectedToolArg:
     """Annotation for tool arguments that are injected at runtime.
 
     Injected via direct type annotation, rather than annotated metadata.
+
+    For example, ToolRuntime is a directly injected argument.
+    Note the direct annotation rather than the verbose alternative:
+    Annotated[ToolRuntime, InjectedRuntime]
+    ```python
+    from langchain_core.tools import tool, ToolRuntime
+
+
+    @tool
+    def foo(x: int, runtime: ToolRuntime) -> str:
+        # use runtime.state, runtime.context, runtime.store, etc.
+        ...
     ```
     """
 
