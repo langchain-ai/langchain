@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import httpx
 import pytest
-import tenacity
 
 from langchain_mistralai import MistralAIEmbeddings
 
@@ -38,14 +37,14 @@ async def test_mistralai_embedding_documents_async() -> None:
 async def test_mistralai_embedding_documents_http_error_async() -> None:
     """Test MistralAI embeddings for documents."""
     documents = ["foo bar", "test document"]
-    embedding = MistralAIEmbeddings(max_retries=0)
+    embedding = MistralAIEmbeddings()
     mock_response = httpx.Response(
         status_code=400,
         request=httpx.Request("POST", url=embedding.async_client.base_url),
     )
     with (
         patch.object(embedding.async_client, "post", return_value=mock_response),
-        pytest.raises(tenacity.RetryError),
+        pytest.raises(httpx.HTTPStatusError),
     ):
         await embedding.aembed_documents(documents)
 

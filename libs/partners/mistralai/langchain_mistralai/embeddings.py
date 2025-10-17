@@ -16,7 +16,6 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
 from typing_extensions import Self
 
@@ -57,13 +56,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         api_key: SecretStr | None
             The API key for the MistralAI API. If not provided, it will be read from the
             environment variable `MISTRAL_API_KEY`.
-        max_retries: int
-            The number of times to retry a request if it fails.
         timeout: int
             The number of seconds to wait for a response before timing out.
-        wait_time: int
-            The number of seconds to wait before retrying a request in case of 429
-            error.
         max_concurrent_requests: int
             The maximum number of concurrent requests to make to the Mistral API.
 
@@ -133,9 +127,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
     )
     endpoint: str = "https://api.mistral.ai/v1/"
-    max_retries: int = 5
     timeout: int = 120
-    wait_time: int = 30
     max_concurrent_requests: int = 64
     tokenizer: Tokenizer = Field(default=None)
 
@@ -225,13 +217,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         try:
             batch_responses = []
 
-            @retry(
-                retry=retry_if_exception_type(
-                    (httpx.TimeoutException, httpx.HTTPStatusError)
-                ),
-                wait=wait_fixed(self.wait_time),
-                stop=stop_after_attempt(self.max_retries),
-            )
             def _embed_batch(batch: list[str]) -> Response:
                 response = self.client.post(
                     url="/embeddings",
@@ -266,13 +251,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         """
         try:
 
-            @retry(
-                retry=retry_if_exception_type(
-                    (httpx.TimeoutException, httpx.HTTPStatusError)
-                ),
-                wait=wait_fixed(self.wait_time),
-                stop=stop_after_attempt(self.max_retries),
-            )
             async def _aembed_batch(batch: list[str]) -> Response:
                 response = await self.async_client.post(
                     url="/embeddings",
