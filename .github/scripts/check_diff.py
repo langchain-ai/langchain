@@ -154,6 +154,10 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
 ) -> List[Dict[str, str]]:
+    # Skip directories without uv.lock (e.g., community or doc-only packages)
+    if not os.path.exists(f"./{dir_}/uv.lock"):
+        return []
+
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
     for package in core_uv_lock_data["package"]:
@@ -293,6 +297,7 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/anthropic")
             dirs_to_run["test"].add("libs/partners/fireworks")
             dirs_to_run["test"].add("libs/partners/groq")
+            dirs_to_run["test"].add("libs/community/langchain_community/chat_models/google_gemini.py")
 
         elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
@@ -310,6 +315,14 @@ if __name__ == "__main__":
                 if partner_dir not in IGNORED_PARTNERS:
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+        elif file.startswith("libs/community/langchain_community/chat_models/"):
+        # Recognize new chat_models (including google_gemini) as part of langchain_community for tests
+            dirs_to_run["test"].add("libs/community/langchain_community")
+
+        elif file.startswith("libs/community/langchain_community/") and file.endswith(".rst"):
+            # Ignore documentation or changelog files in community libs
+            continue
+
         elif file.startswith("libs/"):
             # Check if this is a root-level file in libs/ (e.g., libs/README.md)
             file_parts = file.split("/")
@@ -328,8 +341,13 @@ if __name__ == "__main__":
 
     dependents = dependents_graph()
 
-    # we now have dirs_by_job
-    # todo: clean this up
+    # 🧩 Skip langchain_community because it is not a standalone package (no pyproject.toml)
+    for job in dirs_to_run:
+        dirs_to_run[job] = {
+            d for d in dirs_to_run[job]
+            if d != "libs/community/langchain_community"
+        }
+
     map_job_to_configs = {
         job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
