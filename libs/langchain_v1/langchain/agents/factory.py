@@ -3,15 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -601,7 +593,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-sonnet-4-5-20250929",
+            model="anthropic:claude-sonnet-4-5",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )
