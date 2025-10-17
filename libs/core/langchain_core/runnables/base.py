@@ -860,7 +860,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         The default implementation of batch works well for IO bound runnables.
 
-        Subclasses should override this method if they can batch more efficiently;
+        Subclasses must override this method if they can batch more efficiently;
         e.g., if the underlying `Runnable` uses an API which supports a batch mode.
 
         Args:
@@ -992,7 +992,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         The default implementation of `batch` works well for IO bound runnables.
 
-        Subclasses should override this method if they can batch more efficiently;
+        Subclasses must override this method if they can batch more efficiently;
         e.g., if the underlying `Runnable` uses an API which supports a batch mode.
 
         Args:
@@ -1112,7 +1112,7 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> Iterator[Output]:
         """Default implementation of `stream`, which calls `invoke`.
 
-        Subclasses should override this method if they support streaming output.
+        Subclasses must override this method if they support streaming output.
 
         Args:
             input: The input to the `Runnable`.
@@ -1133,7 +1133,7 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> AsyncIterator[Output]:
         """Default implementation of `astream`, which calls `ainvoke`.
 
-        Subclasses should override this method if they support streaming output.
+        Subclasses must override this method if they support streaming output.
 
         Args:
             input: The input to the `Runnable`.
@@ -1497,7 +1497,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Default implementation of transform, which buffers input and calls `astream`.
 
-        Subclasses should override this method if they can start producing output while
+        Subclasses must override this method if they can start producing output while
         input is still being generated.
 
         Args:
@@ -1542,7 +1542,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Default implementation of atransform, which buffers input and calls `astream`.
 
-        Subclasses should override this method if they can start producing output while
+        Subclasses must override this method if they can start producing output while
         input is still being generated.
 
         Args:

@@ -75,8 +75,6 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         Args:
             request: Initial model request.
-            state: Current agent state.
-            runtime: LangGraph runtime.
             handler: Callback to execute the model.
 
         Returns:

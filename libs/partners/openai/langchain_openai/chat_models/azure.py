@@ -865,7 +865,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
@@ -944,13 +944,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
             - `'raw'`: BaseMessage
             - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
             - `'parsing_error'`: BaseException | None
-
-        !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class `schema`.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for `strict` argument added.
-            Support for `method="json_schema"` added.
 
         !!! warning "Behavior changed in 0.3.0"
             `method` default changed from "function_calling" to "json_schema".
