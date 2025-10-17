@@ -45,7 +45,6 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
-    "PublicAgentState",
     "after_agent",
     "after_model",
     "before_agent",
@@ -172,11 +171,14 @@ class AgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 
 
-class PublicAgentState(TypedDict, Generic[ResponseT]):
-    """Public state schema for the agent.
+class _InputAgentState(TypedDict):
+    """Input state schema for the agent."""
 
-    Just used for typing purposes.
-    """
+    messages: Required[Annotated[list[AnyMessage | dict], add_messages]]
+
+
+class _OutputAgentState(TypedDict, Generic[ResponseT]):
+    """Output state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     structured_response: NotRequired[ResponseT]

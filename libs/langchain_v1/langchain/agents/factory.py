@@ -31,7 +31,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
-    PublicAgentState,
+    _InputAgentState,
+    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -527,7 +528,7 @@ def create_agent(  # noqa: PLR0915
     name: str | None = None,
     cache: BaseCache | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
@@ -780,7 +781,7 @@ def create_agent(  # noqa: PLR0915
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1518,7 +1519,7 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    graph: StateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]],
     *,
     name: str,
     default_destination: str,
