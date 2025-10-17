@@ -1468,6 +1468,10 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/streaming"
   },
   {
+    "source": "/docs/get_started/introduction%20https:/github.com/langchain-ai/langchain",
+    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+  },
+  {
     "source": "/docs/guides/evaluation/comparison/custom/",
     "destination": "https://docs.langchain.com/langsmith/home"
   },
@@ -1812,8 +1816,32 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/models"
   },
   {
+    "source": "/docs/integrations/providers/dspy(/?)",
+    "destination": "https://python.langchain.com/v0.2/docs/integrations/providers/dspy/"
+  },
+  {
+    "source": "/docs/integrations/retrievers/milvus_hybrid_search(/?)",
+    "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/"
+  },
+  {
+    "source": "/docs/integrations/retrievers/singlestoredb(/?)",
+    "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/singlestoredb/"
+  },
+  {
+    "source": "/docs/integrations/toolkits/pandas/%EF%BC%89",
+    "destination": "https://docs.langchain.com/oss/python/langchain/tools"
+  },
+  {
     "source": "/docs/integrations/tools/sqlite/",
     "destination": "https://docs.langchain.com/oss/python/langchain/sql-agent"
+  },
+  {
+    "source": "/docs/integrations/vectorstores/singlestoredb(/?)",
+    "destination": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/singlestoredb/"
+  },
+  {
+    "source": "/docs/modules/agents/agent%5C_types/react",
+    "destination": "https://docs.langchain.com/oss/python/langchain/agents"
   },
   {
     "source": "/docs/modules/agents/concepts/",
@@ -2352,6 +2380,10 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/tools"
   },
   {
+    "source": "/api%5C_reference/redis/chat%5C_message%5C_history/langchain%5C_redis.chat%5C_message%5C_history.redischatmessagehistory.html",
+    "destination": "https://reference.langchain.com/python/"
+  },
+  {
     "source": "/docs/changelog/core/",
     "destination": "https://github.com/langchain-ai/langchain/releases?q=tag:%22langchain-core%3D%3D0%22&expanded=true"
   },
@@ -2366,6 +2398,10 @@
   {
     "source": "/docs/expression_language/streaming/",
     "destination": "https://docs.langchain.com/oss/python/langchain/streaming"
+  },
+  {
+    "source": "/docs/get_started/introduction(/?)",
+    "destination": "https://docs.langchain.com/oss/python/langchain/install"
   },
   {
     "source": "/docs/guides/deployments/",
@@ -2394,6 +2430,14 @@
   {
     "source": "/docs/guides/structured_output/",
     "destination": "https://docs.langchain.com/oss/python/langchain/structured-output"
+  },
+  {
+    "source": "/docs/how_to/graph_mapping(/?)",
+    "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+  },
+  {
+    "source": "/docs/how_to/graph_prompting(/?)",
+    "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
   },
   {
     "source": "/docs/integrations/toolkits/ainetwork",
@@ -2489,6 +2533,10 @@
   },
   {
     "source": "/docs/modules/agents/concepts",
+    "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+  },
+  {
+    "source": "/docs/modules/agents/concepts%EF%BC%89",
     "destination": "https://docs.langchain.com/oss/python/langchain/agents"
   },
   {
@@ -2764,11 +2812,23 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/install"
   },
   {
+    "source": "/docs/get_started/introduction%23modules",
+    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+  },
+  {
+    "source": "/docs/get_started/introduction%5BLangChain%5E%5D",
+    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+  },
+  {
     "source": "/docs/get_started/introduction.html",
     "destination": "https://docs.langchain.com/oss/python/langchain/install"
   },
   {
     "source": "/docs/get_started/quickstart",
+    "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
+  },
+  {
+    "source": "/docs/get_started/quickstart%23prompttemplate--llm--outputparser",
     "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
   },
   {
@@ -2780,11 +2840,23 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/tools"
   },
   {
+    "source": "/docs/langgraph(/?)",
+    "destination": "https://langchain-ai.github.io/langgraph"
+  },
+  {
+    "source": "/docs/langsmith(/?)",
+    "destination": "https://docs.langchain.com/langsmith/home"
+  },
+  {
     "source": "/docs/langsmith/",
     "destination": "https://docs.langchain.com/langsmith/home"
   },
   {
     "source": "/docs/modules/agents",
+    "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+  },
+  {
+    "source": "/docs/modules/agents%5D%E3%80%82",
     "destination": "https://docs.langchain.com/oss/python/langchain/agents"
   },
   {
@@ -2838,6 +2910,10 @@
   {
     "source": "/v0.1/docs/security",
     "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+  },
+  {
+    "source": "/docs(/?)",
+    "destination": "https://docs.langchain.com/oss/python/langchain/install"
   },
   {
     "source": "/docs/",
