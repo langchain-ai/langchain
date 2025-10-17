@@ -47,17 +47,17 @@ class QdrantVectorStore(VectorStore):
         ```
 
     Key init args — indexing params:
-        collection_name: str
+        collection_name:
             Name of the collection.
-        embedding: Embeddings
+        embedding:
             Embedding function to use.
-        sparse_embedding: SparseEmbeddings
+        sparse_embedding:
             Optional sparse embedding function to use.
 
     Key init args — client params:
-        client: QdrantClient
+        client:
             Qdrant client to use.
-        retrieval_mode: RetrievalMode
+        retrieval_mode:
             Retrieval mode to use.
 
     Instantiate:
@@ -376,6 +376,7 @@ class QdrantVectorStore(VectorStore):
         """Construct an instance of `QdrantVectorStore` from a list of texts.
 
         This is a user-friendly interface that:
+
         1. Creates embeddings, one for each text
         2. Creates a Qdrant collection if it doesn't exist.
         3. Adds the text embeddings to the Qdrant database
@@ -502,10 +503,10 @@ class QdrantVectorStore(VectorStore):
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str | int]:
-        """Add texts with embeddings to the vectorstore.
+        """Add texts with embeddings to the `VectorStore`.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the `VectorStore`.
 
         """
         added_ids = []
@@ -534,7 +535,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to query.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score(
@@ -658,7 +659,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query and distance for each.
+            List of `Document` objects most similar to the query and distance for each.
 
         """
         qdrant_filter = filter
@@ -712,7 +713,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score_by_vector(
@@ -745,7 +746,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         self._validate_collection_for_dense(
@@ -788,7 +789,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
@@ -822,9 +823,8 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
-
+            List of `Document` objects selected by maximal marginal relevance and
+                distance for each.
         """
         results = self.client.query_points(
             collection_name=self.collection_name,

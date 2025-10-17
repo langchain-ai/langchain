@@ -42,9 +42,9 @@ class FastEmbedSparse(SparseEmbeddings):
                 use default onnxruntime threading instead.\
 
             kwargs: Additional options to pass to `fastembed.SparseTextEmbedding`
+
         Raises:
             ValueError: If the `model_name` is not supported in `SparseTextEmbedding`.
-
         """
         try:
             from fastembed import (  # type: ignore[import-not-found] # noqa: PLC0415

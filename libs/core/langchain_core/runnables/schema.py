@@ -65,7 +65,7 @@ class BaseStreamEvent(TypedDict):
 
         events = [event async for event in chain.astream_events("hello")]
 
-        # will produce the following events
+        # Will produce the following events
         # (where some fields have been omitted for brevity):
         [
             {

@@ -1,4 +1,4 @@
-"""Internal utilities for the in memory implementation of VectorStore.
+"""Internal utilities for the in memory implementation of `VectorStore`.
 
 These are part of a private API, and users should not use them directly
 as they can change without notice.

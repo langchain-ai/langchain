@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a VectorStore."""
+    """Information about a `VectorStore`."""
 
     vectorstore: VectorStore = Field(exclude=True)
     name: str
@@ -20,7 +20,7 @@ class VectorStoreInfo(BaseModel):
 
 
 class VectorStoreToolkit(BaseToolkit):
-    """Toolkit for interacting with a Vector Store."""
+    """Toolkit for interacting with a `VectorStore`."""
 
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
     llm: BaseLanguageModel

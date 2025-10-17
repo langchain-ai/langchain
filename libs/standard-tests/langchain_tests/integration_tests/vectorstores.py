@@ -151,7 +151,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -499,7 +499,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
