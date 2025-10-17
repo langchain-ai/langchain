@@ -1434,7 +1434,7 @@ def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
 
     result = agent.invoke(
-        {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+        {"custom_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
     )
 
     messages = result["messages"]
@@ -1445,7 +1445,7 @@ def test_injected_state_in_middleware_agent() -> None:
     assert len(tool_messages) == 1
 
     tool_message = tool_messages[0]
-    assert tool_message.name == "test_state"
+    assert tool_message.name == "test_state_tool"
     assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
 
