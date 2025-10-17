@@ -1519,7 +1519,9 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]],
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    ],
     *,
     name: str,
     default_destination: str,
