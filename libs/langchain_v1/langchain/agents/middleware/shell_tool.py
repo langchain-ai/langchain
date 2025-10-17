@@ -42,6 +42,7 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState, Priva
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
+    from langgraph.runtime import Runtime
     from langgraph.types import Command
 
     from langchain.tools.tool_node import ToolCallRequest
@@ -463,16 +464,16 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    def before_agent(self, _state: ShellToolState, _runtime: Any) -> dict[str, Any] | None:
+    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Start the shell session and run startup commands."""
         resources = self._create_resources()
         return {"shell_session_resources": resources}
 
-    async def abefore_agent(self, state: ShellToolState, _runtime: Any) -> dict[str, Any] | None:
+    async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Async counterpart to `before_agent`."""
-        return self.before_agent(state, _runtime)
+        return self.before_agent(state, runtime)
 
-    def after_agent(self, state: ShellToolState, _runtime: Any) -> None:
+    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
         """Run shutdown commands and release resources when an agent completes."""
         resources = self._ensure_resources(state)
         try:
@@ -480,9 +481,9 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         finally:
             resources._finalizer()
 
-    async def aafter_agent(self, state: ShellToolState, _runtime: Any) -> None:
+    async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Async counterpart to `after_agent`."""
-        return self.after_agent(state, _runtime)
+        return self.after_agent(state, runtime)
 
     def _ensure_resources(self, state: ShellToolState) -> _SessionResources:
         resources = state.get("shell_session_resources")
