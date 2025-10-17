@@ -396,7 +396,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a8"
+version = "1.0.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -454,7 +454,7 @@ typing = [
 
 [[package]]
 name = "langchain-exa"
-version = "1.0.0a1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "exa-py" },
@@ -512,7 +512,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0a2"
+version = "1.0.0"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
