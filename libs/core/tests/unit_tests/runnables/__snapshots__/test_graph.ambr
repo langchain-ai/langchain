@@ -427,7 +427,6 @@
         'data': dict({
           '$defs': dict({
             'AIMessage': dict({
-              'additionalProperties': True,
               'description': '''
                 Message from an AI.
                 
@@ -534,7 +533,6 @@
               'type': 'object',
             }),
             'AIMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'Message chunk from an AI (yielded when streaming).',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -655,7 +653,6 @@
               'type': 'object',
             }),
             'ChatMessage': dict({
-              'additionalProperties': True,
               'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -730,7 +727,6 @@
               'type': 'object',
             }),
             'ChatMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'Chat Message chunk.',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -805,7 +801,6 @@
               'type': 'object',
             }),
             'FunctionMessage': dict({
-              'additionalProperties': True,
               'description': '''
                 Message for passing the result of executing a tool back to a model.
                 
@@ -877,7 +872,6 @@
               'type': 'object',
             }),
             'FunctionMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'Function Message chunk.',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -940,7 +934,6 @@
               'type': 'object',
             }),
             'HumanMessage': dict({
-              'additionalProperties': True,
               'description': '''
                 Message from the user.
                 
@@ -1028,7 +1021,6 @@
               'type': 'object',
             }),
             'HumanMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'Human Message chunk.',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -1246,7 +1238,6 @@
               'type': 'object',
             }),
             'SystemMessage': dict({
-              'additionalProperties': True,
               'description': '''
                 Message for priming AI behavior.
                 
@@ -1334,7 +1325,6 @@
               'type': 'object',
             }),
             'SystemMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'System Message chunk.',
               'properties': dict({
                 'additional_kwargs': dict({
@@ -1529,7 +1519,6 @@
               'type': 'object',
             }),
             'ToolMessage': dict({
-              'additionalProperties': True,
               'description': '''
                 Message for passing the result of executing a tool back to a model.
                 
@@ -1648,7 +1637,6 @@
               'type': 'object',
             }),
             'ToolMessageChunk': dict({
-              'additionalProperties': True,
               'description': 'Tool Message chunk.',
               'properties': dict({
                 'additional_kwargs': dict({

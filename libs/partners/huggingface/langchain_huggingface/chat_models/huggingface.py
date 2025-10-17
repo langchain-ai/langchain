@@ -330,18 +330,17 @@ class ChatHuggingFace(BaseChatModel):
         ```
 
     Key init args — completion params:
-        llm: `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, `HuggingFaceHub`, or
-            'HuggingFacePipeline' LLM to be used.
+        llm:
+            LLM to be used.
 
     Key init args — client params:
-        custom_get_token_ids: Callable[[str], list[int]] | None
+        custom_get_token_ids:
             Optional encoder to use for counting tokens.
-        metadata: dict[str, Any] | None
+        metadata:
             Metadata to add to the run trace.
-        tags: list[str] | None
+        tags:
             Tags to add to the run trace.
-        tokenizer: Any
-        verbose: bool
+        verbose:
             Whether to print out response text.
 
     See full list of supported init args and their descriptions in the params
@@ -883,7 +882,7 @@ class ChatHuggingFace(BaseChatModel):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a typedDict class (support added in 0.1.7),
+                - a `TypedDict` class
 
                 Pydantic class is currently supported.
 
@@ -896,10 +895,12 @@ class ChatHuggingFace(BaseChatModel):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs:
                 Additional parameters to pass to the underlying LLM's
@@ -907,20 +908,19 @@ class ChatHuggingFace(BaseChatModel):
                 method, such as `response_format` or `ls_structured_output_format`.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if `include_raw` is False then Runnable outputs a dict.
-
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"

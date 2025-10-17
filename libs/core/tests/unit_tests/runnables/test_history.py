@@ -3,7 +3,6 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 import pytest
-from packaging import version
 from pydantic import BaseModel, RootModel
 from typing_extensions import override
 
@@ -25,7 +24,6 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _schema
 
 
@@ -497,8 +495,6 @@ def test_get_output_schema() -> None:
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
-    if version.parse("2.11") <= PYDANTIC_VERSION:
-        expected_schema["additionalProperties"] = True
     assert _schema(output_type) == expected_schema
 
 

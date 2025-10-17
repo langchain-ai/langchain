@@ -151,10 +151,10 @@ class Qdrant(VectorStore):
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embeddings and add to the `VectorStore`.
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
+            texts: Iterable of strings to add to the `VectorStore`.
             metadatas: Optional list of metadatas associated with the texts.
             ids:
                 Optional list of ids to associate with the texts. Ids have to be
@@ -165,7 +165,7 @@ class Qdrant(VectorStore):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the `VectorStore`.
 
         """
         added_ids = []
@@ -188,10 +188,10 @@ class Qdrant(VectorStore):
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str]:
-        """Run more texts through the embeddings and add to the vectorstore.
+        """Run more texts through the embeddings and add to the `VectorStore`.
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
+            texts: Iterable of strings to add to the `VectorStore`.
             metadatas: Optional list of metadatas associated with the texts.
             ids:
                 Optional list of ids to associate with the texts. Ids have to be
@@ -202,7 +202,7 @@ class Qdrant(VectorStore):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the `VectorStore`.
 
         """
         if self.async_client is None or isinstance(
@@ -265,7 +265,7 @@ class Qdrant(VectorStore):
                 Any other named arguments to pass through to QdrantClient.search()
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score(
@@ -297,7 +297,7 @@ class Qdrant(VectorStore):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = await self.asimilarity_search_with_score(query, k, filter, **kwargs)
@@ -463,7 +463,7 @@ class Qdrant(VectorStore):
                 Any other named arguments to pass through to QdrantClient.search()
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score_by_vector(
@@ -523,7 +523,7 @@ class Qdrant(VectorStore):
                 AsyncQdrantClient.Search().
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = await self.asimilarity_search_with_score_by_vector(
@@ -768,7 +768,7 @@ class Qdrant(VectorStore):
                 Any other named arguments to pass through to QdrantClient.search()
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         query_embedding = self._embed_query(query)
@@ -1020,17 +1020,16 @@ class Qdrant(VectorStore):
                 - int - number of replicas to query, values should present in all
                         queried replicas
                 - 'majority' - query all replicas, but return values present in the
-                               majority of replicas
+                    majority of replicas
                 - 'quorum' - query the majority of replicas, return values present in
-                             all of them
+                    all of them
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
-
+            List of `Document` objects selected by maximal marginal relevance and
+                distance for each.
         """
         query_vector = embedding
         if self.vector_name is not None:
@@ -1102,9 +1101,8 @@ class Qdrant(VectorStore):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
-
+            List of `Document` objects selected by maximal marginal relevance and
+                distance for each.
         """
         if self.async_client is None or isinstance(
             self.async_client._client, AsyncQdrantLocal
@@ -1320,9 +1318,10 @@ class Qdrant(VectorStore):
                 Additional arguments passed directly into REST client initialization
 
         This is a user-friendly interface that:
+
         1. Creates embeddings, one for each text
         2. Initializes the Qdrant database as an in-memory docstore by default
-           (and overridable to a remote docstore)
+            (and overridable to a remote docstore)
         3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
@@ -1560,6 +1559,7 @@ class Qdrant(VectorStore):
                 Additional arguments passed directly into REST client initialization
 
         This is a user-friendly interface that:
+
         1. Creates embeddings, one for each text
         2. Initializes the Qdrant database as an in-memory docstore by default
             (and overridable to a remote docstore)
@@ -1973,19 +1973,19 @@ class Qdrant(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
+        """Return docs and relevance scores in the range `[0, 1]`.
 
-        0 is dissimilar, 1 is most similar.
+        `0` is dissimilar, `1` is most similar.
 
         Args:
             query: input text
             k: Number of Documents to return.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
+            **kwargs: kwargs to be passed to similarity search. Should include
+                `score_threshold`, An optional floating point value between `0` to `1`
+                to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of Tuples of `(doc, similarity_score)`
 
         """
         return self.similarity_search_with_score(query, k, **kwargs)
@@ -1997,19 +1997,19 @@ class Qdrant(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
-        """Return docs and relevance scores in the range [0, 1].
+        """Return docs and relevance scores in the range `[0, 1]`.
 
-        0 is dissimilar, 1 is most similar.
+        `0` is dissimilar, `1` is most similar.
 
         Args:
             query: input text
             k: Number of Documents to return.
-            **kwargs: kwargs to be passed to similarity search. Should include:
-                score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs
+            **kwargs: kwargs to be passed to similarity search. Should include
+                `score_threshold`, An optional floating point value between `0` to `1`
+                to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of (doc, similarity_score)
+            List of Tuples of `(doc, similarity_score)`
 
         """
         return await self.asimilarity_search_with_score(query, k, **kwargs)

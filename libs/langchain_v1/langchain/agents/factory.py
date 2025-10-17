@@ -31,7 +31,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
-    PublicAgentState,
+    _InputAgentState,
+    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -527,7 +528,7 @@ def create_agent(  # noqa: PLR0915
     name: str | None = None,
     cache: BaseCache | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
@@ -780,7 +781,7 @@ def create_agent(  # noqa: PLR0915
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1507,10 +1508,12 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        if all(
-            tool_node.tools_by_name[c["name"]].return_direct
-            for c in last_ai_message.tool_calls
-            if c["name"] in tool_node.tools_by_name
+        # Filter to only client-side tools (provider tools are not in tool_node)
+        client_side_tool_calls = [
+            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        ]
+        if client_side_tool_calls and all(
+            tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
             return end_destination
 
@@ -1527,7 +1530,9 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    ],
     *,
     name: str,
     default_destination: str,

@@ -615,7 +615,7 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema `args_schema`.
+            ValueError: If `string` input is provided with JSON schema `args_schema`.
             ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
             TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
@@ -1210,6 +1210,26 @@ class InjectedToolArg:
     """
 
 
+class _DirectlyInjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Injected via direct type annotation, rather than annotated metadata.
+
+    For example, ToolRuntime is a directly injected argument.
+    Note the direct annotation rather than the verbose alternative:
+    Annotated[ToolRuntime, InjectedRuntime]
+    ```python
+    from langchain_core.tools import tool, ToolRuntime
+
+
+    @tool
+    def foo(x: int, runtime: ToolRuntime) -> str:
+        # use runtime.state, runtime.context, runtime.store, etc.
+        ...
+    ```
+    """
+
+
 class InjectedToolCallId(InjectedToolArg):
     """Annotation for injecting the tool call ID.
 
@@ -1237,6 +1257,24 @@ class InjectedToolCallId(InjectedToolArg):
     """
 
 
+def _is_directly_injected_arg_type(type_: Any) -> bool:
+    """Check if a type annotation indicates a directly injected argument.
+
+    This is currently only used for ToolRuntime.
+    Checks if either the annotation itself is a subclass of _DirectlyInjectedToolArg
+    or the origin of the annotation is a subclass of _DirectlyInjectedToolArg.
+
+    Ex: ToolRuntime or ToolRuntime[ContextT, StateT] would both return True.
+    """
+    return (
+        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
+    ) or (
+        (origin := get_origin(type_)) is not None
+        and isinstance(origin, type)
+        and issubclass(origin, _DirectlyInjectedToolArg)
+    )
+
+
 def _is_injected_arg_type(
     type_: type | TypeVar, injected_type: type[InjectedToolArg] | None = None
 ) -> bool:
@@ -1249,7 +1287,15 @@ def _is_injected_arg_type(
     Returns:
         `True` if the type is an injected argument, `False` otherwise.
     """
-    injected_type = injected_type or InjectedToolArg
+    if injected_type is None:
+        # if no injected type is specified,
+        # check if the type is a directly injected argument
+        if _is_directly_injected_arg_type(type_):
+            return True
+        injected_type = InjectedToolArg
+
+    # if the type is an Annotated type, check if annotated metadata
+    # is an intance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))

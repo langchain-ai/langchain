@@ -75,26 +75,26 @@ class RunnableConfig(TypedDict, total=False):
     max_concurrency: int | None
     """
     Maximum number of parallel calls to make. If not provided, defaults to
-    ThreadPoolExecutor's default.
+    `ThreadPoolExecutor`'s default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 25.
+    Maximum number of times a call can recurse. If not provided, defaults to `25`.
     """
 
     configurable: dict[str, Any]
     """
-    Runtime values for attributes previously made configurable on this Runnable,
-    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made
+    Runtime values for attributes previously made configurable on this `Runnable`,
+    or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+    Check `output_schema` for a description of the attributes that have been made
     configurable.
     """
 
     run_id: uuid.UUID | None
     """
     Unique identifier for the tracer run for this call. If not provided, a new UUID
-        will be generated.
+    will be generated.
     """
 
 
@@ -527,8 +527,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         self,
         fn: Callable[..., T],
         *iterables: Iterable[Any],
-        timeout: float | None = None,
-        chunksize: int = 1,
+        **kwargs: Any,
     ) -> Iterator[T]:
         """Map a function to multiple iterables.
 
@@ -549,8 +548,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         return super().map(
             _wrapped_fn,
             *iterables,
-            timeout=timeout,
-            chunksize=chunksize,
+            **kwargs,
         )
 
 
