@@ -621,7 +621,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a8"
+version = "1.0.0"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -679,7 +679,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.0a4"
+version = "1.0.0"
 source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -699,8 +699,10 @@ dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain", editable = "../../langchain_v1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
+    { name = "langgraph-prebuilt", specifier = ">=0.7.0rc1" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -728,7 +730,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0a2"
+version = "1.0.0"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -773,7 +775,7 @@ typing = [
 
 [[package]]
 name = "langchain-xai"
-version = "1.0.0a1"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

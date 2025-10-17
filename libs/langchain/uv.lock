@@ -2288,6 +2288,9 @@ google-vertexai = [
 groq = [
     { name = "langchain-groq" },
 ]
+huggingface = [
+    { name = "langchain-huggingface" },
+]
 mistralai = [
     { name = "langchain-mistralai" },
 ]
@@ -2381,6 +2384,7 @@ requires-dist = [
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
+    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
@@ -2394,7 +2398,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.0.0,<3.0.0" },
     { name = "sqlalchemy", specifier = ">=1.4.0,<3.0.0" },
 ]
-provides-extras = ["anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2596,6 +2600,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9f/1a/5aed1edbf3d3ac5ae491b3cfaffc087dad51ae41f2e21bc845bc8062bf37/langchain_groq-1.0.0a1.tar.gz", hash = "sha256:132b2b8ee645375bc0f61f0ef2d95831258ba8ca368d3d45cf784573221b9c07", size = 25803, upload-time = "2025-10-02T23:21:35.077Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/7c/3bbe58c4da4fd2e86ac35d7305027e1fe9cba49e0d7a9271ae90ea21b47a/langchain_groq-1.0.0a1-py3-none-any.whl", hash = "sha256:2067e25f2be394a5cde6270d047757c2feb622f9f419d704778c355ce8d9d084", size = 17516, upload-time = "2025-10-02T23:21:33.892Z" },
+]
+
+[[package]]
+name = "langchain-huggingface"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "langchain-core" },
+    { name = "tokenizers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/0d/2a22659534cc70410573a53d32756cf7971de7923ba2ccf940c03ecbe12a/langchain_huggingface-1.0.0.tar.gz", hash = "sha256:0d2eb924ff77dc08bb7dd340ab10d47c1b71372e4297bc12e84c4a66df9a4414", size = 247750, upload-time = "2025-10-17T15:30:35.179Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/30/7476a926e31498ebc4be3131e06650c5136ffb8ba12067f56212e187dd7c/langchain_huggingface-1.0.0-py3-none-any.whl", hash = "sha256:06d6ac57951c6a1c47d329c38f2b32472a839eab2fa14883be784916ea075da0", size = 27493, upload-time = "2025-10-17T15:30:34.023Z" },
 ]
 
 [[package]]

@@ -18,10 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-)
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1271,7 +1268,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-sonnet-4-5",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
@@ -1399,7 +1396,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
+                model="claude-sonnet-4-5",
                 betas=["context-management-2025-06-27"],
             )
             model_with_tools = model.bind_tools([{"type": "memory_20250818", "name": "memory"}])
