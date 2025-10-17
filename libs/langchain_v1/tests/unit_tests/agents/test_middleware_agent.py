@@ -1396,6 +1396,10 @@ def test_runtime_injected_into_middleware() -> None:
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
 
+class TestState(AgentState):
+    test_state: str
+
+
 @tool(description="Test the state")
 def state_test(
     state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
@@ -1407,9 +1411,6 @@ def state_test(
 
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
-
-    class TestState(AgentState):
-        test_state: str
 
     class TestMiddleware(AgentMiddleware):
         state_schema = TestState
