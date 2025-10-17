@@ -1379,22 +1379,21 @@ wheels = [
 
 [[package]]
 name = "huggingface-hub"
-version = "1.0.0rc2"
+version = "0.35.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
     { name = "fsspec" },
     { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
-    { name = "httpx" },
     { name = "packaging" },
     { name = "pyyaml" },
+    { name = "requests" },
     { name = "tqdm" },
-    { name = "typer-slim" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/e1/987c56200ab835d3a46ac7a26690ee1d6a90326c7759d5b8cfad24e662c4/huggingface_hub-1.0.0rc2.tar.gz", hash = "sha256:d9bbfbab9a6e882bbb38cc6e24ef896de1f2a727a71bdd0f01212e4a1187be71", size = 433269, upload-time = "2025-09-25T15:03:20.387Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/7e/a0a97de7c73671863ca6b3f61fa12518caf35db37825e43d63a70956738c/huggingface_hub-0.35.3.tar.gz", hash = "sha256:350932eaa5cc6a4747efae85126ee220e4ef1b54e29d31c3b45c5612ddf0b32a", size = 461798, upload-time = "2025-09-29T14:29:58.625Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/99/36f0611b2f1ff253cb9a786cd33199e5f75da2bf30276ab461ec439bc538/huggingface_hub-1.0.0rc2-py3-none-any.whl", hash = "sha256:d7fc9d745b5a539d5bf6bcf016e0e36b5db42990476b1d0bb993afdf82c2170e", size = 528661, upload-time = "2025-09-25T15:03:18.295Z" },
+    { url = "https://files.pythonhosted.org/packages/31/a0/651f93d154cb72323358bf2bbae3e642bdb5d2f1bfc874d096f7cb159fa0/huggingface_hub-0.35.3-py3-none-any.whl", hash = "sha256:0e3a01829c19d86d03793e4577816fe3bdfc1602ac62c7fb220d593d351224ba", size = 564262, upload-time = "2025-09-29T14:29:55.813Z" },
 ]
 
 [[package]]
@@ -1583,6 +1582,9 @@ google-vertexai = [
 groq = [
     { name = "langchain-groq" },
 ]
+huggingface = [
+    { name = "langchain-huggingface" },
+]
 mistralai = [
     { name = "langchain-mistralai" },
 ]
@@ -1644,6 +1646,7 @@ requires-dist = [
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
+    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
@@ -1653,7 +1656,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.0a4,<2.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -1740,7 +1743,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0rc3"
+version = "1.0.0"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -1875,6 +1878,20 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-huggingface"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "langchain-core" },
+    { name = "tokenizers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/0d/2a22659534cc70410573a53d32756cf7971de7923ba2ccf940c03ecbe12a/langchain_huggingface-1.0.0.tar.gz", hash = "sha256:0d2eb924ff77dc08bb7dd340ab10d47c1b71372e4297bc12e84c4a66df9a4414", size = 247750, upload-time = "2025-10-17T15:30:35.179Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/30/7476a926e31498ebc4be3131e06650c5136ffb8ba12067f56212e187dd7c/langchain_huggingface-1.0.0-py3-none-any.whl", hash = "sha256:06d6ac57951c6a1c47d329c38f2b32472a839eab2fa14883be784916ea075da0", size = 27493, upload-time = "2025-10-17T15:30:34.023Z" },
+]
+
+[[package]]
 name = "langchain-mistralai"
 version = "0.2.12"
 source = { registry = "https://pypi.org/simple" }
@@ -1905,7 +1922,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.0a4"
+version = "1.0.0"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -1928,6 +1945,7 @@ test = [
     { name = "langchain", editable = "." },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-tests", editable = "../standard-tests" },
+    { name = "langgraph-prebuilt", specifier = ">=0.7.0rc1" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
@@ -1945,7 +1963,7 @@ test-integration = [
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pillow", specifier = ">=10.3.0,<11.0.0" },
+    { name = "pillow", specifier = ">=10.3.0,<12.0.0" },
 ]
 typing = [
     { name = "langchain-core", editable = "../core" },
@@ -1968,7 +1986,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0rc1"
+version = "1.0.0"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -2013,7 +2031,7 @@ typing = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.0.0a1"
+version = "1.0.0"
 source = { editable = "../text-splitters" }
 dependencies = [
     { name = "langchain-core" },
@@ -2046,8 +2064,8 @@ test-integration = [
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
     { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
     { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
-    { name = "sentence-transformers", specifier = ">=3.0.1,<4.0.0" },
-    { name = "spacy", specifier = ">=3.8.7,<4.0.0" },
+    { name = "sentence-transformers", marker = "python_full_version < '3.14'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "spacy", marker = "python_full_version < '3.14'", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "transformers", specifier = ">=4.51.3,<5.0.0" },
@@ -4145,19 +4163,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/7d/b1e0399aa5e27071f0042784681d28417f3e526c61f62c8e3635ee5ad334/typer-0.9.4.tar.gz", hash = "sha256:f714c2d90afae3a7929fcd72a3abb08df305e1ff61719381384211c4070af57f", size = 276061, upload-time = "2024-03-23T17:07:55.568Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/39/82c9d3e10979851847361d922a373bdfef4091020da7f893acfaf07c0225/typer-0.9.4-py3-none-any.whl", hash = "sha256:aa6c4a4e2329d868b80ecbaf16f807f2b54e192209d7ac9dd42691d63f7a54eb", size = 45973, upload-time = "2024-03-23T17:07:53.985Z" },
-]
-
-[[package]]
-name = "typer-slim"
-version = "0.19.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/75/d6/489402eda270c00555213bdd53061b23a0ae2b5dccbfe428ebcc9562d883/typer_slim-0.19.2.tar.gz", hash = "sha256:6f601e28fb8249a7507f253e35fb22ccc701403ce99bea6a9923909ddbfcd133", size = 104788, upload-time = "2025-09-23T09:47:42.917Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a5/19/7aef771b3293e1b7c749eebb2948bb7ccd0e9b56aa222eb4d5e015087730/typer_slim-0.19.2-py3-none-any.whl", hash = "sha256:1c9cdbbcd5b8d30f4118d3cb7c52dc63438b751903fbd980a35df1dfe10c6c91", size = 46806, upload-time = "2025-09-23T09:47:41.385Z" },
 ]
 
 [[package]]
