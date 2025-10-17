@@ -1371,9 +1371,6 @@ def test_public_private_state_for_custom_middleware() -> None:
     assert "private_state" not in result
 
 
-@pytest.mark.skipif(
-    sys.version_info >= (3, 14), reason="pydantic 2.12 namespace management not working w/ 3.14"
-)
 def test_runtime_injected_into_middleware() -> None:
     """Test that the runtime is injected into the middleware."""
 
@@ -1434,6 +1431,9 @@ agent = create_agent(
 )
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="pydantic 2.12 namespace management not working w/ 3.14"
+)
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
 
