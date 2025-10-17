@@ -72,21 +72,21 @@ class ChatPerplexity(BaseChatModel):
         ```
 
         Key init args - completion params:
-            model: str
+            model:
                 Name of the model to use. e.g. "sonar"
-            temperature: float
+            temperature:
                 Sampling temperature to use.
-            max_tokens: int | None
+            max_tokens:
                 Maximum number of tokens to generate.
-            streaming: bool
+            streaming:
                 Whether to stream the results or not.
 
         Key init args - client params:
-            pplx_api_key: str | None
+            pplx_api_key:
                 API key for PerplexityChat API.
-            request_timeout: float | Tuple[float, float] | None
+            request_timeout:
                 Timeout for requests to PerplexityChat completion API.
-            max_retries: int
+            max_retries:
                 Maximum number of retries to make when generating.
 
         See full list of supported init args and their descriptions in the params section.
@@ -425,10 +425,12 @@ class ChatPerplexity(BaseChatModel):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 Unsupported: whether to enable strict schema adherence when generating
@@ -438,17 +440,18 @@ class ChatPerplexity(BaseChatModel):
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):
             method = "json_schema"

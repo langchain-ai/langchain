@@ -149,17 +149,18 @@ def init_chat_model(
             `config["configurable"]["{config_prefix}_{param}"]` keys. If
             `'config_prefix'` is an empty string then model will be configurable via
             `config["configurable"]["{param}"]`.
-        temperature: Model temperature.
-        max_tokens: Max output tokens.
-        timeout: The maximum time (in seconds) to wait for a response from the model
-            before canceling the request.
-        max_retries: The maximum number of attempts the system will make to resend a
-            request if it fails due to issues like network timeouts or rate limits.
-        base_url: The URL of the API endpoint where requests are sent.
-        rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
-            rate limits.
-        kwargs: Additional model-specific keyword args to pass to
-            `<<selected chat model>>.__init__(model=model_name, **kwargs)`.
+        **kwargs: Additional model-specific keyword args to pass to the underlying
+            chat model's `__init__` method. Common parameters include:
+
+            - `temperature`: Model temperature for controlling randomness.
+            - `max_tokens`: Maximum number of output tokens.
+            - `timeout`: Maximum time (in seconds) to wait for a response.
+            - `max_retries`: Maximum number of retry attempts for failed requests.
+            - `base_url`: Custom API endpoint URL.
+            - `rate_limiter`: A `BaseRateLimiter` instance to control request rate.
+
+            Refer to the specific model provider's documentation for all available
+            parameters.
 
     Returns:
         A `BaseChatModel` corresponding to the `model_name` and `model_provider`

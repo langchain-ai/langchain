@@ -31,7 +31,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
-    PublicAgentState,
+    _InputAgentState,
+    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -517,6 +518,7 @@ def create_agent(  # noqa: PLR0915
     system_prompt: str | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
+    state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
     checkpointer: Checkpointer | None = None,
     store: BaseStore | None = None,
@@ -526,7 +528,7 @@ def create_agent(  # noqa: PLR0915
     name: str | None = None,
     cache: BaseCache | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
@@ -549,6 +551,13 @@ def create_agent(  # noqa: PLR0915
             If provided, the agent will handle structured output during the
             conversation flow. Raw schemas will be wrapped in an appropriate strategy
             based on model capabilities.
+        state_schema: An optional `TypedDict` schema that extends `AgentState`.
+            When provided, this schema is used instead of `AgentState` as the base
+            schema for merging with middleware state schemas. This allows users to
+            add custom state fields without needing to create custom middleware.
+            Generally, it's recommended to use state_schema extensions via middleware
+            to keep relevant extensions scoped to corresponding hooks / tools.
+            The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object. This is used for persisting
             the state of the graph (e.g., as chat memory) for a single thread
@@ -762,17 +771,19 @@ def create_agent(  # noqa: PLR0915
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
     state_schemas = {m.state_schema for m in middleware}
-    state_schemas.add(AgentState)
+    # Use provided state_schema if available, otherwise use base AgentState
+    base_state = state_schema if state_schema is not None else AgentState
+    state_schemas.add(base_state)
 
-    state_schema = _resolve_schema(state_schemas, "StateSchema", None)
+    resolved_state_schema = _resolve_schema(state_schemas, "StateSchema", None)
     input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
     output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
     ] = StateGraph(
-        state_schema=state_schema,
+        state_schema=resolved_state_schema,
         input_schema=input_schema,
         output_schema=output_schema,
         context_schema=context_schema,
@@ -1119,7 +1130,9 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
-            graph.add_node(f"{m.name}.before_agent", before_agent_node, input_schema=state_schema)
+            graph.add_node(
+                f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
+            )
 
         if (
             m.__class__.before_model is not AgentMiddleware.before_model
@@ -1138,7 +1151,9 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
-            graph.add_node(f"{m.name}.before_model", before_node, input_schema=state_schema)
+            graph.add_node(
+                f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
+            )
 
         if (
             m.__class__.after_model is not AgentMiddleware.after_model
@@ -1157,7 +1172,7 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=state_schema)
+            graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
 
         if (
             m.__class__.after_agent is not AgentMiddleware.after_agent
@@ -1176,7 +1191,9 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
-            graph.add_node(f"{m.name}.after_agent", after_agent_node, input_schema=state_schema)
+            graph.add_node(
+                f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
+            )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
     if middleware_w_before_agent:
@@ -1209,6 +1226,15 @@ def create_agent(  # noqa: PLR0915
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
+        # Only include exit_node in destinations if any tool has return_direct=True
+        # or if there are structured output tools
+        tools_to_model_destinations = [loop_entry_node]
+        if (
+            any(tool.return_direct for tool in tool_node.tools_by_name.values())
+            or structured_output_tools
+        ):
+            tools_to_model_destinations.append(exit_node)
+
         graph.add_conditional_edges(
             "tools",
             _make_tools_to_model_edge(
@@ -1217,7 +1243,7 @@ def create_agent(  # noqa: PLR0915
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
             ),
-            [loop_entry_node, exit_node],
+            tools_to_model_destinations,
         )
 
         # base destinations are tools and exit_node
@@ -1482,10 +1508,12 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        if all(
-            tool_node.tools_by_name[c["name"]].return_direct
-            for c in last_ai_message.tool_calls
-            if c["name"] in tool_node.tools_by_name
+        # Filter to only client-side tools (provider tools are not in tool_node)
+        client_side_tool_calls = [
+            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        ]
+        if client_side_tool_calls and all(
+            tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
             return end_destination
 
@@ -1502,7 +1530,9 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    ],
     *,
     name: str,
     default_destination: str,

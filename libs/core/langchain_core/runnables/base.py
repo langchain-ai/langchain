@@ -860,7 +860,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         The default implementation of batch works well for IO bound runnables.
 
-        Subclasses should override this method if they can batch more efficiently;
+        Subclasses must override this method if they can batch more efficiently;
         e.g., if the underlying `Runnable` uses an API which supports a batch mode.
 
         Args:
@@ -992,7 +992,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         The default implementation of `batch` works well for IO bound runnables.
 
-        Subclasses should override this method if they can batch more efficiently;
+        Subclasses must override this method if they can batch more efficiently;
         e.g., if the underlying `Runnable` uses an API which supports a batch mode.
 
         Args:
@@ -1112,7 +1112,7 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> Iterator[Output]:
         """Default implementation of `stream`, which calls `invoke`.
 
-        Subclasses should override this method if they support streaming output.
+        Subclasses must override this method if they support streaming output.
 
         Args:
             input: The input to the `Runnable`.
@@ -1133,7 +1133,7 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> AsyncIterator[Output]:
         """Default implementation of `astream`, which calls `ainvoke`.
 
-        Subclasses should override this method if they support streaming output.
+        Subclasses must override this method if they support streaming output.
 
         Args:
             input: The input to the `Runnable`.
@@ -1367,8 +1367,8 @@ class Runnable(ABC, Generic[Input, Output]):
 
         events = [event async for event in chain.astream_events("hello", version="v2")]
 
-        # will produce the following events (run_id, and parent_ids
-        # has been omitted for brevity):
+        # Will produce the following events
+        # (run_id, and parent_ids has been omitted for brevity):
         [
             {
                 "data": {"input": "hello"},
@@ -1423,7 +1423,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         async for event in slow_thing.astream_events("some_input", version="v2"):
             print(event)
-        ``
+        ```
 
         Args:
             input: The input to the `Runnable`.
@@ -1497,7 +1497,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Default implementation of transform, which buffers input and calls `astream`.
 
-        Subclasses should override this method if they can start producing output while
+        Subclasses must override this method if they can start producing output while
         input is still being generated.
 
         Args:
@@ -1542,7 +1542,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Default implementation of atransform, which buffers input and calls `astream`.
 
-        Subclasses should override this method if they can start producing output while
+        Subclasses must override this method if they can start producing output while
         input is still being generated.
 
         Args:
@@ -1813,7 +1813,7 @@ class Runnable(ABC, Generic[Input, Output]):
             output_type: The output type to bind to the `Runnable`.
 
         Returns:
-            A new Runnable with the types bound.
+            A new `Runnable` with the types bound.
         """
         return RunnableBinding(
             bound=self,
@@ -1840,7 +1840,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 giving up.
             exponential_jitter_params: Parameters for
                 `tenacity.wait_exponential_jitter`. Namely: `initial`, `max`,
-                `exp_base`, and `jitter` (all float values).
+                `exp_base`, and `jitter` (all `float` values).
 
         Returns:
             A new Runnable that retries the original Runnable on exceptions.
@@ -1925,15 +1925,15 @@ class Runnable(ABC, Generic[Input, Output]):
             fallbacks: A sequence of runnables to try if the original `Runnable`
                 fails.
             exceptions_to_handle: A tuple of exception types to handle.
-            exception_key: If string is specified then handled exceptions will be passed
-                to fallbacks as part of the input under the specified key.
+            exception_key: If `string` is specified then handled exceptions will be
+                passed to fallbacks as part of the input under the specified key.
                 If `None`, exceptions will not be passed to fallbacks.
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
-            Fallback in order, upon failures.
+                Fallback in order, upon failures.
 
         Example:
             ```python
@@ -1961,16 +1961,15 @@ class Runnable(ABC, Generic[Input, Output]):
             fallbacks: A sequence of runnables to try if the original `Runnable`
                 fails.
             exceptions_to_handle: A tuple of exception types to handle.
-            exception_key: If string is specified then handled exceptions will be passed
-                to fallbacks as part of the input under the specified key.
+            exception_key: If `string` is specified then handled exceptions will be
+                passed to fallbacks as part of the input under the specified key.
                 If `None`, exceptions will not be passed to fallbacks.
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
-            Fallback in order, upon failures.
-
+                Fallback in order, upon failures.
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.fallbacks import (  # noqa: PLC0415
