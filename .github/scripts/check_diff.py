@@ -138,7 +138,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/langchain" and job == "extended-tests":
         py_versions = ["3.10", "3.14"]
     elif dir_ == "libs/langchain_v1":
-        py_versions = ["3.10", "3.13"]
+        py_versions = ["3.10", "3.14"]
     elif dir_ in {"libs/cli", "libs/partners/chroma", "libs/partners/nomic"}:
         py_versions = ["3.10", "3.13"]
 
