@@ -15,8 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.tools import tool
+
+from langchain.agents.middleware.types import AgentMiddleware
 
 
 def _expand_include_patterns(pattern: str) -> list[str] | None:
@@ -81,7 +82,6 @@ def _match_include_pattern(basename: str, pattern: str) -> bool:
         return False
 
     return any(fnmatch.fnmatch(basename, candidate) for candidate in expanded)
-
 
 
 class FilesystemFileSearchMiddleware(AgentMiddleware):
