@@ -4,6 +4,7 @@ from types import ModuleType
 from typing import Any
 from unittest.mock import patch
 
+import sys
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -1370,6 +1371,9 @@ def test_public_private_state_for_custom_middleware() -> None:
     assert "private_state" not in result
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="pydantic 2.12 namespace management not working w/ 3.14"
+)
 def test_runtime_injected_into_middleware() -> None:
     """Test that the runtime is injected into the middleware."""
 
