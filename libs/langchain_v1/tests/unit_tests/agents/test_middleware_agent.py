@@ -1396,34 +1396,42 @@ def test_runtime_injected_into_middleware() -> None:
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
 
+# test setup defined at this scope bc of pydantic issues inferring the namespace of
+# custom state w/in a function
+
+
+class CustomState(AgentState):
+    custom_state: str
+
+
+@tool(description="Test the state")
+def test_state_tool(
+    state: Annotated[CustomState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+) -> str:
+    """Test tool that accesses injected state."""
+    assert "custom_state" in state
+    return "success"
+
+
+class CustomMiddleware(AgentMiddleware):
+    state_schema = CustomState
+
+
+agent = create_agent(
+    model=FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {}, "id": "test_call_1", "name": "test_state_tool"}],
+            [],
+        ]
+    ),
+    tools=[test_state_tool],
+    system_prompt="You are a helpful assistant.",
+    middleware=[CustomMiddleware()],
+)
+
+
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
-
-    class TestState(AgentState):
-        test_state: str
-
-    @tool(description="Test the state")
-    def test_state_tool(
-        state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
-    ) -> str:
-        """Test tool that accesses injected state."""
-        assert "test_state" in state
-        return "success"
-
-    class TestMiddleware(AgentMiddleware):
-        state_schema = TestState
-
-    agent = create_agent(
-        model=FakeToolCallingModel(
-            tool_calls=[
-                [{"args": {}, "id": "test_call_1", "name": "test_state_tool"}],
-                [],
-            ]
-        ),
-        tools=[test_state_tool],
-        system_prompt="You are a helpful assistant.",
-        middleware=[TestMiddleware()],
-    )
 
     result = agent.invoke(
         {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
@@ -1437,7 +1445,7 @@ def test_injected_state_in_middleware_agent() -> None:
     assert len(tool_messages) == 1
 
     tool_message = tool_messages[0]
-    assert tool_message.name == "test_state_tool"
+    assert tool_message.name == "test_state"
     assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
 
