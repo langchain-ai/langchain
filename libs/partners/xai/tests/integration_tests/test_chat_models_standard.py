@@ -44,8 +44,7 @@ class TestXAIStandard(ChatModelIntegrationTests):
     @override
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         """Override to use `grok-3` which supports stop sequences."""
-        params = self.chat_model_params
-        params["model"] = "grok-3"
+        params = {**self.chat_model_params, "model": "grok-3"}
 
         grok3_model = ChatXAI(**params)
 

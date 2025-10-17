@@ -530,8 +530,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         rtn = super()._create_chat_result(response, generation_info)
 
         for generation in rtn.generations:
-            if generation.message.response_metadata is None:
-                generation.message.response_metadata = {}
             generation.message.response_metadata["model_provider"] = "xai"
 
         if not isinstance(response, openai.BaseModel):
@@ -562,8 +560,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         )
 
         if generation_chunk:
-            if generation_chunk.message.response_metadata is None:
-                generation_chunk.message.response_metadata = {}
             generation_chunk.message.response_metadata["model_provider"] = "xai"
 
         if (choices := chunk.get("choices")) and generation_chunk:

@@ -21,13 +21,14 @@ def test_reasoning() -> None:
         model="grok-3-mini",
         reasoning_effort="low",
     )
-    response = chat_model.invoke("What is 3^3?")
+    input_message = "What is 3^3?"
+    response = chat_model.invoke(input_message)
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
 
     # Test streaming
     full: BaseMessageChunk | None = None
-    for chunk in chat_model.stream("What is 3^3?"):
+    for chunk in chat_model.stream(input_message):
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
@@ -40,7 +41,8 @@ def test_reasoning() -> None:
     assert len(list(reasoning_content)) >= 1
 
     # Test that passing message with reasoning back in works
-    followup = chat_model.invoke([response, "Based on your reasoning, what is 4^4?"])
+    follow_up_message = "Based on your reasoning, what is 4^4?"
+    followup = chat_model.invoke([input_message, response, follow_up_message])
     assert followup.content
     assert followup.additional_kwargs["reasoning_content"]
     followup_reasoning = (
