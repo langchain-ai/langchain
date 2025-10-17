@@ -1210,6 +1210,14 @@ class InjectedToolArg:
     """
 
 
+class _DirectlyInjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Injected via direct type annotation, rather than annotated metadata.
+    ```
+    """
+
+
 class InjectedToolCallId(InjectedToolArg):
     """Annotation for injecting the tool call ID.
 
@@ -1237,6 +1245,17 @@ class InjectedToolCallId(InjectedToolArg):
     """
 
 
+def _is_directly_injected_arg_type(type_: Any) -> bool:
+    """Check if a type annotation indicates a reserved argument."""
+    return (
+        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
+    ) or (
+        (origin := get_origin(type_)) is not None
+        and isinstance(origin, type)
+        and issubclass(origin, _DirectlyInjectedToolArg)
+    )
+
+
 def _is_injected_arg_type(
     type_: type | TypeVar, injected_type: type[InjectedToolArg] | None = None
 ) -> bool:
@@ -1250,6 +1269,13 @@ def _is_injected_arg_type(
         `True` if the type is an injected argument, `False` otherwise.
     """
     injected_type = injected_type or InjectedToolArg
+
+    # if the type is a directly injected argument, return True
+    if _is_directly_injected_arg_type(type_):
+        return True
+
+    # if the type is an Annotated type, check if annotated metadata
+    # is an intance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
