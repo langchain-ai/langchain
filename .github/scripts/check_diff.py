@@ -136,17 +136,17 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     # custom logic for specific directories
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.10", "3.13"]
+        py_versions = ["3.10", "3.14"]
     elif dir_ == "libs/langchain_v1":
         py_versions = ["3.10", "3.13"]
-    elif dir_ in {"libs/cli"}:
+    elif dir_ in {"libs/cli", "libs/partners/chroma", "libs/partners/nomic"}:
         py_versions = ["3.10", "3.13"]
 
     elif dir_ == ".":
         # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
         py_versions = ["3.10", "3.12"]
     else:
-        py_versions = ["3.10", "3.13"]
+        py_versions = ["3.10", "3.14"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -306,7 +306,9 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
-                dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
+                # Skip codspeed for partners without benchmarks or in IGNORED_PARTNERS
+                if partner_dir not in IGNORED_PARTNERS:
+                    dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
             # Check if this is a root-level file in libs/ (e.g., libs/README.md)
