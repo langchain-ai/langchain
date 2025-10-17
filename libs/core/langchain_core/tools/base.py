@@ -1258,7 +1258,14 @@ class InjectedToolCallId(InjectedToolArg):
 
 
 def _is_directly_injected_arg_type(type_: Any) -> bool:
-    """Check if a type annotation indicates a reserved argument."""
+    """Check if a type annotation indicates a directly injected argument.
+
+    This is currently only used for ToolRuntime.
+    Checks if either the annotation itself is a subclass of _DirectlyInjectedToolArg
+    or the origin of the annotation is a subclass of _DirectlyInjectedToolArg.
+
+    Ex: ToolRuntime or ToolRuntime[ContextT, StateT] would both return True.
+    """
     return (
         isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
     ) or (
