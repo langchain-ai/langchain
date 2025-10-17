@@ -845,7 +845,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -865,8 +865,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
             msg = (
@@ -1115,7 +1115,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -1134,8 +1134,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if isinstance(metadata, list):
             metadata = [

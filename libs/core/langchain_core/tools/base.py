@@ -615,7 +615,7 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema `args_schema`.
+            ValueError: If `string` input is provided with JSON schema `args_schema`.
             ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
             TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
