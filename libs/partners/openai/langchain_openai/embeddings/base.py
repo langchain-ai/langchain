@@ -191,9 +191,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """The maximum number of tokens to embed at once."""
     openai_api_key: SecretStr | None | Callable[[], str] = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            ["OPENAI_API_KEY", "AZURE_OPENAI_API_KEY"], default=None
-        ),
+        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: str | None = Field(

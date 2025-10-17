@@ -188,9 +188,7 @@ class BaseOpenAI(BaseLLM):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: SecretStr | None | Callable[[], str] = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            ["OPENAI_API_KEY", "AZURE_OPENAI_API_KEY"], default=None
-        ),
+        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: str | None = Field(

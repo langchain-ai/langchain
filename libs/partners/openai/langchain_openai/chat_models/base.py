@@ -451,9 +451,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: SecretStr | None | Callable[[], str] = Field(
         alias="api_key",
-        default_factory=secret_from_env(
-            ["OPENAI_API_KEY", "AZURE_OPENAI_API_KEY"], default=None
-        ),
+        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
     )
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
