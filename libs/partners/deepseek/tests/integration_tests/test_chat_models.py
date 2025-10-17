@@ -51,6 +51,14 @@ def test_reasoning_content() -> None:
     response = chat_model.invoke("What is 3^3?")
     assert response.content
     assert response.additional_kwargs["reasoning_content"]
+
+    content_blocks = response.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
     raise ValueError
 
 
@@ -63,3 +71,11 @@ def test_reasoning_content_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.additional_kwargs["reasoning_content"]
+
+    content_blocks = full.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
