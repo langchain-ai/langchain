@@ -1,3 +1,4 @@
+import { next } from "@vercel/edge";
 import redirects from "./redirects.json";
 
 export default function middleware(request) {
@@ -14,6 +15,5 @@ export default function middleware(request) {
     return Response.redirect(redirect.destination, 308);
   }
 
-  // No redirect found - continue to next handler
-  return undefined;
+  return next();
 }
