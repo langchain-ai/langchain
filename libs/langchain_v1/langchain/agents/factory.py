@@ -1507,10 +1507,12 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        if all(
-            tool_node.tools_by_name[c["name"]].return_direct
-            for c in last_ai_message.tool_calls
-            if c["name"] in tool_node.tools_by_name
+        # Filter to only client-side tools (provider tools are not in tool_node)
+        client_side_tool_calls = [
+            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        ]
+        if client_side_tool_calls and all(
+            tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
             return end_destination
 
