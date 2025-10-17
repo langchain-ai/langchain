@@ -63,7 +63,7 @@ class NomicEmbeddings(Embeddings):
         device: str | None = None,
         vision_model: str | None = None,
     ):
-        """Initialize NomicEmbeddings model.
+        """Initialize `NomicEmbeddings` model.
 
         Args:
             model: model name
