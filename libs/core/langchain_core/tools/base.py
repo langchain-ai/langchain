@@ -1268,11 +1268,12 @@ def _is_injected_arg_type(
     Returns:
         `True` if the type is an injected argument, `False` otherwise.
     """
-    injected_type = injected_type or InjectedToolArg
-
-    # if the type is a directly injected argument, return True
-    if _is_directly_injected_arg_type(type_):
-        return True
+    if injected_type is None:
+        # if no injected type is specified,
+        # check if the type is a directly injected argument
+        if _is_directly_injected_arg_type(type_):
+            return True
+        injected_type = InjectedToolArg
 
     # if the type is an Annotated type, check if annotated metadata
     # is an intance or subclass of the injected type
