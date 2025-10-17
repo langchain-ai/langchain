@@ -318,7 +318,8 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
 
     Args:
         middleware: The middleware instance to inspect.
-        hook_name: The name of the hook ('before_model', 'after_model', 'before_tool', 'after_tool').
+        hook_name: The name of the hook ('before_model', 'after_model', 'before_tool',
+            'after_tool').
 
     Returns:
         List of jump destinations, or empty list if not configured.
@@ -712,9 +713,10 @@ def create_agent(  # noqa: PLR0915
         default_tools = list(built_in_tools)
 
     # validate middleware
-    assert len({m.name for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
+    middleware_names = {m.name for m in middleware}
+    if len(middleware_names) != len(middleware):
+        msg = "Please remove duplicate middleware instances."
+        raise ValueError(msg)
     middleware_w_before_agent = [
         m
         for m in middleware
@@ -1226,7 +1228,9 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             before_tool_node = RunnableCallable(sync_before_tool, async_before_tool, trace=False)
-            graph.add_node(f"{m.name}.before_tool", before_tool_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.before_tool", before_tool_node, input_schema=resolved_state_schema
+            )
 
         if (
             m.__class__.after_tool is not AgentMiddleware.after_tool
@@ -1235,9 +1239,7 @@ def create_agent(  # noqa: PLR0915
             # Use RunnableCallable to support both sync and async
             # Pass None for sync if not overridden to avoid signature conflicts
             sync_after_tool = (
-                m.after_tool
-                if m.__class__.after_tool is not AgentMiddleware.after_tool
-                else None
+                m.after_tool if m.__class__.after_tool is not AgentMiddleware.after_tool else None
             )
             async_after_tool = (
                 m.aafter_tool
@@ -1245,7 +1247,9 @@ def create_agent(  # noqa: PLR0915
                 else None
             )
             after_tool_node = RunnableCallable(sync_after_tool, async_after_tool, trace=False)
-            graph.add_node(f"{m.name}.after_tool", after_tool_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.after_tool", after_tool_node, input_schema=resolved_state_schema
+            )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
     if middleware_w_before_agent:
@@ -1337,9 +1341,7 @@ def create_agent(  # noqa: PLR0915
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
                 has_before_tool=has_before_tool,
-                has_after_tool=has_after_tool,
                 middleware_w_before_tool=middleware_w_before_tool if has_before_tool else None,
-                middleware_w_after_tool=middleware_w_after_tool if has_after_tool else None,
             ),
             model_to_tools_destinations,
         )
@@ -1549,9 +1551,7 @@ def _make_model_to_tools_edge(
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
     has_before_tool: bool = False,
-    has_after_tool: bool = False,
     middleware_w_before_tool: list[AgentMiddleware[Any, Any]] | None = None,
-    middleware_w_after_tool: list[AgentMiddleware[Any, Any]] | None = None,
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(
         state: dict[str, Any],

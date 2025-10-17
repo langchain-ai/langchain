@@ -1746,7 +1746,9 @@ def before_tool(
         With conditional jumping:
         ```python
         @before_tool(can_jump_to=["end"])
-        def conditional_before_tool(state: AgentState, runtime: Runtime, request: ToolCallRequest) -> dict[str, Any] | None:
+        def conditional_before_tool(
+            state: AgentState, runtime: Runtime, request: ToolCallRequest
+        ) -> dict[str, Any] | None:
             if should_skip_tool(request):
                 return {"jump_to": "end"}
             return None
@@ -1755,7 +1757,9 @@ def before_tool(
         With custom state schema:
         ```python
         @before_tool(state_schema=MyCustomState)
-        def custom_before_tool(state: MyCustomState, runtime: Runtime, request: ToolCallRequest) -> dict[str, Any]:
+        def custom_before_tool(
+            state: MyCustomState, runtime: Runtime, request: ToolCallRequest
+        ) -> dict[str, Any]:
             return {"tool_call_count": state.get("tool_call_count", 0) + 1}
         ```
     """
@@ -1783,9 +1787,7 @@ def before_tool(
             if func_can_jump_to:
                 async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
 
-            middleware_name = name or cast(
-                "str", getattr(func, "__name__", "BeforeToolMiddleware")
-            )
+            middleware_name = name or cast("str", getattr(func, "__name__", "BeforeToolMiddleware"))
 
             return type(
                 middleware_name,
@@ -1842,7 +1844,8 @@ def after_tool(
     can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> Callable[
-    [_CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
+    [_CallableWithStateRuntimeToolRequestAndResponse[StateT, ContextT]],
+    AgentMiddleware[StateT, ContextT],
 ]: ...
 
 
@@ -1860,11 +1863,12 @@ def after_tool(
     ]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the `after_tool` hook.
+    r"""Decorator used to dynamically create a middleware with the `after_tool` hook.
 
     Args:
         func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest, response: ToolMessage | Command`
+            `state: StateT, runtime: Runtime[ContextT], request: ToolCallRequest,
+            response: ToolMessage | Command`
         state_schema: Optional custom state schema type. If not provided, uses the
             default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
@@ -1886,14 +1890,20 @@ def after_tool(
         Basic usage for logging tool results:
         ```python
         @after_tool
-        def log_tool_result(state: AgentState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> None:
+        def log_tool_result(
+            state: AgentState, runtime: Runtime,
+            request: ToolCallRequest, response: ToolMessage | Command
+        ) -> None:
             print(f"Tool {request.tool_call['name']} returned: {response.content}")
         ```
 
         With conditional jumping based on result:
         ```python
         @after_tool(can_jump_to=["model"])
-        def retry_on_failure(state: AgentState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> dict[str, Any] | None:
+        def retry_on_failure(
+            state: AgentState, runtime: Runtime,
+            request: ToolCallRequest, response: ToolMessage | Command
+        ) -> dict[str, Any] | None:
             if isinstance(response, ToolMessage) and response.status == "error":
                 return {"jump_to": "model"}  # Go back to model for retry
             return None
@@ -1902,7 +1912,10 @@ def after_tool(
         With custom state schema:
         ```python
         @after_tool(state_schema=MyCustomState)
-        def track_tool_usage(state: MyCustomState, runtime: Runtime, request: ToolCallRequest, response: ToolMessage | Command) -> dict[str, Any]:
+        def track_tool_usage(
+            state: MyCustomState, runtime: Runtime,
+            request: ToolCallRequest, response: ToolMessage | Command
+        ) -> dict[str, Any]:
             usage_count = state.get("tool_usage_count", {})
             tool_name = request.tool_call["name"]
             usage_count[tool_name] = usage_count.get(tool_name, 0) + 1
