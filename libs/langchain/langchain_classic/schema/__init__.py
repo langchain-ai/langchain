@@ -5,7 +5,6 @@ from langchain_core.caches import BaseCache
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.exceptions import LangChainException, OutputParserException
-from langchain_core.memory import BaseMemory
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -35,6 +34,8 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore
+
+from langchain_classic.base_memory import BaseMemory
 
 RUN_KEY = "__run"
 

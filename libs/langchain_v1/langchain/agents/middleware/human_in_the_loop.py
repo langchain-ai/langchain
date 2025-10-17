@@ -110,7 +110,8 @@ class _DescriptionFactory(Protocol):
 class InterruptOnConfig(TypedDict):
     """Configuration for an action requiring human in the loop.
 
-    This is the configuration format used in the `HumanInTheLoopMiddleware.__init__` method.
+    This is the configuration format used in the `HumanInTheLoopMiddleware.__init__`
+    method.
     """
 
     allowed_decisions: list[DecisionType]
@@ -120,6 +121,7 @@ class InterruptOnConfig(TypedDict):
     """The description attached to the request for human input.
 
     Can be either:
+
     - A static string describing the approval request
     - A callable that dynamically generates the description based on agent state,
         runtime, and tool call information
@@ -171,12 +173,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
                 * `True` indicates all decisions are allowed: approve, edit, and reject.
                 * `False` indicates that the tool is auto-approved.
-                * `InterruptOnConfig` indicates the specific decisions allowed for this tool.
-                    The InterruptOnConfig can include a `description` field (str or callable) for
-                    custom formatting of the interrupt description.
+                * `InterruptOnConfig` indicates the specific decisions allowed for this
+                    tool.
+                    The InterruptOnConfig can include a `description` field (`str` or
+                    `Callable`) for custom formatting of the interrupt description.
             description_prefix: The prefix to use when constructing action requests.
-                This is used to provide context about the tool call and the action being requested.
-                Not used if a tool has a `description` in its InterruptOnConfig.
+                This is used to provide context about the tool call and the action being
+                requested. Not used if a tool has a `description` in its
+                `InterruptOnConfig`.
         """
         super().__init__()
         resolved_configs: dict[str, InterruptOnConfig] = {}
@@ -270,7 +274,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         raise ValueError(msg)
 
     def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Trigger interrupt flows for relevant tool calls after an AIMessage."""
+        """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
         messages = state["messages"]
         if not messages:
             return None

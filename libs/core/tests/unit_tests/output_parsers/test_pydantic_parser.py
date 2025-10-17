@@ -1,5 +1,6 @@
 """Test PydanticOutputParser."""
 
+import sys
 from enum import Enum
 from typing import Literal
 
@@ -22,15 +23,23 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-class ForecastV1(V1BaseModel):
-    temperature: int
-    f_or_c: Literal["F", "C"]
-    forecast: str
+if sys.version_info < (3, 14):
+
+    class ForecastV1(V1BaseModel):
+        temperature: int
+        f_or_c: Literal["F", "C"]
+        forecast: str
+
+    _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
+    _FORECAST_MODELS = [ForecastV2, ForecastV1]
+else:
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_pydantic_parser_chaining(
-    pydantic_object: type[ForecastV2] | type[ForecastV1],
+    pydantic_object: _FORECAST_MODELS_TYPES,
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -53,7 +62,7 @@ def test_pydantic_parser_chaining(
     assert res.forecast == "Sunny"
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{
@@ -75,7 +84,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
 
 # JSON output parser tests
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_json_parser_chaining(
     pydantic_object: TBaseModel,
 ) -> None:

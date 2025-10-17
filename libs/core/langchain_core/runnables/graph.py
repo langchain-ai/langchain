@@ -71,7 +71,7 @@ class Edge(NamedTuple):
     data: Stringifiable | None = None
     """Optional data associated with the edge. """
     conditional: bool = False
-    """Whether the edge is conditional. Defaults to `False`."""
+    """Whether the edge is conditional."""
 
     def copy(self, *, source: str | None = None, target: str | None = None) -> Edge:
         """Return a copy of the edge with optional new source and target nodes.
@@ -157,9 +157,9 @@ class NodeStyles:
     """Schema for Hexadecimal color codes for different node types.
 
     Args:
-        default: The default color code. Defaults to "fill:#f2f0ff,line-height:1.2".
-        first: The color code for the first node. Defaults to "fill-opacity:0".
-        last: The color code for the last node. Defaults to "fill:#bfb6fc".
+        default: The default color code.
+        first: The color code for the first node.
+        last: The color code for the last node.
     """
 
     default: str = "fill:#f2f0ff,line-height:1.2"
@@ -201,9 +201,9 @@ def node_data_json(
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
-        node: The node to convert.
-        with_schemas: Whether to include the schema of the data if
-            it is a Pydantic model. Defaults to `False`.
+        node: The `Node` to convert.
+        with_schemas: Whether to include the schema of the data if it is a Pydantic
+            model.
 
     Returns:
         A dictionary with the type of the data and the data itself.
@@ -267,7 +267,7 @@ class Graph:
 
         Args:
             with_schemas: Whether to include the schemas of the nodes if they are
-                Pydantic models. Defaults to `False`.
+                Pydantic models.
 
         Returns:
             A dictionary with the nodes and edges of the graph.
@@ -362,7 +362,7 @@ class Graph:
             source: The source node of the edge.
             target: The target node of the edge.
             data: Optional data associated with the edge.
-            conditional: Whether the edge is conditional. Defaults to `False`.
+            conditional: Whether the edge is conditional.
 
         Returns:
             The edge that was added to the graph.
@@ -391,7 +391,7 @@ class Graph:
 
         Args:
             graph: The graph to add.
-            prefix: The prefix to add to the node ids. Defaults to "".
+            prefix: The prefix to add to the node ids.
 
         Returns:
             A tuple of the first and last nodes of the subgraph.
@@ -458,7 +458,7 @@ class Graph:
     def first_node(self) -> Node | None:
         """Find the single node that is not a target of any edge.
 
-        If there is no such node, or there are multiple, return None.
+        If there is no such node, or there are multiple, return `None`.
         When drawing the graph, this node would be the origin.
 
         Returns:
@@ -470,7 +470,7 @@ class Graph:
     def last_node(self) -> Node | None:
         """Find the single node that is not a source of any edge.
 
-        If there is no such node, or there are multiple, return None.
+        If there is no such node, or there are multiple, return `None`.
         When drawing the graph, this node would be the destination.
 
         Returns:
@@ -585,11 +585,10 @@ class Graph:
         """Draw the graph as a Mermaid syntax string.
 
         Args:
-            with_styles: Whether to include styles in the syntax. Defaults to `True`.
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            with_styles: Whether to include styles in the syntax.
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
             frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph.
@@ -647,20 +646,16 @@ class Graph:
         """Draw the graph as a PNG image using Mermaid.
 
         Args:
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
             output_file_path: The path to save the image to. If `None`, the image
                 is not saved.
             draw_method: The method to use to draw the graph.
-                Defaults to MermaidDrawMethod.API.
-            background_color: The color of the background. Defaults to "white".
-            padding: The padding around the graph. Defaults to 10.
-            max_retries: The maximum number of retries (MermaidDrawMethod.API).
-                Defaults to 1.
-            retry_delay: The delay between retries (MermaidDrawMethod.API).
-                Defaults to 1.0.
+            background_color: The color of the background.
+            padding: The padding around the graph.
+            max_retries: The maximum number of retries (`MermaidDrawMethod.API`).
+            retry_delay: The delay between retries (`MermaidDrawMethod.API`).
             frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
                 added to the beginning of the mermaid graph.
@@ -712,7 +707,7 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
 
     Exclude nodes/sources with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
+    If there is no such node, or there are multiple, return `None`.
     When drawing the graph, this node would be the origin.
     """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
@@ -728,7 +723,7 @@ def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
 
     Exclude nodes/targets with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
+    If there is no such node, or there are multiple, return `None`.
     When drawing the graph, this node would be the destination.
     """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}

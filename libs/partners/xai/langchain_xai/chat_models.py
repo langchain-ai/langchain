@@ -38,24 +38,24 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ```
 
     Key init args — completion params:
-        model: str
+        model:
             Name of model to use.
-        temperature: float
+        temperature:
             Sampling temperature between `0` and `2`. Higher values mean more random completions,
             while lower values (like `0.2`) mean more focused and deterministic completions.
             (Default: `1`.)
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate. Refer to your [model's documentation](https://docs.x.ai/docs/models#model-pricing)
             for the maximum number of tokens it can generate.
-        logprobs: bool | None
+        logprobs:
             Whether to return logprobs.
 
     Key init args — client params:
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
+        api_key:
             xAI API key. If not passed in will be read from env var `XAI_API_KEY`.
 
     Instantiate:
@@ -166,7 +166,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         which allows the model to provide reasoning content along with the response.
 
         If provided, reasoning content is returned under the `additional_kwargs` field of the
-        AIMessage or AIMessageChunk.
+        `AIMessage` or `AIMessageChunk`.
 
         If supported, reasoning effort can be specified in the model constructor's `extra_body`
         argument, which will control the amount of reasoning the model does. The value can be one of
@@ -189,105 +189,106 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             reasoning cannot be disabled, and the `reasoning_effort` cannot be specified.
 
     Tool calling / function calling:
-        ```python
-        from pydantic import BaseModel, Field
 
-        model = ChatXAI(model="grok-4")
+    ```python
+    from pydantic import BaseModel, Field
 
-
-        class GetWeather(BaseModel):
-            '''Get the current weather in a given location'''
-
-            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+    model = ChatXAI(model="grok-4")
 
 
-        class GetPopulation(BaseModel):
-            '''Get the current population in a given location'''
+    class GetWeather(BaseModel):
+        '''Get the current weather in a given location'''
 
-            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-
-        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
-        ai_msg = model_with_tools.invoke("Which city is bigger: LA or NY?")
-        ai_msg.tool_calls
-        ```
-
-        ```python
-        [
-            {
-                "name": "GetPopulation",
-                "args": {"location": "NY"},
-                "id": "call_m5tstyn2004pre9bfuxvom8x",
-                "type": "tool_call",
-            },
-            {
-                "name": "GetPopulation",
-                "args": {"location": "LA"},
-                "id": "call_0vjgq455gq1av5sp9eb1pw6a",
-                "type": "tool_call",
-            },
-        ]
-        ```
-
-        !!! note
-            With stream response, the tool / function call will be returned in whole in a
-            single chunk, instead of being streamed across chunks.
-
-        Tool choice can be controlled by setting the `tool_choice` parameter in the model
-        constructor's `extra_body` argument. For example, to disable tool / function calling:
-
-        ```python
-        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
-        ```
-        To require that the model always calls a tool / function, set `tool_choice` to `'required'`:
-
-        ```python
-        model = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
-        ```
-
-        To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
-
-        ```python
-        from pydantic import BaseModel, Field
-
-        model = ChatXAI(
-            model="grok-4",
-            extra_body={
-                "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
-            },
-        )
-
-        class GetWeather(BaseModel):
-            \"\"\"Get the current weather in a given location\"\"\"
-
-            location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+        location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        class GetPopulation(BaseModel):
-            \"\"\"Get the current population in a given location\"\"\"
+    class GetPopulation(BaseModel):
+        '''Get the current population in a given location'''
 
-            location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+        location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
-        ai_msg = model_with_tools.invoke(
-            "Which city is bigger: LA or NY?",
-        )
-        ai_msg.tool_calls
-        ```
+    model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+    ai_msg = model_with_tools.invoke("Which city is bigger: LA or NY?")
+    ai_msg.tool_calls
+    ```
 
-        The resulting tool call would be:
+    ```python
+    [
+        {
+            "name": "GetPopulation",
+            "args": {"location": "NY"},
+            "id": "call_m5tstyn2004pre9bfuxvom8x",
+            "type": "tool_call",
+        },
+        {
+            "name": "GetPopulation",
+            "args": {"location": "LA"},
+            "id": "call_0vjgq455gq1av5sp9eb1pw6a",
+            "type": "tool_call",
+        },
+    ]
+    ```
 
-        ```python
-        [
-            {
-                "name": "GetWeather",
-                "args": {"location": "Los Angeles, CA"},
-                "id": "call_81668711",
-                "type": "tool_call",
-            }
-        ]
-        ```
+    !!! note
+        With stream response, the tool / function call will be returned in whole in a
+        single chunk, instead of being streamed across chunks.
+
+    Tool choice can be controlled by setting the `tool_choice` parameter in the model
+    constructor's `extra_body` argument. For example, to disable tool / function calling:
+
+    ```python
+    model = ChatXAI(model="grok-4", extra_body={"tool_choice": "none"})
+    ```
+    To require that the model always calls a tool / function, set `tool_choice` to `'required'`:
+
+    ```python
+    model = ChatXAI(model="grok-4", extra_body={"tool_choice": "required"})
+    ```
+
+    To specify a tool / function to call, set `tool_choice` to the name of the tool / function:
+
+    ```python
+    from pydantic import BaseModel, Field
+
+    model = ChatXAI(
+        model="grok-4",
+        extra_body={
+            "tool_choice": {"type": "function", "function": {"name": "GetWeather"}}
+        },
+    )
+
+    class GetWeather(BaseModel):
+        \"\"\"Get the current weather in a given location\"\"\"
+
+        location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+
+
+    class GetPopulation(BaseModel):
+        \"\"\"Get the current population in a given location\"\"\"
+
+        location: str = Field(..., description='The city and state, e.g. San Francisco, CA')
+
+
+    model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+    ai_msg = model_with_tools.invoke(
+        "Which city is bigger: LA or NY?",
+    )
+    ai_msg.tool_calls
+    ```
+
+    The resulting tool call would be:
+
+    ```python
+    [
+        {
+            "name": "GetWeather",
+            "args": {"location": "Los Angeles, CA"},
+            "id": "call_81668711",
+            "type": "tool_call",
+        }
+    ]
+    ```
 
     Parallel tool calling / parallel function calling:
         By default, parallel tool / function calling is enabled, so you can process
@@ -373,25 +374,26 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         }
         ```
 
-    Response metadata
-        ```python
-        ai_msg = model.invoke(messages)
-        ai_msg.response_metadata
-        ```
+    Response metadata:
 
-        ```python
-        {
-            "token_usage": {
-                "completion_tokens": 4,
-                "prompt_tokens": 19,
-                "total_tokens": 23,
-            },
-            "model_name": "grok-4",
-            "system_fingerprint": None,
-            "finish_reason": "stop",
-            "logprobs": None,
-        }
-        ```
+    ```python
+    ai_msg = model.invoke(messages)
+    ai_msg.response_metadata
+    ```
+
+    ```python
+    {
+        "token_usage": {
+            "completion_tokens": 4,
+            "prompt_tokens": 19,
+            "total_tokens": 23,
+        },
+        "model_name": "grok-4",
+        "system_fingerprint": None,
+        "finish_reason": "stop",
+        "logprobs": None,
+    }
+    ```
     """  # noqa: E501
 
     model_name: str = Field(default="grok-4", alias="model")
@@ -426,7 +428,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object."""
         return ["langchain_xai", "chat_models"]
 
     @property
@@ -589,15 +591,17 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a `TypedDict` class (support added in 0.1.20),
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -611,10 +615,12 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 - `True`:
@@ -629,17 +635,19 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is `True`, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         # Some applications require that incompatible parameters (e.g., unsupported
         # methods) be handled.
         if method == "function_calling" and strict:

@@ -522,10 +522,10 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the content already exists in the vectorstore,
         the upsert method should update the content with the new data. If the content
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -545,10 +545,10 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the item already exists in the vectorstore,
         the upsert method should update the item with the new data. If the item
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:

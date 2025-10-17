@@ -42,10 +42,9 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 
     Args:
         obj: The object to dump.
-        pretty: Whether to pretty print the json. If true, the json will be
-            indented with 2 spaces (if no indent is provided as part of kwargs).
-            Default is False.
-        **kwargs: Additional arguments to pass to json.dumps
+        pretty: Whether to pretty print the json. If `True`, the json will be
+            indented with 2 spaces (if no indent is provided as part of `kwargs`).
+        **kwargs: Additional arguments to pass to `json.dumps`
 
     Returns:
         A json string representation of the object.

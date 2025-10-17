@@ -96,9 +96,16 @@ def _get_token_ids_default_method(text: str) -> list[int]:
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
+"""Input to a language model."""
+
 LanguageModelOutput = BaseMessage | str
+"""Output from a language model."""
+
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
+"""Input/output interface for a language model."""
+
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
+"""Type variable for the output of a language model."""
 
 
 def _get_verbosity() -> bool:
@@ -193,14 +200,14 @@ class BaseLanguageModel(
                 pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
-            each input prompt and additional model provider-specific output.
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -230,14 +237,14 @@ class BaseLanguageModel(
                 pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
-            each input prompt and additional model provider-specific output.
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -262,8 +269,7 @@ class BaseLanguageModel(
 
         Returns:
             A list of ids corresponding to the tokens in the text, in order they occur
-            in the text.
-
+                in the text.
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)

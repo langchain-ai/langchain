@@ -189,7 +189,7 @@ class HTMLHeaderTextSplitter:
 
         Args:
             url: The URL to fetch content from.
-            timeout: Timeout for the request. Defaults to 10.
+            timeout: Timeout for the request.
             **kwargs: Additional keyword arguments for the request.
 
         Returns:

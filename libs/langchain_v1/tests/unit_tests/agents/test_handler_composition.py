@@ -11,7 +11,7 @@ from langgraph.runtime import Runtime
 
 
 def create_test_request(**kwargs):
-    """Helper to create a ModelRequest with sensible defaults."""
+    """Helper to create a `ModelRequest` with sensible defaults."""
 
     defaults = {
         "messages": [],
@@ -28,7 +28,7 @@ def create_test_request(**kwargs):
 
 
 def create_mock_base_handler(content="test"):
-    """Helper to create a base handler that returns ModelResponse."""
+    """Helper to create a base handler that returns `ModelResponse`."""
 
     def mock_base_handler(req):
         return ModelResponse(result=[AIMessage(content=content)], structured_response=None)
@@ -37,7 +37,7 @@ def create_mock_base_handler(content="test"):
 
 
 class TestChainModelCallHandlers:
-    """Test the _chain_model_call_handlers composition function."""
+    """Test the `_chain_model_call_handlers` composition function."""
 
     def test_empty_handlers_returns_none(self) -> None:
         """Test that empty handlers list returns None."""

@@ -111,7 +111,9 @@ async def test_astream() -> None:
         full = token if full is None else full + token
         if token.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if token.response_metadata:
+        if token.response_metadata and not set(token.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         msg = (
@@ -384,7 +386,7 @@ def test_streaming_generation_info() -> None:
     )
     list(chat.stream("Respond with the single word Hello", stop=["o"]))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
+    # `Hello!` is two tokens, assert that is what is returned
     assert isinstance(generation, LLMResult)
     assert generation.generations[0][0].text == "Hell"
 

@@ -94,13 +94,10 @@ class ChatAgent(Agent):
         Args:
             tools: A list of tools.
             system_message_prefix: The system message prefix.
-                Default is SYSTEM_MESSAGE_PREFIX.
             system_message_suffix: The system message suffix.
-                Default is SYSTEM_MESSAGE_SUFFIX.
-            human_message: The human message. Default is HUMAN_MESSAGE.
+            human_message: The human message.
             format_instructions: The format instructions.
-                Default is FORMAT_INSTRUCTIONS.
-            input_variables: The input variables. Default is None.
+            input_variables: The input variables.
 
         Returns:
             A prompt template.
@@ -141,16 +138,13 @@ class ChatAgent(Agent):
         Args:
             llm: The language model.
             tools: A list of tools.
-            callback_manager: The callback manager. Default is None.
-            output_parser: The output parser. Default is None.
+            callback_manager: The callback manager.
+            output_parser: The output parser.
             system_message_prefix: The system message prefix.
-                Default is SYSTEM_MESSAGE_PREFIX.
             system_message_suffix: The system message suffix.
-                Default is SYSTEM_MESSAGE_SUFFIX.
-            human_message: The human message. Default is HUMAN_MESSAGE.
+            human_message: The human message.
             format_instructions: The format instructions.
-                Default is FORMAT_INSTRUCTIONS.
-            input_variables: The input variables. Default is None.
+            input_variables: The input variables.
             kwargs: Additional keyword arguments.
 
         Returns:
