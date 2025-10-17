@@ -95,7 +95,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a chain with its use case.
     """
-    metadata: dict[str, Any] | None = None
+    metadata: builtins.dict[str, Any] | None = None
     """Optional metadata associated with the chain.
     This metadata will be associated with each call to this chain,
     and passed as arguments to the handlers defined in `callbacks`.
@@ -317,9 +317,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     @abstractmethod
     def _call(
         self,
-        inputs: dict[str, Any],
+        inputs: builtins.dict[str, Any],
         run_manager: CallbackManagerForChainRun | None = None,
-    ) -> dict[str, Any]:
+    ) -> builtins.dict[str, Any]:
         """Execute the chain.
 
         This is a private method that is not user-facing. It is only called within
@@ -339,9 +339,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
     async def _acall(
         self,
-        inputs: dict[str, Any],
+        inputs: builtins.dict[str, Any],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
-    ) -> dict[str, Any]:
+    ) -> builtins.dict[str, Any]:
         """Asynchronously execute the chain.
 
         This is a private method that is not user-facing. It is only called within

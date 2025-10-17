@@ -1258,17 +1258,19 @@ class ChatOllama(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - a Pydantic class,
-                - a JSON schema
-                - a `TypedDict` class
                 - an OpenAI function/tool schema.
+                - a JSON Schema,
+                - a `TypedDict` class,
+                - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1286,21 +1288,26 @@ class ChatOllama(BaseChatModel):
                 an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in 0.2.2"
             Added support for structured output API via `format` parameter.

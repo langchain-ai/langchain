@@ -19,4 +19,4 @@ This package contains the LangChain integration with Exa.
 
 ## 📖 Documentation
 
-View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/exa) for more details.
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/exa_search) for more details.
