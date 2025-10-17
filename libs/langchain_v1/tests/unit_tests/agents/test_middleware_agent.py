@@ -32,7 +32,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.todo import (
+from langchain.agents.middleware.todo_list import (
     TodoListMiddleware,
     PlanningState,
     WRITE_TODOS_SYSTEM_PROMPT,

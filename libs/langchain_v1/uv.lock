@@ -1607,6 +1607,7 @@ lint = [
     { name = "ruff" },
 ]
 test = [
+    { name = "langchain-anthropic" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "pytest" },
@@ -1658,6 +1659,7 @@ provides-extras = ["community", "anthropic", "openai", "google-vertexai", "googl
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
 test = [
+    { name = "langchain-anthropic" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
