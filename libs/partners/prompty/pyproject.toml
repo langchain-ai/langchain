@@ -48,7 +48,7 @@ dev = [
     "langchain-core"
 ]
 typing = [
-    "mypy>=0.991.0,<1.0.0",
+    "mypy>=1.18.1,<1.19.0",
     "types-pyyaml>=6.0.12.20240311,<7.0.0.0",
     "langchain-core",
 ]
