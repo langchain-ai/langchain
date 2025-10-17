@@ -26,7 +26,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import Annotated, Required
+from typing_extensions import Annotated
 
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
@@ -1396,33 +1396,31 @@ def test_runtime_injected_into_middleware() -> None:
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
 
-class ExampleState(AgentState):
-    test_state: str
-
-
-@tool(description="Test the state")
-def state_test(
-    state: Annotated[ExampleState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
-) -> str:
-    """Test tool that accesses injected state."""
-    assert "test_state" in state
-    return "success"
-
-
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
 
+    class TestState(AgentState):
+        test_state: str
+
+    @tool(description="Test the state")
+    def test_state(
+        state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> str:
+        """Test tool that accesses injected state."""
+        assert "test_state" in state
+        return "success"
+
     class TestMiddleware(AgentMiddleware):
-        state_schema = ExampleState
+        state_schema = TestState
 
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
-                [{"args": {}, "id": "test_call_1", "name": "state_test"}],
+                [{"args": {}, "id": "test_call_1", "name": "test_state"}],
                 [],
             ]
         ),
-        tools=[state_test],
+        tools=[test_state],
         system_prompt="You are a helpful assistant.",
         middleware=[TestMiddleware()],
     )
@@ -1439,7 +1437,7 @@ def test_injected_state_in_middleware_agent() -> None:
     assert len(tool_messages) == 1
 
     tool_message = tool_messages[0]
-    assert tool_message.name == "state_test"
+    assert tool_message.name == "test_state"
     assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
 
