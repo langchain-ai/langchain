@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessageChunk
 
 from langchain_xai import ChatXAI
@@ -9,18 +12,25 @@ from langchain_xai import ChatXAI
 MODEL_NAME = "grok-4-fast-reasoning"
 
 
-def test_reasoning() -> None:
+@pytest.mark.parametrize("output_version", ["", "v1"])
+def test_reasoning(output_version: Literal["", "v1"]) -> None:
     """Test reasoning features.
 
     Note: `grok-4` does not return `reasoning_content`, but may optionally return
     encrypted reasoning content if `use_encrypted_content` is set to True.
     """
     # Test reasoning effort
-    chat_model = ChatXAI(
-        # grok-4 doesn't support reasoning_effort
-        model="grok-3-mini",
-        reasoning_effort="low",
-    )
+    if output_version:
+        chat_model = ChatXAI(
+            model="grok-3-mini",
+            reasoning_effort="low",
+            output_version=output_version,
+        )
+    else:
+        chat_model = ChatXAI(
+            model="grok-3-mini",
+            reasoning_effort="low",
+        )
     input_message = "What is 3^3?"
     response = chat_model.invoke(input_message)
     assert response.content
@@ -51,7 +61,13 @@ def test_reasoning() -> None:
     assert len(list(followup_reasoning)) >= 1
 
     # Test passing in a ReasoningContentBlock
-    msg_w_reasoning = AIMessage(content_blocks=response.content_blocks)
+    response_metadata = {"model_provider": "xai"}
+    if output_version:
+        response_metadata["output_version"] = output_version
+    msg_w_reasoning = AIMessage(
+        content_blocks=response.content_blocks,
+        response_metadata=response_metadata,
+    )
     followup_2 = chat_model.invoke(
         [msg_w_reasoning, "Based on your reasoning, what is 5^5?"]
     )
