@@ -1403,7 +1403,7 @@ def test_injected_state_in_middleware_agent() -> None:
         test_state: str
 
     @tool(description="Test the state")
-    def test_state(
+    def state_test(
         state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
     ) -> str:
         """Test tool that accesses injected state."""
@@ -1416,11 +1416,11 @@ def test_injected_state_in_middleware_agent() -> None:
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
-                [{"args": {}, "id": "test_call_1", "name": "test_state"}],
+                [{"args": {}, "id": "test_call_1", "name": "state_test"}],
                 [],
             ]
         ),
-        tools=[test_state],
+        tools=[state_test],
         system_prompt="You are a helpful assistant.",
         middleware=[TestMiddleware()],
     )
@@ -1437,7 +1437,7 @@ def test_injected_state_in_middleware_agent() -> None:
     assert len(tool_messages) == 1
 
     tool_message = tool_messages[0]
-    assert tool_message.name == "test_state"
+    assert tool_message.name == "state_test"
     assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
 
