@@ -63,7 +63,6 @@ test = [
     "numpy>=2.1.0; python_version>='3.13'",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
-    "duckdb-engine>=0.9.2,<1.0.0",
     "freezegun>=1.2.2,<2.0.0",
     "responses>=0.22.0,<1.0.0",
     "lark>=1.1.5,<2.0.0",
