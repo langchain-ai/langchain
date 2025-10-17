@@ -621,7 +621,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a8"
+version = "1.0.0rc2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -699,6 +699,7 @@ dev = [{ name = "langchain-core", editable = "../../core" }]
 lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
+    { name = "langchain", editable = "../../langchain_v1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
@@ -728,7 +729,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0a2"
+version = "1.0.0rc1"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
