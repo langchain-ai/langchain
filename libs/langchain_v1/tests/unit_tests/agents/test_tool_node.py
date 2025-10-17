@@ -1,6 +1,7 @@
 import contextlib
 import dataclasses
 import json
+import sys
 from functools import partial
 from typing import (
     Annotated,
@@ -1254,11 +1255,6 @@ class _InjectStateSchema(TypedDict):
     foo: str
 
 
-class _InjectedStatePydanticSchema(BaseModelV1):
-    messages: list
-    foo: str
-
-
 class _InjectedStatePydanticV2Schema(BaseModel):
     messages: list
     foo: str
@@ -1270,18 +1266,24 @@ class _InjectedStateDataclassSchema:
     foo: str
 
 
+_INJECTED_STATE_SCHEMAS = [
+    _InjectStateSchema,
+    _InjectedStatePydanticV2Schema,
+    _InjectedStateDataclassSchema,
+]
+
+if sys.version_info < (3, 14):
+
+    class _InjectedStatePydanticSchema(BaseModelV1):
+        messages: list
+        foo: str
+
+    _INJECTED_STATE_SCHEMAS.append(_InjectedStatePydanticSchema)
+
 T = TypeVar("T")
 
 
-@pytest.mark.parametrize(
-    "schema_",
-    [
-        _InjectStateSchema,
-        _InjectedStatePydanticSchema,
-        _InjectedStatePydanticV2Schema,
-        _InjectedStateDataclassSchema,
-    ],
-)
+@pytest.mark.parametrize("schema_", _INJECTED_STATE_SCHEMAS)
 def test_tool_node_inject_state(schema_: type[T]) -> None:
     def tool1(some_val: int, state: Annotated[T, InjectedState]) -> str:
         """Tool 1 docstring."""
