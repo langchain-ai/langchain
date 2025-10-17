@@ -75,6 +75,7 @@ from langchain_core.tools import tool as create_tool
 from langchain_core.tools.base import (
     TOOL_MESSAGE_BLOCK_TYPES,
     ToolException,
+    _DirectlyInjectedToolArg,
     get_all_basemodel_annotations,
 )
 from langgraph._internal._runnable import RunnableCallable
@@ -1349,7 +1350,7 @@ def tools_condition(
 
 
 @dataclass
-class ToolRuntime(InjectedToolArg, Generic[ContextT, StateT]):
+class ToolRuntime(_DirectlyInjectedToolArg, Generic[ContextT, StateT]):
     """Runtime context automatically injected into tools.
 
     When a tool function has a parameter named 'tool_runtime' with type hint
