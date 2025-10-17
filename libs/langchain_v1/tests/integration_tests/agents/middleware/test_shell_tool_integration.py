@@ -46,9 +46,9 @@ def test_shell_tool_basic_execution(tmp_path: Path, provider: str) -> None:
     assert len(tool_messages) > 0, "Shell tool should have been called"
 
     tool_outputs = [msg.content for msg in tool_messages]
-    assert any(
-        "hello" in output.lower() for output in tool_outputs
-    ), "Shell output should contain 'hello'"
+    assert any("hello" in output.lower() for output in tool_outputs), (
+        "Shell output should contain 'hello'"
+    )
 
 
 @pytest.mark.requires("langchain_anthropic")
@@ -75,9 +75,7 @@ def test_shell_session_persistence(tmp_path: Path) -> None:
     assert len(tool_messages) >= 2, "Shell tool should be called multiple times"
 
     tool_outputs = [msg.content for msg in tool_messages]
-    assert any(
-        "hello" in output for output in tool_outputs
-    ), "Environment variable should persist"
+    assert any("hello" in output for output in tool_outputs), "Environment variable should persist"
 
 
 @pytest.mark.requires("langchain_anthropic")
