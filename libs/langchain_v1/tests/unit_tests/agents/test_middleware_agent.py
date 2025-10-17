@@ -26,7 +26,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Required
 
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
