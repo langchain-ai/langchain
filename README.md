@@ -73,5 +73,6 @@ To improve your LLM application development, pair LangChain with:
 - [Learn](https://docs.langchain.com/oss/python/learn): Use cases, conceptual overviews, and more.
 - [API Reference](https://reference.langchain.com/python): Detailed reference on
 navigating base packages and integrations for LangChain.
+- [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview): Learn how to contribute to LangChain and find good first issues.
 - [LangChain Forum](https://forum.langchain.com): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [Chat LangChain](https://chat.langchain.com): Ask questions & chat with our documentation.
