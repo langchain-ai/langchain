@@ -1,15 +1,18 @@
 """Test base chat model."""
 
+import json
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
+    AsyncCallbackHandler,
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -176,6 +179,216 @@ async def test_stream_error_callback() -> None:
         with pytest.raises(FakeListChatModelError):
             next(llm_stream)
         eval_response(cb_sync, i)
+
+
+def test_on_llm_new_token_with_string_content() -> None:
+    """Test that on_llm_new_token receives string when content is string."""
+
+    class TokenCollector(BaseCallbackHandler):
+        """Callback handler that collects tokens."""
+
+        def __init__(self) -> None:
+            self.tokens: list[str] = []
+            self.token_types: list[type] = []
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            *,
+            _chunk: ChatGenerationChunk | None = None,
+            **_kwargs: Any,
+        ) -> None:
+            """Store token and its type."""
+            self.tokens.append(token)
+            self.token_types.append(type(token))
+
+    # Test with string content
+    llm = FakeListChatModel(responses=["hello world"])
+    callback = TokenCollector()
+
+    list(llm.stream("test", config={"callbacks": [callback]}))
+
+    # Verify all tokens are strings
+    assert len(callback.tokens) > 0
+    assert all(isinstance(t, str) for t in callback.tokens)
+    assert all(t is str for t in callback.token_types)
+
+
+def test_on_llm_new_token_with_list_content() -> None:
+    """Test that on_llm_new_token receives JSON string when content is list."""
+
+    class TokenCollector(BaseCallbackHandler):
+        """Callback handler that collects tokens."""
+
+        def __init__(self) -> None:
+            self.tokens: list[str] = []
+            self.token_types: list[type] = []
+
+        def on_llm_new_token(
+            self,
+            token: str,
+            *,
+            _chunk: ChatGenerationChunk | None = None,
+            **_kwargs: Any,
+        ) -> None:
+            """Store token and its type."""
+            self.tokens.append(token)
+            self.token_types.append(type(token))
+
+    class FakeChatModelWithListContent(BaseChatModel):
+        """Fake chat model that returns structured content as list."""
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Generate with list content."""
+            content: list[dict[str, Any]] = [
+                {"type": "text", "text": "Hello"},
+                {"type": "tool_use", "id": "1", "name": "test_tool"},
+            ]
+            message = AIMessage(content=cast("Any", content))
+            return ChatResult(generations=[ChatGeneration(message=message)])
+
+        @override
+        def _stream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> Iterator[ChatGenerationChunk]:
+            """Stream chunks with list content."""
+            # First chunk with partial content
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=[{"type": "text", "text": "Hello"}])
+            )
+            # Second chunk with more content
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[
+                        {"type": "text", "text": "Hello"},
+                        {"type": "tool_use", "id": "1", "name": "test_tool"},
+                    ]
+                )
+            )
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model-with-list-content"
+
+    llm = FakeChatModelWithListContent()
+    callback = TokenCollector()
+
+    list(llm.stream("test", config={"callbacks": [callback]}))
+
+    # Verify all tokens are strings (JSON-dumped)
+    assert len(callback.tokens) > 0
+    assert all(isinstance(t, str) for t in callback.tokens)
+    assert all(t is str for t in callback.token_types)
+
+    # Verify tokens are valid JSON strings
+    for token in callback.tokens:
+        if token:  # Skip empty strings (like final chunk markers)
+            try:
+                parsed = json.loads(token)
+                assert isinstance(parsed, list)
+            except json.JSONDecodeError:
+                # This is ok if it's an empty string for the final chunk
+                assert token == ""
+
+
+async def test_on_llm_new_token_with_list_content_async() -> None:
+    """Test that on_llm_new_token receives JSON string when content is list (async)."""
+
+    class AsyncTokenCollector(AsyncCallbackHandler):
+        """Async callback handler that collects tokens."""
+
+        def __init__(self) -> None:
+            self.tokens: list[str] = []
+            self.token_types: list[type] = []
+
+        async def on_llm_new_token(
+            self,
+            token: str,
+            *,
+            _chunk: ChatGenerationChunk | None = None,
+            **_kwargs: Any,
+        ) -> None:
+            """Store token and its type."""
+            self.tokens.append(token)
+            self.token_types.append(type(token))
+
+    class FakeChatModelWithListContent(BaseChatModel):
+        """Fake chat model that returns structured content as list."""
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            """Generate with list content."""
+            content: list[dict[str, Any]] = [
+                {"type": "text", "text": "Hello"},
+                {"type": "tool_use", "id": "1", "name": "test_tool"},
+            ]
+            message = AIMessage(content=cast("Any", content))
+            return ChatResult(generations=[ChatGeneration(message=message)])
+
+        @override
+        async def _astream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> AsyncIterator[ChatGenerationChunk]:
+            """Stream chunks with list content."""
+            # First chunk with partial content
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=[{"type": "text", "text": "Hello"}])
+            )
+            # Second chunk with more content
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[
+                        {"type": "text", "text": "Hello"},
+                        {"type": "tool_use", "id": "1", "name": "test_tool"},
+                    ]
+                )
+            )
+
+        @property
+        def _llm_type(self) -> str:
+            return "fake-chat-model-with-list-content"
+
+    llm = FakeChatModelWithListContent()
+    callback = AsyncTokenCollector()
+
+    async for _ in llm.astream("test", config={"callbacks": [callback]}):
+        pass
+
+    # Verify all tokens are strings (JSON-dumped)
+    assert len(callback.tokens) > 0
+    assert all(isinstance(t, str) for t in callback.tokens)
+    assert all(t is str for t in callback.token_types)
+
+    # Verify tokens are valid JSON strings
+    for token in callback.tokens:
+        if token:  # Skip empty strings (like final chunk markers)
+            try:
+                parsed = json.loads(token)
+                assert isinstance(parsed, list)
+            except json.JSONDecodeError:
+                # This is ok if it's an empty string for the final chunk
+                assert token == ""
 
 
 async def test_astream_fallback_to_ainvoke() -> None:
