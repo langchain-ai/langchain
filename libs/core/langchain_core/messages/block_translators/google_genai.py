@@ -282,7 +282,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     standard content blocks for returning.
 
     Args:
-        message: The AIMessage or AIMessageChunk to convert.
+        message: The `AIMessage` or `AIMessageChunk` to convert.
 
     Returns:
         List of standard content blocks derived from the message content.

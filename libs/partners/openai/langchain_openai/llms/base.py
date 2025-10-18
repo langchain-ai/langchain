@@ -62,46 +62,46 @@ class BaseOpenAI(BaseLLM):
         ```
 
     Key init args — completion params:
-        model_name: str
+        model_name:
             Name of OpenAI model to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int
+        max_tokens:
             Max number of tokens to generate.
-        top_p: float
+        top_p:
             Total probability mass of tokens to consider at each step.
-        frequency_penalty: float
+        frequency_penalty:
             Penalizes repeated tokens according to frequency.
-        presence_penalty: float
+        presence_penalty:
             Penalizes repeated tokens.
-        n: int
+        n:
             How many completions to generate for each prompt.
-        best_of: int
+        best_of:
             Generates best_of completions server-side and returns the "best".
-        logit_bias: dict[str, float] | None
+        logit_bias:
             Adjust the probability of specific tokens being generated.
-        seed: int | None
+        seed:
             Seed for generation.
-        logprobs: int | None
+        logprobs:
             Include the log probabilities on the logprobs most likely output tokens.
-        streaming: bool
+        streaming:
             Whether to stream the results or not.
 
     Key init args — client params:
-        openai_api_key: SecretStr | None
+        openai_api_key:
             OpenAI API key. If not passed in will be read from env var
             `OPENAI_API_KEY`.
-        openai_api_base: str | None
+        openai_api_base:
             Base URL path for API requests, leave blank if not using a proxy or
             service emulator.
-        openai_organization: str | None
+        openai_organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
-        request_timeout: Union[float, tuple[float, float], Any, None]
+        request_timeout:
             Timeout for requests to OpenAI completion API.
-        max_retries: int
+        max_retries:
             Maximum number of retries to make when generating.
-        batch_size: int
+        batch_size:
             Batch size to use when passing multiple documents to generate.
 
     See full list of supported init args and their descriptions in the params section.
@@ -707,29 +707,29 @@ class OpenAI(BaseOpenAI):
         ```
 
     Key init args — completion params:
-        model: str
+        model:
             Name of OpenAI model to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
-        logprobs: bool | None
+        logprobs:
             Whether to return logprobs.
-        stream_options: Dict
+        stream_options:
             Configure streaming outputs, like whether to return token usage when
             streaming (`{"include_usage": True}`).
 
     Key init args — client params:
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
+        api_key:
             OpenAI API key. If not passed in will be read from env var `OPENAI_API_KEY`.
-        base_url: str | None
+        base_url:
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization: str | None
+        organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
 

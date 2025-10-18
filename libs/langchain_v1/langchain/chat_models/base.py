@@ -4,14 +4,7 @@ from __future__ import annotations
 
 import warnings
 from importlib import util
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeAlias,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, AnyMessage
@@ -83,7 +76,7 @@ def init_chat_model(
         for supported model parameters.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
+        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5'`.
 
             You can also specify model and model provider in a single argument using:
 
@@ -149,17 +142,18 @@ def init_chat_model(
             `config["configurable"]["{config_prefix}_{param}"]` keys. If
             `'config_prefix'` is an empty string then model will be configurable via
             `config["configurable"]["{param}"]`.
-        temperature: Model temperature.
-        max_tokens: Max output tokens.
-        timeout: The maximum time (in seconds) to wait for a response from the model
-            before canceling the request.
-        max_retries: The maximum number of attempts the system will make to resend a
-            request if it fails due to issues like network timeouts or rate limits.
-        base_url: The URL of the API endpoint where requests are sent.
-        rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
-            rate limits.
-        kwargs: Additional model-specific keyword args to pass to
-            `<<selected chat model>>.__init__(model=model_name, **kwargs)`.
+        **kwargs: Additional model-specific keyword args to pass to the underlying
+            chat model's `__init__` method. Common parameters include:
+
+            - `temperature`: Model temperature for controlling randomness.
+            - `max_tokens`: Maximum number of output tokens.
+            - `timeout`: Maximum time (in seconds) to wait for a response.
+            - `max_retries`: Maximum number of retry attempts for failed requests.
+            - `base_url`: Custom API endpoint URL.
+            - `rate_limiter`: A `BaseRateLimiter` instance to control request rate.
+
+            Refer to the specific model provider's documentation for all available
+            parameters.
 
     Returns:
         A `BaseChatModel` corresponding to the `model_name` and `model_provider`
@@ -178,7 +172,7 @@ def init_chat_model(
         from langchain.chat_models import init_chat_model
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=0)
+        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5", temperature=0)
         gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
 
         o3_mini.invoke("what's your name")
@@ -200,7 +194,7 @@ def init_chat_model(
 
         configurable_model.invoke(
             "what's your name",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "claude-sonnet-4-5"}},
         )
         ```
 
@@ -224,7 +218,7 @@ def init_chat_model(
             "what's your name",
             config={
                 "configurable": {
-                    "foo_model": "anthropic:claude-sonnet-4-5-20250929",
+                    "foo_model": "anthropic:claude-sonnet-4-5",
                     "foo_temperature": 0.6,
                 }
             },
@@ -270,7 +264,7 @@ def init_chat_model(
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "claude-sonnet-4-5"}},
         )
         ```
 
@@ -611,10 +605,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     @property
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
+        from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
 
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes

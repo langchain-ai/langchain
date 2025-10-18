@@ -917,7 +917,9 @@ class BaseChatOpenAI(BaseChatModel):
         )
 
         usage_metadata: UsageMetadata | None = (
-            _create_usage_metadata(token_usage) if token_usage else None
+            _create_usage_metadata(token_usage, chunk.get("service_tier"))
+            if token_usage
+            else None
         )
         if len(choices) == 0:
             # logprobs is implicitly None
@@ -1289,11 +1291,14 @@ class BaseChatOpenAI(BaseChatModel):
             raise TypeError(msg)
 
         token_usage = response_dict.get("usage")
+        service_tier = response_dict.get("service_tier")
 
         for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = _create_usage_metadata(token_usage)
+                message.usage_metadata = _create_usage_metadata(
+                    token_usage, service_tier
+                )
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1312,8 +1317,8 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if "id" in response_dict:
             llm_output["id"] = response_dict["id"]
-        if "service_tier" in response_dict:
-            llm_output["service_tier"] = response_dict["service_tier"]
+        if service_tier:
+            llm_output["service_tier"] = service_tier
 
         if isinstance(response, openai.BaseModel) and getattr(
             response, "choices", None
@@ -1671,9 +1676,6 @@ class BaseChatOpenAI(BaseChatModel):
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
             kwargs: Any additional parameters are passed directly to `bind`.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for `strict` argument added.
         """  # noqa: E501
         if parallel_tool_calls is not None:
             kwargs["parallel_tool_calls"] = parallel_tool_calls
@@ -1742,9 +1744,11 @@ class BaseChatOpenAI(BaseChatModel):
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1761,10 +1765,12 @@ class BaseChatOpenAI(BaseChatModel):
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - `True`:
@@ -1825,25 +1831,25 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A `Runnable` that takes same inputs as a `BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is `False` and `schema` is a Pydantic class, `Runnable`
-            outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if
-            `include_raw` is `False` then `Runnable` outputs a `dict`.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is `True`, then `Runnable` outputs a dict with keys:
-
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends
-                on the `schema` as described above.
-            - `'parsing_error'`: `BaseException` or `None`
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in 0.3.12"
             Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
             Pass `kwargs` through to the model.
-        """  # noqa: E501
+        """
         if strict is not None and method == "json_mode":
             msg = "Argument `strict` is not supported with `method`='json_mode'"
             raise ValueError(msg)
@@ -2830,17 +2836,19 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Args:
             schema: The output schema. Can be passed in as:
 
+                - an OpenAI function/tool schema,
                 - a JSON Schema,
                 - a `TypedDict` class,
-                - or a Pydantic class,
-                - an OpenAI function/tool schema.
+                - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -2862,8 +2870,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - `True`:
@@ -2929,16 +2939,18 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then `Runnable` outputs a `dict`.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
-
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: `BaseException` or `None`
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in 0.3.0"
             `method` default changed from `"function_calling"` to `"json_schema"`.
@@ -3387,26 +3399,40 @@ class OpenAIRefusalError(Exception):
     """
 
 
-def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
+def _create_usage_metadata(
+    oai_token_usage: dict, service_tier: str | None = None
+) -> UsageMetadata:
     input_tokens = oai_token_usage.get("prompt_tokens") or 0
     output_tokens = oai_token_usage.get("completion_tokens") or 0
     total_tokens = oai_token_usage.get("total_tokens") or input_tokens + output_tokens
+    if service_tier not in {"priority", "flex"}:
+        service_tier = None
+    service_tier_prefix = f"{service_tier}_" if service_tier else ""
     input_token_details: dict = {
         "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
             "audio_tokens"
         ),
-        "cache_read": (oai_token_usage.get("prompt_tokens_details") or {}).get(
-            "cached_tokens"
-        ),
+        f"{service_tier_prefix}cache_read": (
+            oai_token_usage.get("prompt_tokens_details") or {}
+        ).get("cached_tokens"),
     }
     output_token_details: dict = {
         "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "audio_tokens"
         ),
-        "reasoning": (oai_token_usage.get("completion_tokens_details") or {}).get(
-            "reasoning_tokens"
-        ),
+        f"{service_tier_prefix}reasoning": (
+            oai_token_usage.get("completion_tokens_details") or {}
+        ).get("reasoning_tokens"),
     }
+    if service_tier is not None:
+        # Avoid counting cache and reasoning tokens towards the service tier token
+        # counts, since service tier tokens are already priced differently
+        input_token_details[service_tier] = input_tokens - input_token_details.get(
+            f"{service_tier_prefix}cache_read", 0
+        )
+        output_token_details[service_tier] = output_tokens - output_token_details.get(
+            f"{service_tier_prefix}reasoning", 0
+        )
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -3420,20 +3446,34 @@ def _create_usage_metadata(oai_token_usage: dict) -> UsageMetadata:
     )
 
 
-def _create_usage_metadata_responses(oai_token_usage: dict) -> UsageMetadata:
+def _create_usage_metadata_responses(
+    oai_token_usage: dict, service_tier: str | None = None
+) -> UsageMetadata:
     input_tokens = oai_token_usage.get("input_tokens", 0)
     output_tokens = oai_token_usage.get("output_tokens", 0)
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
+    if service_tier not in {"priority", "flex"}:
+        service_tier = None
+    service_tier_prefix = f"{service_tier}_" if service_tier else ""
     output_token_details: dict = {
-        "reasoning": (oai_token_usage.get("output_tokens_details") or {}).get(
-            "reasoning_tokens"
-        )
+        f"{service_tier_prefix}reasoning": (
+            oai_token_usage.get("output_tokens_details") or {}
+        ).get("reasoning_tokens")
     }
     input_token_details: dict = {
-        "cache_read": (oai_token_usage.get("input_tokens_details") or {}).get(
-            "cached_tokens"
-        )
+        f"{service_tier_prefix}cache_read": (
+            oai_token_usage.get("input_tokens_details") or {}
+        ).get("cached_tokens")
     }
+    if service_tier is not None:
+        # Avoid counting cache and reasoning tokens towards the service tier token
+        # counts, since service tier tokens are already priced differently
+        output_token_details[service_tier] = output_tokens - output_token_details.get(
+            f"{service_tier_prefix}reasoning", 0
+        )
+        input_token_details[service_tier] = input_tokens - input_token_details.get(
+            f"{service_tier_prefix}cache_read", 0
+        )
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -3957,7 +3997,9 @@ def _construct_lc_result_from_responses_api(
     response_metadata["model_provider"] = "openai"
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
-        usage_metadata = _create_usage_metadata_responses(response.usage.model_dump())
+        usage_metadata = _create_usage_metadata_responses(
+            response.usage.model_dump(), response.service_tier
+        )
     else:
         usage_metadata = None
 
