@@ -62,7 +62,6 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
                 If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
-                Default is False.
 
         Returns:
             The parsed JSON object.

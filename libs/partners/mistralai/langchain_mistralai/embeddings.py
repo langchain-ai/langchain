@@ -50,21 +50,21 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         ```
 
     Key init args — completion params:
-        model: str
-            Name of MistralAI model to use.
+        model:
+            Name of `MistralAI` model to use.
 
     Key init args — client params:
-        api_key: SecretStr | None
+        api_key:
             The API key for the MistralAI API. If not provided, it will be read from the
             environment variable `MISTRAL_API_KEY`.
-        max_retries: int
+        max_retries:
             The number of times to retry a request if it fails.
-        timeout: int
+        timeout:
             The number of seconds to wait for a response before timing out.
-        wait_time: int
+        wait_time:
             The number of seconds to wait before retrying a request in case of 429
             error.
-        max_concurrent_requests: int
+        max_concurrent_requests:
             The maximum number of concurrent requests to make to the Mistral API.
 
     See full list of supported init args and their descriptions in the params section.

@@ -105,7 +105,7 @@ class PngDrawer:
             source: The source node.
             target: The target node.
             label: The label for the edge.
-            conditional: Whether the edge is conditional. Defaults to `False`.
+            conditional: Whether the edge is conditional.
         """
         viz.add_edge(
             source,

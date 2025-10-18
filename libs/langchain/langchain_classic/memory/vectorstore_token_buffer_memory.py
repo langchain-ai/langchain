@@ -157,7 +157,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     def save_remainder(self) -> None:
         """Save the remainder of the conversation buffer to the vector store.
 
-        This is useful if you have made the vectorstore persistent, in which
+        Useful if you have made the vectorstore persistent, in which
         case this can be called before the end of the session to store the
         remainder of the conversation.
         """

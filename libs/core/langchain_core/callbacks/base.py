@@ -1001,7 +1001,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Args:
             handler: The handler to add.
-            inherit: Whether to inherit the handler. Default is True.
+            inherit: Whether to inherit the handler.
         """
         if handler not in self.handlers:
             self.handlers.append(handler)
@@ -1028,7 +1028,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Args:
             handlers: The handlers to set.
-            inherit: Whether to inherit the handlers. Default is True.
+            inherit: Whether to inherit the handlers.
         """
         self.handlers = []
         self.inheritable_handlers = []
@@ -1044,7 +1044,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Args:
             handler: The handler to set.
-            inherit: Whether to inherit the handler. Default is True.
+            inherit: Whether to inherit the handler.
         """
         self.set_handlers([handler], inherit=inherit)
 
@@ -1057,7 +1057,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Args:
             tags: The tags to add.
-            inherit: Whether to inherit the tags. Default is True.
+            inherit: Whether to inherit the tags.
         """
         for tag in tags:
             if tag in self.tags:
@@ -1087,7 +1087,7 @@ class BaseCallbackManager(CallbackManagerMixin):
 
         Args:
             metadata: The metadata to add.
-            inherit: Whether to inherit the metadata. Default is True.
+            inherit: Whether to inherit the metadata.
         """
         self.metadata.update(metadata)
         if inherit:

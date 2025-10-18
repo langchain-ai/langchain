@@ -185,7 +185,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "runnable"]`
@@ -409,7 +409,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "runnable"]`
@@ -714,7 +714,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "runnable"]`

@@ -15,11 +15,11 @@ class InMemoryCache(BaseCache):
         self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
     def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
-        """Look up based on prompt and llm_string."""
+        """Look up based on `prompt` and `llm_string`."""
         return self._cache.get((prompt, llm_string), None)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
+        """Update cache based on `prompt` and `llm_string`."""
         self._cache[prompt, llm_string] = return_val
 
     @override
@@ -68,12 +68,12 @@ class InMemoryCacheBad(BaseCache):
         self._cache: dict[tuple[str, str], RETURN_VAL_TYPE] = {}
 
     def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
-        """Look up based on prompt and llm_string."""
+        """Look up based on `prompt` and `llm_string`."""
         msg = "This code should not be triggered"
         raise NotImplementedError(msg)
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
-        """Update cache based on prompt and llm_string."""
+        """Update cache based on `prompt` and `llm_string`."""
         msg = "This code should not be triggered"
         raise NotImplementedError(msg)
 

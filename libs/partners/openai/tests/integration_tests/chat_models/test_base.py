@@ -194,13 +194,35 @@ def test_openai_invoke() -> None:
     result = llm.invoke("Hello", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
+    usage_metadata = result.usage_metadata  # type: ignore[attr-defined]
+
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
+    assert usage_metadata is not None
+    flex_input = usage_metadata.get("input_token_details", {}).get("flex")
+    assert isinstance(flex_input, int)
+    assert flex_input > 0
+    assert flex_input == usage_metadata.get("input_tokens")
+    flex_output = usage_metadata.get("output_token_details", {}).get("flex")
+    assert isinstance(flex_output, int)
+    assert flex_output > 0
+    # GPT-5-nano/reasoning model specific. Remove if model used in test changes.
+    flex_reasoning = usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_reasoning, int)
+    assert flex_reasoning > 0
+    assert flex_reasoning + flex_output == usage_metadata.get("output_tokens")
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(model="gpt-4.1-mini")
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
+    )
 
     full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick"):
@@ -236,6 +258,19 @@ def test_stream() -> None:
     assert aggregate.usage_metadata["input_tokens"] > 0
     assert aggregate.usage_metadata["output_tokens"] > 0
     assert aggregate.usage_metadata["total_tokens"] > 0
+    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert (
+        aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+            "flex_reasoning", 0
+        )
+        > 0
+    )
+    assert aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+        "flex_reasoning", 0
+    ) + aggregate.usage_metadata.get("output_token_details", {}).get(
+        "flex", 0
+    ) == aggregate.usage_metadata.get("output_tokens")
 
 
 async def test_astream() -> None:
@@ -306,6 +341,28 @@ async def test_astream() -> None:
     )
     await _test_stream(llm.astream("Hello"), expect_usage=True)
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_flex_usage_responses(streaming: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",
+        max_retries=3,
+        use_responses_api=True,
+        streaming=streaming,
+    )
+    result = llm.invoke("Hello")
+    assert result.usage_metadata
+    flex_input = result.usage_metadata.get("input_token_details", {}).get("flex")
+    flex_output = result.usage_metadata.get("output_token_details", {}).get("flex")
+    flex_reasoning = result.usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_input, int)
+    assert isinstance(flex_output, int)
+    assert isinstance(flex_reasoning, int)
+    assert flex_output + flex_reasoning == result.usage_metadata.get("output_tokens")
 
 
 async def test_abatch_tags() -> None:
