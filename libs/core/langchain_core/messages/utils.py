@@ -1391,6 +1391,54 @@ def convert_to_openai_messages(
     return oai_messages
 
 
+def _remove_orphaned_tool_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Remove ToolMessages that don't have a corresponding AIMessage with tool_calls.
+
+    When trimming messages, we may accidentally orphan ToolMessages by removing
+    the AIMessage that made the tool call. This function cleans up such orphans
+    to maintain valid message history.
+
+    Args:
+        messages: List of messages to clean.
+
+    Returns:
+        List of messages with orphaned ToolMessages removed.
+    """
+    if not messages:
+        return messages
+
+    # Build a set of valid tool_call_ids from AIMessages
+    valid_tool_call_ids: set[str] = set()
+    for msg in messages:
+        if isinstance(msg, AIMessage):
+            # Check tool_calls attribute
+            if msg.tool_calls:
+                for tool_call in msg.tool_calls:
+                    if tool_call_id := tool_call.get("id"):
+                        valid_tool_call_ids.add(tool_call_id)
+            # Also check content blocks for Anthropic format (tool_use blocks)
+            if isinstance(msg.content, list):
+                for block in msg.content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "tool_use"
+                        and block.get("id")
+                    ):
+                        valid_tool_call_ids.add(block["id"])
+
+    # Filter out ToolMessages with invalid tool_call_ids
+    cleaned_messages: list[BaseMessage] = []
+    for msg in messages:
+        if isinstance(msg, ToolMessage):
+            if msg.tool_call_id in valid_tool_call_ids:
+                cleaned_messages.append(msg)
+            # else: skip orphaned ToolMessage
+        else:
+            cleaned_messages.append(msg)
+
+    return cleaned_messages
+
+
 def _first_max_tokens(
     messages: Sequence[BaseMessage],
     *,
@@ -1413,7 +1461,7 @@ def _first_max_tokens(
                     messages.pop()
                 else:
                     break
-        return messages
+        return _remove_orphaned_tool_messages(messages)
 
     # Use binary search to find the maximum number of messages within token limit
     left, right = 0, len(messages)
@@ -1504,7 +1552,9 @@ def _first_max_tokens(
             else:
                 break
 
-    return messages[:idx]
+    trimmed = messages[:idx]
+    # Remove any orphaned ToolMessages that lost their corresponding AIMessage
+    return _remove_orphaned_tool_messages(trimmed)
 
 
 def _last_max_tokens(
@@ -1559,7 +1609,7 @@ def _last_max_tokens(
     if system_message:
         result = [system_message, *result]
 
-    return result
+    return _remove_orphaned_tool_messages(result)
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
