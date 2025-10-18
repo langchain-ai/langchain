@@ -187,6 +187,18 @@ def test_openai_uses_actual_secret_value_from_secretstr(model_class: type) -> No
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
 
 
+@pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
+def test_openai_api_key_accepts_callable(model_class: type) -> None:
+    """Test that the API key can be passed as a callable."""
+
+    def get_api_key() -> str:
+        return "secret-api-key-from-callable"
+
+    model = model_class(openai_api_key=get_api_key)
+    assert callable(model.openai_api_key)
+    assert model.openai_api_key() == "secret-api-key-from-callable"
+
+
 @pytest.mark.parametrize("model_class", [AzureChatOpenAI, AzureOpenAI])
 def test_azure_serialized_secrets(model_class: type) -> None:
     """Test that the actual secret value is correctly retrieved."""
