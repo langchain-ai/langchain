@@ -4,7 +4,7 @@ import threading
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -19,32 +19,31 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
     """Callback Handler that tracks AIMessage.usage_metadata.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain.chat_models import init_chat_model
+        from langchain_core.callbacks import UsageMetadataCallbackHandler
 
-            from langchain.chat_models import init_chat_model
-            from langchain_core.callbacks import UsageMetadataCallbackHandler
+        llm_1 = init_chat_model(model="openai:gpt-4o-mini")
+        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
 
-            llm_1 = init_chat_model(model="openai:gpt-4o-mini")
-            llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
+        callback = UsageMetadataCallbackHandler()
+        result_1 = llm_1.invoke("Hello", config={"callbacks": [callback]})
+        result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
+        callback.usage_metadata
+        ```
+        ```txt
+        {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
+          'output_tokens': 10,
+          'total_tokens': 18,
+          'input_token_details': {'audio': 0, 'cache_read': 0},
+          'output_token_details': {'audio': 0, 'reasoning': 0}},
+         'claude-3-5-haiku-20241022': {'input_tokens': 8,
+          'output_tokens': 21,
+          'total_tokens': 29,
+          'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
+        ```
 
-            callback = UsageMetadataCallbackHandler()
-            result_1 = llm_1.invoke("Hello", config={"callbacks": [callback]})
-            result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
-            callback.usage_metadata
-
-        .. code-block::
-
-            {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
-              'output_tokens': 10,
-              'total_tokens': 18,
-              'input_token_details': {'audio': 0, 'cache_read': 0},
-              'output_token_details': {'audio': 0, 'reasoning': 0}},
-             'claude-3-5-haiku-20241022': {'input_tokens': 8,
-              'output_tokens': 21,
-              'total_tokens': 29,
-              'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
-
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
 
@@ -96,45 +95,49 @@ def get_usage_metadata_callback(
     """Get usage metadata callback.
 
     Get context manager for tracking usage metadata across chat model calls using
-    ``AIMessage.usage_metadata``.
+    `AIMessage.usage_metadata`.
 
     Args:
-        name (str): The name of the context variable. Defaults to
-            ``'usage_metadata_callback'``.
+        name: The name of the context variable.
 
     Yields:
         The usage metadata callback.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain.chat_models import init_chat_model
+        from langchain_core.callbacks import get_usage_metadata_callback
 
-            from langchain.chat_models import init_chat_model
-            from langchain_core.callbacks import get_usage_metadata_callback
+        llm_1 = init_chat_model(model="openai:gpt-4o-mini")
+        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
 
-            llm_1 = init_chat_model(model="openai:gpt-4o-mini")
-            llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
+        with get_usage_metadata_callback() as cb:
+            llm_1.invoke("Hello")
+            llm_2.invoke("Hello")
+            print(cb.usage_metadata)
+        ```
+        ```txt
+        {
+            "gpt-4o-mini-2024-07-18": {
+                "input_tokens": 8,
+                "output_tokens": 10,
+                "total_tokens": 18,
+                "input_token_details": {"audio": 0, "cache_read": 0},
+                "output_token_details": {"audio": 0, "reasoning": 0},
+            },
+            "claude-3-5-haiku-20241022": {
+                "input_tokens": 8,
+                "output_tokens": 21,
+                "total_tokens": 29,
+                "input_token_details": {"cache_read": 0, "cache_creation": 0},
+            },
+        }
+        ```
 
-            with get_usage_metadata_callback() as cb:
-                llm_1.invoke("Hello")
-                llm_2.invoke("Hello")
-                print(cb.usage_metadata)
-
-        .. code-block::
-
-            {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
-              'output_tokens': 10,
-              'total_tokens': 18,
-              'input_token_details': {'audio': 0, 'cache_read': 0},
-              'output_token_details': {'audio': 0, 'reasoning': 0}},
-             'claude-3-5-haiku-20241022': {'input_tokens': 8,
-              'output_tokens': 21,
-              'total_tokens': 29,
-              'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
-
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
-    usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
+    usage_metadata_callback_var: ContextVar[UsageMetadataCallbackHandler | None] = (
         ContextVar(name, default=None)
     )
     register_configure_hook(usage_metadata_callback_var, inheritable=True)

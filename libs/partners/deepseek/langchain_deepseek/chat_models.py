@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from json import JSONDecodeError
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, TypeAlias
 
 import openai
 from langchain_core.callbacks import (
@@ -22,155 +22,150 @@ from typing_extensions import Self
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 
-_BM = TypeVar("_BM", bound=BaseModel)
-_DictOrPydanticClass = Union[dict[str, Any], type[_BM], type]
-_DictOrPydantic = Union[dict, _BM]
+_DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
+_DictOrPydantic: TypeAlias = dict[str, Any] | BaseModel
 
 
 class ChatDeepSeek(BaseChatOpenAI):
     """DeepSeek chat model integration to access models hosted in DeepSeek's API.
 
     Setup:
-        Install ``langchain-deepseek`` and set environment variable ``DEEPSEEK_API_KEY``.
+        Install `langchain-deepseek` and set environment variable `DEEPSEEK_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-deepseek
-            export DEEPSEEK_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-deepseek
+        export DEEPSEEK_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
-        model: str
-            Name of DeepSeek model to use, e.g. "deepseek-chat".
-        temperature: float
+        model:
+            Name of DeepSeek model to use, e.g. `"deepseek-chat"`.
+        temperature:
             Sampling temperature.
-        max_tokens: Optional[int]
+        max_tokens:
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: Optional[float]
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: Optional[str]
-            DeepSeek API key. If not passed in will be read from env var DEEPSEEK_API_KEY.
+        api_key:
+            DeepSeek API key. If not passed in will be read from env var `DEEPSEEK_API_KEY`.
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_deepseek import ChatDeepSeek
 
-            from langchain_deepseek import ChatDeepSeek
-
-            llm = ChatDeepSeek(
-                model="...",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
+        model = ChatDeepSeek(
+            model="...",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # other params...
+        )
+        ```
 
     Invoke:
-        .. code-block:: python
-
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user sentence to French."),
+            ("human", "I love programming."),
+        ]
+        model.invoke(messages)
+        ```
 
     Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
+        ```python
+        for chunk in model.stream(messages):
+            print(chunk.text, end="")
+        ```
+        ```python
+        stream = model.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await model.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await model.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
+        # batch:
+        # await model.abatch([messages])
+        ```
 
     Tool calling:
-        .. code-block:: python
-
-            from pydantic import BaseModel, Field
-
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        ```python
+        from pydantic import BaseModel, Field
 
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-        See ``ChatDeepSeek.bind_tools()`` method for more.
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
+
+        See `ChatDeepSeek.bind_tools()` method for more.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
-
-            from pydantic import BaseModel, Field
-
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+        from pydantic import BaseModel, Field
 
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-        See ``ChatDeepSeek.with_structured_output()`` for more.
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
+
+
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
+        ```
+
+        See `ChatDeepSeek.with_structured_output()` for more.
 
     Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
-
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.usage_metadata
+        ```
+        ```python
+        {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+        ```
     Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.response_metadata
+        ```
     """  # noqa: E501
 
     model_name: str = Field(alias="model")
     """The name of the model"""
-    api_key: Optional[SecretStr] = Field(
+    api_key: SecretStr | None = Field(
         default_factory=secret_from_env("DEEPSEEK_API_KEY", default=None),
     )
     """DeepSeek API key"""
@@ -193,7 +188,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
@@ -202,6 +197,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
+        """Validate necessary environment vars and client params."""
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
@@ -237,24 +233,40 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
                 message["content"] = json.dumps(message["content"])
+            elif message["role"] == "assistant" and isinstance(
+                message["content"], list
+            ):
+                # DeepSeek API expects assistant content to be a string, not a list.
+                # Extract text blocks and join them, or use empty string if none exist.
+                text_parts = [
+                    block.get("text", "")
+                    for block in message["content"]
+                    if isinstance(block, dict) and block.get("type") == "text"
+                ]
+                message["content"] = "".join(text_parts) if text_parts else ""
         return payload
 
     def _create_chat_result(
         self,
-        response: Union[dict, openai.BaseModel],
-        generation_info: Optional[dict] = None,
+        response: dict | openai.BaseModel,
+        generation_info: dict | None = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, openai.BaseModel):
             return rtn
+
+        for generation in rtn.generations:
+            if generation.message.response_metadata is None:
+                generation.message.response_metadata = {}
+            generation.message.response_metadata["model_provider"] = "deepseek"
 
         choices = getattr(response, "choices", None)
         if choices and hasattr(choices[0].message, "reasoning_content"):
@@ -277,8 +289,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         self,
         chunk: dict,
         default_chunk_class: type,
-        base_generation_info: Optional[dict],
-    ) -> Optional[ChatGenerationChunk]:
+        base_generation_info: dict | None,
+    ) -> ChatGenerationChunk | None:
         generation_chunk = super()._convert_chunk_to_generation_chunk(
             chunk,
             default_chunk_class,
@@ -287,6 +299,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
+                generation_chunk.message.response_metadata = {
+                    **generation_chunk.message.response_metadata,
+                    "model_provider": "deepseek",
+                }
                 if (
                     reasoning_content := top.get("delta", {}).get("reasoning_content")
                 ) is not None:
@@ -304,8 +320,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         try:
@@ -329,8 +345,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         try:
@@ -353,7 +369,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def with_structured_output(
         self,
-        schema: Optional[_DictOrPydanticClass] = None,
+        schema: _DictOrPydanticClass | None = None,
         *,
         method: Literal[
             "function_calling",
@@ -361,7 +377,7 @@ class ChatDeepSeek(BaseChatOpenAI):
             "json_schema",
         ] = "function_calling",
         include_raw: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -371,34 +387,34 @@ class ChatDeepSeek(BaseChatOpenAI):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a TypedDict class (support added in 0.1.20),
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
-                - ``'function_calling'``:
-                    Uses DeepSeek's `tool-calling features <https://api-docs.deepseek.com/guides/function_calling>`_.
-                - ``'json_mode'``:
-                    Uses DeepSeek's `JSON mode feature <https://api-docs.deepseek.com/guides/json_mode>`_.
-
-                .. versionchanged:: 0.1.3
-
-                    Added support for ``'json_mode'``.
+                - `'function_calling'`:
+                    Uses DeepSeek's [tool-calling features](https://api-docs.deepseek.com/guides/function_calling).
+                - `'json_mode'`:
+                    Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
+                If `False` then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If `True`
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
@@ -410,18 +426,19 @@ class ChatDeepSeek(BaseChatOpenAI):
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         # Some applications require that incompatible parameters (e.g., unsupported
         # methods) be handled.
         if method == "json_schema":

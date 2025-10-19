@@ -24,7 +24,7 @@ MODEL_NAME = "llama3.1"
 
 @contextmanager
 def _mock_httpx_client_stream(
-    *args: Any, **kwargs: Any
+    *_args: Any, **_kwargs: Any
 ) -> Generator[Response, Any, Any]:
     yield Response(
         status_code=200,
@@ -74,7 +74,7 @@ def test__parse_arguments_from_tool_call() -> None:
 def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
     """Test that functionName metadata is filtered out from tool arguments.
 
-    Some models may include metadata like ``functionName`` in the arguments
+    Some models may include metadata like `functionName` in the arguments
     that just echoes the function name. This should be filtered out for
     no-argument tools to return an empty dictionary.
     """
@@ -310,3 +310,103 @@ def test_load_response_with_actual_content_is_not_skipped(
         assert result.content == "This is actual content"
         assert result.response_metadata.get("done_reason") == "load"
         assert not caplog.text
+
+
+def test_none_parameters_excluded_from_options() -> None:
+    """Test that None parameters are excluded from the options dict sent to Ollama."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "Hello!"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        # Create ChatOllama with only num_ctx set
+        llm = ChatOllama(model="test-model", num_ctx=4096)
+        llm.invoke([HumanMessage("Hello")])
+
+        # Verify that chat was called
+        assert mock_client.chat.called
+
+        # Get the options dict that was passed to chat
+        call_kwargs = mock_client.chat.call_args[1]
+        options = call_kwargs.get("options", {})
+
+        # Only num_ctx should be in options, not None parameters
+        assert "num_ctx" in options
+        assert options["num_ctx"] == 4096
+
+        # These parameters should NOT be in options since they were None
+        assert "mirostat" not in options
+        assert "mirostat_eta" not in options
+        assert "mirostat_tau" not in options
+        assert "tfs_z" not in options
+
+
+def test_all_none_parameters_results_in_empty_options() -> None:
+    """Test that when all parameters are None, options dict is empty."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "Hello!"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        # Create ChatOllama with no parameters set
+        llm = ChatOllama(model="test-model")
+        llm.invoke([HumanMessage("Hello")])
+
+        # Get the options dict that was passed to chat
+        call_kwargs = mock_client.chat.call_args[1]
+        options = call_kwargs.get("options", {})
+
+        # Options should be empty when no parameters are set
+        assert options == {}
+
+
+def test_explicit_options_dict_preserved() -> None:
+    """Test that explicitly provided options dict is preserved and not filtered."""
+    response = [
+        {
+            "model": "test-model",
+            "created_at": "2025-01-01T00:00:00.000000000Z",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"role": "assistant", "content": "Hello!"},
+        }
+    ]
+
+    with patch("langchain_ollama.chat_models.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.chat.return_value = response
+
+        llm = ChatOllama(model="test-model")
+        # Pass explicit options dict, including None values
+        llm.invoke(
+            [HumanMessage("Hello")],
+            options={"temperature": 0.5, "custom_param": None},
+        )
+
+        # Get the options dict that was passed to chat
+        call_kwargs = mock_client.chat.call_args[1]
+        options = call_kwargs.get("options", {})
+
+        # Explicit options should be preserved as-is
+        assert options == {"temperature": 0.5, "custom_param": None}

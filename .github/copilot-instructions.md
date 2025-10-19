@@ -26,7 +26,7 @@ def get_user(user_id: str, verbose: bool = False) -> User:
 - Check if the function/class is exported in `__init__.py`
 - Look for existing usage patterns in tests and examples
 - Use keyword-only arguments for new parameters: `*, new_param: str = "default"`
-- Mark experimental features clearly with docstring warnings (using reStructuredText, like `.. warning::`)
+- Mark experimental features clearly with docstring admonitions (using MkDocs Material, like `!!! warning`)
 
 🧠 *Ask yourself:* "Would this change break someone's code if they used it last week?"
 
@@ -130,7 +130,7 @@ def load_config(path: str) -> dict:
 
 ### 5. Documentation Standards
 
-**Use Google-style docstrings with Args section for all public functions.**
+**Use Google-style docstrings with Args and Returns sections for all public functions.**
 
 ❌ **Insufficient Documentation:**
 
@@ -149,7 +149,7 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
     Args:
         to: The email address of the recipient.
         msg: The message body to send.
-        priority: Email priority level (``'low'``, ``'normal'``, ``'high'``).
+        priority: Email priority level.
 
     Returns:
         True if email was sent successfully, False otherwise.
@@ -166,7 +166,6 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
 - Focus on "why" rather than "what" in descriptions
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
-- Use reStructuredText for docstrings to enable rich formatting
 
 📌 *Tip:* Keep descriptions concise but clear. Only document return values if non-obvious.
 
@@ -204,7 +203,14 @@ class DataProcessor:
         self.email = email_client
 
     def process(self, data: List[dict]) -> ProcessingResult:
-        """Process and store data with notifications."""
+        """Process and store data with notifications.
+
+        Args:
+            data: List of data items to process.
+
+        Returns:
+            ProcessingResult with details of the operation.
+        """
         validated = self._validate_data(data)
         result = self.db.save(validated)
         self._notify_completion(result)
@@ -291,16 +297,15 @@ def search_database(query: str) -> str:
 **Use Conventional Commits format for PR titles:**
 
 - `feat(core): add multi-tenant support`
-- `fix(cli): resolve flag parsing error`
+- `!fix(cli): resolve flag parsing error` (breaking change uses exclamation mark)
 - `docs: update API usage examples`
 - `docs(openai): update API usage examples`
 
 ## Framework-Specific Guidelines
 
-- Follow the existing patterns in `langchain-core` for base abstractions
-- Use `langchain_core.callbacks` for execution tracking
+- Follow the existing patterns in `langchain_core` for base abstractions
 - Implement proper streaming support where applicable
-- Avoid deprecated components like legacy `LLMChain`
+- Avoid deprecated components
 
 ### Partner Integrations
 

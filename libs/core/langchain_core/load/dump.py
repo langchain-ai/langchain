@@ -42,10 +42,9 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 
     Args:
         obj: The object to dump.
-        pretty: Whether to pretty print the json. If true, the json will be
-            indented with 2 spaces (if no indent is provided as part of kwargs).
-            Default is False.
-        kwargs: Additional arguments to pass to json.dumps
+        pretty: Whether to pretty print the json. If `True`, the json will be
+            indented with 2 spaces (if no indent is provided as part of `kwargs`).
+        **kwargs: Additional arguments to pass to `json.dumps`
 
     Returns:
         A json string representation of the object.
@@ -72,7 +71,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    .. note::
+    !!! note
         Unfortunately this function is not as efficient as it could be because it first
         dumps the object to a json string and then loads it back into a dictionary.
 

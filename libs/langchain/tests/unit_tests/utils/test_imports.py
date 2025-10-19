@@ -1,4 +1,4 @@
-from langchain import utils
+from langchain_classic import utils
 
 EXPECTED_ALL = [
     "StrictFormatter",

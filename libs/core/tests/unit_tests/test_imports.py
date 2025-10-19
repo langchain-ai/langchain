@@ -34,7 +34,7 @@ def try_to_import(module_name: str) -> tuple[int, str]:
 def test_importable_all_via_subprocess() -> None:
     """Test import in isolation.
 
-    .. note::
+    !!! note
         ImportErrors due to circular imports can be raised for one sequence of imports
         but not another.
     """

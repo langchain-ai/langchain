@@ -1,24 +1,28 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "ollama>=0.5.3,<1.0.0",
-    "langchain-core>=0.3.76,<2.0.0",
+    "ollama>=0.6.0,<1.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
 ]
 name = "langchain-ollama"
-version = "0.3.8"
+version = "1.0.0"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-ollama%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/ollama"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_ollama/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-ollama%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -33,7 +37,10 @@ test = [
 test_integration = []
 lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy>=1.17.1,<2.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -41,9 +48,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -58,16 +62,16 @@ ignore = [
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
     "FIX002",  # TODOs
     "TD002",   # TODO authors
+    "TD003",   # TODO missing url
     "TC002",   # Incorrect type-checking block
     "TC003",   # Incorrect type-checking block
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "C901",    # Function too complex
     "FBT001",  # Boolean function param
+    "ERA001",  # Commented-out code
 
     # TODO
     "ANN401",

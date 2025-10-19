@@ -1,3 +1,5 @@
+"""Check that the given files can be imported."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

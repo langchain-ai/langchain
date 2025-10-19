@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import pytest  # type: ignore[import-not-found]
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     ],
 )
 def test_qdrant_embedding_interface(
-    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+    embeddings: Embeddings | None, embedding_function: Callable | None
 ) -> None:
     """Test Qdrant may accept different types for embeddings."""
     from qdrant_client import QdrantClient
@@ -45,7 +46,7 @@ def test_qdrant_embedding_interface(
     ],
 )
 def test_qdrant_embedding_interface_raises_value_error(
-    embeddings: Optional[Embeddings], embedding_function: Optional[Callable]
+    embeddings: Embeddings | None, embedding_function: Callable | None
 ) -> None:
     """Test Qdrant requires only one method for embeddings."""
     from qdrant_client import QdrantClient

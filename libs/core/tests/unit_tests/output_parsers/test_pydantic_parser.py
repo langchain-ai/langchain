@@ -1,7 +1,8 @@
 """Test PydanticOutputParser."""
 
+import sys
 from enum import Enum
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import pydantic
 import pytest
@@ -22,15 +23,23 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-class ForecastV1(V1BaseModel):
-    temperature: int
-    f_or_c: Literal["F", "C"]
-    forecast: str
+if sys.version_info < (3, 14):
+
+    class ForecastV1(V1BaseModel):
+        temperature: int
+        f_or_c: Literal["F", "C"]
+        forecast: str
+
+    _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
+    _FORECAST_MODELS = [ForecastV2, ForecastV1]
+else:
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_pydantic_parser_chaining(
-    pydantic_object: Union[type[ForecastV2], type[ForecastV1]],
+    pydantic_object: _FORECAST_MODELS_TYPES,
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -53,7 +62,7 @@ def test_pydantic_parser_chaining(
     assert res.forecast == "Sunny"
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{
@@ -75,7 +84,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
 
 # JSON output parser tests
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_json_parser_chaining(
     pydantic_object: TBaseModel,
 ) -> None:
@@ -109,9 +118,7 @@ class Actions(Enum):
 class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
-    additional_fields: Optional[str] = Field(
-        description="Additional fields", default=None
-    )
+    additional_fields: str | None = Field(description="Additional fields", default=None)
     for_new_lines: str = Field(description="To be used to test newlines")
 
 
