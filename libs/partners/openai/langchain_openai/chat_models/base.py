@@ -22,48 +22,83 @@ from urllib.parse import urlparse
 import certifi
 import openai
 import tiktoken
-from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
-                                      CallbackManagerForLLMRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.messages import (AIMessage, AIMessageChunk, BaseMessage,
-                                     BaseMessageChunk, ChatMessage, ChatMessageChunk,
-                                     FunctionMessage, FunctionMessageChunk,
-                                     HumanMessage, HumanMessageChunk, InvalidToolCall,
-                                     SystemMessage, SystemMessageChunk, ToolCall,
-                                     ToolMessage, ToolMessageChunk)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    ChatMessage,
+    ChatMessageChunk,
+    FunctionMessage,
+    FunctionMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    InvalidToolCall,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolCall,
+    ToolMessage,
+    ToolMessageChunk,
+    is_data_content_block,
+)
 from langchain_core.messages import content as types
-from langchain_core.messages import is_data_content_block
-from langchain_core.messages.ai import (InputTokenDetails, OutputTokenDetails,
-                                        UsageMetadata)
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    OutputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.messages.block_translators.openai import (
-    _convert_from_v03_ai_message, convert_to_openai_data_block)
+    _convert_from_v03_ai_message,
+    convert_to_openai_data_block,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
-from langchain_core.output_parsers.openai_tools import (JsonOutputKeyToolsParser,
-                                                        PydanticToolsParser,
-                                                        make_invalid_tool_call,
-                                                        parse_tool_call)
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import (Runnable, RunnableLambda, RunnableMap,
-                                      RunnablePassthrough)
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
-from langchain_core.utils.function_calling import (convert_to_openai_function,
-                                                   convert_to_openai_tool)
-from langchain_core.utils.pydantic import (PydanticBaseModel, TypeBaseModel,
-                                           is_basemodel_subclass)
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
+from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
+    TypeBaseModel,
+    is_basemodel_subclass,
+)
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
-from langchain_openai.chat_models._client_utils import (_get_default_async_httpx_client,
-                                                        _get_default_httpx_client)
-from langchain_openai.chat_models._compat import (_convert_from_v1_to_chat_completions,
-                                                  _convert_from_v1_to_responses,
-                                                  _convert_to_v03_ai_message)
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
+
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
+from langchain_openai.chat_models._compat import (
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
+    _convert_to_v03_ai_message,
+)
 
 if TYPE_CHECKING:
     from openai.types.responses import Response

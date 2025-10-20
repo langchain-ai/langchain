@@ -9,8 +9,10 @@ from typing import Any, Literal
 
 import openai
 import tiktoken
-from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
-                                      CallbackManagerForLLMRun)
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_pydantic_field_names
