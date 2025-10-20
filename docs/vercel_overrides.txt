@@ -12,4 +12,4 @@ simsimd>=5.0.0
 # Fix sentencepiece build error - use newer version that supports modern CMake
 sentencepiece>=0.2.1
 # Fix langchain-azure-ai dependency conflict with langchain-core
-langchain-core @ file:///Users/mdrxy/oss/langchain/libs/core
+langchain-core @ file:///home/runner/work/langchain/langchain/langchain/libs/core
