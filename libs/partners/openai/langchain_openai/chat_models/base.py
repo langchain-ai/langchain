@@ -766,8 +766,7 @@ class BaseChatOpenAI(BaseChatModel):
         if self.openai_api_key is not None:
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
-            else:
-                # Must be a Callable if not SecretStr and not None
+            elif callable(self.openai_api_key):
                 api_key_value = self.openai_api_key  # type: ignore[assignment]
 
         client_params: dict = {
