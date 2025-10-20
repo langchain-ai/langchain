@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
@@ -214,6 +215,10 @@ def test_guard_import_failure(
         guard_import(module_name, pip_name=pip_name, package=package)
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 def test_get_pydantic_field_names_v1_in_2() -> None:
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str

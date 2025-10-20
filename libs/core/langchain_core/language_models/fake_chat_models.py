@@ -1,4 +1,4 @@
-"""Fake ChatModel for testing purposes."""
+"""Fake chat model for testing purposes."""
 
 import asyncio
 import re
@@ -19,7 +19,7 @@ from langchain_core.runnables import RunnableConfig
 
 
 class FakeMessagesListChatModel(BaseChatModel):
-    """Fake `ChatModel` for testing purposes."""
+    """Fake chat model for testing purposes."""
 
     responses: list[BaseMessage]
     """List of responses to **cycle** through in order."""
@@ -57,7 +57,7 @@ class FakeListChatModelError(Exception):
 
 
 class FakeListChatModel(SimpleChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake chat model for testing purposes."""
 
     responses: list[str]
     """List of responses to **cycle** through in order."""

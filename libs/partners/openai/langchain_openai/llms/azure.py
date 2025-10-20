@@ -97,7 +97,7 @@ class AzureOpenAI(BaseOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object."""
         return ["langchain", "llms", "openai"]
 
     @property

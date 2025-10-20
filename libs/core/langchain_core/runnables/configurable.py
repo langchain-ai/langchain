@@ -72,7 +72,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "runnable"]`
@@ -540,7 +540,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to `'default'`."""
+    """The enum value to use for the default option."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace

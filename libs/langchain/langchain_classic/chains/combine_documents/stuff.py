@@ -35,10 +35,10 @@ def create_stuff_documents_chain(
 
     Args:
         llm: Language model.
-        prompt: Prompt template. Must contain input variable "context" (override by
+        prompt: Prompt template. Must contain input variable `"context"` (override by
             setting document_variable), which will be used for passing in the formatted
             documents.
-        output_parser: Output parser. Defaults to StrOutputParser.
+        output_parser: Output parser. Defaults to `StrOutputParser`.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
             documents. "page_content" will automatically retrieve the
@@ -47,12 +47,12 @@ def create_stuff_documents_chain(
             a prompt that only contains `Document.page_content`.
         document_separator: String separator to use between formatted document strings.
         document_variable_name: Variable name to use for the formatted documents in the
-            prompt. Defaults to "context".
+            prompt. Defaults to `"context"`.
 
     Returns:
-        An LCEL Runnable. The input is a dictionary that must have a "context" key that
-        maps to a List[Document], and any other input variables expected in the prompt.
-        The Runnable return type depends on output_parser used.
+        An LCEL Runnable. The input is a dictionary that must have a `"context"` key
+        that maps to a `list[Document]`, and any other input variables expected in the
+        prompt. The `Runnable` return type depends on `output_parser` used.
 
     Example:
         ```python

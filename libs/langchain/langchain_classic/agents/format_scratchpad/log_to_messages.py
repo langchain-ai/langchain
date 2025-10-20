@@ -11,7 +11,7 @@ def format_log_to_messages(
     Args:
         intermediate_steps: List of tuples of AgentAction and observation strings.
         template_tool_response: Template to format the observation with.
-             Defaults to "{observation}".
+            Defaults to `"{observation}"`.
 
     Returns:
         The scratchpad.

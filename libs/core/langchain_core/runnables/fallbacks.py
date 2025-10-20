@@ -96,7 +96,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
     exception_key: str | None = None
-    """If string is specified then handled exceptions will be passed to fallbacks as
+    """If `string` is specified then handled exceptions will be passed to fallbacks as
         part of the input under the specified key. If `None`, exceptions
         will not be passed to fallbacks. If used, the base Runnable and its fallbacks
         must accept a dictionary as input."""
@@ -143,7 +143,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "runnable"]`

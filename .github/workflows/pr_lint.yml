@@ -27,7 +27,7 @@
 #   * release    — prepare a new release
 #
 # Allowed Scopes (optional):
-#   core, cli, langchain, langchain_v1, langchain_legacy, standard-tests,
+#   core, cli, langchain, langchain_v1, langchain-classic, standard-tests,
 #   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
 #   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
 #   xai, infra
@@ -80,7 +80,7 @@ jobs:
             cli
             langchain
             langchain_v1
-            langchain_legacy
+            langchain-classic
             standard-tests
             text-splitters
             docs

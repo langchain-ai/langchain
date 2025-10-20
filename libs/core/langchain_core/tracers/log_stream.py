@@ -264,7 +264,10 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         memory_stream = _MemoryStream[RunLogPatch](loop)
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()

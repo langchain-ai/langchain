@@ -97,21 +97,17 @@ class SQLRecordManager(RecordManager):
         """Initialize the SQLRecordManager.
 
         This class serves as a manager persistence layer that uses an SQL
-        backend to track upserted records. You should specify either a db_url
+        backend to track upserted records. You should specify either a `db_url`
         to create an engine or provide an existing engine.
 
         Args:
             namespace: The namespace associated with this record manager.
             engine: An already existing SQL Alchemy engine.
-                Default is None.
-            db_url: A database connection string used to create
-                an SQL Alchemy engine. Default is None.
-            engine_kwargs: Additional keyword arguments
-                to be passed when creating the engine. Default is an empty dictionary.
-            async_mode: Whether to create an async engine.
-                Driver should support async operations.
-                It only applies if db_url is provided.
-                Default is False.
+            db_url: A database connection string used to create an SQL Alchemy engine.
+            engine_kwargs: Additional keyword arguments to be passed when creating the
+                engine.
+            async_mode: Whether to create an async engine. Driver should support async
+                operations. It only applies if `db_url` is provided.
 
         Raises:
             ValueError: If both db_url and engine are provided or neither.

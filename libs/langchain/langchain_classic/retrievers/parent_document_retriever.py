@@ -133,7 +133,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
-            **kwargs: additional keyword arguments passed to the vectorstore.
+            **kwargs: additional keyword arguments passed to the `VectorStore`.
         """
         docs, full_docs = self._split_docs_for_adding(
             documents,
@@ -164,7 +164,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
-            **kwargs: additional keyword arguments passed to the vectorstore.
+            **kwargs: additional keyword arguments passed to the `VectorStore`.
         """
         docs, full_docs = self._split_docs_for_adding(
             documents,

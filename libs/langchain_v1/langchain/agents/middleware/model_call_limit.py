@@ -2,14 +2,31 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage
+from langgraph.channels.untracked_value import UntrackedValue
+from typing_extensions import NotRequired
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, hook_config
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    PrivateStateAttr,
+    hook_config,
+)
 
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
+
+
+class ModelCallLimitState(AgentState):
+    """State schema for ModelCallLimitMiddleware.
+
+    Extends AgentState with model call tracking fields.
+    """
+
+    thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
+    run_model_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
 
 
 def _build_limit_exceeded_message(
@@ -69,7 +86,7 @@ class ModelCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ModelCallLimitMiddleware(AgentMiddleware):
+class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
     """Middleware that tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution
@@ -97,6 +114,8 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         ```
     """
 
+    state_schema = ModelCallLimitState
+
     def __init__(
         self,
         *,
@@ -108,17 +127,16 @@ class ModelCallLimitMiddleware(AgentMiddleware):
 
         Args:
             thread_limit: Maximum number of model calls allowed per thread.
-                None means no limit. Defaults to `None`.
+                None means no limit.
             run_limit: Maximum number of model calls allowed per run.
-                None means no limit. Defaults to `None`.
+                None means no limit.
             exit_behavior: What to do when limits are exceeded.
                 - "end": Jump to the end of the agent execution and
                     inject an artificial AI message indicating that the limit was exceeded.
-                - "error": Raise a ModelCallLimitExceededError
-                Defaults to "end".
+                - "error": Raise a `ModelCallLimitExceededError`
 
         Raises:
-            ValueError: If both limits are None or if exit_behavior is invalid.
+            ValueError: If both limits are `None` or if `exit_behavior` is invalid.
         """
         super().__init__()
 
@@ -135,7 +153,7 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         self.exit_behavior = exit_behavior
 
     @hook_config(can_jump_to=["end"])
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    def before_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Check model call limits before making a model call.
 
         Args:
@@ -175,3 +193,18 @@ class ModelCallLimitMiddleware(AgentMiddleware):
                 return {"jump_to": "end", "messages": [limit_ai_message]}
 
         return None
+
+    def after_model(self, state: ModelCallLimitState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+        """Increment model call counts after a model call.
+
+        Args:
+            state: The current agent state.
+            runtime: The langgraph runtime.
+
+        Returns:
+            State updates with incremented call counts.
+        """
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+        }

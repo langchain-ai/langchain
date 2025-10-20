@@ -76,8 +76,8 @@ class LangSmithLoader(BaseLoader):
             splits: A list of dataset splits, which are
                 divisions of your dataset such as 'train', 'test', or 'validation'.
                 Returns examples only from the specified splits.
-            inline_s3_urls: Whether to inline S3 URLs. Defaults to `True`.
-            offset: The offset to start from. Defaults to 0.
+            inline_s3_urls: Whether to inline S3 URLs.
+            offset: The offset to start from.
             limit: The maximum number of examples to return.
             metadata: Metadata to filter by.
             filter: A structured filter string to apply to the examples.

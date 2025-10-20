@@ -293,10 +293,9 @@ def create_schema_from_function(
         filter_args: Optional list of arguments to exclude from the schema.
             Defaults to `FILTERED_ARGS`.
         parse_docstring: Whether to parse the function's docstring for descriptions
-            for each argument. Defaults to `False`.
+            for each argument.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
-            Defaults to `False`.
         include_injected: Whether to include injected arguments in the schema.
             Defaults to `True`, since we want to include them in the schema
             when *validating* tool inputs.
@@ -481,11 +480,11 @@ class ChildTool(BaseTool):
     """Handle the content of the ValidationError thrown."""
 
     response_format: Literal["content", "content_and_artifact"] = "content"
-    """The tool response format. Defaults to 'content'.
+    """The tool response format.
 
-    If "content" then the output of the tool is interpreted as the contents of a
-    ToolMessage. If "content_and_artifact" then the output is expected to be a
-    two-tuple corresponding to the (content, artifact) of a ToolMessage.
+    If `"content"` then the output of the tool is interpreted as the contents of a
+    `ToolMessage`. If `"content_and_artifact"` then the output is expected to be a
+    two-tuple corresponding to the (content, artifact) of a `ToolMessage`.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -616,7 +615,7 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema `args_schema`.
+            ValueError: If `string` input is provided with JSON schema `args_schema`.
             ValueError: If InjectedToolCallId is required but `tool_call_id` is not
                 provided.
             TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
@@ -768,8 +767,8 @@ class ChildTool(BaseTool):
         Args:
             tool_input: The input to the tool.
             verbose: Whether to log the tool's progress.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
             callbacks: Callbacks to be called during tool execution.
             tags: Optional list of tags associated with the tool.
             metadata: Optional metadata associated with the tool.
@@ -880,8 +879,8 @@ class ChildTool(BaseTool):
         Args:
             tool_input: The input to the tool.
             verbose: Whether to log the tool's progress.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
             callbacks: Callbacks to be called during tool execution.
             tags: Optional list of tags associated with the tool.
             metadata: Optional metadata associated with the tool.
@@ -1211,6 +1210,26 @@ class InjectedToolArg:
     """
 
 
+class _DirectlyInjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Injected via direct type annotation, rather than annotated metadata.
+
+    For example, ToolRuntime is a directly injected argument.
+    Note the direct annotation rather than the verbose alternative:
+    Annotated[ToolRuntime, InjectedRuntime]
+    ```python
+    from langchain_core.tools import tool, ToolRuntime
+
+
+    @tool
+    def foo(x: int, runtime: ToolRuntime) -> str:
+        # use runtime.state, runtime.context, runtime.store, etc.
+        ...
+    ```
+    """
+
+
 class InjectedToolCallId(InjectedToolArg):
     """Annotation for injecting the tool call ID.
 
@@ -1238,6 +1257,24 @@ class InjectedToolCallId(InjectedToolArg):
     """
 
 
+def _is_directly_injected_arg_type(type_: Any) -> bool:
+    """Check if a type annotation indicates a directly injected argument.
+
+    This is currently only used for ToolRuntime.
+    Checks if either the annotation itself is a subclass of _DirectlyInjectedToolArg
+    or the origin of the annotation is a subclass of _DirectlyInjectedToolArg.
+
+    Ex: ToolRuntime or ToolRuntime[ContextT, StateT] would both return True.
+    """
+    return (
+        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
+    ) or (
+        (origin := get_origin(type_)) is not None
+        and isinstance(origin, type)
+        and issubclass(origin, _DirectlyInjectedToolArg)
+    )
+
+
 def _is_injected_arg_type(
     type_: type | TypeVar, injected_type: type[InjectedToolArg] | None = None
 ) -> bool:
@@ -1250,7 +1287,15 @@ def _is_injected_arg_type(
     Returns:
         `True` if the type is an injected argument, `False` otherwise.
     """
-    injected_type = injected_type or InjectedToolArg
+    if injected_type is None:
+        # if no injected type is specified,
+        # check if the type is a directly injected argument
+        if _is_directly_injected_arg_type(type_):
+            return True
+        injected_type = InjectedToolArg
+
+    # if the type is an Annotated type, check if annotated metadata
+    # is an intance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
