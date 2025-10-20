@@ -9,10 +9,8 @@ from typing import Any, Literal
 
 import openai
 import tiktoken
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import (AsyncCallbackManagerForLLMRun,
+                                      CallbackManagerForLLMRun)
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_pydantic_field_names
@@ -283,7 +281,7 @@ class BaseOpenAI(BaseLLM):
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
             elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key()
+                api_key_value = self.openai_api_key
 
         client_params: dict = {
             "api_key": api_key_value,

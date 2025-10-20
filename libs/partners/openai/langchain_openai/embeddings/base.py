@@ -300,7 +300,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
             elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key()
+                api_key_value = self.openai_api_key
 
         client_params: dict = {
             "api_key": api_key_value,
