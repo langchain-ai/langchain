@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import warnings
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 import httpx
 from httpx import Response
@@ -16,6 +16,7 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
 from typing_extensions import Self
 
@@ -133,7 +134,9 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
     )
     endpoint: str = "https://api.mistral.ai/v1/"
+    max_retries: int | None = 5
     timeout: int = 120
+    wait_time: int | None = 30
     max_concurrent_requests: int = 64
     tokenizer: Tokenizer = Field(default=None)
 
@@ -210,6 +213,18 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         if batch:
             yield batch
 
+    def _retry(self, func: Callable) -> Callable:
+        if self.max_retries is None or self.wait_time is None:
+            return func
+
+        return retry(
+            retry=retry_if_exception_type(
+                (httpx.TimeoutException, httpx.HTTPStatusError)
+            ),
+            wait=wait_fixed(self.wait_time),
+            stop=stop_after_attempt(self.max_retries),
+        )(func)
+
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a list of document texts.
 
@@ -223,6 +238,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         try:
             batch_responses = []
 
+            @self._retry
             def _embed_batch(batch: list[str]) -> Response:
                 response = self.client.post(
                     url="/embeddings",
@@ -257,6 +273,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         """
         try:
 
+            @self._retry
             async def _aembed_batch(batch: list[str]) -> Response:
                 response = await self.async_client.post(
                     url="/embeddings",
