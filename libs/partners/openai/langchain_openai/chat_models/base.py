@@ -727,12 +727,12 @@ class BaseChatOpenAI(BaseChatModel):
             self.stream_usage = True
 
         # Resolve API key from SecretStr or Callable
-        api_key_value = None
+        api_key_value: str | Callable[[], str] | None = None
         if self.openai_api_key is not None:
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
             elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key
+                api_key_value = self.openai_api_key  # type: ignore[assignment]
 
         client_params: dict = {
             "api_key": api_key_value,
