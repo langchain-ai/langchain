@@ -218,7 +218,7 @@ html_theme_options = {
     #     # Use :html_theme.sidebar_secondary.remove: for file-wide removal
     #     "secondary_sidebar_items": {"**": ["page-toc", "sourcelink"]},
     #     "show_version_warning_banner": True,
-    #     "announcement": None,
+    "announcement": "⚠️ THESE DOCS ARE OUTDATED. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank' style='color: white; text-decoration: underline;'>Visit the new v1.0 docs</a> and new <a href='https://reference.langchain.com/python' target='_blank' style='color: white; text-decoration: underline;'>reference docs</a>",
     "icon_links": [
         {
             # Label for this link
