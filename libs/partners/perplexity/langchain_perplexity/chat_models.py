@@ -29,6 +29,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
+    OutputTokenDetails,
     UsageMetadata,
     subtract_usage,
 )
@@ -52,19 +53,28 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+    """Create UsageMetadata from Perplexity token usage data.
+
+    Args:
+        token_usage: Dictionary containing token usage information from Perplexity API.
+
+    Returns:
+        UsageMetadata with properly structured token counts and details.
+    """
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
-    citation_tokens = token_usage.get("citation_tokens", 0)
-    num_search_queries = token_usage.get("num_search_queries", 0)
-    reasoning_tokens = token_usage.get("reasoning_tokens", 0)
-    return UsageMetadata(  # type: ignore[typeddict-unknown-key]
+
+    # Build output_token_details for Perplexity-specific fields
+    output_token_details: OutputTokenDetails = {}
+    output_token_details["reasoning"] = token_usage.get("reasoning_tokens", 0)
+    output_token_details["citation_tokens"] = token_usage.get("citation_tokens", 0)  # type: ignore[typeddict-unknown-key]
+
+    return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
-        citation_tokens=citation_tokens,
-        num_search_queries=num_search_queries,
-        reasoning_tokens=reasoning_tokens,
+        output_token_details=output_token_details,
     )
 
 
@@ -310,6 +320,7 @@ class ChatPerplexity(BaseChatModel):
         prev_total_usage: UsageMetadata | None = None
 
         added_model_name: bool = False
+        added_search_queries: bool = False
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -340,6 +351,13 @@ class ChatPerplexity(BaseChatModel):
             if (model_name := chunk.get("model")) and not added_model_name:
                 generation_info["model_name"] = model_name
                 added_model_name = True
+
+            # Add num_search_queries to generation_info if present
+            if total_usage := chunk.get("usage"):
+                if num_search_queries := total_usage.get("num_search_queries"):
+                    if not added_search_queries:
+                        generation_info["num_search_queries"] = num_search_queries
+                        added_search_queries = True
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
@@ -378,20 +396,29 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(messages=message_dicts, **params)
         if usage := getattr(response, "usage", None):
-            usage_metadata = _create_usage_metadata(usage.model_dump())
+            usage_dict = usage.model_dump()
+            usage_metadata = _create_usage_metadata(usage_dict)
         else:
             usage_metadata = None
+            usage_dict = {}
 
         additional_kwargs = {}
         for attr in ["citations", "images", "related_questions", "search_results"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
+        # Build response_metadata with model_name and num_search_queries
+        response_metadata: dict[str, Any] = {
+            "model_name": getattr(response, "model", self.model)
+        }
+        if num_search_queries := usage_dict.get("num_search_queries"):
+            response_metadata["num_search_queries"] = num_search_queries
+
         message = AIMessage(
             content=response.choices[0].message.content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
-            response_metadata={"model_name": getattr(response, "model", self.model)},
+            response_metadata=response_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
