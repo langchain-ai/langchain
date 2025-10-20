@@ -16,17 +16,18 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
-version = "1.0.0rc2"
+version = "1.0.0"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://reference.langchain.com/python/langchain_core/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = ["ruff>=0.13.1,<0.14.0"]
@@ -133,4 +134,3 @@ markers = [ "requires: mark tests as requiring a specific library", "compile: ma
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
-

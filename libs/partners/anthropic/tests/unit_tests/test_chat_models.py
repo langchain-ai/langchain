@@ -1325,7 +1325,7 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     assert _client.return_value.messages.count_tokens.call_args.kwargs["foo"] == "bar"
 
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",
+        model="claude-sonnet-4-5",
         betas=["context-management-2025-06-27"],
         context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
@@ -1488,7 +1488,7 @@ def test_cache_control_kwarg() -> None:
 
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
         context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
@@ -1514,8 +1514,8 @@ def test_anthropic_model_params() -> None:
         "ls_temperature": None,
     }
 
-    ls_params = llm._get_ls_params(model="claude-opus-4-1-20250805")
-    assert ls_params.get("ls_model_name") == "claude-opus-4-1-20250805"
+    ls_params = llm._get_ls_params(model="claude-opus-4-1")
+    assert ls_params.get("ls_model_name") == "claude-opus-4-1"
 
 
 def test_streaming_cache_token_reporting() -> None:

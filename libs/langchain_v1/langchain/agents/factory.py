@@ -3,15 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -31,7 +23,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
-    PublicAgentState,
+    _InputAgentState,
+    _OutputAgentState,
 )
 from langchain.agents.structured_output import (
     AutoStrategy,
@@ -527,12 +520,12 @@ def create_agent(  # noqa: PLR0915
     name: str | None = None,
     cache: BaseCache | None = None,
 ) -> CompiledStateGraph[
-    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
 ]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
     For more details on using `create_agent`,
-    visit [Agents](https://docs.langchain.com/oss/python/langchain/agents) documentation.
+    visit the [Agents](https://docs.langchain.com/oss/python/langchain/agents) docs.
 
     Args:
         model: The language model for the agent. Can be a string identifier
@@ -600,7 +593,7 @@ def create_agent(  # noqa: PLR0915
 
 
         graph = create_agent(
-            model="anthropic:claude-sonnet-4-5-20250929",
+            model="anthropic:claude-sonnet-4-5",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )
@@ -780,7 +773,7 @@ def create_agent(  # noqa: PLR0915
 
     # create graph, add nodes
     graph: StateGraph[
-        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
     ] = StateGraph(
         state_schema=resolved_state_schema,
         input_schema=input_schema,
@@ -1225,6 +1218,15 @@ def create_agent(  # noqa: PLR0915
     graph.add_edge(START, entry_node)
     # add conditional edges only if tools exist
     if tool_node is not None:
+        # Only include exit_node in destinations if any tool has return_direct=True
+        # or if there are structured output tools
+        tools_to_model_destinations = [loop_entry_node]
+        if (
+            any(tool.return_direct for tool in tool_node.tools_by_name.values())
+            or structured_output_tools
+        ):
+            tools_to_model_destinations.append(exit_node)
+
         graph.add_conditional_edges(
             "tools",
             _make_tools_to_model_edge(
@@ -1233,7 +1235,7 @@ def create_agent(  # noqa: PLR0915
                 structured_output_tools=structured_output_tools,
                 end_destination=exit_node,
             ),
-            [loop_entry_node, exit_node],
+            tools_to_model_destinations,
         )
 
         # base destinations are tools and exit_node
@@ -1498,10 +1500,12 @@ def _make_tools_to_model_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         # 1. Exit condition: All executed tools have return_direct=True
-        if all(
-            tool_node.tools_by_name[c["name"]].return_direct
-            for c in last_ai_message.tool_calls
-            if c["name"] in tool_node.tools_by_name
+        # Filter to only client-side tools (provider tools are not in tool_node)
+        client_side_tool_calls = [
+            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        ]
+        if client_side_tool_calls and all(
+            tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
         ):
             return end_destination
 
@@ -1518,7 +1522,9 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, _InputAgentState, _OutputAgentState[ResponseT]
+    ],
     *,
     name: str,
     default_destination: str,
