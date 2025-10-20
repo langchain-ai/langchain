@@ -20,12 +20,13 @@ description = "CLI for interacting with LangChain"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-cli%3D%3D1%22"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://docs.langchain.com/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-cli%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.scripts]
 langchain = "langchain_cli.cli:app"
@@ -42,14 +43,14 @@ lint = [
 ]
 test = [
     "langchain-core",
-    "langchain"
+    "langchain-classic"
 ]
-typing = ["langchain"]
+typing = ["langchain-classic"]
 test_integration = []
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
-langchain = { path = "../langchain", editable = true }
+langchain-classic = { path = "../langchain", editable = true }
 
 [tool.ruff.format]
 docstring-code-format = true
