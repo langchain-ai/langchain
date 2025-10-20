@@ -628,7 +628,7 @@ class _ToolNode(RunnableCallable):
         injected_tool_calls = []
         input_types = [input_type] * len(tool_calls)
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
             injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
             outputs = list(
@@ -663,9 +663,9 @@ class _ToolNode(RunnableCallable):
         injected_tool_calls = []
         coros = []
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
             injected_tool_calls.append(injected_call)
-            coros.append(self._arun_one(injected_call, input_type, tool_runtime))
+            coros.append(self._arun_one(injected_call, input_type, tool_runtime))  # type: ignore[arg-type]
         outputs = await asyncio.gather(*coros)
 
         return self._combine_tool_outputs(outputs, input_type)
