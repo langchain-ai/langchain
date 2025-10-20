@@ -188,6 +188,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             )
         ],
+        response_metadata={"model_provider": "mistralai"},
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message
@@ -231,6 +232,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             ),
         ],
+        response_metadata={"model_provider": "mistralai"},
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message

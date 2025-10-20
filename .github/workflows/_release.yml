@@ -4,8 +4,8 @@
 #
 # Handles version bumping, building, and publishing to PyPI with authentication.
 
-name: '🚀 Package Release'
-run-name: 'Release ${{ inputs.working-directory }} ${{ inputs.release-version }}'
+name: "🚀 Package Release"
+run-name: "Release ${{ inputs.working-directory }} ${{ inputs.release-version }}"
 on:
   workflow_call:
     inputs:
@@ -19,11 +19,11 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
-        default: 'libs/langchain'
+        default: "libs/langchain"
       release-version:
         required: true
         type: string
-        default: '0.1.0'
+        default: "0.1.0"
         description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
@@ -36,6 +36,9 @@ env:
   UV_FROZEN: "true"
   UV_NO_SYNC: "true"
 
+permissions:
+  contents: write # Required for creating GitHub releases
+
 jobs:
   # Build the distribution package and extract version info
   # Runs in isolated environment with minimal permissions for security
@@ -43,6 +46,8 @@ jobs:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     outputs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
@@ -95,6 +100,8 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
@@ -226,6 +233,8 @@ jobs:
       - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
@@ -382,10 +391,12 @@ jobs:
       - test-pypi-publish
       - pre-release-checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         partner: [openai, anthropic]
-      fail-fast: false  # Continue testing other partners if one fails
+      fail-fast: false # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
@@ -431,7 +442,7 @@ jobs:
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
-            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z]+[0-9]+)?$' \
             | sort -Vr \
             | head -n 1
           )"

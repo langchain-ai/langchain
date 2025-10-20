@@ -1,11 +1,11 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
     "tenacity!=8.4.0,>=8.1.0,<10.0.0",
@@ -16,14 +16,18 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
-version = "0.3.76"
+version = "1.0.0"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://reference.langchain.com/python/langchain_core/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = ["ruff>=0.13.1,<0.14.0"]
@@ -73,9 +77,6 @@ disallow_any_generics = false
 warn_return_any = false
 
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.format]
 docstring-code-format = true
 
@@ -112,7 +113,6 @@ flake8-annotations.mypy-init-return = true
 flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -120,6 +120,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
+"langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D1", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
@@ -133,4 +134,3 @@ markers = [ "requires: mark tests as requiring a specific library", "compile: ma
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
-

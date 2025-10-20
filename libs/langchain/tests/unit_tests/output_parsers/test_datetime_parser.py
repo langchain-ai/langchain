@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from langchain_core.exceptions import OutputParserException
 
-from langchain.output_parsers.datetime import DatetimeOutputParser
+from langchain_classic.output_parsers.datetime import DatetimeOutputParser
 
 
 def test_datetime_output_parser_parse() -> None:

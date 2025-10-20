@@ -1,4 +1,4 @@
-from langchain import chains
+from langchain_classic import chains
 
 EXPECTED_ALL = [
     "APIChain",

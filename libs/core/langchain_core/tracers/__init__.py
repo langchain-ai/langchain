@@ -1,12 +1,4 @@
-"""**Tracers** are classes for tracing runs.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseCallbackHandler --> BaseTracer --> <name>Tracer  # Examples: LangChainTracer, RootListenersTracer
-                                       --> <name>  # Examples: LogStreamCallbackHandler
-"""  # noqa: E501
+"""**Tracers** are classes for tracing runs."""
 
 from typing import TYPE_CHECKING
 

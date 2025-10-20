@@ -15,7 +15,7 @@ MODEL = "claude-3-5-haiku-latest"
 
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
-    """Use the standard ChatModel integration tests against the ChatAnthropic class."""
+    """Use standard chat model integration tests against the `ChatAnthropic` class."""
 
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
@@ -39,6 +39,10 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     @property
     def supports_image_tool_message(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_tool_message(self) -> bool:
         return True
 
     @property

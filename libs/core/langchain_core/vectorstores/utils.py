@@ -1,4 +1,4 @@
-"""Internal utilities for the in memory implementation of VectorStore.
+"""Internal utilities for the in memory implementation of `VectorStore`.
 
 These are part of a private API, and users should not use them directly
 as they can change without notice.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 try:
     import numpy as np
@@ -25,7 +25,7 @@ except ImportError:
     _HAS_SIMSIMD = False
 
 if TYPE_CHECKING:
-    Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
+    Matrix = list[list[float]] | list[np.ndarray] | np.ndarray
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +112,8 @@ def maximal_marginal_relevance(
     Args:
         query_embedding: The query embedding.
         embedding_list: A list of embeddings.
-        lambda_mult: The lambda parameter for MMR. Default is 0.5.
-        k: The number of embeddings to return. Default is 4.
+        lambda_mult: The lambda parameter for MMR.
+        k: The number of embeddings to return.
 
     Returns:
         A list of indices of the embeddings to return.

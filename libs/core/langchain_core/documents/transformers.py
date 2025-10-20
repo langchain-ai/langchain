@@ -20,35 +20,34 @@ class BaseDocumentTransformer(ABC):
     sequence of transformed Documents.
 
     Example:
-        .. code-block:: python
+        ```python
+        class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
+            embeddings: Embeddings
+            similarity_fn: Callable = cosine_similarity
+            similarity_threshold: float = 0.95
 
-            class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
-                embeddings: Embeddings
-                similarity_fn: Callable = cosine_similarity
-                similarity_threshold: float = 0.95
+            class Config:
+                arbitrary_types_allowed = True
 
-                class Config:
-                    arbitrary_types_allowed = True
+            def transform_documents(
+                self, documents: Sequence[Document], **kwargs: Any
+            ) -> Sequence[Document]:
+                stateful_documents = get_stateful_documents(documents)
+                embedded_documents = _get_embeddings_from_stateful_docs(
+                    self.embeddings, stateful_documents
+                )
+                included_idxs = _filter_similar_embeddings(
+                    embedded_documents,
+                    self.similarity_fn,
+                    self.similarity_threshold,
+                )
+                return [stateful_documents[i] for i in sorted(included_idxs)]
 
-                def transform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    stateful_documents = get_stateful_documents(documents)
-                    embedded_documents = _get_embeddings_from_stateful_docs(
-                        self.embeddings, stateful_documents
-                    )
-                    included_idxs = _filter_similar_embeddings(
-                        embedded_documents,
-                        self.similarity_fn,
-                        self.similarity_threshold,
-                    )
-                    return [stateful_documents[i] for i in sorted(included_idxs)]
-
-                async def atransform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    raise NotImplementedError
-
+            async def atransform_documents(
+                self, documents: Sequence[Document], **kwargs: Any
+            ) -> Sequence[Document]:
+                raise NotImplementedError
+        ```
     """
 
     @abstractmethod
