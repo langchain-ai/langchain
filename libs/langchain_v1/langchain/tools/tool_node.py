@@ -49,7 +49,6 @@ from typing import (
     Generic,
     Literal,
     TypedDict,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -84,7 +83,7 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.store.base import BaseStore  # noqa: TC002
 from langgraph.types import Command, Send, StreamWriter
 from pydantic import BaseModel, ValidationError
-from typing_extensions import Unpack
+from typing_extensions import TypeVar, Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -95,7 +94,7 @@ if TYPE_CHECKING:
 # on if this lives in LangChain or LangGraph... ideally would have some typed
 # messages key
 StateT = TypeVar("StateT", default=dict)
-ContextT = TypeVar("ContextT")
+ContextT = TypeVar("ContextT", default=None)
 
 INVALID_TOOL_NAME_ERROR_TEMPLATE = (
     "Error: {requested_tool} is not a valid tool, try one of [{available_tools}]."
