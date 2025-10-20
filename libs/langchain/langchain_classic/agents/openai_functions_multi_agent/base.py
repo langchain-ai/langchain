@@ -212,7 +212,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Default is None.
+            callbacks: Callbacks to use.
             **kwargs: User inputs.
 
         Returns:
@@ -243,7 +243,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Default is None.
+            callbacks: Callbacks to use.
             **kwargs: User inputs.
 
         Returns:
@@ -275,7 +275,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             system_message: Message to use as the system message that will be the
                 first in the prompt.
             extra_prompt_messages: Prompt messages that will be placed between the
-                system message and the new human input. Default is None.
+                system message and the new human input.
 
         Returns:
             A prompt template to pass into this agent.
@@ -313,10 +313,10 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         Args:
             llm: The language model to use.
             tools: A list of tools to use.
-            callback_manager: The callback manager to use. Default is None.
-            extra_prompt_messages: Extra prompt messages to use. Default is None.
-            system_message: The system message to use.
-                Default is a default system message.
+            callback_manager: The callback manager to use.
+            extra_prompt_messages: Extra prompt messages to use.
+            system_message: The system message to use. Default is a default system
+                message.
             kwargs: Additional arguments.
         """
         system_message_ = (

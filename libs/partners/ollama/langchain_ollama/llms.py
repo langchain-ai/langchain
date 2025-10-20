@@ -53,11 +53,11 @@ class OllamaLLM(BaseLLM):
             Random number seed for generation reproducibility.
 
     Key init args — client params:
-        base_url: str | None
+        base_url:
             Base URL where Ollama server is hosted.
-        keep_alive: int | str | None
+        keep_alive:
             How long the model stays loaded into memory.
-        format: Literal["", "json"]
+        format:
             Specify the format of the output.
 
     See full list of supported init args and their descriptions in the params section.

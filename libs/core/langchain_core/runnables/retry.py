@@ -126,7 +126,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     exponential_jitter_params: ExponentialJitterParams | None = None
     """Parameters for `tenacity.wait_exponential_jitter`. Namely: `initial`,
-    `max`, `exp_base`, and `jitter` (all float values).
+    `max`, `exp_base`, and `jitter` (all `float` values).
     """
 
     max_attempt_number: int = 3

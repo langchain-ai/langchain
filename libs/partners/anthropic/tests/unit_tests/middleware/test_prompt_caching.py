@@ -244,3 +244,68 @@ async def test_anthropic_prompt_caching_middleware_async_min_messages() -> None:
     assert isinstance(result, ModelResponse)
     # Cache control should NOT be added when message count is below minimum
     assert fake_request.model_settings == {}
+
+
+async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() -> None:
+    """Test async path counts system prompt in message count."""
+    middleware = AnthropicPromptCachingMiddleware(
+        type="ephemeral", ttl="1h", min_messages_to_cache=3
+    )
+
+    # Create a mock ChatAnthropic instance
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+
+    # Test with system prompt: 2 messages + 1 system = 3 total (meets minimum)
+    fake_request = ModelRequest(
+        model=mock_chat_anthropic,
+        messages=[HumanMessage("Hello"), HumanMessage("World")],
+        system_prompt="You are a helpful assistant",
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello"), HumanMessage("World")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    result = await middleware.awrap_model_call(fake_request, mock_handler)
+    assert isinstance(result, ModelResponse)
+    # Cache control should be added when system prompt pushes count to minimum
+    assert fake_request.model_settings == {
+        "cache_control": {"type": "ephemeral", "ttl": "1h"}
+    }
+
+
+async def test_anthropic_prompt_caching_middleware_async_default_values() -> None:
+    """Test async path with default middleware initialization."""
+    # Test with default values (min_messages_to_cache=0)
+    middleware = AnthropicPromptCachingMiddleware()
+
+    # Create a mock ChatAnthropic instance
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+
+    # Single message should trigger caching with default settings
+    fake_request = ModelRequest(
+        model=mock_chat_anthropic,
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    result = await middleware.awrap_model_call(fake_request, mock_handler)
+    assert isinstance(result, ModelResponse)
+    # Check that model_settings were added with default values
+    assert fake_request.model_settings == {
+        "cache_control": {"type": "ephemeral", "ttl": "5m"}
+    }

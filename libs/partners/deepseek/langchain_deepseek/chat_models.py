@@ -38,20 +38,20 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```
 
     Key init args — completion params:
-        model: str
-            Name of DeepSeek model to use, e.g. "deepseek-chat".
-        temperature: float
+        model:
+            Name of DeepSeek model to use, e.g. `"deepseek-chat"`.
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: float | None
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
-            DeepSeek API key. If not passed in will be read from env var DEEPSEEK_API_KEY.
+        api_key:
+            DeepSeek API key. If not passed in will be read from env var `DEEPSEEK_API_KEY`.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -263,6 +263,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         if not isinstance(response, openai.BaseModel):
             return rtn
 
+        for generation in rtn.generations:
+            if generation.message.response_metadata is None:
+                generation.message.response_metadata = {}
+            generation.message.response_metadata["model_provider"] = "deepseek"
+
         choices = getattr(response, "choices", None)
         if choices and hasattr(choices[0].message, "reasoning_content"):
             rtn.generations[0].message.additional_kwargs["reasoning_content"] = choices[
@@ -294,6 +299,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
+                generation_chunk.message.response_metadata = {
+                    **generation_chunk.message.response_metadata,
+                    "model_provider": "deepseek",
+                }
                 if (
                     reasoning_content := top.get("delta", {}).get("reasoning_content")
                 ) is not None:
@@ -378,15 +387,17 @@ class ChatDeepSeek(BaseChatOpenAI):
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
-                - a `TypedDict` class (support added in 0.1.20),
+                - a `TypedDict` class,
                 - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -395,16 +406,15 @@ class ChatDeepSeek(BaseChatOpenAI):
                 - `'json_mode'`:
                     Uses DeepSeek's [JSON mode feature](https://api-docs.deepseek.com/guides/json_mode).
 
-                !!! warning "Behavior changed in 0.1.3"
-                    Added support for `'json_mode'`.
-
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 Whether to enable strict schema adherence when generating the function
@@ -416,18 +426,19 @@ class ChatDeepSeek(BaseChatOpenAI):
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         # Some applications require that incompatible parameters (e.g., unsupported
         # methods) be handled.
         if method == "json_schema":

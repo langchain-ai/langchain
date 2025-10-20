@@ -10,7 +10,7 @@ def _convert_v0_multimodal_input_to_v1(
 ) -> list[types.ContentBlock]:
     """Convert v0 multimodal blocks to v1 format.
 
-    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
+    During the `content_blocks` parsing process, we wrap blocks not recognized as a v1
     block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any v0 format
     blocks to v1 format.

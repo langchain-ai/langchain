@@ -201,7 +201,7 @@ class Tee(Generic[T]):
 
         Args:
             iterable: The iterable to split.
-            n: The number of iterators to create. Defaults to 2.
+            n: The number of iterators to create.
             lock: The lock to synchronise access to the shared buffers.
 
         """

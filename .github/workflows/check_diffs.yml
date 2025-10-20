@@ -184,15 +184,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # We have to use 3.12 as 3.13 is not yet supported
       - name: "📦 Install UV Package Manager"
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: "📦 Install Test Dependencies"
         run: uv sync --group test
