@@ -534,7 +534,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -1810,7 +1810,7 @@ def test_search_result_top_level() -> None:
 
 def test_memory_tool() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
     )
     llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
@@ -1824,7 +1824,7 @@ def test_memory_tool() -> None:
 def test_context_management() -> None:
     # TODO: update example to trigger action
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
         context_management={
             "edits": [

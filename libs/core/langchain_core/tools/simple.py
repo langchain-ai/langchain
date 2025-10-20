@@ -176,7 +176,7 @@ class Tool(BaseTool):
             func: The function to create the tool from.
             name: The name of the tool.
             description: The description of the tool.
-            return_direct: Whether to return the output directly. Defaults to `False`.
+            return_direct: Whether to return the output directly.
             args_schema: The schema of the tool's input arguments.
             coroutine: The asynchronous version of the function.
             **kwargs: Additional arguments to pass to the tool.

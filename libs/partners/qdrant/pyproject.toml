@@ -9,21 +9,21 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "qdrant-client>=1.10.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.0.0a7,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
 ]
 name = "langchain-qdrant"
-version = "1.0.0a1"
+version = "1.0.0"
 description = "An integration package connecting Qdrant and LangChain"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/oss/python/integrations/providers/qdrant"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/qdrant"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-qdrant%22"
-docs = "https://reference.langchain.com/python/integrations/langchain_qdrant/"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/qdrant"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_qdrant/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/qdrant"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-qdrant%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 fastembed = [

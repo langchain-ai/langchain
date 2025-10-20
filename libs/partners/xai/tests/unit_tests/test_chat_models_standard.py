@@ -7,6 +7,8 @@ from langchain_tests.unit_tests import (  # type: ignore[import-not-found]
 
 from langchain_xai import ChatXAI
 
+MODEL_NAME = "grok-4"
+
 
 class TestXAIStandard(ChatModelUnitTests):
     @property
@@ -15,7 +17,7 @@ class TestXAIStandard(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "grok-beta"}
+        return {"model": MODEL_NAME}
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
@@ -24,7 +26,7 @@ class TestXAIStandard(ChatModelUnitTests):
                 "XAI_API_KEY": "api_key",
             },
             {
-                "model": "grok-beta",
+                "model": MODEL_NAME,
             },
             {
                 "xai_api_key": "api_key",

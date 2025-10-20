@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated, Literal
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
@@ -204,3 +204,16 @@ class TodoListMiddleware(AgentMiddleware):
             else self.system_prompt
         )
         return handler(request)
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Update the system prompt to include the todo system prompt (async version)."""
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
+        return await handler(request)

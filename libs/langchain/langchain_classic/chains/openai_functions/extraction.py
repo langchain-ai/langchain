@@ -69,7 +69,7 @@ Passage:
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
@@ -94,8 +94,7 @@ def create_extraction_chain(
         prompt: The prompt to use for extraction.
         tags: Optional list of tags to associate with the chain.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`.
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -139,7 +138,7 @@ def create_extraction_chain(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
@@ -162,8 +161,7 @@ def create_extraction_chain_pydantic(
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.

@@ -36,20 +36,20 @@ class Chat__ModuleName__(BaseChatModel):
 
     # TODO: Populate with relevant params.
     Key init args — completion params:
-        model: str
+        model:
             Name of __ModuleName__ model to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        timeout: float | None
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
+        api_key:
             __ModuleName__ API key. If not passed in will be read from env var
             __MODULE_NAME___API_KEY.
 

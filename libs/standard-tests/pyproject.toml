@@ -7,7 +7,7 @@ authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a7,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
     "pytest>=7.0.0,<9.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -21,17 +21,18 @@ dependencies = [
     "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-tests"
-version = "1.0.0a2"
+version = "1.0.0"
 description = "Standard tests for LangChain implementations"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://docs.langchain.com/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = ["langchain-core"]
