@@ -187,8 +187,7 @@ class BaseOpenAI(BaseLLM):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: SecretStr | None | Callable[[], str] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: str | None = Field(
@@ -283,7 +282,7 @@ class BaseOpenAI(BaseLLM):
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
             elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key  # type: ignore[assignment]
+                api_key_value = self.openai_api_key
 
         client_params: dict = {
             "api_key": api_key_value,

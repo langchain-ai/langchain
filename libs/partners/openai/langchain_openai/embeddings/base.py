@@ -190,8 +190,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: SecretStr | None | Callable[[], str] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_organization: str | None = Field(
@@ -300,7 +299,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
             elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key  # type: ignore[assignment]
+                api_key_value = self.openai_api_key
 
         client_params: dict = {
             "api_key": api_key_value,
