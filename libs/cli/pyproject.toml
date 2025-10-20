@@ -43,14 +43,14 @@ lint = [
 ]
 test = [
     "langchain-core",
-    "langchain"
+    "langchain-classic"
 ]
-typing = ["langchain"]
+typing = ["langchain-classic"]
 test_integration = []
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
-langchain = { path = "../langchain", editable = true }
+langchain-classic = { path = "../langchain", editable = true }
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -1,4 +1,6 @@
-"""`caches` provides an optional caching layer for language models.
+"""Optional caching layer for language models.
+
+Distinct from provider-based [prompt caching](https://docs.langchain.com/oss/python/langchain/models#prompt-caching).
 
 !!! warning
     This is a beta feature! Please be wary of deploying experimental code to production

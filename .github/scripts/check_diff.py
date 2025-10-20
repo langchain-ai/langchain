@@ -130,21 +130,12 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.12"]  # 3.13 is not yet supported
+        py_versions = ["3.13"]
     elif dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     # custom logic for specific directories
-
-    elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.10", "3.14"]
-    elif dir_ == "libs/langchain_v1":
-        py_versions = ["3.10", "3.14"]
-    elif dir_ in {"libs/cli", "libs/partners/chroma", "libs/partners/nomic"}:
+    elif dir_ in {"libs/partners/chroma", "libs/partners/nomic"}:
         py_versions = ["3.10", "3.13"]
-
-    elif dir_ == ".":
-        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
-        py_versions = ["3.10", "3.12"]
     else:
         py_versions = ["3.10", "3.14"]
 

@@ -525,7 +525,7 @@ def create_agent(  # noqa: PLR0915
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
     For more details on using `create_agent`,
-    visit [Agents](https://docs.langchain.com/oss/python/langchain/agents) documentation.
+    visit the [Agents](https://docs.langchain.com/oss/python/langchain/agents) docs.
 
     Args:
         model: The language model for the agent. Can be a string identifier
