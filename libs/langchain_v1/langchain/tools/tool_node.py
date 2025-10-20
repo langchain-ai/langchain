@@ -91,7 +91,10 @@ if TYPE_CHECKING:
 
     from langgraph.runtime import Runtime
 
-StateT = TypeVar("StateT")
+# right now we use a dict as the default, can change this to AgentState, but depends
+# on if this lives in LangChain or LangGraph... ideally would have some typed
+# messages key
+StateT = TypeVar("StateT", default=dict)
 ContextT = TypeVar("ContextT")
 
 INVALID_TOOL_NAME_ERROR_TEMPLATE = (
