@@ -142,8 +142,8 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content: "These docs will be deprecated and no longer maintained with the release of LangChain v1.0 in October 2025. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the v1.0 alpha docs</a>",
-        backgroundColor: "#FFAE42",
+        content: "THESE DOCS ARE DEPRECATED and no longer maintained. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the new v1.0 docs</a>",
+        backgroundColor: "#790000ff",
       },
       prism: {
         theme: {
