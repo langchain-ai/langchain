@@ -49,7 +49,6 @@ from typing import (
     Generic,
     Literal,
     TypedDict,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -84,15 +83,18 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.store.base import BaseStore  # noqa: TC002
 from langgraph.types import Command, Send, StreamWriter
 from pydantic import BaseModel, ValidationError
-from typing_extensions import Unpack
+from typing_extensions import TypeVar, Unpack
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from langgraph.runtime import Runtime
 
-StateT = TypeVar("StateT")
-ContextT = TypeVar("ContextT")
+# right now we use a dict as the default, can change this to AgentState, but depends
+# on if this lives in LangChain or LangGraph... ideally would have some typed
+# messages key
+StateT = TypeVar("StateT", default=dict)
+ContextT = TypeVar("ContextT", default=None)
 
 INVALID_TOOL_NAME_ERROR_TEMPLATE = (
     "Error: {requested_tool} is not a valid tool, try one of [{available_tools}]."
@@ -626,7 +628,7 @@ class _ToolNode(RunnableCallable):
         injected_tool_calls = []
         input_types = [input_type] * len(tool_calls)
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
             injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
             outputs = list(
@@ -661,9 +663,9 @@ class _ToolNode(RunnableCallable):
         injected_tool_calls = []
         coros = []
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)
+            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
             injected_tool_calls.append(injected_call)
-            coros.append(self._arun_one(injected_call, input_type, tool_runtime))
+            coros.append(self._arun_one(injected_call, input_type, tool_runtime))  # type: ignore[arg-type]
         outputs = await asyncio.gather(*coros)
 
         return self._combine_tool_outputs(outputs, input_type)
