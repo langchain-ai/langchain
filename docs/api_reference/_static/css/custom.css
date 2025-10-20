@@ -394,3 +394,21 @@ p {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
+
+/* Deprecation announcement banner styling */
+.bd-header-announcement {
+  background-color: #790000 !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.bd-header-announcement a {
+  color: white !important;
+  text-decoration: underline !important;
+}
+
+.bd-header-announcement a:hover {
+  color: #f0f0f0 !important;
+}

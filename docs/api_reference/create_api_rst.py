@@ -618,11 +618,14 @@ def _build_index(dirs: List[str]) -> None:
 Welcome to the LangChain v0.3 Python API reference. This is a reference for all
 `langchain-x` packages.
 
+```{danger}
 These pages refer to the the v0.3 versions of LangChain packages and integrations. To
 visit the documentation for the latest versions of LangChain, visit [https://docs.langchain.com](https://docs.langchain.com)
 and [https://reference.langchain.com/python/](https://reference.langchain.com/python/) (for references.)
 
 For the legacy API reference (<v0.3) hosted on ReadTheDocs see [https://api.python.langchain.com/](https://api.python.langchain.com/).
+```
+
 """
 
     if main_:

@@ -142,7 +142,7 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content: "THESE DOCS ARE DEPRECATED and no longer maintained. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the new v1.0 docs</a>",
+        content: "⚠️ THESE DOCS ARE OUTDATED. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the new v1.0 docs</a>",
         backgroundColor: "#790000ff",
       },
       prism: {
