@@ -748,7 +748,9 @@ class _ToolNode(RunnableCallable):
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                # Filter out injected arguments before including in error message
+                filtered_args = self._filter_injected_args(call["name"], call["args"])
+                raise ToolInvocationError(call["name"], exc, filtered_args) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -893,7 +895,9 @@ class _ToolNode(RunnableCallable):
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                # Filter out injected arguments before including in error message
+                filtered_args = self._filter_injected_args(call["name"], call["args"])
+                raise ToolInvocationError(call["name"], exc, filtered_args) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -1196,6 +1200,42 @@ class _ToolNode(RunnableCallable):
         tool_call_with_state = self._inject_state(tool_call_copy, tool_runtime.state)
         tool_call_with_store = self._inject_store(tool_call_with_state, tool_runtime.store)
         return self._inject_runtime(tool_call_with_store, tool_runtime)
+
+    def _filter_injected_args(self, tool_name: str, tool_args: dict[str, Any]) -> dict[str, Any]:
+        """Filter out injected arguments from tool arguments.
+
+        When tool invocation fails, we want to show only the model-provided arguments
+        in error messages, not the runtime-injected arguments (state, store, runtime).
+
+        Args:
+            tool_name: The name of the tool.
+            tool_args: The tool arguments dictionary (may include injected args).
+
+        Returns:
+            A new dictionary with injected arguments removed.
+        """
+        if tool_name not in self.tools_by_name:
+            return tool_args
+
+        # Collect all injected argument names
+        injected_arg_names: set[str] = set()
+
+        # Add state argument names
+        state_args = self._tool_to_state_args.get(tool_name, {})
+        injected_arg_names.update(state_args.keys())
+
+        # Add store argument name
+        store_arg = self._tool_to_store_arg.get(tool_name)
+        if store_arg:
+            injected_arg_names.add(store_arg)
+
+        # Add runtime argument name
+        runtime_arg = self._tool_to_runtime_arg.get(tool_name)
+        if runtime_arg:
+            injected_arg_names.add(runtime_arg)
+
+        # Filter out injected arguments
+        return {k: v for k, v in tool_args.items() if k not in injected_arg_names}
 
     def _validate_tool_command(
         self,

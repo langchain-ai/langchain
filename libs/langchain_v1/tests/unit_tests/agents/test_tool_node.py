@@ -37,6 +37,7 @@ from typing_extensions import TypedDict
 from langchain.tools import (
     InjectedState,
     InjectedStore,
+    ToolRuntime,
 )
 from langchain.tools.tool_node import _ToolNode
 from langchain.tools.tool_node import TOOL_CALL_ERROR_TEMPLATE, ToolInvocationError, tools_condition
@@ -1548,3 +1549,140 @@ def test_tool_node_stream_writer() -> None:
             },
         ),
     ]
+
+
+def test_tool_invocation_error_excludes_injected_args() -> None:
+    """Test that ToolInvocationError excludes injected arguments from error messages.
+
+    When a tool with injected arguments (state, store, runtime) fails validation,
+    the error message should only show the model-provided arguments, not the
+    injected runtime context.
+    """
+    store = InMemoryStore()
+
+    # Create a tool with multiple injected arguments
+    @dec_tool
+    def tool_with_injections(
+        x: int,  # Model-provided arg
+        state: Annotated[dict[str, Any], InjectedState],  # Injected state
+        store_arg: Annotated[BaseStore, InjectedStore],  # Injected store
+        runtime: ToolRuntime,  # Injected runtime
+    ) -> str:
+        """Tool that requires injected arguments."""
+        # This validation error will be raised if x is wrong type
+        return f"x={x}"
+
+    node = _ToolNode([tool_with_injections], handle_tool_errors=True)
+
+    # Create a tool call with invalid argument (string instead of int)
+    # This will cause a ValidationError
+    tool_call = ToolCall(
+        name="tool_with_injections",
+        args={"x": "not_an_int"},  # Invalid: should be int
+        id="test_call_123",
+    )
+
+    msg = AIMessage("test", tool_calls=[tool_call])
+
+    # Invoke the node - should handle the validation error
+    result = node.invoke({"messages": [msg]}, config=_create_config_with_runtime(store=store))
+
+    # Get the error message from the tool message
+    tool_message = result["messages"][-1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.status == "error"
+
+    error_content = tool_message.content
+
+    # Verify the error message contains the model-provided argument
+    assert "x" in error_content
+    assert "not_an_int" in error_content
+
+    # Verify the error message does NOT contain injected arguments or their values
+    # These should be filtered out
+    assert "state" not in error_content.lower() or "state=" not in error_content.lower()
+    assert "store_arg" not in error_content.lower()
+    assert "runtime" not in error_content.lower()
+    assert "ToolRuntime" not in error_content
+    assert "InMemoryStore" not in error_content
+    assert "BaseStore" not in error_content
+
+    # The error should mention the tool name
+    assert "tool_with_injections" in error_content
+
+
+async def test_tool_invocation_error_excludes_injected_args_async() -> None:
+    """Test async version: ToolInvocationError excludes injected arguments.
+
+    Similar to the sync test, but verifies the async execution path also
+    properly filters injected arguments from error messages.
+    """
+
+    @dec_tool
+    async def async_tool_with_runtime(
+        value: str,  # Model-provided arg
+        runtime: ToolRuntime,  # Injected runtime
+    ) -> str:
+        """Async tool with runtime injection."""
+        return f"value={value}"
+
+    node = _ToolNode([async_tool_with_runtime], handle_tool_errors=True)
+
+    # Create a tool call with invalid argument type
+    tool_call = ToolCall(
+        name="async_tool_with_runtime",
+        args={"value": 123},  # Invalid: should be string, not int
+        id="async_call_456",
+    )
+
+    msg = AIMessage("test", tool_calls=[tool_call])
+
+    # Invoke async
+    result = await node.ainvoke({"messages": [msg]}, config=_create_config_with_runtime())
+
+    # Get the error message
+    tool_message = result["messages"][-1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.status == "error"
+
+    error_content = tool_message.content
+
+    # Verify error contains the model-provided argument
+    assert "value" in error_content
+
+    # Verify error does NOT contain injected runtime
+    assert "runtime" not in error_content.lower() or "runtime=" not in error_content.lower()
+    assert "ToolRuntime" not in error_content
+
+
+def test_tool_invocation_error_with_no_injections() -> None:
+    """Test that tools without injections still show all args in error messages."""
+
+    @dec_tool
+    def simple_tool(a: int, b: int) -> int:
+        """Simple tool with no injections."""
+        return a + b
+
+    node = _ToolNode([simple_tool], handle_tool_errors=True)
+
+    # Create invalid call
+    tool_call = ToolCall(
+        name="simple_tool",
+        args={"a": "invalid", "b": 2},  # 'a' should be int
+        id="simple_call",
+    )
+
+    msg = AIMessage("test", tool_calls=[tool_call])
+
+    result = node.invoke({"messages": [msg]}, config=_create_config_with_runtime())
+
+    tool_message = result["messages"][-1]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.status == "error"
+
+    error_content = tool_message.content
+
+    # Both args should be in the error since neither is injected
+    assert "a" in error_content
+    assert "invalid" in error_content
+    assert "b" in error_content
