@@ -68,7 +68,7 @@ from langchain_core.utils.pydantic import (
     create_model_v2,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
-from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 
 
 def _get_tool_call_json_schema(tool: BaseTool) -> dict:
@@ -98,14 +98,6 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
-    """Return the arguments directly."""
-
-    arg1: int
-    arg2: bool
-    arg3: dict | None = None
-
-
-class _MockSchemaV1(BaseModelV1):
     """Return the arguments directly."""
 
     arg1: int
@@ -206,6 +198,21 @@ def test_decorator_with_specified_schema() -> None:
     assert isinstance(tool_func, BaseTool)
     assert tool_func.args_schema == _MockSchema
 
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_decorator_with_specified_schema_pydantic_v1() -> None:
+    """Test that manually specified schemata are passed through to the tool."""
+
+    class _MockSchemaV1(BaseModelV1):
+        """Return the arguments directly."""
+
+        arg1: int
+        arg2: bool
+        arg3: dict | None = None
+
     @tool(args_schema=cast("ArgsSchema", _MockSchemaV1))
     def tool_func_v1(*, arg1: int, arg2: bool, arg3: dict | None = None) -> str:
         return f"{arg1} {arg2} {arg3}"
@@ -229,7 +236,7 @@ def test_decorated_function_schema_equivalent() -> None:
     assert (
         _schema(structured_tool_input.args_schema)["properties"]
         == _schema(_MockSchema)["properties"]
-        == structured_tool_input.args
+        == _normalize_schema(structured_tool_input.args)
     )
 
 
@@ -348,6 +355,10 @@ def test_structured_tool_types_parsed() -> None:
     assert result == expected
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 def test_structured_tool_types_parsed_pydantic_v1() -> None:
     """Test the non-primitive types are correctly passed to structured tools."""
 
@@ -1880,7 +1891,10 @@ def generate_backwards_compatible_v1() -> list[Any]:
 # behave well with either pydantic 1 proper,
 # pydantic v1 from pydantic 2,
 # or pydantic 2 proper.
-TEST_MODELS = generate_models() + generate_backwards_compatible_v1()
+TEST_MODELS = generate_models()
+
+if sys.version_info < (3, 14):
+    TEST_MODELS += generate_backwards_compatible_v1()
 
 
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
@@ -2079,6 +2093,8 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
+        if sys.version_info >= (3, 14):
+            pytest.skip("pydantic.v1 namespace not supported with Python 3.14+")
 
         class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A

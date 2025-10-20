@@ -17,18 +17,17 @@ class AgentTokenBufferMemory(BaseChatMemory):
     """Memory used to save agent output AND intermediate steps.
 
     Args:
-        human_prefix: Prefix for human messages. Default is "Human".
-        ai_prefix: Prefix for AI messages. Default is "AI".
+        human_prefix: Prefix for human messages.
+        ai_prefix: Prefix for AI messages.
         llm: Language model.
-        memory_key: Key to save memory under. Default is "history".
+        memory_key: Key to save memory under.
         max_token_limit: Maximum number of tokens to keep in the buffer.
             Once the buffer exceeds this many tokens, the oldest
-            messages will be pruned. Default is 12000.
-        return_messages: Whether to return messages. Default is True.
-        output_key: Key to save output under. Default is "output".
+            messages will be pruned.
+        return_messages: Whether to return messages.
+        output_key: Key to save output under.
         intermediate_steps_key: Key to save intermediate steps under.
-            Default is "intermediate_steps".
-        format_as_tools: Whether to format as tools. Default is False.
+        format_as_tools: Whether to format as tools.
     """
 
     human_prefix: str = "Human"

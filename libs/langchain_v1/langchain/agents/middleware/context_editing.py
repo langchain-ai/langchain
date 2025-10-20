@@ -198,7 +198,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         edits: Iterable[ContextEdit] | None = None,
         token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
     ) -> None:
-        """Initialise a context editing middleware instance.
+        """Initializes a context editing middleware instance.
 
         Args:
             edits: Sequence of edit strategies to apply. Defaults to a single

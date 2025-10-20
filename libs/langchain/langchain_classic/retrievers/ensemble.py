@@ -61,7 +61,6 @@ class EnsembleRetriever(BaseRetriever):
             weighting for all retrievers.
         c: A constant added to the rank, controlling the balance between the importance
             of high-ranked items and the consideration given to lower-ranked items.
-            Default is 60.
         id_key: The key in the document's metadata used to determine unique documents.
             If not specified, page_content is used.
     """

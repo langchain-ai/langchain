@@ -238,7 +238,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             The validated values.
 
         Raises:
-            `ValueError`: If the schema is not a Pydantic schema.
+            ValueError: If the schema is not a Pydantic schema.
         """
         schema = values["pydantic_schema"]
         if "args_only" not in values:
@@ -264,7 +264,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             partial: Whether to parse partial JSON objects.
 
         Raises:
-            `ValueError`: If the Pydantic schema is not valid.
+            ValueError: If the Pydantic schema is not valid.
 
         Returns:
             The parsed JSON object.
