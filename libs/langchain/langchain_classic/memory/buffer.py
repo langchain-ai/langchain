@@ -1,11 +1,11 @@
 from typing import Any
 
 from langchain_core._api import deprecated
-from langchain_core.memory import BaseMemory
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
 from typing_extensions import override
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.chat_memory import BaseChatMemory
 from langchain_classic.memory.utils import get_prompt_input_key
 

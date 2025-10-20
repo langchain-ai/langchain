@@ -33,7 +33,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """Initialize the RegexMatchStringEvaluator.
 
         Args:
-            flags: Flags to use for the regex match. Defaults to 0 (no flags).
+            flags: Flags to use for the regex match. Defaults to no flags.
         """
         super().__init__()
         self.flags = flags

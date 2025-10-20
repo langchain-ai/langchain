@@ -90,21 +90,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```
 
     Key init args — embedding params:
-        model: str
+        model:
             Name of OpenAI model to use.
-        dimensions: int | None = None
+        dimensions:
             The number of dimensions the resulting output embeddings should have.
             Only supported in `'text-embedding-3'` and later models.
 
     Key init args — client params:
-        api_key: SecretStr | None = None
+        api_key:
             OpenAI API key.
-        organization: str | None = None
+        organization:
             OpenAI organization ID. If not passed in will be read
             from env var `OPENAI_ORG_ID`.
-        max_retries: int = 2
+        max_retries:
             Maximum number of retries to make when generating.
-        request_timeout: float | Tuple[float, float] | Any | None = None
+        request_timeout:
             Timeout for requests to OpenAI completion API
 
     See full list of supported init args and their descriptions in the params section.
@@ -230,8 +230,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     skip_empty: bool = False
-    """Whether to skip empty strings when embedding or raise an error.
-    Defaults to not skipping."""
+    """Whether to skip empty strings when embedding or raise an error."""
     default_headers: Mapping[str, str] | None = None
     default_query: Mapping[str, object] | None = None
     # Configure a custom httpx client. See the

@@ -5,7 +5,7 @@ channel. The writer and reader can be in the same event loop or in different eve
 loops. When they're in different event loops, they will also be in different
 threads.
 
-This is useful in situations when there's a mix of synchronous and asynchronous
+Useful in situations when there's a mix of synchronous and asynchronous
 used in the code.
 """
 

@@ -345,7 +345,6 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 Defaults to `False`, which aggregates lines into larger chunks.
             strip_headers (bool):
                 Whether to exclude headers from the resulting chunks.
-                Defaults to `True`.
         """
         self.chunks: list[Document] = []
         self.current_chunk = Document(page_content="")

@@ -25,7 +25,7 @@ def test_base_generation_parser() -> None:
             """Parse a list of model Generations into a specific format.
 
             Args:
-                result: A list of Generations to be parsed. The Generations are assumed
+                result: A list of `Generation` to be parsed. The Generations are assumed
                     to be different candidate outputs for a single model input.
                     Many parsers assume that only a single generation is passed it in.
                     We will assert for that
@@ -67,7 +67,7 @@ def test_base_transform_output_parser() -> None:
             """Parse a list of model Generations into a specific format.
 
             Args:
-                result: A list of Generations to be parsed. The Generations are assumed
+                result: A list of `Generation` to be parsed. The Generations are assumed
                     to be different candidate outputs for a single model input.
                     Many parsers assume that only a single generation is passed it in.
                     We will assert for that

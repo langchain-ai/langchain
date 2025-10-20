@@ -89,8 +89,8 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    client: Exa = Field(default=None)
-    exa_api_key: SecretStr = Field(default=None)
+    client: Exa = Field(default=None)  # type: ignore[assignment]
+    exa_api_key: SecretStr = Field(default=SecretStr(""))
 
     @model_validator(mode="before")
     @classmethod
@@ -170,8 +170,8 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
         "Input should be an Exa-optimized query. "
         "Output is a JSON array of the query results"
     )
-    client: Exa = Field(default=None)
-    exa_api_key: SecretStr = Field(default=None)
+    client: Exa = Field(default=None)  # type: ignore[assignment]
+    exa_api_key: SecretStr = Field(default=SecretStr(""))
     exa_base_url: str | None = None
 
     @model_validator(mode="before")

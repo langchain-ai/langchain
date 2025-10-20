@@ -1,5 +1,5 @@
 import pytest
-from langchain._api import suppress_langchain_deprecation_warning as sup2
+from langchain_classic._api import suppress_langchain_deprecation_warning as sup2
 from langchain_core._api import suppress_langchain_deprecation_warning as sup1
 
 from langchain_cli.namespaces.migrate.generate.generic import (

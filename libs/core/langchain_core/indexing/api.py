@@ -326,8 +326,8 @@ def index(
         record_manager: Timestamped set to keep track of which documents were
             updated.
         vector_store: VectorStore or DocumentIndex to index the documents into.
-        batch_size: Batch size to use when indexing. Default is 100.
-        cleanup: How to handle clean up of documents. Default is None.
+        batch_size: Batch size to use when indexing.
+        cleanup: How to handle clean up of documents.
 
             - incremental: Cleans up all documents that haven't been updated AND
               that are associated with source ids that were seen during indexing.
@@ -342,15 +342,12 @@ def index(
               source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
-            of the document. Default is None.
+            of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
-            Default is 1_000.
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
-            Default is False.
         key_encoder: Hashing algorithm to use for hashing the document content and
-            metadata. Default is "sha1".
-            Other options include "blake2b", "sha256", and "sha512".
+            metadata. Options include "blake2b", "sha256", and "sha512".
 
             !!! version-added "Added in version 0.3.66"
 
@@ -667,8 +664,8 @@ async def aindex(
         record_manager: Timestamped set to keep track of which documents were
             updated.
         vector_store: VectorStore or DocumentIndex to index the documents into.
-        batch_size: Batch size to use when indexing. Default is 100.
-        cleanup: How to handle clean up of documents. Default is None.
+        batch_size: Batch size to use when indexing.
+        cleanup: How to handle clean up of documents.
 
             - incremental: Cleans up all documents that haven't been updated AND
               that are associated with source ids that were seen during indexing.
@@ -683,15 +680,12 @@ async def aindex(
               source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
-            of the document. Default is None.
+            of the document.
         cleanup_batch_size: Batch size to use when cleaning up documents.
-            Default is 1_000.
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
-            Default is False.
         key_encoder: Hashing algorithm to use for hashing the document content and
-            metadata. Default is "sha1".
-            Other options include "blake2b", "sha256", and "sha512".
+            metadata. Options include "blake2b", "sha256", and "sha512".
 
             !!! version-added "Added in version 0.3.66"
 
