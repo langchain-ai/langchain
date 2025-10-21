@@ -285,7 +285,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
-            A dictionary containing the preference, scores, and/or other information.
+            `dict` containing the preference, scores, and/or other information.
         """  # noqa: E501
 
     async def _aevaluate_string_pairs(
@@ -307,7 +307,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
-            A dictionary containing the preference, scores, and/or other information.
+            `dict` containing the preference, scores, and/or other information.
         """  # noqa: E501
         return await run_in_executor(
             None,
@@ -338,7 +338,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
-            A dictionary containing the preference, scores, and/or other information.
+            `dict` containing the preference, scores, and/or other information.
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return self._evaluate_string_pairs(
@@ -368,7 +368,7 @@ class PairwiseStringEvaluator(_EvalArgsMixin, ABC):
             **kwargs: Additional keyword arguments, such as callbacks and optional reference strings.
 
         Returns:
-            A dictionary containing the preference, scores, and/or other information.
+            `dict` containing the preference, scores, and/or other information.
         """  # noqa: E501
         self._check_evaluation_args(reference=reference, input_=input)
         return await self._aevaluate_string_pairs(

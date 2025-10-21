@@ -454,7 +454,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = self(
@@ -490,7 +490,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
@@ -608,7 +608,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = self(
@@ -644,8 +644,8 @@ class PairwiseEmbeddingDistanceEvalChain(
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
-            - score: The embedding distance between the two predictions.
+            `dict` containing:
+                - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "prediction_b": prediction_b},

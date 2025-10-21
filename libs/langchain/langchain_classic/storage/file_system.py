@@ -10,10 +10,10 @@ from langchain_classic.storage.exceptions import InvalidKeyException
 
 
 class LocalFileStore(ByteStore):
-    """BaseStore interface that works on the local file system.
+    """`BaseStore` interface that works on the local file system.
 
     Examples:
-        Create a LocalFileStore instance and perform operations on it:
+        Create a `LocalFileStore` instance and perform operations on it:
 
         ```python
         from langchain_classic.storage import LocalFileStore
@@ -44,20 +44,18 @@ class LocalFileStore(ByteStore):
         chmod_dir: int | None = None,
         update_atime: bool = False,
     ) -> None:
-        """Implement the BaseStore interface for the local file system.
+        """Implement the `BaseStore` interface for the local file system.
 
         Args:
             root_path: The root path of the file store. All keys are interpreted as
                 paths relative to this root.
-            chmod_file: If specified, sets permissions for newly created files,
-                overriding the current `umask` if needed.
-            chmod_dir: If specified, sets permissions for newly created dirs,
-                overriding the current `umask` if needed.
-            update_atime: If `True`, updates the filesystem access time
-                (but not the modified time) when a file is read.
-
-                This allows MRU/LRU cache policies to be implemented for filesystems
-                where access time updates are disabled.
+            chmod_file: Sets permissions for newly created files, overriding the
+                current `umask` if needed.
+            chmod_dir: Sets permissions for newly created dirs, overriding the
+                current `umask` if needed.
+            update_atime: Updates the filesystem access time (but not the modified
+                time) when a file is read. This allows MRU/LRU cache policies to be
+                implemented for filesystems where access time updates are disabled.
         """
         self.root_path = Path(root_path).absolute()
         self.chmod_file = chmod_file
@@ -95,10 +93,7 @@ class LocalFileStore(ByteStore):
         whereas the explicit `os.chmod()` used here is not.
 
         Args:
-            dir_path: (Path) The store directory to make
-
-        Returns:
-            None
+            dir_path: The store directory to make.
         """
         if not dir_path.exists():
             self._mkdir_for_store(dir_path.parent)
@@ -114,7 +109,7 @@ class LocalFileStore(ByteStore):
 
         Returns:
             A sequence of optional values associated with the keys.
-            If a key is not found, the corresponding value will be None.
+            If a key is not found, the corresponding value will be `None`.
         """
         values: list[bytes | None] = []
         for key in keys:
@@ -134,9 +129,6 @@ class LocalFileStore(ByteStore):
 
         Args:
             key_value_pairs: A sequence of key-value pairs.
-
-        Returns:
-            None
         """
         for key, value in key_value_pairs:
             full_path = self._get_full_path(key)
@@ -150,7 +142,6 @@ class LocalFileStore(ByteStore):
 
         Args:
             keys: A sequence of keys to delete.
-
         """
         for key in keys:
             full_path = self._get_full_path(key)

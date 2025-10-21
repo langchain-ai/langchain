@@ -153,7 +153,7 @@ class EvalError(dict):
     """Your architecture raised an error."""
 
     def __init__(self, Error: BaseException, **kwargs: Any) -> None:  # noqa: N803
-        """Initialize the EvalError with an error and additional attributes.
+        """Initialize the `EvalError` with an error and additional attributes.
 
         Args:
             Error: The error that occurred.
@@ -162,7 +162,7 @@ class EvalError(dict):
         super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute from the EvalError.
+        """Get an attribute from the `EvalError`.
 
         Args:
             name: The name of the attribute to get.
@@ -1383,7 +1383,7 @@ async def arun_on_dataset(
         **kwargs: Should not be used, but is provided for backwards compatibility.
 
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        `dict` containing the run's project name and the resulting model outputs.
 
     Examples:
     ```python
@@ -1423,9 +1423,8 @@ async def arun_on_dataset(
         evaluation=evaluation_config,
     )
     ```
-    You can also create custom evaluators by subclassing the
-    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-    or LangSmith's `RunEvaluator` classes.
+    You can also create custom evaluators by subclassing the `StringEvaluator or
+    LangSmith's `RunEvaluator` classes.
 
     ```python
     from typing import Optional
@@ -1558,7 +1557,7 @@ def run_on_dataset(
         **kwargs: Should not be used, but is provided for backwards compatibility.
 
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        `dict` containing the run's project name and the resulting model outputs.
 
     Examples:
     ```python
@@ -1599,9 +1598,8 @@ def run_on_dataset(
     )
     ```
 
-    You can also create custom evaluators by subclassing the
-    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-    or LangSmith's `RunEvaluator` classes.
+    You can also create custom evaluators by subclassing the `StringEvaluator` or
+    LangSmith's `RunEvaluator` classes.
 
     ```python
     from typing import Optional

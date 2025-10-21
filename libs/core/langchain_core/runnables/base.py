@@ -2519,9 +2519,6 @@ class Runnable(ABC, Generic[Input, Output]):
         as_tool = runnable.as_tool()
         as_tool.invoke("b")
         ```
-
-        !!! version-added "Added in version 0.2.14"
-
         """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool  # noqa: PLC0415
