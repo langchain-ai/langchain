@@ -57,10 +57,10 @@ class BaseDocumentTransformer(ABC):
         """Transform a list of documents.
 
         Args:
-            documents: A sequence of Documents to be transformed.
+            documents: A sequence of `Document` objects to be transformed.
 
         Returns:
-            A sequence of transformed Documents.
+            A sequence of transformed `Document` objects.
         """
 
     async def atransform_documents(
@@ -69,10 +69,10 @@ class BaseDocumentTransformer(ABC):
         """Asynchronously transform a list of documents.
 
         Args:
-            documents: A sequence of Documents to be transformed.
+            documents: A sequence of `Document` objects to be transformed.
 
         Returns:
-            A sequence of transformed Documents.
+            A sequence of transformed `Document` objects.
         """
         return await run_in_executor(
             None, self.transform_documents, documents, **kwargs
