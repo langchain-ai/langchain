@@ -1029,3 +1029,284 @@ def test_pydantic_tools_parser_name_dict_fallback() -> None:
     assert len(result) == 1
     assert isinstance(result[0], ToolWithoutTitle)
     assert result[0].data == "test_data"
+
+
+def test_pydantic_tools_parser_with_nested_models() -> None:
+    """Test PydanticToolsParser with nested Pydantic v1 and v2 models."""
+
+    # Nested v1 models
+    class AddressV1(pydantic.v1.BaseModel):
+        """Address using Pydantic v1."""
+
+        street: str
+        city: str
+        zip_code: str
+
+    class PersonV1(pydantic.v1.BaseModel):
+        """Person with nested address using Pydantic v1."""
+
+        name: str
+        age: int
+        address: AddressV1
+
+    # Nested v2 models
+    class CoordinatesV2(BaseModel):
+        """Coordinates using Pydantic v2."""
+
+        latitude: float
+        longitude: float
+
+    class LocationV2(BaseModel):
+        """Location with nested coordinates using Pydantic v2."""
+
+        name: str
+        coordinates: CoordinatesV2
+
+    # Test with nested Pydantic v1 model
+    parser_v1 = PydanticToolsParser(tools=[PersonV1])
+    message_v1 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_person",
+                "name": "PersonV1",
+                "args": {
+                    "name": "Alice",
+                    "age": 30,
+                    "address": {
+                        "street": "123 Main St",
+                        "city": "Springfield",
+                        "zip_code": "12345",
+                    },
+                },
+            }
+        ],
+    )
+    generation_v1 = ChatGeneration(message=message_v1)
+    result_v1 = parser_v1.parse_result([generation_v1])
+
+    assert len(result_v1) == 1
+    assert isinstance(result_v1[0], PersonV1)
+    assert result_v1[0].name == "Alice"
+    assert result_v1[0].age == 30
+    assert isinstance(result_v1[0].address, AddressV1)
+    assert result_v1[0].address.street == "123 Main St"
+    assert result_v1[0].address.city == "Springfield"
+
+    # Test with nested Pydantic v2 model
+    parser_v2 = PydanticToolsParser(tools=[LocationV2])
+    message_v2 = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {
+                    "name": "Eiffel Tower",
+                    "coordinates": {"latitude": 48.8584, "longitude": 2.2945},
+                },
+            }
+        ],
+    )
+    generation_v2 = ChatGeneration(message=message_v2)
+    result_v2 = parser_v2.parse_result([generation_v2])
+
+    assert len(result_v2) == 1
+    assert isinstance(result_v2[0], LocationV2)
+    assert result_v2[0].name == "Eiffel Tower"
+    assert isinstance(result_v2[0].coordinates, CoordinatesV2)
+    assert result_v2[0].coordinates.latitude == 48.8584
+    assert result_v2[0].coordinates.longitude == 2.2945
+
+    # Test with both nested models in one message
+    parser_mixed = PydanticToolsParser(tools=[PersonV1, LocationV2])
+    message_mixed = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_person",
+                "name": "PersonV1",
+                "args": {
+                    "name": "Bob",
+                    "age": 25,
+                    "address": {
+                        "street": "456 Oak Ave",
+                        "city": "Portland",
+                        "zip_code": "97201",
+                    },
+                },
+            },
+            {
+                "id": "call_location",
+                "name": "LocationV2",
+                "args": {
+                    "name": "Golden Gate Bridge",
+                    "coordinates": {"latitude": 37.8199, "longitude": -122.4783},
+                },
+            },
+        ],
+    )
+    generation_mixed = ChatGeneration(message=message_mixed)
+    result_mixed = parser_mixed.parse_result([generation_mixed])
+
+    assert len(result_mixed) == 2
+    assert isinstance(result_mixed[0], PersonV1)
+    assert result_mixed[0].name == "Bob"
+    assert result_mixed[0].address.city == "Portland"
+    assert isinstance(result_mixed[1], LocationV2)
+    assert result_mixed[1].name == "Golden Gate Bridge"
+    assert result_mixed[1].coordinates.latitude == 37.8199
+
+
+def test_pydantic_tools_parser_with_optional_fields() -> None:
+    """Test PydanticToolsParser with optional fields in v1 and v2 models."""
+
+    # v1 model with optional fields
+    class ProductV1(pydantic.v1.BaseModel):
+        """Product with optional fields using Pydantic v1."""
+
+        name: str
+        price: float
+        description: str | None = None
+        stock: int = 0
+
+    # v2 model with optional fields
+    class UserV2(BaseModel):
+        """User with optional fields using Pydantic v2."""
+
+        username: str
+        email: str
+        bio: str | None = None
+        age: int | None = None
+
+    # Test v1 with all fields provided
+    parser_v1_full = PydanticToolsParser(tools=[ProductV1])
+    message_v1_full = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product_full",
+                "name": "ProductV1",
+                "args": {
+                    "name": "Laptop",
+                    "price": 999.99,
+                    "description": "High-end laptop",
+                    "stock": 50,
+                },
+            }
+        ],
+    )
+    generation_v1_full = ChatGeneration(message=message_v1_full)
+    result_v1_full = parser_v1_full.parse_result([generation_v1_full])
+
+    assert len(result_v1_full) == 1
+    assert isinstance(result_v1_full[0], ProductV1)
+    assert result_v1_full[0].name == "Laptop"
+    assert result_v1_full[0].price == 999.99
+    assert result_v1_full[0].description == "High-end laptop"
+    assert result_v1_full[0].stock == 50
+
+    # Test v1 with only required fields
+    parser_v1_minimal = PydanticToolsParser(tools=[ProductV1])
+    message_v1_minimal = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product_minimal",
+                "name": "ProductV1",
+                "args": {"name": "Mouse", "price": 29.99},
+            }
+        ],
+    )
+    generation_v1_minimal = ChatGeneration(message=message_v1_minimal)
+    result_v1_minimal = parser_v1_minimal.parse_result([generation_v1_minimal])
+
+    assert len(result_v1_minimal) == 1
+    assert isinstance(result_v1_minimal[0], ProductV1)
+    assert result_v1_minimal[0].name == "Mouse"
+    assert result_v1_minimal[0].price == 29.99
+    assert result_v1_minimal[0].description is None
+    assert result_v1_minimal[0].stock == 0
+
+    # Test v2 with all fields provided
+    parser_v2_full = PydanticToolsParser(tools=[UserV2])
+    message_v2_full = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_user_full",
+                "name": "UserV2",
+                "args": {
+                    "username": "john_doe",
+                    "email": "john@example.com",
+                    "bio": "Software developer",
+                    "age": 28,
+                },
+            }
+        ],
+    )
+    generation_v2_full = ChatGeneration(message=message_v2_full)
+    result_v2_full = parser_v2_full.parse_result([generation_v2_full])
+
+    assert len(result_v2_full) == 1
+    assert isinstance(result_v2_full[0], UserV2)
+    assert result_v2_full[0].username == "john_doe"
+    assert result_v2_full[0].email == "john@example.com"
+    assert result_v2_full[0].bio == "Software developer"
+    assert result_v2_full[0].age == 28
+
+    # Test v2 with only required fields
+    parser_v2_minimal = PydanticToolsParser(tools=[UserV2])
+    message_v2_minimal = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_user_minimal",
+                "name": "UserV2",
+                "args": {"username": "jane_smith", "email": "jane@example.com"},
+            }
+        ],
+    )
+    generation_v2_minimal = ChatGeneration(message=message_v2_minimal)
+    result_v2_minimal = parser_v2_minimal.parse_result([generation_v2_minimal])
+
+    assert len(result_v2_minimal) == 1
+    assert isinstance(result_v2_minimal[0], UserV2)
+    assert result_v2_minimal[0].username == "jane_smith"
+    assert result_v2_minimal[0].email == "jane@example.com"
+    assert result_v2_minimal[0].bio is None
+    assert result_v2_minimal[0].age is None
+
+    # Test mixed v1 and v2 with partial optional fields
+    parser_mixed = PydanticToolsParser(tools=[ProductV1, UserV2])
+    message_mixed = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "id": "call_product",
+                "name": "ProductV1",
+                "args": {"name": "Keyboard", "price": 79.99, "stock": 100},
+            },
+            {
+                "id": "call_user",
+                "name": "UserV2",
+                "args": {
+                    "username": "alice",
+                    "email": "alice@example.com",
+                    "age": 35,
+                },
+            },
+        ],
+    )
+    generation_mixed = ChatGeneration(message=message_mixed)
+    result_mixed = parser_mixed.parse_result([generation_mixed])
+
+    assert len(result_mixed) == 2
+    assert isinstance(result_mixed[0], ProductV1)
+    assert result_mixed[0].name == "Keyboard"
+    assert result_mixed[0].description is None
+    assert result_mixed[0].stock == 100
+    assert isinstance(result_mixed[1], UserV2)
+    assert result_mixed[1].username == "alice"
+    assert result_mixed[1].bio is None
+    assert result_mixed[1].age == 35
