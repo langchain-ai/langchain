@@ -623,16 +623,11 @@ class _ToolNode(RunnableCallable):
             )
             tool_runtimes.append(tool_runtime)
 
-        # Inject tool arguments (including runtime)
-
-        injected_tool_calls = []
+        # Pass original tool calls without injection
         input_types = [input_type] * len(tool_calls)
-        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
-            injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
             outputs = list(
-                executor.map(self._run_one, injected_tool_calls, input_types, tool_runtimes)
+                executor.map(self._run_one, tool_calls, input_types, tool_runtimes)
             )
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -660,12 +655,10 @@ class _ToolNode(RunnableCallable):
             )
             tool_runtimes.append(tool_runtime)
 
-        injected_tool_calls = []
+        # Pass original tool calls without injection
         coros = []
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
-            injected_tool_calls.append(injected_call)
-            coros.append(self._arun_one(injected_call, input_type, tool_runtime))  # type: ignore[arg-type]
+            coros.append(self._arun_one(call, input_type, tool_runtime))  # type: ignore[arg-type]
         outputs = await asyncio.gather(*coros)
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -742,12 +735,15 @@ class _ToolNode(RunnableCallable):
             msg = f"Tool {call['name']} is not registered with ToolNode"
             raise TypeError(msg)
 
-        call_args = {**call, "type": "tool_call"}
+        # Inject state, store, and runtime right before invocation
+        injected_call = self._inject_tool_args(call, request.runtime)
+        call_args = {**injected_call, "type": "tool_call"}
 
         try:
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
+                # Use original call["args"] without injected values for error reporting
                 raise ToolInvocationError(call["name"], exc, call["args"]) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
@@ -887,12 +883,15 @@ class _ToolNode(RunnableCallable):
             msg = f"Tool {call['name']} is not registered with ToolNode"
             raise TypeError(msg)
 
-        call_args = {**call, "type": "tool_call"}
+        # Inject state, store, and runtime right before invocation
+        injected_call = self._inject_tool_args(call, request.runtime)
+        call_args = {**injected_call, "type": "tool_call"}
 
         try:
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
+                # Use original call["args"] without injected values for error reporting
                 raise ToolInvocationError(call["name"], exc, call["args"]) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
