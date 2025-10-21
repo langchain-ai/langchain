@@ -182,23 +182,21 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     Test subclasses **must** implement the following two properties:
 
-    chat_model_class
-        The chat model class to test, e.g., `ChatParrotLink`.
+    `chat_model_class`: The chat model class to test, e.g., `ChatParrotLink`.
 
-        ```python
-        @property
-        def chat_model_class(self) -> Type[ChatParrotLink]:
-            return ChatParrotLink
-        ```
+    ```python
+    @property
+    def chat_model_class(self) -> Type[ChatParrotLink]:
+        return ChatParrotLink
+    ```
 
-    chat_model_params
-        Initialization parameters for the chat model.
+    `chat_model_params`: Initialization parameters for the chat model.
 
-        ```python
-        @property
-        def chat_model_params(self) -> dict:
-            return {"model": "bird-brain-001", "temperature": 0}
-        ```
+    ```python
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "bird-brain-001", "temperature": 0}
+    ```
 
     In addition, test subclasses can control what features are tested (such as tool
     calling or multi-modality) by selectively overriding the following properties.
@@ -266,7 +264,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         `with_structured_output` method is overridden. If the base implementation is
         intended to be used, this method should be overridden.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
         ```python
         @property
@@ -290,7 +288,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports JSON mode in
         `with_structured_output`.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/#json-mode
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
         ```python
         @property
@@ -324,7 +322,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
         ```python
         @property
@@ -349,7 +347,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
         ```python
         @property
@@ -374,7 +372,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
         ```python
         @property
@@ -399,7 +397,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
         ```python
         @property
@@ -420,8 +418,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Defaults to `True`.
 
-        `usage_metadata` is an optional dict attribute on `AIMessage`s that track input
-        and output tokens.
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
+        input and output tokens.
         [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
 
         ```python
@@ -537,8 +535,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Property controlling what usage metadata details are emitted in both invoke
         and stream.
 
-        `usage_metadata` is an optional dict attribute on `AIMessage`s that track input
-        and output tokens.
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
+        input and output tokens.
         [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
 
         It includes optional keys `input_token_details` and `output_token_details`
@@ -580,9 +578,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
 
-            ```python
-            :caption: tests/conftest.py
-
+            ```python title="tests/conftest.py"
             import pytest
             from langchain_tests.conftest import (
                 _base_vcr_config as _base_vcr_config,
@@ -617,9 +613,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 to your VCR fixture and enable this serializer in the config. See
                 example below:
 
-                ```python
-                :caption: tests/conftest.py
-
+                ```python title="tests/conftest.py"
                 import pytest
                 from langchain_tests.conftest import (
                     CustomPersister,
@@ -658,7 +652,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def pytest_recording_configure(config: dict, vcr: VCR) -> None:
                     vcr.register_persister(CustomPersister())
                     vcr.register_serializer("yaml.gz", CustomSerializer())
-
                 ```
 
                 You can inspect the contents of the compressed cassettes (e.g., to

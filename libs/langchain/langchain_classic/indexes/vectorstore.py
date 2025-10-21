@@ -117,7 +117,7 @@ class VectorStoreIndexWrapper(BaseModel):
             **kwargs: Additional keyword arguments forwarded to the chain.
 
         Returns:
-            A dictionary containing the answer and source documents.
+            `dict` containing the answer and source documents.
         """
         if llm is None:
             msg = (
@@ -152,7 +152,7 @@ class VectorStoreIndexWrapper(BaseModel):
             **kwargs: Additional keyword arguments forwarded to the chain.
 
         Returns:
-            A dictionary containing the answer and source documents.
+            `dict` containing the answer and source documents.
         """
         if llm is None:
             msg = (

@@ -287,8 +287,6 @@ def init_chat_model(
         )
         ```
 
-    !!! version-added "Added in version 0.2.7"
-
     !!! warning "Behavior changed in 0.2.8"
         Support for `configurable_fields` and `config_prefix` added.
 

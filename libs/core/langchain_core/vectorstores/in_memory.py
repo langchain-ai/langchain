@@ -260,7 +260,7 @@ class InMemoryVectorStore(VectorStore):
             ids: The ids of the documents to get.
 
         Returns:
-            A list of Document objects.
+            A list of `Document` objects.
         """
         documents = []
 
@@ -284,7 +284,7 @@ class InMemoryVectorStore(VectorStore):
             ids: The ids of the documents to get.
 
         Returns:
-            A list of Document objects.
+            A list of `Document` objects.
         """
         return self.get_by_ids(ids)
 

@@ -110,7 +110,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_tool_calling(self) -> bool:
-        """(bool) whether the model supports tool calling."""
+        """Whether the model supports tool calling."""
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
@@ -120,7 +120,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_tool_choice(self) -> bool:
-        """(bool) whether the model supports tool calling."""
+        """Whether the model supports tool calling."""
         bind_tools_params = inspect.signature(
             self.chat_model_class.bind_tools
         ).parameters
@@ -128,7 +128,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def has_structured_output(self) -> bool:
-        """(bool) whether the chat model supports structured output."""
+        """Whether the chat model supports structured output."""
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
@@ -136,19 +136,19 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def structured_output_kwargs(self) -> dict:
-        """If specified, additional kwargs for with_structured_output."""
+        """If specified, additional kwargs for `with_structured_output`."""
         return {}
 
     @property
     def supports_json_mode(self) -> bool:
-        """(bool) whether the chat model supports JSON mode."""
+        """Whether the chat model supports JSON mode."""
         return False
 
     @property
     def supports_image_inputs(self) -> bool:
         """Supports image inputs.
 
-        (bool) whether the chat model supports image inputs, defaults to
+        Whether the chat model supports image inputs, defaults to
         `False`.
 
         """
@@ -158,7 +158,7 @@ class ChatModelTests(BaseStandardTests):
     def supports_image_urls(self) -> bool:
         """Supports image inputs from URLs.
 
-        (bool) whether the chat model supports image inputs from URLs, defaults to
+        Whether the chat model supports image inputs from URLs, defaults to
         `False`.
 
         """
@@ -166,14 +166,14 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_pdf_inputs(self) -> bool:
-        """(bool) whether the chat model supports PDF inputs, defaults to `False`."""
+        """Whether the chat model supports PDF inputs, defaults to `False`."""
         return False
 
     @property
     def supports_audio_inputs(self) -> bool:
         """Supports audio inputs.
 
-        (bool) whether the chat model supports audio inputs, defaults to `False`.
+        Whether the chat model supports audio inputs, defaults to `False`.
 
         """
         return False
@@ -182,7 +182,7 @@ class ChatModelTests(BaseStandardTests):
     def supports_video_inputs(self) -> bool:
         """Supports video inputs.
 
-        (bool) whether the chat model supports video inputs, defaults to `False`.
+        Whether the chat model supports video inputs, defaults to `False`.
 
         No current tests are written for this feature.
 
@@ -193,7 +193,7 @@ class ChatModelTests(BaseStandardTests):
     def returns_usage_metadata(self) -> bool:
         """Returns usage metadata.
 
-        (bool) whether the chat model returns usage metadata on invoke and streaming
+        Whether the chat model returns usage metadata on invoke and streaming
         responses.
 
         """
@@ -201,14 +201,14 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_anthropic_inputs(self) -> bool:
-        """(bool) whether the chat model supports Anthropic-style inputs."""
+        """Whether the chat model supports Anthropic-style inputs."""
         return False
 
     @property
     def supports_image_tool_message(self) -> bool:
         """Supports image `ToolMessage` objects.
 
-        (bool) whether the chat model supports `ToolMessage` objects that include image
+        Whether the chat model supports `ToolMessage` objects that include image
         content.
 
         """
@@ -218,7 +218,7 @@ class ChatModelTests(BaseStandardTests):
     def supports_pdf_tool_message(self) -> bool:
         """Supports PDF `ToolMessage` objects.
 
-        (bool) whether the chat model supports `ToolMessage` objects that include PDF
+        Whether the chat model supports `ToolMessage` objects that include PDF
         content.
 
         """
@@ -226,7 +226,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def enable_vcr_tests(self) -> bool:
-        """(bool) whether to enable VCR tests for the chat model.
+        """Whether to enable VCR tests for the chat model.
 
         !!! warning
             See `enable_vcr_tests` dropdown `above <ChatModelTests>` for more
@@ -252,8 +252,8 @@ class ChatModelTests(BaseStandardTests):
     ]:
         """Supported usage metadata details.
 
-        (dict) what usage metadata details are emitted in invoke and stream. Only
-        needs to be overridden if these details are returned by the model.
+        What usage metadata details are emitted in invoke and stream. Only needs to be
+        overridden if these details are returned by the model.
         """
         return {"invoke": [], "stream": []}
 
@@ -290,22 +290,21 @@ class ChatModelUnitTests(ChatModelTests):
 
     Test subclasses **must** implement the following two properties:
 
-    chat_model_class
-        The chat model class to test, e.g., `ChatParrotLink`.
+    `chat_model_class`: The chat model class to test, e.g., `ChatParrotLink`.
 
-        ```python
-        @property
-        def chat_model_class(self) -> Type[ChatParrotLink]:
-            return ChatParrotLink
-        ```
-    chat_model_params
-        Initialization parameters for the chat model.
+    ```python
+    @property
+    def chat_model_class(self) -> Type[ChatParrotLink]:
+        return ChatParrotLink
+    ```
 
-        ```python
-        @property
-        def chat_model_params(self) -> dict:
-            return {"model": "bird-brain-001", "temperature": 0}
-        ```
+    `chat_model_params`: Initialization parameters for the chat model.
+
+    ```python
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "bird-brain-001", "temperature": 0}
+    ```
 
     In addition, test subclasses can control what features are tested (such as tool
     calling or multi-modality) by selectively overriding the following properties.
@@ -372,7 +371,7 @@ class ChatModelUnitTests(ChatModelTests):
         `with_structured_output` or `bind_tools` methods. If the base
         implementations are intended to be used, this method should be overridden.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
         ```python
         @property
@@ -396,7 +395,7 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports JSON mode in
         `with_structured_output`.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/#json-mode
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
         ```python
         @property
@@ -430,7 +429,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
 
         ```python
@@ -456,7 +455,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
 
         ```python
@@ -482,7 +481,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
 
         ```python
@@ -508,7 +507,7 @@ class ChatModelUnitTests(ChatModelTests):
         }
         ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
         ```python
         @property
@@ -529,7 +528,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         Defaults to `True`.
 
-        `usage_metadata` is an optional dict attribute on `AIMessage`s that track
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
         [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
 
@@ -651,7 +650,7 @@ class ChatModelUnitTests(ChatModelTests):
         Property controlling what usage metadata details are emitted in both `invoke`
         and `stream`.
 
-        `usage_metadata` is an optional dict attribute on `AIMessage`s that track
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
         [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
 
@@ -694,9 +693,7 @@ class ChatModelUnitTests(ChatModelTests):
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
 
-            ```python
-            :caption: tests/conftest.py
-
+            ```python title="tests/conftest.py"
             import pytest
             from langchain_tests.conftest import (
                 _base_vcr_config as _base_vcr_config,
@@ -731,9 +728,7 @@ class ChatModelUnitTests(ChatModelTests):
                 to your VCR fixture and enable this serializer in the config. See
                 example below:
 
-                ```python
-                :caption: tests/conftest.py
-
+                ```python title="tests/conftest.py"
                 import pytest
                 from langchain_tests.conftest import (
                     CustomPersister,
@@ -814,36 +809,37 @@ class ChatModelUnitTests(ChatModelTests):
             You can then commit the cassette to your repository. Subsequent test runs
             will use the cassette instead of making HTTP calls.
 
-    Testing initialization from environment variables
-        Some unit tests may require testing initialization from environment variables.
-        These tests can be enabled by overriding the `init_from_env_params`
-        property (see below):
+    **Testing initialization from environment variables**
 
-        ??? note "`init_from_env_params`"
+    Some unit tests may require testing initialization from environment variables.
+    These tests can be enabled by overriding the `init_from_env_params`
+    property (see below).
 
-            This property is used in unit tests to test initialization from
-            environment variables. It should return a tuple of three dictionaries
-            that specify the environment variables, additional initialization args,
-            and expected instance attributes to check.
+    ??? note "`init_from_env_params`"
 
-            Defaults to empty dicts. If not overridden, the test is skipped.
+        This property is used in unit tests to test initialization from
+        environment variables. It should return a tuple of three dictionaries
+        that specify the environment variables, additional initialization args,
+        and expected instance attributes to check.
 
-            Example:
-            ```python
-            @property
-            def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-                return (
-                    {
-                        "MY_API_KEY": "api_key",
-                    },
-                    {
-                        "model": "bird-brain-001",
-                    },
-                    {
-                        "my_api_key": "api_key",
-                    },
-                )
-            ```
+        Defaults to empty dicts. If not overridden, the test is skipped.
+
+        Example:
+        ```python
+        @property
+        def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+            return (
+                {
+                    "MY_API_KEY": "api_key",
+                },
+                {
+                    "model": "bird-brain-001",
+                },
+                {
+                    "my_api_key": "api_key",
+                },
+            )
+        ```
 
     '''  # noqa: E501,D214
 
@@ -858,9 +854,8 @@ class ChatModelUnitTests(ChatModelTests):
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """Init from env params.
 
-        (tuple) environment variables, additional initialization args, and expected
-        instance attributes for testing initialization from environment variables.
-
+        Environment variables, additional initialization args, and expected instance
+        attributes for testing initialization from environment variables.
         """
         return {}, {}, {}
 

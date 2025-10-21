@@ -103,7 +103,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def vectorstore(self) -> VectorStore:
         """Get the vectorstore class to test.
 
-        The returned vectorstore should be EMPTY.
+        The returned vectorstore should be empty.
         """
 
     @property
@@ -398,7 +398,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert documents == []
 
     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -439,7 +439,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 
@@ -754,7 +754,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_documents_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -797,7 +797,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 
