@@ -1566,9 +1566,6 @@ class CallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
-
         """
         if not self.handlers:
             return
@@ -2042,8 +2039,6 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
@@ -2555,9 +2550,6 @@ async def adispatch_custom_event(
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415
@@ -2630,9 +2622,6 @@ def dispatch_custom_event(
         foo_ = RunnableLambda(foo)
         foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
         ```
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415
