@@ -321,15 +321,12 @@ class ToolInvocationError(ToolException):
         """
         # Format error display based on filtered errors if provided
         if filtered_errors is not None:
-            # Manually format the filtered errors
-            error_count = len(filtered_errors)
-            plural = "s" if error_count != 1 else ""
-            header = f"{error_count} validation error{plural} for {tool_name}"
-            error_str_parts = [header]
+            # Manually format the filtered errors without URLs or fancy formatting
+            error_str_parts = []
             for error in filtered_errors:
-                loc_str = " -> ".join(str(loc) for loc in error.get("loc", ()))
-                error_str_parts.append(f"{loc_str}")
-                error_str_parts.append(f"  {error.get('msg', 'Unknown error')}")
+                loc_str = ".".join(str(loc) for loc in error.get("loc", ()))
+                msg = error.get("msg", "Unknown error")
+                error_str_parts.append(f"{loc_str}: {msg}")
             error_display_str = "\n".join(error_str_parts)
         else:
             error_display_str = str(source)

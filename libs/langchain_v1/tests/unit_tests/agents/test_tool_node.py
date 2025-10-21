@@ -517,10 +517,8 @@ async def test_tool_node_error_handling() -> None:
             result_error["messages"][1].content
             == f"Error: {ToolException('Test error')!r}\n Please fix your mistakes."
         )
-        assert (
-            "ValidationError" in result_error["messages"][2].content
-            or "validation error" in result_error["messages"][2].content
-        )
+        # Check that the validation error contains the field name
+        assert "some_other_val" in result_error["messages"][2].content
 
         assert result_error["messages"][0].tool_call_id == "some id"
         assert result_error["messages"][1].tool_call_id == "some other id"
