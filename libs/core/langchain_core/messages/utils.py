@@ -439,8 +439,8 @@ def filter_messages(
         exclude_ids: Message IDs to exclude.
         exclude_tool_calls: Tool call IDs to exclude.
             Can be one of the following:
-            - `True`: all `AIMessage`s with tool calls and all
-                `ToolMessage` objects will be excluded.
+            - `True`: All `AIMessage` objects with tool calls and all `ToolMessage`
+                objects will be excluded.
             - a sequence of tool call IDs to exclude:
                 - `ToolMessage` objects with the corresponding tool call ID will be
                     excluded.

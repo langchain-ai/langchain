@@ -343,7 +343,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.
@@ -389,7 +389,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.

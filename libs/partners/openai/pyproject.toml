@@ -12,7 +12,7 @@ dependencies = [
     "tiktoken>=0.7.0,<1.0.0",
 ]
 name = "langchain-openai"
-version = "1.0.0"
+version = "1.0.1"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -40,7 +40,6 @@ test = [
     "vcrpy>=7.0.0,<8.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
-    "langgraph-prebuilt>=0.7.0rc1",  # set explicitly until we have a stable version
     "langchain",
     "langchain-core",
     "langchain-tests",

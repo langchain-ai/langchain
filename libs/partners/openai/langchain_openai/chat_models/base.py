@@ -10,7 +10,14 @@ import re
 import ssl
 import sys
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -109,6 +116,7 @@ from typing_extensions import Self
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _resolve_sync_and_async_api_keys,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -465,9 +473,57 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: SecretStr | None = Field(
+    openai_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
+    """API key to use.
+
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
+    string, or sync or async callable that returns a string.
+
+    ??? example "Specify with environment variable"
+
+        ```bash
+        export OPENAI_API_KEY=...
+        ```
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano")
+        ```
+
+    ??? example "Specify with a string"
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key="...")
+        ```
+
+    ??? example "Specify with a sync callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        def get_api_key() -> str:
+            # Custom logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+
+    ??? example "Specify with an async callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        async def get_api_key() -> str:
+            # Custom async logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+    """
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: str | None = Field(default=None, alias="organization")
@@ -776,10 +832,18 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             self.stream_usage = True
 
+        # Resolve API key from SecretStr or Callable
+        sync_api_key_value: str | Callable[[], str] | None = None
+        async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
+
+        if self.openai_api_key is not None:
+            # Because OpenAI and AsyncOpenAI clients support either sync or async
+            # callables for the API key, we need to resolve separate values here.
+            sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
+                self.openai_api_key
+            )
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -800,24 +864,33 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
         if not self.client:
-            if self.openai_proxy and not self.http_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
+            if sync_api_key_value is None:
+                # No valid sync API key, leave client as None and raise informative
+                # error on invocation.
+                self.client = None
+                self.root_client = None
+            else:
+                if self.openai_proxy and not self.http_client:
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        msg = (
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                        raise ImportError(msg) from e
+                    self.http_client = httpx.Client(
+                        proxy=self.openai_proxy, verify=global_ssl_context
                     )
-                    raise ImportError(msg) from e
-                self.http_client = httpx.Client(
-                    proxy=self.openai_proxy, verify=global_ssl_context
-                )
-            sync_specific = {
-                "http_client": self.http_client
-                or _get_default_httpx_client(self.openai_api_base, self.request_timeout)
-            }
-            self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
-            self.client = self.root_client.chat.completions
+                sync_specific = {
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    ),
+                    "api_key": sync_api_key_value,
+                }
+                self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+                self.client = self.root_client.chat.completions
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
@@ -835,7 +908,8 @@ class BaseChatOpenAI(BaseChatModel):
                 "http_client": self.http_async_client
                 or _get_default_async_httpx_client(
                     self.openai_api_base, self.request_timeout
-                )
+                ),
+                "api_key": async_api_key_value,
             }
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
@@ -965,6 +1039,16 @@ class BaseChatOpenAI(BaseChatModel):
             message=message_chunk, generation_info=generation_info or None
         )
 
+    def _ensure_sync_client_available(self) -> None:
+        """Check that sync client is available, raise error if not."""
+        if self.client is None:
+            msg = (
+                "Sync client is not available. This happens when an async callable "
+                "was provided for the API key. Use async methods (ainvoke, astream) "
+                "instead, or provide a string or sync callable for the API key."
+            )
+            raise ValueError(msg)
+
     def _stream_responses(
         self,
         messages: list[BaseMessage],
@@ -972,6 +1056,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        self._ensure_sync_client_available()
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         if self.include_response_headers:
@@ -1101,6 +1186,7 @@ class BaseChatOpenAI(BaseChatModel):
         stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        self._ensure_sync_client_available()
         kwargs["stream"] = True
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
@@ -1169,6 +1255,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        self._ensure_sync_client_available()
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None

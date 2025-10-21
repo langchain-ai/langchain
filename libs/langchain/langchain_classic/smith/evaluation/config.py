@@ -34,28 +34,17 @@ BATCH_EVALUATOR_LIKE = Callable[
 class EvalConfig(BaseModel):
     """Configuration for a given run evaluator.
 
-    Parameters
-    ----------
-    evaluator_type : EvaluatorType
-        The type of evaluator to use.
-
-    Methods:
-    -------
-    get_kwargs()
-        Get the keyword arguments for the evaluator configuration.
-
+    Attributes:
+        evaluator_type: The type of evaluator to use.
     """
 
     evaluator_type: EvaluatorType
 
     def get_kwargs(self) -> dict[str, Any]:
-        """Get the keyword arguments for the load_evaluator call.
+        """Get the keyword arguments for the `load_evaluator` call.
 
         Returns:
-        -------
-        Dict[str, Any]
-            The keyword arguments for the load_evaluator call.
-
+            The keyword arguments for the `load_evaluator` call.
         """
         kwargs = {}
         for field, val in self:
@@ -110,7 +99,7 @@ class RunEvalConfig(BaseModel):
     batch_evaluators: list[BATCH_EVALUATOR_LIKE] | None = None
     """Evaluators that run on an aggregate/batch level.
 
-    These generate 1 or more metrics that are assigned to the full test run.
+    These generate one or more metrics that are assigned to the full test run.
     As a result, they are not associated with individual traces.
     """
 
@@ -134,13 +123,9 @@ class RunEvalConfig(BaseModel):
     class Criteria(SingleKeyEvalConfig):
         """Configuration for a reference-free criteria evaluator.
 
-        Parameters
-        ----------
-        criteria : CRITERIA_TYPE | None
-            The criteria to evaluate.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
-
+        Attributes:
+            criteria: The criteria to evaluate.
+            llm: The language model to use for the evaluation chain.
         """
 
         criteria: CRITERIA_TYPE | None = None
@@ -150,12 +135,9 @@ class RunEvalConfig(BaseModel):
     class LabeledCriteria(SingleKeyEvalConfig):
         """Configuration for a labeled (with references) criteria evaluator.
 
-        Parameters
-        ----------
-        criteria : CRITERIA_TYPE | None
-            The criteria to evaluate.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
+        Attributes:
+            criteria: The criteria to evaluate.
+            llm: The language model to use for the evaluation chain.
         """
 
         criteria: CRITERIA_TYPE | None = None
@@ -165,14 +147,9 @@ class RunEvalConfig(BaseModel):
     class EmbeddingDistance(SingleKeyEvalConfig):
         """Configuration for an embedding distance evaluator.
 
-        Parameters
-        ----------
-        embeddings : Optional[Embeddings]
-            The embeddings to use for computing the distance.
-
-        distance_metric : Optional[EmbeddingDistanceEnum]
-            The distance metric to use for computing the distance.
-
+        Attributes:
+            embeddings: The embeddings to use for computing the distance.
+            distance_metric: The distance metric to use for computing the distance.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.EMBEDDING_DISTANCE
@@ -186,34 +163,23 @@ class RunEvalConfig(BaseModel):
     class StringDistance(SingleKeyEvalConfig):
         """Configuration for a string distance evaluator.
 
-        Parameters
-        ----------
-        distance : Optional[StringDistanceEnum]
-            The string distance metric to use.
-
+        Attributes:
+            distance: The string distance metric to use (`damerau_levenshtein`,
+                `levenshtein`, `jaro`, or `jaro_winkler`).
+            normalize_score: Whether to normalize the distance to between 0 and 1.
+                Applies only to the Levenshtein and Damerau-Levenshtein distances.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.STRING_DISTANCE
         distance: StringDistanceEnum | None = None
-        """The string distance metric to use.
-            damerau_levenshtein: The Damerau-Levenshtein distance.
-            levenshtein: The Levenshtein distance.
-            jaro: The Jaro distance.
-            jaro_winkler: The Jaro-Winkler distance.
-        """
         normalize_score: bool = True
-        """Whether to normalize the distance to between 0 and 1.
-        Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     class QA(SingleKeyEvalConfig):
         """Configuration for a QA evaluator.
 
-        Parameters
-        ----------
-        prompt : Optional[BasePromptTemplate]
-            The prompt template to use for generating the question.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
+        Attributes:
+            prompt: The prompt template to use for generating the question.
+            llm: The language model to use for the evaluation chain.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.QA
@@ -223,13 +189,9 @@ class RunEvalConfig(BaseModel):
     class ContextQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
-        Parameters
-        ----------
-        prompt : Optional[BasePromptTemplate]
-            The prompt template to use for generating the question.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
-
+        Attributes:
+            prompt: The prompt template to use for generating the question.
+            llm: The language model to use for the evaluation chain.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
@@ -239,13 +201,9 @@ class RunEvalConfig(BaseModel):
     class CoTQA(SingleKeyEvalConfig):
         """Configuration for a context-based QA evaluator.
 
-        Parameters
-        ----------
-        prompt : Optional[BasePromptTemplate]
-            The prompt template to use for generating the question.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
-
+        Attributes:
+            prompt: The prompt template to use for generating the question.
+            llm: The language model to use for the evaluation chain.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.CONTEXT_QA
@@ -253,34 +211,22 @@ class RunEvalConfig(BaseModel):
         prompt: BasePromptTemplate | None = None
 
     class JsonValidity(SingleKeyEvalConfig):
-        """Configuration for a json validity evaluator.
-
-        Parameters
-        ----------
-        """
+        """Configuration for a json validity evaluator."""
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_VALIDITY
 
     class JsonEqualityEvaluator(EvalConfig):
-        """Configuration for a json equality evaluator.
-
-        Parameters
-        ----------
-        """
+        """Configuration for a json equality evaluator."""
 
         evaluator_type: EvaluatorType = EvaluatorType.JSON_EQUALITY
 
     class ExactMatch(SingleKeyEvalConfig):
         """Configuration for an exact match string evaluator.
 
-        Parameters
-        ----------
-        ignore_case : bool
-            Whether to ignore case when comparing strings.
-        ignore_punctuation : bool
-            Whether to ignore punctuation when comparing strings.
-        ignore_numbers : bool
-            Whether to ignore numbers when comparing strings.
+        Attributes:
+            ignore_case: Whether to ignore case when comparing strings.
+            ignore_punctuation: Whether to ignore punctuation when comparing strings.
+            ignore_numbers: Whether to ignore numbers when comparing strings.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.EXACT_MATCH
@@ -291,10 +237,8 @@ class RunEvalConfig(BaseModel):
     class RegexMatch(SingleKeyEvalConfig):
         """Configuration for a regex match string evaluator.
 
-        Parameters
-        ----------
-        flags : int
-            The flags to pass to the regex. Example: re.IGNORECASE.
+        Attributes:
+            flags: The flags to pass to the regex. Example: `re.IGNORECASE`.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.REGEX_MATCH
@@ -309,17 +253,12 @@ class RunEvalConfig(BaseModel):
         It is recommended to normalize these scores
         by setting `normalize_by` to 10.
 
-        Parameters
-        ----------
-        criteria : CRITERIA_TYPE | None
-            The criteria to evaluate.
-        llm : BaseLanguageModel | None
-            The language model to use for the evaluation chain.
-        normalize_by: int | None = None
-            If you want to normalize the score, the denominator to use.
-            If not provided, the score will be between 1 and 10 (by default).
-        prompt : Optional[BasePromptTemplate]
-
+        Attributes:
+            criteria: The criteria to evaluate.
+            llm: The language model to use for the evaluation chain.
+            normalize_by: If you want to normalize the score, the denominator to use.
+                If not provided, the score will be between 1 and 10.
+            prompt: The prompt template to use for evaluation.
         """
 
         evaluator_type: EvaluatorType = EvaluatorType.SCORE_STRING

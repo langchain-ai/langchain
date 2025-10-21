@@ -508,8 +508,6 @@ class DocumentIndex(BaseRetriever):
     1. Storing document in the index.
     2. Fetching document by ID.
     3. Searching for document using a query.
-
-    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod

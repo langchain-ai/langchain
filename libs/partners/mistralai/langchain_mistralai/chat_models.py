@@ -446,7 +446,7 @@ def _convert_message_to_mistral_chat_message(
 
 
 class ChatMistralAI(BaseChatModel):
-    """A chat model that uses the MistralAI API."""
+    """A chat model that uses the Mistral AI API."""
 
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator

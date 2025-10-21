@@ -1,8 +1,8 @@
 """**Text Splitters** are classes for splitting text.
 
 !!! note
-    **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from
-    TextSplitter.
+    `MarkdownHeaderTextSplitter` and `HTMLHeaderTextSplitter` do not derive from
+    `TextSplitter`.
 """
 
 from langchain_text_splitters.base import (

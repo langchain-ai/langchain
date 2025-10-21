@@ -1549,7 +1549,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1922,7 +1922,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -1945,7 +1945,6 @@ test = [
     { name = "langchain", editable = "." },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-tests", editable = "../standard-tests" },
-    { name = "langgraph-prebuilt", specifier = ">=0.7.0rc1" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
