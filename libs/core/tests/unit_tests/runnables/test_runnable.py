@@ -4,10 +4,10 @@ import sys
 import time
 import uuid
 import warnings
-from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from functools import partial
 from operator import itemgetter
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -170,7 +170,7 @@ class FakeTracer(BaseTracer):
         return result
 
     @property
-    def run_ids(self) -> list[Optional[uuid.UUID]]:
+    def run_ids(self) -> list[uuid.UUID | None]:
         runs = self.flattened_runs()
         uuids_map = {v: k for k, v in self.uuids_map.items()}
         return [uuids_map.get(r.id) for r in runs]
@@ -181,7 +181,7 @@ class FakeRunnable(Runnable[str, int]):
     def invoke(
         self,
         input: str,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> int:
         return len(input)
@@ -194,7 +194,7 @@ class FakeRunnableSerializable(RunnableSerializable[str, int]):
     def invoke(
         self,
         input: str,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> int:
         return len(input)
@@ -314,15 +314,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "Example:\n"
+                "    ```python\n"
+                "    from langchain_core.documents import Document\n"
                 "\n"
-                "    .. code-block:: python\n"
-                "\n"
-                "        from langchain_core.documents import Document\n"
-                "\n"
-                "        document = Document(\n"
-                '            page_content="Hello, world!", '
+                "    document = Document(\n"
+                '        page_content="Hello, world!", '
                 'metadata={"source": "https://example.com"}\n'
-                "        )",
+                "    )\n"
+                "    ```",
                 "properties": {
                     "id": {
                         "anyOf": [{"type": "string"}, {"type": "null"}],
@@ -531,9 +530,6 @@ def test_passthrough_assign_schema() -> None:
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
     assert RunnableLambda(first_lambda).get_input_jsonschema() == {
@@ -1856,7 +1852,7 @@ def test_prompt_with_chat_model(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1965,7 +1961,7 @@ async def test_prompt_with_chat_model_async(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -3842,7 +3838,7 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
 
 def test_recursive_lambda() -> None:
-    def _simple_recursion(x: int) -> Union[int, Runnable]:
+    def _simple_recursion(x: int) -> int | Runnable:
         if x < 10:
             return RunnableLambda(lambda *_: _simple_recursion(x + 1))
         return x
@@ -3855,7 +3851,7 @@ def test_recursive_lambda() -> None:
 
 
 def test_retrying(mocker: MockerFixture) -> None:
-    def _lambda(x: int) -> Union[int, Runnable]:
+    def _lambda(x: int) -> int | Runnable:
         if x == 1:
             msg = "x is 1"
             raise ValueError(msg)
@@ -3972,7 +3968,7 @@ async def test_async_retry_batch_preserves_order() -> None:
 
 
 async def test_async_retrying(mocker: MockerFixture) -> None:
-    def _lambda(x: int) -> Union[int, Runnable]:
+    def _lambda(x: int) -> int | Runnable:
         if x == 1:
             msg = "x is 1"
             raise ValueError(msg)
@@ -4173,7 +4169,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
 
         @override
         def invoke(
-            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+            self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
         ) -> Any:
             raise NotImplementedError
 
@@ -4197,7 +4193,7 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
         def batch(
             self,
             inputs: list[str],
-            config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+            config: RunnableConfig | list[RunnableConfig] | None = None,
             *,
             return_exceptions: bool = False,
             **kwargs: Any,
@@ -4314,7 +4310,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
         @override
         def invoke(
-            self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+            self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
         ) -> Any:
             raise NotImplementedError
 
@@ -4338,7 +4334,7 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
         async def abatch(
             self,
             inputs: list[str],
-            config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+            config: RunnableConfig | list[RunnableConfig] | None = None,
             *,
             return_exceptions: bool = False,
             **kwargs: Any,
@@ -4790,9 +4786,6 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
     assert tracer.runs[2].outputs == {"output": "bye"}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
     runnable = RunnableLambda(lambda x: x * 2)
@@ -5437,7 +5430,7 @@ async def test_astream_log_deep_copies() -> None:
 
     chain = RunnableLambda(add_one)
     chunks = []
-    final_output: Optional[RunLogPatch] = None
+    final_output: RunLogPatch | None = None
     async for chunk in chain.astream_log(1):
         chunks.append(chunk)
         final_output = chunk if final_output is None else final_output + chunk
@@ -5503,7 +5496,7 @@ def test_default_transform_with_dicts() -> None:
     class CustomRunnable(RunnableSerializable[Input, Output]):
         @override
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+            self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
         ) -> Output:
             return cast("Output", input)
 
@@ -5525,7 +5518,7 @@ async def test_default_atransform_with_dicts() -> None:
     class CustomRunnable(RunnableSerializable[Input, Output]):
         @override
         def invoke(
-            self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+            self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
         ) -> Output:
             return cast("Output", input)
 
@@ -5637,8 +5630,8 @@ def test_closing_iterator_doesnt_raise_error() -> None:
             error: BaseException,
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[list[str]] = None,
+            parent_run_id: UUID | None = None,
+            tags: list[str] | None = None,
             **kwargs: Any,
         ) -> None:
             """Run when chain errors."""
@@ -5651,7 +5644,7 @@ def test_closing_iterator_doesnt_raise_error() -> None:
             outputs: dict[str, Any],
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
+            parent_run_id: UUID | None = None,
             **kwargs: Any,
         ) -> None:
             nonlocal on_chain_end_triggered

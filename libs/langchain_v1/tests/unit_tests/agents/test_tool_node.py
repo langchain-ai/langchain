@@ -1,14 +1,15 @@
 import contextlib
 import dataclasses
 import json
+import sys
 from functools import partial
 from typing import (
     Annotated,
     Any,
     NoReturn,
     TypeVar,
-    Union,
 )
+from unittest.mock import Mock
 
 import pytest
 from langchain_core.messages import (
@@ -19,6 +20,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.tools import BaseTool, ToolException
 from langchain_core.tools import tool as dec_tool
 from langgraph.config import get_stream_writer
@@ -32,19 +34,40 @@ from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict
 
-from langchain.agents import (
-    ToolNode,
-)
 from langchain.tools import (
     InjectedState,
     InjectedStore,
 )
+from langchain.tools.tool_node import _ToolNode
 from langchain.tools.tool_node import TOOL_CALL_ERROR_TEMPLATE, ToolInvocationError, tools_condition
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
 
 pytestmark = pytest.mark.anyio
+
+
+def _create_mock_runtime(store: BaseStore | None = None) -> Mock:
+    """Create a mock Runtime object for testing ToolNode outside of graph context.
+
+    This helper is needed because ToolNode._func expects a Runtime parameter
+    which is injected by RunnableCallable from config["configurable"]["__pregel_runtime"].
+    When testing ToolNode directly (outside a graph), we need to provide this manually.
+    """
+    mock_runtime = Mock()
+    mock_runtime.store = store
+    mock_runtime.context = None
+    mock_runtime.stream_writer = lambda *args, **kwargs: None
+    return mock_runtime
+
+
+def _create_config_with_runtime(store: BaseStore | None = None) -> RunnableConfig:
+    """Create a RunnableConfig with mock Runtime for testing ToolNode.
+
+    Returns:
+        RunnableConfig with __pregel_runtime in configurable dict.
+    """
+    return {"configurable": {"__pregel_runtime": _create_mock_runtime(store)}}
 
 
 def tool1(some_val: int, some_other_val: str) -> str:
@@ -90,7 +113,7 @@ tool5.handle_tool_error = "foo"
 
 async def test_tool_node() -> None:
     """Test tool node."""
-    result = ToolNode([tool1]).invoke(
+    result = _ToolNode([tool1]).invoke(
         {
             "messages": [
                 AIMessage(
@@ -104,7 +127,8 @@ async def test_tool_node() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message: ToolMessage = result["messages"][-1]
@@ -112,7 +136,7 @@ async def test_tool_node() -> None:
     assert tool_message.content == "1 - foo"
     assert tool_message.tool_call_id == "some 0"
 
-    result2 = await ToolNode([tool2]).ainvoke(
+    result2 = await _ToolNode([tool2]).ainvoke(
         {
             "messages": [
                 AIMessage(
@@ -126,7 +150,8 @@ async def test_tool_node() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message: ToolMessage = result2["messages"][-1]
@@ -134,7 +159,7 @@ async def test_tool_node() -> None:
     assert tool_message.content == "tool2: 2 - bar"
 
     # list of dicts tool content
-    result3 = await ToolNode([tool3]).ainvoke(
+    result3 = await _ToolNode([tool3]).ainvoke(
         {
             "messages": [
                 AIMessage(
@@ -148,7 +173,8 @@ async def test_tool_node() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
     tool_message: ToolMessage = result3["messages"][-1]
     assert tool_message.type == "tool"
@@ -158,7 +184,7 @@ async def test_tool_node() -> None:
     assert tool_message.tool_call_id == "some 2"
 
     # list of content blocks tool content
-    result4 = await ToolNode([tool4]).ainvoke(
+    result4 = await _ToolNode([tool4]).ainvoke(
         {
             "messages": [
                 AIMessage(
@@ -172,7 +198,8 @@ async def test_tool_node() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
     tool_message: ToolMessage = result4["messages"][-1]
     assert tool_message.type == "tool"
@@ -188,7 +215,7 @@ async def test_tool_node_tool_call_input() -> None:
         "id": "some 0",
         "type": "tool_call",
     }
-    result = ToolNode([tool1]).invoke([tool_call_1])
+    result = _ToolNode([tool1]).invoke([tool_call_1], config=_create_config_with_runtime())
     assert result["messages"] == [
         ToolMessage(content="1 - foo", tool_call_id="some 0", name="tool1"),
     ]
@@ -200,7 +227,9 @@ async def test_tool_node_tool_call_input() -> None:
         "id": "some 1",
         "type": "tool_call",
     }
-    result = ToolNode([tool1]).invoke([tool_call_1, tool_call_2])
+    result = _ToolNode([tool1]).invoke(
+        [tool_call_1, tool_call_2], config=_create_config_with_runtime()
+    )
     assert result["messages"] == [
         ToolMessage(content="1 - foo", tool_call_id="some 0", name="tool1"),
         ToolMessage(content="2 - bar", tool_call_id="some 1", name="tool1"),
@@ -209,7 +238,9 @@ async def test_tool_node_tool_call_input() -> None:
     # Test with unknown tool
     tool_call_3 = tool_call_1.copy()
     tool_call_3["name"] = "tool2"
-    result = ToolNode([tool1]).invoke([tool_call_1, tool_call_3])
+    result = _ToolNode([tool1]).invoke(
+        [tool_call_1, tool_call_3], config=_create_config_with_runtime()
+    )
     assert result["messages"] == [
         ToolMessage(content="1 - foo", tool_call_id="some 0", name="tool1"),
         ToolMessage(
@@ -222,7 +253,7 @@ async def test_tool_node_tool_call_input() -> None:
 
 
 def test_tool_node_error_handling_default_invocation() -> None:
-    tn = ToolNode([tool1])
+    tn = _ToolNode([tool1])
     result = tn.invoke(
         {
             "messages": [
@@ -237,7 +268,8 @@ def test_tool_node_error_handling_default_invocation() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     assert all(m.type == "tool" for m in result["messages"])
@@ -249,7 +281,7 @@ def test_tool_node_error_handling_default_invocation() -> None:
 
 
 def test_tool_node_error_handling_default_exception() -> None:
-    tn = ToolNode([tool1])
+    tn = _ToolNode([tool1])
     with pytest.raises(ValueError):
         tn.invoke(
             {
@@ -265,7 +297,8 @@ def test_tool_node_error_handling_default_exception() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
 
@@ -282,7 +315,7 @@ async def test_tool_node_error_handling() -> None:
         (ValueError, ToolException, ToolInvocationError),
         handle_all,
     ):
-        result_error = await ToolNode(
+        result_error = await _ToolNode(
             [tool1, tool2, tool3], handle_tool_errors=handle_tool_errors
         ).ainvoke(
             {
@@ -308,7 +341,8 @@ async def test_tool_node_error_handling() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
         assert all(m.type == "tool" for m in result_error["messages"])
@@ -339,7 +373,7 @@ async def test_tool_node_error_handling_callable() -> None:
         return "Tool exception"
 
     for handle_tool_errors in ("Value error", handle_value_error):
-        result_error = await ToolNode([tool1], handle_tool_errors=handle_tool_errors).ainvoke(
+        result_error = await _ToolNode([tool1], handle_tool_errors=handle_tool_errors).ainvoke(
             {
                 "messages": [
                     AIMessage(
@@ -353,7 +387,8 @@ async def test_tool_node_error_handling_callable() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
         tool_message: ToolMessage = result_error["messages"][-1]
         assert tool_message.type == "tool"
@@ -365,7 +400,7 @@ async def test_tool_node_error_handling_callable() -> None:
     # - passing a callable with all exceptions in the signature
     for handle_tool_errors in ((ValueError,), handle_value_error):
         with pytest.raises(ToolException) as exc_info:
-            await ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
+            await _ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
                 {
                     "messages": [
                         AIMessage(
@@ -384,13 +419,14 @@ async def test_tool_node_error_handling_callable() -> None:
                             ],
                         )
                     ]
-                }
+                },
+                config=_create_config_with_runtime(),
             )
         assert str(exc_info.value) == "Test error"
 
     for handle_tool_errors in ((ToolException,), handle_tool_exception):
         with pytest.raises(ValueError) as exc_info:
-            await ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
+            await _ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
                 {
                     "messages": [
                         AIMessage(
@@ -409,14 +445,15 @@ async def test_tool_node_error_handling_callable() -> None:
                             ],
                         )
                     ]
-                }
+                },
+                config=_create_config_with_runtime(),
             )
         assert str(exc_info.value) == "Test error"
 
 
 async def test_tool_node_handle_tool_errors_false() -> None:
     with pytest.raises(ValueError) as exc_info:
-        ToolNode([tool1], handle_tool_errors=False).invoke(
+        _ToolNode([tool1], handle_tool_errors=False).invoke(
             {
                 "messages": [
                     AIMessage(
@@ -430,13 +467,14 @@ async def test_tool_node_handle_tool_errors_false() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
     assert str(exc_info.value) == "Test error"
 
     with pytest.raises(ToolException):
-        await ToolNode([tool2], handle_tool_errors=False).ainvoke(
+        await _ToolNode([tool2], handle_tool_errors=False).ainvoke(
             {
                 "messages": [
                     AIMessage(
@@ -450,14 +488,15 @@ async def test_tool_node_handle_tool_errors_false() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
     assert str(exc_info.value) == "Test error"
 
     # test validation errors get raised if handle_tool_errors is False
     with pytest.raises(ToolInvocationError):
-        ToolNode([tool1], handle_tool_errors=False).invoke(
+        _ToolNode([tool1], handle_tool_errors=False).invoke(
             {
                 "messages": [
                     AIMessage(
@@ -471,13 +510,14 @@ async def test_tool_node_handle_tool_errors_false() -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
 
 def test_tool_node_individual_tool_error_handling() -> None:
     # test error handling on individual tools (and that it overrides overall error handling!)
-    result_individual_tool_error_handler = ToolNode([tool5], handle_tool_errors="bar").invoke(
+    result_individual_tool_error_handler = _ToolNode([tool5], handle_tool_errors="bar").invoke(
         {
             "messages": [
                 AIMessage(
@@ -491,7 +531,8 @@ def test_tool_node_individual_tool_error_handling() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message: ToolMessage = result_individual_tool_error_handler["messages"][-1]
@@ -502,7 +543,7 @@ def test_tool_node_individual_tool_error_handling() -> None:
 
 
 def test_tool_node_incorrect_tool_name() -> None:
-    result_incorrect_name = ToolNode([tool1, tool2]).invoke(
+    result_incorrect_name = _ToolNode([tool1, tool2]).invoke(
         {
             "messages": [
                 AIMessage(
@@ -516,7 +557,8 @@ def test_tool_node_incorrect_tool_name() -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
 
     tool_message: ToolMessage = result_incorrect_name["messages"][-1]
@@ -536,7 +578,7 @@ def test_tool_node_node_interrupt() -> None:
         return "handled"
 
     for handle_tool_errors in (True, (GraphBubbleUp,), "handled", handle, False):
-        node = ToolNode([tool_interrupt], handle_tool_errors=handle_tool_errors)
+        node = _ToolNode([tool_interrupt], handle_tool_errors=handle_tool_errors)
         with pytest.raises(GraphBubbleUp) as exc_info:
             node.invoke(
                 {
@@ -552,7 +594,8 @@ def test_tool_node_node_interrupt() -> None:
                             ],
                         )
                     ]
-                }
+                },
+                config=_create_config_with_runtime(),
             )
             assert exc_info.value == "foo"
 
@@ -639,7 +682,7 @@ async def test_tool_node_command(input_type: str) -> None:
         input_ = {"messages": [AIMessage("", tool_calls=tool_calls)]}
     elif input_type == "tool_calls":
         input_ = tool_calls
-    result = ToolNode([add, transfer_to_bob]).invoke(input_)
+    result = _ToolNode([add, transfer_to_bob]).invoke(input_, config=_create_config_with_runtime())
 
     assert result == [
         {
@@ -670,8 +713,9 @@ async def test_tool_node_command(input_type: str) -> None:
 
     # test sync tools
     for tool in [transfer_to_bob, custom_tool]:
-        result = ToolNode([tool]).invoke(
-            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]}
+        result = _ToolNode([tool]).invoke(
+            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]},
+            config=_create_config_with_runtime(),
         )
         assert result == [
             Command(
@@ -691,8 +735,9 @@ async def test_tool_node_command(input_type: str) -> None:
 
     # test async tools
     for tool in [async_transfer_to_bob, async_custom_tool]:
-        result = await ToolNode([tool]).ainvoke(
-            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]}
+        result = await _ToolNode([tool]).ainvoke(
+            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]},
+            config=_create_config_with_runtime(),
         )
         assert result == [
             Command(
@@ -711,7 +756,7 @@ async def test_tool_node_command(input_type: str) -> None:
         ]
 
     # test multiple commands
-    result = ToolNode([transfer_to_bob, custom_tool]).invoke(
+    result = _ToolNode([transfer_to_bob, custom_tool]).invoke(
         {
             "messages": [
                 AIMessage(
@@ -722,7 +767,8 @@ async def test_tool_node_command(input_type: str) -> None:
                     ],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     )
     assert result == [
         Command(
@@ -761,7 +807,7 @@ async def test_tool_node_command(input_type: str) -> None:
             """My tool"""
             return Command(update=[ToolMessage(content="foo", tool_call_id=tool_call_id)])
 
-        ToolNode([list_update_tool]).invoke(
+        _ToolNode([list_update_tool]).invoke(
             {
                 "messages": [
                     AIMessage(
@@ -769,7 +815,8 @@ async def test_tool_node_command(input_type: str) -> None:
                         tool_calls=[{"args": {}, "id": "1", "name": "list_update_tool"}],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
     # test validation (missing tool message in the update for current graph)
@@ -780,7 +827,7 @@ async def test_tool_node_command(input_type: str) -> None:
             """My tool"""
             return Command(update={"messages": []})
 
-        ToolNode([no_update_tool]).invoke(
+        _ToolNode([no_update_tool]).invoke(
             {
                 "messages": [
                     AIMessage(
@@ -788,7 +835,8 @@ async def test_tool_node_command(input_type: str) -> None:
                         tool_calls=[{"args": {}, "id": "1", "name": "no_update_tool"}],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
     # test validation (tool message with a wrong tool call ID)
@@ -799,7 +847,7 @@ async def test_tool_node_command(input_type: str) -> None:
             """My tool"""
             return Command(update={"messages": [ToolMessage(content="foo", tool_call_id="2")]})
 
-        ToolNode([mismatching_tool_call_id_tool]).invoke(
+        _ToolNode([mismatching_tool_call_id_tool]).invoke(
             {
                 "messages": [
                     AIMessage(
@@ -813,7 +861,8 @@ async def test_tool_node_command(input_type: str) -> None:
                         ],
                     )
                 ]
-            }
+            },
+            config=_create_config_with_runtime(),
         )
 
     # test validation (missing tool message in the update for parent graph is OK)
@@ -822,7 +871,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """No update"""
         return Command(update={"messages": []}, graph=Command.PARENT)
 
-    assert ToolNode([node_update_parent_tool]).invoke(
+    assert _ToolNode([node_update_parent_tool]).invoke(
         {
             "messages": [
                 AIMessage(
@@ -830,7 +879,8 @@ async def test_tool_node_command(input_type: str) -> None:
                     tool_calls=[{"args": {}, "id": "1", "name": "node_update_parent_tool"}],
                 )
             ]
-        }
+        },
+        config=_create_config_with_runtime(),
     ) == [Command(update={"messages": []}, graph=Command.PARENT)]
 
 
@@ -899,7 +949,7 @@ async def test_tool_node_command_list_input() -> None:
         """Add two numbers"""
         return a + b
 
-    result = ToolNode([add, transfer_to_bob]).invoke(
+    result = _ToolNode([add, transfer_to_bob]).invoke(
         [
             AIMessage(
                 "",
@@ -908,7 +958,8 @@ async def test_tool_node_command_list_input() -> None:
                     {"args": {}, "id": "2", "name": "transfer_to_bob"},
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
 
     assert result == [
@@ -936,8 +987,9 @@ async def test_tool_node_command_list_input() -> None:
 
     # test sync tools
     for tool in [transfer_to_bob, custom_tool]:
-        result = ToolNode([tool]).invoke(
-            [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]
+        result = _ToolNode([tool]).invoke(
+            [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])],
+            config=_create_config_with_runtime(),
         )
         assert result == [
             Command(
@@ -955,8 +1007,9 @@ async def test_tool_node_command_list_input() -> None:
 
     # test async tools
     for tool in [async_transfer_to_bob, async_custom_tool]:
-        result = await ToolNode([tool]).ainvoke(
-            [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]
+        result = await _ToolNode([tool]).ainvoke(
+            [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])],
+            config=_create_config_with_runtime(),
         )
         assert result == [
             Command(
@@ -973,7 +1026,7 @@ async def test_tool_node_command_list_input() -> None:
         ]
 
     # test multiple commands
-    result = ToolNode([transfer_to_bob, custom_tool]).invoke(
+    result = _ToolNode([transfer_to_bob, custom_tool]).invoke(
         [
             AIMessage(
                 "",
@@ -982,7 +1035,8 @@ async def test_tool_node_command_list_input() -> None:
                     {"args": {}, "id": "2", "name": "custom_transfer_to_bob"},
                 ],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     )
     assert result == [
         Command(
@@ -1019,13 +1073,14 @@ async def test_tool_node_command_list_input() -> None:
                 update={"messages": [ToolMessage(content="foo", tool_call_id=tool_call_id)]}
             )
 
-        ToolNode([list_update_tool]).invoke(
+        _ToolNode([list_update_tool]).invoke(
             [
                 AIMessage(
                     "",
                     tool_calls=[{"args": {}, "id": "1", "name": "list_update_tool"}],
                 )
-            ]
+            ],
+            config=_create_config_with_runtime(),
         )
 
     # test validation (missing tool message in the update for current graph)
@@ -1036,13 +1091,14 @@ async def test_tool_node_command_list_input() -> None:
             """My tool"""
             return Command(update=[])
 
-        ToolNode([no_update_tool]).invoke(
+        _ToolNode([no_update_tool]).invoke(
             [
                 AIMessage(
                     "",
                     tool_calls=[{"args": {}, "id": "1", "name": "no_update_tool"}],
                 )
-            ]
+            ],
+            config=_create_config_with_runtime(),
         )
 
     # test validation (tool message with a wrong tool call ID)
@@ -1053,13 +1109,14 @@ async def test_tool_node_command_list_input() -> None:
             """My tool"""
             return Command(update=[ToolMessage(content="foo", tool_call_id="2")])
 
-        ToolNode([mismatching_tool_call_id_tool]).invoke(
+        _ToolNode([mismatching_tool_call_id_tool]).invoke(
             [
                 AIMessage(
                     "",
                     tool_calls=[{"args": {}, "id": "1", "name": "mismatching_tool_call_id_tool"}],
                 )
-            ]
+            ],
+            config=_create_config_with_runtime(),
         )
 
     # test validation (missing tool message in the update for parent graph is OK)
@@ -1068,13 +1125,14 @@ async def test_tool_node_command_list_input() -> None:
         """No update"""
         return Command(update=[], graph=Command.PARENT)
 
-    assert ToolNode([node_update_parent_tool]).invoke(
+    assert _ToolNode([node_update_parent_tool]).invoke(
         [
             AIMessage(
                 "",
                 tool_calls=[{"args": {}, "id": "1", "name": "node_update_parent_tool"}],
             )
-        ]
+        ],
+        config=_create_config_with_runtime(),
     ) == [Command(update=[], graph=Command.PARENT)]
 
 
@@ -1128,8 +1186,9 @@ def test_tool_node_parent_command_with_send() -> None:
         {"args": {}, "id": "2", "name": "transfer_to_bob", "type": "tool_call"},
     ]
 
-    result = ToolNode([transfer_to_alice, transfer_to_bob]).invoke(
-        [AIMessage("", tool_calls=tool_calls)]
+    result = _ToolNode([transfer_to_alice, transfer_to_bob]).invoke(
+        [AIMessage("", tool_calls=tool_calls)],
+        config=_create_config_with_runtime(),
     )
 
     assert result == [
@@ -1173,13 +1232,16 @@ async def test_tool_node_command_remove_all_messages() -> None:
         """A tool that removes all messages."""
         return Command(update={"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)]})
 
-    tool_node = ToolNode([remove_all_messages_tool])
+    tool_node = _ToolNode([remove_all_messages_tool])
     tool_call = {
         "name": "remove_all_messages_tool",
         "args": {},
         "id": "tool_call_123",
     }
-    result = await tool_node.ainvoke({"messages": [AIMessage(content="", tool_calls=[tool_call])]})
+    result = await tool_node.ainvoke(
+        {"messages": [AIMessage(content="", tool_calls=[tool_call])]},
+        config=_create_config_with_runtime(),
+    )
 
     assert isinstance(result, list)
     assert len(result) == 1
@@ -1189,11 +1251,6 @@ async def test_tool_node_command_remove_all_messages() -> None:
 
 
 class _InjectStateSchema(TypedDict):
-    messages: list
-    foo: str
-
-
-class _InjectedStatePydanticSchema(BaseModelV1):
     messages: list
     foo: str
 
@@ -1209,18 +1266,24 @@ class _InjectedStateDataclassSchema:
     foo: str
 
 
+_INJECTED_STATE_SCHEMAS = [
+    _InjectStateSchema,
+    _InjectedStatePydanticV2Schema,
+    _InjectedStateDataclassSchema,
+]
+
+if sys.version_info < (3, 14):
+
+    class _InjectedStatePydanticSchema(BaseModelV1):
+        messages: list
+        foo: str
+
+    _INJECTED_STATE_SCHEMAS.append(_InjectedStatePydanticSchema)
+
 T = TypeVar("T")
 
 
-@pytest.mark.parametrize(
-    "schema_",
-    [
-        _InjectStateSchema,
-        _InjectedStatePydanticSchema,
-        _InjectedStatePydanticV2Schema,
-        _InjectedStateDataclassSchema,
-    ],
-)
+@pytest.mark.parametrize("schema_", _INJECTED_STATE_SCHEMAS)
 def test_tool_node_inject_state(schema_: type[T]) -> None:
     def tool1(some_val: int, state: Annotated[T, InjectedState]) -> str:
         """Tool 1 docstring."""
@@ -1246,7 +1309,7 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
         """Tool 1 docstring."""
         return msgs[0].content
 
-    node = ToolNode([tool1, tool2, tool3, tool4], handle_tool_errors=True)
+    node = _ToolNode([tool1, tool2, tool3, tool4], handle_tool_errors=True)
     for tool_name in ("tool1", "tool2", "tool3"):
         tool_call = {
             "name": tool_name,
@@ -1255,7 +1318,9 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
             "type": "tool_call",
         }
         msg = AIMessage("hi?", tool_calls=[tool_call])
-        result = node.invoke(schema_(messages=[msg], foo="bar"))
+        result = node.invoke(
+            schema_(messages=[msg], foo="bar"), config=_create_config_with_runtime()
+        )
         tool_message = result["messages"][-1]
         assert tool_message.content == "bar", f"Failed for tool={tool_name}"
 
@@ -1265,10 +1330,10 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
                 failure_input = schema_(messages=[msg], notfoo="bar")
             if failure_input is not None:
                 with pytest.raises(KeyError):
-                    node.invoke(failure_input)
+                    node.invoke(failure_input, config=_create_config_with_runtime())
 
                 with pytest.raises(ValueError):
-                    node.invoke([msg])
+                    node.invoke([msg], config=_create_config_with_runtime())
         else:
             failure_input = None
             try:
@@ -1278,10 +1343,10 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
                 # anyway
                 pass
             if failure_input is not None:
-                messages_ = node.invoke(failure_input)
+                messages_ = node.invoke(failure_input, config=_create_config_with_runtime())
                 tool_message = messages_["messages"][-1]
                 assert "KeyError" in tool_message.content
-                tool_message = node.invoke([msg])[-1]
+                tool_message = node.invoke([msg], config=_create_config_with_runtime())[-1]
                 assert "KeyError" in tool_message.content
 
     tool_call = {
@@ -1291,11 +1356,11 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
         "type": "tool_call",
     }
     msg = AIMessage("hi?", tool_calls=[tool_call])
-    result = node.invoke(schema_(messages=[msg], foo=""))
+    result = node.invoke(schema_(messages=[msg], foo=""), config=_create_config_with_runtime())
     tool_message = result["messages"][-1]
     assert tool_message.content == "hi?"
 
-    result = node.invoke([msg])
+    result = node.invoke([msg], config=_create_config_with_runtime())
     tool_message = result[-1]
     assert tool_message.content == "hi?"
 
@@ -1323,7 +1388,7 @@ def test_tool_node_inject_store() -> None:
         store_val = store.get(namespace, "test_key").value["foo"]
         return f"Some val: {some_val}, store val: {store_val}, state val: {bar}"
 
-    node = ToolNode([tool1, tool2, tool3], handle_tool_errors=True)
+    node = _ToolNode([tool1, tool2, tool3], handle_tool_errors=True)
     store.put(namespace, "test_key", {"foo": "bar"})
 
     class State(MessagesState):
@@ -1342,7 +1407,9 @@ def test_tool_node_inject_store() -> None:
             "type": "tool_call",
         }
         msg = AIMessage("hi?", tool_calls=[tool_call])
-        node_result = node.invoke({"messages": [msg]}, store=store)
+        node_result = node.invoke(
+            {"messages": [msg]}, config=_create_config_with_runtime(store=store)
+        )
         graph_result = graph.invoke({"messages": [msg]})
         for result in (node_result, graph_result):
             result["messages"][-1]
@@ -1358,7 +1425,9 @@ def test_tool_node_inject_store() -> None:
         "type": "tool_call",
     }
     msg = AIMessage("hi?", tool_calls=[tool_call])
-    node_result = node.invoke({"messages": [msg], "bar": "baz"}, store=store)
+    node_result = node.invoke(
+        {"messages": [msg], "bar": "baz"}, config=_create_config_with_runtime(store=store)
+    )
     graph_result = graph.invoke({"messages": [msg], "bar": "baz"})
     for result in (node_result, graph_result):
         result["messages"][-1]
@@ -1382,8 +1451,9 @@ def test_tool_node_ensure_utf8() -> None:
     data = ["星期一", "水曜日", "목요일", "Friday"]
     tools = [get_day_list]
     tool_calls = [ToolCall(name=get_day_list.name, args={"days": data}, id="test_id")]
-    outputs: list[ToolMessage] = ToolNode(tools).invoke(
-        [AIMessage(content="", tool_calls=tool_calls)]
+    outputs: list[ToolMessage] = _ToolNode(tools).invoke(
+        [AIMessage(content="", tool_calls=tool_calls)],
+        config=_create_config_with_runtime(),
     )
     assert outputs[0].content == json.dumps(data, ensure_ascii=False)
 
@@ -1408,7 +1478,7 @@ def test_tool_node_messages_key() -> None:
 
     builder = StateGraph(State)
     builder.add_node("agent", call_model)
-    builder.add_node("tools", ToolNode([add], messages_key="subgraph_messages"))
+    builder.add_node("tools", _ToolNode([add], messages_key="subgraph_messages"))
     builder.add_conditional_edges(
         "agent", partial(tools_condition, messages_key="subgraph_messages")
     )
@@ -1439,7 +1509,7 @@ def test_tool_node_stream_writer() -> None:
 
         return x
 
-    tool_node = ToolNode([streaming_tool])
+    tool_node = _ToolNode([streaming_tool])
     graph = (
         StateGraph(MessagesState).add_node("tools", tool_node).add_edge(START, "tools").compile()
     )

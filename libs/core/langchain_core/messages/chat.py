@@ -19,7 +19,7 @@ class ChatMessage(BaseMessage):
     """The speaker / role of the Message."""
 
     type: Literal["chat"] = "chat"
-    """The type of the message (used during serialization). Defaults to "chat"."""
+    """The type of the message (used during serialization)."""
 
 
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
@@ -29,11 +29,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used during serialization).
-
-    Defaults to ``'ChatMessageChunk'``.
-
-    """
+    """The type of the message (used during serialization)."""
 
     @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]

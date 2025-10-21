@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from langchain_core.load import Serializable
 from langchain_core.utils._merge import merge_dicts
@@ -28,7 +28,7 @@ class Generation(Serializable):
     text: str
     """Generated text output."""
 
-    generation_info: Optional[dict[str, Any]] = None
+    generation_info: dict[str, Any] | None = None
     """Raw response from the provider.
 
     May include things like the reason for finishing or token log probabilities.
@@ -44,10 +44,10 @@ class Generation(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "output"]``
+            `["langchain", "schema", "output"]`
         """
         return ["langchain", "schema", "output"]
 
@@ -56,16 +56,16 @@ class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
-        """Concatenate two ``GenerationChunk``s.
+        """Concatenate two `GenerationChunk`s.
 
         Args:
-            other: Another ``GenerationChunk`` to concatenate with.
+            other: Another `GenerationChunk` to concatenate with.
 
         Raises:
-            TypeError: If other is not a ``GenerationChunk``.
+            TypeError: If other is not a `GenerationChunk`.
 
         Returns:
-            A new ``GenerationChunk`` concatenated from self and other.
+            A new `GenerationChunk` concatenated from self and other.
         """
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(

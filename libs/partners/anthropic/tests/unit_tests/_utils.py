@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.callbacks import BaseCallbackHandler
 from pydantic import BaseModel
@@ -22,7 +22,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_chat_model_: bool = False
 
     # to allow for similar callback handlers that are not technically equal
-    fake_id: Union[str, None] = None
+    fake_id: str | None = None
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0

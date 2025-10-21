@@ -5,7 +5,8 @@ from __future__ import annotations
 import random
 import re
 import string
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from bs4 import Tag
@@ -2369,7 +2370,7 @@ def test_haskell_code_splitter() -> None:
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
-    """Fixture to create an HTMLHeaderTextSplitter instance with given headers.
+    """Fixture to create an `HTMLHeaderTextSplitter` instance with given headers.
 
     This factory allows dynamic creation of splitters with different headers.
     """
@@ -2579,12 +2580,12 @@ def test_html_header_text_splitter(
     """Test the HTML header text splitter.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory function to create
-            the HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_input (str): The HTML input string to be split.
-        expected_documents (List[Document]): List of expected Document objects.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory : Factory function to create the HTML
+            header splitter.
+        headers_to_split_on: List of headers to split on.
+        html_input: The HTML input string to be split.
+        expected_documents: List of expected Document objects.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata
@@ -2597,7 +2598,9 @@ def test_html_header_text_splitter(
         f"Test Case '{test_case}' Failed: Number of documents mismatch. "
         f"Expected {len(expected_documents)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_documents), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_documents, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"Test Case '{test_case}' Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}"
@@ -2733,12 +2736,12 @@ def test_additional_html_header_text_splitter(
     """Test the HTML header text splitter.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory function to create
-            the HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_content (str): HTML content to be split.
-        expected_output (List[Document]): Expected list of Document objects.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory: Factory function to create the HTML
+            header splitter.
+        headers_to_split_on: List of headers to split on.
+        html_content: HTML content to be split.
+        expected_output: Expected list of `Document` objects.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata
@@ -2751,7 +2754,9 @@ def test_additional_html_header_text_splitter(
         f"{test_case} Failed: Number of documents mismatch. "
         f"Expected {len(expected_output)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_output, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}\n"
@@ -2803,13 +2808,12 @@ def test_html_no_headers_with_multiple_splitters(
     """Test HTML content splitting without headers using multiple splitters.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory to create the
-            HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_content (str): HTML content to be split.
-        expected_output (List[Document]): Expected list of Document objects
-            after splitting.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory: Factory to create the HTML header
+            splitter.
+        headers_to_split_on: List of headers to split on.
+        html_content: HTML content to be split.
+        expected_output: Expected list of `Document` objects after splitting.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata
@@ -2822,7 +2826,9 @@ def test_html_no_headers_with_multiple_splitters(
         f"{test_case} Failed: Number of documents mismatch. "
         f"Expected {len(expected_output)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_output, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}\n"
