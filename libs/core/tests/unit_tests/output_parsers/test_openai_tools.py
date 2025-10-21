@@ -894,8 +894,8 @@ def test_pydantic_tools_parser_with_mixed_pydantic_versions() -> None:
     class WeatherV1(pydantic.v1.BaseModel):
         """Weather information using Pydantic v1."""
 
-        temperature: int
-        conditions: str
+        temperature: int = pydantic.v1.Field()
+        conditions: str = pydantic.v1.Field()
 
     class LocationV2(BaseModel):
         """Location information using Pydantic v2."""
@@ -1038,16 +1038,16 @@ def test_pydantic_tools_parser_with_nested_models() -> None:
     class AddressV1(pydantic.v1.BaseModel):
         """Address using Pydantic v1."""
 
-        street: str
-        city: str
-        zip_code: str
+        street: str = pydantic.v1.Field()
+        city: str = pydantic.v1.Field()
+        zip_code: str = pydantic.v1.Field()
 
     class PersonV1(pydantic.v1.BaseModel):
         """Person with nested address using Pydantic v1."""
 
-        name: str
-        age: int
-        address: AddressV1
+        name: str = pydantic.v1.Field()
+        age: int = pydantic.v1.Field()
+        address: AddressV1 = pydantic.v1.Field()
 
     # Nested v2 models
     class CoordinatesV2(BaseModel):
@@ -1165,10 +1165,10 @@ def test_pydantic_tools_parser_with_optional_fields() -> None:
     class ProductV1(pydantic.v1.BaseModel):
         """Product with optional fields using Pydantic v1."""
 
-        name: str
-        price: float
-        description: str | None = None
-        stock: int = 0
+        name: str = pydantic.v1.Field()
+        price: float = pydantic.v1.Field()
+        description: str | None = pydantic.v1.Field(default=None)
+        stock: int = pydantic.v1.Field(default=0)
 
     # v2 model with optional fields
     class UserV2(BaseModel):
