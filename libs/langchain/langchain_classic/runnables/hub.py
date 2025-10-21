@@ -17,7 +17,7 @@ class HubRunnable(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
         api_key: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the HubRunnable.
+        """Initialize the `HubRunnable`.
 
         Args:
             owner_repo_commit: The full name of the prompt to pull from in the format of

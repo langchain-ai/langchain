@@ -23,10 +23,10 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
         """Initialize the progress bar.
 
         Args:
-            total: int, the total number of items to be processed.
-            ncols: int, the character width of the progress bar.
-            end_with: str, last string to print after progress bar reaches end.
-            **kwargs: additional keyword arguments.
+            total: The total number of items to be processed.
+            ncols: The character width of the progress bar.
+            end_with: Last string to print after progress bar reaches end.
+            **kwargs: Additional keyword arguments.
         """
         self.total = total
         self.ncols = ncols
