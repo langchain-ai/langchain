@@ -1,8 +1,9 @@
 """Unit tests for ValidationError filtering in ToolNode.
 
-This module tests that validation errors for injected arguments (InjectedState,
-InjectedStore, ToolRuntime) are properly filtered out when tools are invoked with
-invalid arguments, ensuring only model-controllable argument errors are reported.
+This module tests that validation errors are filtered to only include arguments
+that the model controls. Injected arguments (InjectedState, InjectedStore,
+ToolRuntime) are automatically provided by the system and should not appear in
+validation error messages since the model has no control over them.
 """
 
 from typing import Annotated
@@ -42,7 +43,11 @@ def _create_config_with_runtime(store: BaseStore | None = None) -> RunnableConfi
 
 
 async def test_filter_injected_state_validation_errors() -> None:
-    """Test that validation errors for InjectedState arguments are filtered out."""
+    """Test that validation errors for InjectedState arguments are filtered out.
+
+    InjectedState parameters are not controlled by the model, so any validation
+    errors related to them should not appear in error messages.
+    """
 
     @dec_tool
     def my_tool(
@@ -91,7 +96,11 @@ async def test_filter_injected_state_validation_errors() -> None:
 
 
 async def test_filter_injected_store_validation_errors() -> None:
-    """Test that validation errors for InjectedStore arguments are filtered out."""
+    """Test that validation errors for InjectedStore arguments are filtered out.
+
+    InjectedStore parameters are not controlled by the model, so any validation
+    errors related to them should not appear in error messages.
+    """
 
     @dec_tool
     def my_tool(
@@ -145,7 +154,11 @@ async def test_filter_injected_store_validation_errors() -> None:
 
 
 async def test_filter_tool_runtime_validation_errors() -> None:
-    """Test that validation errors for ToolRuntime arguments are filtered out."""
+    """Test that validation errors for ToolRuntime arguments are filtered out.
+
+    ToolRuntime parameters are not controlled by the model, so any validation
+    errors related to them should not appear in error messages.
+    """
 
     @dec_tool
     def my_tool(
@@ -193,7 +206,11 @@ async def test_filter_tool_runtime_validation_errors() -> None:
 
 
 async def test_filter_multiple_injected_args() -> None:
-    """Test filtering when multiple injected arguments have validation errors."""
+    """Test filtering when a tool has multiple injected arguments.
+
+    When a tool uses multiple injected parameters (state, store, runtime), none of
+    them should appear in validation error messages since they're all system-provided.
+    """
 
     @dec_tool
     def my_tool(
@@ -246,7 +263,11 @@ async def test_filter_multiple_injected_args() -> None:
 
 
 async def test_no_filtering_when_all_errors_are_model_args() -> None:
-    """Test that filtering doesn't hide errors for non-injected arguments."""
+    """Test that validation errors for model-controlled arguments are preserved.
+
+    When validation fails for arguments the model controls, those errors should
+    be fully reported to help the model correct its tool calls.
+    """
 
     @dec_tool
     def my_tool(
@@ -299,7 +320,11 @@ async def test_no_filtering_when_all_errors_are_model_args() -> None:
 
 
 async def test_validation_error_with_no_injected_args() -> None:
-    """Test that normal tools without injection still show all errors."""
+    """Test that tools without injected arguments show all validation errors.
+
+    For tools that only have model-controlled parameters, all validation errors
+    should be reported since everything is under the model's control.
+    """
 
     @dec_tool
     def my_tool(value1: int, value2: str) -> str:
@@ -341,7 +366,11 @@ async def test_validation_error_with_no_injected_args() -> None:
 
 
 async def test_tool_invocation_error_without_handle_errors() -> None:
-    """Test that ToolInvocationError is raised with filtered errors when not handling."""
+    """Test that ToolInvocationError contains only model-controlled parameter errors.
+
+    When handle_tool_errors is False, the raised ToolInvocationError should still
+    filter out injected arguments from the error details.
+    """
 
     @dec_tool
     def my_tool(
@@ -391,7 +420,11 @@ async def test_tool_invocation_error_without_handle_errors() -> None:
 
 
 async def test_sync_tool_validation_error_filtering() -> None:
-    """Test that error filtering works for sync tools as well."""
+    """Test that error filtering works for sync tools.
+
+    Error filtering should work identically for both sync and async tool execution,
+    excluding injected arguments from validation error messages.
+    """
 
     @dec_tool
     def my_tool(
@@ -435,16 +468,16 @@ async def test_sync_tool_validation_error_filtering() -> None:
 
 
 async def test_create_agent_error_content_with_multiple_params() -> None:
-    """Test that error messages contain non-injected params but not injected ones.
+    """Test that error messages only include model-controlled parameter errors.
 
-    This test uses create_agent to verify that when a tool with both regular
+    Uses create_agent to verify that when a tool with both model-controlled
     and injected parameters receives invalid arguments, the error message:
-    1. Contains details about the non-injected parameter errors
-    2. Does NOT contain any injected parameter names or values
-    3. Properly formats the validation errors for clarity
+    1. Contains details about model-controlled parameter errors (query, limit)
+    2. Does NOT contain injected parameter names (state, store, runtime)
+    3. Does NOT contain values from injected parameters
+    4. Properly formats the validation errors for model correction
     """
 
-    # Custom state with sensitive information
     class TestState(AgentState):
         user_id: str
         api_key: str
@@ -519,11 +552,8 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
 
     content = tool_message.content
 
-    # Verify error mentions the non-injected parameter issues
-    # Should mention 'query' error
+    # Verify error mentions model-controlled parameter issues
     assert "query" in content.lower(), "Error should mention 'query' parameter"
-
-    # Should mention 'limit' error (missing required field)
     assert "limit" in content.lower(), "Error should mention 'limit' parameter"
 
     # Should indicate validation errors occurred
@@ -531,34 +561,34 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
         "Error should indicate validation occurred"
     )
 
-    # CRITICAL: Verify NO injected parameter names appear in error
+    # Verify NO injected parameter names appear in error
+    # These are not controlled by the model and should be excluded
     assert "state" not in content.lower(), "Error should NOT mention 'state' (injected parameter)"
     assert "store" not in content.lower(), "Error should NOT mention 'store' (injected parameter)"
     assert "runtime" not in content.lower(), (
         "Error should NOT mention 'runtime' (injected parameter)"
     )
 
-    # CRITICAL: Verify NO sensitive values from state appear in error
-    assert "user_12345" not in content, "Error should NOT contain user_id value from state"
-    assert "sk-secret-key" not in content, "Error should NOT contain api_key value from state"
-    assert "secret_session_token" not in content, "Error should NOT contain session data from state"
+    # Verify NO values from injected parameters appear in error
+    # The model doesn't control these, so they shouldn't be in the error message
+    assert "user_12345" not in content, "Error should NOT contain user_id value"
+    assert "sk-secret-key" not in content, "Error should NOT contain api_key value"
+    assert "secret_session_token" not in content, "Error should NOT contain session_data value"
 
-    # Verify the original tool call args are mentioned (not the injected ones)
-    # The error template includes: "with kwargs {tool_kwargs}"
-    # This should show the original args from the model's tool call
+    # Verify the original model tool call args are present
+    # The error should show what the model actually provided
     assert "12345" in content, "Error should show the invalid query value (12345)"
 
-    # Additional verification: check error structure
-    # Should be formatted in a readable way
+    # Check error is well-formatted
     assert "complex_tool" in content, "Error should mention the tool name"
 
 
 async def test_create_agent_error_only_model_controllable_params() -> None:
-    """Test that errors only show model-controllable parameter issues.
+    """Test that errors only include model-controllable parameter issues.
 
-    This is a focused test ensuring that when ONLY non-injected parameters
-    have validation errors, those errors are clearly shown without any
-    confusion from injected parameters.
+    Focused test ensuring that validation errors for model-controlled parameters
+    are clearly reported, while injected parameters remain completely absent from
+    error messages.
     """
 
     class StateWithSecrets(AgentState):
@@ -613,17 +643,18 @@ async def test_create_agent_error_only_model_controllable_params() -> None:
     assert len(tool_messages) == 1
     content = tool_messages[0].content
 
-    # The error should clearly show issues with username and/or email
-    # Note: validation might not catch all our expected errors since we're not
-    # using custom validators, but it should at least show the params
+    # The error should mention model-controlled parameters
+    # Note: Pydantic's default validation may or may not catch format issues,
+    # but the parameters themselves should be present in error messages
     assert "username" in content.lower() or "email" in content.lower(), (
-        "Error should mention at least one of the invalid parameters"
+        "Error should mention at least one model-controlled parameter"
     )
 
-    # Critical: password should NEVER appear
+    # Password is injected and should not appear
+    # The model doesn't control it, so it shouldn't be in the error
     assert "password" not in content.lower(), (
         "Error should NOT mention 'password' (injected parameter)"
     )
     assert "super_secret_password" not in content, (
-        "Error should NOT contain password value from state"
+        "Error should NOT contain password value (from injected state)"
     )
