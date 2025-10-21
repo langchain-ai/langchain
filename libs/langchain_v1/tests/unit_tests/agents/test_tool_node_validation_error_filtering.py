@@ -8,6 +8,7 @@ feedback about the parameters it can actually control, improving error correctio
 and reducing confusion from irrelevant system implementation details.
 """
 
+import sys
 from typing import Annotated
 from unittest.mock import Mock
 
@@ -476,6 +477,7 @@ async def test_sync_tool_validation_error_filtering() -> None:
     assert "state" not in tool_message.content.lower()
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14")
 async def test_create_agent_error_content_with_multiple_params() -> None:
     """Test that error messages only include LLM-controlled parameter errors.
 
@@ -594,6 +596,7 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
     assert "complex_tool" in content, "Error should mention the tool name"
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14")
 async def test_create_agent_error_only_model_controllable_params() -> None:
     """Test that errors only include LLM-controllable parameter issues.
 
