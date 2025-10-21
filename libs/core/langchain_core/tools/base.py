@@ -283,7 +283,7 @@ def create_schema_from_function(
     filter_args: Sequence[str] | None = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
-    include_injected: bool = False,
+    include_injected: bool = True,
 ) -> type[BaseModel]:
     """Create a Pydantic schema from a function's signature.
 
@@ -297,8 +297,8 @@ def create_schema_from_function(
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
         include_injected: Whether to include injected arguments in the schema.
-            Defaults to `False`, since injected arguments are provided by the system
-            and should not be validated or exposed to language models.
+            Defaults to `True`, since we want to include them in the schema
+            when *validating* tool inputs.
 
     Returns:
         A Pydantic model with the same arguments as the function.

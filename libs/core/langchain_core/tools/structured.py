@@ -196,6 +196,7 @@ class StructuredTool(BaseTool):
                 parse_docstring=parse_docstring,
                 error_on_invalid_docstring=error_on_invalid_docstring,
                 filter_args=_filter_schema_args(source_function),
+                include_injected=False,
             )
         description_ = description
         if description is None and not parse_docstring:
