@@ -471,15 +471,16 @@ def _filter_validation_errors(
     tool_to_store_arg: str | None,
     tool_to_runtime_arg: str | None,
 ) -> list[ErrorDetails]:
-    """Filter validation errors to only include model-controlled arguments.
+    """Filter validation errors to only include LLM-controlled arguments.
 
-    When a tool invocation fails validation, only errors for arguments that the model
-    controls should be included in error messages. Injected arguments (state, store,
-    runtime) are provided by the system, not the model, so validation errors for them
-    are filtered out.
+    When a tool invocation fails validation, only errors for arguments that the LLM
+    controls should be included in error messages. This ensures the LLM receives
+    focused, actionable feedback about parameters it can actually fix. System-injected
+    arguments (state, store, runtime) are filtered out since the LLM has no control
+    over them.
 
     This function also removes injected argument values from the `input` field in error
-    details, ensuring that only model-provided arguments appear in error messages.
+    details, ensuring that only LLM-provided arguments appear in error messages.
 
     Args:
         validation_error: The Pydantic ValidationError raised during tool invocation.
@@ -488,8 +489,8 @@ def _filter_validation_errors(
         tool_to_runtime_arg: Name of the runtime argument, if any.
 
     Returns:
-        List of ErrorDetails containing only errors for model-controlled arguments,
-        with injected argument values removed from the input field.
+        List of ErrorDetails containing only errors for LLM-controlled arguments,
+        with system-injected argument values removed from the input field.
     """
     injected_args = set(tool_to_state_args.keys())
     if tool_to_store_arg:

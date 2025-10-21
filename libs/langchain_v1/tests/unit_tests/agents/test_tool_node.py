@@ -305,18 +305,20 @@ def test_tool_node_error_handling_default_exception() -> None:
 
 
 def test_tool_invocation_error_excludes_injected_state() -> None:
-    """Test that tool invocation errors do not include injected state information.
+    """Test that tool invocation errors only include LLM-controllable arguments.
 
     When a tool has InjectedState parameters and the LLM makes an incorrect
     invocation (e.g., missing required arguments), the error message should only
-    contain the original arguments from the tool call, not the injected state values.
+    contain the arguments from the tool call that the LLM controls. This ensures
+    the LLM receives relevant context to correct its mistakes, without being
+    distracted by system-injected parameters it has no control over.
 
     This test uses create_agent to ensure the behavior works in a full agent context.
     """
 
-    # Define a custom state schema with secret data
+    # Define a custom state schema with injected data
     class TestState(AgentState):
-        secret_data: str
+        secret_data: str  # Example of state data not controlled by LLM
 
     @dec_tool
     def tool_with_injected_state(
@@ -348,7 +350,7 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
         state_schema=TestState,
     )
 
-    # Invoke the agent with secret data in the state
+    # Invoke the agent with injected state data
     result = agent.invoke(
         {
             "messages": [HumanMessage("Test message")],
@@ -362,18 +364,19 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     tool_message = tool_messages[0]
     assert tool_message.status == "error"
 
-    # The error message should contain the original args in the kwargs section
+    # The error message should contain only the LLM-provided args (wrong_arg)
+    # and NOT the system-injected state (secret_data)
     assert "{'wrong_arg': 'value'}" in tool_message.content
     assert "secret_data" not in tool_message.content
     assert "sensitive_secret_123" not in tool_message.content
 
 
 async def test_tool_invocation_error_excludes_injected_state_async() -> None:
-    """Test that async tool invocation errors exclude injected state information.
+    """Test that async tool invocation errors only include LLM-controllable arguments.
 
     This test verifies that the async execution path (_execute_tool_async and _arun_one)
-    properly filters validation errors to exclude injected arguments, just like the
-    sync path does.
+    properly filters validation errors to exclude system-injected arguments, ensuring
+    the LLM receives only relevant context for correction.
     """
 
     # Define a custom state schema
@@ -426,19 +429,21 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
     tool_message = tool_messages[0]
     assert tool_message.status == "error"
 
-    # Verify error mentions model-controlled parameters
+    # Verify error mentions LLM-controlled parameters only
     content = tool_message.content
-    assert "query" in content.lower(), "Error should mention 'query'"
-    assert "max_results" in content.lower(), "Error should mention 'max_results'"
+    assert "query" in content.lower(), "Error should mention 'query' (LLM-controlled)"
+    assert "max_results" in content.lower(), "Error should mention 'max_results' (LLM-controlled)"
 
-    # Verify injected state does not appear in the validation errors
-    # The tool name may contain "state", but the error list should not mention it
+    # Verify system-injected state does not appear in the validation errors
+    # This keeps the error focused on what the LLM can actually fix
     assert "internal_data" not in content, (
-        "Error should NOT mention 'internal_data' field from state"
+        "Error should NOT mention 'internal_data' (system-injected field)"
     )
-    assert "secret_internal_value" not in content, "Error should NOT contain state values"
+    assert "secret_internal_value" not in content, (
+        "Error should NOT contain system-injected state values"
+    )
 
-    # Verify only the model-controlled parameters are in the error list
+    # Verify only LLM-controlled parameters are in the error list
     # Should see "query" and "max_results" errors, but not "state"
     lines = content.split("\n")
     error_lines = [line.strip() for line in lines if line.strip()]
@@ -453,9 +458,9 @@ async def test_tool_invocation_error_excludes_injected_state_async() -> None:
         and not line.startswith("please")
         and len(line.split()) <= 2
     ]
-    # Check that state is not in the field error list
+    # Verify system-injected 'state' is not in the field error list
     assert not any("state" == field.lower() for field in field_errors), (
-        "The field 'state' should not appear in validation errors"
+        "The field 'state' (system-injected) should not appear in validation errors"
     )
 
 

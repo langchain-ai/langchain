@@ -1,9 +1,11 @@
 """Unit tests for ValidationError filtering in ToolNode.
 
 This module tests that validation errors are filtered to only include arguments
-that the model controls. Injected arguments (InjectedState, InjectedStore,
+that the LLM controls. Injected arguments (InjectedState, InjectedStore,
 ToolRuntime) are automatically provided by the system and should not appear in
-validation error messages since the model has no control over them.
+validation error messages. This ensures the LLM receives focused, actionable
+feedback about the parameters it can actually control, improving error correction
+and reducing confusion from irrelevant system implementation details.
 """
 
 from typing import Annotated
@@ -45,8 +47,9 @@ def _create_config_with_runtime(store: BaseStore | None = None) -> RunnableConfi
 async def test_filter_injected_state_validation_errors() -> None:
     """Test that validation errors for InjectedState arguments are filtered out.
 
-    InjectedState parameters are not controlled by the model, so any validation
-    errors related to them should not appear in error messages.
+    InjectedState parameters are not controlled by the LLM, so any validation
+    errors related to them should not appear in error messages. This ensures
+    the LLM receives only actionable feedback about its own tool call arguments.
     """
 
     @dec_tool
@@ -98,8 +101,9 @@ async def test_filter_injected_state_validation_errors() -> None:
 async def test_filter_injected_store_validation_errors() -> None:
     """Test that validation errors for InjectedStore arguments are filtered out.
 
-    InjectedStore parameters are not controlled by the model, so any validation
-    errors related to them should not appear in error messages.
+    InjectedStore parameters are not controlled by the LLM, so any validation
+    errors related to them should not appear in error messages. This keeps
+    error feedback focused on LLM-controllable parameters.
     """
 
     @dec_tool
@@ -156,8 +160,9 @@ async def test_filter_injected_store_validation_errors() -> None:
 async def test_filter_tool_runtime_validation_errors() -> None:
     """Test that validation errors for ToolRuntime arguments are filtered out.
 
-    ToolRuntime parameters are not controlled by the model, so any validation
-    errors related to them should not appear in error messages.
+    ToolRuntime parameters are not controlled by the LLM, so any validation
+    errors related to them should not appear in error messages. This ensures
+    the LLM only sees errors for parameters it can fix.
     """
 
     @dec_tool
@@ -209,7 +214,8 @@ async def test_filter_multiple_injected_args() -> None:
     """Test filtering when a tool has multiple injected arguments.
 
     When a tool uses multiple injected parameters (state, store, runtime), none of
-    them should appear in validation error messages since they're all system-provided.
+    them should appear in validation error messages since they're all system-provided
+    and not controlled by the LLM. Only LLM-controllable parameter errors should appear.
     """
 
     @dec_tool
@@ -263,10 +269,11 @@ async def test_filter_multiple_injected_args() -> None:
 
 
 async def test_no_filtering_when_all_errors_are_model_args() -> None:
-    """Test that validation errors for model-controlled arguments are preserved.
+    """Test that validation errors for LLM-controlled arguments are preserved.
 
-    When validation fails for arguments the model controls, those errors should
-    be fully reported to help the model correct its tool calls.
+    When validation fails for arguments the LLM controls, those errors should
+    be fully reported to help the LLM correct its tool calls. This ensures
+    the LLM receives complete feedback about all issues it can fix.
     """
 
     @dec_tool
@@ -322,8 +329,9 @@ async def test_no_filtering_when_all_errors_are_model_args() -> None:
 async def test_validation_error_with_no_injected_args() -> None:
     """Test that tools without injected arguments show all validation errors.
 
-    For tools that only have model-controlled parameters, all validation errors
-    should be reported since everything is under the model's control.
+    For tools that only have LLM-controlled parameters, all validation errors
+    should be reported since everything is under the LLM's control and can be
+    corrected by the LLM in subsequent tool calls.
     """
 
     @dec_tool
@@ -366,10 +374,11 @@ async def test_validation_error_with_no_injected_args() -> None:
 
 
 async def test_tool_invocation_error_without_handle_errors() -> None:
-    """Test that ToolInvocationError contains only model-controlled parameter errors.
+    """Test that ToolInvocationError contains only LLM-controlled parameter errors.
 
     When handle_tool_errors is False, the raised ToolInvocationError should still
-    filter out injected arguments from the error details.
+    filter out system-injected arguments from the error details, ensuring that
+    error messages focus on what the LLM can control.
     """
 
     @dec_tool
@@ -468,14 +477,16 @@ async def test_sync_tool_validation_error_filtering() -> None:
 
 
 async def test_create_agent_error_content_with_multiple_params() -> None:
-    """Test that error messages only include model-controlled parameter errors.
+    """Test that error messages only include LLM-controlled parameter errors.
 
-    Uses create_agent to verify that when a tool with both model-controlled
-    and injected parameters receives invalid arguments, the error message:
-    1. Contains details about model-controlled parameter errors (query, limit)
-    2. Does NOT contain injected parameter names (state, store, runtime)
-    3. Does NOT contain values from injected parameters
-    4. Properly formats the validation errors for model correction
+    Uses create_agent to verify that when a tool with both LLM-controlled
+    and system-injected parameters receives invalid arguments, the error message:
+    1. Contains details about LLM-controlled parameter errors (query, limit)
+    2. Does NOT contain system-injected parameter names (state, store, runtime)
+    3. Does NOT contain values from system-injected parameters
+    4. Properly formats the validation errors for LLM correction
+
+    This ensures the LLM receives focused, actionable feedback.
     """
 
     class TestState(AgentState):
@@ -552,47 +563,47 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
 
     content = tool_message.content
 
-    # Verify error mentions model-controlled parameter issues
-    assert "query" in content.lower(), "Error should mention 'query' parameter"
-    assert "limit" in content.lower(), "Error should mention 'limit' parameter"
+    # Verify error mentions LLM-controlled parameter issues
+    assert "query" in content.lower(), "Error should mention 'query' (LLM-controlled)"
+    assert "limit" in content.lower(), "Error should mention 'limit' (LLM-controlled)"
 
     # Should indicate validation errors occurred
     assert "validation error" in content.lower() or "error" in content.lower(), (
         "Error should indicate validation occurred"
     )
 
-    # Verify NO injected parameter names appear in error
-    # These are not controlled by the model and should be excluded
-    assert "state" not in content.lower(), "Error should NOT mention 'state' (injected parameter)"
-    assert "store" not in content.lower(), "Error should NOT mention 'store' (injected parameter)"
+    # Verify NO system-injected parameter names appear in error
+    # These are not controlled by the LLM and should be excluded
+    assert "state" not in content.lower(), "Error should NOT mention 'state' (system-injected)"
+    assert "store" not in content.lower(), "Error should NOT mention 'store' (system-injected)"
     assert "runtime" not in content.lower(), (
-        "Error should NOT mention 'runtime' (injected parameter)"
+        "Error should NOT mention 'runtime' (system-injected)"
     )
 
-    # Verify NO values from injected parameters appear in error
-    # The model doesn't control these, so they shouldn't be in the error message
-    assert "user_12345" not in content, "Error should NOT contain user_id value"
-    assert "sk-secret-key" not in content, "Error should NOT contain api_key value"
-    assert "secret_session_token" not in content, "Error should NOT contain session_data value"
+    # Verify NO values from system-injected parameters appear in error
+    # The LLM doesn't control these, so they shouldn't distract from the actual issues
+    assert "user_12345" not in content, "Error should NOT contain user_id value (from state)"
+    assert "sk-secret-key" not in content, "Error should NOT contain api_key value (from state)"
+    assert "secret_session_token" not in content, "Error should NOT contain session_data value (from state)"
 
-    # Verify the original model tool call args are present
-    # The error should show what the model actually provided
-    assert "12345" in content, "Error should show the invalid query value (12345)"
+    # Verify the LLM's original tool call args are present
+    # The error should show what the LLM actually provided to help it correct the mistake
+    assert "12345" in content, "Error should show the invalid query value provided by LLM (12345)"
 
     # Check error is well-formatted
     assert "complex_tool" in content, "Error should mention the tool name"
 
 
 async def test_create_agent_error_only_model_controllable_params() -> None:
-    """Test that errors only include model-controllable parameter issues.
+    """Test that errors only include LLM-controllable parameter issues.
 
-    Focused test ensuring that validation errors for model-controlled parameters
-    are clearly reported, while injected parameters remain completely absent from
-    error messages.
+    Focused test ensuring that validation errors for LLM-controlled parameters
+    are clearly reported, while system-injected parameters remain completely
+    absent from error messages. This provides focused feedback to the LLM.
     """
 
     class StateWithSecrets(AgentState):
-        password: str
+        password: str  # Example of data not controlled by LLM
 
     @dec_tool
     def secure_tool(
@@ -605,11 +616,11 @@ async def test_create_agent_error_only_model_controllable_params() -> None:
         Args:
             username: The username (3-20 chars).
             email: The email address.
-            state: State with password (injected).
+            state: State with password (system-injected).
         """
         return f"Validated {username} with email {email}"
 
-    # Model provides invalid username (too short) and invalid email
+    # LLM provides invalid username (too short) and invalid email
     model = FakeToolCallingModel(
         tool_calls=[
             [
@@ -643,18 +654,18 @@ async def test_create_agent_error_only_model_controllable_params() -> None:
     assert len(tool_messages) == 1
     content = tool_messages[0].content
 
-    # The error should mention model-controlled parameters
+    # The error should mention LLM-controlled parameters
     # Note: Pydantic's default validation may or may not catch format issues,
     # but the parameters themselves should be present in error messages
     assert "username" in content.lower() or "email" in content.lower(), (
-        "Error should mention at least one model-controlled parameter"
+        "Error should mention at least one LLM-controlled parameter"
     )
 
-    # Password is injected and should not appear
-    # The model doesn't control it, so it shouldn't be in the error
+    # Password is system-injected and should not appear
+    # The LLM doesn't control it, so it shouldn't distract from the actual errors
     assert "password" not in content.lower(), (
-        "Error should NOT mention 'password' (injected parameter)"
+        "Error should NOT mention 'password' (system-injected parameter)"
     )
     assert "super_secret_password" not in content, (
-        "Error should NOT contain password value (from injected state)"
+        "Error should NOT contain password value (from system-injected state)"
     )
