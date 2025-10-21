@@ -354,7 +354,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - score: A score between 1 and 10.
 
@@ -395,7 +395,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - score: A score between 1 and 10.
 

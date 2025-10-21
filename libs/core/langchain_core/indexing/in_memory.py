@@ -23,8 +23,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     It provides a simple search API that returns documents by the number of
     counts the given query appears in the document.
-
-    !!! version-added "Added in version 0.2.29"
     """
 
     store: dict[str, Document] = Field(default_factory=dict)

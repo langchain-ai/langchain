@@ -1,7 +1,10 @@
 """Test OpenAI embeddings."""
 
+import os
+
 import numpy as np
 import openai
+import pytest
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -67,3 +70,56 @@ def test_langchain_openai_embeddings_dimensions_large_num() -> None:
     output = embedding.embed_documents(documents)
     assert len(output) == 2000
     assert len(output[0]) == 128
+
+
+def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = OpenAIEmbeddings(
+        model="text-embedding-3-small", dimensions=128, api_key=get_openai_api_key
+    )
+    _ = model.embed_query("hello")
+    assert calls["sync"] == 1
+
+
+async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0, "async": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    async def get_openai_api_key_async() -> str:
+        calls["async"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = OpenAIEmbeddings(
+        model="text-embedding-3-small", dimensions=128, api_key=get_openai_api_key
+    )
+    _ = model.embed_query("hello")
+    assert calls["sync"] == 1
+
+    _ = await model.aembed_query("hello")
+    assert calls["sync"] == 2
+
+    model = OpenAIEmbeddings(
+        model="text-embedding-3-small", dimensions=128, api_key=get_openai_api_key_async
+    )
+    _ = await model.aembed_query("hello")
+    assert calls["async"] == 1
+
+    with pytest.raises(ValueError):
+        # We do not create a sync callable from an async one
+        _ = model.embed_query("hello")

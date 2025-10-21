@@ -12,7 +12,8 @@ class ToolsIntegrationTests(ToolsTests):
     def test_invoke_matches_output_schema(self, tool: BaseTool) -> None:
         """Test invoke matches output schema.
 
-        If invoked with a ToolCall, the tool should return a valid ToolMessage content.
+        If invoked with a `ToolCall`, the tool should return a valid `ToolMessage`
+        content.
 
         If you have followed the [custom tool guide](https://python.langchain.com/docs/how_to/custom_tools/),
         this test should always pass because ToolCall inputs are handled by the
@@ -44,7 +45,8 @@ class ToolsIntegrationTests(ToolsTests):
     async def test_async_invoke_matches_output_schema(self, tool: BaseTool) -> None:
         """Test async invoke matches output schema.
 
-        If ainvoked with a ToolCall, the tool should return a valid ToolMessage content.
+        If ainvoked with a `ToolCall`, the tool should return a valid `ToolMessage`
+        content.
 
         For debugging tips, see `test_invoke_matches_output_schema`.
         """
@@ -68,9 +70,9 @@ class ToolsIntegrationTests(ToolsTests):
             assert all(isinstance(c, str | dict) for c in tool_message.content)
 
     def test_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """Test invoke without ToolCall.
+        """Test invoke without `ToolCall`.
 
-        If invoked without a ToolCall, the tool can return anything
+        If invoked without a `ToolCall`, the tool can return anything
         but it shouldn't throw an error.
 
         If this test fails, your tool may not be handling the input you defined
@@ -82,9 +84,9 @@ class ToolsIntegrationTests(ToolsTests):
         tool.invoke(self.tool_invoke_params_example)
 
     async def test_async_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """Test async invoke without ToolCall.
+        """Test async invoke without `ToolCall`.
 
-        If ainvoked without a ToolCall, the tool can return anything
+        If ainvoked without a `ToolCall`, the tool can return anything
         but it shouldn't throw an error.
 
         For debugging tips, see `test_invoke_no_tool_call`.
