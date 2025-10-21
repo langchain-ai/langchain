@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
@@ -62,6 +63,57 @@ def test_chat_openai_model() -> None:
     assert chat.model_name == "foo"
     chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
+
+
+def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+
+async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0, "async": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    async def get_openai_api_key_async() -> str:
+        calls["async"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+    response = await model.ainvoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 2
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key_async)
+    async_response = await model.ainvoke("hello")
+    assert isinstance(async_response, AIMessage)
+    assert calls["async"] == 1
+
+    with pytest.raises(ValueError):
+        # We do not create a sync callable from an async one
+        _ = model.invoke("hello")
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
