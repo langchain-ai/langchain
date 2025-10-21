@@ -34,9 +34,6 @@ class LangSmithLoader(BaseLoader):
         ```python
         # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
         ```
-
-    !!! version-added "Added in version 0.2.34"
-
     """
 
     def __init__(
