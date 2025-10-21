@@ -312,8 +312,26 @@ class ToolInvocationError(ToolException):
             source: The exception that occurred.
             tool_kwargs: The keyword arguments that were passed to the tool.
         """
+        # Format the ValidationError without input values to avoid exposing
+        # injected arguments in error messages
+        error_count = source.error_count()
+        errors_list = source.errors(include_input=False)
+
+        # Store the filtered errors for programmatic access
+        self.filtered_errors = errors_list
+
+        error_str = f"{error_count} validation error{'s' if error_count > 1 else ''} for {tool_name}\n"
+        for error in errors_list:
+            loc = " -> ".join(str(loc_part) for loc_part in error["loc"])
+            error_str += f"{loc}\n  {error['msg']}"
+            if error.get("type"):
+                error_str += f" [type={error['type']}]"
+            if error.get("url"):
+                error_str += f"\n    For further information visit {error['url']}"
+            error_str += "\n"
+
         self.message = TOOL_INVOCATION_ERROR_TEMPLATE.format(
-            tool_name=tool_name, tool_kwargs=tool_kwargs, error=source
+            tool_name=tool_name, tool_kwargs=tool_kwargs, error=error_str
         )
         self.tool_name = tool_name
         self.tool_kwargs = tool_kwargs

@@ -283,7 +283,7 @@ def create_schema_from_function(
     filter_args: Sequence[str] | None = None,
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
-    include_injected: bool = True,
+    include_injected: bool = False,
 ) -> type[BaseModel]:
     """Create a Pydantic schema from a function's signature.
 
@@ -297,8 +297,8 @@ def create_schema_from_function(
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
         include_injected: Whether to include injected arguments in the schema.
-            Defaults to `True`, since we want to include them in the schema
-            when *validating* tool inputs.
+            Defaults to `False`, since injected arguments are provided by the system
+            and should not be validated or exposed to language models.
 
     Returns:
         A Pydantic model with the same arguments as the function.
@@ -641,44 +641,55 @@ class ChildTool(BaseTool):
         if input_args is not None:
             if isinstance(input_args, dict):
                 return tool_input
+
+            # Get the function signature to identify injected args
+            sig = inspect.signature(self._run)
+            injected_args = []
+            injected_tool_call_id_param = None
+            for param_name, param in sig.parameters.items():
+                if param.annotation != inspect.Parameter.empty:
+                    if _is_injected_arg_type(param.annotation, injected_type=InjectedToolCallId):
+                        injected_tool_call_id_param = param_name
+                    elif _is_injected_arg_type(param.annotation):
+                        injected_args.append(param_name)
+
+            # Check if InjectedToolCallId is required
+            if injected_tool_call_id_param and tool_call_id is None:
+                msg = (
+                    "When tool includes an InjectedToolCallId "
+                    "argument, tool must always be invoked with a full "
+                    "model ToolCall of the form: {'args': {...}, "
+                    "'name': '...', 'type': 'tool_call', "
+                    "'tool_call_id': '...'}"
+                )
+                raise ValueError(msg)
+
+            # Filter out injected args from tool_input for validation
+            # Keep a reference to the full tool_input for return value filtering
+            validation_input = {
+                k: v for k, v in tool_input.items() if k not in injected_args
+            }
+
             if issubclass(input_args, BaseModel):
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.model_validate(tool_input)
+                result = input_args.model_validate(validation_input)
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
-                for k, v in get_all_basemodel_annotations(input_args).items():
-                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
-                        if tool_call_id is None:
-                            msg = (
-                                "When tool includes an InjectedToolCallId "
-                                "argument, tool must always be invoked with a full "
-                                "model ToolCall of the form: {'args': {...}, "
-                                "'name': '...', 'type': 'tool_call', "
-                                "'tool_call_id': '...'}"
-                            )
-                            raise ValueError(msg)
-                        tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
+                result = input_args.parse_obj(validation_input)
                 result_dict = result.dict()
             else:
                 msg = (
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            return {
+
+            # Build the final result, including validated args and injected tool_call_id
+            final_result = {
                 k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
             }
+            if injected_tool_call_id_param:
+                final_result[injected_tool_call_id_param] = tool_call_id
+
+            return final_result
         return tool_input
 
     @abstractmethod
