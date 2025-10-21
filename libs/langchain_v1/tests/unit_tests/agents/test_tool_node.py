@@ -304,7 +304,9 @@ def test_tool_node_error_handling_default_exception() -> None:
         )
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
+)
 def test_tool_invocation_error_excludes_injected_state() -> None:
     """Test that tool invocation errors only include LLM-controllable arguments.
 
@@ -372,7 +374,9 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     assert "sensitive_secret_123" not in tool_message.content
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="Pydantic model rebuild issue in Python 3.14"
+)
 async def test_tool_invocation_error_excludes_injected_state_async() -> None:
     """Test that async tool invocation errors only include LLM-controllable arguments.
 
