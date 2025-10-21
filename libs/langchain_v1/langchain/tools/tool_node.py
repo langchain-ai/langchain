@@ -303,7 +303,11 @@ class ToolInvocationError(ToolException):
     """
 
     def __init__(
-        self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
+        self,
+        tool_name: str,
+        source: ValidationError,
+        tool_kwargs: dict[str, Any],
+        filtered_errors: list[dict] | None = None,
     ) -> None:
         """Initialize the ToolInvocationError.
 
@@ -311,14 +315,66 @@ class ToolInvocationError(ToolException):
             tool_name: The name of the tool that failed.
             source: The exception that occurred.
             tool_kwargs: The keyword arguments that were passed to the tool.
+            filtered_errors: Optional list of filtered validation errors.
         """
+        # If filtered_errors is provided, create a new ValidationError with only those errors
+        if filtered_errors:
+            from pydantic_core import ValidationError as CoreValidationError
+
+            error_to_display = CoreValidationError.from_exception_data(
+                title=tool_name,
+                line_errors=filtered_errors,
+            )
+        else:
+            error_to_display = source
+
         self.message = TOOL_INVOCATION_ERROR_TEMPLATE.format(
-            tool_name=tool_name, tool_kwargs=tool_kwargs, error=source
+            tool_name=tool_name, tool_kwargs=tool_kwargs, error=error_to_display
         )
         self.tool_name = tool_name
         self.tool_kwargs = tool_kwargs
         self.source = source
+        self.filtered_errors = filtered_errors
         super().__init__(self.message)
+
+
+def _filter_validation_errors(
+    validation_error: ValidationError, injected_args: set[str]
+) -> list[dict]:
+    """Filter validation errors to exclude injected arguments.
+
+    Args:
+        validation_error: The Pydantic ValidationError to filter.
+        injected_args: Set of argument names that are system-injected.
+
+    Returns:
+        List of error dicts with injected arguments filtered out.
+    """
+    if not injected_args:
+        return validation_error.errors()
+
+    filtered = []
+    for error in validation_error.errors():
+        # Get the first element of the location tuple (the field name)
+        loc = error.get("loc", ())
+        if loc and loc[0] in injected_args:
+            # Skip errors for injected arguments
+            continue
+
+        # Filter the input field to remove injected fields
+        error_copy = dict(error)
+        if "input" in error_copy:
+            input_value = error_copy["input"]
+            if isinstance(input_value, dict):
+                # Remove injected keys from the input dict
+                filtered_input = {
+                    k: v for k, v in input_value.items() if k not in injected_args
+                }
+                error_copy["input"] = filtered_input
+
+        filtered.append(error_copy)
+
+    return filtered
 
 
 def _default_handle_tool_errors(e: Exception) -> str:
@@ -701,6 +757,24 @@ class _ToolNode(RunnableCallable):
             combined_outputs.append(parent_command)
         return combined_outputs
 
+    def _get_injected_args(self, tool_name: str) -> set[str]:
+        """Get set of injected argument names for a tool.
+
+        Args:
+            tool_name: Name of the tool.
+
+        Returns:
+            Set of argument names that are system-injected.
+        """
+        injected = set()
+        if tool_name in self._tool_to_state_args:
+            injected.update(self._tool_to_state_args[tool_name].keys())
+        if store_arg := self._tool_to_store_arg.get(tool_name):
+            injected.add(store_arg)
+        if runtime_arg := self._tool_to_runtime_arg.get(tool_name):
+            injected.add(runtime_arg)
+        return injected
+
     def _execute_tool_sync(
         self,
         request: ToolCallRequest,
@@ -739,8 +813,13 @@ class _ToolNode(RunnableCallable):
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
+                # Filter out validation errors for injected arguments
+                injected_args = self._get_injected_args(call["name"])
+                filtered_errors = _filter_validation_errors(exc, injected_args)
                 # Use original call["args"] without injected values for error reporting
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                raise ToolInvocationError(
+                    call["name"], exc, call["args"], filtered_errors
+                ) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -887,8 +966,13 @@ class _ToolNode(RunnableCallable):
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
+                # Filter out validation errors for injected arguments
+                injected_args = self._get_injected_args(call["name"])
+                filtered_errors = _filter_validation_errors(exc, injected_args)
                 # Use original call["args"] without injected values for error reporting
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                raise ToolInvocationError(
+                    call["name"], exc, call["args"], filtered_errors
+                ) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
