@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 import base64
-import inspect
 import json
 import logging
 import os
@@ -118,6 +116,7 @@ from typing_extensions import Self
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _resolve_sync_and_async_api_keys,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -479,6 +478,52 @@ class BaseChatOpenAI(BaseChatModel):
     ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
+    """API key to use.
+
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
+    string, or sync or async callable that returns a string.
+
+    ??? example "Specify with environment variable"
+
+        ```bash
+        export OPENAI_API_KEY=...
+        ```
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano")
+        ```
+
+    ??? example "Specify with a string"
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key="...")
+        ```
+
+    ??? example "Specify with a sync callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        def get_api_key() -> str:
+            # Custom logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+
+    ??? example "Specify with an async callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        async def get_api_key() -> str:
+            # Custom async logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+    """
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: str | None = Field(default=None, alias="organization")
@@ -792,22 +837,11 @@ class BaseChatOpenAI(BaseChatModel):
         async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
 
         if self.openai_api_key is not None:
-            if isinstance(self.openai_api_key, SecretStr):
-                sync_api_key_value = self.openai_api_key.get_secret_value()
-                async_api_key_value = self.openai_api_key.get_secret_value()
-            elif callable(self.openai_api_key):
-                if inspect.iscoroutinefunction(self.openai_api_key):
-                    async_api_key_value = self.openai_api_key
-                    sync_api_key_value = None
-                else:
-                    sync_api_key_value = cast(Callable, self.openai_api_key)
-
-                    async def async_api_key_wrapper() -> str:
-                        return await asyncio.get_event_loop().run_in_executor(
-                            None, cast(Callable, self.openai_api_key)
-                        )
-
-                    async_api_key_value = async_api_key_wrapper
+            # Because OpenAI and AsyncOpenAI clients support either sync or async
+            # callables for the API key, we need to resolve separate values here.
+            sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
+                self.openai_api_key
+            )
 
         client_params: dict = {
             "organization": self.openai_organization,
@@ -831,7 +865,8 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(msg)
         if not self.client:
             if sync_api_key_value is None:
-                # No valid sync API key, leave client as None
+                # No valid sync API key, leave client as None and raise informative
+                # error on invocation.
                 self.client = None
                 self.root_client = None
             else:
@@ -1010,7 +1045,7 @@ class BaseChatOpenAI(BaseChatModel):
             msg = (
                 "Sync client is not available. This happens when an async callable "
                 "was provided for the API key. Use async methods (ainvoke, astream) "
-                "instead."
+                "instead, or provide a string or sync callable for the API key."
             )
             raise ValueError(msg)
 
