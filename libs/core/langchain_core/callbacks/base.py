@@ -961,11 +961,11 @@ class BaseCallbackManager(CallbackManagerMixin):
                 #    ['tag2', 'tag1']
             ```
         """  # noqa: E501
-        # Directly combine the handler lists without using add_handler
-        # to preserve the distinction between handlers and inheritable_handlers
-        combined_handlers = list(self.handlers) + list(other.handlers)
-        combined_inheritable = list(self.inheritable_handlers) + list(
-            other.inheritable_handlers
+        # Combine handlers and inheritable_handlers separately, using sets
+        # to deduplicate (order not preserved)
+        combined_handlers = list(set(self.handlers) | set(other.handlers))
+        combined_inheritable = list(
+            set(self.inheritable_handlers) | set(other.inheritable_handlers)
         )
 
         return self.__class__(
