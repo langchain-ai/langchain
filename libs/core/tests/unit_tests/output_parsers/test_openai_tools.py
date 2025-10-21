@@ -1,3 +1,4 @@
+import sys
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
@@ -890,12 +891,21 @@ def test_max_tokens_error(caplog: Any) -> None:
 
 def test_pydantic_tools_parser_with_mixed_pydantic_versions() -> None:
     """Test PydanticToolsParser with both Pydantic v1 and v2 models."""
+    # For Python 3.14+ compatibility, use create_model for Pydantic v1
+    if sys.version_info >= (3, 14):
+        WeatherV1 = pydantic.v1.create_model(  # noqa: N806
+            "WeatherV1",
+            __doc__="Weather information using Pydantic v1.",
+            temperature=(int, ...),
+            conditions=(str, ...),
+        )
+    else:
 
-    class WeatherV1(pydantic.v1.BaseModel):
-        """Weather information using Pydantic v1."""
+        class WeatherV1(pydantic.v1.BaseModel):
+            """Weather information using Pydantic v1."""
 
-        temperature: int = pydantic.v1.Field()
-        conditions: str = pydantic.v1.Field()
+            temperature: int
+            conditions: str
 
     class LocationV2(BaseModel):
         """Location information using Pydantic v2."""
@@ -1033,21 +1043,37 @@ def test_pydantic_tools_parser_name_dict_fallback() -> None:
 
 def test_pydantic_tools_parser_with_nested_models() -> None:
     """Test PydanticToolsParser with nested Pydantic v1 and v2 models."""
-
     # Nested v1 models
-    class AddressV1(pydantic.v1.BaseModel):
-        """Address using Pydantic v1."""
+    if sys.version_info >= (3, 14):
+        AddressV1 = pydantic.v1.create_model(  # noqa: N806
+            "AddressV1",
+            __doc__="Address using Pydantic v1.",
+            street=(str, ...),
+            city=(str, ...),
+            zip_code=(str, ...),
+        )
+        PersonV1 = pydantic.v1.create_model(  # noqa: N806
+            "PersonV1",
+            __doc__="Person with nested address using Pydantic v1.",
+            name=(str, ...),
+            age=(int, ...),
+            address=(AddressV1, ...),
+        )
+    else:
 
-        street: str = pydantic.v1.Field()
-        city: str = pydantic.v1.Field()
-        zip_code: str = pydantic.v1.Field()
+        class AddressV1(pydantic.v1.BaseModel):
+            """Address using Pydantic v1."""
 
-    class PersonV1(pydantic.v1.BaseModel):
-        """Person with nested address using Pydantic v1."""
+            street: str
+            city: str
+            zip_code: str
 
-        name: str = pydantic.v1.Field()
-        age: int = pydantic.v1.Field()
-        address: AddressV1 = pydantic.v1.Field()
+        class PersonV1(pydantic.v1.BaseModel):
+            """Person with nested address using Pydantic v1."""
+
+            name: str
+            age: int
+            address: AddressV1
 
     # Nested v2 models
     class CoordinatesV2(BaseModel):
@@ -1160,15 +1186,24 @@ def test_pydantic_tools_parser_with_nested_models() -> None:
 
 def test_pydantic_tools_parser_with_optional_fields() -> None:
     """Test PydanticToolsParser with optional fields in v1 and v2 models."""
+    if sys.version_info >= (3, 14):
+        ProductV1 = pydantic.v1.create_model(  # noqa: N806
+            "ProductV1",
+            __doc__="Product with optional fields using Pydantic v1.",
+            name=(str, ...),
+            price=(float, ...),
+            description=(str | None, None),
+            stock=(int, 0),
+        )
+    else:
 
-    # v1 model with optional fields
-    class ProductV1(pydantic.v1.BaseModel):
-        """Product with optional fields using Pydantic v1."""
+        class ProductV1(pydantic.v1.BaseModel):
+            """Product with optional fields using Pydantic v1."""
 
-        name: str = pydantic.v1.Field()
-        price: float = pydantic.v1.Field()
-        description: str | None = pydantic.v1.Field(default=None)
-        stock: int = pydantic.v1.Field(default=0)
+            name: str
+            price: float
+            description: str | None = None
+            stock: int = 0
 
     # v2 model with optional fields
     class UserV2(BaseModel):
