@@ -576,15 +576,15 @@ async def test_create_agent_error_content_with_multiple_params() -> None:
     # These are not controlled by the LLM and should be excluded
     assert "state" not in content.lower(), "Error should NOT mention 'state' (system-injected)"
     assert "store" not in content.lower(), "Error should NOT mention 'store' (system-injected)"
-    assert "runtime" not in content.lower(), (
-        "Error should NOT mention 'runtime' (system-injected)"
-    )
+    assert "runtime" not in content.lower(), "Error should NOT mention 'runtime' (system-injected)"
 
     # Verify NO values from system-injected parameters appear in error
     # The LLM doesn't control these, so they shouldn't distract from the actual issues
     assert "user_12345" not in content, "Error should NOT contain user_id value (from state)"
     assert "sk-secret-key" not in content, "Error should NOT contain api_key value (from state)"
-    assert "secret_session_token" not in content, "Error should NOT contain session_data value (from state)"
+    assert "secret_session_token" not in content, (
+        "Error should NOT contain session_data value (from state)"
+    )
 
     # Verify the LLM's original tool call args are present
     # The error should show what the LLM actually provided to help it correct the mistake
