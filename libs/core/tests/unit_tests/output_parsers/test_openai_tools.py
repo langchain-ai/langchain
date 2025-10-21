@@ -930,8 +930,8 @@ def test_pydantic_tools_parser_with_mixed_pydantic_versions() -> None:
 
     assert len(result_v1) == 1
     assert isinstance(result_v1[0], WeatherV1)
-    assert result_v1[0].temperature == 25
-    assert result_v1[0].conditions == "sunny"
+    assert result_v1[0].temperature == 25  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].conditions == "sunny"  # type: ignore[attr-defined,unused-ignore]
 
     # Test with Pydantic v2 model
     parser_v2 = PydanticToolsParser(tools=[LocationV2])
@@ -975,7 +975,7 @@ def test_pydantic_tools_parser_with_mixed_pydantic_versions() -> None:
 
     assert len(result_mixed) == 2
     assert isinstance(result_mixed[0], WeatherV1)
-    assert result_mixed[0].temperature == 20
+    assert result_mixed[0].temperature == 20  # type: ignore[attr-defined,unused-ignore]
     assert isinstance(result_mixed[1], LocationV2)
     assert result_mixed[1].city == "London"
 
@@ -1113,11 +1113,11 @@ def test_pydantic_tools_parser_with_nested_models() -> None:
 
     assert len(result_v1) == 1
     assert isinstance(result_v1[0], PersonV1)
-    assert result_v1[0].name == "Alice"
-    assert result_v1[0].age == 30
-    assert isinstance(result_v1[0].address, AddressV1)
-    assert result_v1[0].address.street == "123 Main St"
-    assert result_v1[0].address.city == "Springfield"
+    assert result_v1[0].name == "Alice"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].age == 30  # type: ignore[attr-defined,unused-ignore]
+    assert isinstance(result_v1[0].address, AddressV1)  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].address.street == "123 Main St"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1[0].address.city == "Springfield"  # type: ignore[attr-defined,unused-ignore]
 
     # Test with nested Pydantic v2 model
     parser_v2 = PydanticToolsParser(tools=[LocationV2])
@@ -1177,8 +1177,8 @@ def test_pydantic_tools_parser_with_nested_models() -> None:
 
     assert len(result_mixed) == 2
     assert isinstance(result_mixed[0], PersonV1)
-    assert result_mixed[0].name == "Bob"
-    assert result_mixed[0].address.city == "Portland"
+    assert result_mixed[0].name == "Bob"  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].address.city == "Portland"  # type: ignore[attr-defined,unused-ignore]
     assert isinstance(result_mixed[1], LocationV2)
     assert result_mixed[1].name == "Golden Gate Bridge"
     assert result_mixed[1].coordinates.latitude == 37.8199
@@ -1236,10 +1236,10 @@ def test_pydantic_tools_parser_with_optional_fields() -> None:
 
     assert len(result_v1_full) == 1
     assert isinstance(result_v1_full[0], ProductV1)
-    assert result_v1_full[0].name == "Laptop"
-    assert result_v1_full[0].price == 999.99
-    assert result_v1_full[0].description == "High-end laptop"
-    assert result_v1_full[0].stock == 50
+    assert result_v1_full[0].name == "Laptop"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].price == 999.99  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].description == "High-end laptop"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_full[0].stock == 50  # type: ignore[attr-defined,unused-ignore]
 
     # Test v1 with only required fields
     parser_v1_minimal = PydanticToolsParser(tools=[ProductV1])
@@ -1258,10 +1258,10 @@ def test_pydantic_tools_parser_with_optional_fields() -> None:
 
     assert len(result_v1_minimal) == 1
     assert isinstance(result_v1_minimal[0], ProductV1)
-    assert result_v1_minimal[0].name == "Mouse"
-    assert result_v1_minimal[0].price == 29.99
-    assert result_v1_minimal[0].description is None
-    assert result_v1_minimal[0].stock == 0
+    assert result_v1_minimal[0].name == "Mouse"  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].price == 29.99  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].description is None  # type: ignore[attr-defined,unused-ignore]
+    assert result_v1_minimal[0].stock == 0  # type: ignore[attr-defined,unused-ignore]
 
     # Test v2 with all fields provided
     parser_v2_full = PydanticToolsParser(tools=[UserV2])
@@ -1338,9 +1338,9 @@ def test_pydantic_tools_parser_with_optional_fields() -> None:
 
     assert len(result_mixed) == 2
     assert isinstance(result_mixed[0], ProductV1)
-    assert result_mixed[0].name == "Keyboard"
-    assert result_mixed[0].description is None
-    assert result_mixed[0].stock == 100
+    assert result_mixed[0].name == "Keyboard"  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].description is None  # type: ignore[attr-defined,unused-ignore]
+    assert result_mixed[0].stock == 100  # type: ignore[attr-defined,unused-ignore]
     assert isinstance(result_mixed[1], UserV2)
     assert result_mixed[1].username == "alice"
     assert result_mixed[1].bio is None
