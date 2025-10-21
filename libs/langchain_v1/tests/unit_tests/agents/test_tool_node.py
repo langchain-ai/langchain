@@ -313,6 +313,7 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
 
     This test uses create_agent to ensure the behavior works in a full agent context.
     """
+
     # Define a custom state schema with secret data
     class TestState(AgentState):
         secret_data: str
@@ -359,7 +360,6 @@ def test_tool_invocation_error_excludes_injected_state() -> None:
     tool_messages = [m for m in result["messages"] if m.type == "tool"]
     assert len(tool_messages) == 1
     tool_message = tool_messages[0]
-    assert tool_message is None
     assert tool_message.status == "error"
 
     # The error message should contain the original args in the kwargs section
