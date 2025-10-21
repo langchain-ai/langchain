@@ -406,11 +406,14 @@ def _init_chat_model_helper(
         from langchain_mistralai import ChatMistralAI
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
+
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
+        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
+        return ChatHuggingFace(llm=llm)
+
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq
