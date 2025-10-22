@@ -176,6 +176,7 @@ convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.extend-per-file-ignores]
+"langchain_classic/vectorstores/mariadb.py" = ["S608"]  # SQL injection false positive - using parameterized queries
 "tests/**/*.py" = [
     "D1",      # Docstrings not mandatory in tests
     "S101",    # Tests need assertions
