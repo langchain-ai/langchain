@@ -34,6 +34,7 @@ _EXPECTED = [
     "Hologres",
     "LanceDB",
     "LLMRails",
+    "MariaDB",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",

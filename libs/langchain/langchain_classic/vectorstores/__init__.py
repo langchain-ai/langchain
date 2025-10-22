@@ -44,6 +44,7 @@ if TYPE_CHECKING:
         Hologres,
         LanceDB,
         LLMRails,
+        MariaDB,
         Marqo,
         MatchingEngine,
         Meilisearch,
@@ -86,6 +87,11 @@ if TYPE_CHECKING:
         Zilliz,
     )
 
+try:
+    from langchain_classic.vectorstores.mariadb import MariaDB
+except ImportError:
+    MariaDB = None
+
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
@@ -122,6 +128,7 @@ DEPRECATED_LOOKUP = {
     "LanceDB": "langchain_community.vectorstores",
     "LLMRails": "langchain_community.vectorstores",
     "Marqo": "langchain_community.vectorstores",
+    "MariaDB": "langchain_classic.vectorstores",
     "MatchingEngine": "langchain_community.vectorstores",
     "Meilisearch": "langchain_community.vectorstores",
     "Milvus": "langchain_community.vectorstores",
@@ -204,6 +211,7 @@ __all__ = [
     "Hologres",
     "LLMRails",
     "LanceDB",
+    "MariaDB",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
