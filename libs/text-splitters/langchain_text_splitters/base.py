@@ -170,7 +170,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def from_huggingface_tokenizer(
         cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
     ) -> TextSplitter:
-        """Text splitter that uses HuggingFace tokenizer to count length."""
+        """Text splitter that uses Hugging Face tokenizer to count length."""
         if not _HAS_TRANSFORMERS:
             msg = (
                 "Could not import transformers python package. "
