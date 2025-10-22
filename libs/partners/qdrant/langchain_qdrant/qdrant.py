@@ -10,13 +10,10 @@ from typing import (
     Any,
 )
 
-import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
-
-from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Sequence
@@ -829,9 +826,8 @@ class QdrantVectorStore(VectorStore):
         results = self.client.query_points(
             collection_name=self.collection_name,
             query=models.NearestQuery(
-                nearest=embedding, mmr=models.Mmr(
-                    diversity=lambda_mult, candidates_limit=fetch_k
-                )
+                nearest=embedding,
+                mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
             ),
             query_filter=filter,
             search_params=search_params,
