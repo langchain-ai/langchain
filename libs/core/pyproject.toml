@@ -1,55 +1,59 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langsmith>=0.3.45",
-    "tenacity!=8.4.0,<10.0.0,>=8.1.0",
-    "jsonpatch<2.0,>=1.33",
-    "PyYAML>=5.3",
-    "typing-extensions>=4.7",
-    "packaging>=23.2",
-    "pydantic>=2.7.4",
+    "langsmith>=0.3.45,<1.0.0",
+    "tenacity!=8.4.0,>=8.1.0,<10.0.0",
+    "jsonpatch>=1.33.0,<2.0.0",
+    "PyYAML>=5.3.0,<7.0.0",
+    "typing-extensions>=4.7.0,<5.0.0",
+    "packaging>=23.2.0,<26.0.0",
+    "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
-version = "0.3.76"
+version = "1.0.0"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-core%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://reference.langchain.com/python/langchain_core/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
-    "mypy<1.19,>=1.18.1",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
+    "mypy>=1.18.1,<1.19.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
+    "types-requests>=2.28.11.5,<3.0.0.0",
     "langchain-text-splitters",
 ]
 dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "grandalf<1.0,>=0.8",
+    "jupyter>=1.0.0,<2.0.0",
+    "setuptools>=67.6.1,<68.0.0",
+    "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
-    "pytest<9,>=8",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "grandalf<1.0,>=0.8",
-    "responses<1.0.0,>=0.25.0",
-    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest>=8.0.0,<9.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "grandalf>=0.8.0,<1.0.0",
+    "responses>=0.25.0,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster~=1.5.18",
+    "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",
@@ -72,9 +76,6 @@ enable_error_code = "deprecated"
 disallow_any_generics = false
 warn_return_any = false
 
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -99,7 +100,6 @@ ignore = [
     # TODO rules
     "ANN401",  # No Any types
     "BLE",     # Blind exceptions
-    "DOC",     # Docstrings (preview)
     "ERA",     # No commented-out code
     "PLR2004", # Comparison to magic number
 ]
@@ -113,12 +113,14 @@ flake8-annotations.mypy-init-return = true
 flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pydocstyle.convention = "google"
-pydocstyle.ignore-var-parameters = true
-pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
+"langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
 "tests/**" = [ "D1", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
@@ -132,4 +134,3 @@ markers = [ "requires: mark tests as requiring a specific library", "compile: ma
 asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
-

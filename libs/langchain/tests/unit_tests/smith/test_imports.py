@@ -1,4 +1,4 @@
-from langchain import smith
+from langchain_classic import smith
 
 EXPECTED_ALL = [
     "arun_on_dataset",

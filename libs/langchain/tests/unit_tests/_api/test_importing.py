@@ -1,4 +1,4 @@
-from langchain._api.module_import import create_importer
+from langchain_classic._api.module_import import create_importer
 
 
 def test_import_from_non_deprecated_path() -> None:

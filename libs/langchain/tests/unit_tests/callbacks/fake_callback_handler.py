@@ -1,7 +1,7 @@
 """A fake callback handler for testing purposes."""
 
 from itertools import chain
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
@@ -24,7 +24,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_chat_model_: bool = False
 
     # to allow for similar callback handlers that are not technically equal
-    fake_id: Union[str, None] = None
+    fake_id: str | None = None
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
@@ -284,7 +284,7 @@ class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         assert all(isinstance(m, BaseMessage) for m in chain(*messages))

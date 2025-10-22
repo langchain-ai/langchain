@@ -1,4 +1,4 @@
-from langchain.prompts.few_shot import __all__
+from langchain_classic.prompts.few_shot import __all__
 
 EXPECTED_ALL = [
     "FewShotChatMessagePromptTemplate",

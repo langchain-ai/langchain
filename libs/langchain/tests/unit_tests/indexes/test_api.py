@@ -1,4 +1,4 @@
-from langchain.indexes import __all__
+from langchain_classic.indexes import __all__
 
 
 def test_all() -> None:

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional, Union
 
 HERE = Path(__file__).parent
 
@@ -9,9 +8,7 @@ PACKAGE_DIR = HERE.parent
 SEPARATOR = os.sep
 
 
-def get_relative_path(
-    file: Union[Path, str], *, relative_to: Path = PACKAGE_DIR
-) -> str:
+def get_relative_path(file: Path | str, *, relative_to: Path = PACKAGE_DIR) -> str:
     """Get the path of the file as a relative path to the package directory.
 
     Args:
@@ -27,9 +24,9 @@ def get_relative_path(
 
 
 def as_import_path(
-    file: Union[Path, str],
+    file: Path | str,
     *,
-    suffix: Optional[str] = None,
+    suffix: str | None = None,
     relative_to: Path = PACKAGE_DIR,
 ) -> str:
     """Path of the file as a LangChain import exclude langchain top namespace.

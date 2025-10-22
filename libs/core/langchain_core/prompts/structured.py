@@ -1,11 +1,8 @@
 """Structured prompt template for a language model."""
 
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from typing import (
     Any,
-    Callable,
-    Optional,
-    Union,
 )
 
 from pydantic import BaseModel, Field
@@ -31,16 +28,16 @@ from langchain_core.utils import get_pydantic_field_names
 class StructuredPrompt(ChatPromptTemplate):
     """Structured prompt template for a language model."""
 
-    schema_: Union[dict, type]
+    schema_: dict | type
     """Schema for the structured prompt."""
     structured_output_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     def __init__(
         self,
         messages: Sequence[MessageLikeRepresentation],
-        schema_: Optional[Union[dict, type[BaseModel]]] = None,
+        schema_: dict | type[BaseModel] | None = None,
         *,
-        structured_output_kwargs: Optional[dict[str, Any]] = None,
+        structured_output_kwargs: dict[str, Any] | None = None,
         template_format: PromptTemplateFormat = "f-string",
         **kwargs: Any,
     ) -> None:
@@ -66,13 +63,13 @@ class StructuredPrompt(ChatPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
-        For example, if the class is ``langchain.llms.openai.OpenAI``, then the
-        namespace is ``["langchain", "llms", "openai"]``
+        For example, if the class is `langchain.llms.openai.OpenAI`, then the
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
-            The namespace of the langchain object.
+            The namespace of the LangChain object.
         """
         return cls.__module__.split(".")
 
@@ -80,7 +77,7 @@ class StructuredPrompt(ChatPromptTemplate):
     def from_messages_and_schema(
         cls,
         messages: Sequence[MessageLikeRepresentation],
-        schema: Union[dict, type],
+        schema: dict | type,
         **kwargs: Any,
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
@@ -88,35 +85,34 @@ class StructuredPrompt(ChatPromptTemplate):
         Examples:
             Instantiation from a list of message templates:
 
-            .. code-block:: python
-
-                from langchain_core.prompts import StructuredPrompt
-
-
-                class OutputSchema(BaseModel):
-                    name: str
-                    value: int
+            ```python
+            from langchain_core.prompts import StructuredPrompt
 
 
-                template = StructuredPrompt(
-                    [
-                        ("human", "Hello, how are you?"),
-                        ("ai", "I'm doing well, thanks!"),
-                        ("human", "That's good to hear."),
-                    ],
-                    OutputSchema,
-                )
+            class OutputSchema(BaseModel):
+                name: str
+                value: int
 
+
+            template = StructuredPrompt(
+                [
+                    ("human", "Hello, how are you?"),
+                    ("ai", "I'm doing well, thanks!"),
+                    ("human", "That's good to hear."),
+                ],
+                OutputSchema,
+            )
+            ```
         Args:
             messages: sequence of message representations.
-                  A message can be represented using the following formats:
-                  (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                  (message type, template); e.g., ("human", "{user_input}"),
-                  (4) 2-tuple of (message class, template), (5) a string which is
-                  shorthand for ("human", template); e.g., "{user_input}"
+                A message can be represented using the following formats:
+                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
+                (message type, template); e.g., ("human", "{user_input}"),
+                (4) 2-tuple of (message class, template), (5) a string which is
+                shorthand for ("human", template); e.g., "{user_input}"
             schema: a dictionary representation of function call, or a Pydantic model.
-            kwargs: Any additional kwargs to pass through to
-                ``ChatModel.with_structured_output(schema, **kwargs)``.
+            **kwargs: Any additional kwargs to pass through to
+                `ChatModel.with_structured_output(schema, **kwargs)`.
 
         Returns:
             a structured prompt template
@@ -127,32 +123,28 @@ class StructuredPrompt(ChatPromptTemplate):
     @override
     def __or__(
         self,
-        other: Union[
-            Runnable[Any, Other],
-            Callable[[Iterator[Any]], Iterator[Other]],
-            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
-        ],
+        other: Runnable[Any, Other]
+        | Callable[[Iterator[Any]], Iterator[Other]]
+        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+        | Callable[[Any], Other]
+        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
     ) -> RunnableSerializable[dict, Other]:
         return self.pipe(other)
 
     def pipe(
         self,
-        *others: Union[
-            Runnable[Any, Other],
-            Callable[[Iterator[Any]], Iterator[Other]],
-            Callable[[AsyncIterator[Any]], AsyncIterator[Other]],
-            Callable[[Any], Other],
-            Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
-        ],
-        name: Optional[str] = None,
+        *others: Runnable[Any, Other]
+        | Callable[[Iterator[Any]], Iterator[Other]]
+        | Callable[[AsyncIterator[Any]], AsyncIterator[Other]]
+        | Callable[[Any], Other]
+        | Mapping[str, Runnable[Any, Other] | Callable[[Any], Other] | Any],
+        name: str | None = None,
     ) -> RunnableSerializable[dict, Other]:
         """Pipe the structured prompt to a language model.
 
         Args:
             others: The language model to pipe the structured prompt to.
-            name: The name of the pipeline. Defaults to None.
+            name: The name of the pipeline.
 
         Returns:
             A RunnableSequence object.

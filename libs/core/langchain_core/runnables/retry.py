@@ -3,9 +3,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -35,7 +33,7 @@ U = TypeVar("U")
 
 
 class ExponentialJitterParams(TypedDict, total=False):
-    """Parameters for ``tenacity.wait_exponential_jitter``."""
+    """Parameters for `tenacity.wait_exponential_jitter`."""
 
     initial: float
     """Initial wait."""
@@ -62,36 +60,34 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     Example:
     Here's an example that uses a RunnableLambda to raise an exception
 
-        .. code-block:: python
-
-            import time
-
-
-            def foo(input) -> None:
-                '''Fake function that raises an exception.'''
-                raise ValueError(f"Invoking foo failed. At time {time.time()}")
+        ```python
+        import time
 
 
-            runnable = RunnableLambda(foo)
+        def foo(input) -> None:
+            '''Fake function that raises an exception.'''
+            raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
-            runnable_with_retries = runnable.with_retry(
-                retry_if_exception_type=(ValueError,),  # Retry only on ValueError
-                wait_exponential_jitter=True,  # Add jitter to the exponential backoff
-                stop_after_attempt=2,  # Try twice
-                exponential_jitter_params={
-                    "initial": 2
-                },  # if desired, customize backoff
-            )
 
-            # The method invocation above is equivalent to the longer form below:
+        runnable = RunnableLambda(foo)
 
-            runnable_with_retries = RunnableRetry(
-                bound=runnable,
-                retry_exception_types=(ValueError,),
-                max_attempt_number=2,
-                wait_exponential_jitter=True,
-                exponential_jitter_params={"initial": 2},
-            )
+        runnable_with_retries = runnable.with_retry(
+            retry_if_exception_type=(ValueError,),  # Retry only on ValueError
+            wait_exponential_jitter=True,  # Add jitter to the exponential backoff
+            stop_after_attempt=2,  # Try twice
+            exponential_jitter_params={"initial": 2},  # if desired, customize backoff
+        )
+
+        # The method invocation above is equivalent to the longer form below:
+
+        runnable_with_retries = RunnableRetry(
+            bound=runnable,
+            retry_exception_types=(ValueError,),
+            max_attempt_number=2,
+            wait_exponential_jitter=True,
+            exponential_jitter_params={"initial": 2},
+        )
+        ```
 
     This logic can be used to retry any Runnable, including a chain of Runnables,
     but in general it's best practice to keep the scope of the retry as small as
@@ -99,22 +95,20 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     the Runnable that is likely to fail, not the entire chain.
 
     Example:
+        ```python
+        from langchain_core.chat_models import ChatOpenAI
+        from langchain_core.prompts import PromptTemplate
 
-        .. code-block:: python
+        template = PromptTemplate.from_template("tell me a joke about {topic}.")
+        model = ChatOpenAI(temperature=0.5)
 
-            from langchain_core.chat_models import ChatOpenAI
-            from langchain_core.prompts import PromptTemplate
+        # Good
+        chain = template | model.with_retry()
 
-            template = PromptTemplate.from_template("tell me a joke about {topic}.")
-            model = ChatOpenAI(temperature=0.5)
-
-            # Good
-            chain = template | model.with_retry()
-
-            # Bad
-            chain = template | model
-            retryable_chain = chain.with_retry()
-
+        # Bad
+        chain = template | model
+        retryable_chain = chain.with_retry()
+        ```
     """
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
@@ -130,9 +124,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     wait_exponential_jitter: bool = True
     """Whether to add jitter to the exponential backoff."""
 
-    exponential_jitter_params: Optional[ExponentialJitterParams] = None
-    """Parameters for ``tenacity.wait_exponential_jitter``. Namely: ``initial``,
-    ``max``, ``exp_base``, and ``jitter`` (all float values).
+    exponential_jitter_params: ExponentialJitterParams | None = None
+    """Parameters for `tenacity.wait_exponential_jitter`. Namely: `initial`,
+    `max`, `exp_base`, and `jitter` (all `float` values).
     """
 
     max_attempt_number: int = 3
@@ -178,7 +172,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         retry_state: RetryCallState,
     ) -> list[RunnableConfig]:
         return [
-            self._patch_config(c, rm, retry_state) for c, rm in zip(config, run_manager)
+            self._patch_config(c, rm, retry_state)
+            for c, rm in zip(config, run_manager, strict=False)
         ]
 
     def _invoke(
@@ -201,7 +196,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
@@ -225,7 +220,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     @override
     async def ainvoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
@@ -235,7 +230,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         run_manager: list["CallbackManagerForChainRun"],
         config: list[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
+    ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
         not_set: list[Output] = []
@@ -284,7 +279,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -296,7 +291,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     def batch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
@@ -311,7 +306,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         run_manager: list["AsyncCallbackManagerForChainRun"],
         config: list[RunnableConfig],
         **kwargs: Any,
-    ) -> list[Union[Output, Exception]]:
+    ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
 
         not_set: list[Output] = []
@@ -359,7 +354,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             if result is not_set:
                 result = cast("list[Output]", [e] * len(inputs))
 
-        outputs: list[Union[Output, Exception]] = []
+        outputs: list[Output | Exception] = []
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
@@ -371,7 +366,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     async def abatch(
         self,
         inputs: list[Input],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,

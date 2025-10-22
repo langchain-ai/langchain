@@ -1,0 +1,28 @@
+# Label PRs based on changed files.
+#
+# See `.github/pr-file-labeler.yml` to see rules for each label/directory.
+
+name: "🏷️ Pull Request Labeler"
+
+on:
+  # Safe since we're not checking out or running the PR's code
+  # Never check out the PR's head in a pull_request_target job
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  labeler:
+    name: "label"
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Label Pull Request
+        uses: actions/labeler@v6
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/pr-file-labeler.yml
+          sync-labels: false

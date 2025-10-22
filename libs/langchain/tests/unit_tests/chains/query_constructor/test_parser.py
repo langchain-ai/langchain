@@ -1,6 +1,6 @@
 """Test LLM-generated structured query parsing."""
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import lark
 import pytest
@@ -11,7 +11,7 @@ from langchain_core.structured_query import (
     Operator,
 )
 
-from langchain.chains.query_constructor.parser import get_parser
+from langchain_classic.chains.query_constructor.parser import get_parser
 
 DEFAULT_PARSER = get_parser()
 
@@ -71,13 +71,13 @@ def test_parse_nested_operation() -> None:
 
 def test_parse_disallowed_comparator() -> None:
     parser = get_parser(allowed_comparators=[Comparator.EQ])
-    with pytest.raises(ValueError, match="Received disallowed comparator gt."):
+    with pytest.raises(ValueError, match="Received disallowed comparator gt"):
         parser.parse('gt("a", 2)')
 
 
 def test_parse_disallowed_operator() -> None:
     parser = get_parser(allowed_operators=[Operator.AND])
-    with pytest.raises(ValueError, match="Received disallowed operator not."):
+    with pytest.raises(ValueError, match="Received disallowed operator not"):
         parser.parse('not(gt("a", 2))')
 
 
@@ -145,7 +145,7 @@ def test_parse_date_value(x: str) -> None:
         ),
     ],
 )
-def test_parse_datetime_value(x: str, expected: Optional[dict[str, str]]) -> None:
+def test_parse_datetime_value(x: str, expected: dict[str, str] | None) -> None:
     """Test parsing of datetime values with ISO 8601 format."""
     parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
     actual = parsed.value

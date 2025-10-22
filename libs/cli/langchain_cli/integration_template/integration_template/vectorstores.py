@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Iterator,
     List,
-    Optional,
     Sequence,
     Tuple,
     Type,
@@ -29,133 +28,133 @@ class __ModuleName__VectorStore(VectorStore):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args — indexing params:
-        collection_name: str
+        collection_name:
             Name of the collection.
-        embedding_function: Embeddings
+        embedding_function:
             Embedding function to use.
 
     # TODO: Populate with relevant params.
     Key init args — client params:
-        client: Optional[Client]
+        client:
             Client to use.
-        connection_args: Optional[dict]
+        connection_args:
             Connection arguments.
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __module_name__.vectorstores import __ModuleName__VectorStore
+        from langchain_openai import OpenAIEmbeddings
 
-            from __module_name__.vectorstores import __ModuleName__VectorStore
-            from langchain_openai import OpenAIEmbeddings
-
-            vector_store = __ModuleName__VectorStore(
-                collection_name="foo",
-                embedding_function=OpenAIEmbeddings(),
-                connection_args={"uri": "./foo.db"},
-                # other params...
-            )
+        vector_store = __ModuleName__VectorStore(
+            collection_name="foo",
+            embedding_function=OpenAIEmbeddings(),
+            connection_args={"uri": "./foo.db"},
+            # other params...
+        )
+        ```
 
     # TODO: Populate with relevant variables.
     Add Documents:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
 
-            from langchain_core.documents import Document
+        document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+        document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+        document_3 = Document(page_content="i will be deleted :(")
 
-            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
-            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
-            document_3 = Document(page_content="i will be deleted :(")
-
-            documents = [document_1, document_2, document_3]
-            ids = ["1", "2", "3"]
-            vector_store.add_documents(documents=documents, ids=ids)
+        documents = [document_1, document_2, document_3]
+        ids = ["1", "2", "3"]
+        vector_store.add_documents(documents=documents, ids=ids)
+        ```
 
     # TODO: Populate with relevant variables.
     Delete Documents:
-        .. code-block:: python
-
-            vector_store.delete(ids=["3"])
+        ```python
+        vector_store.delete(ids=["3"])
+        ```
 
     # TODO: Fill out with relevant variables and example output.
     Search:
-        .. code-block:: python
+        ```python
+        results = vector_store.similarity_search(query="thud",k=1)
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
 
-            results = vector_store.similarity_search(query="thud",k=1)
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Fill out with relevant variables and example output.
     Search with filter:
-        .. code-block:: python
+        ```python
+        results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
 
-            results = vector_store.similarity_search(query="thud",k=1,filter={"bar": "baz"})
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Fill out with relevant variables and example output.
     Search with score:
-        .. code-block:: python
+        ```python
+        results = vector_store.similarity_search_with_score(query="qux",k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
 
-            results = vector_store.similarity_search_with_score(query="qux",k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Fill out with relevant variables and example output.
     Async:
-        .. code-block:: python
+        ```python
+        # add documents
+        # await vector_store.aadd_documents(documents=documents, ids=ids)
 
-            # add documents
-            # await vector_store.aadd_documents(documents=documents, ids=ids)
+        # delete documents
+        # await vector_store.adelete(ids=["3"])
 
-            # delete documents
-            # await vector_store.adelete(ids=["3"])
+        # search
+        # results = vector_store.asimilarity_search(query="thud",k=1)
 
-            # search
-            # results = vector_store.asimilarity_search(query="thud",k=1)
+        # search with score
+        results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
+        for doc,score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
 
-            # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
-            for doc,score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            # TODO: Example output
+        ```python
+        # TODO: Example output
+        ```
 
     # TODO: Fill out with relevant variables and example output.
     Use as Retriever:
-        .. code-block:: python
+        ```python
+        retriever = vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+        )
+        retriever.invoke("thud")
+        ```
 
-            retriever = vector_store.as_retriever(
-                search_type="mmr",
-                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
-            )
-            retriever.invoke("thud")
+        ```python
+        # TODO: Example output
 
-        .. code-block:: python
-
-            # TODO: Example output
-
+        ```
     """  # noqa: E501
 
     def __init__(self, embedding: Embeddings) -> None:
@@ -172,7 +171,7 @@ class __ModuleName__VectorStore(VectorStore):
         cls: Type[__ModuleName__VectorStore],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> __ModuleName__VectorStore:
         store = cls(
@@ -187,7 +186,7 @@ class __ModuleName__VectorStore(VectorStore):
     #     cls: Type[VST],
     #     texts: List[str],
     #     embedding: Embeddings,
-    #     metadatas: Optional[List[dict]] = None,
+    #     metadatas: list[dict] | None = None,
     #     **kwargs: Any,
     # ) -> VST:
     #     return await asyncio.get_running_loop().run_in_executor(
@@ -201,7 +200,7 @@ class __ModuleName__VectorStore(VectorStore):
     def add_documents(
         self,
         documents: List[Document],
-        ids: Optional[List[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add documents to the store."""
@@ -215,7 +214,7 @@ class __ModuleName__VectorStore(VectorStore):
             )
             raise ValueError(msg)
 
-        id_iterator: Iterator[Optional[str]] = (
+        id_iterator: Iterator[str | None] = (
             iter(ids) if ids else iter(doc.id for doc in documents)
         )
 
@@ -238,19 +237,19 @@ class __ModuleName__VectorStore(VectorStore):
     # async def aadd_documents(
     #     self,
     #     documents: List[Document],
-    #     ids: Optional[List[str]] = None,
+    #     ids: list[str] | None = None,
     #     **kwargs: Any,
     # ) -> List[str]:
     #     raise NotImplementedError
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> None:
         if ids:
             for _id in ids:
                 self._database.pop(_id, None)
 
     # optional: add custom async implementations
     # async def adelete(
-    #     self, ids: Optional[List[str]] = None, **kwargs: Any
+    #     self, ids: list[str] | None = None, **kwargs: Any
     # ) -> None:
     #     raise NotImplementedError
 
@@ -287,7 +286,7 @@ class __ModuleName__VectorStore(VectorStore):
         self,
         embedding: List[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
+        filter: Callable[[Document], bool] | None = None,
         **kwargs: Any,
     ) -> List[tuple[Document, float, List[float]]]:
         # get all docs with fixed order in list

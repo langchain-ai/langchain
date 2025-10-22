@@ -14,7 +14,7 @@ test tests:
 	uv run --group test pytest -vvv --disable-socket --allow-unix-socket $(TEST_FILE)
 
 integration_test integration_tests:
-	uv run --group test --group test_integration pytest -vvv --timeout 30 $(TEST_FILE)
+	uv run --group test --group test_integration pytest -n auto -vvv --timeout 30 $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
@@ -44,12 +44,6 @@ lint lint_diff lint_package lint_tests:
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
-
-spell_check:
-	uv run --all-groups codespell --toml pyproject.toml
-
-spell_fix:
-	uv run --all-groups codespell --toml pyproject.toml -w
 
 check_imports: $(shell find langchain_anthropic -name '*.py')
 	uv run --all-groups python ./scripts/check_imports.py $^

@@ -43,11 +43,11 @@ def test_mistralai_initialization() -> None:
         ChatMistralAI(model="test", mistral_api_key="test"),  # type: ignore[call-arg, call-arg]
         ChatMistralAI(model="test", api_key="test"),  # type: ignore[call-arg, arg-type]
     ]:
-        assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
+        assert cast("SecretStr", model.mistral_api_key).get_secret_value() == "test"
 
 
 @pytest.mark.parametrize(
-    "model,expected_url",
+    ("model", "expected_url"),
     [
         (ChatMistralAI(model="test"), "https://api.mistral.ai/v1"),  # type: ignore[call-arg, arg-type]
         (ChatMistralAI(model="test", endpoint="baz"), "baz"),  # type: ignore[call-arg, arg-type]
@@ -188,6 +188,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             )
         ],
+        response_metadata={"model_provider": "mistralai"},
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message
@@ -231,6 +232,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             ),
         ],
+        response_metadata={"model_provider": "mistralai"},
     )
     assert result == expected_output
     assert _convert_message_to_mistral_chat_message(expected_output) == message

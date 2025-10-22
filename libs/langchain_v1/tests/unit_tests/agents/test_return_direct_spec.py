@@ -24,10 +24,10 @@ You are a strict polling bot.
 class TestCase(BaseSchema):
     name: str
     return_direct: bool
-    response_format: Optional[Dict[str, Any]]
+    response_format: dict[str, Any] | None
     expected_tool_calls: int
     expected_last_message: str
-    expected_structured_response: Optional[Dict[str, Any]]
+    expected_structured_response: dict[str, Any] | None
 
 
 TEST_CASES = load_spec("return_direct", as_model=TestCase)

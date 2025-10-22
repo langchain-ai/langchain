@@ -3,7 +3,7 @@
 import operator
 import uuid
 from collections.abc import Sequence
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from pydantic import Field
 from typing_extensions import override
@@ -23,8 +23,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     It provides a simple search API that returns documents by the number of
     counts the given query appears in the document.
-
-    .. versionadded:: 0.2.29
     """
 
     store: dict[str, Document] = Field(default_factory=dict)
@@ -60,7 +58,7 @@ class InMemoryDocumentIndex(DocumentIndex):
         return UpsertResponse(succeeded=ok_ids, failed=[])
 
     @override
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs.
 
         Args:

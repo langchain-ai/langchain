@@ -1,4 +1,4 @@
-from langchain.prompts.chat import __all__
+from langchain_classic.prompts.chat import __all__
 
 EXPECTED_ALL = [
     "MessageLike",

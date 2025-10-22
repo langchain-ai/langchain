@@ -1,4 +1,4 @@
-from langchain.schema.runnable.config import __all__
+from langchain_classic.schema.runnable.config import __all__
 
 EXPECTED_ALL = [
     "EmptyDict",
