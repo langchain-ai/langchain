@@ -1071,7 +1071,6 @@ def test_convert_to_openai_function_no_args() -> None:
             "properties": {},
             "additionalProperties": False,
             "type": "object",
-            "required": [],
         },
         "strict": True,
     }
