@@ -1159,13 +1159,13 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
 
 
 def test_convert_to_openai_function_strict_required() -> None:
-    class my_function(BaseModel):  # noqa: N801
-        """Dummy function."""
+    class MyModel(BaseModel):
+        """Dummy schema."""
 
         arg1: int = Field(..., description="foo")
-        arg2: Optional[str] = Field(None, description="bar")
+        arg2: str | None = Field(None, description="bar")
 
     expected = ["arg1", "arg2"]
-    func = convert_to_openai_function(my_function, strict=True)
+    func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
