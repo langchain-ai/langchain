@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "qdrant-client>=1.10.1,<2.0.0",
+    "qdrant-client>=1.15.1,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
     "langchain-core>=1.0.0,<2.0.0",
 ]
