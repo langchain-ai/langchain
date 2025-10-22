@@ -284,7 +284,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
                     continue
 
                 # Check if this is a limit warning (not a successful execution)
-                is_limit_warning = "tool call limits exceeded" in msg.content.lower()
+                content = msg.content if isinstance(msg.content, str) else str(msg.content)
+                is_limit_warning = "tool call limits exceeded" in content.lower()
 
                 # Check if this tool matches our filter
                 if self.tool_name is not None and msg.name != self.tool_name:
