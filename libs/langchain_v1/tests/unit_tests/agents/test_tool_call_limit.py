@@ -452,3 +452,366 @@ def test_exception_error_messages():
     error_msg = str(exc_info.value)
     assert "'search' tool call limits exceeded" in error_msg
     assert "thread limit (2/2)" in error_msg
+
+
+def test_end_behavior():
+    """Test end behavior: stops entire agent when limit hit."""
+
+    @tool
+    def tool1(query: str) -> str:
+        """First tool."""
+        return f"tool1: {query}"
+
+    @tool
+    def tool2(query: str) -> str:
+        """Second tool."""
+        return f"tool2: {query}"
+
+    @tool
+    def tool3(query: str) -> str:
+        """Third tool."""
+        return f"tool3: {query}"
+
+    # Model tries to call all 3 tools
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="tool1", args={"query": "test"}, id="1"),
+                ToolCall(name="tool2", args={"query": "test"}, id="2"),
+                ToolCall(name="tool3", args={"query": "test"}, id="3"),
+            ]
+        ]
+    )
+
+    # Limit to 2 tool calls with end behavior
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")
+
+    agent = create_agent(
+        model=model,
+        tools=[tool1, tool2, tool3],
+        middleware=[middleware],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Call all tools")]})
+
+    # Agent should hit limit before calling model, jumping to end
+    # The model makes 3 tool calls in first response
+    # after_model increments count to 3
+    # before_model on next iteration sees count >= limit and jumps to end
+    messages = result["messages"]
+
+    # Should have: HumanMessage, AIMessage with tool calls, 3 ToolMessages, AIMessage with limit message
+    ai_messages = [m for m in messages if isinstance(m, AIMessage)]
+
+    # Last message should be the limit exceeded message
+    assert "run limit" in ai_messages[-1].content or "Tool call limits exceeded" in ai_messages[-1].content
+
+
+def test_end_tools_behavior():
+    """Test end_tools behavior: blocks tool execution but lets agent continue."""
+
+    call_count = {"tool1": 0, "tool2": 0, "tool3": 0}
+
+    @tool
+    def tool1(query: str) -> str:
+        """First tool."""
+        call_count["tool1"] += 1
+        return f"tool1 result: {query}"
+
+    @tool
+    def tool2(query: str) -> str:
+        """Second tool."""
+        call_count["tool2"] += 1
+        return f"tool2 result: {query}"
+
+    @tool
+    def tool3(query: str) -> str:
+        """Third tool."""
+        call_count["tool3"] += 1
+        return f"tool3 result: {query}"
+
+    # Model makes 3 tool calls, then responds with no tool calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="tool1", args={"query": "test"}, id="1"),
+                ToolCall(name="tool2", args={"query": "test"}, id="2"),
+                ToolCall(name="tool3", args={"query": "test"}, id="3"),
+            ],
+            [],  # Final response with no tool calls
+        ]
+    )
+
+    # Limit to 2 tool calls with end_tools behavior
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end_tools")
+
+    agent = create_agent(
+        model=model,
+        tools=[tool1, tool2, tool3],
+        middleware=[middleware],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Call all tools")]})
+
+    # Verify that only the first 2 tools were actually executed
+    assert call_count["tool1"] == 1, "tool1 should have been called"
+    assert call_count["tool2"] == 1, "tool2 should have been called"
+    assert call_count["tool3"] == 0, "tool3 should have been blocked"
+
+    # Check messages - should have results from tool1 and tool2, warning from tool3
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 3
+
+    # First two should have actual results
+    assert "tool1 result" in tool_messages[0].content
+    assert "tool2 result" in tool_messages[1].content
+
+    # Third should be a limit warning
+    assert "Tool call limits exceeded" in tool_messages[2].content
+    assert "Do not call any more tools" in tool_messages[2].content
+
+
+def test_error_behavior():
+    """Test error behavior: raises exception when limit hit."""
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"Results for: {query}"
+
+    # Model makes 3 tool calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "test1"}, id="1"),
+                ToolCall(name="search", args={"query": "test2"}, id="2"),
+                ToolCall(name="search", args={"query": "test3"}, id="3"),
+            ]
+        ]
+    )
+
+    # Limit to 2 tool calls with error behavior
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="error")
+
+    agent = create_agent(
+        model=model,
+        tools=[search],
+        middleware=[middleware],
+    )
+
+    # Should raise exception when limit is hit
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
+        agent.invoke({"messages": [HumanMessage("Search for things")]})
+
+    assert "run limit" in str(exc_info.value)
+    assert exc_info.value.run_limit == 2
+
+
+def test_end_tools_with_specific_tool():
+    """Test end_tools behavior with specific tool limiting."""
+
+    call_count = {"search": 0, "calculator": 0}
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        call_count["search"] += 1
+        return f"search result: {query}"
+
+    @tool
+    def calculator(expression: str) -> str:
+        """Calculate an expression."""
+        call_count["calculator"] += 1
+        return f"calculator result: {expression}"
+
+    # Model makes 3 search calls and 2 calculator calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "test1"}, id="1"),
+                ToolCall(name="search", args={"query": "test2"}, id="2"),
+                ToolCall(name="calculator", args={"expression": "1+1"}, id="3"),
+                ToolCall(name="search", args={"query": "test3"}, id="4"),
+                ToolCall(name="calculator", args={"expression": "2+2"}, id="5"),
+            ],
+            [],
+        ]
+    )
+
+    # Limit only search to 2 calls with end_tools behavior
+    middleware = ToolCallLimitMiddleware(
+        tool_name="search", run_limit=2, exit_behavior="end_tools"
+    )
+
+    agent = create_agent(
+        model=model,
+        tools=[search, calculator],
+        middleware=[middleware],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Search and calculate")]})
+
+    # First 2 search calls should execute, third should be blocked
+    assert call_count["search"] == 2, "Only first 2 search calls should execute"
+    # All calculator calls should execute (not limited)
+    assert call_count["calculator"] == 2, "All calculator calls should execute"
+
+    # Check tool messages
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+
+    search_messages = [m for m in tool_messages if m.name == "search"]
+    calc_messages = [m for m in tool_messages if m.name == "calculator"]
+
+    # Should have 3 search messages (2 results + 1 warning)
+    assert len(search_messages) == 3
+    assert "search result" in search_messages[0].content
+    assert "search result" in search_messages[1].content
+    assert "tool call limits exceeded" in search_messages[2].content.lower()
+
+    # Should have 2 calculator results
+    assert len(calc_messages) == 2
+    assert "calculator result" in calc_messages[0].content
+    assert "calculator result" in calc_messages[1].content
+
+
+def test_end_tools_thread_limit():
+    """Test end_tools behavior with thread limit across multiple runs."""
+
+    call_count = {"search": 0}
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        call_count["search"] += 1
+        return f"search result {call_count['search']}: {query}"
+
+    # First run: 2 search calls
+    # Second run: 2 more search calls (total 4)
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="search", args={"query": "test1"}, id="1"),
+                ToolCall(name="search", args={"query": "test2"}, id="2"),
+            ],
+            [],
+            [
+                ToolCall(name="search", args={"query": "test3"}, id="3"),
+                ToolCall(name="search", args={"query": "test4"}, id="4"),
+            ],
+            [],
+        ]
+    )
+
+    # Thread limit of 3 with end_tools behavior
+    middleware = ToolCallLimitMiddleware(thread_limit=3, exit_behavior="end_tools")
+
+    agent = create_agent(
+        model=model,
+        tools=[search],
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+
+    thread_config = {"configurable": {"thread_id": "test_thread"}}
+
+    # First run: 2 calls, both should execute
+    result1 = agent.invoke({"messages": [HumanMessage("First search")]}, thread_config)
+    assert call_count["search"] == 2
+
+    tool_messages_1 = [m for m in result1["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages_1) == 2
+    assert "search result" in tool_messages_1[0].content
+    assert "search result" in tool_messages_1[1].content
+
+    # Second run: would add 2 more (total 4), but limit is 3
+    # So only first call should execute, second should be blocked
+    result2 = agent.invoke({"messages": [HumanMessage("Second search")]}, thread_config)
+    assert call_count["search"] == 3, "Only 1 more search should execute (3 total)"
+
+    tool_messages_2 = [
+        m
+        for m in result2["messages"]
+        if isinstance(m, ToolMessage) and m not in tool_messages_1
+    ]
+
+    # Should have 2 new tool messages: 1 result, 1 warning
+    assert len(tool_messages_2) == 2
+    # First is the successful execution
+    assert "search result 3" in tool_messages_2[0].content
+    # Second is the blocked execution
+    assert "Tool call limits exceeded" in tool_messages_2[1].content
+
+
+def test_comparison_all_three_behaviors():
+    """
+    Comprehensive test comparing all three exit behaviors.
+
+    This demonstrates the key differences:
+    - end: Stops entire agent execution
+    - end_tools: Blocks individual tool executions, agent continues
+    - error: Raises exception
+    """
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        return f"search: {query}"
+
+    # Model tries to make 3 tool calls
+    def make_model():
+        return FakeToolCallingModel(
+            tool_calls=[
+                [
+                    ToolCall(name="search", args={"query": "q1"}, id="1"),
+                    ToolCall(name="search", args={"query": "q2"}, id="2"),
+                    ToolCall(name="search", args={"query": "q3"}, id="3"),
+                ],
+                [],
+            ]
+        )
+
+    # Test 1: end behavior
+    agent_end = create_agent(
+        model=make_model(),
+        tools=[search],
+        middleware=[ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")],
+    )
+
+    result_end = agent_end.invoke({"messages": [HumanMessage("Search")]})
+
+    # With end: agent completes first iteration (3 tool calls),
+    # then before_model on next iteration sees limit exceeded and jumps to end
+    messages_end = result_end["messages"]
+    ai_messages_end = [m for m in messages_end if isinstance(m, AIMessage)]
+
+    # Should have limit exceeded message
+    assert any("limit" in m.content.lower() for m in ai_messages_end)
+
+    # Test 2: end_tools behavior
+    agent_end_tools = create_agent(
+        model=make_model(),
+        tools=[search],
+        middleware=[ToolCallLimitMiddleware(run_limit=2, exit_behavior="end_tools")],
+    )
+
+    result_end_tools = agent_end_tools.invoke({"messages": [HumanMessage("Search")]})
+
+    # With end_tools: first 2 tools execute, third gets warning, agent continues
+    tool_messages_end_tools = [m for m in result_end_tools["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages_end_tools) == 3
+    assert "search: q1" in tool_messages_end_tools[0].content
+    assert "search: q2" in tool_messages_end_tools[1].content
+    assert "Tool call limits exceeded" in tool_messages_end_tools[2].content
+
+    # Test 3: error behavior
+    agent_error = create_agent(
+        model=make_model(),
+        tools=[search],
+        middleware=[ToolCallLimitMiddleware(run_limit=2, exit_behavior="error")],
+    )
+
+    # With error: should raise exception
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
+        agent_error.invoke({"messages": [HumanMessage("Search")]})
+
+    assert exc_info.value.run_limit == 2
