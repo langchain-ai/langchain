@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
-from langgraph.types import Command
 from typing_extensions import NotRequired
 
 from langchain.agents.middleware.types import (
@@ -17,7 +16,11 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
+
     from langchain.tools.tool_node import ToolCallRequest
 
 
@@ -166,9 +169,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
         from langchain.agents import create_agent
 
         # Limit all tool calls globally - stop entire agent when exceeded
-        global_limiter = ToolCallLimitMiddleware(
-            thread_limit=20, run_limit=10, exit_behavior="end"
-        )
+        global_limiter = ToolCallLimitMiddleware(thread_limit=20, run_limit=10, exit_behavior="end")
 
         # Limit a specific tool - block tool execution but let agent continue
         search_limiter = ToolCallLimitMiddleware(
@@ -464,7 +465,8 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
                 matching_before = sum(
                     1
                     for i in range(idx)
-                    if self.tool_name is None or last_ai_message.tool_calls[i]["name"] == self.tool_name
+                    if self.tool_name is None
+                    or last_ai_message.tool_calls[i]["name"] == self.tool_name
                 )
                 tool_call_position = matching_before
                 break
@@ -485,8 +487,12 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
         run_count_after_this_tool = current_run_count + tool_call_position + 1
 
         # Check if this tool call would exceed limits
-        thread_limit_exceeded = self.thread_limit is not None and count_after_this_tool > self.thread_limit
-        run_limit_exceeded = self.run_limit is not None and run_count_after_this_tool > self.run_limit
+        thread_limit_exceeded = (
+            self.thread_limit is not None and count_after_this_tool > self.thread_limit
+        )
+        run_limit_exceeded = (
+            self.run_limit is not None and run_count_after_this_tool > self.run_limit
+        )
 
         if thread_limit_exceeded or run_limit_exceeded:
             # This tool would exceed the limit - return warning message

@@ -504,7 +504,10 @@ def test_end_behavior():
     ai_messages = [m for m in messages if isinstance(m, AIMessage)]
 
     # Last message should be the limit exceeded message
-    assert "run limit" in ai_messages[-1].content or "Tool call limits exceeded" in ai_messages[-1].content
+    assert (
+        "run limit" in ai_messages[-1].content
+        or "Tool call limits exceeded" in ai_messages[-1].content
+    )
 
 
 def test_end_tools_behavior():
@@ -687,9 +690,7 @@ def test_end_tools_with_specific_tool():
     )
 
     # Limit only search to 2 calls with end_tools behavior
-    middleware = ToolCallLimitMiddleware(
-        tool_name="search", run_limit=2, exit_behavior="end_tools"
-    )
+    middleware = ToolCallLimitMiddleware(tool_name="search", run_limit=2, exit_behavior="end_tools")
 
     agent = create_agent(
         model=model,
@@ -777,9 +778,7 @@ def test_end_tools_thread_limit():
     assert call_count["search"] == 3, "Only 1 more search should execute (3 total)"
 
     tool_messages_2 = [
-        m
-        for m in result2["messages"]
-        if isinstance(m, ToolMessage) and m not in tool_messages_1
+        m for m in result2["messages"] if isinstance(m, ToolMessage) and m not in tool_messages_1
     ]
 
     # Should have 2 new tool messages: 1 result, 1 warning
@@ -845,7 +844,9 @@ def test_comparison_all_three_behaviors():
     result_end_tools = agent_end_tools.invoke({"messages": [HumanMessage("Search")]})
 
     # With end_tools: first 2 tools execute, third gets warning, agent continues
-    tool_messages_end_tools = [m for m in result_end_tools["messages"] if isinstance(m, ToolMessage)]
+    tool_messages_end_tools = [
+        m for m in result_end_tools["messages"] if isinstance(m, ToolMessage)
+    ]
     assert len(tool_messages_end_tools) == 3
     assert "search: q1" in tool_messages_end_tools[0].content
     assert "search: q2" in tool_messages_end_tools[1].content
