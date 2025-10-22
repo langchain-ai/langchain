@@ -607,6 +607,54 @@ def test_error_behavior():
     assert exc_info.value.run_limit == 2
 
 
+def test_end_tools_sequential():
+    """Test end_tools behavior with sequential tool calls (one at a time)."""
+
+    call_count = {"search": 0}
+
+    @tool
+    def search(query: str) -> str:
+        """Search for information."""
+        call_count["search"] += 1
+        return f"search result {call_count['search']}: {query}"
+
+    # Model makes tool calls one at a time across multiple iterations
+    # Each iteration: make one tool call, then continue
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [ToolCall(name="search", args={"query": "first"}, id="1")],
+            [ToolCall(name="search", args={"query": "second"}, id="2")],
+            [ToolCall(name="search", args={"query": "third"}, id="3")],
+            [],  # Final response with no tool calls
+        ]
+    )
+
+    # Limit to 2 tool calls with end_tools behavior
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end_tools")
+
+    agent = create_agent(
+        model=model,
+        tools=[search],
+        middleware=[middleware],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("Search sequentially")]})
+
+    # First 2 tools should execute, third should be blocked
+    assert call_count["search"] == 2, "Only first 2 searches should execute"
+
+    # Check tool messages
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) == 3
+
+    # First two should have actual results
+    assert "search result 1" in tool_messages[0].content
+    assert "search result 2" in tool_messages[1].content
+
+    # Third should be blocked
+    assert "tool call limits exceeded" in tool_messages[2].content.lower()
+
+
 def test_end_tools_with_specific_tool():
     """Test end_tools behavior with specific tool limiting."""
 

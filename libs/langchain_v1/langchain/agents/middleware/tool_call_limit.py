@@ -263,8 +263,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
             ToolCallLimitExceededError: If limits are exceeded and exit_behavior
                 is "error".
         """
-        # For end_tools behavior, count ALL executions in the current run
-        # Works for both parallel and sequential execution
+        # For end_tools behavior, count executions from current run
         if self.exit_behavior == "end_tools":
             messages = state.get("messages", [])
             if not messages:
@@ -275,8 +274,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
             if not run_messages:
                 return None
 
-            # Count ALL successful tool executions in the current run
-            # This works for both parallel (all at once) and sequential (one at a time)
+            # Count successful tool executions in the current run
             count_key = self.tool_name if self.tool_name else "__all__"
             successful_executions = 0
 
@@ -285,7 +283,7 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
                     continue
 
                 # Check if this is a limit warning (not a successful execution)
-                is_limit_warning = "Tool call limits exceeded" in msg.content or "tool call limits exceeded" in msg.content
+                is_limit_warning = "tool call limits exceeded" in msg.content.lower()
 
                 # Check if this tool matches our filter
                 if self.tool_name is not None and msg.name != self.tool_name:
@@ -482,12 +480,11 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
         current_thread_count = thread_counts.get(count_key, 0)
         current_run_count = run_counts.get(count_key, 0)
 
-        # Calculate what the count would be after THIS specific tool executes
-        # (based on its position in the tool_calls list)
+        # Calculate count after this tool executes (based on position)
         count_after_this_tool = current_thread_count + tool_call_position + 1
         run_count_after_this_tool = current_run_count + tool_call_position + 1
 
-        # Check if THIS specific tool call would exceed limits
+        # Check if this tool call would exceed limits
         thread_limit_exceeded = self.thread_limit is not None and count_after_this_tool > self.thread_limit
         run_limit_exceeded = self.run_limit is not None and run_count_after_this_tool > self.run_limit
 
@@ -507,5 +504,4 @@ class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
             )
 
         # Within limit - execute the tool
-        # Note: Counting happens in after_model by checking ToolMessages
         return execute(request)
