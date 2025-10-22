@@ -507,7 +507,7 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | None = None,
+    system_prompt: str | list[str | dict] | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
@@ -536,6 +536,7 @@ def create_agent(  # noqa: PLR0915
             the agent will consist of a model node without a tool calling loop.
         system_prompt: An optional system prompt for the LLM. Prompts are converted to a
             `SystemMessage` and added to the beginning of the message list.
+            Can be a string or a list of strings or dicts.
         middleware: A sequence of middleware instances to apply to the agent.
             Middleware can intercept and modify agent behavior at various stages.
         response_format: An optional configuration for structured responses.
