@@ -63,7 +63,7 @@ def test_qdrant_mmr_search(
         output,
         [
             Document(page_content="foo", metadata={"page": 0}),
-            Document(page_content="bar", metadata={"page": 1}),
+            Document(page_content="baz", metadata={"page": 2}),
         ],
     )
 

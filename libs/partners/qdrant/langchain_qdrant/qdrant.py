@@ -10,6 +10,7 @@ from typing import (
     Any,
 )
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -827,13 +828,10 @@ class QdrantVectorStore(VectorStore):
         """
         results = self.client.query_points(
             collection_name=self.collection_name,
-            query=models.NearestQuery(
-                nearest=embedding,
-                mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
-            ),
+            query=embedding,
             query_filter=filter,
             search_params=search_params,
-            limit=k,
+            limit=fetch_k,
             with_payload=True,
             with_vectors=True,
             score_threshold=score_threshold,
@@ -854,14 +852,14 @@ class QdrantVectorStore(VectorStore):
         return [
             (
                 self._document_from_point(
-                    result,
+                    results[i],
                     self.collection_name,
                     self.content_payload_key,
                     self.metadata_payload_key,
                 ),
-                result.score,
+                results[i].score,
             )
-            for result in results
+            for i in mmr_selected
         ]
 
     def delete(  # type: ignore[override]
