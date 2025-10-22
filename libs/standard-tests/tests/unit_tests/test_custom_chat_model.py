@@ -1,6 +1,6 @@
 """Test the standard tests on the custom chat model in the docs."""
 
-from typing import Optional
+from __future__ import annotations
 
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -34,7 +34,7 @@ class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
     def test_unicode_tool_call_integration(
         self,
         model: BaseChatModel,
-        tool_choice: Optional[str] = None,
-        force_tool_call: bool = True,
+        tool_choice: str | None = None,  # noqa: PT028
+        force_tool_call: bool = True,  # noqa: FBT001, FBT002, PT028
     ) -> None:
         """Expected failure as ChatParrotLink doesn't support tool calling yet."""

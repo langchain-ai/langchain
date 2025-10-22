@@ -22,7 +22,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o-mini", "stream_usage": True}
+        return {"model": "gpt-4o-mini"}
 
     @property
     def supports_image_inputs(self) -> bool:
@@ -62,11 +62,11 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return True
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4o-mini", stream_usage=True)
@@ -95,12 +95,11 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
         message = HumanMessage(
             [
-                {"type": "text", "text": "Summarize this document:"},
+                {"type": "text", "text": "What is the document title, verbatim?"},
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                     "filename": "my-pdf",  # OpenAI requires a filename
                 },
             ]
@@ -110,7 +109,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         # Test OpenAI Chat Completions format
         message = HumanMessage(
             [
-                {"type": "text", "text": "Summarize this document:"},
+                {"type": "text", "text": "What is the document title, verbatim?"},
                 {
                     "type": "file",
                     "file": {
@@ -129,11 +128,10 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         for chunk in llm.stream(input_):
             full = full + chunk if full else chunk  # type: ignore[operator]
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))
 
 
-@pytest.mark.skip()  # Test either finishes in 5 seconds or 5 minutes.
+@pytest.mark.skip  # Test either finishes in 5 seconds or 5 minutes.
 def test_audio_model() -> None:
     class AudioModelTests(ChatModelIntegrationTests):
         @property

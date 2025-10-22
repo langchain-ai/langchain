@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Optional,
-    Union,
     cast,
 )
 
@@ -38,15 +35,12 @@ if TYPE_CHECKING:
 
 
 class RouterInput(TypedDict):
-    """Router input.
-
-    Attributes:
-        key: The key to route on.
-        input: The input to pass to the selected Runnable.
-    """
+    """Router input."""
 
     key: str
+    """The key to route on."""
     input: Any
+    """The input to pass to the selected Runnable."""
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
@@ -55,18 +49,16 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     Returns the output of the selected Runnable.
 
     Example:
+        ```python
+        from langchain_core.runnables.router import RouterRunnable
+        from langchain_core.runnables import RunnableLambda
 
-        .. code-block:: python
+        add = RunnableLambda(func=lambda x: x + 1)
+        square = RunnableLambda(func=lambda x: x**2)
 
-            from langchain_core.runnables.router import RouterRunnable
-            from langchain_core.runnables import RunnableLambda
-
-            add = RunnableLambda(func=lambda x: x + 1)
-            square = RunnableLambda(func=lambda x: x**2)
-
-            router = RouterRunnable(runnables={"add": add, "square": square})
-            router.invoke({"key": "square", "input": 3})
-
+        router = RouterRunnable(runnables={"add": add, "square": square})
+        router.invoke({"key": "square", "input": 3})
+        ```
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
@@ -80,14 +72,14 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     def __init__(
         self,
-        runnables: Mapping[str, Union[Runnable[Any, Output], Callable[[Any], Output]]],
+        runnables: Mapping[str, Runnable[Any, Output] | Callable[[Any], Output]],
     ) -> None:
         """Create a RouterRunnable.
 
         Args:
             runnables: A mapping of keys to Runnables.
         """
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 
@@ -98,18 +90,22 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "schema", "runnable"]`
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
     def invoke(
-        self, input: RouterInput, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: RouterInput, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
@@ -124,8 +120,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def ainvoke(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Output:
         key = input["key"]
         actual_input = input["input"]
@@ -140,10 +136,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     def batch(
         self,
         inputs: list[RouterInput],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if not inputs:
             return []
@@ -156,7 +152,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         def invoke(
             runnable: Runnable, input_: Input, config: RunnableConfig
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             if return_exceptions:
                 try:
                     return runnable.invoke(input_, config, **kwargs)
@@ -177,10 +173,10 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def abatch(
         self,
         inputs: list[RouterInput],
-        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
-        **kwargs: Optional[Any],
+        **kwargs: Any | None,
     ) -> list[Output]:
         if not inputs:
             return []
@@ -193,7 +189,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         async def ainvoke(
             runnable: Runnable, input_: Input, config: RunnableConfig
-        ) -> Union[Output, Exception]:
+        ) -> Output | Exception:
             if return_exceptions:
                 try:
                     return await runnable.ainvoke(input_, config, **kwargs)
@@ -213,8 +209,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     def stream(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         key = input["key"]
         actual_input = input["input"]
@@ -229,8 +225,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     async def astream(
         self,
         input: RouterInput,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         key = input["key"]
         actual_input = input["input"]

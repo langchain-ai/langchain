@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import os
 import uuid
-from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
@@ -29,14 +30,14 @@ async def test_qdrant_from_texts_stores_duplicated_texts(qdrant_location: str) -
     )
 
     client = vec_store.client
-    assert 2 == client.count(collection_name).count
+    assert client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_ids(
-    batch_size: int, vector_name: Optional[str], qdrant_location: str
+    batch_size: int, vector_name: str | None, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.afrom_texts stores provided ids."""
     collection_name = uuid.uuid4().hex
@@ -55,7 +56,7 @@ async def test_qdrant_from_texts_stores_ids(
     )
 
     client = vec_store.client
-    assert 2 == client.count(collection_name).count
+    assert client.count(collection_name).count == 2
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)
 
@@ -78,7 +79,7 @@ async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
     )
 
     client = vec_store.client
-    assert 5 == client.count(collection_name).count
+    assert client.count(collection_name).count == 5
     assert all(
         vector_name in point.vector  # type: ignore[operator]
         for point in client.scroll(collection_name, with_vectors=True)[0]
@@ -88,9 +89,9 @@ async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 async def test_qdrant_from_texts_reuses_same_collection(
-    location: str, vector_name: Optional[str]
+    location: str, vector_name: str | None
 ) -> None:
-    """Test if Qdrant.afrom_texts reuses the same collection"""
+    """Test if Qdrant.afrom_texts reuses the same collection."""
     collection_name = uuid.uuid4().hex
     embeddings = ConsistentFakeEmbeddings()
 
@@ -111,17 +112,18 @@ async def test_qdrant_from_texts_reuses_same_collection(
     )
 
     client = vec_store.client
-    assert 7 == client.count(collection_name).count
+    assert client.count(collection_name).count == 7
 
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     location: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test if Qdrant.afrom_texts raises an exception if dimensionality does not
-    match"""
+    match.
+    """
     collection_name = uuid.uuid4().hex
 
     await Qdrant.afrom_texts(
@@ -144,7 +146,7 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize(
-    ["first_vector_name", "second_vector_name"],
+    ("first_vector_name", "second_vector_name"),
     [
         (None, "custom-vector"),
         ("custom-vector", None),
@@ -153,10 +155,10 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 )
 async def test_qdrant_from_texts_raises_error_on_different_vector_name(
     location: str,
-    first_vector_name: Optional[str],
-    second_vector_name: Optional[str],
+    first_vector_name: str | None,
+    second_vector_name: str | None,
 ) -> None:
-    """Test if Qdrant.afrom_texts raises an exception if vector name does not match"""
+    """Test if Qdrant.afrom_texts raises an exception if vector name does not match."""
     collection_name = uuid.uuid4().hex
 
     await Qdrant.afrom_texts(
@@ -181,7 +183,7 @@ async def test_qdrant_from_texts_raises_error_on_different_vector_name(
 async def test_qdrant_from_texts_raises_error_on_different_distance(
     location: str,
 ) -> None:
-    """Test if Qdrant.afrom_texts raises an exception if distance does not match"""
+    """Test if Qdrant.afrom_texts raises an exception if distance does not match."""
     collection_name = uuid.uuid4().hex
 
     await Qdrant.afrom_texts(
@@ -206,9 +208,9 @@ async def test_qdrant_from_texts_raises_error_on_different_distance(
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
     location: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
-    """Test if Qdrant.afrom_texts recreates the collection even if config mismatches"""
+    """Test if Qdrant.afrom_texts recreates the collection even if config mismatches."""
     from qdrant_client import QdrantClient
 
     collection_name = uuid.uuid4().hex
@@ -231,11 +233,11 @@ async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
     )
 
     client = QdrantClient(location=location, api_key=os.getenv("QDRANT_API_KEY"))
-    assert 2 == client.count(collection_name).count
+    assert client.count(collection_name).count == 2
     vector_params = client.get_collection(collection_name).config.params.vectors
     if vector_name is not None:
         vector_params = vector_params[vector_name]  # type: ignore[index]
-    assert 5 == vector_params.size  # type: ignore[union-attr]
+    assert vector_params.size == 5  # type: ignore[union-attr]
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])

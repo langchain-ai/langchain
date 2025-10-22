@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import pkgutil
+from types import ModuleType
 
 
 def generate_raw_migrations(
@@ -10,7 +11,16 @@ def generate_raw_migrations(
     to_package: str,
     filter_by_all: bool = False,  # noqa: FBT001, FBT002
 ) -> list[tuple[str, str]]:
-    """Scan the `langchain` package and generate migrations for all modules."""
+    """Scan the `langchain` package and generate migrations for all modules.
+
+    Args:
+        from_package: The package to migrate from.
+        to_package: The package to migrate to.
+        filter_by_all: Whether to only consider items in `__all__`.
+
+    Returns:
+        A list of tuples containing the original import path and the new import path.
+    """
     package = importlib.import_module(from_package)
 
     items = []
@@ -65,7 +75,7 @@ def generate_raw_migrations(
 def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     """Look at all the top level modules in langchain_community.
 
-    Attempt to import everything from each ``__init__`` file. For example,
+    Attempt to import everything from each `__init__` file. For example,
 
     langchain_community/
         chat_models/
@@ -73,23 +83,29 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
         llm/
             __init__.py # <-- import everything from here
 
-
     It'll collect all the imports, import the classes / functions it can find
     there. It'll return a list of 2-tuples
 
     Each tuple will contain the fully qualified path of the class / function to where
-    its logic is defined
-    (e.g., ``langchain_community.chat_models.xyz_implementation.ver2.XYZ``)
+    its logic is defined.
+    (e.g., `langchain_community.chat_models.xyz_implementation.ver2.XYZ`)
     and the second tuple will contain the path
     to importing it from the top level namespaces
-    (e.g., ``langchain_community.chat_models.XYZ``)
+    (e.g., `langchain_community.chat_models.XYZ`)
+
+    Args:
+        pkg: The package to scan.
+
+    Returns:
+        A list of tuples containing the fully qualified path and the top-level
+        import path.
     """
     package = importlib.import_module(pkg)
 
     items = []
 
     # Function to handle importing from modules
-    def handle_module(module, module_name) -> None:
+    def handle_module(module: ModuleType, module_name: str) -> None:
         if hasattr(module, "__all__"):
             all_objects = module.__all__
             for name in all_objects:
@@ -129,7 +145,17 @@ def generate_simplified_migrations(
     to_package: str,
     filter_by_all: bool = True,  # noqa: FBT001, FBT002
 ) -> list[tuple[str, str]]:
-    """Get all the raw migrations, then simplify them if possible."""
+    """Get all the raw migrations, then simplify them if possible.
+
+    Args:
+        from_package: The package to migrate from.
+        to_package: The package to migrate to.
+        filter_by_all: Whether to only consider items in `__all__`.
+
+    Returns:
+        A list of tuples containing the original import path and the simplified
+        import path.
+    """
     raw_migrations = generate_raw_migrations(
         from_package,
         to_package,

@@ -11,15 +11,19 @@ from langchain_anthropic import ChatAnthropic
 
 REPO_ROOT_DIR = Path(__file__).parents[5]
 
+MODEL = "claude-3-5-haiku-latest"
+
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
+    """Use standard chat model integration tests against the `ChatAnthropic` class."""
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "claude-3-5-sonnet-latest"}
+        return {"model": MODEL}
 
     @property
     def supports_image_inputs(self) -> bool:
@@ -35,6 +39,10 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     @property
     def supports_image_tool_message(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_tool_message(self) -> bool:
         return True
 
     @property
@@ -67,10 +75,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
-            model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
-            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
+            model=MODEL,  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -96,10 +103,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
-            model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
-            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
+            model=MODEL,  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -146,6 +152,6 @@ def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noq
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
-        return cast(AIMessage, full)
-    return cast(AIMessage, llm.invoke(input_))
+            full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
+        return cast("AIMessage", full)
+    return cast("AIMessage", llm.invoke(input_))

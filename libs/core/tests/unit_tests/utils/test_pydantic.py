@@ -1,9 +1,12 @@
 """Test for some custom pydantic decorators."""
 
+import sys
 import warnings
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import ConfigDict
+import pytest
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from langchain_core.utils.pydantic import (
     _create_subset_model_v2,
@@ -16,8 +19,6 @@ from langchain_core.utils.pydantic import (
 
 
 def test_pre_init_decorator() -> None:
-    from pydantic import BaseModel
-
     class Foo(BaseModel):
         x: int = 5
         y: int
@@ -35,11 +36,9 @@ def test_pre_init_decorator() -> None:
 
 
 def test_pre_init_decorator_with_more_defaults() -> None:
-    from pydantic import BaseModel, Field
-
     class Foo(BaseModel):
         a: int = 1
-        b: Optional[int] = None
+        b: int | None = None
         c: int = Field(default=2)
         d: int = Field(default_factory=lambda: 3)
 
@@ -56,8 +55,6 @@ def test_pre_init_decorator_with_more_defaults() -> None:
 
 
 def test_with_aliases() -> None:
-    from pydantic import BaseModel, Field
-
     class Foo(BaseModel):
         x: int = Field(default=1, alias="y")
         z: int
@@ -92,19 +89,14 @@ def test_with_aliases() -> None:
 
 def test_is_basemodel_subclass() -> None:
     """Test pydantic."""
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
-
-    assert is_basemodel_subclass(BaseModelV2)
+    assert is_basemodel_subclass(BaseModel)
     assert is_basemodel_subclass(BaseModelV1)
 
 
 def test_is_basemodel_instance() -> None:
     """Test pydantic."""
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic.v1 import BaseModel as BaseModelV1
 
-    class Foo(BaseModelV2):
+    class Foo(BaseModel):
         x: int
 
     assert is_basemodel_instance(Foo(x=5))
@@ -117,11 +109,9 @@ def test_is_basemodel_instance() -> None:
 
 def test_with_field_metadata() -> None:
     """Test pydantic with field metadata."""
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic import Field as FieldV2
 
-    class Foo(BaseModelV2):
-        x: list[int] = FieldV2(
+    class Foo(BaseModel):
+        x: list[int] = Field(
             description="List of integers", min_length=10, max_length=15
         )
 
@@ -144,8 +134,6 @@ def test_with_field_metadata() -> None:
 
 
 def test_fields_pydantic_v2_proper() -> None:
-    from pydantic import BaseModel
-
     class Foo(BaseModel):
         x: int
 
@@ -153,10 +141,12 @@ def test_fields_pydantic_v2_proper() -> None:
     assert fields == {"x": Foo.model_fields["x"]}
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 def test_fields_pydantic_v1_from_2() -> None:
-    from pydantic.v1 import BaseModel
-
-    class Foo(BaseModel):
+    class Foo(BaseModelV1):
         x: int
 
     fields = get_fields(Foo)

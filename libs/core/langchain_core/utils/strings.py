@@ -10,7 +10,7 @@ def stringify_value(val: Any) -> str:
         val: The value to stringify.
 
     Returns:
-        str: The stringified value.
+        The stringified value.
     """
     if isinstance(val, str):
         return val
@@ -28,7 +28,7 @@ def stringify_dict(data: dict) -> str:
         data: The dictionary to stringify.
 
     Returns:
-        str: The stringified dictionary.
+        The stringified dictionary.
     """
     text = ""
     for key, value in data.items():
@@ -43,7 +43,7 @@ def comma_list(items: list[Any]) -> str:
         items: The list to convert.
 
     Returns:
-        str: The comma-separated string.
+        The comma-separated string.
     """
     return ", ".join(str(item) for item in items)
 
@@ -57,10 +57,10 @@ def sanitize_for_postgres(text: str, replacement: str = "") -> str:
 
     Args:
         text: The text to sanitize.
-        replacement: String to replace NUL bytes with. Defaults to empty string.
+        replacement: String to replace NUL bytes with.
 
     Returns:
-        str: The sanitized text with NUL bytes removed or replaced.
+        The sanitized text with NUL bytes removed or replaced.
 
     Example:
         >>> sanitize_for_postgres("Hello\\x00world")

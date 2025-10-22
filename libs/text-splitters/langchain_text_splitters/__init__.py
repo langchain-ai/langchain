@@ -1,22 +1,9 @@
 """**Text Splitters** are classes for splitting text.
 
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
-                                                 RecursiveCharacterTextSplitter -->  <name>TextSplitter
-
-Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
-
-
-**Main helpers:**
-
-.. code-block::
-
-    Document, Tokenizer, Language, LineType, HeaderType
-
-"""  # noqa: E501
+!!! note
+    `MarkdownHeaderTextSplitter` and `HTMLHeaderTextSplitter` do not derive from
+    `TextSplitter`.
+"""
 
 from langchain_text_splitters.base import (
     Language,

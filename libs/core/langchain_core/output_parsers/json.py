@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional, TypeVar, Union
+from typing import Annotated, Any, TypeVar
 
 import jsonpatch  # type: ignore[import-untyped]
 import pydantic
@@ -23,7 +23,7 @@ from langchain_core.utils.json import (
 )
 
 # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]
+PydanticBaseModel = BaseModel | pydantic.BaseModel
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -38,31 +38,30 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     describing the difference between the previous and the current object.
     """
 
-    pydantic_object: Annotated[Optional[type[TBaseModel]], SkipValidation()] = None  # type: ignore[valid-type]
+    pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
-    If None, no validation is performed."""
+    If `None`, no validation is performed."""
 
     @override
-    def _diff(self, prev: Optional[Any], next: Any) -> Any:
+    def _diff(self, prev: Any | None, next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
+    @staticmethod
+    def _get_schema(pydantic_object: type[TBaseModel]) -> dict[str, Any]:
         if issubclass(pydantic_object, pydantic.BaseModel):
             return pydantic_object.model_json_schema()
-        if issubclass(pydantic_object, pydantic.v1.BaseModel):
-            return pydantic_object.schema()
-        return None
+        return pydantic_object.schema()
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed JSON object.

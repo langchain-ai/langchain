@@ -4,13 +4,11 @@ import asyncio
 import inspect
 import sys
 import uuid
-from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import cycle
 from typing import (
     Any,
-    Callable,
-    Optional,
     cast,
 )
 
@@ -20,6 +18,7 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
+from langchain_core.callbacks.manager import adispatch_custom_event
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
@@ -361,7 +360,7 @@ async def test_event_stream_with_triple_lambda() -> None:
 
 
 async def test_event_stream_exception() -> None:
-    def step(name: str, err: Optional[str], val: str) -> str:
+    def step(name: str, err: str | None, val: str) -> str:
         if err:
             raise ValueError(err)
         return val + name[-1]
@@ -539,7 +538,11 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="hello",
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -565,7 +568,11 @@ async def test_astream_events_from_model() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="world!", chunk_position="last"
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -579,7 +586,9 @@ async def test_astream_events_from_model() -> None:
             },
             {
                 "data": {
-                    "output": _any_id_ai_message_chunk(content="hello world!"),
+                    "output": _any_id_ai_message_chunk(
+                        content="hello world!", chunk_position="last"
+                    ),
                 },
                 "event": "on_chat_model_end",
                 "metadata": {
@@ -645,7 +654,11 @@ async def test_astream_with_model_in_chain() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="hello",
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -671,7 +684,11 @@ async def test_astream_with_model_in_chain() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="world!", chunk_position="last"
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -753,7 +770,11 @@ async def test_astream_with_model_in_chain() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="hello")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="hello",
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -779,7 +800,11 @@ async def test_astream_with_model_in_chain() -> None:
                 "tags": ["my_model"],
             },
             {
-                "data": {"chunk": _any_id_ai_message_chunk(content="world!")},
+                "data": {
+                    "chunk": _any_id_ai_message_chunk(
+                        content="world!", chunk_position="last"
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -930,7 +955,12 @@ async def test_event_stream_with_simple_chain() -> None:
                 "tags": ["my_chain", "my_model", "seq:step:2"],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="hello",
+                        id="ai1",
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -944,7 +974,12 @@ async def test_event_stream_with_simple_chain() -> None:
                 "tags": ["my_chain", "my_model", "seq:step:2"],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="hello",
+                        id="ai1",
+                    )
+                },
                 "event": "on_chain_stream",
                 "metadata": {"foo": "bar"},
                 "name": "my_chain",
@@ -976,7 +1011,11 @@ async def test_event_stream_with_simple_chain() -> None:
                 "tags": ["my_chain"],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="world!", id="ai1", chunk_position="last"
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {
                     "a": "b",
@@ -990,7 +1029,11 @@ async def test_event_stream_with_simple_chain() -> None:
                 "tags": ["my_chain", "my_model", "seq:step:2"],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="world!", id="ai1", chunk_position="last"
+                    )
+                },
                 "event": "on_chain_stream",
                 "metadata": {"foo": "bar"},
                 "name": "my_chain",
@@ -1008,7 +1051,9 @@ async def test_event_stream_with_simple_chain() -> None:
                             ]
                         ]
                     },
-                    "output": AIMessageChunk(content="hello world!", id="ai1"),
+                    "output": AIMessageChunk(
+                        content="hello world!", id="ai1", chunk_position="last"
+                    ),
                 },
                 "event": "on_chat_model_end",
                 "metadata": {
@@ -1023,7 +1068,11 @@ async def test_event_stream_with_simple_chain() -> None:
                 "tags": ["my_chain", "my_model", "seq:step:2"],
             },
             {
-                "data": {"output": AIMessageChunk(content="hello world!", id="ai1")},
+                "data": {
+                    "output": AIMessageChunk(
+                        content="hello world!", id="ai1", chunk_position="last"
+                    )
+                },
                 "event": "on_chain_end",
                 "metadata": {"foo": "bar"},
                 "name": "my_chain",
@@ -1805,7 +1854,12 @@ async def test_events_astream_config() -> None:
                 "tags": [],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="Goodbye",
+                        id="ai2",
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {"ls_model_type": "chat"},
                 "name": "GenericFakeChatModel",
@@ -1823,7 +1877,11 @@ async def test_events_astream_config() -> None:
                 "tags": [],
             },
             {
-                "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
+                "data": {
+                    "chunk": AIMessageChunk(
+                        content="world", id="ai2", chunk_position="last"
+                    )
+                },
                 "event": "on_chat_model_stream",
                 "metadata": {"ls_model_type": "chat"},
                 "name": "GenericFakeChatModel",
@@ -1833,7 +1891,9 @@ async def test_events_astream_config() -> None:
             },
             {
                 "data": {
-                    "output": AIMessageChunk(content="Goodbye world", id="ai2"),
+                    "output": AIMessageChunk(
+                        content="Goodbye world", id="ai2", chunk_position="last"
+                    ),
                 },
                 "event": "on_chat_model_end",
                 "metadata": {"ls_model_type": "chat"},
@@ -2073,7 +2133,7 @@ class StreamingRunnable(Runnable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         """Invoke the runnable."""
         msg = "Server side error"
@@ -2083,8 +2143,8 @@ class StreamingRunnable(Runnable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         raise NotImplementedError
 
@@ -2092,8 +2152,8 @@ class StreamingRunnable(Runnable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -2548,7 +2608,6 @@ async def test_cancel_astream_events() -> None:
 
 async def test_custom_event() -> None:
     """Test adhoc event."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Ignoring type due to RunnableLamdba being dynamic when it comes to being
     # applied as a decorator to async functions.
@@ -2625,7 +2684,6 @@ async def test_custom_event() -> None:
 
 async def test_custom_event_nested() -> None:
     """Test adhoc event in a nested chain."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Ignoring type due to RunnableLamdba being dynamic when it comes to being
     # applied as a decorator to async functions.
@@ -2736,7 +2794,6 @@ async def test_custom_event_root_dispatch() -> None:
     # This just tests that nothing breaks on the path.
     # It shouldn't do anything at the moment, since the tracer isn't configured
     # to handle adhoc events.
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Expected behavior is that the event cannot be dispatched
     with pytest.raises(RuntimeError):
@@ -2750,8 +2807,6 @@ IS_GTE_3_11 = sys.version_info >= (3, 11)
 @pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
 async def test_custom_event_root_dispatch_with_in_tool() -> None:
     """Test adhoc event in a nested chain."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
-    from langchain_core.tools import tool
 
     @tool
     async def foo(x: int) -> int:

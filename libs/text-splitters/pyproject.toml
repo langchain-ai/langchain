@@ -1,69 +1,128 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.72"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.0.0,<2.0.0",
+]
 name = "langchain-text-splitters"
-version = "0.3.9"
+version = "1.0.0"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://docs.langchain.com/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-text-splitters%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2", "langchain-core"]
-typing = [
-    "mypy<2.0,>=1.15",
-    "lxml-stubs<1.0.0,>=0.5.1",
-    "types-requests<3.0.0.0,>=2.31.0.20240218",
-    "tiktoken<1.0.0,>=0.8.0",
+lint = [
+    "ruff>=0.13.1,<0.14.0",
+    "langchain-core"
 ]
-dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
+typing = [
+    "mypy>=1.18.1,<1.19.0",
+    "lxml-stubs>=0.5.1,<1.0.0",
+    "types-requests>=2.31.0.20240218,<3.0.0.0",
+    "tiktoken>=0.8.0,<1.0.0",
+    "beautifulsoup4>=4.13.5,<5.0.0",
+]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "langchain-core"
+]
 test = [
-    "pytest<9,>=8",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest>=8.0.0,<9.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "langchain-core",
 ]
 test_integration = [
-    "spacy<4.0.0,>=3.8.7",
-    "thinc<9.0.0,>=8.3.6",
-    "nltk<4.0.0,>=3.9.1",
-    "transformers<5.0.0,>=4.51.3",
-    "sentence-transformers>=3.0.1",
+    "spacy>=3.8.7,<4.0.0; python_version < \"3.14\"",
+    "thinc>=8.3.6,<9.0.0",
+    "nltk>=3.9.1,<4.0.0",
+    "transformers>=4.51.3,<5.0.0",
+    "sentence-transformers>=3.0.1,<4.0.0; python_version < \"3.14\"",
+    "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
+    "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
+    "tiktoken>=0.8.0,<1.0.0",
+    "en-core-web-sm",
 ]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.mypy]
-strict = "True"
-strict_bytes = "True"
+plugins = ["pydantic.mypy"]
+strict = true
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
+warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = ["konlpy", "nltk",]
-ignore_missing_imports = "True"
+ignore_missing_imports = true
 
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "FBT", "I", "UP", "PGH003", "T201", "D"]
-ignore = ["D100",]
-pyupgrade.keep-runtime-typing = true
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = [
+    "D1",      # Docstrings not mandatory in scripts
+    "INP001",  # Not a package
+    "S311"     # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"tests/**" = [
+    "D1",      # Docstrings not mandatory in tests
+    "PLR2004", # Magic value comparisons
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001"   # Private member access in tests
+]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -75,9 +134,3 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]

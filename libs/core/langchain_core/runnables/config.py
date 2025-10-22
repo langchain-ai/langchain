@@ -5,34 +5,41 @@ from __future__ import annotations
 import asyncio
 import uuid
 import warnings
-from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
+from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ParamSpec,
+    TypeVar,
+    cast,
+)
 
-from typing_extensions import ParamSpec, TypedDict
+from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+from typing_extensions import TypedDict
 
+from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
     accepts_run_manager,
 )
+from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManager,
         AsyncCallbackManagerForChainRun,
-        CallbackManager,
         CallbackManagerForChainRun,
     )
 else:
     # Pydantic validates through typed dicts, but
     # the callbacks need forward refs updated
-    Callbacks = Optional[Union[list, Any]]
+    Callbacks = list | Any | None
 
 
 class EmptyDict(TypedDict, total=False):
@@ -65,29 +72,29 @@ class RunnableConfig(TypedDict, total=False):
     Name for the tracer run for this call. Defaults to the name of the class.
     """
 
-    max_concurrency: Optional[int]
+    max_concurrency: int | None
     """
     Maximum number of parallel calls to make. If not provided, defaults to
-    ThreadPoolExecutor's default.
+    `ThreadPoolExecutor`'s default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 25.
+    Maximum number of times a call can recurse. If not provided, defaults to `25`.
     """
 
     configurable: dict[str, Any]
     """
-    Runtime values for attributes previously made configurable on this Runnable,
-    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made
+    Runtime values for attributes previously made configurable on this `Runnable`,
+    or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+    Check `output_schema` for a description of the attributes that have been made
     configurable.
     """
 
-    run_id: Optional[uuid.UUID]
+    run_id: uuid.UUID | None
     """
     Unique identifier for the tracer run for this call. If not provided, a new UUID
-        will be generated.
+    will be generated.
     """
 
 
@@ -120,14 +127,15 @@ var_child_runnable_config: ContextVar[RunnableConfig | None] = ContextVar(
 # This is imported and used in langgraph, so don't break.
 def _set_config_context(
     config: RunnableConfig,
-) -> tuple[Token[Optional[RunnableConfig]], Optional[dict[str, Any]]]:
+) -> tuple[Token[RunnableConfig | None], dict[str, Any] | None]:
     """Set the child Runnable config + tracing context.
 
     Args:
-        config (RunnableConfig): The config to set.
-    """
-    from langchain_core.tracers.langchain import LangChainTracer
+        config: The config to set.
 
+    Returns:
+        The token to reset the config and the previous tracing context.
+    """
     config_token = var_child_runnable_config.set(config)
     current_context = None
     if (
@@ -147,8 +155,6 @@ def _set_config_context(
         )
         and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        from langsmith.run_helpers import _set_tracing_context, get_tracing_context
-
         current_context = get_tracing_context()
         _set_tracing_context({"parent": run})
     return config_token, current_context
@@ -159,10 +165,11 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     """Set the child Runnable config + tracing context.
 
     Args:
-        config (RunnableConfig): The config to set.
-    """
-    from langsmith.run_helpers import _set_tracing_context
+        config: The config to set.
 
+    Yields:
+        The config context.
+    """
     ctx = copy_context()
     config_token, _ = ctx.run(_set_config_context, config)
     try:
@@ -182,15 +189,14 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
         )
 
 
-def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
+def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
-        config (Optional[RunnableConfig], optional): The config to ensure.
-          Defaults to None.
+        config: The config to ensure.
 
     Returns:
-        RunnableConfig: The ensured config.
+        The ensured config.
     """
     empty = RunnableConfig(
         tags=[],
@@ -237,19 +243,18 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 
 def get_config_list(
-    config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
+    config: RunnableConfig | Sequence[RunnableConfig] | None, length: int
 ) -> list[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
      It is useful for subclasses overriding batch() or abatch().
 
     Args:
-        config (Optional[Union[RunnableConfig, list[RunnableConfig]]]):
-          The config or list of configs.
-        length (int): The length of the list.
+        config: The config or list of configs.
+        length: The length of the list.
 
     Returns:
-        list[RunnableConfig]: The list of configs.
+        The list of configs.
 
     Raises:
         ValueError: If the length of the list is not equal to the length of the inputs.
@@ -284,30 +289,26 @@ def get_config_list(
 
 
 def patch_config(
-    config: Optional[RunnableConfig],
+    config: RunnableConfig | None,
     *,
-    callbacks: Optional[BaseCallbackManager] = None,
-    recursion_limit: Optional[int] = None,
-    max_concurrency: Optional[int] = None,
-    run_name: Optional[str] = None,
-    configurable: Optional[dict[str, Any]] = None,
+    callbacks: BaseCallbackManager | None = None,
+    recursion_limit: int | None = None,
+    max_concurrency: int | None = None,
+    run_name: str | None = None,
+    configurable: dict[str, Any] | None = None,
 ) -> RunnableConfig:
     """Patch a config with new values.
 
     Args:
-        config (Optional[RunnableConfig]): The config to patch.
-        callbacks (Optional[BaseCallbackManager], optional): The callbacks to set.
-          Defaults to None.
-        recursion_limit (Optional[int], optional): The recursion limit to set.
-          Defaults to None.
-        max_concurrency (Optional[int], optional): The max concurrency to set.
-          Defaults to None.
-        run_name (Optional[str], optional): The run name to set. Defaults to None.
-        configurable (Optional[dict[str, Any]], optional): The configurable to set.
-          Defaults to None.
+        config: The config to patch.
+        callbacks: The callbacks to set.
+        recursion_limit: The recursion limit to set.
+        max_concurrency: The max concurrency to set.
+        run_name: The run name to set.
+        configurable: The configurable to set.
 
     Returns:
-        RunnableConfig: The patched config.
+        The patched config.
     """
     config = ensure_config(config)
     if callbacks is not None:
@@ -329,14 +330,14 @@ def patch_config(
     return config
 
 
-def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
+def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
     Args:
-        *configs (Optional[RunnableConfig]): The configs to merge.
+        *configs: The configs to merge.
 
     Returns:
-        RunnableConfig: The merged config.
+        The merged config.
     """
     base: RunnableConfig = {}
     # Even though the keys aren't literals, this is correct
@@ -396,15 +397,13 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
 
 
 def call_func_with_variable_args(
-    func: Union[
-        Callable[[Input], Output],
-        Callable[[Input, RunnableConfig], Output],
-        Callable[[Input, CallbackManagerForChainRun], Output],
-        Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
-    ],
-    input: Input,  # noqa: A002
+    func: Callable[[Input], Output]
+    | Callable[[Input, RunnableConfig], Output]
+    | Callable[[Input, CallbackManagerForChainRun], Output]
+    | Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
+    input: Input,
     config: RunnableConfig,
-    run_manager: Optional[CallbackManagerForChainRun] = None,
+    run_manager: CallbackManagerForChainRun | None = None,
     **kwargs: Any,
 ) -> Output:
     """Call function that may optionally accept a run_manager and/or config.
@@ -413,7 +412,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -430,18 +429,15 @@ def call_func_with_variable_args(
 
 
 def acall_func_with_variable_args(
-    func: Union[
-        Callable[[Input], Awaitable[Output]],
-        Callable[[Input, RunnableConfig], Awaitable[Output]],
-        Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
-        Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-            Awaitable[Output],
-        ],
+    func: Callable[[Input], Awaitable[Output]]
+    | Callable[[Input, RunnableConfig], Awaitable[Output]]
+    | Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]]
+    | Callable[
+        [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
     ],
-    input: Input,  # noqa: A002
+    input: Input,
     config: RunnableConfig,
-    run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    run_manager: AsyncCallbackManagerForChainRun | None = None,
     **kwargs: Any,
 ) -> Awaitable[Output]:
     """Async call function that may optionally accept a run_manager and/or config.
@@ -450,7 +446,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to None.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -470,13 +466,11 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
     """Get a callback manager for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Returns:
-        CallbackManager: The callback manager.
+        The callback manager.
     """
-    from langchain_core.callbacks.manager import CallbackManager
-
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -490,13 +484,11 @@ def get_async_callback_manager_for_config(
     """Get an async callback manager for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Returns:
-        AsyncCallbackManager: The async callback manager.
+        The async callback manager.
     """
-    from langchain_core.callbacks.manager import AsyncCallbackManager
-
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -520,12 +512,12 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         """Submit a function to the executor.
 
         Args:
-            func (Callable[..., T]): The function to submit.
-            *args (Any): The positional arguments to the function.
-            **kwargs (Any): The keyword arguments to the function.
+            func: The function to submit.
+            *args: The positional arguments to the function.
+            **kwargs: The keyword arguments to the function.
 
         Returns:
-            Future[T]: The future for the function.
+            The future for the function.
         """
         return super().submit(
             cast("Callable[..., T]", partial(copy_context().run, func, *args, **kwargs))
@@ -535,20 +527,18 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         self,
         fn: Callable[..., T],
         *iterables: Iterable[Any],
-        timeout: float | None = None,
-        chunksize: int = 1,
+        **kwargs: Any,
     ) -> Iterator[T]:
         """Map a function to multiple iterables.
 
         Args:
-            fn (Callable[..., T]): The function to map.
-            *iterables (Iterable[Any]): The iterables to map over.
-            timeout (float | None, optional): The timeout for the map.
-                Defaults to None.
-            chunksize (int, optional): The chunksize for the map. Defaults to 1.
+            fn: The function to map.
+            *iterables: The iterables to map over.
+            timeout: The timeout for the map.
+            chunksize: The chunksize for the map.
 
         Returns:
-            Iterator[T]: The iterator for the mapped function.
+            The iterator for the mapped function.
         """
         contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
 
@@ -558,22 +548,21 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         return super().map(
             _wrapped_fn,
             *iterables,
-            timeout=timeout,
-            chunksize=chunksize,
+            **kwargs,
         )
 
 
 @contextmanager
 def get_executor_for_config(
-    config: Optional[RunnableConfig],
+    config: RunnableConfig | None,
 ) -> Generator[Executor, None, None]:
     """Get an executor for a config.
 
     Args:
-        config (RunnableConfig): The config.
+        config: The config.
 
     Yields:
-        Generator[Executor, None, None]: The executor.
+        The executor.
     """
     config = config or {}
     with ContextThreadPoolExecutor(
@@ -583,7 +572,7 @@ def get_executor_for_config(
 
 
 async def run_in_executor(
-    executor_or_config: Optional[Union[Executor, RunnableConfig]],
+    executor_or_config: Executor | RunnableConfig | None,
     func: Callable[P, T],
     *args: P.args,
     **kwargs: P.kwargs,
@@ -592,15 +581,12 @@ async def run_in_executor(
 
     Args:
         executor_or_config: The executor or config to run in.
-        func (Callable[P, Output]): The function.
-        *args (Any): The positional arguments to the function.
-        **kwargs (Any): The keyword arguments to the function.
+        func: The function.
+        *args: The positional arguments to the function.
+        **kwargs: The keyword arguments to the function.
 
     Returns:
-        Output: The output of the function.
-
-    Raises:
-        RuntimeError: If the function raises a StopIteration.
+        The output of the function.
     """
 
     def wrapper() -> T:

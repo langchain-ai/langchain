@@ -7,7 +7,7 @@ import re
 from abc import abstractmethod
 from collections import deque
 from io import StringIO
-from typing import TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import override
 
@@ -70,9 +70,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         raise NotImplementedError
 
     @override
-    def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[list[str]]:
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[list[str]]:
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -105,7 +103,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[list[str]]:
         buffer = ""
         async for chunk in input:
@@ -143,22 +141,19 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Check if the langchain object is serializable.
-
-        Returns True.
-        """
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            A list of strings.
-            Default is ["langchain", "output_parsers", "list"].
+            `["langchain", "output_parsers", "list"]`
         """
         return ["langchain", "output_parsers", "list"]
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the comma-separated list output."""
         return (
@@ -166,6 +161,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
@@ -213,15 +209,8 @@ class NumberedListOutputParser(ListOutputParser):
         """
         return re.findall(self.pattern, text)
 
+    @override
     def parse_iter(self, text: str) -> Iterator[re.Match]:
-        """Parse the output of an LLM call.
-
-        Args:
-            text: The output of an LLM call.
-
-        Yields:
-            A match object for each part of the output.
-        """
         return re.finditer(self.pattern, text)
 
     @property
@@ -235,6 +224,7 @@ class MarkdownListOutputParser(ListOutputParser):
     pattern: str = r"^\s*[-*]\s([^\n]+)$"
     """The pattern to match a Markdown list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
         return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
@@ -250,15 +240,8 @@ class MarkdownListOutputParser(ListOutputParser):
         """
         return re.findall(self.pattern, text, re.MULTILINE)
 
+    @override
     def parse_iter(self, text: str) -> Iterator[re.Match]:
-        """Parse the output of an LLM call.
-
-        Args:
-            text: The output of an LLM call.
-
-        Yields:
-            A match object for each part of the output.
-        """
         return re.finditer(self.pattern, text, re.MULTILINE)
 
     @property

@@ -5,13 +5,13 @@ from langchain_core.language_models import FakeListLLM
 from langchain_core.tools import Tool
 from langchain_core.tracers.context import collect_runs
 
-from langchain.agents import (
+from langchain_classic.agents import (
     AgentExecutor,
     AgentExecutorIterator,
     AgentType,
     initialize_agent,
 )
-from langchain.schema import RUN_KEY
+from langchain_classic.schema import RUN_KEY
 from tests.unit_tests.agents.test_agent import _get_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
@@ -28,7 +28,8 @@ def test_agent_iterator_bad_action() -> None:
 
 
 def test_agent_iterator_stopped_early() -> None:
-    """
+    """Test react chain iterator when stopped early.
+
     Test react chain iterator when max iterations or
     max execution time is exceeded.
     """
@@ -58,7 +59,8 @@ def test_agent_iterator_stopped_early() -> None:
 
 
 async def test_agent_async_iterator_stopped_early() -> None:
-    """
+    """Test when async react chain iterator is stopped early.
+
     Test react chain async iterator when max iterations or
     max execution time is exceeded.
     """
@@ -229,11 +231,11 @@ def test_agent_iterator_properties_and_setters() -> None:
 
     assert isinstance(agent_iter, AgentExecutorIterator)
     assert isinstance(agent_iter.inputs, dict)
-    assert isinstance(agent_iter.callbacks, type(None))
-    assert isinstance(agent_iter.tags, type(None))
+    assert agent_iter.callbacks is None
+    assert agent_iter.tags is None
     assert isinstance(agent_iter.agent_executor, AgentExecutor)
 
-    agent_iter.inputs = "New input"  # type: ignore[assignment]
+    agent_iter.inputs = "New input"
     assert isinstance(agent_iter.inputs, dict)
 
     agent_iter.callbacks = [FakeCallbackHandler()]
@@ -352,7 +354,6 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
-
     # Get agent for testing.
     bad_action_name = "FailingTool"
     responses = [

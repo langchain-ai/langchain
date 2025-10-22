@@ -1,4 +1,4 @@
-from langchain.schema.agent import __all__
+from langchain_classic.schema.agent import __all__
 
 EXPECTED_ALL = ["AgentAction", "AgentActionMessageLog", "AgentFinish"]
 

@@ -1,10 +1,11 @@
 """Develop integration packages for LangChain."""
 
+import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Annotated, Optional, cast
+from typing import Annotated, cast
 
 import typer
 from typing_extensions import TypedDict
@@ -15,6 +16,8 @@ integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
 class Replacements(TypedDict):
+    """Replacements."""
+
     __package_name__: str
     __module_name__: str
     __ModuleName__: str
@@ -63,14 +66,14 @@ def new(
         ),
     ],
     name_class: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help="The name of the integration in PascalCase. e.g. `MyIntegration`."
             " This is used to name classes like `MyIntegrationVectorStore`",
         ),
     ] = None,
     src: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             help="The name of the single template file to copy."
             " e.g. `--src integration_template/chat_models.py "
@@ -78,7 +81,7 @@ def new(
         ),
     ] = None,
     dst: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             help="The relative path to the integration package to place the new file in"
             ". e.g. `my-integration/my_integration.py`",
@@ -113,23 +116,40 @@ def new(
             typer.echo(f"Folder {destination_dir} exists.")
             raise typer.Exit(code=1)
 
-        # copy over template from ../integration_template
+        # Copy over template from ../integration_template
         shutil.copytree(project_template_dir, destination_dir, dirs_exist_ok=False)
 
-        # folder movement
+        # Folder movement
         package_dir = destination_dir / replacements["__module_name__"]
         shutil.move(destination_dir / "integration_template", package_dir)
 
-        # replacements in files
+        # Replacements in files
         replace_glob(destination_dir, "**/*", cast("dict[str, str]", replacements))
 
-        # poetry install
-        subprocess.run(
-            ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
-            cwd=destination_dir,
-        )
+        # Dependency install
+        try:
+            # Use --no-progress to avoid tty issues in CI/test environments
+            env = os.environ.copy()
+            env.pop("UV_FROZEN", None)
+            env.pop("VIRTUAL_ENV", None)
+            subprocess.run(
+                ["uv", "sync", "--dev", "--no-progress"],  # noqa: S607
+                cwd=destination_dir,
+                check=True,
+                env=env,
+            )
+        except FileNotFoundError:
+            typer.echo(
+                "uv is not installed. Skipping dependency installation; run "
+                "`uv sync --dev` manually if needed.",
+            )
+        except subprocess.CalledProcessError:
+            typer.echo(
+                "Failed to install dependencies. You may need to run "
+                "`uv sync --dev` manually in the package directory.",
+            )
     else:
-        # confirm src and dst are the same length
+        # Confirm src and dst are the same length
         if not src:
             typer.echo("Cannot provide --dst without --src.")
             raise typer.Exit(code=1)
@@ -138,7 +158,7 @@ def new(
             typer.echo("Number of --src and --dst arguments must match.")
             raise typer.Exit(code=1)
         if not dst:
-            # assume we're in a package dir, copy to equivalent path
+            # Assume we're in a package dir, copy to equivalent path
             dst_paths = [destination_dir / p for p in src]
         else:
             dst_paths = [Path.cwd() / p for p in dst]
@@ -149,7 +169,7 @@ def new(
                 for p in dst_paths
             ]
 
-        # confirm no duplicate dst_paths
+        # Confirm no duplicate dst_paths
         if len(dst_paths) != len(set(dst_paths)):
             typer.echo(
                 "Duplicate destination paths provided or computed - please "
@@ -157,13 +177,13 @@ def new(
             )
             raise typer.Exit(code=1)
 
-        # confirm no files exist at dst_paths
+        # Confirm no files exist at dst_paths
         for dst_path in dst_paths:
             if dst_path.exists():
                 typer.echo(f"File {dst_path} exists.")
                 raise typer.Exit(code=1)
 
-        for src_path, dst_path in zip(src_paths, dst_paths):
+        for src_path, dst_path in zip(src_paths, dst_paths, strict=False):
             shutil.copy(src_path, dst_path)
             replace_file(dst_path, cast("dict[str, str]", replacements))
 
@@ -200,7 +220,7 @@ def create_doc(
         ),
     ],
     name_class: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help=(
                 "The PascalCase name of the integration (e.g. `OpenAI`, "
