@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langchain.tools.tool_node import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
 

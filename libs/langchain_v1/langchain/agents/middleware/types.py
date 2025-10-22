@@ -19,8 +19,6 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langchain.tools.tool_node import ToolCallRequest
-
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
@@ -29,6 +27,7 @@ from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
+from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
@@ -52,6 +51,8 @@ __all__ = [
     "dynamic_prompt",
     "hook_config",
     "wrap_tool_call",
+    "ToolCallRequest",
+    "ToolCallWrapper",
 ]
 
 JumpTo = Literal["tools", "model", "end"]

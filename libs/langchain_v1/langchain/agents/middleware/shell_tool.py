@@ -44,8 +44,7 @@ if TYPE_CHECKING:
 
     from langgraph.runtime import Runtime
     from langgraph.types import Command
-
-    from langchain.tools.tool_node import ToolCallRequest
+    from langchain.agents.middleware.types import ToolCallRequest
 
 LOGGER = logging.getLogger(__name__)
 _DONE_MARKER_PREFIX = "__LC_SHELL_DONE__"
