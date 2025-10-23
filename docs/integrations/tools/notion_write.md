@@ -138,6 +138,33 @@ print(asyncio.run(main()))
 
 ---
 
+## Full agent example
+
+```python
+from langchain import OpenAI, initialize_agent, AgentType
+from langchain_notion_tools import NotionSearchTool, NotionWriteTool
+
+llm = OpenAI(temperature=0)
+search_tool = NotionSearchTool(api_token="…", default_parent_page_id="…")
+write_tool = NotionWriteTool(api_token="…", default_parent_page_id="…")
+
+agent = initialize_agent(
+    tools=[search_tool, write_tool],
+    llm=llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True,
+)
+
+agent.run(
+    "Find the product spec in Notion titled 'Q2 roadmap', "
+    "add a new section 'Decisions made 2025-10' with bullet list …"
+)
+```
+
+![Notion page created](docs/images/notion_write_example.gif)
+
+---
+
 ## CLI debugging (optional)
 
 Before wiring an agent, you can test payloads using the installed CLIs:
