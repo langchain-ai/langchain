@@ -14,3 +14,5 @@ class CockroachDB(PGVector):
 
     # CockroachDB exposes a pgvector-compatible API, so no overrides are necessary.
     pass
+
+# Trigger CI
