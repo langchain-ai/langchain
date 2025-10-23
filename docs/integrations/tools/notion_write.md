@@ -1,4 +1,4 @@
-# Notion Write Toolkit
+# LangChain Notion Write Toolkit
 
 The **LangChain Notion Write Toolkit** is an external package that equips LangChain agents with *first-class* read/write access to Notion via the official Notion API. It targets scenarios where an assistant needs to collate research, prepare status reports, or log decisions directly in Notion without human copy/paste steps.
 
@@ -161,7 +161,7 @@ agent.run(
 )
 ```
 
-![Notion page created](docs/images/notion_write_example.gif)
+![Animated Notion page update showing appended bullet list](docs/images/notion_write_example.gif)
 
 ---
 
