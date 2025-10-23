@@ -25,11 +25,22 @@ Existing community integrations focus on **searching** Notion. Product teams ask
 
 ## Installation
 
+Version **0.1.0** of the toolkit is available on PyPI. Pin to that version (or newer) to ensure compatibility with the documented interface.
+
 ```bash
-pip install langchain-notion-tools
+pip install "langchain-notion-tools>=0.1.0"
 ```
 
-The package depends only on `langchain-core`, `pydantic>=2`, and the official `notion-client`. No extra vendor SDKs are required.
+### Runtime requirements
+
+| Dependency | Version |
+| --- | --- |
+| `langchain-core` | ≥ 0.3 |
+| `pydantic` | ≥ 2.0 |
+| `notion-client` | ≥ 2.5 |
+| Python | 3.9 – 3.12 |
+
+If you are still on legacy LangChain versions (< 0.3) the toolkit will not load because it expects the modern tool interface.
 
 ---
 
@@ -76,12 +87,12 @@ from langchain.agents import AgentType, initialize_agent
 from langchain.chat_models import ChatOpenAI
 from langchain_notion_tools import create_toolkit
 
-# Share a single Notion client between search + write tools.
 toolkit = create_toolkit()
+tools = list(toolkit.tools)
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 agent = initialize_agent(
-    toolkit.tools,
+    tools,
     llm,
     agent=AgentType.OPENAI_FUNCTIONS,
     verbose=True,
@@ -103,6 +114,28 @@ The agent will:
 3. Invoke `notion_write` to create or append to a Notion page.
 4. Return a human-readable summary.
 
+### Async usage
+
+Both tools expose async counterparts (`_arun`). The toolkit provisions async Notion clients automatically, so you can `await` operations directly:
+
+```python
+import asyncio
+from langchain_notion_tools import create_toolkit
+
+toolkit = create_toolkit()
+write_tool = toolkit.write  # NotionWriteTool instance
+
+async def main():
+    response = await write_tool._arun(
+        title="Async summary",
+        parent={"page_id": "your-parent-id"},
+        is_dry_run=True,
+    )
+    return response["summary"]
+
+print(asyncio.run(main()))
+```
+
 ---
 
 ## CLI debugging (optional)
@@ -111,9 +144,11 @@ Before wiring an agent, you can test payloads using the installed CLIs:
 
 ```bash
 # Preview the blocks that would be sent to Notion
-notion-write   --title "Sprint Review"   --parent-page "$NOTION_DEFAULT_PARENT_PAGE_ID"   --blocks-from-text "## Summary
-- Release green
-- Ship follow-up doc"   --dry-run
+notion-write \
+  --title "Sprint Review" \
+  --parent-page "$NOTION_DEFAULT_PARENT_PAGE_ID" \
+  --blocks-from-text "## Summary\n- Release green\n- Ship follow-up doc" \
+  --dry-run
 
 # Retrieve the raw results of a search query
 notion-search --query "roadmap" | jq .
@@ -161,12 +196,26 @@ The toolkit enforces two global guards before calling the Notion API:
 
 If a request exceeds either limit, a `NotionConfigurationError` is raised before the API call is sent.
 
+### Security & permissions
+
+- The Notion integration token must have **write access** to the workspace. The toolkit does not escalate privileges.
+- Sanitisation removes unsupported block types and strips hyperlinks from code blocks, but arbitrary text is passed through. Avoid feeding untrusted HTML/JS.
+- Tokens and parent IDs are automatically redacted in logs (`***xyz`).
+- Failures from the Notion API surface as `ToolException` with HTTP status + error codes so you can layer manual approvals if desired.
+
 ### Error handling philosophy
 
 - Upstream HTTP errors are mapped to `ToolException` so agent executors can surface the failure reason.
 - Notion API error codes (e.g., rate limits) are appended to the exception message for easier debugging.
 - Token redaction strips the integration token from stack traces and logs.
 - All errors include actionable summaries, e.g., *“Update page blocks failed (code conflict_resolution_failed) [status 409]”*.
+
+### Limitations
+
+- Only the block helpers listed above are supported today. Attachments, synced blocks, embeds, and database rows are roadmap items.
+- Multi-workspace routing is not handled; each toolkit instance binds to a single integration token.
+- Rate limiting leverages Notion’s client defaults; heavy write workloads should implement additional throttling.
+- The toolkit targets Python 3.9–3.12. Python 3.8 and 3.13+ have not been validated yet.
 
 ### Roadmap & community contributions
 
