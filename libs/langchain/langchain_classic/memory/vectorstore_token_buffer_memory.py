@@ -64,47 +64,44 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
 
     Example using ChromaDB:
 
-    .. code-block:: python
+    ```python
+    from langchain_classic.memory.token_buffer_vectorstore_memory import (
+        ConversationVectorStoreTokenBufferMemory,
+    )
+    from langchain_chroma import Chroma
+    from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+    from langchain_openai import OpenAI
 
-        from langchain_classic.memory.token_buffer_vectorstore_memory import (
-            ConversationVectorStoreTokenBufferMemory,
-        )
-        from langchain_chroma import Chroma
-        from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-        from langchain_openai import OpenAI
+    embedder = HuggingFaceInstructEmbeddings(
+        query_instruction="Represent the query for retrieval: "
+    )
+    chroma = Chroma(
+        collection_name="demo",
+        embedding_function=embedder,
+        collection_metadata={"hnsw:space": "cosine"},
+    )
 
-        embedder = HuggingFaceInstructEmbeddings(
-            query_instruction="Represent the query for retrieval: "
-        )
-        chroma = Chroma(
-            collection_name="demo",
-            embedding_function=embedder,
-            collection_metadata={"hnsw:space": "cosine"},
-        )
+    retriever = chroma.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={
+            "k": 5,
+            "score_threshold": 0.75,
+        },
+    )
 
-        retriever = chroma.as_retriever(
-            search_type="similarity_score_threshold",
-            search_kwargs={
-                "k": 5,
-                "score_threshold": 0.75,
-            },
-        )
+    conversation_memory = ConversationVectorStoreTokenBufferMemory(
+        return_messages=True,
+        llm=OpenAI(),
+        retriever=retriever,
+        max_token_limit=1000,
+    )
 
-        conversation_memory = ConversationVectorStoreTokenBufferMemory(
-            return_messages=True,
-            llm=OpenAI(),
-            retriever=retriever,
-            max_token_limit=1000,
-        )
-
-        conversation_memory.save_context(
-            {"Human": "Hi there"}, {"AI": "Nice to meet you!"}
-        )
-        conversation_memory.save_context(
-            {"Human": "Nice day isn't it?"}, {"AI": "I love Wednesdays."}
-        )
-        conversation_memory.load_memory_variables({"input": "What time is it?"})
-
+    conversation_memory.save_context({"Human": "Hi there"}, {"AI": "Nice to meet you!"})
+    conversation_memory.save_context(
+        {"Human": "Nice day isn't it?"}, {"AI": "I love Wednesdays."}
+    )
+    conversation_memory.load_memory_variables({"input": "What time is it?"})
+    ```
     """
 
     retriever: VectorStoreRetriever = Field(exclude=True)
@@ -160,7 +157,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     def save_remainder(self) -> None:
         """Save the remainder of the conversation buffer to the vector store.
 
-        This is useful if you have made the vectorstore persistent, in which
+        Useful if you have made the vectorstore persistent, in which
         case this can be called before the end of the session to store the
         remainder of the conversation.
         """

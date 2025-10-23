@@ -1,3 +1,5 @@
+"""LangChain integration for Exa."""
+
 from exa_py.api import (
     HighlightsContentsOptions,
     TextContentsOptions,

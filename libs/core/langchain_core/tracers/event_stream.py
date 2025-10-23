@@ -128,7 +128,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             exclude_tags=exclude_tags,
         )
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         memory_stream = _MemoryStream[StreamEvent](loop)
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
@@ -179,7 +182,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             output: The output of the Runnable.
 
         Yields:
-            T: The output of the Runnable.
+            The output of the Runnable.
         """
         sentinel = object()
         # atomic check and set
@@ -229,7 +232,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             output: The output of the Runnable.
 
         Yields:
-            T: The output of the Runnable.
+            The output of the Runnable.
         """
         sentinel = object()
         # atomic check and set
@@ -473,7 +476,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         For both chat models and non-chat models (legacy LLMs).
 
         Raises:
-            ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.
+            ValueError: If the run type is not `'llm'` or `'chat_model'`.
         """
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info.get("inputs")

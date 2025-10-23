@@ -2,10 +2,11 @@
 
 import base64
 import json
+import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 import httpx
 import openai
@@ -62,6 +63,57 @@ def test_chat_openai_model() -> None:
     assert chat.model_name == "foo"
     chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
+
+
+def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+
+async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0, "async": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    async def get_openai_api_key_async() -> str:
+        calls["async"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+    response = await model.ainvoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 2
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key_async)
+    async_response = await model.ainvoke("hello")
+    assert isinstance(async_response, AIMessage)
+    assert calls["async"] == 1
+
+    with pytest.raises(ValueError):
+        # We do not create a sync callable from an async one
+        _ = model.invoke("hello")
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -141,7 +193,7 @@ def test_chat_openai_streaming_generation_info() -> None:
     chat = ChatOpenAI(max_tokens=2, temperature=0, callbacks=callback_manager)  # type: ignore[call-arg]
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
+    # `Hello!` is two tokens, assert that is what is returned
     assert generation.generations[0][0].text == "Hello!"
 
 
@@ -194,15 +246,37 @@ def test_openai_invoke() -> None:
     result = llm.invoke("Hello", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
+    usage_metadata = result.usage_metadata  # type: ignore[attr-defined]
+
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
+    assert usage_metadata is not None
+    flex_input = usage_metadata.get("input_token_details", {}).get("flex")
+    assert isinstance(flex_input, int)
+    assert flex_input > 0
+    assert flex_input == usage_metadata.get("input_tokens")
+    flex_output = usage_metadata.get("output_token_details", {}).get("flex")
+    assert isinstance(flex_output, int)
+    assert flex_output > 0
+    # GPT-5-nano/reasoning model specific. Remove if model used in test changes.
+    flex_reasoning = usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_reasoning, int)
+    assert flex_reasoning > 0
+    assert flex_reasoning + flex_output == usage_metadata.get("output_tokens")
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI(model="gpt-4.1-mini")
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
+    )
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -211,7 +285,7 @@ def test_stream() -> None:
     assert full.response_metadata.get("model_name") is not None
 
     # check token usage
-    aggregate: Optional[BaseMessageChunk] = None
+    aggregate: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
     chunks_with_response_metadata = 0
     for chunk in llm.stream("Hello"):
@@ -236,13 +310,26 @@ def test_stream() -> None:
     assert aggregate.usage_metadata["input_tokens"] > 0
     assert aggregate.usage_metadata["output_tokens"] > 0
     assert aggregate.usage_metadata["total_tokens"] > 0
+    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert (
+        aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+            "flex_reasoning", 0
+        )
+        > 0
+    )
+    assert aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
+        "flex_reasoning", 0
+    ) + aggregate.usage_metadata.get("output_token_details", {}).get(
+        "flex", 0
+    ) == aggregate.usage_metadata.get("output_tokens")
 
 
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
 
     async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:
-        full: Optional[BaseMessageChunk] = None
+        full: BaseMessageChunk | None = None
         chunks_with_token_counts = 0
         chunks_with_response_metadata = 0
         async for chunk in stream:
@@ -308,6 +395,28 @@ async def test_astream() -> None:
     await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
+@pytest.mark.parametrize("streaming", [False, True])
+def test_flex_usage_responses(streaming: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",
+        max_retries=3,
+        use_responses_api=True,
+        streaming=streaming,
+    )
+    result = llm.invoke("Hello")
+    assert result.usage_metadata
+    flex_input = result.usage_metadata.get("input_token_details", {}).get("flex")
+    flex_output = result.usage_metadata.get("output_token_details", {}).get("flex")
+    flex_reasoning = result.usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning"
+    )
+    assert isinstance(flex_input, int)
+    assert isinstance(flex_output, int)
+    assert isinstance(flex_reasoning, int)
+    assert flex_output + flex_reasoning == result.usage_metadata.get("output_tokens")
+
+
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
     llm = ChatOpenAI()
@@ -357,7 +466,7 @@ async def test_async_response_metadata() -> None:
 
 def test_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -370,7 +479,7 @@ def test_response_metadata_streaming() -> None:
 
 async def test_async_response_metadata_streaming() -> None:
     llm = ChatOpenAI()
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -564,7 +673,7 @@ def test_openai_response_headers(use_responses_api: bool) -> None:
     assert "content-type" in headers
 
     # Stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in chat_openai.stream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
@@ -588,7 +697,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
     assert "content-type" in headers
 
     # Stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in chat_openai.astream(query, max_tokens=MAX_TOKEN_COUNT):  # type: ignore[call-arg]
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
@@ -672,7 +781,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
     class magic_function_notrequired_arg(BaseModel):  # noqa: N801
         """Applies a magic function to an input."""
 
-        input: Optional[int] = Field(default=None)
+        input: int | None = Field(default=None)
 
     model = ChatOpenAI(
         model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
@@ -694,7 +803,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
         model_with_invalid_tool_schema.invoke(query)
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in model_with_tools.stream(query):
         full = chunk if full is None else full + chunk  # type: ignore
     assert isinstance(full, AIMessage)
@@ -960,7 +1069,7 @@ class Foo(BaseModel):
 
 
 def test_stream_response_format() -> None:
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks = []
     for chunk in ChatOpenAI(model="gpt-5-nano").stream(
         "how are ya", response_format=Foo
@@ -977,7 +1086,7 @@ def test_stream_response_format() -> None:
 
 
 async def test_astream_response_format() -> None:
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks = []
     async for chunk in ChatOpenAI(model="gpt-5-nano").astream(
         "how are ya", response_format=Foo
@@ -1048,7 +1157,7 @@ def test_structured_output_and_tools() -> None:
     assert isinstance(response.additional_kwargs["parsed"], ResponseFormat)
 
     # Test streaming tool calls
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream(
         "Generate a user name for Alice, black hair. Use the tool."
     ):

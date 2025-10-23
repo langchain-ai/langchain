@@ -43,7 +43,7 @@ def tee_peer(
     """An individual iterator of a `.tee`.
 
     This function is a generator that yields items from the shared iterator
-    ``iterator``. It buffers items until the least advanced iterator has
+    `iterator`. It buffers items until the least advanced iterator has
     yielded them as well. The buffer is shared with all other peers.
 
     Args:
@@ -89,38 +89,38 @@ def tee_peer(
 
 
 class Tee(Generic[T]):
-    """Create ``n`` separate asynchronous iterators over ``iterable``.
+    """Create `n` separate asynchronous iterators over `iterable`.
 
-    This splits a single ``iterable`` into multiple iterators, each providing
+    This splits a single `iterable` into multiple iterators, each providing
     the same items in the same order.
     All child iterators may advance separately but share the same items
-    from ``iterable`` -- when the most advanced iterator retrieves an item,
+    from `iterable` -- when the most advanced iterator retrieves an item,
     it is buffered until the least advanced iterator has yielded it as well.
-    A ``tee`` works lazily and can handle an infinite ``iterable``, provided
+    A `tee` works lazily and can handle an infinite `iterable`, provided
     that all iterators advance.
 
-    .. code-block:: python
-
-        async def derivative(sensor_data):
-            previous, current = a.tee(sensor_data, n=2)
-            await a.anext(previous)  # advance one iterator
-            return a.map(operator.sub, previous, current)
+    ```python
+    async def derivative(sensor_data):
+        previous, current = a.tee(sensor_data, n=2)
+        await a.anext(previous)  # advance one iterator
+        return a.map(operator.sub, previous, current)
+    ```
 
     Unlike `itertools.tee`, `.tee` returns a custom type instead
     of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
     to get the child iterators. In addition, its `.tee.aclose` method
-    immediately closes all children, and it can be used in an ``async with`` context
+    immediately closes all children, and it can be used in an `async with` context
     for the same effect.
 
-    If ``iterable`` is an iterator and read elsewhere, ``tee`` will *not*
-    provide these items. Also, ``tee`` must internally buffer each item until the
+    If `iterable` is an iterator and read elsewhere, `tee` will *not*
+    provide these items. Also, `tee` must internally buffer each item until the
     last iterator has yielded it; if the most and least advanced iterator differ
     by most data, using a :py`list` is more efficient (but not lazy).
 
-    If the underlying iterable is concurrency safe (``anext`` may be awaited
+    If the underlying iterable is concurrency safe (`anext` may be awaited
     concurrently) the resulting iterators are concurrency safe as well. Otherwise,
     the iterators are safe if there is only ever one single "most advanced" iterator.
-    To enforce sequential use of ``anext``, provide a ``lock``
+    To enforce sequential use of `anext`, provide a `lock`
     - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
 
@@ -133,13 +133,13 @@ class Tee(Generic[T]):
         *,
         lock: AbstractContextManager[Any] | None = None,
     ):
-        """Create a ``tee``.
+        """Create a `tee`.
 
         Args:
             iterable: The iterable to split.
-            n: The number of iterators to create. Defaults to 2.
+            n: The number of iterators to create.
             lock: The lock to synchronise access to the shared buffers.
-                Defaults to None.
+
         """
         self._iterator = iter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
@@ -207,7 +207,7 @@ def batch_iterate(size: int | None, iterable: Iterable[T]) -> Iterator[list[T]]:
     """Utility batching function.
 
     Args:
-        size: The size of the batch. If None, returns a single batch.
+        size: The size of the batch. If `None`, returns a single batch.
         iterable: The iterable to batch.
 
     Yields:

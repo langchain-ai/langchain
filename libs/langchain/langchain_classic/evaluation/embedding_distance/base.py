@@ -51,7 +51,7 @@ def _embedding_factory() -> Embeddings:
     """Create an Embeddings object.
 
     Returns:
-        Embeddings: The created Embeddings object.
+        The created `Embeddings` object.
     """
     # Here for backwards compatibility.
     # Generally, we do not want to be seeing imports from langchain community
@@ -94,9 +94,8 @@ class _EmbeddingDistanceChainMixin(Chain):
     """Shared functionality for embedding distance evaluators.
 
     Attributes:
-        embeddings (Embeddings): The embedding objects to vectorize the outputs.
-        distance_metric (EmbeddingDistance): The distance metric to use
-                                            for comparing the embeddings.
+        embeddings: The embedding objects to vectorize the outputs.
+        distance_metric: The distance metric to use for comparing the embeddings.
     """
 
     embeddings: Embeddings = Field(default_factory=_embedding_factory)
@@ -107,10 +106,10 @@ class _EmbeddingDistanceChainMixin(Chain):
         """Validate that the TikTok library is installed.
 
         Args:
-            values (Dict[str, Any]): The values to validate.
+            values: The values to validate.
 
         Returns:
-            Dict[str, Any]: The validated values.
+            The validated values.
         """
         embeddings = values.get("embeddings")
         types_ = []
@@ -159,7 +158,7 @@ class _EmbeddingDistanceChainMixin(Chain):
         """Return the output keys of the chain.
 
         Returns:
-            List[str]: The output keys.
+            The output keys.
         """
         return ["score"]
 
@@ -173,10 +172,10 @@ class _EmbeddingDistanceChainMixin(Chain):
         """Get the metric function for the given metric name.
 
         Args:
-            metric (EmbeddingDistance): The metric name.
+            metric: The metric name.
 
         Returns:
-            Any: The metric function.
+            The metric function.
         """
         metrics = {
             EmbeddingDistance.COSINE: self._cosine_distance,
@@ -334,7 +333,7 @@ class _EmbeddingDistanceChainMixin(Chain):
             vectors (np.ndarray): The input vectors.
 
         Returns:
-            float: The computed score.
+            The computed score.
         """
         metric = self._get_metric(self.distance_metric)
         if _check_numpy() and isinstance(vectors, _import_numpy().ndarray):
@@ -362,7 +361,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if a reference is required, False otherwise.
+            True if a reference is required, `False` otherwise.
         """
         return True
 
@@ -376,7 +375,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Return the input keys of the chain.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["prediction", "reference"]
 
@@ -389,12 +388,11 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Compute the score for a prediction and reference.
 
         Args:
-            inputs (Dict[str, Any]): The input data.
-            run_manager (Optional[CallbackManagerForChainRun], optional):
-                The callback manager.
+            inputs: The input data.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The computed score.
+            The computed score.
         """
         vectors = self.embeddings.embed_documents(
             [inputs["prediction"], inputs["reference"]],
@@ -414,12 +412,11 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """Asynchronously compute the score for a prediction and reference.
 
         Args:
-            inputs (Dict[str, Any]): The input data.
-            run_manager (AsyncCallbackManagerForChainRun, optional):
-                The callback manager.
+            inputs: The input data.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The computed score.
+            The computed score.
         """
         vectors = await self.embeddings.aembed_documents(
             [
@@ -457,7 +454,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = self(
@@ -493,7 +490,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
@@ -524,7 +521,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Return the input keys of the chain.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["prediction", "prediction_b"]
 
@@ -542,12 +539,11 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Compute the score for two predictions.
 
         Args:
-            inputs (Dict[str, Any]): The input data.
-            run_manager (CallbackManagerForChainRun, optional):
-                The callback manager.
+            inputs: The input data.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The computed score.
+            The computed score.
         """
         vectors = self.embeddings.embed_documents(
             [
@@ -570,12 +566,11 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Asynchronously compute the score for two predictions.
 
         Args:
-            inputs (Dict[str, Any]): The input data.
-            run_manager (AsyncCallbackManagerForChainRun, optional):
-                The callback manager.
+            inputs: The input data.
+            run_manager: The callback manager.
 
         Returns:
-            Dict[str, Any]: The computed score.
+            The computed score.
         """
         vectors = await self.embeddings.aembed_documents(
             [
@@ -613,7 +608,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - score: The embedding distance between the two predictions.
         """
         result = self(
@@ -649,8 +644,8 @@ class PairwiseEmbeddingDistanceEvalChain(
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
-            - score: The embedding distance between the two predictions.
+            `dict` containing:
+                - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "prediction_b": prediction_b},

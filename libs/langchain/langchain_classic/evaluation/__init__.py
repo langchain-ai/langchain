@@ -9,16 +9,16 @@ To load an evaluator, you can use the `load_evaluators <langchain.evaluation.loa
 `load_evaluator <langchain.evaluation.loading.load_evaluator>` functions with the
 names of the evaluators to load.
 
-.. code-block:: python
+```python
+from langchain_classic.evaluation import load_evaluator
 
-    from langchain_classic.evaluation import load_evaluator
-
-    evaluator = load_evaluator("qa")
-    evaluator.evaluate_strings(
-        prediction="We sold more than 40,000 units last week",
-        input="How many units did we sell last week?",
-        reference="We sold 32,378 units",
-    )
+evaluator = load_evaluator("qa")
+evaluator.evaluate_strings(
+    prediction="We sold more than 40,000 units last week",
+    input="How many units did we sell last week?",
+    reference="We sold 32,378 units",
+)
+```
 
 The evaluator must be one of `EvaluatorType <langchain.evaluation.schema.EvaluatorType>`.
 
@@ -27,11 +27,11 @@ The evaluator must be one of `EvaluatorType <langchain.evaluation.schema.Evaluat
 To load one of the LangChain HuggingFace datasets, you can use the `load_dataset <langchain.evaluation.loading.load_dataset>` function with the
 name of the dataset to load.
 
-.. code-block:: python
+```python
+from langchain_classic.evaluation import load_dataset
 
-        from langchain_classic.evaluation import load_dataset
-
-        ds = load_dataset("llm-math")
+ds = load_dataset("llm-math")
+```
 
 **Some common use cases for evaluation include:**
 

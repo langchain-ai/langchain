@@ -40,15 +40,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     """An Agent driven by OpenAIs function powered API.
 
     Args:
-        llm: This should be an instance of ChatOpenAI, specifically a model
+        llm: This should be an instance of `ChatOpenAI`, specifically a model
             that supports using `functions`.
         tools: The tools this agent has access to.
         prompt: The prompt for this agent, should support agent_scratchpad as one
             of the variables. For an easy way to construct this prompt, use
             `OpenAIFunctionsAgent.create_prompt(...)`
         output_parser: The output parser for this agent. Should be an instance of
-            OpenAIFunctionsAgentOutputParser.
-            Defaults to OpenAIFunctionsAgentOutputParser.
+            `OpenAIFunctionsAgentOutputParser`.
     """
 
     llm: BaseLanguageModel
@@ -106,14 +105,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Defaults to None.
-            with_functions: Whether to use functions. Defaults to True.
+            callbacks: Callbacks to use.
+            with_functions: Whether to use functions.
             **kwargs: User inputs.
 
         Returns:
             Action specifying what tool to use.
-            If the agent is finished, returns an AgentFinish.
-            If the agent is not finished, returns an AgentAction.
+            If the agent is finished, returns an `AgentFinish`.
+            If the agent is not finished, returns an `AgentAction`.
         """
         agent_scratchpad = format_to_openai_function_messages(intermediate_steps)
         selected_inputs = {
@@ -146,7 +145,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            callbacks: Callbacks to use. Defaults to None.
+            callbacks: Callbacks to use.
             **kwargs: User inputs.
 
         Returns:
@@ -261,8 +260,8 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         Args:
             llm: The LLM to use as the agent.
             tools: The tools to use.
-            callback_manager: The callback manager to use. Defaults to None.
-            extra_prompt_messages: Extra prompt messages to use. Defaults to None.
+            callback_manager: The callback manager to use.
+            extra_prompt_messages: Extra prompt messages to use.
             system_message: The system message to use.
                 Defaults to a default system message.
             kwargs: Additional parameters to pass to the agent.
@@ -310,58 +309,57 @@ def create_openai_functions_agent(
     Example:
         Creating an agent with no memory
 
-        .. code-block:: python
+        ```python
+        from langchain_community.chat_models import ChatOpenAI
+        from langchain_classic.agents import (
+            AgentExecutor,
+            create_openai_functions_agent,
+        )
+        from langchain_classic import hub
 
-            from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import (
-                AgentExecutor,
-                create_openai_functions_agent,
-            )
-            from langchain_classic import hub
+        prompt = hub.pull("hwchase17/openai-functions-agent")
+        model = ChatOpenAI()
+        tools = ...
 
-            prompt = hub.pull("hwchase17/openai-functions-agent")
-            model = ChatOpenAI()
-            tools = ...
+        agent = create_openai_functions_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            agent = create_openai_functions_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
+        agent_executor.invoke({"input": "hi"})
 
-            agent_executor.invoke({"input": "hi"})
+        # Using with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
 
-            # Using with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    "chat_history": [
-                        HumanMessage(content="hi! my name is bob"),
-                        AIMessage(content="Hello Bob! How can I assist you today?"),
-                    ],
-                }
-            )
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                "chat_history": [
+                    HumanMessage(content="hi! my name is bob"),
+                    AIMessage(content="Hello Bob! How can I assist you today?"),
+                ],
+            }
+        )
+        ```
 
     Prompt:
 
         The agent prompt must have an `agent_scratchpad` key that is a
-            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
         Here's an example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", "You are a helpful assistant"),
-                    MessagesPlaceholder("chat_history", optional=True),
-                    ("human", "{input}"),
-                    MessagesPlaceholder("agent_scratchpad"),
-                ]
-            )
-
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant"),
+                MessagesPlaceholder("chat_history", optional=True),
+                ("human", "{input}"),
+                MessagesPlaceholder("agent_scratchpad"),
+            ]
+        )
+        ```
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)

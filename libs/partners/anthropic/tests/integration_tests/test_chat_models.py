@@ -6,7 +6,7 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 import httpx
 import pytest
@@ -40,7 +40,7 @@ def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_input_token_counts = 0
     chunks_with_output_token_counts = 0
     chunks_with_model_name = 0
@@ -86,7 +86,7 @@ async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     chunks_with_input_token_counts = 0
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
@@ -276,6 +276,53 @@ def test_system_invoke() -> None:
 
     result = chain.invoke({})
     assert isinstance(result.content, str)
+
+
+def test_handle_empty_aimessage() -> None:
+    # Anthropic can generate empty AIMessages, which are not valid unless in the last
+    # message in a sequence.
+    llm = ChatAnthropic(model=MODEL_NAME)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage([]),
+        HumanMessage("My name is Bob."),
+    ]
+    _ = llm.invoke(messages)
+
+    # Test tool call sequence
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "name": "get_weather",
+                "description": "Get weather report for a city",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                },
+            },
+        ],
+    )
+    _ = llm_with_tools.invoke(
+        [
+            HumanMessage("What's the weather in Boston?"),
+            AIMessage(
+                content=[],
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "Boston"},
+                        "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                content="It's sunny.", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"
+            ),
+            AIMessage([]),
+            HumanMessage("Thanks!"),
+        ]
+    )
 
 
 def test_anthropic_call() -> None:
@@ -487,7 +534,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -810,7 +857,7 @@ def test_citations(output_version: Literal["v0", "v1"]) -> None:
         assert any("citations" in block for block in response.content)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream(messages):
         full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
@@ -850,7 +897,7 @@ def test_thinking() -> None:
             assert isinstance(block["signature"], str)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
@@ -894,7 +941,7 @@ def test_thinking_v1() -> None:
             assert isinstance(signature, str)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
@@ -948,7 +995,7 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
     assert value is not None
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
@@ -1108,7 +1155,7 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1173,7 +1220,7 @@ def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
     assert block_types == {"text", call_key, result_key}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1394,7 +1441,7 @@ def test_web_fetch() -> None:
         )
 
     # Streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1493,7 +1540,7 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1562,7 +1609,7 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
         assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1763,7 +1810,7 @@ def test_search_result_top_level() -> None:
 
 def test_memory_tool() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
     )
     llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
@@ -1777,7 +1824,7 @@ def test_memory_tool() -> None:
 def test_context_management() -> None:
     # TODO: update example to trigger action
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
         context_management={
             "edits": [
@@ -1798,7 +1845,7 @@ def test_context_management() -> None:
     assert response.response_metadata.get("context_management")
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk

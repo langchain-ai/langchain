@@ -8,9 +8,9 @@ with any LangChain chat model.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -22,10 +22,12 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately
 from typing_extensions import Protocol
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
-
-if TYPE_CHECKING:
-    from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
 
@@ -183,8 +185,8 @@ class ContextEditingMiddleware(AgentMiddleware):
     """Middleware that automatically prunes tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count
-    exceeds configured thresholds. Currently the ``ClearToolUsesEdit`` strategy is
-    supported, aligning with Anthropic's ``clear_tool_uses_20250919`` behaviour.
+    exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is
+    supported, aligning with Anthropic's `clear_tool_uses_20250919` behaviour.
     """
 
     edits: list[ContextEdit]
@@ -196,7 +198,7 @@ class ContextEditingMiddleware(AgentMiddleware):
         edits: Iterable[ContextEdit] | None = None,
         token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
     ) -> None:
-        """Initialise a context editing middleware instance.
+        """Initializes a context editing middleware instance.
 
         Args:
             edits: Sequence of edit strategies to apply. Defaults to a single
@@ -209,15 +211,14 @@ class ContextEditingMiddleware(AgentMiddleware):
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
 
-    def modify_model_request(
+    def wrap_model_call(
         self,
         request: ModelRequest,
-        state: AgentState,  # noqa: ARG002
-        runtime: Runtime,  # noqa: ARG002
-    ) -> ModelRequest:
-        """Modify the model request by applying context edits before invocation."""
+        handler: Callable[[ModelRequest], ModelResponse],
+    ) -> ModelCallResult:
+        """Apply context edits before invoking the model via handler."""
         if not request.messages:
-            return request
+            return handler(request)
 
         if self.token_count_method == "approximate":  # noqa: S105
 
@@ -236,7 +237,35 @@ class ContextEditingMiddleware(AgentMiddleware):
         for edit in self.edits:
             edit.apply(request.messages, count_tokens=count_tokens)
 
-        return request
+        return handler(request)
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        """Apply context edits before invoking the model via handler (async version)."""
+        if not request.messages:
+            return await handler(request)
+
+        if self.token_count_method == "approximate":  # noqa: S105
+
+            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+                return count_tokens_approximately(messages)
+        else:
+            system_msg = (
+                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
+            )
+
+            def count_tokens(messages: Sequence[BaseMessage]) -> int:
+                return request.model.get_num_tokens_from_messages(
+                    system_msg + list(messages), request.tools
+                )
+
+        for edit in self.edits:
+            edit.apply(request.messages, count_tokens=count_tokens)
+
+        return await handler(request)
 
 
 __all__ = [

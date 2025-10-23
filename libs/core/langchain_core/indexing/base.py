@@ -61,7 +61,7 @@ class RecordManager(ABC):
         """Initialize the record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         self.namespace = namespace
 
@@ -244,7 +244,7 @@ class InMemoryRecordManager(RecordManager):
         """Initialize the in-memory record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         super().__init__(namespace)
         # Each key points to a dictionary
@@ -278,10 +278,10 @@ class InMemoryRecordManager(RecordManager):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -315,10 +315,10 @@ class InMemoryRecordManager(RecordManager):
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -361,13 +361,13 @@ class InMemoryRecordManager(RecordManager):
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -397,13 +397,13 @@ class InMemoryRecordManager(RecordManager):
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -508,8 +508,6 @@ class DocumentIndex(BaseRetriever):
     1. Storing document in the index.
     2. Fetching document by ID.
     3. Searching for document using a query.
-
-    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod
@@ -522,14 +520,14 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the content already exists in the vectorstore,
         the upsert method should update the content with the new data. If the content
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
         """
@@ -545,14 +543,14 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the item already exists in the vectorstore,
         the upsert method should update the item with the new data. If the item
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
         """
@@ -571,12 +569,12 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index,
                 or else issue a non-blocking delete etc.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
 
@@ -589,11 +587,11 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
         return await run_in_executor(
@@ -624,10 +622,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
 
     async def aget(
@@ -650,10 +648,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
         return await run_in_executor(
             None,

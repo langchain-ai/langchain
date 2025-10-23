@@ -38,17 +38,16 @@ def _dump_pydantic_models(obj: Any) -> Any:
 
 
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
-    """Return a json string representation of an object.
+    """Return a JSON string representation of an object.
 
     Args:
         obj: The object to dump.
-        pretty: Whether to pretty print the json. If true, the json will be
-            indented with 2 spaces (if no indent is provided as part of kwargs).
-            Default is False.
-        kwargs: Additional arguments to pass to json.dumps
+        pretty: Whether to pretty print the json. If `True`, the json will be
+            indented with 2 spaces (if no indent is provided as part of `kwargs`).
+        **kwargs: Additional arguments to pass to `json.dumps`
 
     Returns:
-        A json string representation of the object.
+        A JSON string representation of the object.
 
     Raises:
         ValueError: If `default` is passed as a kwarg.
@@ -72,14 +71,12 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    !!! note
-        Unfortunately this function is not as efficient as it could be because it first
-        dumps the object to a json string and then loads it back into a dictionary.
-
     Args:
         obj: The object to dump.
 
     Returns:
-        dictionary that can be serialized to json using json.dumps
+        Dictionary that can be serialized to json using `json.dumps`.
     """
+    # Unfortunately this function is not as efficient as it could be because it first
+    # dumps the object to a json string and then loads it back into a dictionary.
     return json.loads(dumps(obj))

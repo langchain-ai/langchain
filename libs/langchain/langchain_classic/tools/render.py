@@ -11,8 +11,10 @@ from langchain_core.tools import (
     render_text_description_and_args,
 )
 from langchain_core.utils.function_calling import (
-    format_tool_to_openai_function,
-    format_tool_to_openai_tool,
+    convert_to_openai_function as format_tool_to_openai_function,
+)
+from langchain_core.utils.function_calling import (
+    convert_to_openai_tool as format_tool_to_openai_tool,
 )
 
 __all__ = [

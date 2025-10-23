@@ -57,17 +57,17 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     In this case, the invocation would look like this:
 
     `with_history.invoke(..., config={"configurable": {"session_id": "bar"}})`
-    ; e.g., ``{"configurable": {"session_id": "<SESSION_ID>"}}``.
+    ; e.g., `{"configurable": {"session_id": "<SESSION_ID>"}}`.
 
     The configuration can be customized by passing in a list of
-    ``ConfigurableFieldSpec`` objects to the ``history_factory_config`` parameter (see
+    `ConfigurableFieldSpec` objects to the `history_factory_config` parameter (see
     example below).
 
     In the examples, we will use a chat message history with an in-memory
     implementation to make it easy to experiment and see the results.
 
     For production use cases, you will want to use a persistent implementation
-    of chat message history, such as ``RedisChatMessageHistory``.
+    of chat message history, such as `RedisChatMessageHistory`.
 
     Example: Chat message history with an in-memory implementation for testing.
 
@@ -224,7 +224,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
     get_session_history: GetSessionHistoryCallable
     """Function that returns a new BaseChatMessageHistory.
-    This function should either take a single positional argument ``session_id`` of type
+    This function should either take a single positional argument `session_id` of type
     string and return a corresponding chat message history instance"""
     input_messages_key: str | None = None
     """Must be specified if the base runnable accepts a dict as input.
@@ -237,7 +237,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     separate key for historical messages."""
     history_factory_config: Sequence[ConfigurableFieldSpec]
     """Configure fields that should be passed to the chat history factory.
-    See ``ConfigurableFieldSpec`` for more details."""
+    See `ConfigurableFieldSpec` for more details."""
 
     def __init__(
         self,
@@ -260,18 +260,18 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             runnable: The base Runnable to be wrapped.
                 Must take as input one of:
 
-                1. A list of ``BaseMessage``
+                1. A list of `BaseMessage`
                 2. A dict with one key for all messages
                 3. A dict with one key for the current input string/message(s) and
-                   a separate key for historical messages. If the input key points
-                   to a string, it will be treated as a ``HumanMessage`` in history.
+                    a separate key for historical messages. If the input key points
+                    to a string, it will be treated as a `HumanMessage` in history.
 
                 Must return as output one of:
 
-                1. A string which can be treated as an ``AIMessage``
-                2. A ``BaseMessage`` or sequence of ``BaseMessage``
-                3. A dict with a key for a ``BaseMessage`` or sequence of
-                    ``BaseMessage``
+                1. A string which can be treated as an `AIMessage`
+                2. A `BaseMessage` or sequence of `BaseMessage`
+                3. A dict with a key for a `BaseMessage` or sequence of
+                    `BaseMessage`
 
             get_session_history: Function that returns a new BaseChatMessageHistory.
                 This function should either take a single positional argument
@@ -279,7 +279,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 chat message history instance.
                 ```python
                 def get_session_history(
-                    session_id: str, *, user_id: Optional[str] = None
+                    session_id: str, *, user_id: str | None = None
                 ) -> BaseChatMessageHistory: ...
                 ```
 
@@ -296,17 +296,17 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 ```
 
             input_messages_key: Must be specified if the base runnable accepts a dict
-                as input. Default is None.
+                as input.
             output_messages_key: Must be specified if the base runnable returns a dict
-                as output. Default is None.
+                as output.
             history_messages_key: Must be specified if the base runnable accepts a dict
                 as input and expects a separate key for historical messages.
             history_factory_config: Configure fields that should be passed to the
-                chat history factory. See ``ConfigurableFieldSpec`` for more details.
+                chat history factory. See `ConfigurableFieldSpec` for more details.
                 Specifying these allows you to pass multiple config keys
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
-                ``RunnableBindingBase`` init.
+                `RunnableBindingBase` init.
 
         """
         history_chain: Runnable = RunnableLambda(
@@ -400,11 +400,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     def get_output_schema(
         self, config: RunnableConfig | None = None
     ) -> type[BaseModel]:
-        """Get a pydantic model that can be used to validate output to the Runnable.
+        """Get a Pydantic model that can be used to validate output to the `Runnable`.
 
-        Runnables that leverage the configurable_fields and configurable_alternatives
-        methods will have a dynamic output schema that depends on which
-        configuration the Runnable is invoked with.
+        `Runnable` objects that leverage the `configurable_fields` and
+        `configurable_alternatives` methods will have a dynamic output schema that
+        depends on which configuration the `Runnable` is invoked with.
 
         This method allows to get an output schema for a specific configuration.
 
@@ -412,7 +412,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             config: A config to use when generating the schema.
 
         Returns:
-            A pydantic model that can be used to validate output.
+            A Pydantic model that can be used to validate output.
         """
         root_type = self.OutputType
 

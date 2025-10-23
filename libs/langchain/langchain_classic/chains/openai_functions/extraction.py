@@ -69,12 +69,12 @@ Passage:
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -94,8 +94,7 @@ def create_extraction_chain(
         prompt: The prompt to use for extraction.
         tags: Optional list of tags to associate with the chain.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`.
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.
@@ -139,12 +138,12 @@ def create_extraction_chain(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -155,15 +154,14 @@ def create_extraction_chain_pydantic(
     prompt: BasePromptTemplate | None = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
-    """Creates a chain that extracts information from a passage using pydantic schema.
+    """Creates a chain that extracts information from a passage using Pydantic schema.
 
     Args:
-        pydantic_schema: The pydantic schema of the entities to extract.
+        pydantic_schema: The Pydantic schema of the entities to extract.
         llm: The language model to use.
         prompt: The prompt to use for extraction.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
-            logs will be printed to the console. Defaults to the global `verbose` value,
-            accessible via `langchain.globals.get_verbose()`
+            logs will be printed to the console.
 
     Returns:
         Chain that can be used to extract information from a passage.

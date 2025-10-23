@@ -37,15 +37,15 @@ def initialize_agent(
     Args:
         tools: List of tools this agent has access to.
         llm: Language model to use as the agent.
-        agent: Agent type to use. If None and agent_path is also None, will default
-            to AgentType.ZERO_SHOT_REACT_DESCRIPTION. Defaults to None.
+        agent: Agent type to use. If `None` and agent_path is also None, will default
+            to AgentType.ZERO_SHOT_REACT_DESCRIPTION.
         callback_manager: CallbackManager to use. Global callback manager is used if
-            not provided. Defaults to None.
-        agent_path: Path to serialized agent to use. If None and agent is also None,
-            will default to AgentType.ZERO_SHOT_REACT_DESCRIPTION. Defaults to None.
+            not provided.
+        agent_path: Path to serialized agent to use. If `None` and agent is also None,
+            will default to AgentType.ZERO_SHOT_REACT_DESCRIPTION.
         agent_kwargs: Additional keyword arguments to pass to the underlying agent.
-            Defaults to None.
-        tags: Tags to apply to the traced runs. Defaults to None.
+
+        tags: Tags to apply to the traced runs.
         kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:

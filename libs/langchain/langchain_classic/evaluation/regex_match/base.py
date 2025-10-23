@@ -33,7 +33,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """Initialize the RegexMatchStringEvaluator.
 
         Args:
-            flags: Flags to use for the regex match. Defaults to 0 (no flags).
+            flags: Flags to use for the regex match. Defaults to no flags.
         """
         super().__init__()
         self.flags = flags
@@ -53,7 +53,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """Get the input keys.
 
         Returns:
-            List[str]: The input keys.
+            The input keys.
         """
         return ["reference", "prediction"]
 
@@ -62,7 +62,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         """Get the evaluation name.
 
         Returns:
-            str: The evaluation name.
+            The evaluation name.
         """
         return "regex_match"
 

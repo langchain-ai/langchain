@@ -26,8 +26,8 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Create an image prompt template.
 
         Raises:
-            ValueError: If the input variables contain ``'url'``, ``'path'``, or
-                ``'detail'``.
+            ValueError: If the input variables contain `'url'`, `'path'`, or
+                `'detail'`.
         """
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
@@ -49,10 +49,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "image"]``
+            `["langchain", "prompts", "image"]`
         """
         return ["langchain", "prompts", "image"]
 
@@ -60,7 +60,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -71,7 +71,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -85,7 +85,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -93,14 +93,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Raises:
             ValueError: If the url is not provided.
             ValueError: If the url is not a string.
-            ValueError: If ``'path'`` is provided in the template or kwargs.
+            ValueError: If `'path'` is provided in the template or kwargs.
 
         Example:
-
-            .. code-block:: python
-
-                prompt.format(variable1="foo")
-
+            ```python
+            prompt.format(variable1="foo")
+            ```
         """
         formatted = {}
         for k, v in self.template.items():
@@ -134,7 +132,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.

@@ -7,22 +7,22 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a7,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
     "openai>=2.0.0,<3.0.0",
 ]
 name = "langchain-perplexity"
-version = "1.0.0a1"
+version = "1.0.0"
 description = "An integration package connecting Perplexity and LangChain"
 readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/oss/python/integrations/providers/perplexity"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/perplexity"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-perplexity%22"
-docs = "https://reference.langchain.com/python/integrations/langchain_perplexity/"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/perplexity"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_perplexity/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/perplexity"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-perplexity%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -43,7 +43,7 @@ lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = [
     "httpx>=0.27.0,<1.0.0",
-    "pillow>=10.3.0,<11.0.0",
+    "pillow>=10.3.0,<12.0.0",
 ]
 typing = [
     "mypy>=1.10.0,<2.0.0",
@@ -67,7 +67,6 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", "UP045"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

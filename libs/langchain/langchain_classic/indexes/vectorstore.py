@@ -55,7 +55,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -90,7 +90,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -117,7 +117,7 @@ class VectorStoreIndexWrapper(BaseModel):
             **kwargs: Additional keyword arguments forwarded to the chain.
 
         Returns:
-            A dictionary containing the answer and source documents.
+            `dict` containing the answer and source documents.
         """
         if llm is None:
             msg = (
@@ -125,7 +125,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}
@@ -152,7 +152,7 @@ class VectorStoreIndexWrapper(BaseModel):
             **kwargs: Additional keyword arguments forwarded to the chain.
 
         Returns:
-            A dictionary containing the answer and source documents.
+            `dict` containing the answer and source documents.
         """
         if llm is None:
             msg = (
@@ -160,7 +160,7 @@ class VectorStoreIndexWrapper(BaseModel):
                 "Please provide an llm to use for querying the vectorstore.\n"
                 "For example,\n"
                 "from langchain_openai import OpenAI\n"
-                "llm = OpenAI(temperature=0)"
+                "model = OpenAI(temperature=0)"
             )
             raise NotImplementedError(msg)
         retriever_kwargs = retriever_kwargs or {}

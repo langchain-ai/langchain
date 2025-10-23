@@ -149,22 +149,17 @@ class StructuredTool(BaseTool):
             description: The description of the tool.
                 Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
-                Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
+            args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
-                Defaults to True.
-            response_format: The tool response format. If "content" then the output of
-                the tool is interpreted as the contents of a ToolMessage. If
-                "content_and_artifact" then the output is expected to be a two-tuple
-                corresponding to the (content, artifact) of a ToolMessage.
-                Defaults to "content".
-            parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
+            response_format: The tool response format. If `"content"` then the output of
+                the tool is interpreted as the contents of a `ToolMessage`. If
+                `"content_and_artifact"` then the output is expected to be a two-tuple
+                corresponding to the `(content, artifact)` of a `ToolMessage`.
+            parse_docstring: if `infer_schema` and `parse_docstring`, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
-                Defaults to False.
-            error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
-                whether to raise ValueError on invalid Google Style docstrings.
-                Defaults to False.
-            kwargs: Additional arguments to pass to the tool
+            error_on_invalid_docstring: if `parse_docstring` is provided, configure
+                whether to raise `ValueError` on invalid Google Style docstrings.
+            **kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.
@@ -173,18 +168,17 @@ class StructuredTool(BaseTool):
             ValueError: If the function is not provided.
             ValueError: If the function does not have a docstring and description
                 is not provided.
-            TypeError: If the ``args_schema`` is not a ``BaseModel`` or dict.
+            TypeError: If the `args_schema` is not a `BaseModel` or dict.
 
         Examples:
+            ```python
+            def add(a: int, b: int) -> int:
+                \"\"\"Add two numbers\"\"\"
+                return a + b
+            tool = StructuredTool.from_function(add)
+            tool.run(1, 2) # 3
 
-            .. code-block:: python
-
-                def add(a: int, b: int) -> int:
-                    \"\"\"Add two numbers\"\"\"
-                    return a + b
-                tool = StructuredTool.from_function(add)
-                tool.run(1, 2) # 3
-
+            ```
         """
         if func is not None:
             source_function = func

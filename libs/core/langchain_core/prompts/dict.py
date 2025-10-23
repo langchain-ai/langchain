@@ -74,10 +74,10 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain_core", "prompts", "dict"]``
+            `["langchain_core", "prompts", "dict"]`
         """
         return ["langchain_core", "prompts", "dict"]
 
@@ -85,7 +85,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.

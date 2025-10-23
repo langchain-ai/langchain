@@ -100,7 +100,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
     """A parser for the output of the PairwiseStringEvalChain.
 
     Attributes:
-        _type (str): The type of the output parser.
+        _type: The type of the output parser.
 
     """
 
@@ -109,7 +109,7 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         """Return the type of the output parser.
 
         Returns:
-            str: The type of the output parser.
+            The type of the output parser.
 
         """
         return "pairwise_string_result"
@@ -118,10 +118,10 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
         """Parse the output text.
 
         Args:
-            text (str): The output text to parse.
+            text: The output text to parse.
 
         Returns:
-            Dict: The parsed output.
+            The parsed output.
 
         Raises:
             ValueError: If the verdict is invalid.
@@ -165,10 +165,10 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain_classic.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(
+        >>> model = ChatOpenAI(
         ...     temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42}
         ... )
-        >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
+        >>> chain = PairwiseStringEvalChain.from_llm(llm=model)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",
         ...     prediction = "H2O",
@@ -207,7 +207,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return False
@@ -217,7 +217,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return whether the chain requires an input.
 
         Returns:
-            bool: True if the chain requires an input, False otherwise.
+            `True` if the chain requires an input, `False` otherwise.
 
         """
         return True
@@ -227,7 +227,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         """Return the warning to show when reference is ignored.
 
         Returns:
-            str: The warning to show when reference is ignored.
+            The warning to show when reference is ignored.
 
         """
         return (
@@ -290,13 +290,13 @@ Performance may be significantly worse with other models.",
         """Prepare the input for the chain.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            input_ (str, optional): The input or task string.
-            reference (str, optional): The reference string, if any.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            input_: The input or task string.
+            reference: The reference string, if any.
 
         Returns:
-            dict: The prepared input for the chain.
+            The prepared input for the chain.
 
         """
         input_dict = {
@@ -343,7 +343,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.
@@ -389,7 +389,7 @@ Performance may be significantly worse with other models.",
             **kwargs: Additional keyword arguments.
 
         Returns:
-            A dictionary containing:
+            `dict` containing:
                 - reasoning: The reasoning for the preference.
                 - value: The preference value, which is either 'A', 'B', or None
                     for no preference.
@@ -425,7 +425,7 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         """Return whether the chain requires a reference.
 
         Returns:
-            bool: True if the chain requires a reference, False otherwise.
+            `True` if the chain requires a reference, `False` otherwise.
 
         """
         return True
@@ -442,18 +442,18 @@ class LabeledPairwiseStringEvalChain(PairwiseStringEvalChain):
         """Initialize the LabeledPairwiseStringEvalChain from an LLM.
 
         Args:
-            llm (BaseLanguageModel): The LLM to use.
-            prompt (PromptTemplate, optional): The prompt to use.
-            criteria (Union[CRITERIA_TYPE, str], optional): The criteria to use.
-            **kwargs (Any): Additional keyword arguments.
+            llm: The LLM to use.
+            prompt: The prompt to use.
+            criteria: The criteria to use.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            LabeledPairwiseStringEvalChain: The initialized LabeledPairwiseStringEvalChain.
+            The initialized `LabeledPairwiseStringEvalChain`.
 
         Raises:
             ValueError: If the input variables are not as expected.
 
-        """  # noqa: E501
+        """
         expected_input_vars = {
             "prediction",
             "prediction_b",

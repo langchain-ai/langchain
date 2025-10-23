@@ -40,7 +40,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
     pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
-    If None, no validation is performed."""
+    If `None`, no validation is performed."""
 
     @override
     def _diff(self, prev: Any | None, next: Any) -> Any:
@@ -59,10 +59,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed JSON object.

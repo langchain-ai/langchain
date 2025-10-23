@@ -96,10 +96,10 @@ class BasePromptTemplate(
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "prompt_template"]``
+            `["langchain", "schema", "prompt_template"]`
         """
         return ["langchain", "schema", "prompt_template"]
 
@@ -127,10 +127,10 @@ class BasePromptTemplate(
         """Get the input schema for the prompt.
 
         Args:
-            config: RunnableConfig, configuration for the prompt.
+            config: configuration for the prompt.
 
         Returns:
-            Type[BaseModel]: The input schema for the prompt.
+            The input schema for the prompt.
         """
         # This is correct, but pydantic typings/mypy don't think so.
         required_input_variables = {
@@ -199,7 +199,7 @@ class BasePromptTemplate(
             config: RunnableConfig, configuration for the prompt.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         config = ensure_config(config)
         if self.metadata:
@@ -225,7 +225,7 @@ class BasePromptTemplate(
             config: RunnableConfig, configuration for the prompt.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         config = ensure_config(config)
         if self.metadata:
@@ -245,20 +245,20 @@ class BasePromptTemplate(
         """Create Prompt Value.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         """Async create Prompt Value.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         return self.format_prompt(**kwargs)
 
@@ -266,10 +266,10 @@ class BasePromptTemplate(
         """Return a partial of the prompt template.
 
         Args:
-            kwargs: Union[str, Callable[[], str]], partial variables to set.
+            **kwargs: partial variables to set.
 
         Returns:
-            BasePromptTemplate: A partial of the prompt template.
+            A partial of the prompt template.
         """
         prompt_dict = self.__dict__.copy()
         prompt_dict["input_variables"] = list(
@@ -290,34 +290,30 @@ class BasePromptTemplate(
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            await prompt.aformat(variable1="foo")
-
+        ```python
+        await prompt.aformat(variable1="foo")
+        ```
         """
         return self.format(**kwargs)
 
@@ -330,10 +326,10 @@ class BasePromptTemplate(
         """Return dictionary representation of prompt.
 
         Args:
-            kwargs: Any additional arguments to pass to the dictionary.
+            **kwargs: Any additional arguments to pass to the dictionary.
 
         Returns:
-            Dict: Dictionary representation of the prompt.
+            Dictionary representation of the prompt.
         """
         prompt_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -352,10 +348,9 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
 
         Example:
-        .. code-block:: python
-
-            prompt.save(file_path="path/prompt.yaml")
-
+        ```python
+        prompt.save(file_path="path/prompt.yaml")
+        ```
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -426,16 +421,16 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
         string of the document formatted.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.documents import Document
-            from langchain_core.prompts import PromptTemplate
+        doc = Document(page_content="This is a joke", metadata={"page": "1"})
+        prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+        format_document(doc, prompt)
+        >>> "Page 1: This is a joke"
 
-            doc = Document(page_content="This is a joke", metadata={"page": "1"})
-            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
-            format_document(doc, prompt)
-            >>> "Page 1: This is a joke"
-
+        ```
     """
     return prompt.format(**_get_document_info(doc, prompt))
 

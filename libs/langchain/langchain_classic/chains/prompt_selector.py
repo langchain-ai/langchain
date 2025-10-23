@@ -48,7 +48,7 @@ def is_llm(llm: BaseLanguageModel) -> bool:
         llm: Language model to check.
 
     Returns:
-        True if the language model is a BaseLLM model, False otherwise.
+        `True` if the language model is a BaseLLM model, `False` otherwise.
     """
     return isinstance(llm, BaseLLM)
 
@@ -60,6 +60,6 @@ def is_chat_model(llm: BaseLanguageModel) -> bool:
         llm: Language model to check.
 
     Returns:
-        True if the language model is a BaseChatModel model, False otherwise.
+        `True` if the language model is a BaseChatModel model, `False` otherwise.
     """
     return isinstance(llm, BaseChatModel)

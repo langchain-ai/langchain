@@ -46,10 +46,10 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "few_shot_with_templates"]``
+            `["langchain", "prompts", "few_shot_with_templates"]`
         """
         return ["langchain", "prompts", "few_shot_with_templates"]
 
@@ -116,17 +116,15 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
-            prompt.format(variable1="foo")
-
+        ```python
+        prompt.format(variable1="foo")
+        ```
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
@@ -165,7 +163,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.

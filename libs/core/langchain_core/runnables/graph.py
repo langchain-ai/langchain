@@ -52,7 +52,7 @@ def is_uuid(value: str) -> bool:
         value: The string to check.
 
     Returns:
-        True if the string is a valid UUID, False otherwise.
+        `True` if the string is a valid UUID, `False` otherwise.
     """
     try:
         UUID(value)
@@ -69,16 +69,16 @@ class Edge(NamedTuple):
     target: str
     """The target node id."""
     data: Stringifiable | None = None
-    """Optional data associated with the edge. Defaults to None."""
+    """Optional data associated with the edge. """
     conditional: bool = False
-    """Whether the edge is conditional. Defaults to False."""
+    """Whether the edge is conditional."""
 
     def copy(self, *, source: str | None = None, target: str | None = None) -> Edge:
         """Return a copy of the edge with optional new source and target nodes.
 
         Args:
-            source: The new source node id. Defaults to None.
-            target: The new target node id. Defaults to None.
+            source: The new source node id.
+            target: The new target node id.
 
         Returns:
             A copy of the edge with the new source and target nodes.
@@ -101,7 +101,7 @@ class Node(NamedTuple):
     data: type[BaseModel] | RunnableType | None
     """The data of the node."""
     metadata: dict[str, Any] | None
-    """Optional metadata for the node. Defaults to None."""
+    """Optional metadata for the node. """
 
     def copy(
         self,
@@ -112,8 +112,8 @@ class Node(NamedTuple):
         """Return a copy of the node with optional new id and name.
 
         Args:
-            id: The new node id. Defaults to None.
-            name: The new node name. Defaults to None.
+            id: The new node id.
+            name: The new node name.
 
         Returns:
             A copy of the node with the new id and name.
@@ -132,7 +132,7 @@ class Branch(NamedTuple):
     condition: Callable[..., str]
     """A callable that returns a string representation of the condition."""
     ends: dict[str, str] | None
-    """Optional dictionary of end node ids for the branches. Defaults to None."""
+    """Optional dictionary of end node ids for the branches. """
 
 
 class CurveStyle(Enum):
@@ -157,9 +157,9 @@ class NodeStyles:
     """Schema for Hexadecimal color codes for different node types.
 
     Args:
-        default: The default color code. Defaults to "fill:#f2f0ff,line-height:1.2".
-        first: The color code for the first node. Defaults to "fill-opacity:0".
-        last: The color code for the last node. Defaults to "fill:#bfb6fc".
+        default: The default color code.
+        first: The color code for the first node.
+        last: The color code for the last node.
     """
 
     default: str = "fill:#f2f0ff,line-height:1.2"
@@ -201,9 +201,9 @@ def node_data_json(
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
-        node: The node to convert.
-        with_schemas: Whether to include the schema of the data if
-            it is a Pydantic model. Defaults to False.
+        node: The `Node` to convert.
+        with_schemas: Whether to include the schema of the data if it is a Pydantic
+            model.
 
     Returns:
         A dictionary with the type of the data and the data itself.
@@ -267,7 +267,7 @@ class Graph:
 
         Args:
             with_schemas: Whether to include the schemas of the nodes if they are
-                Pydantic models. Defaults to False.
+                Pydantic models.
 
         Returns:
             A dictionary with the nodes and edges of the graph.
@@ -321,8 +321,8 @@ class Graph:
 
         Args:
             data: The data of the node.
-            id: The id of the node. Defaults to None.
-            metadata: Optional metadata for the node. Defaults to None.
+            id: The id of the node.
+            metadata: Optional metadata for the node.
 
         Returns:
             The node that was added to the graph.
@@ -361,8 +361,8 @@ class Graph:
         Args:
             source: The source node of the edge.
             target: The target node of the edge.
-            data: Optional data associated with the edge. Defaults to None.
-            conditional: Whether the edge is conditional. Defaults to False.
+            data: Optional data associated with the edge.
+            conditional: Whether the edge is conditional.
 
         Returns:
             The edge that was added to the graph.
@@ -391,7 +391,7 @@ class Graph:
 
         Args:
             graph: The graph to add.
-            prefix: The prefix to add to the node ids. Defaults to "".
+            prefix: The prefix to add to the node ids.
 
         Returns:
             A tuple of the first and last nodes of the subgraph.
@@ -458,7 +458,7 @@ class Graph:
     def first_node(self) -> Node | None:
         """Find the single node that is not a target of any edge.
 
-        If there is no such node, or there are multiple, return None.
+        If there is no such node, or there are multiple, return `None`.
         When drawing the graph, this node would be the origin.
 
         Returns:
@@ -470,7 +470,7 @@ class Graph:
     def last_node(self) -> Node | None:
         """Find the single node that is not a source of any edge.
 
-        If there is no such node, or there are multiple, return None.
+        If there is no such node, or there are multiple, return `None`.
         When drawing the graph, this node would be the destination.
 
         Returns:
@@ -548,10 +548,11 @@ class Graph:
         """Draw the graph as a PNG image.
 
         Args:
-            output_file_path: The path to save the image to. If None, the image
-                is not saved. Defaults to None.
-            fontname: The name of the font to use. Defaults to None.
-            labels: Optional labels for nodes and edges in the graph. Defaults to None.
+            output_file_path: The path to save the image to. If `None`, the image
+                is not saved.
+            fontname: The name of the font to use.
+            labels: Optional labels for nodes and edges in the graph. Defaults to
+                `None`.
 
         Returns:
             The PNG image as bytes if output_file_path is None, None otherwise.
@@ -584,14 +585,13 @@ class Graph:
         """Draw the graph as a Mermaid syntax string.
 
         Args:
-            with_styles: Whether to include styles in the syntax. Defaults to True.
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            with_styles: Whether to include styles in the syntax.
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
-            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
-                added to the beginning of the mermaid graph. Defaults to None.
+                added to the beginning of the mermaid graph.
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -646,23 +646,19 @@ class Graph:
         """Draw the graph as a PNG image using Mermaid.
 
         Args:
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
-            output_file_path: The path to save the image to. If None, the image
-                is not saved. Defaults to None.
+            output_file_path: The path to save the image to. If `None`, the image
+                is not saved.
             draw_method: The method to use to draw the graph.
-                Defaults to MermaidDrawMethod.API.
-            background_color: The color of the background. Defaults to "white".
-            padding: The padding around the graph. Defaults to 10.
-            max_retries: The maximum number of retries (MermaidDrawMethod.API).
-                Defaults to 1.
-            retry_delay: The delay between retries (MermaidDrawMethod.API).
-                Defaults to 1.0.
-            frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+            background_color: The color of the background.
+            padding: The padding around the graph.
+            max_retries: The maximum number of retries (`MermaidDrawMethod.API`).
+            retry_delay: The delay between retries (`MermaidDrawMethod.API`).
+            frontmatter_config: Mermaid frontmatter config.
                 Can be used to customize theme and styles. Will be converted to YAML and
-                added to the beginning of the mermaid graph. Defaults to None.
+                added to the beginning of the mermaid graph.
 
                 See more here: https://mermaid.js.org/config/configuration.html.
 
@@ -678,7 +674,7 @@ class Graph:
                 }
                 ```
             base_url: The base URL of the Mermaid server for rendering via API.
-                Defaults to None.
+
 
         Returns:
             The PNG image as bytes.
@@ -711,7 +707,7 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
 
     Exclude nodes/sources with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
+    If there is no such node, or there are multiple, return `None`.
     When drawing the graph, this node would be the origin.
     """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
@@ -727,7 +723,7 @@ def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
 
     Exclude nodes/targets with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
+    If there is no such node, or there are multiple, return `None`.
     When drawing the graph, this node would be the destination.
     """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}

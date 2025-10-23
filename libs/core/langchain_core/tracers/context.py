@@ -47,17 +47,13 @@ def tracing_v2_enabled(
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
-        project_name (str, optional): The name of the project.
-            Defaults to ``'default'``.
-        example_id (str or UUID, optional): The ID of the example.
-            Defaults to None.
-        tags (list[str], optional): The tags to add to the run.
-            Defaults to None.
-        client (LangSmithClient, optional): The client of the langsmith.
-            Defaults to None.
+        project_name: The name of the project. Defaults to `'default'`.
+        example_id: The ID of the example.
+        tags: The tags to add to the run.
+        client: The client of the langsmith.
 
     Yields:
-        LangChainTracer: The LangChain tracer.
+        The LangChain tracer.
 
     Example:
         >>> with tracing_v2_enabled():
@@ -89,7 +85,7 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
     """Collect all run traces in context.
 
     Yields:
-        run_collector.RunCollectorCallbackHandler: The run collector callback handler.
+        The run collector callback handler.
 
     Example:
         >>> with collect_runs() as runs_cb:
@@ -179,15 +175,14 @@ def register_configure_hook(
     """Register a configure hook.
 
     Args:
-        context_var (ContextVar[Optional[Any]]): The context variable.
-        inheritable (bool): Whether the context variable is inheritable.
-        handle_class (Optional[Type[BaseCallbackHandler]], optional):
-          The callback handler class. Defaults to None.
-        env_var (Optional[str], optional): The environment variable. Defaults to None.
+        context_var: The context variable.
+        inheritable: Whether the context variable is inheritable.
+        handle_class: The callback handler class.
+        env_var: The environment variable.
 
     Raises:
-        ValueError: If env_var is set, handle_class must also be set
-          to a non-None value.
+        ValueError: If env_var is set, handle_class must also be set to a non-None
+            value.
     """
     if env_var is not None and handle_class is None:
         msg = "If env_var is set, handle_class must also be set to a non-None value."

@@ -155,51 +155,50 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     as are allowed.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_classic.chains import (
+            StuffDocumentsChain,
+            LLMChain,
+            ReduceDocumentsChain,
+        )
+        from langchain_core.prompts import PromptTemplate
+        from langchain_community.llms import OpenAI
 
-            from langchain_classic.chains import (
-                StuffDocumentsChain,
-                LLMChain,
-                ReduceDocumentsChain,
-            )
-            from langchain_core.prompts import PromptTemplate
-            from langchain_community.llms import OpenAI
-
-            # This controls how each document will be formatted. Specifically,
-            # it will be passed to `format_document` - see that function for more
-            # details.
-            document_prompt = PromptTemplate(
-                input_variables=["page_content"], template="{page_content}"
-            )
-            document_variable_name = "context"
-            llm = OpenAI()
-            # The prompt here should take as an input variable the
-            # `document_variable_name`
-            prompt = PromptTemplate.from_template("Summarize this content: {context}")
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            combine_documents_chain = StuffDocumentsChain(
-                llm_chain=llm_chain,
-                document_prompt=document_prompt,
-                document_variable_name=document_variable_name,
-            )
-            chain = ReduceDocumentsChain(
-                combine_documents_chain=combine_documents_chain,
-            )
-            # If we wanted to, we could also pass in collapse_documents_chain
-            # which is specifically aimed at collapsing documents BEFORE
-            # the final call.
-            prompt = PromptTemplate.from_template("Collapse this content: {context}")
-            llm_chain = LLMChain(llm=llm, prompt=prompt)
-            collapse_documents_chain = StuffDocumentsChain(
-                llm_chain=llm_chain,
-                document_prompt=document_prompt,
-                document_variable_name=document_variable_name,
-            )
-            chain = ReduceDocumentsChain(
-                combine_documents_chain=combine_documents_chain,
-                collapse_documents_chain=collapse_documents_chain,
-            )
-
+        # This controls how each document will be formatted. Specifically,
+        # it will be passed to `format_document` - see that function for more
+        # details.
+        document_prompt = PromptTemplate(
+            input_variables=["page_content"], template="{page_content}"
+        )
+        document_variable_name = "context"
+        model = OpenAI()
+        # The prompt here should take as an input variable the
+        # `document_variable_name`
+        prompt = PromptTemplate.from_template("Summarize this content: {context}")
+        llm_chain = LLMChain(llm=model, prompt=prompt)
+        combine_documents_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_prompt=document_prompt,
+            document_variable_name=document_variable_name,
+        )
+        chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_documents_chain,
+        )
+        # If we wanted to, we could also pass in collapse_documents_chain
+        # which is specifically aimed at collapsing documents BEFORE
+        # the final call.
+        prompt = PromptTemplate.from_template("Collapse this content: {context}")
+        llm_chain = LLMChain(llm=model, prompt=prompt)
+        collapse_documents_chain = StuffDocumentsChain(
+            llm_chain=llm_chain,
+            document_prompt=document_prompt,
+            document_variable_name=document_variable_name,
+        )
+        chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_documents_chain,
+            collapse_documents_chain=collapse_documents_chain,
+        )
+        ```
     """
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -207,7 +206,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     This is typically a StuffDocumentsChain."""
     collapse_documents_chain: BaseCombineDocumentsChain | None = None
     """Chain to use to collapse documents if needed until they can all fit.
-    If None, will use the combine_documents_chain.
+    If `None`, will use the combine_documents_chain.
     This is typically a StuffDocumentsChain."""
     token_max: int = 3000
     """The maximum number of tokens to group documents into. For example, if
@@ -215,7 +214,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     3000 tokens before trying to combine them into a smaller chunk."""
     collapse_max_retries: int | None = None
     """The maximum number of retries to collapse documents to fit token_max.
-    If None, it will keep trying to collapse documents to fit token_max.
+    If `None`, it will keep trying to collapse documents to fit token_max.
     Otherwise, after it reaches the max number, it will throw an error"""
 
     model_config = ConfigDict(

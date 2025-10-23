@@ -29,36 +29,34 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     chunk.
 
     Examples:
+        ```python
+        from langchain_chroma import Chroma
+        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+        from langchain_classic.storage import InMemoryStore
 
-        .. code-block:: python
+        # This text splitter is used to create the parent documents
+        parent_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=2000, add_start_index=True
+        )
+        # This text splitter is used to create the child documents
+        # It should create documents smaller than the parent
+        child_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=400, add_start_index=True
+        )
+        # The vectorstore to use to index the child chunks
+        vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
+        # The storage layer for the parent documents
+        store = InMemoryStore()
 
-            from langchain_chroma import Chroma
-            from langchain_community.embeddings import OpenAIEmbeddings
-            from langchain_text_splitters import RecursiveCharacterTextSplitter
-            from langchain_classic.storage import InMemoryStore
-
-            # This text splitter is used to create the parent documents
-            parent_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=2000, add_start_index=True
-            )
-            # This text splitter is used to create the child documents
-            # It should create documents smaller than the parent
-            child_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=400, add_start_index=True
-            )
-            # The vectorstore to use to index the child chunks
-            vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
-            # The storage layer for the parent documents
-            store = InMemoryStore()
-
-            # Initialize the retriever
-            retriever = ParentDocumentRetriever(
-                vectorstore=vectorstore,
-                docstore=store,
-                child_splitter=child_splitter,
-                parent_splitter=parent_splitter,
-            )
-
+        # Initialize the retriever
+        retriever = ParentDocumentRetriever(
+            vectorstore=vectorstore,
+            docstore=store,
+            child_splitter=child_splitter,
+            parent_splitter=parent_splitter,
+        )
+        ```
     """
 
     child_splitter: TextSplitter
@@ -71,7 +69,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
     If none, then the parent documents will be the raw documents passed in."""
 
     child_metadata_fields: Sequence[str] | None = None
-    """Metadata fields to leave in child documents. If None, leave all parent document
+    """Metadata fields to leave in child documents. If `None`, leave all parent document
         metadata.
     """
 
@@ -135,7 +133,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
-            **kwargs: additional keyword arguments passed to the vectorstore.
+            **kwargs: additional keyword arguments passed to the `VectorStore`.
         """
         docs, full_docs = self._split_docs_for_adding(
             documents,
@@ -166,7 +164,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
                 and you don't want to re-add them.
-            **kwargs: additional keyword arguments passed to the vectorstore.
+            **kwargs: additional keyword arguments passed to the `VectorStore`.
         """
         docs, full_docs = self._split_docs_for_adding(
             documents,

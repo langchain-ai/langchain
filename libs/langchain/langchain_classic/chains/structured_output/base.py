@@ -53,12 +53,12 @@ from pydantic import BaseModel
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -88,7 +88,7 @@ def create_openai_fn_runnable(
         llm: Language model to use, assumed to support the OpenAI function-calling API.
         prompt: BasePromptTemplate to pass to the model.
         enforce_single_function_usage: only used if a single function is passed in. If
-            True, then the model will be forced to use the given function. If False,
+            True, then the model will be forced to use the given function. If `False`,
             then the model will be given the option to use the given function or not.
         output_parser: BaseLLMOutputParser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModels are passed
@@ -103,37 +103,37 @@ def create_openai_fn_runnable(
         A runnable sequence that will pass in the given functions to the model when run.
 
     Example:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
-
-                from langchain_classic.chains.structured_output import create_openai_fn_runnable
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel, Field
-
-
-                class RecordPerson(BaseModel):
-                    '''Record some identifying information about a person.'''
-
-                    name: str = Field(..., description="The person's name")
-                    age: int = Field(..., description="The person's age")
-                    fav_food: Optional[str] = Field(None, description="The person's favorite food")
+        from langchain_classic.chains.structured_output import create_openai_fn_runnable
+        from langchain_openai import ChatOpenAI
+        from pydantic import BaseModel, Field
 
 
-                class RecordDog(BaseModel):
-                    '''Record some identifying information about a dog.'''
+        class RecordPerson(BaseModel):
+            '''Record some identifying information about a person.'''
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+            name: str = Field(..., description="The person's name")
+            age: int = Field(..., description="The person's age")
+            fav_food: str | None = Field(None, description="The person's favorite food")
 
 
-                llm = ChatOpenAI(model="gpt-4", temperature=0)
-                structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
-                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
-                # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+        class RecordDog(BaseModel):
+            '''Record some identifying information about a dog.'''
 
-    """  # noqa: E501
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
+
+
+        model = ChatOpenAI(model="gpt-4", temperature=0)
+        structured_model = create_openai_fn_runnable([RecordPerson, RecordDog], model)
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken)
+        # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
+        ```
+    """
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
         raise ValueError(msg)
@@ -172,12 +172,12 @@ def create_openai_fn_runnable(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -221,12 +221,12 @@ def create_structured_output_runnable(
             recommended over 'openai-functions'. If 'openai-json' then OpenAI model
             with response_format set to JSON is used.
         enforce_function_usage: Only applies when mode is 'openai-tools' or
-            'openai-functions'. If True, then the model will be forced to use the given
-            output schema. If False, then the model can elect whether to use the output
+            'openai-functions'. If `True`, then the model will be forced to use the given
+            output schema. If `False`, then the model can elect whether to use the output
             schema.
         return_single: Only applies when mode is 'openai-tools'. Whether to a list of
-            structured outputs or a single one. If True and model does not return any
-            structured outputs then chain output is None. If False and model does not
+            structured outputs or a single one. If `True` and model does not return any
+            structured outputs then chain output is None. If `False` and model does not
             return any structured outputs then chain output is an empty list.
         kwargs: Additional named arguments.
 
@@ -235,163 +235,164 @@ def create_structured_output_runnable(
             output_schema.
 
     OpenAI tools example with Pydantic schema (mode='openai-tools'):
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
-
-                from langchain_classic.chains import create_structured_output_runnable
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel, Field
+        from langchain_classic.chains import create_structured_output_runnable
+        from langchain_openai import ChatOpenAI
+        from pydantic import BaseModel, Field
 
 
-                class RecordDog(BaseModel):
-                    '''Record some identifying information about a dog.'''
+        class RecordDog(BaseModel):
+            '''Record some identifying information about a dog.'''
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                prompt = ChatPromptTemplate.from_messages(
-                    [
-                        ("system", "You are an extraction algorithm. Please extract every possible instance"),
-                        ('human', '{input}')
-                    ]
-                )
-                structured_llm = create_structured_output_runnable(
-                    RecordDog,
-                    llm,
-                    mode="openai-tools",
-                    enforce_function_usage=True,
-                    return_single=True
-                )
-                structured_llm.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
-                # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an extraction algorithm. Please extract every possible instance"),
+                ('human', '{input}')
+            ]
+        )
+        structured_model = create_structured_output_runnable(
+            RecordDog,
+            model,
+            mode="openai-tools",
+            enforce_function_usage=True,
+            return_single=True
+        )
+        structured_model.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+        # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+        ```
 
     OpenAI tools example with dict schema (mode="openai-tools"):
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
-
-                from langchain_classic.chains import create_structured_output_runnable
-                from langchain_openai import ChatOpenAI
+        from langchain_classic.chains import create_structured_output_runnable
+        from langchain_openai import ChatOpenAI
 
 
-                dog_schema = {
-                    "type": "function",
-                    "function": {
-                        "name": "record_dog",
-                        "description": "Record some identifying information about a dog.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "description": "The dog's name",
-                                    "type": "string"
-                                },
-                                "color": {
-                                    "description": "The dog's color",
-                                    "type": "string"
-                                },
-                                "fav_food": {
-                                    "description": "The dog's favorite food",
-                                    "type": "string"
-                                }
-                            },
-                            "required": ["name", "color"]
+        dog_schema = {
+            "type": "function",
+            "function": {
+                "name": "record_dog",
+                "description": "Record some identifying information about a dog.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "description": "The dog's name",
+                            "type": "string"
+                        },
+                        "color": {
+                            "description": "The dog's color",
+                            "type": "string"
+                        },
+                        "fav_food": {
+                            "description": "The dog's favorite food",
+                            "type": "string"
                         }
-                    }
+                    },
+                    "required": ["name", "color"]
                 }
+            }
+        }
 
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = create_structured_output_runnable(
-                    dog_schema,
-                    llm,
-                    mode="openai-tools",
-                    enforce_function_usage=True,
-                    return_single=True
-                )
-                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
-                # -> {'name': 'Harry', 'color': 'brown', 'fav_food': 'chicken'}
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(
+            dog_schema,
+            model,
+            mode="openai-tools",
+            enforce_function_usage=True,
+            return_single=True
+        )
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken")
+        # -> {'name': 'Harry', 'color': 'brown', 'fav_food': 'chicken'}
+        ```
 
     OpenAI functions example (mode="openai-functions"):
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
+        from langchain_classic.chains import create_structured_output_runnable
+        from langchain_openai import ChatOpenAI
+        from pydantic import BaseModel, Field
 
-                from langchain_classic.chains import create_structured_output_runnable
-                from langchain_openai import ChatOpenAI
-                from pydantic import BaseModel, Field
+        class Dog(BaseModel):
+            '''Identifying information about a dog.'''
 
-                class Dog(BaseModel):
-                    '''Identifying information about a dog.'''
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
-
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
-                structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken")
+        # -> Dog(name="Harry", color="brown", fav_food="chicken")
+        ```
 
     OpenAI functions with prompt example:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
+        from langchain_classic.chains import create_structured_output_runnable
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from pydantic import BaseModel, Field
 
-                from langchain_classic.chains import create_structured_output_runnable
-                from langchain_openai import ChatOpenAI
-                from langchain_core.prompts import ChatPromptTemplate
-                from pydantic import BaseModel, Field
+        class Dog(BaseModel):
+            '''Identifying information about a dog.'''
 
-                class Dog(BaseModel):
-                    '''Identifying information about a dog.'''
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
+        system = '''Extract information about any dogs mentioned in the user input.'''
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system), ("human", "{input}"),]
+        )
+        chain = prompt | structured_model
+        chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+        # -> Dog(name="Harry", color="brown", fav_food="chicken")
+        ```
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
-                system = '''Extract information about any dogs mentioned in the user input.'''
-                prompt = ChatPromptTemplate.from_messages(
-                    [("system", system), ("human", "{input}"),]
-                )
-                chain = prompt | structured_llm
-                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
-                # -> Dog(name="Harry", color="brown", fav_food="chicken")
     OpenAI json response format example (mode="openai-json"):
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-                from typing import Optional
+        from langchain_classic.chains import create_structured_output_runnable
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from pydantic import BaseModel, Field
 
-                from langchain_classic.chains import create_structured_output_runnable
-                from langchain_openai import ChatOpenAI
-                from langchain_core.prompts import ChatPromptTemplate
-                from pydantic import BaseModel, Field
+        class Dog(BaseModel):
+            '''Identifying information about a dog.'''
 
-                class Dog(BaseModel):
-                    '''Identifying information about a dog.'''
+            name: str = Field(..., description="The dog's name")
+            color: str = Field(..., description="The dog's color")
+            fav_food: str | None = Field(None, description="The dog's favorite food")
 
-                    name: str = Field(..., description="The dog's name")
-                    color: str = Field(..., description="The dog's color")
-                    fav_food: Optional[str] = Field(None, description="The dog's favorite food")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-json")
+        system = '''You are a world class assistant for extracting information in structured JSON formats. \
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json")
-                system = '''You are a world class assistant for extracting information in structured JSON formats. \
+        Extract a valid JSON blob from the user input that matches the following JSON Schema:
 
-                Extract a valid JSON blob from the user input that matches the following JSON Schema:
+        {output_schema}'''
+        prompt = ChatPromptTemplate.from_messages(
+            [("system", system), ("human", "{input}"),]
+        )
+        chain = prompt | structured_model
+        chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
 
-                {output_schema}'''
-                prompt = ChatPromptTemplate.from_messages(
-                    [("system", system), ("human", "{input}"),]
-                )
-                chain = prompt | structured_llm
-                chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
-
+        ```
     """  # noqa: E501
     # for backwards compatibility
     force_function_usage = kwargs.get(

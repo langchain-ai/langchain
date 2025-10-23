@@ -85,7 +85,7 @@ def _dereference_refs_helper(
         full_schema: The complete schema containing all definitions
         processed_refs: Set tracking currently processing refs (for cycle detection)
         skip_keys: Keys under which to skip recursion
-        shallow_refs: If True, only break cycles; if False, deep-inline all refs
+        shallow_refs: If `True`, only break cycles; if False, deep-inline all refs
 
     Returns:
         The object with $ref properties resolved and merged with other properties.
@@ -184,7 +184,7 @@ def dereference_refs(
             point to. If not provided, defaults to schema_obj (useful when the
             schema is self-contained).
         skip_keys: Controls recursion behavior and reference resolution depth:
-            - If None (default): Only recurse under '$defs' and use shallow reference
+            - If `None` (Default): Only recurse under '$defs' and use shallow reference
               resolution (break cycles but don't deep-inline nested refs)
             - If provided (even as []): Recurse under all keys and use deep reference
               resolution (fully inline all nested references)
@@ -226,7 +226,7 @@ def dereference_refs(
         ... }
         >>> result = dereference_refs(schema)  # Won't cause infinite recursion
 
-    Note:
+    !!! note
         - Circular references are handled gracefully by breaking cycles
         - Mixed $ref objects (with both $ref and other properties) are supported
         - Additional properties in mixed $refs override resolved properties

@@ -74,8 +74,8 @@ def create_base_retry_decorator(
 
     Args:
         error_types: List of error types to retry on.
-        max_retries: Number of retries. Default is 1.
-        run_manager: Callback manager for the run. Default is None.
+        max_retries: Number of retries.
+        run_manager: Callback manager for the run.
 
     Returns:
         A retry decorator.
@@ -91,13 +91,17 @@ def create_base_retry_decorator(
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # TODO: Fix RUF006 - this task should have a reference
-                        #  and be awaited somewhere
-                        loop.create_task(coro)  # noqa: RUF006
-                    else:
+                    try:
+                        loop = asyncio.get_event_loop()
+                    except RuntimeError:
                         asyncio.run(coro)
+                    else:
+                        if loop.is_running():
+                            # TODO: Fix RUF006 - this task should have a reference
+                            #  and be awaited somewhere
+                            loop.create_task(coro)  # noqa: RUF006
+                        else:
+                            asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:
@@ -153,7 +157,7 @@ def get_prompts(
     Args:
         params: Dictionary of parameters.
         prompts: List of prompts.
-        cache: Cache object. Default is None.
+        cache: Cache object.
 
     Returns:
         A tuple of existing prompts, llm_string, missing prompt indexes,
@@ -189,7 +193,7 @@ async def aget_prompts(
     Args:
         params: Dictionary of parameters.
         prompts: List of prompts.
-        cache: Cache object. Default is None.
+        cache: Cache object.
 
     Returns:
         A tuple of existing prompts, llm_string, missing prompt indexes,
@@ -299,7 +303,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     @property
     @override
     def OutputType(self) -> type[str]:
-        """Get the input type for this runnable."""
+        """Get the input type for this `Runnable`."""
         return str
 
     def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
@@ -835,13 +839,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -857,12 +861,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Raises:
             ValueError: If prompts is not a list.
-            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
-                ``run_name`` (if provided) does not match the length of prompts.
+            ValueError: If the length of `callbacks`, `tags`, `metadata`, or
+                `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
             msg = (
@@ -1105,13 +1109,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -1126,12 +1130,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 to the model provider API call.
 
         Raises:
-            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
-                ``run_name`` (if provided) does not match the length of prompts.
+            ValueError: If the length of `callbacks`, `tags`, `metadata`, or
+                `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if isinstance(metadata, list):
             metadata = [
@@ -1340,11 +1344,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ValueError: If the file path is not a string or Path object.
 
         Example:
-
-            .. code-block:: python
-
-                llm.save(file_path="path/llm.yaml")
-
+            ```python
+            llm.save(file_path="path/llm.yaml")
+            ```
         """
         # Convert file to Path object.
         save_path = Path(file_path)

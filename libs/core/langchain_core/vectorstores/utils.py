@@ -1,4 +1,4 @@
-"""Internal utilities for the in memory implementation of VectorStore.
+"""Internal utilities for the in memory implementation of `VectorStore`.
 
 These are part of a private API, and users should not use them directly
 as they can change without notice.
@@ -112,8 +112,8 @@ def maximal_marginal_relevance(
     Args:
         query_embedding: The query embedding.
         embedding_list: A list of embeddings.
-        lambda_mult: The lambda parameter for MMR. Default is 0.5.
-        k: The number of embeddings to return. Default is 4.
+        lambda_mult: The lambda parameter for MMR.
+        k: The number of embeddings to return.
 
     Returns:
         A list of indices of the embeddings to return.
