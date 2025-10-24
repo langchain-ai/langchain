@@ -194,7 +194,7 @@ class Serializable(BaseModel, ABC):
             ValueError: If the class has deprecated attributes.
 
         Returns:
-            A json serializable object or a `SerializedNotImplemented` object.
+            A JSON serializable object or a `SerializedNotImplemented` object.
         """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
