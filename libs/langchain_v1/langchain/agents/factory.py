@@ -797,8 +797,27 @@ def create_agent(  # noqa: PLR0915
                 provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
                     effective_response_format.schema_spec
                 )
-                structured_response = provider_strategy_binding.parse(output)
-                return {"messages": [output], "structured_response": structured_response}
+
+                # Retry logic for provider strategy
+                last_exception: Exception | None = None
+                for attempt in range(effective_response_format.max_retries + 1):
+                    try:
+                        structured_response = provider_strategy_binding.parse(output)
+                        return {"messages": [output], "structured_response": structured_response}
+                    except Exception as exc:
+                        last_exception = exc
+                        if attempt >= effective_response_format.max_retries:
+                            break
+
+                # Handle failure after retries exhausted
+                if effective_response_format.on_failure == "raise":
+                    raise last_exception  # type: ignore[misc]
+                elif callable(effective_response_format.on_failure):
+                    msg = effective_response_format.on_failure(last_exception)  # type: ignore[arg-type]
+                    raise StructuredOutputValidationError(
+                        effective_response_format.schema_spec.name, Exception(msg)
+                    ) from last_exception
+
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
@@ -834,37 +853,47 @@ def create_agent(  # noqa: PLR0915
                     ]
                     return {"messages": [output, *tool_messages]}
 
-                # Handle single structured output
+                # Handle single structured output with retry
                 tool_call = structured_tool_calls[0]
-                try:
-                    structured_tool_binding = structured_output_tools[tool_call["name"]]
-                    structured_response = structured_tool_binding.parse(tool_call["args"])
+                structured_tool_binding = structured_output_tools[tool_call["name"]]
 
-                    tool_message_content = (
-                        effective_response_format.tool_message_content
-                        if effective_response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
-                    )
+                # Retry logic for tool strategy
+                last_exception: Exception | None = None
+                for attempt in range(effective_response_format.max_retries + 1):
+                    try:
+                        structured_response = structured_tool_binding.parse(tool_call["args"])
 
-                    return {
-                        "messages": [
-                            output,
-                            ToolMessage(
-                                content=tool_message_content,
-                                tool_call_id=tool_call["id"],
-                                name=tool_call["name"],
-                            ),
-                        ],
-                        "structured_response": structured_response,
-                    }
-                except Exception as exc:  # noqa: BLE001
-                    exception = StructuredOutputValidationError(tool_call["name"], exc)
-                    should_retry, error_message = _handle_structured_output_error(
-                        exception, effective_response_format
-                    )
-                    if not should_retry:
-                        raise exception
+                        tool_message_content = (
+                            effective_response_format.tool_message_content
+                            if effective_response_format.tool_message_content
+                            else f"Returning structured response: {structured_response}"
+                        )
 
+                        return {
+                            "messages": [
+                                output,
+                                ToolMessage(
+                                    content=tool_message_content,
+                                    tool_call_id=tool_call["id"],
+                                    name=tool_call["name"],
+                                ),
+                            ],
+                            "structured_response": structured_response,
+                        }
+                    except Exception as exc:  # noqa: BLE001
+                        last_exception = exc
+                        if attempt >= effective_response_format.max_retries:
+                            break
+
+                # Handle failure after retries exhausted
+                exception = StructuredOutputValidationError(tool_call["name"], last_exception)  # type: ignore[arg-type]
+
+                # Check if we should send error to model for self-correction
+                should_retry, error_message = _handle_structured_output_error(
+                    exception, effective_response_format
+                )
+                if should_retry:
+                    # Model self-correction mode
                     return {
                         "messages": [
                             output,
@@ -875,6 +904,17 @@ def create_agent(  # noqa: PLR0915
                             ),
                         ],
                     }
+
+                # Apply on_failure behavior
+                if effective_response_format.on_failure == "raise":
+                    raise exception
+                elif callable(effective_response_format.on_failure):
+                    msg = effective_response_format.on_failure(last_exception)  # type: ignore[arg-type]
+                    raise StructuredOutputValidationError(
+                        tool_call["name"], Exception(msg)
+                    ) from last_exception
+                else:
+                    raise exception
 
         return {"messages": [output]}
 

@@ -199,6 +199,16 @@ class ToolStrategy(Generic[SchemaT]):
     - `False`: No retry, let exceptions propagate
     """
 
+    max_retries: int
+    """Maximum number of retry attempts for parsing failures (default: 0)."""
+
+    on_failure: Literal["raise"] | Callable[[Exception], str]
+    """Behavior when retries are exhausted.
+
+    - `"raise"`: Raise the exception (default)
+    - `Callable[[Exception], str]`: Custom error message function
+    """
+
     def __init__(
         self,
         schema: type[SchemaT],
@@ -209,15 +219,23 @@ class ToolStrategy(Generic[SchemaT]):
         | type[Exception]
         | tuple[type[Exception], ...]
         | Callable[[Exception], str] = True,
+        max_retries: int = 0,
+        on_failure: Literal["raise"] | Callable[[Exception], str] = "raise",
     ) -> None:
         """Initialize `ToolStrategy`.
 
-        Initialize `ToolStrategy` with schemas, tool message content, and error handling
-        strategy.
+        Args:
+            schema: The schema for structured output.
+            tool_message_content: Custom content for tool response messages.
+            handle_errors: Error handling strategy for customizing error messages.
+            max_retries: Maximum number of retry attempts (0 = no retry).
+            on_failure: Behavior when retries exhausted (`"raise"` or custom function).
         """
         self.schema = schema
         self.tool_message_content = tool_message_content
         self.handle_errors = handle_errors
+        self.max_retries = max_retries
+        self.on_failure = on_failure
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
@@ -246,13 +264,34 @@ class ProviderStrategy(Generic[SchemaT]):
     schema_spec: _SchemaSpec[SchemaT]
     """Schema spec for native mode."""
 
+    max_retries: int
+    """Maximum number of retry attempts for parsing failures (default: 0)."""
+
+    on_failure: Literal["raise"] | Callable[[Exception], str]
+    """Behavior when retries are exhausted.
+
+    - `"raise"`: Raise the exception (default)
+    - `Callable[[Exception], str]`: Custom error message function
+    """
+
     def __init__(
         self,
         schema: type[SchemaT],
+        *,
+        max_retries: int = 0,
+        on_failure: Literal["raise"] | Callable[[Exception], str] = "raise",
     ) -> None:
-        """Initialize ProviderStrategy with schema."""
+        """Initialize ProviderStrategy with schema.
+
+        Args:
+            schema: The schema for structured output.
+            max_retries: Maximum number of retry attempts (0 = no retry).
+            on_failure: Behavior when retries exhausted (`"raise"` or custom function).
+        """
         self.schema = schema
         self.schema_spec = _SchemaSpec(schema)
+        self.max_retries = max_retries
+        self.on_failure = on_failure
 
     def to_model_kwargs(self) -> dict[str, Any]:
         """Convert to kwargs to bind to a model to force structured output."""
