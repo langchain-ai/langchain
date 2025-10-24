@@ -89,6 +89,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from langgraph.runtime import Runtime
+    from pydantic_core import ErrorDetails
 
 # right now we use a dict as the default, can change this to AgentState, but depends
 # on if this lives in LangChain or LangGraph... ideally would have some typed
@@ -303,7 +304,11 @@ class ToolInvocationError(ToolException):
     """
 
     def __init__(
-        self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
+        self,
+        tool_name: str,
+        source: ValidationError,
+        tool_kwargs: dict[str, Any],
+        filtered_errors: list[ErrorDetails] | None = None,
     ) -> None:
         """Initialize the ToolInvocationError.
 
@@ -311,13 +316,28 @@ class ToolInvocationError(ToolException):
             tool_name: The name of the tool that failed.
             source: The exception that occurred.
             tool_kwargs: The keyword arguments that were passed to the tool.
+            filtered_errors: Optional list of filtered validation errors excluding
+                injected arguments.
         """
+        # Format error display based on filtered errors if provided
+        if filtered_errors is not None:
+            # Manually format the filtered errors without URLs or fancy formatting
+            error_str_parts = []
+            for error in filtered_errors:
+                loc_str = ".".join(str(loc) for loc in error.get("loc", ()))
+                msg = error.get("msg", "Unknown error")
+                error_str_parts.append(f"{loc_str}: {msg}")
+            error_display_str = "\n".join(error_str_parts)
+        else:
+            error_display_str = str(source)
+
         self.message = TOOL_INVOCATION_ERROR_TEMPLATE.format(
-            tool_name=tool_name, tool_kwargs=tool_kwargs, error=source
+            tool_name=tool_name, tool_kwargs=tool_kwargs, error=error_display_str
         )
         self.tool_name = tool_name
         self.tool_kwargs = tool_kwargs
         self.source = source
+        self.filtered_errors = filtered_errors
         super().__init__(self.message)
 
 
@@ -440,6 +460,59 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
     # If no type information is available, return (Exception,)
     # for backwards compatibility.
     return (Exception,)
+
+
+def _filter_validation_errors(
+    validation_error: ValidationError,
+    tool_to_state_args: dict[str, str | None],
+    tool_to_store_arg: str | None,
+    tool_to_runtime_arg: str | None,
+) -> list[ErrorDetails]:
+    """Filter validation errors to only include LLM-controlled arguments.
+
+    When a tool invocation fails validation, only errors for arguments that the LLM
+    controls should be included in error messages. This ensures the LLM receives
+    focused, actionable feedback about parameters it can actually fix. System-injected
+    arguments (state, store, runtime) are filtered out since the LLM has no control
+    over them.
+
+    This function also removes injected argument values from the `input` field in error
+    details, ensuring that only LLM-provided arguments appear in error messages.
+
+    Args:
+        validation_error: The Pydantic ValidationError raised during tool invocation.
+        tool_to_state_args: Mapping of state argument names to state field names.
+        tool_to_store_arg: Name of the store argument, if any.
+        tool_to_runtime_arg: Name of the runtime argument, if any.
+
+    Returns:
+        List of ErrorDetails containing only errors for LLM-controlled arguments,
+        with system-injected argument values removed from the input field.
+    """
+    injected_args = set(tool_to_state_args.keys())
+    if tool_to_store_arg:
+        injected_args.add(tool_to_store_arg)
+    if tool_to_runtime_arg:
+        injected_args.add(tool_to_runtime_arg)
+
+    filtered_errors: list[ErrorDetails] = []
+    for error in validation_error.errors():
+        # Check if error location contains any injected argument
+        # error['loc'] is a tuple like ('field_name',) or ('field_name', 'nested_field')
+        if error["loc"] and error["loc"][0] not in injected_args:
+            # Create a copy of the error dict to avoid mutating the original
+            error_copy: dict[str, Any] = {**error}
+
+            # Remove injected arguments from input_value if it's a dict
+            if isinstance(error_copy.get("input"), dict):
+                input_dict = error_copy["input"]
+                input_copy = {k: v for k, v in input_dict.items() if k not in injected_args}
+                error_copy["input"] = input_copy
+
+            # Cast is safe because ErrorDetails is a TypedDict compatible with this structure
+            filtered_errors.append(error_copy)  # type: ignore[arg-type]
+
+    return filtered_errors
 
 
 class _ToolNode(RunnableCallable):
@@ -623,17 +696,10 @@ class _ToolNode(RunnableCallable):
             )
             tool_runtimes.append(tool_runtime)
 
-        # Inject tool arguments (including runtime)
-
-        injected_tool_calls = []
+        # Pass original tool calls without injection
         input_types = [input_type] * len(tool_calls)
-        for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
-            injected_tool_calls.append(injected_call)
         with get_executor_for_config(config) as executor:
-            outputs = list(
-                executor.map(self._run_one, injected_tool_calls, input_types, tool_runtimes)
-            )
+            outputs = list(executor.map(self._run_one, tool_calls, input_types, tool_runtimes))
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -660,12 +726,10 @@ class _ToolNode(RunnableCallable):
             )
             tool_runtimes.append(tool_runtime)
 
-        injected_tool_calls = []
+        # Pass original tool calls without injection
         coros = []
         for call, tool_runtime in zip(tool_calls, tool_runtimes, strict=False):
-            injected_call = self._inject_tool_args(call, tool_runtime)  # type: ignore[arg-type]
-            injected_tool_calls.append(injected_call)
-            coros.append(self._arun_one(injected_call, input_type, tool_runtime))  # type: ignore[arg-type]
+            coros.append(self._arun_one(call, input_type, tool_runtime))  # type: ignore[arg-type]
         outputs = await asyncio.gather(*coros)
 
         return self._combine_tool_outputs(outputs, input_type)
@@ -742,13 +806,23 @@ class _ToolNode(RunnableCallable):
             msg = f"Tool {call['name']} is not registered with ToolNode"
             raise TypeError(msg)
 
-        call_args = {**call, "type": "tool_call"}
+        # Inject state, store, and runtime right before invocation
+        injected_call = self._inject_tool_args(call, request.runtime)
+        call_args = {**injected_call, "type": "tool_call"}
 
         try:
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                # Filter out errors for injected arguments
+                filtered_errors = _filter_validation_errors(
+                    exc,
+                    self._tool_to_state_args.get(call["name"], {}),
+                    self._tool_to_store_arg.get(call["name"]),
+                    self._tool_to_runtime_arg.get(call["name"]),
+                )
+                # Use original call["args"] without injected values for error reporting
+                raise ToolInvocationError(call["name"], exc, call["args"], filtered_errors) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -887,13 +961,23 @@ class _ToolNode(RunnableCallable):
             msg = f"Tool {call['name']} is not registered with ToolNode"
             raise TypeError(msg)
 
-        call_args = {**call, "type": "tool_call"}
+        # Inject state, store, and runtime right before invocation
+        injected_call = self._inject_tool_args(call, request.runtime)
+        call_args = {**injected_call, "type": "tool_call"}
 
         try:
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
+                # Filter out errors for injected arguments
+                filtered_errors = _filter_validation_errors(
+                    exc,
+                    self._tool_to_state_args.get(call["name"], {}),
+                    self._tool_to_store_arg.get(call["name"]),
+                    self._tool_to_runtime_arg.get(call["name"]),
+                )
+                # Use original call["args"] without injected values for error reporting
+                raise ToolInvocationError(call["name"], exc, call["args"], filtered_errors) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
