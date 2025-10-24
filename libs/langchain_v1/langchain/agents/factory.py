@@ -33,6 +33,7 @@ from langchain.agents.structured_output import (
     ProviderStrategy,
     ProviderStrategyBinding,
     ResponseFormat,
+    StructuredOutputError,
     StructuredOutputValidationError,
     ToolStrategy,
 )
@@ -803,8 +804,8 @@ def create_agent(  # noqa: PLR0915
                     schema_name = getattr(
                         effective_response_format.schema_spec.schema, "__name__", "response_format"
                     )
-                    exception = StructuredOutputValidationError(schema_name, exc, output)
-                    raise exception
+                    validation_error = StructuredOutputValidationError(schema_name, exc, output)
+                    raise validation_error
                 else:
                     return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
@@ -820,7 +821,7 @@ def create_agent(  # noqa: PLR0915
             ]
 
             if structured_tool_calls:
-                exception: Exception | None = None
+                exception: StructuredOutputError | None = None
                 if len(structured_tool_calls) > 1:
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]

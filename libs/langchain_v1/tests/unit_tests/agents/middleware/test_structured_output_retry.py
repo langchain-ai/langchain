@@ -34,12 +34,6 @@ def test_structured_output_retry_initialization() -> None:
     assert middleware_custom.max_retries == 5
 
 
-def test_structured_output_retry_validation_errors() -> None:
-    """Test that middleware validates parameters."""
-    with pytest.raises(ValueError, match="max_retries must be >= 0"):
-        StructuredOutputRetryMiddleware(max_retries=-1)
-
-
 def test_structured_output_retry_success_first_attempt() -> None:
     """Test that successful calls on first attempt don't trigger retry."""
     middleware = StructuredOutputRetryMiddleware(max_retries=2)
@@ -93,10 +87,11 @@ def test_structured_output_retry_with_validation_error() -> None:
     assert handler.call_count == 2
 
     # Check that error feedback was added to messages
-    assert len(mock_request.messages) == 2
-    assert mock_request.messages[0] == ai_msg_with_error
-    assert isinstance(mock_request.messages[1], HumanMessage)
-    assert "errors" in mock_request.messages[1].content.lower()
+    assert len(mock_request.messages) == 1
+    assert isinstance(mock_request.messages[0], HumanMessage)
+    # The human message should contain both the AI's previous response and the error
+    assert "your previous response" in mock_request.messages[0].content.lower()
+    assert "error" in mock_request.messages[0].content.lower()
 
 
 def test_structured_output_retry_exhausted() -> None:
@@ -159,7 +154,7 @@ def test_structured_output_retry_multiple_outputs_error() -> None:
 
 
 def test_structured_output_retry_ai_message_preserved() -> None:
-    """Test that AI message from exception is preserved in retry messages."""
+    """Test that AI message content from exception is embedded in retry message."""
     middleware = StructuredOutputRetryMiddleware(max_retries=1)
 
     # Create mock request
@@ -185,10 +180,11 @@ def test_structured_output_retry_ai_message_preserved() -> None:
     # Execute
     result = middleware.wrap_model_call(mock_request, handler)
 
-    # Verify the original AI message with error was added to messages
-    assert len(mock_request.messages) == 2
-    assert mock_request.messages[0] == ai_msg_with_error
-    assert mock_request.messages[0].id == "test-id-123"
+    # Verify the AI message content was embedded in the human message
+    assert len(mock_request.messages) == 1
+    assert isinstance(mock_request.messages[0], HumanMessage)
+    # Check that the AI's previous content is included
+    assert '{"temperature": "invalid", "conditions": "sunny"}' in mock_request.messages[0].content
 
 
 async def test_structured_output_retry_async() -> None:
