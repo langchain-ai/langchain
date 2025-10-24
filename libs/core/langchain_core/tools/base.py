@@ -676,9 +676,17 @@ class ChildTool(BaseTool):
                     f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
                 )
                 raise NotImplementedError(msg)
-            return {
+            validated_fields = {
                 k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
             }
+            # FIX FOR ISSUE #33646: Preserve injected arguments
+            # Add back injected arguments that were in original input but not in schema
+            for param_name, param_value in tool_input.items():
+                if param_name not in validated_fields:
+                    # This could be an injected argument like ToolRuntime
+                    validated_fields[param_name] = param_value
+
+            return validated_fields
         return tool_input
 
     @abstractmethod
