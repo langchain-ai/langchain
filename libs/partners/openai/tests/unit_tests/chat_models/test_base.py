@@ -2997,3 +2997,73 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+def test_vllm_response_with_valid_choices() -> None:
+    """Test that vLLM-style responses with valid choices don't raise null error.
+    
+    This tests the fix for issue #32252 where vLLM responses were incorrectly
+    identified as having null choices.
+    """
+    from langchain_openai import ChatOpenAI
+    
+    # Simulate a vLLM-style response (as a dict)
+    vllm_response = {
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": None,
+                "message": {
+                    "content": "Test response content",
+                    "role": "assistant",
+                    "tool_calls": []
+                },
+                "stop_reason": None
+            }
+        ],
+        "created": 1753518740,
+        "id": "chatcmpl-test123",
+        "model": "test-model",
+        "object": "chat.completion",
+        "usage": {
+            "completion_tokens": 10,
+            "prompt_tokens": 20,
+            "total_tokens": 30
+        }
+    }
+    
+    llm = ChatOpenAI(model="gpt-3.5-turbo", api_key="test")
+    
+    # This should not raise "Received response with null value for choices"
+    result = llm._create_chat_result(vllm_response)
+    
+    assert result is not None
+    assert len(result.generations) == 1
+    assert result.generations[0].message.content == "Test response content"
+    assert result.llm_output["token_usage"]["total_tokens"] == 30
+
+
+def test_improved_null_choices_error_message() -> None:
+    """Test that the improved error message provides better debugging info."""
+    from langchain_openai import ChatOpenAI
+    import pytest
+    
+    # Create a response with null choices
+    bad_response = {
+        "choices": None,
+        "created": 1753518740,
+        "id": "chatcmpl-test123",
+        "model": "test-model",
+    }
+    
+    llm = ChatOpenAI(model="gpt-3.5-turbo", api_key="test")
+    
+    # Should raise TypeError with improved message
+    with pytest.raises(TypeError) as exc_info:
+        llm._create_chat_result(bad_response)
+    
+    error_msg = str(exc_info.value)
+    # Check that the improved error message contains debugging info
+    assert "Response keys:" in error_msg
+    assert "Raw response type:" in error_msg
+    assert "incompatibility with the API endpoint" in error_msg

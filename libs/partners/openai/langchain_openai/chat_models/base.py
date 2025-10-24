@@ -1268,16 +1268,32 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info: dict | None = None,
     ) -> ChatResult:
         generations = []
-
-        response_dict = (
-            response if isinstance(response, dict) else response.model_dump()
-        )
+        
+        # Handle response serialization more robustly for non-OpenAI APIs
+        if isinstance(response, dict):
+            response_dict = response
+        else:
+            # Try model_dump() first
+            try:
+                response_dict = response.model_dump()
+            except Exception as e:
+                # Fallback: try to access raw JSON if model_dump fails
+                try:
+                    if hasattr(response, 'model_dump_json'):
+                        import json
+                        response_dict = json.loads(response.model_dump_json())
+                    else:
+                        raise e
+                except Exception:
+                    # If all else fails, raise the original error
+                    raise e
+        
         # Sometimes the AI Model calling will get error, we should raise it (this is
         # typically followed by a null value for `choices`, which we raise for
         # separately below).
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
-
+        
         # Raise informative error messages for non-OpenAI chat completions APIs
         # that return malformed responses.
         try:
@@ -1285,14 +1301,20 @@ class BaseChatOpenAI(BaseChatModel):
         except KeyError as e:
             msg = f"Response missing `choices` key: {response_dict.keys()}"
             raise KeyError(msg) from e
-
+        
+        # Improved null check with better error message
         if choices is None:
-            msg = "Received response with null value for `choices`."
+            # Provide more debugging info for non-OpenAI APIs
+            msg = (
+                f"Received response with null value for `choices`. "
+                f"Response keys: {list(response_dict.keys())}. "
+                f"This may indicate an incompatibility with the API endpoint. "
+                f"Raw response type: {type(response).__name__}"
+            )
             raise TypeError(msg)
-
+        
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
-
         for res in choices:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
@@ -1319,7 +1341,6 @@ class BaseChatOpenAI(BaseChatModel):
             llm_output["id"] = response_dict["id"]
         if service_tier:
             llm_output["service_tier"] = service_tier
-
         if isinstance(response, openai.BaseModel) and getattr(
             response, "choices", None
         ):
@@ -1328,9 +1349,7 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
-
         return ChatResult(generations=generations, llm_output=llm_output)
-
     async def _astream(
         self,
         messages: list[BaseMessage],
