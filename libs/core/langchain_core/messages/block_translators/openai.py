@@ -118,12 +118,55 @@ def convert_to_openai_data_block(
         else:
             error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
+    elif block["type"] == "video":
+        # Handle video blocks similar to audio/image blocks
+        if "base64" in block or block.get("source_type") == "base64":
+            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format: {"base64": "...", ...}
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            video_format = block["mime_type"].split("/")[-1]  # e.g., mp4, webm, avi
+
+            if api == "chat/completions":
+                # For Chat Completions API
+                formatted_block = {
+                    "type": "video",
+                    "video": {
+                        "data": f"data:{block['mime_type']};base64,{base64_data}",
+                    }
+                }
+            else:
+                # For Responses API
+                formatted_block = {
+                    "type": "input_video",
+                    "input_video": {
+                        "data": base64_data,
+                        "format": video_format
+                    }
+                }
+        elif "url" in block:
+            if api == "chat/completions":
+                # Chat Completions API doesn't support video URLs
+                error_msg = "OpenAI Chat Completions does not support video URLs."
+                raise ValueError(error_msg)
+            # Only supported by Responses API
+            formatted_block = {"type": "input_video", "video_url": block["url"]}
+        elif "file_id" in block or block.get("source_type") == "id":
+            # Handle video file IDs
+            file_id = block["id"] if "source_type" in block else block["file_id"]
+            formatted_block = {
+                "type": "video",
+                "video": {"file_id": file_id}
+            }
+            if api == "responses":
+                formatted_block = {"type": "input_video", "file_id": file_id}
+        else:
+            error_msg = "Keys base64, url, or file_id required for video blocks."
+            raise ValueError(error_msg)
     else:
         error_msg = f"Block of type {block['type']} is not supported."
         raise ValueError(error_msg)
 
     return formatted_block
-
 
 # v1 / Chat Completions
 def _convert_to_v1_from_chat_completions(
