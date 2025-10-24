@@ -24,6 +24,7 @@ from .shell_tool import (
     RedactionRule,
     ShellToolMiddleware,
 )
+from .structured_output_retry import StructuredOutputRetryMiddleware
 from .summarization import SummarizationMiddleware
 from .todo import TodoListMiddleware
 from .tool_call_limit import ToolCallLimitMiddleware
@@ -65,6 +66,7 @@ __all__ = [
     "PIIMiddleware",
     "RedactionRule",
     "ShellToolMiddleware",
+    "StructuredOutputRetryMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
