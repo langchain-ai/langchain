@@ -132,16 +132,13 @@ def convert_to_openai_data_block(
                     "type": "video",
                     "video": {
                         "data": f"data:{block['mime_type']};base64,{base64_data}",
-                    }
+                    },
                 }
             else:
                 # For Responses API
                 formatted_block = {
                     "type": "input_video",
-                    "input_video": {
-                        "data": base64_data,
-                        "format": video_format
-                    }
+                    "input_video": {"data": base64_data, "format": video_format},
                 }
         elif "url" in block:
             if api == "chat/completions":
@@ -153,10 +150,7 @@ def convert_to_openai_data_block(
         elif "file_id" in block or block.get("source_type") == "id":
             # Handle video file IDs
             file_id = block["id"] if "source_type" in block else block["file_id"]
-            formatted_block = {
-                "type": "video",
-                "video": {"file_id": file_id}
-            }
+            formatted_block = {"type": "video", "video": {"file_id": file_id}}
             if api == "responses":
                 formatted_block = {"type": "input_video", "file_id": file_id}
         else:
@@ -167,6 +161,7 @@ def convert_to_openai_data_block(
         raise ValueError(error_msg)
 
     return formatted_block
+
 
 # v1 / Chat Completions
 def _convert_to_v1_from_chat_completions(
@@ -215,9 +210,11 @@ def _convert_to_v1_from_chat_completions_input(
 
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
-        cast("dict[str, Any]", block)
-        if block.get("type") != "non_standard"
-        else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
+        (
+            cast("dict[str, Any]", block)
+            if block.get("type") != "non_standard"
+            else block["value"]
+        )  # type: ignore[typeddict-item]  # this is only non-standard blocks
         for block in content
     ]
     for block in unpacked_blocks:
