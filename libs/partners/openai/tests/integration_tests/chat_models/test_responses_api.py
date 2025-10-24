@@ -254,7 +254,7 @@ def test_parsed_strict() -> None:
 
     schema = _convert_to_openai_response_format(Joke)
     invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
-    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=schema)
