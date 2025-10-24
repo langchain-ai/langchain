@@ -90,11 +90,23 @@ def test_structured_output_retry_first_attempt_invalid() -> None:
     # The model will call the WeatherReport structured output tool
     tool_calls = [
         # First attempt - invalid: wrong type for temperature
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": "not-a-float", "conditions": "sunny"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": "not-a-float", "conditions": "sunny"},
+            }
+        ],
         # Second attempt - invalid: missing required field
         [{"name": "WeatherReport", "id": "2", "args": {"temperature": 72.5}}],
         # Third attempt - valid
-        [{"name": "WeatherReport", "id": "3", "args": {"temperature": 72.5, "conditions": "sunny"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "3",
+                "args": {"temperature": 72.5, "conditions": "sunny"},
+            }
+        ],
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -128,9 +140,27 @@ def test_structured_output_retry_exceeds_max_retries() -> None:
     """Test structured output retry raises error when max retries exceeded."""
     # All three attempts return invalid arguments
     tool_calls = [
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": "invalid", "conditions": "sunny"}}],
-        [{"name": "WeatherReport", "id": "2", "args": {"temperature": "also-invalid", "conditions": "cloudy"}}],
-        [{"name": "WeatherReport", "id": "3", "args": {"temperature": "still-invalid", "conditions": "rainy"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": "invalid", "conditions": "sunny"},
+            }
+        ],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "2",
+                "args": {"temperature": "also-invalid", "conditions": "cloudy"},
+            }
+        ],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "3",
+                "args": {"temperature": "still-invalid", "conditions": "rainy"},
+            }
+        ],
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -158,7 +188,13 @@ def test_structured_output_retry_succeeds_first_attempt() -> None:
     """Test structured output retry when first attempt succeeds (no retry needed)."""
     # First attempt returns valid structured output
     tool_calls = [
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": 68.0, "conditions": "cloudy"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": 68.0, "conditions": "cloudy"},
+            }
+        ],
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -192,9 +228,21 @@ def test_structured_output_retry_validation_error() -> None:
     """Test structured output retry with schema validation errors."""
     # First attempt has wrong type, second has missing field, third succeeds
     tool_calls = [
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": "seventy-two", "conditions": "sunny"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": "seventy-two", "conditions": "sunny"},
+            }
+        ],
         [{"name": "WeatherReport", "id": "2", "args": {"temperature": 72.5}}],
-        [{"name": "WeatherReport", "id": "3", "args": {"temperature": 72.5, "conditions": "partly cloudy"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "3",
+                "args": {"temperature": 72.5, "conditions": "partly cloudy"},
+            }
+        ],
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -228,8 +276,20 @@ def test_structured_output_retry_zero_retries() -> None:
     """Test structured output retry with max_retries=0 (no retries allowed)."""
     # First attempt returns invalid arguments
     tool_calls = [
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": "invalid", "conditions": "sunny"}}],
-        [{"name": "WeatherReport", "id": "2", "args": {"temperature": 72.5, "conditions": "sunny"}}],  # Would succeed if retried
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": "invalid", "conditions": "sunny"},
+            }
+        ],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "2",
+                "args": {"temperature": 72.5, "conditions": "sunny"},
+            }
+        ],  # Would succeed if retried
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
@@ -258,8 +318,20 @@ def test_structured_output_retry_preserves_messages() -> None:
     """Test structured output retry preserves error feedback in messages."""
     # First attempt invalid, second succeeds
     tool_calls = [
-        [{"name": "WeatherReport", "id": "1", "args": {"temperature": "invalid", "conditions": "rainy"}}],
-        [{"name": "WeatherReport", "id": "2", "args": {"temperature": 75.0, "conditions": "rainy"}}],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "1",
+                "args": {"temperature": "invalid", "conditions": "rainy"},
+            }
+        ],
+        [
+            {
+                "name": "WeatherReport",
+                "id": "2",
+                "args": {"temperature": 75.0, "conditions": "rainy"},
+            }
+        ],
     ]
 
     model = FakeToolCallingModel(tool_calls=tool_calls)
