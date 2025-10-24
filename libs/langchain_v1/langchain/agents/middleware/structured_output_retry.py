@@ -1,17 +1,28 @@
 """Minimal structured output retry middleware example."""
 
 from langchain_core.messages import HumanMessage
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
+
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    Awaitable,
+    Callable,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.agents.structured_output import StructuredOutputError
 
 
 class StructuredOutputRetryMiddleware(AgentMiddleware):
     """Retries model calls when structured output parsing fails."""
 
-    def __init__(self, max_retries: int = 2):
+    def __init__(self, max_retries: int = 2) -> None:
+        """Initialize the structured output retry middleware."""
         self.max_retries = max_retries
 
-    def wrap_model_call(self, request: ModelRequest, handler) -> ModelResponse:
+    def wrap_model_call(
+        self, request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+    ) -> ModelResponse:
+        """Intercept and control model execution via handler callback."""
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
@@ -24,12 +35,13 @@ class StructuredOutputRetryMiddleware(AgentMiddleware):
                     request.messages.append(exc.ai_message)
 
                 request.messages.append(
-                    HumanMessage(
-                        content=f"Error: {exc}. Please try again with a valid response."
-                    )
+                    HumanMessage(content=f"Error: {exc}. Please try again with a valid response.")
                 )
 
-    async def awrap_model_call(self, request: ModelRequest, handler) -> ModelResponse:
+    async def awrap_model_call(
+        self, request: ModelRequest, handler: Callable[[ModelRequest], Awaitable[ModelResponse]]
+    ) -> ModelResponse:
+        """Intercept and control async model execution via handler callback."""
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
@@ -41,7 +53,5 @@ class StructuredOutputRetryMiddleware(AgentMiddleware):
                     request.messages.append(exc.ai_message)
 
                 request.messages.append(
-                    HumanMessage(
-                        content=f"Error: {exc}. Please try again with a valid response."
-                    )
+                    HumanMessage(content=f"Error: {exc}. Please try again with a valid response.")
                 )

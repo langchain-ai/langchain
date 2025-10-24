@@ -158,10 +158,6 @@ def test_structured_output_retry_multiple_outputs_error() -> None:
     assert handler.call_count == 2
 
 
-
-
-
-
 def test_structured_output_retry_ai_message_preserved() -> None:
     """Test that AI message from exception is preserved in retry messages."""
     middleware = StructuredOutputRetryMiddleware(max_retries=1)
@@ -175,7 +171,9 @@ def test_structured_output_retry_ai_message_preserved() -> None:
         content='{"temperature": "invalid", "conditions": "sunny"}',
         id="test-id-123",
     )
-    error = StructuredOutputValidationError("WeatherReport", ValueError("Invalid"), ai_msg_with_error)
+    error = StructuredOutputValidationError(
+        "WeatherReport", ValueError("Invalid"), ai_msg_with_error
+    )
 
     success_response = ModelResponse(
         result=[AIMessage(content='{"temperature": 72.5, "conditions": "sunny"}')],

@@ -59,9 +59,7 @@ class MultipleStructuredOutputsError(StructuredOutputError):
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
-    def __init__(
-        self, tool_name: str, source: Exception, ai_message: AIMessage
-    ) -> None:
+    def __init__(self, tool_name: str, source: Exception, ai_message: AIMessage) -> None:
         """Initialize `StructuredOutputValidationError`.
 
         Args:
