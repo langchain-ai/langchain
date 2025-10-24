@@ -426,9 +426,13 @@ def convert_to_openai_function(
                 oai_function["parameters"]
             )
             # All fields must be `required`
-            fields = oai_function["parameters"].get("properties", {})
-            if isinstance(fields, dict) and fields:
-                oai_function["parameters"]["required"] = list(fields.keys())
+            parameters = oai_function.get("parameters")
+            if isinstance(parameters, dict):
+                fields = parameters.get("properties")
+                if isinstance(fields, dict) and fields:
+                    parameters = dict(parameters)
+                    parameters["required"] = list(fields.keys())
+                    oai_function["parameters"] = parameters
     return oai_function
 
 
