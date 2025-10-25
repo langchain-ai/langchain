@@ -2,6 +2,21 @@
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[project]
+name = "langchain-serpex"
+version = "0.1.0"
+description = "An integration package connecting SERPEX and LangChain"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "langchain-core>=0.3.0,<0.4",
+    "httpx>=0.27.0",
+]
+
+[project.urls]
+Repository = "https://github.com/langchain-ai/langchain"
+
 [tool.poetry]
 name = "langchain-serpex"
 version = "0.1.0"
