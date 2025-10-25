@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -94,7 +94,7 @@ class SerpexSearchResults(BaseTool):
         default="web",
         description="Search category (currently only 'web' supported)",
     )
-    time_range: Optional[str] = Field(
+    time_range: str | None = Field(
         default=None,
         description=(
             "Time range: all, day, week, month, year (not supported by Brave)"
@@ -108,10 +108,14 @@ class SerpexSearchResults(BaseTool):
     def validate_environment(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that API key exists in environment."""
         api_key = values.get("api_key")
-        if isinstance(api_key, SecretStr):
-            api_key_str = api_key.get_secret_value()
-        else:
-            api_key_str = api_key or os.getenv("SERPEX_API_KEY", "")
+        if not api_key or (
+            isinstance(api_key, SecretStr) and not api_key.get_secret_value()
+        ):
+            api_key_from_env = os.getenv("SERPEX_API_KEY", "")
+            if api_key_from_env:
+                values["api_key"] = SecretStr(api_key_from_env)
+        elif isinstance(api_key, str):
+            values["api_key"] = SecretStr(api_key)
 
         return values
 
@@ -210,7 +214,7 @@ class SerpexSearchResults(BaseTool):
     def _run(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Execute the search."""
@@ -244,7 +248,7 @@ class SerpexSearchResults(BaseTool):
     async def _arun(
         self,
         query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Execute the search asynchronously."""
