@@ -43,7 +43,7 @@ dev = ["langchain-core"]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E",  # pycodestyle
   "F",  # Pyflakes
