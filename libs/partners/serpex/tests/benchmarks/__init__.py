@@ -1,1 +1,0 @@
-"""Benchmark tests for SERPEX."""
