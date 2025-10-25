@@ -1020,6 +1020,7 @@ RunnableAgentType = RunnableAgent | RunnableMultiActionAgent
 
 class AgentExecutor(Chain):
     """Agent that is using tools."""
+    config: RunnableConfig | None = None
 
     agent: BaseSingleActionAgent | BaseMultiActionAgent | Runnable
     """The agent to run for creating a plan and determining actions
@@ -1297,9 +1298,10 @@ class AgentExecutor(Chain):
         self,
         name_to_tool_map: dict[str, BaseTool],
         color_mapping: dict[str, str],
-        inputs: dict[str, str],
+        inputs: dict[str, Any],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: CallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> AgentFinish | list[tuple[AgentAction, str]]:
         return self._consume_next_step(
             list(
@@ -1309,6 +1311,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
+                    config=config,
                 ),
             ),
         )
@@ -1317,9 +1320,10 @@ class AgentExecutor(Chain):
         self,
         name_to_tool_map: dict[str, BaseTool],
         color_mapping: dict[str, str],
-        inputs: dict[str, str],
+        inputs: dict[str, Any],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: CallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> Iterator[AgentFinish | AgentAction | AgentStep]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1390,6 +1394,7 @@ class AgentExecutor(Chain):
                 color_mapping,
                 agent_action,
                 run_manager,
+                config=config,
             )
 
     def _perform_agent_action(
@@ -1398,6 +1403,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: CallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
@@ -1415,6 +1421,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1427,6 +1434,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         return AgentStep(action=agent_action, observation=observation)
@@ -1438,6 +1446,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> AgentFinish | list[tuple[AgentAction, str]]:
         return self._consume_next_step(
             [
@@ -1448,6 +1457,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
+                    config=config,
                 )
             ],
         )
@@ -1456,9 +1466,10 @@ class AgentExecutor(Chain):
         self,
         name_to_tool_map: dict[str, BaseTool],
         color_mapping: dict[str, str],
-        inputs: dict[str, str],
+        inputs: dict[str, Any],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> AsyncIterator[AgentFinish | AgentAction | AgentStep]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1530,6 +1541,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
+                    config=config,
                 )
                 for agent_action in actions
             ],
@@ -1545,6 +1557,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: AsyncCallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> AgentStep:
         if run_manager:
             await run_manager.on_agent_action(
@@ -1566,6 +1579,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1578,15 +1592,18 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         return AgentStep(action=agent_action, observation=observation)
 
     def _call(
         self,
-        inputs: dict[str, str],
+        inputs: dict[str, Any],
         run_manager: CallbackManagerForChainRun | None = None,
+        config: RunnableConfig | None = None,
     ) -> dict[str, Any]:
+        config = ensure_config(config)
         """Run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -1608,6 +1625,7 @@ class AgentExecutor(Chain):
                 inputs,
                 intermediate_steps,
                 run_manager=run_manager,
+                config=config,
             )
             if isinstance(next_step_output, AgentFinish):
                 return self._return(
@@ -1638,9 +1656,11 @@ class AgentExecutor(Chain):
 
     async def _acall(
         self,
-        inputs: dict[str, str],
+        inputs: dict[str, Any],
         run_manager: AsyncCallbackManagerForChainRun | None = None,
-    ) -> dict[str, str]:
+        config: RunnableConfig | None = None,
+    ) -> dict[str, Any]:
+        config = ensure_config(config)
         """Async run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -1664,6 +1684,7 @@ class AgentExecutor(Chain):
                         inputs,
                         intermediate_steps,
                         run_manager=run_manager,
+                        config=config,
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(
