@@ -29,6 +29,7 @@ test = [
     "langchain-core",
     "langchain-tests",
 ]
+test_integration = []
 lint = [
     "ruff>=0.13.1,<0.14.0",
 ]
