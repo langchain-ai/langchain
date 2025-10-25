@@ -415,6 +415,7 @@ test = [
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
 ]
+test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
     { name = "mypy", specifier = ">=1.10.0,<2.0.0" },
