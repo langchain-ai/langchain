@@ -7,7 +7,7 @@ import pytest
 from langchain_serpex import SerpexSearchResults
 
 
-def test_serpex_initialization():
+def test_serpex_initialization() -> None:
     """Test that Serpex can be initialized with API key."""
     tool = SerpexSearchResults(api_key="test_api_key_12345")
     assert tool.name == "serpex_search"
@@ -15,14 +15,14 @@ def test_serpex_initialization():
     assert tool.category == "web"
 
 
-def test_serpex_initialization_from_env(monkeypatch):
+def test_serpex_initialization_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that Serpex can be initialized from environment variable."""
     monkeypatch.setenv("SERPEX_API_KEY", "env_test_key")
     tool = SerpexSearchResults()
     assert tool.name == "serpex_search"
 
 
-def test_serpex_custom_parameters():
+def test_serpex_custom_parameters() -> None:
     """Test that Serpex accepts custom parameters."""
     tool = SerpexSearchResults(
         api_key="test_api_key", engine="google", category="web", time_range="day"
@@ -31,7 +31,7 @@ def test_serpex_custom_parameters():
     assert tool.time_range == "day"
 
 
-def test_serpex_build_params():
+def test_serpex_build_params() -> None:
     """Test that _build_params creates correct parameters."""
     tool = SerpexSearchResults(api_key="test_key", engine="bing", time_range="week")
     params = tool._build_params("test query")
@@ -42,7 +42,7 @@ def test_serpex_build_params():
     assert params["time_range"] == "week"
 
 
-def test_serpex_build_params_override():
+def test_serpex_build_params_override() -> None:
     """Test that _build_params allows overrides."""
     tool = SerpexSearchResults(api_key="test_key", engine="google")
     params = tool._build_params("test query", engine="duckduckgo", time_range="month")
@@ -51,7 +51,7 @@ def test_serpex_build_params_override():
     assert params["time_range"] == "month"
 
 
-def test_serpex_format_results_with_organic():
+def test_serpex_format_results_with_organic() -> None:
     """Test formatting organic search results."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -85,7 +85,7 @@ def test_serpex_format_results_with_organic():
     assert "Published: 2025-01-22" in formatted
 
 
-def test_serpex_format_results_with_answers():
+def test_serpex_format_results_with_answers() -> None:
     """Test formatting instant answers."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -98,7 +98,7 @@ def test_serpex_format_results_with_answers():
     assert "Answer: The capital of France is Paris." in formatted
 
 
-def test_serpex_format_results_with_infoboxes():
+def test_serpex_format_results_with_infoboxes() -> None:
     """Test formatting knowledge panel/infobox."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -111,7 +111,7 @@ def test_serpex_format_results_with_infoboxes():
     assert "Knowledge Panel: Python is a high-level programming language." in formatted
 
 
-def test_serpex_format_results_with_suggestions():
+def test_serpex_format_results_with_suggestions() -> None:
     """Test formatting search suggestions."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -125,7 +125,7 @@ def test_serpex_format_results_with_suggestions():
     assert "coffee shops near me open now" in formatted
 
 
-def test_serpex_format_results_with_corrections():
+def test_serpex_format_results_with_corrections() -> None:
     """Test formatting query corrections."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -139,7 +139,7 @@ def test_serpex_format_results_with_corrections():
     assert "python programming" in formatted
 
 
-def test_serpex_format_results_empty():
+def test_serpex_format_results_empty() -> None:
     """Test formatting when no results."""
     tool = SerpexSearchResults(api_key="test_key")
 
@@ -149,7 +149,7 @@ def test_serpex_format_results_empty():
     assert formatted == "No search results found."
 
 
-def test_serpex_custom_base_url():
+def test_serpex_custom_base_url() -> None:
     """Test that custom base URL is respected."""
     custom_url = "https://custom-api.example.com"
     tool = SerpexSearchResults(api_key="test_key", base_url=custom_url)
@@ -158,7 +158,7 @@ def test_serpex_custom_base_url():
 
 # Integration test (requires real API key)
 @pytest.mark.skipif("SERPEX_API_KEY" not in os.environ, reason="SERPEX_API_KEY not set")
-def test_serpex_real_search():
+def test_serpex_real_search() -> None:
     """Test with real API (requires SERPEX_API_KEY environment variable)."""
     api_key = os.getenv("SERPEX_API_KEY")
 
