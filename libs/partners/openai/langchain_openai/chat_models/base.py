@@ -1671,6 +1671,9 @@ class BaseChatOpenAI(BaseChatModel):
         elif model.startswith(("gpt-3.5-turbo", "gpt-4", "gpt-5")):
             tokens_per_message = 3
             tokens_per_name = 1
+        elif model.startswith("deepseek-chat"):
+            tokens_per_message = 4
+            tokens_per_name = 0
         else:
             msg = (
                 f"get_num_tokens_from_messages() is not presently implemented "
