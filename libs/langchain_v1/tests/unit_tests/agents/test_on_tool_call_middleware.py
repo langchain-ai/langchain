@@ -10,7 +10,7 @@ from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain.tools.tool_node import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest
 from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
 
 

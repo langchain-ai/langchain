@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from langgraph.types import Command
 
     from langchain.tools import BaseTool
-    from langchain.tools.tool_node import ToolCallRequest
+    from langchain.agents.middleware.types import ToolCallRequest
 
 
 class LLMToolEmulator(AgentMiddleware):

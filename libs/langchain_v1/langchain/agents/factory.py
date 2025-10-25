@@ -37,7 +37,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
-from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
+from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from langgraph.store.base import BaseStore
     from langgraph.types import Checkpointer
 
-    from langchain.tools.tool_node import ToolCallRequest, ToolCallWrapper
+    from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -675,7 +675,7 @@ def create_agent(  # noqa: PLR0915
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
-    tool_node: _ToolNode | None = None
+    tool_node: ToolNode | None = None
     # Extract built-in provider tools (dict format) and regular tools (BaseTool/callables)
     built_in_tools = [t for t in tools if isinstance(t, dict)]
     regular_tools = [t for t in tools if not isinstance(t, dict)]
@@ -685,7 +685,7 @@ def create_agent(  # noqa: PLR0915
 
     # Only create ToolNode if we have client-side tools
     tool_node = (
-        _ToolNode(
+        ToolNode(
             tools=available_tools,
             wrap_tool_call=wrap_tool_call_wrapper,
             awrap_tool_call=awrap_tool_call_wrapper,
@@ -1491,7 +1491,7 @@ def _make_model_to_model_edge(
 
 def _make_tools_to_model_edge(
     *,
-    tool_node: _ToolNode,
+    tool_node: ToolNode,
     model_destination: str,
     structured_output_tools: dict[str, OutputToolBinding],
     end_destination: str,
