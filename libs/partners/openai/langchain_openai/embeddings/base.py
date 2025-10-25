@@ -15,6 +15,9 @@ from langchain_core.utils import from_env, get_pydantic_field_names, secret_from
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+# OpenAI API limits
+MAX_TOKENS_PER_REQUEST = 300000  # OpenAI's max tokens per embedding request
+
 logger = logging.getLogger(__name__)
 
 
@@ -476,13 +479,37 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         client_kwargs = {**self._invocation_params, **kwargs}
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
         batched_embeddings: list[list[float]] = []
-        for i in _iter:
+        # Calculate actual token counts for each chunk
+        token_counts = [len(t) if isinstance(t, list) else len(t.split()) for t in tokens]
+
+        # Process in batches respecting the token limit
+        i = 0
+        while i < len(tokens):
+            # Determine how many chunks we can include in this batch
+            batch_token_count = 0
+            batch_end = i
+            
+            for j in range(i, min(i + _chunk_size, len(tokens))):
+                chunk_tokens = token_counts[j]
+                # Check if adding this chunk would exceed the limit
+                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
+                    if batch_end == i:
+                        # Single chunk exceeds limit - handle it anyway
+                        batch_end = j + 1
+                    break
+                batch_token_count += chunk_tokens
+                batch_end = j + 1
+            
+            # Make API call with this batch
+            batch_tokens = tokens[i:batch_end]
             response = self.client.create(
-                input=tokens[i : i + _chunk_size], **client_kwargs
+                input=batch_tokens, **client_kwargs
             )
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            
+            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
@@ -530,14 +557,37 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             None, self._tokenize, texts, _chunk_size
         )
         batched_embeddings: list[list[float]] = []
-        for i in range(0, len(tokens), _chunk_size):
-            response = await self.async_client.create(
-                input=tokens[i : i + _chunk_size], **client_kwargs
-            )
+        # Calculate actual token counts for each chunk
+        token_counts = [len(t) if isinstance(t, list) else len(t.split()) for t in tokens]
 
+        # Process in batches respecting the token limit
+        i = 0
+        while i < len(tokens):
+            # Determine how many chunks we can include in this batch
+            batch_token_count = 0
+            batch_end = i
+            
+            for j in range(i, min(i + _chunk_size, len(tokens))):
+                chunk_tokens = token_counts[j]
+                # Check if adding this chunk would exceed the limit
+                if batch_token_count + chunk_tokens > MAX_TOKENS_PER_REQUEST:
+                    if batch_end == i:
+                        # Single chunk exceeds limit - handle it anyway
+                        batch_end = j + 1
+                    break
+                batch_token_count += chunk_tokens
+                batch_end = j + 1
+            
+            # Make API call with this batch
+            batch_tokens = tokens[i:batch_end]
+            response = await self.async_client.create(
+                input=batch_tokens, **client_kwargs
+            )
             if not isinstance(response, dict):
                 response = response.model_dump()
             batched_embeddings.extend(r["embedding"] for r in response["data"])
+            
+            i = batch_end
 
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty

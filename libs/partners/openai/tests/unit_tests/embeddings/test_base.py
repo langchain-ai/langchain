@@ -96,3 +96,55 @@ async def test_embed_with_kwargs_async() -> None:
         mock_create.assert_any_call(input=texts, **client_kwargs)
 
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+
+def test_embeddings_respects_token_limit() -> None:
+    """Test that embeddings respect the 300k token per request limit.
+    
+    This tests the fix for issue #31227 where large batches of embeddings
+    would exceed OpenAI's token limit.
+    """
+    from langchain_openai import OpenAIEmbeddings
+    
+    # Create embeddings instance
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-ada-002",
+        openai_api_key="test-key"
+    )
+    
+    # Mock the client to track API calls
+    from unittest.mock import MagicMock, Mock
+    
+    call_counts = []
+    original_create = embeddings.client.create
+    
+    def mock_create(input, **kwargs):
+        # Track how many tokens in this call
+        if isinstance(input, list):
+            total_tokens = sum(len(t) if isinstance(t, list) else len(t.split()) for t in input)
+            call_counts.append(total_tokens)
+            # Verify this call doesn't exceed limit
+            assert total_tokens <= 300000, f"Batch exceeded token limit: {total_tokens} tokens"
+        
+        # Return mock response
+        mock_response = Mock()
+        mock_response.model_dump.return_value = {
+            "data": [{"embedding": [0.1] * 1536} for _ in range(len(input) if isinstance(input, list) else 1)]
+        }
+        return mock_response
+    
+    embeddings.client.create = mock_create
+    
+    # Create a scenario that would exceed 300k tokens in a single batch
+    # with default chunk_size=1000
+    # Simulate 500 texts with ~1000 tokens each = 500k tokens total
+    large_texts = ["word " * 1000 for _ in range(500)]
+    
+    # This should not raise an error anymore
+    result = embeddings.embed_documents(large_texts)
+    
+    # Verify we made multiple API calls to respect the limit
+    assert len(call_counts) > 1, "Should have split into multiple batches"
+    
+    # Verify each call respected the limit
+    for count in call_counts:
+        assert count <= 300000, f"Batch exceeded limit: {count}"
