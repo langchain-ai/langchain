@@ -619,7 +619,81 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherBaseModel](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="gpt-4.1",
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert len(response["messages"]) == 4
+
+    def test_unsupported_model_raises_error(self) -> None:
+        """Test that ProviderStrategy raises ValueError for unsupported models."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        # Use a model name that doesn't support provider strategy
+        model = FakeToolCallingModel[WeatherBaseModel](
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="claude-3-5-sonnet",
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"Cannot use ProviderStrategy with claude-3-5-sonnet\. "
+                r"Supported models: OpenAI \(gpt-5, gpt-4\.1, gpt-oss, o3-pro, o3-mini\), "
+                r"X\.AI \(Grok\)\. "
+                r"Consider using a raw schema \(which auto-selects the best strategy\) or "
+                r"explicitly use `ToolStrategy` for unsupported providers\."
+            ),
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    def test_supported_openai_models(self) -> None:
+        """Test that ProviderStrategy works with all supported OpenAI model variants."""
+        supported_models = ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"]
+
+        for model_name in supported_models:
+            tool_calls = [
+                [{"args": {}, "id": "1", "name": "get_weather"}],
+            ]
+
+            model = FakeToolCallingModel[WeatherBaseModel](
+                tool_calls=tool_calls,
+                structured_response=EXPECTED_WEATHER_PYDANTIC,
+                model_name=model_name,
+            )
+
+            agent = create_agent(
+                model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+            )
+            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+            assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+            assert len(response["messages"]) == 4
+
+    def test_supported_grok_model(self) -> None:
+        """Test that ProviderStrategy works with Grok models."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        model = FakeToolCallingModel[WeatherBaseModel](
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_PYDANTIC,
+            model_name="grok-beta",
         )
 
         agent = create_agent(
@@ -637,7 +711,9 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherDataclass](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
+            tool_calls=tool_calls,
+            structured_response=EXPECTED_WEATHER_DATACLASS,
+            model_name="gpt-4.1",
         )
 
         agent = create_agent(
@@ -657,7 +733,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[WeatherTypedDict](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -675,7 +751,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         model = FakeToolCallingModel[dict](
-            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
+            tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT, model_name="gpt-4.1"
         )
 
         agent = create_agent(
@@ -697,13 +773,13 @@ class TestDynamicModelWithResponseFormat:
         on the middleware-modified model (not the original), ensuring the correct strategy is
         selected based on the final model's capabilities.
         """
-        from unittest.mock import patch
         from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
         from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 
-        # Custom model that we'll use to test whether the tool strategy is applied
-        # correctly at runtime.
+        # Custom model that we'll use to test whether the provider strategy is applied
+        # correctly at runtime. Use a model_name that supports provider strategy.
         class CustomModel(GenericFakeChatModel):
+            model_name: str = "gpt-4.1"
             tool_bindings: list[Any] = []
 
             def bind_tools(
@@ -736,14 +812,6 @@ class TestDynamicModelWithResponseFormat:
                 request.model = model
                 return handler(request)
 
-        # Track which model is checked for provider strategy support
-        calls = []
-
-        def mock_supports_provider_strategy(model) -> bool:
-            """Track which model is checked and return True for ProviderStrategy."""
-            calls.append(model)
-            return True
-
         # Use raw Pydantic model (not wrapped in ToolStrategy or ProviderStrategy)
         # This should auto-detect strategy based on model capabilities
         agent = create_agent(
@@ -754,14 +822,7 @@ class TestDynamicModelWithResponseFormat:
             middleware=[ModelSwappingMiddleware()],
         )
 
-        with patch(
-            "langchain.agents.factory._supports_provider_strategy",
-            side_effect=mock_supports_provider_strategy,
-        ):
-            response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
-
-        # Verify strategy resolution was deferred: check was called once during _get_bound_model
-        assert len(calls) == 1
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         # Verify successful parsing of JSON as structured output via ProviderStrategy
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC

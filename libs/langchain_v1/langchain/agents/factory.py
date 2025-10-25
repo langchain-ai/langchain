@@ -5,7 +5,6 @@ from __future__ import annotations
 import itertools
 from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
 
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
@@ -35,6 +34,7 @@ from langchain.agents.structured_output import (
     ResponseFormat,
     StructuredOutputValidationError,
     ToolStrategy,
+    _supports_provider_strategy,
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
@@ -42,6 +42,7 @@ from langchain.tools.tool_node import ToolCallWithContext, _ToolNode
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
+    from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.runnables import Runnable
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -338,29 +339,6 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
         return async_method.__can_jump_to__
 
     return []
-
-
-def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
-    """Check if a model supports provider-specific structured output.
-
-    Args:
-        model: Model name string or `BaseChatModel` instance.
-
-    Returns:
-        `True` if the model supports provider-specific structured output, `False` otherwise.
-    """
-    model_name: str | None = None
-    if isinstance(model, str):
-        model_name = model
-    elif isinstance(model, BaseChatModel):
-        model_name = getattr(model, "model_name", None)
-
-    return (
-        "grok" in model_name.lower()
-        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
-        if model_name
-        else False
-    )
 
 
 def _handle_structured_output_error(
@@ -925,16 +903,34 @@ def create_agent(  # noqa: PLR0915
 
         # Determine effective response format (auto-detect if needed)
         effective_response_format: ResponseFormat | None
+        model_name: str = cast(
+            "str",
+            (
+                request.model
+                if isinstance(request.model, str)
+                else getattr(request.model, "model_name", "")
+            ),
+        )
         if isinstance(request.response_format, AutoStrategy):
             # User provided raw schema via AutoStrategy - auto-detect best strategy based on model
-            if _supports_provider_strategy(request.model):
+            if _supports_provider_strategy(model_name):
                 # Model supports provider strategy - use it
                 effective_response_format = ProviderStrategy(schema=request.response_format.schema)
             else:
                 # Model doesn't support provider strategy - use ToolStrategy
                 effective_response_format = ToolStrategy(schema=request.response_format.schema)
+        elif isinstance(request.response_format, ProviderStrategy):
+            if not _supports_provider_strategy(model_name):
+                msg = (
+                    f"Cannot use ProviderStrategy with {model_name}. "
+                    "Supported models: OpenAI (gpt-5, gpt-4.1, gpt-oss, o3-pro, o3-mini), "
+                    "X.AI (Grok). "
+                    "Consider using a raw schema (which auto-selects the best strategy) or "
+                    "explicitly use `ToolStrategy` for unsupported providers."
+                )
+                raise ValueError(msg)
+            effective_response_format = request.response_format
         else:
-            # User explicitly specified a strategy - preserve it
             effective_response_format = request.response_format
 
         # Build final tools list including structured output tools
@@ -950,12 +946,9 @@ def create_agent(  # noqa: PLR0915
         if isinstance(effective_response_format, ProviderStrategy):
             # Use provider-specific structured output
             kwargs = effective_response_format.to_model_kwargs()
-            return (
-                request.model.bind_tools(
-                    final_tools, strict=True, **kwargs, **request.model_settings
-                ),
-                effective_response_format,
-            )
+            return request.model.bind_tools(
+                final_tools, **kwargs, **request.model_settings
+            ), effective_response_format
 
         if isinstance(effective_response_format, ToolStrategy):
             # Current implementation requires that tools used for structured output
