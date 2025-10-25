@@ -77,7 +77,7 @@ class ModelRequest:
     """Model request information for the agent."""
 
     model: BaseChatModel
-    system_prompt: str | None
+    system_prompt: str | None | list[str | dict]
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
     tools: list[BaseTool | dict]
