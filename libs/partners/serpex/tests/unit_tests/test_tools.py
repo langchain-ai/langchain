@@ -1,15 +1,17 @@
 """Tests for SERPEX Search Tool."""
 
 import os
+from typing import Any
 
 import pytest
+from pydantic import SecretStr
 
 from langchain_serpex import SerpexSearchResults
 
 
 def test_serpex_initialization() -> None:
     """Test that Serpex can be initialized with API key."""
-    tool = SerpexSearchResults(api_key="test_api_key_12345")
+    tool = SerpexSearchResults(api_key=SecretStr("test_api_key_12345"))
     assert tool.name == "serpex_search"
     assert tool.engine == "auto"
     assert tool.category == "web"
@@ -25,7 +27,10 @@ def test_serpex_initialization_from_env(monkeypatch: pytest.MonkeyPatch) -> None
 def test_serpex_custom_parameters() -> None:
     """Test that Serpex accepts custom parameters."""
     tool = SerpexSearchResults(
-        api_key="test_api_key", engine="google", category="web", time_range="day"
+        api_key=SecretStr("test_api_key"),
+        engine="google",
+        category="web",
+        time_range="day",
     )
     assert tool.engine == "google"
     assert tool.time_range == "day"
@@ -33,7 +38,9 @@ def test_serpex_custom_parameters() -> None:
 
 def test_serpex_build_params() -> None:
     """Test that _build_params creates correct parameters."""
-    tool = SerpexSearchResults(api_key="test_key", engine="bing", time_range="week")
+    tool = SerpexSearchResults(
+        api_key=SecretStr("test_key"), engine="bing", time_range="week"
+    )
     params = tool._build_params("test query")
 
     assert params["q"] == "test query"
@@ -44,7 +51,7 @@ def test_serpex_build_params() -> None:
 
 def test_serpex_build_params_override() -> None:
     """Test that _build_params allows overrides."""
-    tool = SerpexSearchResults(api_key="test_key", engine="google")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"), engine="google")
     params = tool._build_params("test query", engine="duckduckgo", time_range="month")
 
     assert params["engine"] == "duckduckgo"
@@ -53,9 +60,9 @@ def test_serpex_build_params_override() -> None:
 
 def test_serpex_format_results_with_organic() -> None:
     """Test formatting organic search results."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
-    mock_data = {
+    mock_data: dict[str, Any] = {
         "metadata": {"number_of_results": 2},
         "results": [
             {
@@ -87,7 +94,7 @@ def test_serpex_format_results_with_organic() -> None:
 
 def test_serpex_format_results_with_answers() -> None:
     """Test formatting instant answers."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
     mock_data = {
         "answers": [{"answer": "The capital of France is Paris."}],
@@ -100,7 +107,7 @@ def test_serpex_format_results_with_answers() -> None:
 
 def test_serpex_format_results_with_infoboxes() -> None:
     """Test formatting knowledge panel/infobox."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
     mock_data = {
         "infoboxes": [{"description": "Python is a high-level programming language."}],
@@ -113,7 +120,7 @@ def test_serpex_format_results_with_infoboxes() -> None:
 
 def test_serpex_format_results_with_suggestions() -> None:
     """Test formatting search suggestions."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
     mock_data = {
         "results": [],
@@ -127,7 +134,7 @@ def test_serpex_format_results_with_suggestions() -> None:
 
 def test_serpex_format_results_with_corrections() -> None:
     """Test formatting query corrections."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
     mock_data = {
         "results": [],
@@ -141,9 +148,9 @@ def test_serpex_format_results_with_corrections() -> None:
 
 def test_serpex_format_results_empty() -> None:
     """Test formatting when no results."""
-    tool = SerpexSearchResults(api_key="test_key")
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"))
 
-    mock_data = {"results": []}
+    mock_data: dict[str, Any] = {"results": []}
 
     formatted = tool._format_results(mock_data)
     assert formatted == "No search results found."
@@ -152,7 +159,7 @@ def test_serpex_format_results_empty() -> None:
 def test_serpex_custom_base_url() -> None:
     """Test that custom base URL is respected."""
     custom_url = "https://custom-api.example.com"
-    tool = SerpexSearchResults(api_key="test_key", base_url=custom_url)
+    tool = SerpexSearchResults(api_key=SecretStr("test_key"), base_url=custom_url)
     assert tool.base_url == custom_url
 
 
@@ -165,7 +172,9 @@ def test_serpex_real_search() -> None:
     if not api_key:
         pytest.skip("SERPEX_API_KEY not set")
 
-    tool = SerpexSearchResults(api_key=api_key, engine="auto", category="web")
+    tool = SerpexSearchResults(
+        api_key=SecretStr(api_key), engine="auto", category="web"
+    )
 
     result = tool._run("weather in San Francisco")
 

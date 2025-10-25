@@ -3,6 +3,7 @@
 import os
 
 import pytest
+from pydantic import SecretStr
 
 from langchain_serpex import SerpexSearchResults
 
@@ -20,7 +21,7 @@ def test_serpex_search_integration() -> None:
     if not api_key:
         pytest.skip("SERPEX_API_KEY not set")
 
-    tool = SerpexSearchResults(api_key=api_key)
+    tool = SerpexSearchResults(api_key=SecretStr(api_key))
     result = tool._run("Python programming language")
 
     assert result
@@ -38,7 +39,7 @@ def test_serpex_different_engines() -> None:
     engines = ["google", "bing", "duckduckgo"]
 
     for engine in engines:
-        tool = SerpexSearchResults(api_key=api_key, engine=engine)
+        tool = SerpexSearchResults(api_key=SecretStr(api_key), engine=engine)
         result = tool._run("test query")
         assert result
         assert isinstance(result, str)
