@@ -134,7 +134,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     # custom logic for specific directories
-    elif dir_ in {"libs/partners/chroma", "libs/partners/nomic"}:
+    elif dir_ in {"libs/partners/chroma"}:
         py_versions = ["3.10", "3.13"]
     else:
         py_versions = ["3.10", "3.14"]
