@@ -1,5 +1,6 @@
 """Helper class to draw a state graph into a PNG file."""
 
+from itertools import groupby
 from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
@@ -141,6 +142,7 @@ class PngDrawer:
         # Add nodes, conditional edges, and edges to the graph
         self.add_nodes(viz, graph)
         self.add_edges(viz, graph)
+        self.add_subgraph(viz, [node.split(":") for node in graph.nodes])
 
         # Update entrypoint and END styles
         self.update_styles(viz, graph)
@@ -160,6 +162,32 @@ class PngDrawer:
         """
         for node in graph.nodes:
             self.add_node(viz, node)
+
+    def add_subgraph(
+        self,
+        viz: Any,
+        nodes: list[list[str]],
+        parent_prefix: list[str] | None = None,
+    ) -> None:
+        """Add subgraphs to the graph.
+
+        Args:
+            viz: The graphviz object.
+            nodes: The nodes to add.
+            parent_prefix: The prefix of the parent subgraph.
+        """
+        for prefix, grouped in groupby(
+            [node[:] for node in sorted(nodes)],
+            key=lambda x: x.pop(0),
+        ):
+            current_prefix = (parent_prefix or []) + [prefix]
+            grouped_nodes = list(grouped)
+            if len(grouped_nodes) > 1:
+                subgraph = viz.add_subgraph(
+                    [":".join(current_prefix + node) for node in grouped_nodes],
+                    name="cluster_" + ":".join(current_prefix),
+                )
+                self.add_subgraph(subgraph, grouped_nodes, current_prefix)
 
     def add_edges(self, viz: Any, graph: Graph) -> None:
         """Add edges to the graph.
