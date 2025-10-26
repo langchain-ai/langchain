@@ -201,6 +201,14 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
+    # Allow middleware to declare additional middleware to be inserted
+    # immediately after this middleware. Factored recursively, the final order
+    # is parent -> children -> grandchildren, etc.
+    # This enables composition patterns where a middleware can bundle and
+    # expose other middleware without users having to pass them explicitly.
+    middleware: list["AgentMiddleware[Any, Any]"]
+    """Additional middleware registered by this middleware (optional)."""
+
     @property
     def name(self) -> str:
         """The name of the middleware instance.

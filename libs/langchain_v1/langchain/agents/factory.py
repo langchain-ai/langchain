@@ -610,6 +610,28 @@ def create_agent(  # noqa: PLR0915
     if tools is None:
         tools = []
 
+    # Expand nested middleware: if a middleware declares additional middleware,
+    # insert them immediately after, recursively (parent -> children -> ...).
+    def _expand_middleware_sequence(
+        seq: "Sequence[AgentMiddleware[Any, Any]]",
+        _seen: set[int] | None = None,
+    ) -> list[AgentMiddleware[Any, Any]]:
+        expanded: list[AgentMiddleware[Any, Any]] = []
+        seen = _seen if _seen is not None else set()
+        for m in seq:
+            mid = id(m)
+            if mid in seen:
+                # Skip already expanded instances to avoid cycles/duplicates
+                continue
+            seen.add(mid)
+            expanded.append(m)
+            children = getattr(m, "middleware", []) or []
+            if children:
+                expanded.extend(_expand_middleware_sequence(children, seen))
+        return expanded
+
+    middleware = tuple(_expand_middleware_sequence(middleware))
+
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
     # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
