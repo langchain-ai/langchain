@@ -1055,9 +1055,7 @@ class BaseCallbackManager(CallbackManagerMixin):
             tags: The tags to add.
             inherit: Whether to inherit the tags.
         """
-        for tag in tags:
-            if tag in self.tags:
-                self.remove_tags([tag])
+        self.remove_tags([tag for tag in tags if tag in self.tags])
         self.tags.extend(tags)
         if inherit:
             self.inheritable_tags.extend(tags)
