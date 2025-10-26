@@ -193,7 +193,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_structured_output_without_think_tags(self) -> None:
         """Test parsing structured output without think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = '{"name": "John Doe", "age": 30, "email": "john@example.com"}'
         generation = Generation(text=text)
         result = parser.parse_result([generation])
@@ -204,7 +206,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_structured_output_with_think_tags(self) -> None:
         """Test parsing structured output with think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = '<think>Let me create a person\
             object</think>{"name": "John Doe", "age": 30}'
         generation = Generation(text=text)
@@ -216,7 +220,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_structured_output_with_multiple_think_tags(self) -> None:
         """Test parsing with multiple think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = """<think>Step 1: Determine name</think>
 <think>Step 2: Determine age</think>
 {"name": "Jane Smith", "age": 25}"""
@@ -228,7 +234,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_structured_output_markdown_with_think_tags(self) -> None:
         """Test parsing markdown-wrapped structured output with think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = """<think>Building person object</think>
 ```json
 {"name": "Alice Brown", "age": 35, "email": "alice@example.com"}
@@ -242,7 +250,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_nested_structured_output_with_think_tags(self) -> None:
         """Test parsing nested Pydantic models with think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockCompany)
+        parser: ReasoningStructuredOutputParser[MockCompany] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockCompany)
+        )
         text = """<think>Creating company with employees</think>
 {
     "company_name": "Tech Corp",
@@ -263,7 +273,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_invalid_structured_output_with_think_tags(self) -> None:
         """Test that invalid structured output raises exception."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         # Missing required field 'age'
         text = '<think>Creating person</think>{"name": "John"}'
         generation = Generation(text=text)
@@ -272,7 +284,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_structured_wrong_type_with_think_tags(self) -> None:
         """Test that wrong types raise validation errors."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         # Age should be int, not string
         text = '<think>Creating person</think>{"name": "John", "age": "thirty"}'
         generation = Generation(text=text)
@@ -281,7 +295,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parse_empty_after_stripping_think_tags(self) -> None:
         """Test handling when only think tags remain."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = "<think>Only reasoning here</think>"
         generation = Generation(text=text)
         with pytest.raises(OutputParserException):
@@ -289,14 +305,18 @@ class TestReasoningStructuredOutputParser:
 
     def test_get_format_instructions(self) -> None:
         """Test that format instructions work correctly."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         instructions = parser.get_format_instructions()
         assert "MockPerson" in instructions or "name" in instructions
         assert isinstance(instructions, str)
 
     def test_partial_structured_parsing_with_think_tags(self) -> None:
         """Test partial parsing of structured output with think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = '<think>Starting</think>{"name": "John", "age": 30'
         generation = Generation(text=text)
         # Partial parsing should handle incomplete JSON
@@ -306,7 +326,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_parser_with_think_tags_in_json_values(self) -> None:
         """Test that think tags in JSON string values don't cause issues."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         # Think tags should be stripped before JSON parsing, so they won't be in values
         text = '<think>reasoning</think>{"name": "John <Doe>", "age": 30}'
         generation = Generation(text=text)
@@ -317,7 +339,9 @@ class TestReasoningStructuredOutputParser:
 
     def test_multiline_think_tags_with_structured_output(self) -> None:
         """Test parsing structured output with multiline think tags."""
-        parser = ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        parser: ReasoningStructuredOutputParser[MockPerson] = (
+            ReasoningStructuredOutputParser(pydantic_object=MockPerson)
+        )
         text = """<think>
 Step 1: Consider the requirements
 Step 2: Structure the data

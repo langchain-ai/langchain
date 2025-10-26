@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Generic
 
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import Generation
+from langchain_core.utils.pydantic import TBaseModel
 
 
 def strip_think_tags(text: str) -> str:
@@ -70,7 +71,9 @@ class ReasoningJsonOutputParser(JsonOutputParser):
         return super().parse_result([Generation(text=text)], partial=partial)
 
 
-class ReasoningStructuredOutputParser(PydanticOutputParser):
+class ReasoningStructuredOutputParser(
+    PydanticOutputParser[TBaseModel], Generic[TBaseModel]
+):
     """A structured output parser that strips reasoning tags before parsing.
 
     This parser removes any content enclosed in <think> tags from the input text
