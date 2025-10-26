@@ -195,6 +195,7 @@ def test_loads_with_missing_secrets() -> None:
     with pytest.raises(openai.OpenAIError):
         loads(llm_string)
 
+
 def test_load_with_string_secrets() -> None:
     obj = {"api_key": "__SECRET_API_KEY__"}
     secrets_map = {"__SECRET_API_KEY__": "hello"}
