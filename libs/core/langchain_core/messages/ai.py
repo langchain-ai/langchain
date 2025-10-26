@@ -4,7 +4,7 @@ import json
 import logging
 import operator
 from collections.abc import Sequence
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Literal, cast, overload
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
@@ -40,13 +40,13 @@ class InputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full input token count. Does *not* need to have all keys.
 
     Example:
-        .. code-block:: python
-
-            {
-                "audio": 10,
-                "cache_creation": 200,
-                "cache_read": 100,
-            }
+        ```python
+        {
+            "audio": 10,
+            "cache_creation": 200,
+            "cache_read": 100,
+        }
+        ```
 
     !!! version-added "Added in version 0.3.9"
 
@@ -76,12 +76,12 @@ class OutputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full output token count. Does *not* need to have all keys.
 
     Example:
-        .. code-block:: python
-
-            {
-                "audio": 10,
-                "reasoning": 200,
-            }
+        ```python
+        {
+            "audio": 10,
+            "reasoning": 200,
+        }
+        ```
 
     !!! version-added "Added in version 0.3.9"
 
@@ -104,25 +104,25 @@ class UsageMetadata(TypedDict):
     This is a standard representation of token usage that is consistent across models.
 
     Example:
-        .. code-block:: python
-
-            {
-                "input_tokens": 350,
-                "output_tokens": 240,
-                "total_tokens": 590,
-                "input_token_details": {
-                    "audio": 10,
-                    "cache_creation": 200,
-                    "cache_read": 100,
-                },
-                "output_token_details": {
-                    "audio": 10,
-                    "reasoning": 200,
-                },
-            }
+        ```python
+        {
+            "input_tokens": 350,
+            "output_tokens": 240,
+            "total_tokens": 590,
+            "input_token_details": {
+                "audio": 10,
+                "cache_creation": 200,
+                "cache_read": 100,
+            },
+            "output_token_details": {
+                "audio": 10,
+                "reasoning": 200,
+            },
+        }
+        ```
 
     !!! warning "Behavior changed in 0.3.9"
-        Added ``input_token_details`` and ``output_token_details``.
+        Added `input_token_details` and `output_token_details`.
 
     """
 
@@ -148,57 +148,56 @@ class UsageMetadata(TypedDict):
 class AIMessage(BaseMessage):
     """Message from an AI.
 
-    AIMessage is returned from a chat model as a response to a prompt.
+    An `AIMessage` is returned from a chat model as a response to a prompt.
 
     This message represents the output of the model and consists of both
-    the raw output as returned by the model together standardized fields
+    the raw output as returned by the model and standardized fields
     (e.g., tool calls, usage metadata) added by the LangChain framework.
 
     """
 
     tool_calls: list[ToolCall] = []
-    """If provided, tool calls associated with the message."""
+    """If present, tool calls associated with the message."""
     invalid_tool_calls: list[InvalidToolCall] = []
-    """If provided, tool calls with parsing errors associated with the message."""
-    usage_metadata: Optional[UsageMetadata] = None
-    """If provided, usage metadata for a message, such as token counts.
+    """If present, tool calls with parsing errors associated with the message."""
+    usage_metadata: UsageMetadata | None = None
+    """If present, usage metadata for a message, such as token counts.
 
     This is a standard representation of token usage that is consistent across models.
-
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization). Defaults to "ai"."""
+    """The type of the message (used for deserialization)."""
 
     @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``AIMessage``.
+        """Initialize an `AIMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
             content: The content of the message.
             content_blocks: Typed standard content.
-            kwargs: Additional arguments to pass to the parent class.
+            **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
             # If there are tool calls in content_blocks, but not in tool_calls, add them
@@ -209,7 +208,7 @@ class AIMessage(BaseMessage):
                 kwargs["tool_calls"] = content_tool_calls
 
             super().__init__(
-                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                content=cast("str | list[str | dict]", content_blocks),
                 **kwargs,
             )
         else:
@@ -217,7 +216,11 @@ class AIMessage(BaseMessage):
 
     @property
     def lc_attributes(self) -> dict:
-        """Attrs to be serialized even if they are derived from other init args."""
+        """Attributes to be serialized.
+
+        Includes all attributes, even if they are derived from other initialization
+        arguments.
+        """
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -225,11 +228,11 @@ class AIMessage(BaseMessage):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return content blocks of the message.
+        """Return standard, typed `ContentBlock` dicts from the message.
 
         If the message has a known model provider, use the provider-specific translator
         first before falling back to best-effort parsing. For details, see the property
-        on ``BaseMessage``.
+        on `BaseMessage`.
         """
         if self.response_metadata.get("output_version") == "v1":
             return cast("list[types.ContentBlock]", self.content)
@@ -331,11 +334,10 @@ class AIMessage(BaseMessage):
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
-        """Return a pretty representation of the message.
+        """Return a pretty representation of the message for display.
 
         Args:
             html: Whether to return an HTML-formatted string.
-                 Defaults to False.
 
         Returns:
             A pretty representation of the message.
@@ -344,7 +346,7 @@ class AIMessage(BaseMessage):
         base = super().pretty_repr(html=html)
         lines = []
 
-        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> list[str]:
+        def _format_tool_args(tc: ToolCall | InvalidToolCall) -> list[str]:
             lines = [
                 f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
                 f" Call ID: {tc.get('id')}",
@@ -372,31 +374,27 @@ class AIMessage(BaseMessage):
 
 
 class AIMessageChunk(AIMessage, BaseMessageChunk):
-    """Message chunk from an AI."""
+    """Message chunk from an AI (yielded when streaming)."""
 
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for deserialization).
-
-    Defaults to ``AIMessageChunk``.
-
-    """
+    """The type of the message (used for deserialization)."""
 
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
-    chunk_position: Optional[Literal["last"]] = None
-    """Optional span represented by an aggregated AIMessageChunk.
+    chunk_position: Literal["last"] | None = None
+    """Optional span represented by an aggregated `AIMessageChunk`.
 
-    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
-    ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
+    If a chunk with `chunk_position="last"` is aggregated into a stream,
+    `tool_call_chunks` in message content will be parsed into `tool_calls`.
     """
 
     @property
     def lc_attributes(self) -> dict:
-        """Attrs to be serialized even if they are derived from other init args."""
+        """Attributes to be serialized, even if they are derived from other initialization args."""  # noqa: E501
         return {
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
@@ -404,7 +402,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return content blocks of the message."""
+        """Return standard, typed `ContentBlock` dicts from the message."""
         if self.response_metadata.get("output_version") == "v1":
             return cast("list[types.ContentBlock]", self.content)
 
@@ -545,12 +543,15 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     and call_id in id_to_tc
                 ):
                     self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
+                    if "extras" in block:
+                        # mypy does not account for instance check for dict above
+                        self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
 
         return self
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
-        """Parse server_tool_call_chunks."""
+        """Parse `server_tool_call_chunks`."""
         if (
             self.chunk_position == "last"
             and self.response_metadata.get("output_version") == "v1"
@@ -596,14 +597,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple ``AIMessageChunk``s together.
+    """Add multiple `AIMessageChunk`s together.
 
     Args:
-        left: The first ``AIMessageChunk``.
-        *others: Other ``AIMessageChunk``s to add.
+        left: The first `AIMessageChunk`.
+        *others: Other `AIMessageChunk`s to add.
 
     Returns:
-        The resulting ``AIMessageChunk``.
+        The resulting `AIMessageChunk`.
 
     """
     content = merge_content(left.content, *(o.content for o in others))
@@ -632,7 +633,7 @@ def add_ai_message_chunks(
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata: Optional[UsageMetadata] = left.usage_metadata
+        usage_metadata: UsageMetadata | None = left.usage_metadata
         for other in others:
             usage_metadata = add_usage(usage_metadata, other.usage_metadata)
     else:
@@ -662,7 +663,7 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
-    chunk_position: Optional[Literal["last"]] = (
+    chunk_position: Literal["last"] | None = (
         "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
     )
 
@@ -677,49 +678,46 @@ def add_ai_message_chunks(
     )
 
 
-def add_usage(
-    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
-) -> UsageMetadata:
+def add_usage(left: UsageMetadata | None, right: UsageMetadata | None) -> UsageMetadata:
     """Recursively add two UsageMetadata objects.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.messages.ai import add_usage
 
-            from langchain_core.messages.ai import add_usage
+        left = UsageMetadata(
+            input_tokens=5,
+            output_tokens=0,
+            total_tokens=5,
+            input_token_details=InputTokenDetails(cache_read=3),
+        )
+        right = UsageMetadata(
+            input_tokens=0,
+            output_tokens=10,
+            total_tokens=10,
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
 
-            left = UsageMetadata(
-                input_tokens=5,
-                output_tokens=0,
-                total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3),
-            )
-            right = UsageMetadata(
-                input_tokens=0,
-                output_tokens=10,
-                total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
-            add_usage(left, right)
+        add_usage(left, right)
+        ```
 
         results in
 
-        .. code-block:: python
-
-            UsageMetadata(
-                input_tokens=5,
-                output_tokens=10,
-                total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
+        ```python
+        UsageMetadata(
+            input_tokens=5,
+            output_tokens=10,
+            total_tokens=15,
+            input_token_details=InputTokenDetails(cache_read=3),
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
+        ```
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The sum of the two ``UsageMetadata`` objects.
+        The sum of the two `UsageMetadata` objects.
 
     """
     if not (left or right):
@@ -740,50 +738,49 @@ def add_usage(
 
 
 def subtract_usage(
-    left: Optional[UsageMetadata], right: Optional[UsageMetadata]
+    left: UsageMetadata | None, right: UsageMetadata | None
 ) -> UsageMetadata:
-    """Recursively subtract two ``UsageMetadata`` objects.
+    """Recursively subtract two `UsageMetadata` objects.
 
-    Token counts cannot be negative so the actual operation is ``max(left - right, 0)``.
+    Token counts cannot be negative so the actual operation is `max(left - right, 0)`.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.messages.ai import subtract_usage
 
-            from langchain_core.messages.ai import subtract_usage
+        left = UsageMetadata(
+            input_tokens=5,
+            output_tokens=10,
+            total_tokens=15,
+            input_token_details=InputTokenDetails(cache_read=4),
+        )
+        right = UsageMetadata(
+            input_tokens=3,
+            output_tokens=8,
+            total_tokens=11,
+            output_token_details=OutputTokenDetails(reasoning=4),
+        )
 
-            left = UsageMetadata(
-                input_tokens=5,
-                output_tokens=10,
-                total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4),
-            )
-            right = UsageMetadata(
-                input_tokens=3,
-                output_tokens=8,
-                total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4),
-            )
-
-            subtract_usage(left, right)
+        subtract_usage(left, right)
+        ```
 
         results in
 
-        .. code-block:: python
-
-            UsageMetadata(
-                input_tokens=2,
-                output_tokens=2,
-                total_tokens=4,
-                input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0),
-            )
-
+        ```python
+        UsageMetadata(
+            input_tokens=2,
+            output_tokens=2,
+            total_tokens=4,
+            input_token_details=InputTokenDetails(cache_read=4),
+            output_token_details=OutputTokenDetails(reasoning=0),
+        )
+        ```
     Args:
-        left: The first ``UsageMetadata`` object.
-        right: The second ``UsageMetadata`` object.
+        left: The first `UsageMetadata` object.
+        right: The second `UsageMetadata` object.
 
     Returns:
-        The resulting ``UsageMetadata`` after subtraction.
+        The resulting `UsageMetadata` after subtraction.
 
     """
     if not (left or right):

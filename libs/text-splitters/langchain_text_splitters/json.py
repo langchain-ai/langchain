@@ -19,9 +19,9 @@ class RecursiveJsonSplitter:
     """
 
     max_chunk_size: int = 2000
-    """The maximum size for each chunk. Defaults to 2000."""
+    """The maximum size for each chunk."""
     min_chunk_size: int = 1800
-    """The minimum size for each chunk, derived from ``max_chunk_size`` if not
+    """The minimum size for each chunk, derived from `max_chunk_size` if not
     explicitly provided."""
 
     def __init__(
@@ -30,12 +30,12 @@ class RecursiveJsonSplitter:
         """Initialize the chunk size configuration for text processing.
 
         This constructor sets up the maximum and minimum chunk sizes, ensuring that
-        the ``min_chunk_size`` defaults to a value slightly smaller than the
-        ``max_chunk_size`` if not explicitly provided.
+        the `min_chunk_size` defaults to a value slightly smaller than the
+        `max_chunk_size` if not explicitly provided.
 
         Args:
-            max_chunk_size: The maximum size for a chunk. Defaults to 2000.
-            min_chunk_size: The minimum size for a chunk. If None,
+            max_chunk_size: The maximum size for a chunk.
+            min_chunk_size: The minimum size for a chunk. If `None`,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
         """
         super().__init__()
@@ -55,14 +55,17 @@ class RecursiveJsonSplitter:
     def _set_nested_dict(
         d: dict[str, Any],
         path: list[str],
-        value: Any,
+        value: Any,  # noqa: ANN401
     ) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def _list_to_dict_preprocessing(self, data: Any) -> Any:
+    def _list_to_dict_preprocessing(
+        self,
+        data: Any,  # noqa: ANN401
+    ) -> Any:  # noqa: ANN401
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
@@ -77,7 +80,7 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: Any,
+        data: Any,  # noqa: ANN401
         current_path: list[str] | None = None,
         chunks: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
@@ -141,7 +144,7 @@ class RecursiveJsonSplitter:
         ensure_ascii: bool = True,  # noqa: FBT001,FBT002
         metadatas: list[dict[Any, Any]] | None = None,
     ) -> list[Document]:
-        """Create documents from a list of json objects (Dict)."""
+        """Create a list of `Document` objects from a list of json objects (`dict`)."""
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):

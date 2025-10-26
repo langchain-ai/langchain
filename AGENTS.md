@@ -149,23 +149,25 @@ def send_email(to: str, msg: str, *, priority: str = "normal") -> bool:
     Args:
         to: The email address of the recipient.
         msg: The message body to send.
-        priority: Email priority level (``'low'``, ``'normal'``, ``'high'``).
+        priority: Email priority level (`'low'`, `'normal'`, `'high'`).
 
     Returns:
-        True if email was sent successfully, False otherwise.
+        `True` if email was sent successfully, `False` otherwise.
 
     Raises:
-        InvalidEmailError: If the email address format is invalid.
-        SMTPConnectionError: If unable to connect to email server.
+        `InvalidEmailError`: If the email address format is invalid.
+        `SMTPConnectionError`: If unable to connect to email server.
     """
 ```
 
 **Documentation Guidelines:**
 
 - Types go in function signatures, NOT in docstrings
+  - If a default is present, DO NOT repeat it in the docstring unless there is post-processing or it is set conditionally.
 - Focus on "why" rather than "what" in descriptions
 - Document all parameters, return values, and exceptions
 - Keep descriptions concise but clear
+- Ensure American English spelling (e.g., "behavior", not "behaviour")
 
 📌 *Tip:* Keep descriptions concise but clear. Only document return values if non-obvious.
 

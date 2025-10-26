@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.chains.qa_with_sources.base import QAWithSourcesChain
+from langchain_classic.chains.qa_with_sources.base import QAWithSourcesChain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

@@ -6,16 +6,16 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 
 !!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
-    We may change the API at any time with no warning.
+    This module is for internal use only. Do not use it in your own code. We may change
+    the API at any time with no warning.
 """
 
 import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Generator
-from typing import Any, Callable, TypeVar, Union, cast
+from collections.abc import Callable, Generator
+from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -27,7 +27,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Callable[..., Any], type])
+T = TypeVar("T", bound=Callable[..., Any] | type)
 
 
 def beta(
@@ -40,40 +40,37 @@ def beta(
     """Decorator to mark a function, a class, or a property as beta.
 
     When marking a classmethod, a staticmethod, or a property, the
-    ``@beta`` decorator should go *under* ``@classmethod`` and
-    ``@staticmethod`` (i.e., `beta` should directly decorate the
-    underlying callable), but *over* ``@property``.
+    `@beta` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `beta` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When marking a class ``C`` intended to be used as a base class in a
-    multiple inheritance hierarchy, ``C`` *must* define an ``__init__`` method
-    (if ``C`` instead inherited its ``__init__`` from its own base class, then
-    ``@beta`` would mess up ``__init__`` inheritance when installing its
-    own (annotation-emitting) ``C.__init__``).
+    When marking a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@beta` would mess up `__init__` inheritance when installing its
+    own (annotation-emitting) `C.__init__`).
 
     Args:
-        message : str, optional
+        message:
             Override the default beta message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the beta object.
-        obj_type : str, optional
+        obj_type:
             The object type being beta.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
 
     Returns:
         A decorator which can be used to mark functions or classes as beta.
 
-    Examples:
-
-        .. code-block:: python
-
-            @beta
-            def the_function_to_annotate():
-                pass
-
+    ```python
+    @beta
+    def the_function_to_annotate():
+        pass
+    ```
     """
 
     def beta(

@@ -1,19 +1,4 @@
-"""**Messages** are objects used in prompts and chat conversations.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage
-                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk
-
-**Main helpers:**
-
-.. code-block::
-
-    ChatPromptTemplate
-
-"""  # noqa: E501
+"""**Messages** are objects used in prompts and chat conversations."""
 
 from typing import TYPE_CHECKING
 

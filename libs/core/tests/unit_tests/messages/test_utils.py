@@ -1,8 +1,8 @@
 import base64
 import json
 import re
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import pytest
 from typing_extensions import override
@@ -743,9 +743,7 @@ class FakeTokenCountingModel(FakeChatModel):
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Optional[
-            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
     ) -> int:
         return dummy_token_counter(messages)
 

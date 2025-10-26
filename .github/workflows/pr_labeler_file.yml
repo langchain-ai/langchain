@@ -12,7 +12,7 @@ on:
 
 jobs:
   labeler:
-    name: 'label'
+    name: "label"
     permissions:
       contents: read
       pull-requests: write
@@ -20,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Label Pull Request
-      uses: actions/labeler@v6
-      with:
-        repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        configuration-path: .github/pr-file-labeler.yml
-        sync-labels: false
+      - name: Label Pull Request
+        uses: actions/labeler@v6
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/pr-file-labeler.yml
+          sync-labels: false

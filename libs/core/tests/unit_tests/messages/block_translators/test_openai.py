@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pytest
 
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
@@ -218,10 +216,10 @@ def test_convert_to_v1_from_responses_chunk() -> None:
             response_metadata={"model_provider": "openai"},
         ),
     ]
-    for chunk, expected in zip(chunks, expected_chunks):
+    for chunk, expected in zip(chunks, expected_chunks, strict=False):
         assert chunk.content_blocks == expected.content_blocks
 
-    full: Optional[AIMessageChunk] = None
+    full: AIMessageChunk | None = None
     for chunk in chunks:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)

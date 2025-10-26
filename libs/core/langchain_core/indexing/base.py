@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from typing_extensions import override
 
@@ -61,7 +61,7 @@ class RecordManager(ABC):
         """Initialize the record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         self.namespace = namespace
 
@@ -100,8 +100,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -128,8 +128,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Asynchronously upsert records into the database.
 
@@ -177,10 +177,10 @@ class RecordManager(ABC):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
@@ -198,10 +198,10 @@ class RecordManager(ABC):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Asynchronously list records in the database based on the provided filters.
 
@@ -233,7 +233,7 @@ class RecordManager(ABC):
 
 
 class _Record(TypedDict):
-    group_id: Optional[str]
+    group_id: str | None
     updated_at: float
 
 
@@ -244,7 +244,7 @@ class InMemoryRecordManager(RecordManager):
         """Initialize the in-memory record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         super().__init__(namespace)
         # Each key points to a dictionary
@@ -270,18 +270,18 @@ class InMemoryRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -307,18 +307,18 @@ class InMemoryRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Async upsert records into the database.
 
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -352,22 +352,22 @@ class InMemoryRecordManager(RecordManager):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -388,22 +388,22 @@ class InMemoryRecordManager(RecordManager):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Async list records in the database based on the provided filters.
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -508,8 +508,6 @@ class DocumentIndex(BaseRetriever):
     1. Storing document in the index.
     2. Fetching document by ID.
     3. Searching for document using a query.
-
-    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod
@@ -522,14 +520,14 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the content already exists in the vectorstore,
         the upsert method should update the content with the new data. If the content
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
         """
@@ -545,14 +543,14 @@ class DocumentIndex(BaseRetriever):
 
         When an ID is specified and the item already exists in the vectorstore,
         the upsert method should update the item with the new data. If the item
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully added or updated in the vectorstore and the list of IDs that
             failed to be added or updated.
         """
@@ -564,24 +562,24 @@ class DocumentIndex(BaseRetriever):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs or other criteria.
 
         Calling delete without any input parameters should raise a ValueError!
 
         Args:
             ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index,
                 or else issue a non-blocking delete etc.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
 
     async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
+        self, ids: list[str] | None = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
 
@@ -589,11 +587,11 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
         return await run_in_executor(
@@ -624,10 +622,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
 
     async def aget(
@@ -650,10 +648,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
         return await run_in_executor(
             None,

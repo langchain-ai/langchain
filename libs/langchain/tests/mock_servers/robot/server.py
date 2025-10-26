@@ -1,7 +1,7 @@
 """A mock Robot server."""
 
 from enum import Enum
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any
 from uuid import uuid4
 
 import uvicorn
@@ -80,8 +80,8 @@ class WalkInput(BaseModel):
     """Input for walking."""
 
     direction: Direction
-    speed: Optional[float]
-    style_or_cautiousness: Union[Style, Cautiousness]
+    speed: float | None
+    style_or_cautiousness: Style | Cautiousness
     other_commands: Any
 
 
@@ -200,7 +200,7 @@ def custom_openapi() -> dict[str, Any]:
 
 # This lets us prevent the "servers" configuration from being overwritten in
 # the auto-generated OpenAPI schema
-app.openapi = custom_openapi
+app.openapi = custom_openapi  # type: ignore[method-assign]
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=PORT)

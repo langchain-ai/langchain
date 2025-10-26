@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Annotated, Any, Literal, Optional, cast
+from typing import Annotated, Any, Literal, cast
 
 import openai
 import pytest
@@ -18,11 +18,12 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI, custom_tool
+from langchain_openai.chat_models.base import _convert_to_openai_response_format
 
 MODEL_NAME = "gpt-4o-mini"
 
 
-def _check_response(response: Optional[BaseMessage]) -> None:
+def _check_response(response: BaseMessage | None) -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     for block in response.content:
@@ -34,7 +35,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
                 if annotation["type"] == "file_citation":
                     assert all(
                         key in annotation
-                        for key in ["file_id", "filename", "index", "type"]
+                        for key in ["file_id", "filename", "file_index", "type"]
                     )
                 elif annotation["type"] == "web_search":
                     assert all(
@@ -69,7 +70,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     _check_response(first_response)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -123,7 +124,7 @@ async def test_web_search_async() -> None:
     assert response.response_metadata["status"]
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -194,7 +195,7 @@ def test_parsed_pydantic_schema(
     assert parsed.response
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("how are ya", response_format=Foo):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -212,7 +213,7 @@ async def test_parsed_pydantic_schema_async() -> None:
     assert parsed.response
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream("how are ya", response_format=Foo):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -233,7 +234,7 @@ def test_parsed_dict_schema(schema: Any) -> None:
     assert isinstance(parsed["response"], str)
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("how are ya", response_format=schema):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -247,24 +248,30 @@ def test_parsed_dict_schema(schema: Any) -> None:
 def test_parsed_strict() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
 
-    class InvalidJoke(TypedDict):
+    class Joke(TypedDict):
         setup: Annotated[str, ..., "The setup of the joke"]
         punchline: Annotated[str, None, "The punchline of the joke"]
 
+    schema = _convert_to_openai_response_format(Joke)
+    invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
+
     # Test not strict
-    response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
+    response = llm.invoke("Tell me a joke", response_format=schema)
     parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
 
     # Test strict
     with pytest.raises(openai.BadRequestError):
         llm.invoke(
-            "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+            "Tell me a joke about cats.", response_format=invalid_schema, strict=True
         )
     with pytest.raises(openai.BadRequestError):
         next(
             llm.stream(
-                "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+                "Tell me a joke about cats.",
+                response_format=invalid_schema,
+                strict=True,
             )
         )
 
@@ -280,7 +287,7 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     assert isinstance(parsed["response"], str)
 
     # Test stream
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream("how are ya", response_format=schema):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -325,7 +332,7 @@ def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
         model="o4-mini", reasoning={"effort": "low"}, output_version=output_version
     )
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("Hello"):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -374,27 +381,67 @@ def test_computer_calls() -> None:
     assert response.additional_kwargs["tool_outputs"]
 
 
-def test_file_search() -> None:
-    pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+@pytest.mark.default_cassette("test_file_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_file_search(
+    output_version: Literal["responses/v1", "v1"],
+) -> None:
+    vector_store_id = os.getenv("OPENAI_VECTOR_STORE_ID")
+    if not vector_store_id:
+        pytest.skip()
+
+    llm = ChatOpenAI(
+        model=MODEL_NAME,
+        use_responses_api=True,
+        output_version=output_version,
+    )
     tool = {
         "type": "file_search",
-        "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
+        "vector_store_ids": [vector_store_id],
     }
 
     input_message = {"role": "user", "content": "What is deep research by OpenAI?"}
     response = llm.invoke([input_message], tools=[tool])
     _check_response(response)
 
-    full: Optional[BaseMessageChunk] = None
+    if output_version == "v1":
+        assert [block["type"] for block in response.content] == [  # type: ignore[index]
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
+    else:
+        assert [block["type"] for block in response.content] == [  # type: ignore[index]
+            "file_search_call",
+            "text",
+        ]
+
+    full: AIMessageChunk | None = None
     for chunk in llm.stream([input_message], tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
 
+    if output_version == "v1":
+        assert [block["type"] for block in full.content] == [  # type: ignore[index]
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
+    else:
+        assert [block["type"] for block in full.content] == ["file_search_call", "text"]  # type: ignore[index]
+
     next_message = {"role": "user", "content": "Thank you."}
     _ = llm.invoke([input_message, full, next_message])
+
+    for message in [response, full]:
+        assert [block["type"] for block in message.content_blocks] == [
+            "server_tool_call",
+            "server_tool_result",
+            "text",
+        ]
 
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
@@ -413,7 +460,7 @@ def test_stream_reasoning_summary(
         "role": "user",
         "content": "What was the third tallest buliding in the year 2000?",
     }
-    response_1: Optional[BaseMessageChunk] = None
+    response_1: BaseMessageChunk | None = None
     for chunk in llm.stream([message_1]):
         assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
@@ -520,7 +567,7 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         [{"type": "code_interpreter", "container": container_id}]
     )
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -624,7 +671,7 @@ def test_mcp_builtin_zdr() -> None:
             "spec (modelcontextprotocol/modelcontextprotocol) support?"
         ),
     }
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -678,7 +725,7 @@ def test_mcp_builtin_zdr_v1() -> None:
             "spec (modelcontextprotocol/modelcontextprotocol) support?"
         ),
     }
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -756,7 +803,7 @@ def test_image_generation_streaming(
         "type",
     }
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -801,7 +848,7 @@ def test_image_generation_streaming_v1() -> None:
         "status",
     }
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
@@ -1029,7 +1076,7 @@ def test_custom_tool(output_version: Literal["responses/v1", "v1"]) -> None:
     assert isinstance(response, AIMessage)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk

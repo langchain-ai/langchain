@@ -5,7 +5,6 @@ from importlib import util
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.runnables import Runnable
 
 _SUPPORTED_PROVIDERS = {
     "azure_openai": "langchain_openai",
@@ -36,13 +35,13 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Returns:
         A tuple of (provider, model_name)
 
-    .. code-block:: python
+    ```python
+    _parse_model_string("openai:text-embedding-3-small")
+    # Returns: ("openai", "text-embedding-3-small")
 
-        _parse_model_string("openai:text-embedding-3-small")
-        # Returns: ("openai", "text-embedding-3-small")
-
-        _parse_model_string("bedrock:amazon.titan-embed-text-v1")
-        # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+    _parse_model_string("bedrock:amazon.titan-embed-text-v1")
+    # Returns: ("bedrock", "amazon.titan-embed-text-v1")
+    ```
 
     Raises:
         ValueError: If the model string is not in the correct format or
@@ -126,47 +125,61 @@ def init_embeddings(
     *,
     provider: str | None = None,
     **kwargs: Any,
-) -> Embeddings | Runnable[Any, list[float]]:
+) -> Embeddings:
     """Initialize an embeddings model from a model name and optional provider.
 
-    **Note:** Must have the integration package corresponding to the model provider
-    installed.
+    !!! note
+        Must have the integration package corresponding to the model provider
+        installed.
 
     Args:
-        model: Name of the model to use. Can be either:
-            - A model string like "openai:text-embedding-3-small"
-            - Just the model name if provider is specified
-        provider: Optional explicit provider name. If not specified,
-            will attempt to parse from the model string. Supported providers
-            and their required packages:
+        model: Name of the model to use.
 
-            {_get_provider_list()}
+            Can be either:
+
+            - A model string like `"openai:text-embedding-3-small"`
+            - Just the model name if the provider is specified separately or can be
+                inferred.
+
+            See supported providers under the `provider` arg description.
+        provider: Optional explicit provider name. If not specified, will attempt to
+            parse from the model string in the `model` arg.
+
+            Supported providers:
+
+            - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
+            - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
+            - `mistraiai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
             These vary by provider, see the provider-specific documentation for details.
 
     Returns:
-        An Embeddings instance that can generate embeddings for text.
+        An `Embeddings` instance that can generate embeddings for text.
 
     Raises:
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    ??? note "Example Usage"
-        :open:
+    ???+ note "Example Usage"
 
-        .. code-block:: python
+        ```python
+        # Using a model string
+        model = init_embeddings("openai:text-embedding-3-small")
+        model.embed_query("Hello, world!")
 
-            # Using a model string
-            model = init_embeddings("openai:text-embedding-3-small")
-            model.embed_query("Hello, world!")
+        # Using explicit provider
+        model = init_embeddings(model="text-embedding-3-small", provider="openai")
+        model.embed_documents(["Hello, world!", "Goodbye, world!"])
 
-            # Using explicit provider
-            model = init_embeddings(model="text-embedding-3-small", provider="openai")
-            model.embed_documents(["Hello, world!", "Goodbye, world!"])
-
-            # With additional parameters
-            model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
+        # With additional parameters
+        model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
+        ```
 
     !!! version-added "Added in version 0.3.9"
 

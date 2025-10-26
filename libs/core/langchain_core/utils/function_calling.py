@@ -8,13 +8,12 @@ import logging
 import types
 import typing
 import uuid
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
     Union,
     cast,
     get_args,
@@ -28,7 +27,7 @@ from pydantic.v1 import create_model as create_model_v1
 from typing_extensions import TypedDict, is_typeddict
 
 import langchain_core
-from langchain_core._api import beta, deprecated
+from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -73,11 +72,11 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     except when a "title" appears within a property definition under "properties".
 
     Args:
-        kv (dict): The input JSON schema as a dictionary.
-        prev_key (str): The key from the parent dictionary, used to identify context.
+        kv: The input JSON schema as a dictionary.
+        prev_key: The key from the parent dictionary, used to identify context.
 
     Returns:
-        dict: A new dictionary with appropriate "title" fields removed.
+        A new dictionary with appropriate "title" fields removed.
     """
     new_kv = {}
 
@@ -103,8 +102,8 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 def _convert_json_schema_to_openai_function(
     schema: dict,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
@@ -115,7 +114,7 @@ def _convert_json_schema_to_openai_function(
             used.
         description: The description of the function. If not provided, the description
             of the schema will be used.
-        rm_titles: Whether to remove titles from the schema. Defaults to True.
+        rm_titles: Whether to remove titles from the schema.
 
     Returns:
         The function description.
@@ -137,8 +136,8 @@ def _convert_json_schema_to_openai_function(
 def _convert_pydantic_to_openai_function(
     model: type,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     rm_titles: bool = True,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the OpenAI API.
@@ -149,7 +148,7 @@ def _convert_pydantic_to_openai_function(
             used.
         description: The description of the function. If not provided, the description
             of the schema will be used.
-        rm_titles: Whether to remove titles from the schema. Defaults to True.
+        rm_titles: Whether to remove titles from the schema.
 
     Raises:
         TypeError: If the model is not a Pydantic model.
@@ -167,42 +166,6 @@ def _convert_pydantic_to_openai_function(
     return _convert_json_schema_to_openai_function(
         schema, name=name, description=description, rm_titles=rm_titles
     )
-
-
-convert_pydantic_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_convert_pydantic_to_openai_function)
-
-
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="1.0",
-)
-def convert_pydantic_to_openai_tool(
-    model: type[BaseModel],
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-) -> ToolDescription:
-    """Converts a Pydantic model to a function description for the OpenAI API.
-
-    Args:
-        model: The Pydantic model to convert.
-        name: The name of the function. If not provided, the title of the schema will be
-            used.
-        description: The description of the function. If not provided, the description
-            of the schema will be used.
-
-    Returns:
-        The tool description.
-    """
-    function = _convert_pydantic_to_openai_function(
-        model, name=name, description=description
-    )
-    return {"type": "function", "function": function}
 
 
 def _get_python_function_name(function: Callable) -> str:
@@ -239,13 +202,6 @@ def _convert_python_function_to_openai_function(
         name=func_name,
         description=model.__doc__,
     )
-
-
-convert_python_function_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_convert_python_function_to_openai_function)
 
 
 def _convert_typed_dict_to_openai_function(typed_dict: type) -> FunctionDescription:
@@ -285,7 +241,9 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
                 )
-                field_kwargs = dict(zip(("default", "description"), annotated_args[1:]))
+                field_kwargs = dict(
+                    zip(("default", "description"), annotated_args[1:], strict=False)
+                )
                 if (field_desc := field_kwargs.get("description")) and not isinstance(
                     field_desc, str
                 ):
@@ -367,48 +325,23 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     }
 
 
-format_tool_to_openai_function = deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="1.0",
-)(_format_tool_to_openai_function)
-
-
-@deprecated(
-    "0.1.16",
-    alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="1.0",
-)
-def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
-    """Format tool into the OpenAI function API.
-
-    Args:
-        tool: The tool to format.
-
-    Returns:
-        The tool description.
-    """
-    function = _format_tool_to_openai_function(tool)
-    return {"type": "function", "function": function}
-
-
 def convert_to_openai_function(
-    function: Union[dict[str, Any], type, Callable, BaseTool],
+    function: dict[str, Any] | type | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
     Args:
         function:
-            A dictionary, Pydantic BaseModel class, TypedDict class, a LangChain
-            Tool object, or a Python function. If a dictionary is passed in, it is
+            A dictionary, Pydantic `BaseModel` class, `TypedDict` class, a LangChain
+            `Tool` object, or a Python function. If a dictionary is passed in, it is
             assumed to already be a valid OpenAI function, a JSON schema with
-            top-level 'title' key specified, an Anthropic format
-            tool, or an Amazon Bedrock Converse format tool.
+            top-level `title` key specified, an Anthropic format tool, or an Amazon
+            Bedrock Converse format tool.
         strict:
-            If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, `strict` argument will not
             be included in function definition.
 
     Returns:
@@ -418,17 +351,8 @@ def convert_to_openai_function(
     Raises:
         ValueError: If function is not in a supported format.
 
-    !!! warning "Behavior changed in 0.2.29"
-        ``strict`` arg added.
-
-    !!! warning "Behavior changed in 0.3.13"
-        Support for Anthropic format tools added.
-
-    !!! warning "Behavior changed in 0.3.14"
-        Support for Amazon Bedrock Converse format tools added.
-
     !!! warning "Behavior changed in 0.3.16"
-        'description' and 'parameters' keys are now optional. Only 'name' is
+        `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
     # an Anthropic format tool
@@ -501,6 +425,14 @@ def convert_to_openai_function(
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
+            # All fields must be `required`
+            parameters = oai_function.get("parameters")
+            if isinstance(parameters, dict):
+                fields = parameters.get("properties")
+                if isinstance(fields, dict) and fields:
+                    parameters = dict(parameters)
+                    parameters["required"] = list(fields.keys())
+                    oai_function["parameters"] = parameters
     return oai_function
 
 
@@ -520,51 +452,37 @@ _WellKnownOpenAITools = (
 
 
 def convert_to_openai_tool(
-    tool: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    tool: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a tool-like object to an OpenAI tool schema.
 
-    OpenAI tool schema reference:
-    https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools
+    [OpenAI tool schema reference](https://platform.openai.com/docs/api-reference/chat/create#chat-create-tools)
 
     Args:
         tool:
-            Either a dictionary, a pydantic.BaseModel class, Python function, or
-            BaseTool. If a dictionary is passed in, it is
-            assumed to already be a valid OpenAI function, a JSON schema with
-            top-level 'title' key specified, an Anthropic format
-            tool, or an Amazon Bedrock Converse format tool.
+            Either a dictionary, a `pydantic.BaseModel` class, Python function, or
+            `BaseTool`. If a dictionary is passed in, it is assumed to already be a
+            valid OpenAI function, a JSON schema with top-level `title` key specified,
+            an Anthropic format tool, or an Amazon Bedrock Converse format tool.
         strict:
-            If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+            If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, `strict` argument will not
             be included in tool definition.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
 
-    !!! warning "Behavior changed in 0.2.29"
-        ``strict`` arg added.
-
-    !!! warning "Behavior changed in 0.3.13"
-        Support for Anthropic format tools added.
-
-    !!! warning "Behavior changed in 0.3.14"
-        Support for Amazon Bedrock Converse format tools added.
-
     !!! warning "Behavior changed in 0.3.16"
-        'description' and 'parameters' keys are now optional. Only 'name' is
+        `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
     !!! warning "Behavior changed in 0.3.44"
         Return OpenAI Responses API-style tools unchanged. This includes
-        any dict with "type" in "file_search", "function", "computer_use_preview",
-        "web_search_preview".
-
-    !!! warning "Behavior changed in 0.3.61"
-        Added support for OpenAI's built-in code interpreter and remote MCP tools.
+        any dict with `"type"` in `"file_search"`, `"function"`,
+        `"computer_use_preview"`, `"web_search_preview"`.
 
     !!! warning "Behavior changed in 0.3.63"
         Added support for OpenAI's image generation built-in tool.
@@ -592,16 +510,16 @@ def convert_to_openai_tool(
 
 
 def convert_to_json_schema(
-    schema: Union[dict[str, Any], type[BaseModel], Callable, BaseTool],
+    schema: dict[str, Any] | type[BaseModel] | Callable | BaseTool,
     *,
-    strict: Optional[bool] = None,
+    strict: bool | None = None,
 ) -> dict[str, Any]:
     """Convert a schema representation to a JSON schema.
 
     Args:
         schema: The schema to convert.
-        strict: If True, model output is guaranteed to exactly match the JSON Schema
-            provided in the function definition. If None, ``strict`` argument will not
+        strict: If `True`, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If `None`, `strict` argument will not
             be included in function definition.
 
     Raises:
@@ -637,9 +555,9 @@ def convert_to_json_schema(
 def tool_example_to_messages(
     input: str,
     tool_calls: list[BaseModel],
-    tool_outputs: Optional[list[str]] = None,
+    tool_outputs: list[str] | None = None,
     *,
-    ai_response: Optional[str] = None,
+    ai_response: str | None = None,
 ) -> list[BaseMessage]:
     """Convert an example into a list of messages that can be fed into an LLM.
 
@@ -648,15 +566,15 @@ def tool_example_to_messages(
 
     The list of messages per example by default corresponds to:
 
-    1. ``HumanMessage``: contains the content from which content should be extracted.
-    2. ``AIMessage``: contains the extracted information from the model
-    3. ``ToolMessage``: contains confirmation to the model that the model requested a
-       tool correctly.
+    1. `HumanMessage`: contains the content from which content should be extracted.
+    2. `AIMessage`: contains the extracted information from the model
+    3. `ToolMessage`: contains confirmation to the model that the model requested a
+        tool correctly.
 
-    If ``ai_response`` is specified, there will be a final ``AIMessage`` with that
+    If `ai_response` is specified, there will be a final `AIMessage` with that
     response.
 
-    The ``ToolMessage`` is required because some chat models are hyper-optimized for
+    The `ToolMessage` is required because some chat models are hyper-optimized for
     agents rather than for an extraction use case.
 
     Args:
@@ -664,50 +582,46 @@ def tool_example_to_messages(
         tool_calls: Tool calls represented as Pydantic BaseModels
         tool_outputs: Tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
-            will be inserted. Defaults to None.
-        ai_response: If provided, content for a final ``AIMessage``.
+            will be inserted.
+        ai_response: If provided, content for a final `AIMessage`.
 
     Returns:
         A list of messages
 
     Examples:
-
-        .. code-block:: python
-
-            from typing import Optional
-            from pydantic import BaseModel, Field
-            from langchain_openai import ChatOpenAI
+        ```python
+        from typing import Optional
+        from pydantic import BaseModel, Field
+        from langchain_openai import ChatOpenAI
 
 
-            class Person(BaseModel):
-                '''Information about a person.'''
+        class Person(BaseModel):
+            '''Information about a person.'''
 
-                name: Optional[str] = Field(..., description="The name of the person")
-                hair_color: Optional[str] = Field(
-                    ..., description="The color of the person's hair if known"
-                )
-                height_in_meters: Optional[str] = Field(
-                    ..., description="Height in METERS"
-                )
+            name: str | None = Field(..., description="The name of the person")
+            hair_color: str | None = Field(
+                ..., description="The color of the person's hair if known"
+            )
+            height_in_meters: str | None = Field(..., description="Height in METERS")
 
 
-            examples = [
-                (
-                    "The ocean is vast and blue. It's more than 20,000 feet deep.",
-                    Person(name=None, height_in_meters=None, hair_color=None),
-                ),
-                (
-                    "Fiona traveled far from France to Spain.",
-                    Person(name="Fiona", height_in_meters=None, hair_color=None),
-                ),
-            ]
+        examples = [
+            (
+                "The ocean is vast and blue. It's more than 20,000 feet deep.",
+                Person(name=None, height_in_meters=None, hair_color=None),
+            ),
+            (
+                "Fiona traveled far from France to Spain.",
+                Person(name="Fiona", height_in_meters=None, hair_color=None),
+            ),
+        ]
 
 
-            messages = []
+        messages = []
 
-            for txt, tool_call in examples:
-                messages.extend(tool_example_to_messages(txt, [tool_call]))
-
+        for txt, tool_call in examples:
+            messages.extend(tool_example_to_messages(txt, [tool_call]))
+        ```
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = [
@@ -716,7 +630,7 @@ def tool_example_to_messages(
             "type": "function",
             "function": {
                 # The name of the function right now corresponds to the name
-                # of the pydantic model. This is implicit in the API right now,
+                # of the Pydantic model. This is implicit in the API right now,
                 # and will be improved over time.
                 "name": tool_call.__class__.__name__,
                 "arguments": tool_call.model_dump_json(),
@@ -731,7 +645,7 @@ def tool_example_to_messages(
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
-    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
+    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls, strict=False):
         messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))
 
     if ai_response:
@@ -740,7 +654,7 @@ def tool_example_to_messages(
 
 
 def _parse_google_docstring(
-    docstring: Optional[str],
+    docstring: str | None,
     args: list[str],
     *,
     error_on_invalid_docstring: bool = False,

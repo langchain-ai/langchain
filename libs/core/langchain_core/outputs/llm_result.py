@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ class LLMResult(BaseModel):
     """
 
     generations: list[
-        list[Union[Generation, ChatGeneration, GenerationChunk, ChatGenerationChunk]]
+        list[Generation | ChatGeneration | GenerationChunk | ChatGenerationChunk]
     ]
     """Generated outputs.
 
@@ -30,13 +30,13 @@ class LLMResult(BaseModel):
     The second dimension of the list represents different candidate generations for a
     given prompt.
 
-    - When returned from **an LLM**, the type is ``list[list[Generation]]``.
-    - When returned from a **chat model**, the type is ``list[list[ChatGeneration]]``.
+    - When returned from **an LLM**, the type is `list[list[Generation]]`.
+    - When returned from a **chat model**, the type is `list[list[ChatGeneration]]`.
 
     ChatGeneration is a subclass of Generation that has a field for a structured chat
     message.
     """
-    llm_output: Optional[dict] = None
+    llm_output: dict | None = None
     """For arbitrary LLM provider specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the
@@ -45,7 +45,7 @@ class LLMResult(BaseModel):
     Users should generally avoid relying on this field and instead rely on accessing
     relevant information from standardized fields present in AIMessage.
     """
-    run: Optional[list[RunInfo]] = None
+    run: list[RunInfo] | None = None
     """List of metadata info for model call for each input.
 
     See `langchain_core.outputs.run_info.RunInfo` for details.
@@ -91,13 +91,13 @@ class LLMResult(BaseModel):
         return llm_results
 
     def __eq__(self, other: object) -> bool:
-        """Check for ``LLMResult`` equality by ignoring any metadata related to runs.
+        """Check for `LLMResult` equality by ignoring any metadata related to runs.
 
         Args:
-            other: Another ``LLMResult`` object to compare against.
+            other: Another `LLMResult` object to compare against.
 
         Returns:
-            True if the generations and ``llm_output`` are equal, False otherwise.
+            `True` if the generations and `llm_output` are equal, `False` otherwise.
         """
         if not isinstance(other, LLMResult):
             return NotImplemented

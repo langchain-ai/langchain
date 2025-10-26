@@ -13,7 +13,7 @@ def get_package_root(cwd: Path | None = None) -> Path:
 
     Args:
         cwd: The current working directory to start the search from.
-            If None, uses the current working directory of the process.
+            If `None`, uses the current working directory of the process.
 
     Returns:
         The path to the package root directory.

@@ -1,6 +1,13 @@
-"""langgraph.prebuilt exposes a higher-level API for creating and executing agents and tools."""
+"""Entrypoint to building [Agents](https://docs.langchain.com/oss/python/langchain/agents) with LangChain.
 
-from langchain.agents.react_agent import AgentState, create_agent
+!!! warning "Reference docs"
+    This page contains **reference documentation** for Agents. See
+    [the docs](https://docs.langchain.com/oss/python/langchain/agents) for conceptual
+    guides, tutorials, and examples on using Agents.
+"""  # noqa: E501
+
+from langchain.agents.factory import create_agent
+from langchain.agents.middleware.types import AgentState
 
 __all__ = [
     "AgentState",

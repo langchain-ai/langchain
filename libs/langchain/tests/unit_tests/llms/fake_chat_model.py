@@ -2,7 +2,7 @@
 
 import re
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -26,8 +26,8 @@ class FakeChatModel(SimpleChatModel):
     def _call(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         return "fake response"
@@ -36,8 +36,8 @@ class FakeChatModel(SimpleChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         output_str = "fake response"
@@ -58,20 +58,20 @@ class GenericFakeChatModel(BaseChatModel):
     """A generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
-    * Invokes ``on_llm_new_token`` to allow for testing of callback related code for new
-      tokens.
+    * Invokes `on_llm_new_token` to allow for testing of callback related code for new
+        tokens.
     * Includes logic to break messages into message chunk to facilitate testing of
-      streaming.
+        streaming.
     """
 
     messages: Iterator[AIMessage]
     """Get an iterator over messages.
 
-    This can be expanded to accept other types like ``Callables`` / dicts / strings
+    This can be expanded to accept other types like `Callables` / dicts / strings
     to make the interface more generic if needed.
 
     !!! note
-        If you want to pass a list, you can use ``iter`` to convert it to an iterator.
+        If you want to pass a list, you can use `iter` to convert it to an iterator.
 
     !!! warning
         Streaming is not implemented yet. We should try to implement it in the future by
@@ -83,8 +83,8 @@ class GenericFakeChatModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
@@ -95,8 +95,8 @@ class GenericFakeChatModel(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
@@ -201,8 +201,8 @@ class GenericFakeChatModel(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Stream the output of the model."""

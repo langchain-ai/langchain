@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -8,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
-from langchain.chat_models.base import __all__, init_chat_model
+from langchain_classic.chat_models.base import __all__, init_chat_model
 
 EXPECTED_ALL = [
     "BaseChatModel",
@@ -38,7 +37,7 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     llm1: BaseChatModel = init_chat_model(
         model_name,
         model_provider=model_provider,
@@ -71,25 +70,23 @@ def test_configurable() -> None:
     """Test configurable chat model behavior without default parameters.
 
     Verifies that a configurable chat model initialized without default parameters:
-    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
+    - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
     - Blocks access to non-configurable methods until configuration is provided
-    - Supports declarative operations (``bind_tools``) without mutating original model
+    - Supports declarative operations (`bind_tools`) without mutating original model
     - Can chain declarative operations and configuration to access full functionality
     - Properly resolves to the configured model type when parameters are provided
 
     Example:
+    ```python
+    # This creates a configurable model without specifying which model
+    model = init_chat_model()
 
-    .. code-block:: python
+    # This will FAIL - no model specified yet
+    model.get_num_tokens("hello")  # AttributeError!
 
-        # This creates a configurable model without specifying which model
-        model = init_chat_model()
-
-        # This will FAIL - no model specified yet
-        model.get_num_tokens("hello")  # AttributeError!
-
-        # This works - provides model at runtime
-        response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
-
+    # This works - provides model at runtime
+    response = model.invoke("Hello", config={"configurable": {"model": "gpt-4o"}})
+    ```
     """
     model = init_chat_model()
 
@@ -168,7 +165,7 @@ def test_configurable() -> None:
             "store": None,
             "extra_body": None,
             "include_response_headers": False,
-            "stream_usage": False,
+            "stream_usage": True,
             "use_previous_response_id": False,
             "use_responses_api": None,
         },
@@ -197,30 +194,26 @@ def test_configurable_with_default() -> None:
     """Test configurable chat model behavior with default parameters.
 
     Verifies that a configurable chat model initialized with default parameters:
-    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
-    - Provides immediate access to non-configurable methods (e.g. ``get_num_tokens``)
-    - Supports model switching through runtime configuration using ``config_prefix``
+    - Has access to all standard runnable methods (`invoke`, `stream`, etc.)
+    - Provides immediate access to non-configurable methods (e.g. `get_num_tokens`)
+    - Supports model switching through runtime configuration using `config_prefix`
     - Maintains proper model identity and attributes when reconfigured
     - Can be used in chains with different model providers via configuration
 
     Example:
+    ```python
+    # This creates a configurable model with default parameters (model)
+    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
 
-    .. code-block:: python
+    # This works immediately - uses default gpt-4o
+    tokens = model.get_num_tokens("hello")
 
-        # This creates a configurable model with default parameters (model)
-        model = init_chat_model(
-            "gpt-4o", configurable_fields="any", config_prefix="bar"
-        )
-
-        # This works immediately - uses default gpt-4o
-        tokens = model.get_num_tokens("hello")
-
-        # This also works - switches to Claude at runtime
-        response = model.invoke(
-            "Hello",
-            config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}},
-        )
-
+    # This also works - switches to Claude at runtime
+    response = model.invoke(
+        "Hello",
+        config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}},
+    )
+    ```
     """
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
