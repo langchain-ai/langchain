@@ -67,9 +67,9 @@ class LLMResult(BaseModel):
                 Generation.
         """
         llm_results = []
-        for gen_list in self.generations:
+        for i, gen_list in enumerate(self.generations):
             # Avoid double counting tokens in OpenAICallback
-            if len(llm_results) == 0:
+            if i == 0:
                 llm_results.append(
                     LLMResult(
                         generations=[gen_list],
