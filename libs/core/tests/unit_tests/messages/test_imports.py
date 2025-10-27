@@ -55,6 +55,9 @@ EXPECTED_ALL = [
     "convert_to_openai_data_block",
     "convert_to_openai_image_block",
     "convert_to_openai_messages",
+    "UsageMetadata",
+    "InputTokenDetails",
+    "OutputTokenDetails",
 ]
 
 
