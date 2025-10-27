@@ -3043,7 +3043,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         @tool
         def get_weather(location: str) -> str:  # noqa: ARG001
-            """Call to surf the web."""
+            """Get the weather at a location."""
             return "It's sunny."
 
         llm_with_tools = model.bind_tools([get_weather])
