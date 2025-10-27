@@ -266,7 +266,7 @@ def _error(msg: str) -> None:
 
 
 def _generate_immediate_error(_: Iterator) -> Iterator[str]:
-    _error("immmediate error")
+    _error("immediate error")
     yield ""
 
 

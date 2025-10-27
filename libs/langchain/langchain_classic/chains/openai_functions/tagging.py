@@ -41,7 +41,7 @@ Passage:
         "See API reference for this function for replacement: <"
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html"
         "> You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/docs/how_to/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -84,7 +84,7 @@ def create_tagging_chain(
     )
     ```
 
-    Read more here: https://python.langchain.com/docs/how_to/structured_output/
+    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
 
     Args:
         schema: The schema of the entities to extract.
@@ -117,7 +117,7 @@ def create_tagging_chain(
         "See API reference for this function for replacement: <"
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html"
         "> You can read more about `with_structured_output` here: "
-        "<https://python.langchain.com/docs/how_to/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "If you notice other issues, please provide "
         "feedback here: "
         "<https://github.com/langchain-ai/langchain/discussions/18154>"
@@ -160,7 +160,7 @@ def create_tagging_chain_pydantic(
     )
     ```
 
-    Read more here: https://python.langchain.com/docs/how_to/structured_output/
+    Read more here: https://docs.langchain.com/oss/python/langchain/models#structured-outputs
 
     Args:
         pydantic_schema: The Pydantic schema of the entities to extract.
