@@ -3,7 +3,7 @@
 import importlib
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core._api import beta
 from langchain_core.load.mapping import (
@@ -50,12 +50,11 @@ class Reviver:
 
     def __init__(
         self,
-        secrets_map: Optional[dict[str, str]] = None,
-        valid_namespaces: Optional[list[str]] = None,
+        secrets_map: dict[str, str] | None = None,
+        valid_namespaces: list[str] | None = None,
         secrets_from_env: bool = True,  # noqa: FBT001,FBT002
-        additional_import_mappings: Optional[
-            dict[tuple[str, ...], tuple[str, ...]]
-        ] = None,
+        additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]]
+        | None = None,
         *,
         ignore_unserializable_fields: bool = False,
     ) -> None:
@@ -64,16 +63,13 @@ class Reviver:
         Args:
             secrets_map: A map of secrets to load. If a secret is not found in
                 the map, it will be loaded from the environment if `secrets_from_env`
-                is True. Defaults to None.
+                is True.
             valid_namespaces: A list of additional namespaces (modules)
-                to allow to be deserialized. Defaults to None.
+                to allow to be deserialized.
             secrets_from_env: Whether to load secrets from the environment.
-                Defaults to True.
             additional_import_mappings: A dictionary of additional namespace mappings
                 You can use this to override default mappings or add new mappings.
-                Defaults to None.
             ignore_unserializable_fields: Whether to ignore unserializable fields.
-                Defaults to False.
         """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or {}
@@ -108,7 +104,7 @@ class Reviver:
             ValueError: If trying to deserialize something that cannot
                 be deserialized in the current version of langchain-core.
             NotImplementedError: If the object is not implemented and
-                ``ignore_unserializable_fields`` is False.
+                `ignore_unserializable_fields` is False.
         """
         if (
             value.get("lc") == 1
@@ -187,10 +183,10 @@ class Reviver:
 def loads(
     text: str,
     *,
-    secrets_map: Optional[dict[str, str]] = None,
-    valid_namespaces: Optional[list[str]] = None,
+    secrets_map: dict[str, str] | None = None,
+    valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON string.
@@ -201,16 +197,13 @@ def loads(
         text: The string to load.
         secrets_map: A map of secrets to load. If a secret is not found in
             the map, it will be loaded from the environment if `secrets_from_env`
-            is True. Defaults to None.
+            is True.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized. Defaults to None.
+            to allow to be deserialized.
         secrets_from_env: Whether to load secrets from the environment.
-            Defaults to True.
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
-            Defaults to None.
         ignore_unserializable_fields: Whether to ignore unserializable fields.
-            Defaults to False.
 
     Returns:
         Revived LangChain objects.
@@ -231,10 +224,10 @@ def loads(
 def load(
     obj: Any,
     *,
-    secrets_map: Optional[dict[str, str]] = None,
-    valid_namespaces: Optional[list[str]] = None,
+    secrets_map: dict[str, str] | None = None,
+    valid_namespaces: list[str] | None = None,
     secrets_from_env: bool = True,
-    additional_import_mappings: Optional[dict[tuple[str, ...], tuple[str, ...]]] = None,
+    additional_import_mappings: dict[tuple[str, ...], tuple[str, ...]] | None = None,
     ignore_unserializable_fields: bool = False,
 ) -> Any:
     """Revive a LangChain class from a JSON object.
@@ -246,16 +239,13 @@ def load(
         obj: The object to load.
         secrets_map: A map of secrets to load. If a secret is not found in
             the map, it will be loaded from the environment if `secrets_from_env`
-            is True. Defaults to None.
+            is True.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized. Defaults to None.
+            to allow to be deserialized.
         secrets_from_env: Whether to load secrets from the environment.
-            Defaults to True.
         additional_import_mappings: A dictionary of additional namespace mappings
             You can use this to override default mappings or add new mappings.
-            Defaults to None.
         ignore_unserializable_fields: Whether to ignore unserializable fields.
-            Defaults to False.
 
     Returns:
         Revived LangChain objects.

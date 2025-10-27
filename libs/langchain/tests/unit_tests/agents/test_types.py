@@ -1,5 +1,5 @@
-from langchain.agents.agent_types import AgentType
-from langchain.agents.types import AGENT_TO_CLASS
+from langchain_classic.agents.agent_types import AgentType
+from langchain_classic.agents.types import AGENT_TO_CLASS
 
 
 def test_confirm_full_coverage() -> None:

@@ -1,3 +1,5 @@
+"""Check that no dependencies allow prereleases unless we're releasing a prerelease."""
+
 import sys
 
 import tomllib
@@ -6,15 +8,14 @@ if __name__ == "__main__":
     # Get the TOML file path from the command line argument
     toml_file = sys.argv[1]
 
-    # read toml file
     with open(toml_file, "rb") as file:
         toml_data = tomllib.load(file)
 
-    # see if we're releasing an rc
+    # See if we're releasing an rc or dev version
     version = toml_data["project"]["version"]
     releasing_rc = "rc" in version or "dev" in version
 
-    # if not, iterate through dependencies and make sure none allow prereleases
+    # If not, iterate through dependencies and make sure none allow prereleases
     if not releasing_rc:
         dependencies = toml_data["project"]["dependencies"]
         for dep_version in dependencies:

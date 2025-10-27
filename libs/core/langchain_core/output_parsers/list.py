@@ -7,7 +7,7 @@ import re
 from abc import abstractmethod
 from collections import deque
 from io import StringIO
-from typing import TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import override
 
@@ -70,9 +70,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         raise NotImplementedError
 
     @override
-    def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[list[str]]:
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[list[str]]:
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -105,7 +103,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[list[str]]:
         buffer = ""
         async for chunk in input:
@@ -148,10 +146,10 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "output_parsers", "list"]``
+            `["langchain", "output_parsers", "list"]`
         """
         return ["langchain", "output_parsers", "list"]
 

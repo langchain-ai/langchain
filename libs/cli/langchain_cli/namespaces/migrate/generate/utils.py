@@ -6,7 +6,6 @@ import os
 import pathlib
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
 
 from typing_extensions import override
 
@@ -22,7 +21,7 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 class ImportExtractor(ast.NodeVisitor):
     """Import extractor."""
 
-    def __init__(self, *, from_package: Optional[str] = None) -> None:
+    def __init__(self, *, from_package: str | None = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
         self.imports: list[tuple[str, str]] = []
         self.package = from_package
@@ -66,7 +65,7 @@ def is_subclass(class_obj: type, classes_: list[type]) -> bool:
         classes_: A list of classes to check against.
 
     Returns:
-        True if `class_obj` is a subclass of any class in `classes_`, False otherwise.
+        True if `class_obj` is a subclass of any class in `classes_`, `False` otherwise.
     """
     return any(
         issubclass(class_obj, kls)
@@ -105,7 +104,7 @@ def _get_all_classnames_from_file(file: Path, pkg: str) -> list[tuple[str, str]]
 def identify_all_imports_in_file(
     file: str,
     *,
-    from_package: Optional[str] = None,
+    from_package: str | None = None,
 ) -> list[tuple[str, str]]:
     """Identify all the imports in the given file.
 
@@ -191,7 +190,7 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
 def find_imports_from_package(
     code: str,
     *,
-    from_package: Optional[str] = None,
+    from_package: str | None = None,
 ) -> list[tuple[str, str]]:
     """Find imports in code.
 

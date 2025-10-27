@@ -4,13 +4,13 @@ import re
 
 import pytest
 
-from langchain.evaluation.comparison.eval_chain import (
+from langchain_classic.evaluation.comparison.eval_chain import (
     LabeledPairwiseStringEvalChain,
     PairwiseStringEvalChain,
     PairwiseStringResultOutputParser,
     resolve_pairwise_criteria,
 )
-from langchain.evaluation.criteria.eval_chain import Criteria
+from langchain_classic.evaluation.criteria.eval_chain import Criteria
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -113,7 +113,7 @@ def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
     )
     chain = LabeledPairwiseStringEvalChain.from_llm(llm=llm)
     with pytest.raises(
-        ValueError, match="LabeledPairwiseStringEvalChain requires a reference string."
+        ValueError, match="LabeledPairwiseStringEvalChain requires a reference string"
     ):
         chain.evaluate_string_pairs(
             prediction="I like pie.",
