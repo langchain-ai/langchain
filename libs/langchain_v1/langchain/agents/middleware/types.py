@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentMiddleware",
-    "AgentRuntime",
     "AgentState",
     "ContextT",
     "ModelRequest",
@@ -110,14 +109,25 @@ class AgentRuntime(Generic[ContextT]):
     context: ContextT = field(default=None)  # type: ignore[assignment]
     """Static context for the graph run, like `user_id`, `db_conn`, etc."""
 
-    store: BaseStore | None = field(default=None)  # type: ignore[valid-type]
+    store: BaseStore | None = field(default=None)
     """Store for the graph run, enabling persistence and memory."""
 
-    stream_writer: StreamWriter = field(default=None)  # type: ignore[assignment,valid-type]
+    stream_writer: StreamWriter = field(default=None)  # type: ignore[assignment]
     """Function that writes to the custom stream."""
 
     previous: Any = field(default=None)
     """The previous return value for the given thread."""
+
+    @classmethod
+    def from_runtime(cls, name: str, runtime: Runtime[ContextT]) -> AgentRuntime[ContextT]:
+        """Create an AgentRuntime from a Runtime."""
+        return AgentRuntime[ContextT](
+            agent_name=name,
+            context=runtime.context,
+            store=runtime.store,
+            stream_writer=runtime.stream_writer,
+            previous=runtime.previous,
+        )
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -285,27 +295,27 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         return self.__class__.__name__
 
-    def before_agent(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
+    def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts."""
 
     async def abefore_agent(
-        self, state: StateT, runtime: AgentRuntime[ContextT]
+        self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run before the agent execution starts."""
 
-    def before_model(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
+    def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
     async def abefore_model(
-        self, state: StateT, runtime: AgentRuntime[ContextT]
+        self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run before the model is called."""
 
-    def after_model(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
+    def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called."""
 
     async def aafter_model(
-        self, state: StateT, runtime: AgentRuntime[ContextT]
+        self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
@@ -437,11 +447,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         )
         raise NotImplementedError(msg)
 
-    def after_agent(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
+    def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
 
     async def aafter_agent(
-        self, state: StateT, runtime: AgentRuntime[ContextT]
+        self, state: StateT, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
 
@@ -578,10 +588,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with `AgentState` and `AgentRuntime` as arguments."""
+    """Callable with `AgentState` and `Runtime` as arguments."""
 
     def __call__(
-        self, state: StateT_contra, runtime: AgentRuntime[ContextT]
+        self, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state and runtime."""
         ...
@@ -985,7 +995,7 @@ def before_agent(
 
     Args:
         func: The function to be decorated. Must accept:
-            `state: StateT, runtime: AgentRuntime[ContextT]` - State and runtime context
+            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
         state_schema: Optional custom state schema type. If not provided, uses the
             default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
@@ -1007,16 +1017,14 @@ def before_agent(
         Basic usage:
         ```python
         @before_agent
-        def log_before_agent(state: AgentState, runtime: AgentRuntime) -> None:
+        def log_before_agent(state: AgentState, runtime: Runtime) -> None:
             print(f"Starting agent '{runtime.agent_name}' with {len(state['messages'])} messages")
         ```
 
         With conditional jumping:
         ```python
         @before_agent(can_jump_to=["end"])
-        def conditional_before_agent(
-            state: AgentState, runtime: AgentRuntime
-        ) -> dict[str, Any] | None:
+        def conditional_before_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
                 return {"jump_to": "end"}
             return None
