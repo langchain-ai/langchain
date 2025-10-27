@@ -1391,11 +1391,6 @@ class LLM(BaseLLM):
         `astream` will use `_astream` if provided, otherwise it will implement
         a fallback behavior that will use `_stream` if `_stream` is implemented,
         and use `_acall` if `_stream` is not implemented.
-
-    Please see the following guide for more information on how to
-    implement a custom LLM:
-
-    https://python.langchain.com/docs/how_to/custom_llm/
     """
 
     @abstractmethod
