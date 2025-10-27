@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -18,6 +19,7 @@ from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    AgentRuntime,
     AgentState,
     JumpTo,
     ModelRequest,
@@ -1018,6 +1020,12 @@ def create_agent(  # noqa: PLR0915
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
+        # Wrap runtime with agent name
+        agent_runtime = AgentRuntime(
+            agent_name=name or "LangGraph",
+            runtime=runtime,
+        )
+
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1026,7 +1034,7 @@ def create_agent(  # noqa: PLR0915
             messages=state["messages"],
             tool_choice=None,
             state=state,
-            runtime=runtime,
+            runtime=agent_runtime,
         )
 
         if wrap_model_call_handler is None:
@@ -1071,6 +1079,12 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
+        # Wrap runtime with agent name
+        agent_runtime = AgentRuntime(
+            agent_name=name or "LangGraph",
+            runtime=runtime,
+        )
+
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1079,7 +1093,7 @@ def create_agent(  # noqa: PLR0915
             messages=state["messages"],
             tool_choice=None,
             state=state,
-            runtime=runtime,
+            runtime=agent_runtime,
         )
 
         if awrap_model_call_handler is None:
@@ -1103,6 +1117,33 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_node("tools", tool_node)
 
+    # Helper function to wrap middleware hooks with AgentRuntime
+    def _wrap_hook_with_agent_runtime(hook_fn):
+        """Wrap a middleware hook to convert Runtime to AgentRuntime."""
+        if hook_fn is None:
+            return None
+
+        if iscoroutinefunction(hook_fn):
+
+            async def async_wrapper(state, runtime: Runtime[ContextT]):
+                agent_runtime = AgentRuntime(
+                    agent_name=name or "LangGraph",
+                    runtime=runtime,
+                )
+                return await hook_fn(state, agent_runtime)
+
+            return async_wrapper
+        else:
+
+            def sync_wrapper(state, runtime: Runtime[ContextT]):
+                agent_runtime = AgentRuntime(
+                    agent_name=name or "LangGraph",
+                    runtime=runtime,
+                )
+                return hook_fn(state, agent_runtime)
+
+            return sync_wrapper
+
     # Add middleware nodes
     for m in middleware:
         if (
@@ -1121,7 +1162,10 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.abefore_agent is not AgentMiddleware.abefore_agent
                 else None
             )
-            before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
+            # Wrap hooks with AgentRuntime conversion
+            wrapped_sync = _wrap_hook_with_agent_runtime(sync_before_agent)
+            wrapped_async = _wrap_hook_with_agent_runtime(async_before_agent)
+            before_agent_node = RunnableCallable(wrapped_sync, wrapped_async, trace=False)
             graph.add_node(
                 f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
             )
@@ -1142,7 +1186,10 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.abefore_model is not AgentMiddleware.abefore_model
                 else None
             )
-            before_node = RunnableCallable(sync_before, async_before, trace=False)
+            # Wrap hooks with AgentRuntime conversion
+            wrapped_sync = _wrap_hook_with_agent_runtime(sync_before)
+            wrapped_async = _wrap_hook_with_agent_runtime(async_before)
+            before_node = RunnableCallable(wrapped_sync, wrapped_async, trace=False)
             graph.add_node(
                 f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
             )
@@ -1163,7 +1210,10 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.aafter_model is not AgentMiddleware.aafter_model
                 else None
             )
-            after_node = RunnableCallable(sync_after, async_after, trace=False)
+            # Wrap hooks with AgentRuntime conversion
+            wrapped_sync = _wrap_hook_with_agent_runtime(sync_after)
+            wrapped_async = _wrap_hook_with_agent_runtime(async_after)
+            after_node = RunnableCallable(wrapped_sync, wrapped_async, trace=False)
             graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
 
         if (
@@ -1182,7 +1232,10 @@ def create_agent(  # noqa: PLR0915
                 if m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
                 else None
             )
-            after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
+            # Wrap hooks with AgentRuntime conversion
+            wrapped_sync = _wrap_hook_with_agent_runtime(sync_after_agent)
+            wrapped_async = _wrap_hook_with_agent_runtime(async_after_agent)
+            after_agent_node = RunnableCallable(wrapped_sync, wrapped_async, trace=False)
             graph.add_node(
                 f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
             )

@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentMiddleware",
+    "AgentRuntime",
     "AgentState",
     "ContextT",
     "ModelRequest",
@@ -60,6 +61,53 @@ JumpTo = Literal["tools", "model", "end"]
 ResponseT = TypeVar("ResponseT")
 
 
+@dataclass
+class AgentRuntime(Generic[ContextT]):
+    """Runtime context for agent execution, extending LangGraph's Runtime.
+
+    This class provides agent-specific execution context to middleware, including
+    the name of the currently executing graph and access to the underlying
+    LangGraph Runtime object.
+
+    The AgentRuntime follows the same pattern as ToolRuntime, providing a
+    composition-based approach to extending runtime context for agent-specific
+    use cases.
+
+    Attributes:
+        agent_name: The name of the currently executing graph/agent. This is the
+            name passed to `graph.compile(name=...)` or defaults to "LangGraph".
+        runtime: The underlying LangGraph Runtime object containing context,
+            store, stream_writer, and previous value.
+
+    Example:
+        ```python
+        from langchain.agents.middleware import wrap_model_call, AgentRuntime
+        from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
+        @wrap_model_call
+        def log_agent_name(
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelResponse:
+            '''Log which agent is making the model call.'''
+            agent_name = request.runtime.agent_name
+            print(f"Agent '{agent_name}' is calling the model")
+
+            # Access underlying runtime context
+            user_id = request.runtime.runtime.context.get("user_id")
+            print(f"User: {user_id}")
+
+            return handler(request)
+        ```
+    """
+
+    agent_name: str
+    """The name of the currently executing graph/agent."""
+
+    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    """The underlying LangGraph Runtime object with context, store, and stream_writer."""
+
+
 class _ModelRequestOverrides(TypedDict, total=False):
     """Possible overrides for ModelRequest.override() method."""
 
@@ -74,7 +122,23 @@ class _ModelRequestOverrides(TypedDict, total=False):
 
 @dataclass
 class ModelRequest:
-    """Model request information for the agent."""
+    """Model request information for the agent.
+
+    This dataclass contains all the information needed for a model invocation,
+    including the model, messages, tools, and runtime context.
+
+    Attributes:
+        model: The chat model to invoke.
+        system_prompt: Optional system prompt to prepend to messages.
+        messages: List of conversation messages (excluding system prompt).
+        tool_choice: Tool selection configuration for the model.
+        tools: Available tools for the model to use.
+        response_format: Structured output format specification.
+        state: Complete agent state at the time of model invocation.
+        runtime: Agent runtime context including agent name and underlying
+            LangGraph Runtime with context, store, and stream_writer.
+        model_settings: Additional model-specific settings.
+    """
 
     model: BaseChatModel
     system_prompt: str | None
@@ -83,7 +147,7 @@ class ModelRequest:
     tools: list[BaseTool | dict]
     response_format: ResponseFormat | None
     state: AgentState
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
+    runtime: AgentRuntime[ContextT]  # type: ignore[valid-type]
     model_settings: dict[str, Any] = field(default_factory=dict)
 
     def override(self, **overrides: Unpack[_ModelRequestOverrides]) -> ModelRequest:
@@ -209,27 +273,27 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """
         return self.__class__.__name__
 
-    def before_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_agent(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the agent execution starts."""
 
     async def abefore_agent(
-        self, state: StateT, runtime: Runtime[ContextT]
+        self, state: StateT, runtime: AgentRuntime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run before the agent execution starts."""
 
-    def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_model(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
     async def abefore_model(
-        self, state: StateT, runtime: Runtime[ContextT]
+        self, state: StateT, runtime: AgentRuntime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run before the model is called."""
 
-    def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def after_model(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called."""
 
     async def aafter_model(
-        self, state: StateT, runtime: Runtime[ContextT]
+        self, state: StateT, runtime: AgentRuntime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the model is called."""
 
@@ -361,11 +425,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         )
         raise NotImplementedError(msg)
 
-    def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def after_agent(self, state: StateT, runtime: AgentRuntime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the agent execution completes."""
 
     async def aafter_agent(
-        self, state: StateT, runtime: Runtime[ContextT]
+        self, state: StateT, runtime: AgentRuntime[ContextT]
     ) -> dict[str, Any] | None:
         """Async logic to run after the agent execution completes."""
 
@@ -502,10 +566,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
 
 class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with `AgentState` and `Runtime` as arguments."""
+    """Callable with `AgentState` and `AgentRuntime` as arguments."""
 
     def __call__(
-        self, state: StateT_contra, runtime: Runtime[ContextT]
+        self, state: StateT_contra, runtime: AgentRuntime[ContextT]
     ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state and runtime."""
         ...
@@ -909,7 +973,7 @@ def before_agent(
 
     Args:
         func: The function to be decorated. Must accept:
-            `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
+            `state: StateT, runtime: AgentRuntime[ContextT]` - State and runtime context
         state_schema: Optional custom state schema type. If not provided, uses the
             default `AgentState` schema.
         tools: Optional list of additional tools to register with this middleware.
@@ -931,14 +995,14 @@ def before_agent(
         Basic usage:
         ```python
         @before_agent
-        def log_before_agent(state: AgentState, runtime: Runtime) -> None:
-            print(f"Starting agent with {len(state['messages'])} messages")
+        def log_before_agent(state: AgentState, runtime: AgentRuntime) -> None:
+            print(f"Starting agent '{runtime.agent_name}' with {len(state['messages'])} messages")
         ```
 
         With conditional jumping:
         ```python
         @before_agent(can_jump_to=["end"])
-        def conditional_before_agent(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        def conditional_before_agent(state: AgentState, runtime: AgentRuntime) -> dict[str, Any] | None:
             if some_condition(state):
                 return {"jump_to": "end"}
             return None

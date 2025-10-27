@@ -1351,7 +1351,7 @@ def test_public_private_state_for_custom_middleware() -> None:
     class CustomMiddleware(AgentMiddleware[CustomState]):
         state_schema: type[CustomState] = CustomState
 
-        def before_model(self, state: CustomState) -> dict[str, Any]:
+        def before_model(self, state: CustomState, runtime) -> dict[str, Any]:
             assert "omit_input" not in state
             assert "omit_output" in state
             assert "private_state" not in state
@@ -1456,11 +1456,11 @@ def test_injected_state_in_middleware_agent() -> None:
 
 def test_jump_to_is_ephemeral() -> None:
     class MyMiddleware(AgentMiddleware):
-        def before_model(self, state: AgentState) -> dict[str, Any]:
+        def before_model(self, state: AgentState, runtime) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
 
-        def after_model(self, state: AgentState) -> dict[str, Any]:
+        def after_model(self, state: AgentState, runtime) -> dict[str, Any]:
             assert "jump_to" not in state
             return {"jump_to": "model"}
 
