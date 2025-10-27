@@ -30,7 +30,7 @@ def stringify_dict(data: dict) -> str:
     Returns:
         The stringified dictionary.
     """
-    return "\n".join(key + ": " + stringify_value(value) for key, value in data.items())
+    return "".join(f"{key}: {stringify_value(value)}\n" for key, value in data.items())
 
 
 def comma_list(items: list[Any]) -> str:
