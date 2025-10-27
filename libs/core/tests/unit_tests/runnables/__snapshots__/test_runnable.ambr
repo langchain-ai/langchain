@@ -2627,9 +2627,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -2743,6 +2743,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -4077,9 +4079,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -4193,6 +4195,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -5558,9 +5562,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -5674,6 +5678,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -6914,9 +6920,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -7030,6 +7036,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -8406,9 +8414,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -8522,6 +8530,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -9807,9 +9817,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -9923,6 +9933,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -11207,9 +11219,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -11323,6 +11335,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',
@@ -12649,9 +12663,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -12765,6 +12779,8 @@
                   "reasoning": 200,
               }
               ```
+          
+          May also hold extra provider-specific keys.
           
           !!! version-added "Added in version 0.3.9"
         ''',

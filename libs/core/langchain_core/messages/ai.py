@@ -48,9 +48,9 @@ class InputTokenDetails(TypedDict, total=False):
         }
         ```
 
-    !!! version-added "Added in version 0.3.9"
-
     May also hold extra provider-specific keys.
+
+    !!! version-added "Added in version 0.3.9"
 
     """
 
@@ -82,6 +82,8 @@ class OutputTokenDetails(TypedDict, total=False):
             "reasoning": 200,
         }
         ```
+
+    May also hold extra provider-specific keys.
 
     !!! version-added "Added in version 0.3.9"
 
