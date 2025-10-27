@@ -79,13 +79,15 @@ def _extract_tool_calls_from_message(message: AIMessage) -> list[ToolCall]:
 
 def extract_tool_calls(content: str | list[str | dict]) -> list[ToolCall]:
     """Extract tool calls from a list of content blocks."""
-    tool_calls = []
     if isinstance(content, list):
+        tool_calls = []
         for block in content:
             if isinstance(block, str):
                 continue
-            if block["type"] == "tool_use":
-                tool_calls.append(
-                    tool_call(name=block["name"], args=block["input"], id=block["id"]),
-                )
-    return tool_calls
+            if block["type"] != "tool_use":
+                continue
+            tool_calls.append(
+                tool_call(name=block["name"], args=block["input"], id=block["id"]),
+            )
+        return tool_calls
+    return []
