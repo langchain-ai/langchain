@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from collections.abc import AsyncIterator, Collection, Iterator, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Iterator, Mapping
 from typing import Any, Literal
 
 import openai
@@ -186,7 +186,7 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: SecretStr | None = Field(
+    openai_api_key: SecretStr | None | Callable[[], str] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
@@ -276,10 +276,16 @@ class BaseOpenAI(BaseLLM):
             msg = "Cannot stream results when best_of > 1."
             raise ValueError(msg)
 
+        # Resolve API key from SecretStr or Callable
+        api_key_value: str | Callable[[], str] | None = None
+        if self.openai_api_key is not None:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            elif callable(self.openai_api_key):
+                api_key_value = self.openai_api_key
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,

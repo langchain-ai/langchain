@@ -88,7 +88,7 @@ def init_chat_model(
         for supported model parameters.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
+        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5'`.
 
             You can also specify model and model provider in a single argument using:
 
@@ -183,9 +183,7 @@ def init_chat_model(
         from langchain_classic.chat_models import init_chat_model
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-        claude_sonnet = init_chat_model(
-            "anthropic:claude-sonnet-4-5-20250929", temperature=0
-        )
+        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5", temperature=0)
         gemini_2_flash = init_chat_model(
             "google_vertexai:gemini-2.5-flash", temperature=0
         )
@@ -211,7 +209,7 @@ def init_chat_model(
 
         configurable_model.invoke(
             "what's your name",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "claude-sonnet-4-5"}},
         )
         ```
 
@@ -235,7 +233,7 @@ def init_chat_model(
             "what's your name",
             config={
                 "configurable": {
-                    "foo_model": "anthropic:claude-sonnet-4-5-20250929",
+                    "foo_model": "anthropic:claude-sonnet-4-5",
                     "foo_temperature": 0.6,
                 }
             },
@@ -285,11 +283,9 @@ def init_chat_model(
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
-            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
+            config={"configurable": {"model": "claude-sonnet-4-5"}},
         )
         ```
-
-    !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
         Support for `configurable_fields` and `config_prefix` added.
@@ -410,11 +406,14 @@ def _init_chat_model_helper(
         from langchain_mistralai import ChatMistralAI
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
+
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
+        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
+        return ChatHuggingFace(llm=llm)
+
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq

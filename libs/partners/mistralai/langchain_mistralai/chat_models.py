@@ -364,16 +364,14 @@ def _convert_message_to_mistral_chat_message(
         return {"role": "user", "content": message.content}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
-        tool_calls = []
+        tool_calls: list = []
         if message.tool_calls or message.invalid_tool_calls:
-            for tool_call in message.tool_calls:
+            if message.tool_calls:
                 tool_calls.extend(
-                    [
-                        _format_tool_call_for_mistral(tool_call)
-                        for tool_call in message.tool_calls
-                    ]
+                    _format_tool_call_for_mistral(tool_call)
+                    for tool_call in message.tool_calls
                 )
-            for invalid_tool_call in message.invalid_tool_calls:
+            if message.invalid_tool_calls:
                 tool_calls.extend(
                     _format_invalid_tool_call_for_mistral(invalid_tool_call)
                     for invalid_tool_call in message.invalid_tool_calls
@@ -446,7 +444,7 @@ def _convert_message_to_mistral_chat_message(
 
 
 class ChatMistralAI(BaseChatModel):
-    """A chat model that uses the MistralAI API."""
+    """A chat model that uses the Mistral AI API."""
 
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator

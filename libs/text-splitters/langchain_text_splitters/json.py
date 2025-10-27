@@ -144,7 +144,7 @@ class RecursiveJsonSplitter:
         ensure_ascii: bool = True,  # noqa: FBT001,FBT002
         metadatas: list[dict[Any, Any]] | None = None,
     ) -> list[Document]:
-        """Create documents from a list of json objects (Dict)."""
+        """Create a list of `Document` objects from a list of json objects (`dict`)."""
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):

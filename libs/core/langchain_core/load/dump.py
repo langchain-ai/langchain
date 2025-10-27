@@ -17,7 +17,7 @@ def default(obj: Any) -> Any:
         obj: The object to serialize to json if it is a Serializable object.
 
     Returns:
-        A json serializable object or a SerializedNotImplemented object.
+        A JSON serializable object or a SerializedNotImplemented object.
     """
     if isinstance(obj, Serializable):
         return obj.to_json()
@@ -38,7 +38,7 @@ def _dump_pydantic_models(obj: Any) -> Any:
 
 
 def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
-    """Return a json string representation of an object.
+    """Return a JSON string representation of an object.
 
     Args:
         obj: The object to dump.
@@ -47,7 +47,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
         **kwargs: Additional arguments to pass to `json.dumps`
 
     Returns:
-        A json string representation of the object.
+        A JSON string representation of the object.
 
     Raises:
         ValueError: If `default` is passed as a kwarg.
@@ -71,14 +71,12 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    !!! note
-        Unfortunately this function is not as efficient as it could be because it first
-        dumps the object to a json string and then loads it back into a dictionary.
-
     Args:
         obj: The object to dump.
 
     Returns:
-        dictionary that can be serialized to json using json.dumps
+        Dictionary that can be serialized to json using `json.dumps`.
     """
+    # Unfortunately this function is not as efficient as it could be because it first
+    # dumps the object to a json string and then loads it back into a dictionary.
     return json.loads(dumps(obj))

@@ -18,10 +18,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-)
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1186,7 +1183,8 @@ class ChatAnthropic(BaseChatModel):
             See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
             for detail.
 
-    Extended context windows (beta):
+    !!! note title="Extended context windows (beta)"
+
         Claude Sonnet 4 supports a 1-million token context window, available in beta for
         organizations in usage tier 4 and organizations with custom rate limits.
 
@@ -1221,7 +1219,8 @@ class ChatAnthropic(BaseChatModel):
         for detail.
 
 
-    Token-efficient tool use (beta):
+    !!! note title="Token-efficient tool use (beta)"
+
         See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/)
         for more detail.
 
@@ -1257,7 +1256,8 @@ class ChatAnthropic(BaseChatModel):
         Total tokens: 408
         ```
 
-    Context management:
+    !!! note title="Context management"
+
         Anthropic supports a context editing feature that will automatically manage the
         model's context window (e.g., by clearing tool results).
 
@@ -1268,7 +1268,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-sonnet-4-5",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
@@ -1276,7 +1276,8 @@ class ChatAnthropic(BaseChatModel):
         response = model_with_tools.invoke("Search for recent developments in AI")
         ```
 
-    Built-in tools:
+    !!! note title="Built-in tools"
+
         See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools)
         for more detail.
 
@@ -1395,14 +1396,14 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-5-20250929",
+                model="claude-sonnet-4-5",
                 betas=["context-management-2025-06-27"],
             )
             model_with_tools = model.bind_tools([{"type": "memory_20250818", "name": "memory"}])
             response = model_with_tools.invoke("What are my interests?")
             ```
 
-    Response metadata
+    !!! note title="Response metadata"
 
         ```python
         ai_msg = model.invoke(messages)

@@ -72,12 +72,11 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     Embed multiple texts:
         ```python
         input_texts = ["Document 1...", "Document 2..."]
+        vectors = embed.embed_documents(input_texts)
+        print(len(vectors))
+        # The first 3 coordinates for the first vector
+        print(vectors[0][:3])
         ```
-            vectors = embed.embed_documents(input_texts)
-            print(len(vectors))
-            # The first 3 coordinates for the first vector
-            print(vectors[0][:3])
-
         ```python
         2
         [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]

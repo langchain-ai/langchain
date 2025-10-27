@@ -69,8 +69,8 @@ class ExaSearchRetriever(BaseRetriever):
     """Whether to include a summary of the content. Can be a boolean or a dict with a
     custom query."""
 
-    client: Exa = Field(default=None)
-    exa_api_key: SecretStr = Field(default=None)
+    client: Exa = Field(default=None)  # type: ignore[assignment]
+    exa_api_key: SecretStr = Field(default=SecretStr(""))
     exa_base_url: str | None = None
 
     @model_validator(mode="before")
