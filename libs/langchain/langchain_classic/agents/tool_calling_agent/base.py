@@ -55,12 +55,11 @@ def create_tool_calling_agent(
                 ("placeholder", "{agent_scratchpad}"),
             ]
         )
-
         model = ChatAnthropic(model="claude-3-opus-20240229")
 
         @tool
         def magic_function(input: int) -> int:
-            """Applies a magic function to an input."""
+            \"\"\"Applies a magic function to an input.\"\"\"
             return input + 2
 
         tools = [magic_function]
@@ -87,11 +86,6 @@ def create_tool_calling_agent(
         The agent prompt must have an `agent_scratchpad` key that is a
             `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
-
-        Note: The system message in the prompt can accept either a simple string
-            (e.g., "You are a helpful assistant") or a list format for more complex
-            instructions (e.g., ["SystemMessage1", "SystemMessage2"]). Both formats
-            are supported and will be properly processed by the agent.
 
     Troubleshooting:
         - If you encounter `invalid_tool_calls` errors, ensure that your tool
