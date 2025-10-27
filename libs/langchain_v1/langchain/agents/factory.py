@@ -1002,7 +1002,15 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+            # Format system message content based on response format requirements.
+            # OpenAI's structured output (ProviderStrategy) requires content as blocks.
+            if isinstance(effective_response_format, ProviderStrategy):
+                messages = [
+                    SystemMessage([{"type": "text", "text": request.system_prompt}]),
+                    *messages,
+                ]
+            else:
+                messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
 
@@ -1055,7 +1063,15 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+            # Format system message content based on response format requirements.
+            # OpenAI's structured output (ProviderStrategy) requires content as blocks.
+            if isinstance(effective_response_format, ProviderStrategy):
+                messages = [
+                    SystemMessage([{"type": "text", "text": request.system_prompt}]),
+                    *messages,
+                ]
+            else:
+                messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
 
