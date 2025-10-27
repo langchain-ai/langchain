@@ -5,12 +5,10 @@
 
 !!! warning
     New agents should be built using the
-    [langgraph library](https://github.com/langchain-ai/langgraph), which provides a
+    [`langchain` library](https://pypi.org/project/langchain/), which provides a
     simpler and more flexible way to define agents.
 
-    Please see the
-    [migration guide](https://python.langchain.com/docs/how_to/migrate_agent/) for
-    information on how to migrate existing agents to modern langgraph agents.
+    See docs on [building agents](https://docs.langchain.com/oss/python/langchain/agents).
 
 Agents use language models to choose a sequence of actions to take.
 

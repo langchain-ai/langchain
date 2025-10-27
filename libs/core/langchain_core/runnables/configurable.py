@@ -475,11 +475,11 @@ _enums_for_spec_lock = threading.Lock()
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """Runnable that can be dynamically configured.
 
-    A RunnableConfigurableAlternatives should be initiated using the
+    A `RunnableConfigurableAlternatives` should be initiated using the
     `configurable_alternatives` method of a Runnable or can be
     initiated directly as well.
 
-    Here is an example of using a RunnableConfigurableAlternatives that uses
+    Here is an example of using a `RunnableConfigurableAlternatives` that uses
     alternative prompts to illustrate its functionality:
 
         ```python
@@ -506,7 +506,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
         ```
 
-    Equivalently, you can initialize RunnableConfigurableAlternatives directly
+    Equivalently, you can initialize `RunnableConfigurableAlternatives` directly
     and use in LCEL in the same way:
 
         ```python
