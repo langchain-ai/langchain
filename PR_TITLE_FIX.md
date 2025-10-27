@@ -1,40 +1,97 @@
 # 修复 PR 标题错误
 
-## 问题
-你的 PR 标题不符合 Conventional Commits 规范。
+## ⚠️ 最新错误
 
-当前标题：
+scope "platform" 不在允许的列表中！
+
+## ✅ 正确的 PR 标题（更新）
+
+请使用以下标题之一：
+
+### 选项 1（推荐 - 不使用 scope）
 ```
-Claude/ai agent platform prd 011 cux1 yv vb3 ch bhj vk tt q rx
-```
-
-## 解决方案
-
-### 推荐的 PR 标题格式
-
-根据你的提交内容，建议使用以下标题之一：
-
-**选项 1（推荐）：**
-```
-feat(platform): implement AI Agent Platform MVP
+feat: implement AI Agent Platform MVP
 ```
 
-**选项 2（更详细）：**
+### 选项 2（使用 infra scope）
 ```
-feat(platform): implement AI Agent Platform with chat UI and agent studio
-```
-
-**选项 3（简洁）：**
-```
-feat: add AI Agent Platform
+feat(infra): implement AI Agent Platform MVP
 ```
 
-## Conventional Commits 规范说明
+### 选项 3（使用 docs scope - 如果视为示例项目）
+```
+feat(docs): add AI Agent Platform example
+```
 
-格式：`<type>(<scope>): <description>`
+## 📋 允许的 Scope 列表
 
-### Type 类型：
-- `feat`: 新功能
+根据项目配置，**只能使用以下 scope**：
+
+### 核心组件
+- `core` - 核心功能
+- `cli` - 命令行工具
+- `langchain` - LangChain 主包
+- `langchain_v1` - LangChain v1
+- `langchain-classic` - 经典版本
+
+### 工具和测试
+- `standard-tests` - 标准测试
+- `text-splitters` - 文本分割器
+- `docs` - 文档
+- `infra` - 基础设施
+
+### LLM 提供商集成
+- `anthropic` - Anthropic/Claude
+- `openai` - OpenAI
+- `mistralai` - Mistral AI
+- `groq` - Groq
+- `deepseek` - DeepSeek
+- `huggingface` - Hugging Face
+- `fireworks` - Fireworks
+- `ollama` - Ollama
+- `perplexity` - Perplexity
+- `prompty` - Prompty
+- `xai` - xAI
+
+### 向量数据库
+- `chroma` - ChromaDB
+- `qdrant` - Qdrant
+
+### 其他
+- `exa` - Exa
+- `nomic` - Nomic
+
+## 🔧 如何修改 PR 标题
+
+### 在 GitHub 网页上修改（推荐）
+
+1. 访问你的 Pull Request 页面
+2. 点击 PR 标题右侧的 **"Edit"** 按钮
+3. 将标题修改为：
+   ```
+   feat: implement AI Agent Platform MVP
+   ```
+   或
+   ```
+   feat(infra): implement AI Agent Platform MVP
+   ```
+4. 点击 **"Save"** 保存
+
+## 📝 Conventional Commits 格式说明
+
+```
+<type>(<scope>): <description>
+
+示例:
+feat(infra): implement AI Agent Platform MVP
+│    │       │
+│    │       └─ 简短描述（必需）
+│    └─ 范围（可选，但必须在允许列表中）
+└─ 类型（必需）
+```
+
+### Type 类型
+- `feat`: 新功能 ⭐ **（推荐用于你的 PR）**
 - `fix`: Bug 修复
 - `docs`: 文档更新
 - `style`: 代码格式（不影响代码运行）
@@ -42,81 +99,93 @@ feat: add AI Agent Platform
 - `test`: 测试
 - `chore`: 构建过程或辅助工具的变动
 
-### Scope 范围（可选）：
-- `platform`: 平台级别的更改
-- `backend`: 后端更改
-- `frontend`: 前端更改
-- `core`: 核心功能
+### Scope 选择建议
 
-## 如何修改 PR 标题
+对于你的 AI Agent Platform 项目：
 
-### 在 GitHub 网页上修改（最简单）
+| Scope | 适用场景 | 推荐度 |
+|-------|---------|--------|
+| **无 scope** | 通用新功能 | ⭐⭐⭐⭐⭐ 最推荐 |
+| `infra` | 基础设施相关的新项目 | ⭐⭐⭐⭐ |
+| `docs` | 如果视为文档/示例项目 | ⭐⭐⭐ |
 
-1. 访问你的 Pull Request 页面
-2. 点击 PR 标题右侧的 "Edit" 按钮
-3. 将标题修改为：`feat(platform): implement AI Agent Platform MVP`
-4. 点击 "Save" 保存
+## 🎯 推荐做法
 
-### 或者使用 GitHub CLI（如果已安装）
+**最简单且最安全的方式 - 不使用 scope：**
 
-```bash
-# 首先找到 PR 编号
-gh pr list
-
-# 然后修改标题（替换 PR_NUMBER）
-gh pr edit PR_NUMBER --title "feat(platform): implement AI Agent Platform MVP"
+```
+feat: implement AI Agent Platform MVP
 ```
 
-## PR 描述建议
+这样可以：
+- ✅ 避免 scope 验证错误
+- ✅ 简洁明了
+- ✅ 符合所有规范要求
 
-你也可以在 PR 描述中添加更多细节：
+## 📄 PR 描述建议
+
+建议在 PR 描述中添加详细信息：
 
 ```markdown
 ## Summary
-Implement a complete AI Agent Platform MVP with the following features:
+Implement a complete AI Agent Platform MVP for building and deploying conversational AI agents.
+
+## Features
 
 ### Backend (FastAPI + LangChain)
-- User authentication (JWT)
+- User authentication with JWT
 - Agent CRUD operations
-- Chat with streaming responses
+- Real-time chat with streaming responses
 - LLM configuration management
 - Support for OpenAI and Anthropic models
 
 ### Frontend (React + TypeScript)
-- Chat interface (ChatGPT-like)
+- ChatGPT-like conversational interface
 - Agent Studio for configuration
-- Conversation history
+- Conversation history management
 - Responsive design with Ant Design
 
 ### Technical Stack
-- Backend: FastAPI 0.115.0, LangChain 0.3.7, SQLAlchemy 2.0.35
-- Frontend: React 18.3.1, TypeScript 5.6.2, Ant Design 5.21.4, Vite 5.4.8
+- **Backend**: FastAPI 0.115.0, LangChain 0.3.7, SQLAlchemy 2.0.35
+- **Frontend**: React 18.3.1, TypeScript 5.6.2, Ant Design 5.21.4, Vite 5.4.8
+- **Database**: SQLite (dev), PostgreSQL-ready (prod)
+- **AI**: OpenAI GPT-4/3.5, Anthropic Claude 3.5
 
-## What Changed
+## Project Structure
+```
+agent-platform/
+├── backend/          # FastAPI backend (29 Python files)
+├── frontend/         # React frontend (12 TypeScript files)
+└── README.md         # Comprehensive documentation
+```
+
+## Changes
 - 58 files changed
 - ~3,800 lines of code
 - Complete full-stack implementation
 
-## How to Test
+## Testing
 1. Follow setup instructions in `agent-platform/README.md`
-2. Create an account and configure LLM provider
+2. Register account and configure LLM provider
 3. Create an agent in Studio
 4. Start a conversation in Chat
 
-## Related
-- Implements requirements from AI Agent Platform PRD
-- Closes #[issue-number] (if applicable)
+## Documentation
+- Complete README with setup guide
+- API documentation (Swagger/ReDoc)
+- Troubleshooting guide
+- Development guidelines
 ```
 
-## 修改后的效果
+## ✨ 修改后的效果
 
-修改标题后，CI/CD 系统将能够：
-- ✅ 识别这是一个新功能（feat）
-- ✅ 自动生成正确的版本号
-- ✅ 创建合适的 changelog 条目
-- ✅ 通过 conventional commits 检查
+使用正确的标题后：
+- ✅ CI/CD 检查通过
+- ✅ 自动生成版本号
+- ✅ 创建 changelog 条目
+- ✅ PR 可以被合并
 
-## 参考资源
+## 🔗 参考资源
 
 - [Conventional Commits 官方规范](https://www.conventionalcommits.org/)
-- [Angular Commit Guidelines](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#commit)
+- [LangChain 贡献指南](https://github.com/langchain-ai/langchain/blob/master/CONTRIBUTING.md)
