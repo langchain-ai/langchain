@@ -34,23 +34,24 @@ def fake_chat_model():
 
 def test_agent_runtime_structure():
     """Test that AgentRuntime has correct structure."""
+
     @dataclass
     class LocalContext:
         user_id: str
 
-    runtime = Runtime(
-        context=LocalContext(user_id="test_user"),
-        store=None,
-    )
-
+    context = LocalContext(user_id="test_user")
     agent_runtime = AgentRuntime(
         agent_name="TestAgent",
-        runtime=runtime,
+        context=context,
+        store=None,
+        stream_writer=None,
+        previous=None,
     )
 
     assert agent_runtime.agent_name == "TestAgent"
-    assert agent_runtime.runtime == runtime
-    assert agent_runtime.runtime.context.user_id == "test_user"
+    assert agent_runtime.context == context
+    assert agent_runtime.context.user_id == "test_user"
+    assert agent_runtime.store is None
 
 
 def test_agent_runtime_in_before_agent_hook(fake_chat_model):
@@ -62,7 +63,7 @@ def test_agent_runtime_in_before_agent_hook(fake_chat_model):
     def capture_runtime(state, runtime: AgentRuntime):
         nonlocal captured_agent_name, captured_context
         captured_agent_name = runtime.agent_name
-        captured_context = runtime.runtime.context
+        captured_context = runtime.context
         return None
 
     agent = create_agent(
@@ -92,7 +93,7 @@ def test_agent_runtime_in_before_model_hook(fake_chat_model):
     def capture_runtime(state, runtime: AgentRuntime):
         nonlocal captured_agent_name, captured_context
         captured_agent_name = runtime.agent_name
-        captured_context = runtime.runtime.context
+        captured_context = runtime.context
         return None
 
     agent = create_agent(
@@ -122,7 +123,7 @@ def test_agent_runtime_in_wrap_model_call(fake_chat_model):
     def capture_from_request(request: ModelRequest, handler):
         nonlocal captured_agent_name, captured_context
         captured_agent_name = request.runtime.agent_name
-        captured_context = request.runtime.runtime.context
+        captured_context = request.runtime.context
         return handler(request)
 
     agent = create_agent(
@@ -166,7 +167,7 @@ def test_agent_runtime_default_name(fake_chat_model):
 
 
 def test_agent_runtime_with_store(fake_chat_model):
-    """Test that AgentRuntime provides access to store through underlying runtime."""
+    """Test that AgentRuntime provides access to store directly."""
     store = InMemoryStore()
     store.put(("test",), "key1", {"value": "test_data"})
 
@@ -175,8 +176,8 @@ def test_agent_runtime_with_store(fake_chat_model):
     @before_agent
     def access_store(state, runtime: AgentRuntime):
         nonlocal captured_store_value
-        if runtime.runtime.store:
-            item = runtime.runtime.store.get(("test",), "key1")
+        if runtime.store:
+            item = runtime.store.get(("test",), "key1")
             if item:
                 captured_store_value = item.value
         return None
@@ -271,9 +272,9 @@ def test_agent_runtime_access_pattern(fake_chat_model):
         # Access agent name directly
         agent_name = request.runtime.agent_name
 
-        # Access underlying runtime for context, store, etc.
-        user_id = request.runtime.runtime.context.user_id if request.runtime.runtime.context else None
-        store = request.runtime.runtime.store
+        # Access runtime properties directly (flat structure)
+        user_id = request.runtime.context.user_id if request.runtime.context else None
+        store = request.runtime.store
 
         assert agent_name == "PatternTestAgent"
         assert user_id == "pattern_user"

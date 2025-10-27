@@ -1020,10 +1020,13 @@ def create_agent(  # noqa: PLR0915
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
-        # Wrap runtime with agent name
+        # Create flat AgentRuntime with all runtime properties
         agent_runtime = AgentRuntime(
             agent_name=name or "LangGraph",
-            runtime=runtime,
+            context=runtime.context,
+            store=runtime.store,
+            stream_writer=runtime.stream_writer,
+            previous=runtime.previous,
         )
 
         request = ModelRequest(
@@ -1079,10 +1082,13 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
-        # Wrap runtime with agent name
+        # Create flat AgentRuntime with all runtime properties
         agent_runtime = AgentRuntime(
             agent_name=name or "LangGraph",
-            runtime=runtime,
+            context=runtime.context,
+            store=runtime.store,
+            stream_writer=runtime.stream_writer,
+            previous=runtime.previous,
         )
 
         request = ModelRequest(
@@ -1128,21 +1134,26 @@ def create_agent(  # noqa: PLR0915
             async def async_wrapper(state, runtime: Runtime[ContextT]):
                 agent_runtime = AgentRuntime(
                     agent_name=name or "LangGraph",
-                    runtime=runtime,
+                    context=runtime.context,
+                    store=runtime.store,
+                    stream_writer=runtime.stream_writer,
+                    previous=runtime.previous,
                 )
                 return await hook_fn(state, agent_runtime)
 
             return async_wrapper
-        else:
 
-            def sync_wrapper(state, runtime: Runtime[ContextT]):
-                agent_runtime = AgentRuntime(
-                    agent_name=name or "LangGraph",
-                    runtime=runtime,
-                )
-                return hook_fn(state, agent_runtime)
+        def sync_wrapper(state, runtime: Runtime[ContextT]):
+            agent_runtime = AgentRuntime(
+                agent_name=name or "LangGraph",
+                context=runtime.context,
+                store=runtime.store,
+                stream_writer=runtime.stream_writer,
+                previous=runtime.previous,
+            )
+            return hook_fn(state, agent_runtime)
 
-            return sync_wrapper
+        return sync_wrapper
 
     # Add middleware nodes
     for m in middleware:

@@ -27,7 +27,8 @@ from typing import TypeAlias
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
-from langgraph.types import Command  # noqa: TC002
+from langgraph.store.base import BaseStore  # noqa: TC002
+from langgraph.types import Command, StreamWriter  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -66,23 +67,25 @@ class AgentRuntime(Generic[ContextT]):
     """Runtime context for agent execution, extending LangGraph's Runtime.
 
     This class provides agent-specific execution context to middleware, including
-    the name of the currently executing graph and access to the underlying
-    LangGraph Runtime object.
+    the name of the currently executing graph and all Runtime properties flattened
+    for convenient access.
 
-    The AgentRuntime follows the same pattern as ToolRuntime, providing a
-    composition-based approach to extending runtime context for agent-specific
-    use cases.
+    The AgentRuntime follows the same pattern as ToolRuntime, providing a flat
+    structure with all runtime properties directly accessible.
 
     Attributes:
         agent_name: The name of the currently executing graph/agent. This is the
-            name passed to `graph.compile(name=...)` or defaults to "LangGraph".
-        runtime: The underlying LangGraph Runtime object containing context,
-            store, stream_writer, and previous value.
+            name passed to `create_agent(name=...)` or defaults to "LangGraph".
+        context: Static context for the graph run (e.g., `user_id`, `db_conn`).
+        store: Store for persistence and memory, if configured.
+        stream_writer: Function for writing to the custom stream.
+        previous: The previous return value for the given thread (functional API only).
 
     Example:
         ```python
         from langchain.agents.middleware import wrap_model_call, AgentRuntime
         from langchain.agents.middleware.types import ModelRequest, ModelResponse
+
 
         @wrap_model_call
         def log_agent_name(
@@ -93,8 +96,8 @@ class AgentRuntime(Generic[ContextT]):
             agent_name = request.runtime.agent_name
             print(f"Agent '{agent_name}' is calling the model")
 
-            # Access underlying runtime context
-            user_id = request.runtime.runtime.context.get("user_id")
+            # Access runtime context directly (flattened)
+            user_id = request.runtime.context.get("user_id")
             print(f"User: {user_id}")
 
             return handler(request)
@@ -104,8 +107,17 @@ class AgentRuntime(Generic[ContextT]):
     agent_name: str
     """The name of the currently executing graph/agent."""
 
-    runtime: Runtime[ContextT]  # type: ignore[valid-type]
-    """The underlying LangGraph Runtime object with context, store, and stream_writer."""
+    context: ContextT = field(default=None)  # type: ignore[assignment]
+    """Static context for the graph run, like `user_id`, `db_conn`, etc."""
+
+    store: BaseStore | None = field(default=None)  # type: ignore[valid-type]
+    """Store for the graph run, enabling persistence and memory."""
+
+    stream_writer: StreamWriter = field(default=None)  # type: ignore[assignment,valid-type]
+    """Function that writes to the custom stream."""
+
+    previous: Any = field(default=None)
+    """The previous return value for the given thread."""
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -1002,7 +1014,9 @@ def before_agent(
         With conditional jumping:
         ```python
         @before_agent(can_jump_to=["end"])
-        def conditional_before_agent(state: AgentState, runtime: AgentRuntime) -> dict[str, Any] | None:
+        def conditional_before_agent(
+            state: AgentState, runtime: AgentRuntime
+        ) -> dict[str, Any] | None:
             if some_condition(state):
                 return {"jump_to": "end"}
             return None
