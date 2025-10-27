@@ -1,0 +1,19 @@
+.conversation-list {
+  padding: 0;
+}
+
+.conversation-item {
+  cursor: pointer;
+  padding: 12px 16px !important;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.conversation-item:hover {
+  background-color: #e6f7ff;
+}
+
+.conversation-item.selected {
+  background-color: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}

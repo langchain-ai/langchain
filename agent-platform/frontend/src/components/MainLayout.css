@@ -1,0 +1,22 @@
+.main-layout {
+  height: 100%;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+}
+
+.logo {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.main-content {
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}

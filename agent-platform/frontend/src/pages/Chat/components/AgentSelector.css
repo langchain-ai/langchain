@@ -1,0 +1,29 @@
+.agent-selector {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.agent-selector-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.agent-card {
+  text-align: center;
+}
+
+.agent-icon {
+  margin-bottom: 16px;
+  color: #1890ff;
+}
+
+.agent-meta {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

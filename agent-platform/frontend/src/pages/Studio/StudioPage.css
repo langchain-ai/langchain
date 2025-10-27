@@ -1,0 +1,19 @@
+.studio-page {
+  height: 100%;
+}
+
+.studio-content {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.studio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.studio-header h1 {
+  margin: 0;
+}
