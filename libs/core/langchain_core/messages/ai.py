@@ -126,6 +126,10 @@ class UsageMetadata(TypedDict):
     !!! warning "Behavior changed in 0.3.9"
         Added `input_token_details` and `output_token_details`.
 
+    !!! note "LangSmith SDK"
+        The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+        LangSmith's `UsageMetadata` has additional fields to capture cost information
+        used by the LangSmith platform.
     """
 
     input_tokens: int
@@ -133,7 +137,7 @@ class UsageMetadata(TypedDict):
     output_tokens: int
     """Count of output (or completion) tokens. Sum of all output token types."""
     total_tokens: int
-    """Total token count. Sum of input_tokens + output_tokens."""
+    """Total token count. Sum of `input_tokens` + `output_tokens`."""
     input_token_details: NotRequired[InputTokenDetails]
     """Breakdown of input token counts.
 
@@ -143,7 +147,6 @@ class UsageMetadata(TypedDict):
     """Breakdown of output token counts.
 
     Does *not* need to sum to full output token count. Does *not* need to have all keys.
-
     """
 
 
@@ -155,7 +158,6 @@ class AIMessage(BaseMessage):
     This message represents the output of the model and consists of both
     the raw output as returned by the model and standardized fields
     (e.g., tool calls, usage metadata) added by the LangChain framework.
-
     """
 
     tool_calls: list[ToolCall] = []
