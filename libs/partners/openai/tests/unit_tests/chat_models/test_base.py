@@ -257,8 +257,8 @@ def test__convert_dict_to_message_tool_call() -> None:
                 error=(
                     "Function GenerateUsername arguments:\n\noops\n\nare not "
                     "valid JSON. Received JSONDecodeError Expecting value: line 1 "
-                    "column 1 (char 0)\nFor troubleshooting, visit: https://python"
-                    ".langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE "
+                    "column 1 (char 0)\nFor troubleshooting, visit: https://docs"
+                    ".langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE "
                 ),
                 type="invalid_tool_call",
             )
