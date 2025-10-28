@@ -824,16 +824,19 @@ class ChildTool(BaseTool):
                     tool_kwargs |= {config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    msg = (
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
-                    )
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead generated response of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
                     error_to_raise = ValueError(msg)
                 else:
-                    content, artifact = response
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
             else:
                 content = response
         except (ValidationError, ValidationErrorV1) as e:
@@ -937,16 +940,19 @@ class ChildTool(BaseTool):
                 coro = self._arun(*tool_args, **tool_kwargs)
                 response = await coro_with_context(coro, context)
             if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    msg = (
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
-                    )
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead generated response of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
                     error_to_raise = ValueError(msg)
                 else:
-                    content, artifact = response
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
             else:
                 content = response
         except ValidationError as e:

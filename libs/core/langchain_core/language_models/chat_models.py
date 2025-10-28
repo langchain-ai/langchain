@@ -1726,9 +1726,12 @@ def _gen_info_and_msg_metadata(
     }
 
 
+_MAX_CLEANUP_DEPTH = 100
+
+
 def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
-    if depth > 100:  # Don't cooperate for pathological cases
+    if depth > _MAX_CLEANUP_DEPTH:  # Don't cooperate for pathological cases
         return
 
     if not isinstance(serialized, dict):

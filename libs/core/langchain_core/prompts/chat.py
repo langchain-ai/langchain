@@ -1335,8 +1335,22 @@ def _create_template_from_message_type(
                 raise ValueError(msg)
             var_name = template[1:-1]
             message = MessagesPlaceholder(variable_name=var_name, optional=True)
-        elif len(template) == 2 and isinstance(template[1], bool):
-            var_name_wrapped, is_optional = template
+        else:
+            try:
+                var_name_wrapped, is_optional = template
+            except ValueError as e:
+                msg = (
+                    "Unexpected arguments for placeholder message type."
+                    " Expected either a single string variable name"
+                    " or a list of [variable_name: str, is_optional: bool]."
+                    f" Got: {template}"
+                )
+                raise ValueError(msg) from e
+
+            if not isinstance(is_optional, bool):
+                msg = f"Expected is_optional to be a boolean. Got: {is_optional}"
+                raise ValueError(msg)  # noqa:TRY004
+
             if not isinstance(var_name_wrapped, str):
                 msg = f"Expected variable name to be a string. Got: {var_name_wrapped}"
                 raise ValueError(msg)  # noqa:TRY004
@@ -1349,14 +1363,6 @@ def _create_template_from_message_type(
             var_name = var_name_wrapped[1:-1]
 
             message = MessagesPlaceholder(variable_name=var_name, optional=is_optional)
-        else:
-            msg = (
-                "Unexpected arguments for placeholder message type."
-                " Expected either a single string variable name"
-                " or a list of [variable_name: str, is_optional: bool]."
-                f" Got: {template}"
-            )
-            raise ValueError(msg)
     else:
         msg = (
             f"Unexpected message type: {message_type}. Use one of 'human',"
@@ -1410,10 +1416,11 @@ def _convert_to_message_template(
                 )
                 raise ValueError(msg)
             message = (message["role"], message["content"])
-        if len(message) != 2:
+        try:
+            message_type_str, template = message
+        except ValueError as e:
             msg = f"Expected 2-tuple of (role, template), got {message}"
-            raise ValueError(msg)
-        message_type_str, template = message
+            raise ValueError(msg) from e
         if isinstance(message_type_str, str):
             message_ = _create_template_from_message_type(
                 message_type_str, template, template_format=template_format
