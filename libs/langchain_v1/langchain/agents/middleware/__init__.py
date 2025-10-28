@@ -17,6 +17,7 @@ from .human_in_the_loop import (
 from .model_call_limit import ModelCallLimitMiddleware
 from .model_fallback import ModelFallbackMiddleware
 from .pii import PIIDetectionError, PIIMiddleware
+from .response_caching import ResponseCachingMiddleware
 from .shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
@@ -64,6 +65,7 @@ __all__ = [
     "PIIDetectionError",
     "PIIMiddleware",
     "RedactionRule",
+    "ResponseCachingMiddleware",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
