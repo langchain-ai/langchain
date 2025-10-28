@@ -61,15 +61,15 @@
   },
   {
     "source": "/",
-    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    "destination": "https://docs.langchain.com/oss/python/langchain/overview"
   },
   {
     "source": "/docs(/?)",
-    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    "destination": "https://docs.langchain.com/oss/python/langchain/overview"
   },
   {
     "source": "/docs/get_started/introduction(/?)",
-    "destination": "https://docs.langchain.com/oss/python/langchain/install"
+    "destination": "https://docs.langchain.com/oss/python/langchain/overview"
   },
   {
     "source": "/docs/how_to/migrate_chains(/?)",
