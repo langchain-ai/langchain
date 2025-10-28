@@ -604,7 +604,7 @@ def test_incremental_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental or scoped_full",
+        match="Source IDs are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -654,7 +654,7 @@ async def test_aincremental_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental or scoped_full",
+        match="Source IDs are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -956,7 +956,7 @@ def test_scoped_full_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental or scoped_full",
+        match="Source IDs are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -1006,7 +1006,7 @@ async def test_ascoped_full_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental or scoped_full",
+        match="Source IDs are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -2801,7 +2801,7 @@ def test_index_with_upsert_kwargs(
         ]
         assert [doc.metadata for doc in args[0]] == [{"source": "1"}, {"source": "2"}]
 
-        # Check that ids are present
+        # Check that IDs are present
         assert "ids" in kwargs
         assert isinstance(kwargs["ids"], list)
         assert len(kwargs["ids"]) == 2
@@ -2932,7 +2932,7 @@ async def test_aindex_with_upsert_kwargs(
         ]
         assert [doc.metadata for doc in args[0]] == [{"source": "1"}, {"source": "2"}]
 
-        # Check that ids are present
+        # Check that IDs are present
         assert "ids" in kwargs
         assert isinstance(kwargs["ids"], list)
         assert len(kwargs["ids"]) == 2

@@ -262,13 +262,13 @@ class BaseLanguageModel(
         return self.lc_attributes
 
     def get_token_ids(self, text: str) -> list[int]:
-        """Return the ordered ids of the tokens in a text.
+        """Return the ordered IDs of the tokens in a text.
 
         Args:
             text: The string input to tokenize.
 
         Returns:
-            A list of ids corresponding to the tokens in the text, in order they occur
+            A list of IDs corresponding to the tokens in the text, in order they occur
                 in the text.
         """
         if self.custom_get_token_ids is not None:
