@@ -26756,23 +26756,23 @@
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_TOOL_RESULTS"
   },
   {
-    "source":"/docs/troubleshooting/errors/MESSAGE_COERCION_FAILURE",
+    "source": "/docs/troubleshooting/errors/MESSAGE_COERCION_FAILURE",
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/MESSAGE_COERCION_FAILURE"
   },
   {
-    "source":"/docs/troubleshooting/errors/MODEL_AUTHENTICATION",
+    "source": "/docs/troubleshooting/errors/MODEL_AUTHENTICATION",
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_AUTHENTICATION"
   },
   {
-    "source":"/docs/troubleshooting/errors/MODEL_NOT_FOUND",
+    "source": "/docs/troubleshooting/errors/MODEL_NOT_FOUND",
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_NOT_FOUND"
   },
   {
-    "source":"/docs/troubleshooting/errors/MODEL_RATE_LIMIT",
+    "source": "/docs/troubleshooting/errors/MODEL_RATE_LIMIT",
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_RATE_LIMIT"
   },
   {
-    "source":"/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE",
+    "source": "/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE",
     "destination": "https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE"
   },
   {
@@ -28770,5 +28770,9 @@
   {
     "source": "/v0.2/docs/integrations/memory/sql_chat_message_history/",
     "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders"
+  },
+  {
+    "source": "/:path*",
+    "destination": "https://docs.langchain.com/oss/python/langchain/overview"
   }
 ]
