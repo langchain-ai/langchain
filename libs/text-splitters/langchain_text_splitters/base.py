@@ -170,7 +170,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def from_huggingface_tokenizer(
         cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
     ) -> TextSplitter:
-        """Text splitter that uses HuggingFace tokenizer to count length."""
+        """Text splitter that uses Hugging Face tokenizer to count length."""
         if not _HAS_TRANSFORMERS:
             msg = (
                 "Could not import transformers python package. "
@@ -341,9 +341,9 @@ class Tokenizer:
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
     decode: Callable[[list[int]], str]
-    """ Function to decode a list of token ids to a string"""
+    """ Function to decode a list of token IDs to a string"""
     encode: Callable[[str], list[int]]
-    """ Function to encode a string to a list of token ids"""
+    """ Function to encode a string to a list of token IDs"""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:

@@ -392,7 +392,7 @@ class TestStateAndRuntime:
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
         assert len(state_values) == 1
-        assert state_values[0]["messages_count"] == 1  # Just the human message
+        assert state_values[0]["messages_count"] == 1  # Just The HumanMessage
         assert result["messages"][1].content == "Response"
 
     def test_retry_with_state_tracking(self) -> None:

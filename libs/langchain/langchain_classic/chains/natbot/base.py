@@ -40,7 +40,7 @@ class NatBotChain(Chain):
         access and use this chain, and isolate the network access of the server
         that hosts this chain.
 
-        See https://python.langchain.com/docs/security for more information.
+        See https://docs.langchain.com/oss/python/security-policy for more information.
 
     Example:
         ```python

@@ -53,7 +53,7 @@ def create_sql_query_chain(
 
         Control access to who can submit requests to this chain.
 
-        See https://python.langchain.com/docs/security for more information.
+        See https://docs.langchain.com/oss/python/security-policy for more information.
 
     Args:
         llm: The language model to use.

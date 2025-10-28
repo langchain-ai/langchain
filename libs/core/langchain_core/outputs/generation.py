@@ -11,9 +11,8 @@ from langchain_core.utils._merge import merge_dicts
 class Generation(Serializable):
     """A single text generation output.
 
-    Generation represents the response from an
-    `"old-fashioned" LLM <https://python.langchain.com/docs/concepts/text_llms/>__` that
-    generates regular text (not chat messages).
+    Generation represents the response from an "old-fashioned" LLM (string-in,
+    string-out) that generates regular text (not chat messages).
 
     This model is used internally by chat model and will eventually
     be mapped to a more general `LLMResult` object, and then projected into
