@@ -10,11 +10,8 @@ import hashlib
 import json
 import time
 from collections import OrderedDict
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
-
-from langchain_core.messages import BaseMessage
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -24,7 +21,9 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
+
+    from langchain_core.messages import BaseMessage
 
 
 @dataclass
