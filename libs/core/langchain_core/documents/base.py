@@ -32,7 +32,7 @@ class BaseMedia(Serializable):
 
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
-    # it has been adopted by enough vectorstore implementations.
+    # it has been adopted by enough VectorStore implementations.
     id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 

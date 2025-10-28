@@ -1029,18 +1029,18 @@ def convert_to_openai_messages(
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
-                - `'string'`:
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type `'text'`, these
-                    are joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type `'text'`, then
-                    all blocks are left as dicts.
-                - `'block'`:
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type `'text'`. If a message has
-                    content blocks these are left as is.
-        include_id: Whether to include message ids in the openai messages, if they
-                    are present in the source messages.
+            - `'string'`:
+                If a message has a string content, this is left as a string. If
+                a message has content blocks that are all of type `'text'`, these
+                are joined with a newline to make a single string. If a message has
+                content blocks and at least one isn't of type `'text'`, then
+                all blocks are left as dicts.
+            - `'block'`:
+                If a message has a string content, this is turned into a list
+                with a single content block of type `'text'`. If a message has
+                content blocks these are left as is.
+        include_id: Whether to include message IDs in the openai messages, if they
+            are present in the source messages.
 
     Raises:
         ValueError: if an unrecognized `text_format` is specified, or if a message
