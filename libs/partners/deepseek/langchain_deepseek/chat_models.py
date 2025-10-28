@@ -156,7 +156,8 @@ class ChatDeepSeek(BaseChatOpenAI):
         ```python
         {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
         ```
-    Response metadata
+
+    Response metadata:
         ```python
         ai_msg = model.invoke(messages)
         ai_msg.response_metadata
