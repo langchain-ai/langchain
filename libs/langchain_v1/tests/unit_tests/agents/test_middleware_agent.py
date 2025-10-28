@@ -1070,6 +1070,13 @@ def test_summarization_middleware_no_summarization_cases() -> None:
     result = middleware.before_model(state, None)
     assert result is None
 
+    # Test when summarization is disabled but message exceeds threshold
+    middleware_disabled = SummarizationMiddleware(model=model, max_tokens_before_summary=None)
+    messages = [HumanMessage(content="Hello"), AIMessage(content="Hi")] * 15
+    state = {"messages": messages}
+    result = middleware_disabled.before_model(state, None)
+    assert result is None
+
 
 def test_summarization_middleware_helper_methods() -> None:
     """Test SummarizationMiddleware helper methods."""
