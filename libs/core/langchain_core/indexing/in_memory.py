@@ -62,10 +62,10 @@ class InMemoryDocumentIndex(DocumentIndex):
         """Delete by IDs.
 
         Args:
-            ids: List of ids to delete.
+            ids: List of IDs to delete.
 
         Raises:
-            ValueError: If ids is None.
+            ValueError: If IDs is None.
 
         Returns:
             A response object that contains the list of IDs that were successfully

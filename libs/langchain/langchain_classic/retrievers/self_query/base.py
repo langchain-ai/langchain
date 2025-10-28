@@ -251,7 +251,7 @@ class SelfQueryRetriever(BaseRetriever):
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass in to the vector store search."""
     structured_query_translator: Visitor
-    """Translator for turning internal query language into vectorstore search params."""
+    """Translator for turning internal query language into `VectorStore` search params."""  # noqa: E501
     verbose: bool = False
 
     use_original_query: bool = False
@@ -360,7 +360,7 @@ class SelfQueryRetriever(BaseRetriever):
                 queried.
             metadata_field_info: Metadata field information for the documents.
             structured_query_translator: Optional translator for turning internal query
-                language into vectorstore search params.
+                language into `VectorStore` search params.
             chain_kwargs: Additional keyword arguments for the query constructor.
             enable_limit: Whether to enable the limit operator.
             use_original_query: Whether to use the original query instead of the revised

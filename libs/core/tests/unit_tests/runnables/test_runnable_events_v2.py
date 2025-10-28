@@ -56,7 +56,7 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
-    """Removes the run ids from events."""
+    """Removes the run IDs from events."""
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
