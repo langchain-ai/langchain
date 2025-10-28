@@ -330,66 +330,17 @@ def test_create_usage_metadata_with_cached_tokens() -> None:
     assert "output_token_details" not in result
 
 
-def test_create_usage_metadata_with_reasoning_tokens() -> None:
-    """Test usage metadata with reasoning tokens."""
-    token_usage = {
-        "prompt_tokens": 100,
-        "completion_tokens": 150,
-        "total_tokens": 250,
-        "completion_tokens_details": {"reasoning_tokens": 50},
-    }
-
-    result = _create_usage_metadata(token_usage)
-
-    assert isinstance(result, dict)
-    assert result["input_tokens"] == 100
-    assert result["output_tokens"] == 150
-    assert result["total_tokens"] == 250
-    assert "input_token_details" not in result
-    assert "output_token_details" in result
-    assert isinstance(result["output_token_details"], dict)
-    assert result["output_token_details"]["reasoning"] == 50
 
 
-def test_create_usage_metadata_with_prediction_tokens() -> None:
-    """Test usage metadata with prediction tokens.
-
-    Note: Prediction tokens are not included in usage_metadata.
-    Users can access them from response_metadata["token_usage"] if needed.
-    """
-    token_usage = {
-        "prompt_tokens": 100,
-        "completion_tokens": 200,
-        "total_tokens": 300,
-        "completion_tokens_details": {
-            "reasoning_tokens": 0,
-            "accepted_prediction_tokens": 50,
-            "rejected_prediction_tokens": 10,
-        },
-    }
-
-    result = _create_usage_metadata(token_usage)
-
-    assert isinstance(result, dict)
-    assert result["input_tokens"] == 100
-    assert result["output_tokens"] == 200
-    assert result["total_tokens"] == 300
-    assert "input_token_details" not in result
-    assert "output_token_details" not in result
 
 
 def test_create_usage_metadata_with_all_details() -> None:
-    """Test usage metadata with all token details."""
+    """Test usage metadata with all available details."""
     token_usage = {
         "prompt_tokens": 2006,
         "completion_tokens": 300,
         "total_tokens": 2306,
         "prompt_tokens_details": {"cached_tokens": 1920},
-        "completion_tokens_details": {
-            "reasoning_tokens": 50,
-            "accepted_prediction_tokens": 20,
-            "rejected_prediction_tokens": 5,
-        },
     }
 
     result = _create_usage_metadata(token_usage)
@@ -403,9 +354,7 @@ def test_create_usage_metadata_with_all_details() -> None:
     assert isinstance(result["input_token_details"], dict)
     assert result["input_token_details"]["cache_read"] == 1920
 
-    assert "output_token_details" in result
-    assert isinstance(result["output_token_details"], dict)
-    assert result["output_token_details"]["reasoning"] == 50
+    assert "output_token_details" not in result
 
 
 def test_create_usage_metadata_missing_total_tokens() -> None:
@@ -429,7 +378,6 @@ def test_create_usage_metadata_empty_details() -> None:
         "completion_tokens": 50,
         "total_tokens": 150,
         "prompt_tokens_details": {},
-        "completion_tokens_details": {},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -482,7 +430,6 @@ def test_chat_result_with_usage_metadata() -> None:
             "completion_tokens": 300,
             "total_tokens": 2306,
             "prompt_tokens_details": {"cached_tokens": 1920},
-            "completion_tokens_details": {"reasoning_tokens": 50},
         },
     }
 
@@ -502,8 +449,7 @@ def test_chat_result_with_usage_metadata() -> None:
     assert "input_token_details" in message.usage_metadata
     assert message.usage_metadata["input_token_details"]["cache_read"] == 1920
 
-    assert "output_token_details" in message.usage_metadata
-    assert message.usage_metadata["output_token_details"]["reasoning"] == 50
+    assert "output_token_details" not in message.usage_metadata
 
 
 def test_chat_result_backward_compatibility() -> None:
@@ -570,11 +516,6 @@ def test_streaming_with_usage_metadata() -> None:
                 "completion_tokens": 300,
                 "total_tokens": 2306,
                 "prompt_tokens_details": {"cached_tokens": 1920},
-                "completion_tokens_details": {
-                    "reasoning_tokens": 50,
-                    "accepted_prediction_tokens": 20,
-                    "rejected_prediction_tokens": 5,
-                },
             }
         },
     }
@@ -593,8 +534,7 @@ def test_streaming_with_usage_metadata() -> None:
     assert "input_token_details" in result.usage_metadata
     assert result.usage_metadata["input_token_details"]["cache_read"] == 1920
 
-    assert "output_token_details" in result.usage_metadata
-    assert result.usage_metadata["output_token_details"]["reasoning"] == 50
+    assert "output_token_details" not in result.usage_metadata
 
 
 def test_streaming_without_usage_metadata() -> None:

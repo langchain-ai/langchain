@@ -39,7 +39,6 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
-    OutputTokenDetails,
     UsageMetadata,
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -1419,11 +1418,6 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
             "cached_tokens"
         ),
     }
-    output_token_details: dict = {
-        "reasoning": (groq_token_usage.get("completion_tokens_details") or {}).get(
-            "reasoning_tokens"
-        ),
-    }
     usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
@@ -1432,6 +1426,4 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
 
     if filtered_input := {k: v for k, v in input_token_details.items() if v}:
         usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
-    if filtered_output := {k: v for k, v in output_token_details.items() if v}:
-        usage_metadata["output_token_details"] = OutputTokenDetails(**filtered_output)  # type: ignore[typeddict-item]
     return usage_metadata
