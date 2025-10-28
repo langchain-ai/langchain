@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
+import warnings
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -612,8 +613,6 @@ def create_agent(  # noqa: PLR0915
 
     # Convert response format and setup structured output tools
     # Raw schemas are wrapped in AutoStrategy to preserve auto-detection intent.
-    # AutoStrategy is converted to ToolStrategy upfront to calculate tools during agent creation,
-    # but may be replaced with ProviderStrategy later based on model capabilities.
     initial_response_format: ToolStrategy | ProviderStrategy | AutoStrategy | None
     if response_format is None:
         initial_response_format = None
@@ -624,15 +623,29 @@ def create_agent(  # noqa: PLR0915
         # AutoStrategy provided - preserve it for later auto-detection
         initial_response_format = response_format
     else:
-        # Raw schema - wrap in AutoStrategy to enable auto-detection
-        initial_response_format = AutoStrategy(schema=response_format)
+        if not isinstance(response_format, AutoStrategy):
+            schema = response_format  # raw schema
+        else:
+            schema = response_format.schema
+        try:
+            model_capabilities = model.capabilities
+            if model_capabilities["structured_output"]:
+                response_format = ProviderStrategy(schema=schema)
+            else:
+                response_format = ToolStrategy(schema=schema)
+            initial_response_format = response_format
+        except ImportError:
+            warning_msg = (
+                "Could not infer structured output strategy. pip install "
+                "langchain-llm-capabilities to enable model capability detection. "
+                "Defaulting to ToolStrategy."
+            )
+            warnings.warn(warning_msg, ImportWarning)
+            response_format = ToolStrategy(schema=schema)
+            initial_response_format = response_format
 
-    # For AutoStrategy, convert to ToolStrategy to setup tools upfront
-    # (may be replaced with ProviderStrategy later based on model)
     tool_strategy_for_setup: ToolStrategy | None = None
-    if isinstance(initial_response_format, AutoStrategy):
-        tool_strategy_for_setup = ToolStrategy(schema=initial_response_format.schema)
-    elif isinstance(initial_response_format, ToolStrategy):
+    if isinstance(initial_response_format, ToolStrategy):
         tool_strategy_for_setup = initial_response_format
 
     structured_output_tools: dict[str, OutputToolBinding] = {}
