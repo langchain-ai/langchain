@@ -9,6 +9,7 @@ import langchain_core.load as lc_load
 import pytest
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     FunctionMessage,
     HumanMessage,
     InvalidToolCall,
@@ -16,7 +17,12 @@ from langchain_core.messages import (
     ToolCall,
 )
 
-from langchain_groq.chat_models import ChatGroq, _convert_dict_to_message
+from langchain_groq.chat_models import (
+    ChatGroq,
+    _convert_chunk_to_message_chunk,
+    _convert_dict_to_message,
+    _create_usage_metadata,
+)
 
 if "GROQ_API_KEY" not in os.environ:
     os.environ["GROQ_API_KEY"] = "fake-key"
@@ -283,3 +289,353 @@ def test_groq_serialization() -> None:
 
     # Ensure a None was preserved
     assert llm.groq_api_base == llm2.groq_api_base
+
+
+def test_create_usage_metadata_basic() -> None:
+    """Test basic usage metadata creation without details."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert "input_token_details" not in result
+    assert "output_token_details" not in result
+
+
+def test_create_usage_metadata_with_cached_tokens() -> None:
+    """Test usage metadata with prompt caching."""
+    token_usage = {
+        "prompt_tokens": 2006,
+        "completion_tokens": 300,
+        "total_tokens": 2306,
+        "prompt_tokens_details": {
+            "cached_tokens": 1920
+        }
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 2006
+    assert result["output_tokens"] == 300
+    assert result["total_tokens"] == 2306
+    assert "input_token_details" in result
+    assert isinstance(result["input_token_details"], dict)
+    assert result["input_token_details"]["cache_read"] == 1920
+    assert "output_token_details" not in result
+
+
+def test_create_usage_metadata_with_reasoning_tokens() -> None:
+    """Test usage metadata with reasoning tokens."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 150,
+        "total_tokens": 250,
+        "completion_tokens_details": {
+            "reasoning_tokens": 50
+        }
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 150
+    assert result["total_tokens"] == 250
+    assert "input_token_details" not in result
+    assert "output_token_details" in result
+    assert isinstance(result["output_token_details"], dict)
+    assert result["output_token_details"]["reasoning"] == 50
+
+
+def test_create_usage_metadata_with_prediction_tokens() -> None:
+    """Test usage metadata with prediction tokens."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 200,
+        "total_tokens": 300,
+        "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "accepted_prediction_tokens": 50,
+            "rejected_prediction_tokens": 10
+        }
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 200
+    assert result["total_tokens"] == 300
+    assert "input_token_details" not in result
+    assert "output_token_details" in result
+    assert isinstance(result["output_token_details"], dict)
+    assert "reasoning" not in result["output_token_details"]
+    assert result["output_token_details"]["accepted_prediction"] == 50
+    assert result["output_token_details"]["rejected_prediction"] == 10
+
+
+def test_create_usage_metadata_with_all_details() -> None:
+    """Test usage metadata with all token details."""
+    token_usage = {
+        "prompt_tokens": 2006,
+        "completion_tokens": 300,
+        "total_tokens": 2306,
+        "prompt_tokens_details": {
+            "cached_tokens": 1920
+        },
+        "completion_tokens_details": {
+            "reasoning_tokens": 50,
+            "accepted_prediction_tokens": 20,
+            "rejected_prediction_tokens": 5
+        }
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 2006
+    assert result["output_tokens"] == 300
+    assert result["total_tokens"] == 2306
+
+    assert "input_token_details" in result
+    assert isinstance(result["input_token_details"], dict)
+    assert result["input_token_details"]["cache_read"] == 1920
+
+    assert "output_token_details" in result
+    assert isinstance(result["output_token_details"], dict)
+    assert result["output_token_details"]["reasoning"] == 50
+    assert result["output_token_details"]["accepted_prediction"] == 20
+    assert result["output_token_details"]["rejected_prediction"] == 5
+
+
+def test_create_usage_metadata_missing_total_tokens() -> None:
+    """Test that total_tokens is calculated when missing."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+
+
+def test_create_usage_metadata_empty_details() -> None:
+    """Test that empty detail dicts don't create token detail objects."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "prompt_tokens_details": {},
+        "completion_tokens_details": {}
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert "input_token_details" not in result
+    assert "output_token_details" not in result
+
+
+def test_create_usage_metadata_zero_cached_tokens() -> None:
+    """Test that zero cached tokens are not included (falsy)."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "prompt_tokens_details": {
+            "cached_tokens": 0
+        }
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert "input_token_details" not in result
+
+
+def test_chat_result_with_usage_metadata() -> None:
+    """Test that _create_chat_result properly includes usage metadata."""
+    llm = ChatGroq(model="test-model")
+
+    mock_response = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Test response",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 2006,
+            "completion_tokens": 300,
+            "total_tokens": 2306,
+            "prompt_tokens_details": {
+                "cached_tokens": 1920
+            },
+            "completion_tokens_details": {
+                "reasoning_tokens": 50
+            }
+        }
+    }
+
+    result = llm._create_chat_result(mock_response, {})
+
+    assert len(result.generations) == 1
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+    assert message.content == "Test response"
+
+    assert message.usage_metadata is not None
+    assert isinstance(message.usage_metadata, dict)
+    assert message.usage_metadata["input_tokens"] == 2006
+    assert message.usage_metadata["output_tokens"] == 300
+    assert message.usage_metadata["total_tokens"] == 2306
+
+    assert "input_token_details" in message.usage_metadata
+    assert message.usage_metadata["input_token_details"]["cache_read"] == 1920
+
+    assert "output_token_details" in message.usage_metadata
+    assert message.usage_metadata["output_token_details"]["reasoning"] == 50
+
+
+def test_chat_result_backward_compatibility() -> None:
+    """Test that responses without new fields still work."""
+    llm = ChatGroq(model="test-model")
+
+    mock_response = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Test response",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 100,
+            "completion_tokens": 50,
+            "total_tokens": 150,
+        }
+    }
+
+    result = llm._create_chat_result(mock_response, {})
+
+    assert len(result.generations) == 1
+    message = result.generations[0].message
+    assert isinstance(message, AIMessage)
+
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 100
+    assert message.usage_metadata["output_tokens"] == 50
+    assert message.usage_metadata["total_tokens"] == 150
+
+    assert "input_token_details" not in message.usage_metadata
+    assert "output_token_details" not in message.usage_metadata
+
+
+def test_streaming_with_usage_metadata() -> None:
+    """Test that streaming properly includes usage metadata."""
+    chunk = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "Hello",
+                },
+                "finish_reason": None,
+            }
+        ],
+        "x_groq": {
+            "usage": {
+                "prompt_tokens": 2006,
+                "completion_tokens": 300,
+                "total_tokens": 2306,
+                "prompt_tokens_details": {
+                    "cached_tokens": 1920
+                },
+                "completion_tokens_details": {
+                    "reasoning_tokens": 50,
+                    "accepted_prediction_tokens": 20,
+                    "rejected_prediction_tokens": 5
+                }
+            }
+        }
+    }
+
+    result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "Hello"
+
+    assert result.usage_metadata is not None
+    assert isinstance(result.usage_metadata, dict)
+    assert result.usage_metadata["input_tokens"] == 2006
+    assert result.usage_metadata["output_tokens"] == 300
+    assert result.usage_metadata["total_tokens"] == 2306
+
+    assert "input_token_details" in result.usage_metadata
+    assert result.usage_metadata["input_token_details"]["cache_read"] == 1920
+
+    assert "output_token_details" in result.usage_metadata
+    assert result.usage_metadata["output_token_details"]["reasoning"] == 50
+    assert result.usage_metadata["output_token_details"]["accepted_prediction"] == 20
+    assert result.usage_metadata["output_token_details"]["rejected_prediction"] == 5
+
+
+def test_streaming_without_usage_metadata() -> None:
+    """Test that streaming works without usage metadata (backward compatibility)."""
+    chunk = {
+        "id": "chatcmpl-123",
+        "object": "chat.completion.chunk",
+        "created": 1234567890,
+        "model": "test-model",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {
+                    "role": "assistant",
+                    "content": "Hello",
+                },
+                "finish_reason": None,
+            }
+        ],
+    }
+
+    result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+
+    assert isinstance(result, AIMessageChunk)
+    assert result.content == "Hello"
+    assert result.usage_metadata is None
