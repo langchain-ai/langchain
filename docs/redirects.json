@@ -4485,7 +4485,7 @@
   },
   {
     "source": "/v0.1/docs/security",
-    "destination": "https://docs.langchain.com/oss/python/langchain/guardrails"
+    "destination": "https://docs.langchain.com/oss/python/security-policy"
   },
   {
     "source": "/v0.1/docs/templates",
@@ -26741,7 +26741,39 @@
   },
   {
     "source": "/v0.2/docs/security/",
-    "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders"
+    "destination": "https://docs.langchain.com/oss/python/security-policy"
+  },
+  {
+    "source": "/docs/security/",
+    "destination": "https://docs.langchain.com/oss/python/security-policy"
+  },
+  {
+    "source": "/docs/troubleshooting/errors/INVALID_PROMPT_INPUT/",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_PROMPT_INPUT"
+  },
+  {
+    "source": "/docs/troubleshooting/errors/INVALID_TOOL_RESULTS/",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_TOOL_RESULTS"
+  },
+  {
+    "source":"/docs/troubleshooting/errors/MESSAGE_COERCION_FAILURE",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/MESSAGE_COERCION_FAILURE"
+  },
+  {
+    "source":"/docs/troubleshooting/errors/MODEL_AUTHENTICATION",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_AUTHENTICATION"
+  },
+  {
+    "source":"/docs/troubleshooting/errors/MODEL_NOT_FOUND",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_NOT_FOUND"
+  },
+  {
+    "source":"/docs/troubleshooting/errors/MODEL_RATE_LIMIT",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_RATE_LIMIT"
+  },
+  {
+    "source":"/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE",
+    "destination": "https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE"
   },
   {
     "source": "/v0.2/docs/tutorials/qa_chat_history/",
