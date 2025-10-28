@@ -827,7 +827,7 @@ class ChildTool(BaseTool):
                 msg = (
                     "Since response_format='content_and_artifact' "
                     "a two-tuple of the message content and raw tool output is "
-                    f"expected. Instead generated response of type: "
+                    f"expected. Instead, generated response is of type: "
                     f"{type(response)}."
                 )
                 if not isinstance(response, tuple):
@@ -943,7 +943,7 @@ class ChildTool(BaseTool):
                 msg = (
                     "Since response_format='content_and_artifact' "
                     "a two-tuple of the message content and raw tool output is "
-                    f"expected. Instead generated response of type: "
+                    f"expected. Instead, generated response is of type: "
                     f"{type(response)}."
                 )
                 if not isinstance(response, tuple):

@@ -1349,11 +1349,11 @@ def _create_template_from_message_type(
 
             if not isinstance(is_optional, bool):
                 msg = f"Expected is_optional to be a boolean. Got: {is_optional}"
-                raise ValueError(msg)  # noqa:TRY004
+                raise ValueError(msg)  # noqa: TRY004
 
             if not isinstance(var_name_wrapped, str):
                 msg = f"Expected variable name to be a string. Got: {var_name_wrapped}"
-                raise ValueError(msg)  # noqa:TRY004
+                raise ValueError(msg)  # noqa: TRY004
             if var_name_wrapped[0] != "{" or var_name_wrapped[-1] != "}":
                 msg = (
                     f"Invalid placeholder template: {var_name_wrapped}."
