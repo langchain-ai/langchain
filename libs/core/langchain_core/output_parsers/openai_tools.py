@@ -6,7 +6,8 @@ import logging
 from json import JSONDecodeError
 from typing import Annotated, Any
 
-from pydantic import SkipValidation, ValidationError
+from pydantic import BaseModel, SkipValidation, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
@@ -17,8 +18,6 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import (
     TypeBaseModel,
-    is_pydantic_v1_subclass,
-    is_pydantic_v2_subclass,
 )
 
 logger = logging.getLogger(__name__)
@@ -339,10 +338,10 @@ class PydanticToolsParser(JsonOutputToolsParser):
         name_dict_v2: dict[str, TypeBaseModel] = {
             tool.model_config.get("title") or tool.__name__: tool
             for tool in self.tools
-            if is_pydantic_v2_subclass(tool)
+            if issubclass(tool, BaseModel)
         }
         name_dict_v1: dict[str, TypeBaseModel] = {
-            tool.__name__: tool for tool in self.tools if is_pydantic_v1_subclass(tool)
+            tool.__name__: tool for tool in self.tools if issubclass(tool, BaseModelV1)
         }
         name_dict: dict[str, TypeBaseModel] = {**name_dict_v2, **name_dict_v1}
         pydantic_objects = []
