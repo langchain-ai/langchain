@@ -175,7 +175,7 @@ def test_pydantic_output_parser_type_inference() -> None:
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
     pydantic_parser = PydanticOutputParser[SampleModel](pydantic_object=SampleModel)
-    schema = pydantic_parser.get_output_schema().model_json_schema()
+    schema = pydantic_parser.get_output_jsonschema()
 
     assert schema == {
         "properties": {

@@ -1835,7 +1835,7 @@ def test_tool_inherited_injected_arg() -> None:
             return y
 
     tool_ = InheritedInjectedArgTool()
-    assert tool_.get_input_schema().model_json_schema() == {
+    assert tool_.get_input_jsonschema() == {
         "title": "FooSchema",  # Matches the title from the provided schema
         "description": "foo.",
         "type": "object",
@@ -2009,7 +2009,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     tool = SomeTool(name="some_tool", description="some description")
 
-    assert tool.get_input_schema().model_json_schema() == {
+    assert tool.get_input_jsonschema() == {
         "properties": {
             "a": {"title": "A", "type": "integer"},
             "b": {"title": "B", "type": "string"},
@@ -2632,7 +2632,7 @@ def test_structured_tool_args_schema_dict() -> None:
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,
@@ -2668,7 +2668,7 @@ def test_simple_tool_args_schema_dict() -> None:
     assert _get_tool_call_json_schema(tool) == args_schema
     # test that the input schema is the same as the parent (Runnable) input schema
     assert (
-        tool.get_input_schema().model_json_schema()
+        tool.get_input_jsonschema()
         == create_model_v2(
             tool.get_name("Input"),
             root=tool.InputType,

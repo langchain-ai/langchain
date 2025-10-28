@@ -96,7 +96,7 @@ from langchain_core.tracers.root_listeners import (
 )
 from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
-from langchain_core.utils.pydantic import create_model_v2
+from langchain_core.utils.pydantic import TypeBaseModel, create_model_v2, get_fields
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -363,14 +363,14 @@ class Runnable(ABC, Generic[Input, Output]):
         raise TypeError(msg)
 
     @property
-    def input_schema(self) -> type[BaseModel]:
+    def input_schema(self) -> TypeBaseModel:
         """The type of input this `Runnable` accepts specified as a Pydantic model."""
         return self.get_input_schema()
 
     def get_input_schema(
         self,
         config: RunnableConfig | None = None,
-    ) -> type[BaseModel]:
+    ) -> TypeBaseModel:
         """Get a Pydantic model that can be used to validate input to the `Runnable`.
 
         `Runnable` objects that leverage the `configurable_fields` and
@@ -436,10 +436,13 @@ class Runnable(ABC, Generic[Input, Output]):
         !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
-        return self.get_input_schema(config).model_json_schema()
+        schema = self.get_input_schema(config)
+        if issubclass(schema, BaseModel):
+            return schema.model_json_schema()
+        return schema.schema()
 
     @property
-    def output_schema(self) -> type[BaseModel]:
+    def output_schema(self) -> TypeBaseModel:
         """Output schema.
 
         The type of output this `Runnable` produces specified as a Pydantic model.
@@ -449,7 +452,7 @@ class Runnable(ABC, Generic[Input, Output]):
     def get_output_schema(
         self,
         config: RunnableConfig | None = None,
-    ) -> type[BaseModel]:
+    ) -> TypeBaseModel:
         """Get a Pydantic model that can be used to validate output to the `Runnable`.
 
         `Runnable` objects that leverage the `configurable_fields` and
@@ -515,7 +518,10 @@ class Runnable(ABC, Generic[Input, Output]):
         !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
-        return self.get_output_schema(config).model_json_schema()
+        schema = self.get_output_schema(config)
+        if issubclass(schema, BaseModel):
+            return schema.model_json_schema()
+        return schema.schema()
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -2728,7 +2734,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
 def _seq_input_schema(
     steps: list[Runnable[Any, Any]], config: RunnableConfig | None
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     # Import locally to prevent circular import
     from langchain_core.runnables.passthrough import (  # noqa: PLC0415
         RunnableAssign,
@@ -2746,7 +2752,7 @@ def _seq_input_schema(
                 "RunnableSequenceInput",
                 field_definitions={
                     k: (v.annotation, v.default)
-                    for k, v in next_input_schema.model_fields.items()
+                    for k, v in get_fields(next_input_schema).items()
                     if k not in first.mapper.steps__
                 },
             )
@@ -2758,7 +2764,7 @@ def _seq_input_schema(
 
 def _seq_output_schema(
     steps: list[Runnable[Any, Any]], config: RunnableConfig | None
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     # Import locally to prevent circular import
     from langchain_core.runnables.passthrough import (  # noqa: PLC0415
         RunnableAssign,
@@ -2778,7 +2784,7 @@ def _seq_output_schema(
                 field_definitions={
                     **{
                         k: (v.annotation, v.default)
-                        for k, v in prev_output_schema.model_fields.items()
+                        for k, v in get_fields(prev_output_schema).items()
                     },
                     **{
                         k: (v.annotation, v.default)
@@ -2795,11 +2801,11 @@ def _seq_output_schema(
                     "RunnableSequenceOutput",
                     field_definitions={
                         k: (v.annotation, v.default)
-                        for k, v in prev_output_schema.model_fields.items()
+                        for k, v in get_fields(prev_output_schema).items()
                         if k in last.keys
                     },
                 )
-            field = prev_output_schema.model_fields[last.keys]
+            field = get_fields(prev_output_schema)[last.keys]
             return create_model_v2(
                 "RunnableSequenceOutput", root=(field.annotation, field.default)
             )
@@ -2987,7 +2993,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return self.last.OutputType
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """Get the input schema of the `Runnable`.
 
         Args:
@@ -3000,9 +3006,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return _seq_input_schema(self.steps, config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """Get the output schema of the `Runnable`.
 
         Args:
@@ -3716,7 +3720,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         return Any
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """Get the input schema of the `Runnable`.
 
         Args:
@@ -3727,12 +3731,11 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         """
         if all(
-            s.get_input_schema(config).model_json_schema().get("type", "object")
-            == "object"
+            s.get_input_jsonschema(config).get("type", "object") == "object"
             for s in self.steps__.values()
         ):
             for step in self.steps__.values():
-                fields = step.get_input_schema(config).model_fields
+                fields = get_fields(step.get_input_schema(config))
                 root_field = fields.get("root")
                 if root_field is not None and root_field.annotation != Any:
                     return super().get_input_schema(config)
@@ -3743,7 +3746,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 field_definitions={
                     k: (v.annotation, v.default)
                     for step in self.steps__.values()
-                    for k, v in step.get_input_schema(config).model_fields.items()
+                    for k, v in get_fields(step.get_input_schema(config)).items()
                     if k != "__root__"
                 },
             )
@@ -4662,7 +4665,7 @@ class RunnableLambda(Runnable[Input, Output]):
         return Any
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """The Pydantic schema for the input to this `Runnable`.
 
         Args:
@@ -5639,15 +5642,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         )
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         if self.custom_input_type is not None:
             return super().get_input_schema(config)
         return self.bound.get_input_schema(merge_configs(self.config, config))
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         if self.custom_output_type is not None:
             return super().get_output_schema(config)
         return self.bound.get_output_schema(merge_configs(self.config, config))

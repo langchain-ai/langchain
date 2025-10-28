@@ -40,7 +40,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
     @property
     def input_keys(self) -> list[str]:
         """Input keys for Hyde's LLM chain."""
-        return self.llm_chain.input_schema.model_json_schema()["required"]
+        return self.llm_chain.get_input_jsonschema()["required"]
 
     @property
     def output_keys(self) -> list[str]:
