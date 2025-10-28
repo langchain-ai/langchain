@@ -87,8 +87,8 @@ class ConversationalChatAgent(Agent):
 
         Args:
             tools: The tools to use.
-            system_message: The system message to use.
-            human_message: The human message to use.
+            system_message: The `SystemMessage` to use.
+            human_message: The `HumanMessage` to use.
             input_variables: The input variables to use.
             output_parser: The output parser to use.
 
@@ -150,8 +150,8 @@ class ConversationalChatAgent(Agent):
             tools: A list of tools to use.
             callback_manager: The callback manager to use.
             output_parser: The output parser to use.
-            system_message: The system message to use.
-            human_message: The human message to use.
+            system_message: The `SystemMessage` to use.
+            human_message: The `HumanMessage` to use.
             input_variables: The input variables to use.
             **kwargs: Any additional arguments.
 

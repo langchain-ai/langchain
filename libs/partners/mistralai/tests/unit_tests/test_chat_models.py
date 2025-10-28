@@ -349,4 +349,4 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     # Ensure there are no duplicate ids
     ids = [tc.get("id") for tc in tool_calls if isinstance(tc, dict)]
     assert len(ids) == 2
-    assert len(set(ids)) == 2, f"Duplicate tool call ids found: {ids}"
+    assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
