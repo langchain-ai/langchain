@@ -1418,7 +1418,7 @@ def test_web_fetch() -> None:
         "role": "user",
         "content": (
             "Fetch https://docs.langchain.com and then try to fetch "
-            "https://python.langchain.com"
+            "https://langchain.com"
         ),
     }
     max_uses_response = llm_with_tools.invoke([multi_fetch_message])

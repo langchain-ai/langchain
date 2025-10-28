@@ -807,7 +807,7 @@ class ChatAnthropic(BaseChatModel):
         See `ChatAnthropic.with_structured_output()` for more.
 
     Image input:
-        See [multimodal guides](https://python.langchain.com/docs/how_to/multimodal_inputs/)
+        See [multimodal guides](https://docs.langchain.com/oss/python/langchain/models#multimodal)
         for more detail.
 
         ```python
@@ -875,7 +875,7 @@ class ChatAnthropic(BaseChatModel):
             ```
 
     PDF input:
-        See [multimodal guides](https://python.langchain.com/docs/how_to/multimodal_inputs/)
+        See [multimodal guides](https://docs.langchain.com/oss/python/langchain/models#multimodal)
         for more detail.
 
         ```python
@@ -1221,7 +1221,7 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note title="Token-efficient tool use (beta)"
 
-        See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/)
+        See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic)
         for more detail.
 
         ```python
@@ -1278,7 +1278,7 @@ class ChatAnthropic(BaseChatModel):
 
     !!! note title="Built-in tools"
 
-        See LangChain [docs](https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools)
+        See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#built-in-tools)
         for more detail.
 
         ??? note "Web search"

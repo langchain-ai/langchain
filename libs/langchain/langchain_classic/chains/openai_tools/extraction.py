@@ -20,7 +20,7 @@ If a property is not present and is not required in the function parameters, do 
         "LangChain has introduced a method called `with_structured_output` that"
         "is available on ChatModels capable of tool calling."
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "Please follow our extraction use case documentation for more guidelines"
         "on how to do information extraction with LLMs."
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
