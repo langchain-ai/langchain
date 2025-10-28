@@ -1401,6 +1401,7 @@ def _lc_invalid_tool_call_to_groq_tool_call(
         },
     }
 
+
 def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     """Create usage metadata from Groq token usage response.
 
@@ -1410,32 +1411,27 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     Returns:
         Usage metadata dict with input/output token details.
     """
-    input_tokens = groq_token_usage.get("prompt_tokens", 0)
-    output_tokens = groq_token_usage.get("completion_tokens", 0)
-    total_tokens = groq_token_usage.get("total_tokens", input_tokens + output_tokens)
-
+    input_tokens = groq_token_usage.get("prompt_tokens") or 0
+    output_tokens = groq_token_usage.get("completion_tokens") or 0
+    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+    input_token_details: dict = {
+        "cache_read": (groq_token_usage.get("prompt_tokens_details") or {}).get(
+            "cached_tokens"
+        ),
+    }
+    output_token_details: dict = {
+        "reasoning": (groq_token_usage.get("completion_tokens_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
     usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "total_tokens": total_tokens,
     }
 
-    if prompt_details := groq_token_usage.get("prompt_tokens_details"):
-        input_token_details: InputTokenDetails = {}
-        if cached := prompt_details.get("cached_tokens"):
-            input_token_details["cache_read"] = cached
-        if input_token_details:
-            usage_metadata["input_token_details"] = input_token_details
-
-    if completion_details := groq_token_usage.get("completion_tokens_details"):
-        output_token_details: OutputTokenDetails = {}
-        if reasoning := completion_details.get("reasoning_tokens"):
-            output_token_details["reasoning"] = reasoning
-        if accepted := completion_details.get("accepted_prediction_tokens"):
-            output_token_details["accepted_prediction"] = accepted
-        if rejected := completion_details.get("rejected_prediction_tokens"):
-            output_token_details["rejected_prediction"] = rejected
-        if output_token_details:
-            usage_metadata["output_token_details"] = output_token_details
-
+    if filtered_input := {k: v for k, v in input_token_details.items() if v}:
+        usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
+    if filtered_output := {k: v for k, v in output_token_details.items() if v}:
+        usage_metadata["output_token_details"] = OutputTokenDetails(**filtered_output)  # type: ignore[typeddict-item]
     return usage_metadata

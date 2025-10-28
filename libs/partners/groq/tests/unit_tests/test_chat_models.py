@@ -315,9 +315,7 @@ def test_create_usage_metadata_with_cached_tokens() -> None:
         "prompt_tokens": 2006,
         "completion_tokens": 300,
         "total_tokens": 2306,
-        "prompt_tokens_details": {
-            "cached_tokens": 1920
-        }
+        "prompt_tokens_details": {"cached_tokens": 1920},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -338,9 +336,7 @@ def test_create_usage_metadata_with_reasoning_tokens() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 150,
         "total_tokens": 250,
-        "completion_tokens_details": {
-            "reasoning_tokens": 50
-        }
+        "completion_tokens_details": {"reasoning_tokens": 50},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -356,7 +352,11 @@ def test_create_usage_metadata_with_reasoning_tokens() -> None:
 
 
 def test_create_usage_metadata_with_prediction_tokens() -> None:
-    """Test usage metadata with prediction tokens."""
+    """Test usage metadata with prediction tokens.
+
+    Note: Prediction tokens are not included in usage_metadata.
+    Users can access them from response_metadata["token_usage"] if needed.
+    """
     token_usage = {
         "prompt_tokens": 100,
         "completion_tokens": 200,
@@ -364,8 +364,8 @@ def test_create_usage_metadata_with_prediction_tokens() -> None:
         "completion_tokens_details": {
             "reasoning_tokens": 0,
             "accepted_prediction_tokens": 50,
-            "rejected_prediction_tokens": 10
-        }
+            "rejected_prediction_tokens": 10,
+        },
     }
 
     result = _create_usage_metadata(token_usage)
@@ -375,11 +375,7 @@ def test_create_usage_metadata_with_prediction_tokens() -> None:
     assert result["output_tokens"] == 200
     assert result["total_tokens"] == 300
     assert "input_token_details" not in result
-    assert "output_token_details" in result
-    assert isinstance(result["output_token_details"], dict)
-    assert "reasoning" not in result["output_token_details"]
-    assert result["output_token_details"]["accepted_prediction"] == 50
-    assert result["output_token_details"]["rejected_prediction"] == 10
+    assert "output_token_details" not in result
 
 
 def test_create_usage_metadata_with_all_details() -> None:
@@ -388,14 +384,12 @@ def test_create_usage_metadata_with_all_details() -> None:
         "prompt_tokens": 2006,
         "completion_tokens": 300,
         "total_tokens": 2306,
-        "prompt_tokens_details": {
-            "cached_tokens": 1920
-        },
+        "prompt_tokens_details": {"cached_tokens": 1920},
         "completion_tokens_details": {
             "reasoning_tokens": 50,
             "accepted_prediction_tokens": 20,
-            "rejected_prediction_tokens": 5
-        }
+            "rejected_prediction_tokens": 5,
+        },
     }
 
     result = _create_usage_metadata(token_usage)
@@ -412,8 +406,6 @@ def test_create_usage_metadata_with_all_details() -> None:
     assert "output_token_details" in result
     assert isinstance(result["output_token_details"], dict)
     assert result["output_token_details"]["reasoning"] == 50
-    assert result["output_token_details"]["accepted_prediction"] == 20
-    assert result["output_token_details"]["rejected_prediction"] == 5
 
 
 def test_create_usage_metadata_missing_total_tokens() -> None:
@@ -437,7 +429,7 @@ def test_create_usage_metadata_empty_details() -> None:
         "completion_tokens": 50,
         "total_tokens": 150,
         "prompt_tokens_details": {},
-        "completion_tokens_details": {}
+        "completion_tokens_details": {},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -455,9 +447,7 @@ def test_create_usage_metadata_zero_cached_tokens() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 50,
         "total_tokens": 150,
-        "prompt_tokens_details": {
-            "cached_tokens": 0
-        }
+        "prompt_tokens_details": {"cached_tokens": 0},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -491,13 +481,9 @@ def test_chat_result_with_usage_metadata() -> None:
             "prompt_tokens": 2006,
             "completion_tokens": 300,
             "total_tokens": 2306,
-            "prompt_tokens_details": {
-                "cached_tokens": 1920
-            },
-            "completion_tokens_details": {
-                "reasoning_tokens": 50
-            }
-        }
+            "prompt_tokens_details": {"cached_tokens": 1920},
+            "completion_tokens_details": {"reasoning_tokens": 50},
+        },
     }
 
     result = llm._create_chat_result(mock_response, {})
@@ -543,7 +529,7 @@ def test_chat_result_backward_compatibility() -> None:
             "prompt_tokens": 100,
             "completion_tokens": 50,
             "total_tokens": 150,
-        }
+        },
     }
 
     result = llm._create_chat_result(mock_response, {})
@@ -583,16 +569,14 @@ def test_streaming_with_usage_metadata() -> None:
                 "prompt_tokens": 2006,
                 "completion_tokens": 300,
                 "total_tokens": 2306,
-                "prompt_tokens_details": {
-                    "cached_tokens": 1920
-                },
+                "prompt_tokens_details": {"cached_tokens": 1920},
                 "completion_tokens_details": {
                     "reasoning_tokens": 50,
                     "accepted_prediction_tokens": 20,
-                    "rejected_prediction_tokens": 5
-                }
+                    "rejected_prediction_tokens": 5,
+                },
             }
-        }
+        },
     }
 
     result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
@@ -611,8 +595,6 @@ def test_streaming_with_usage_metadata() -> None:
 
     assert "output_token_details" in result.usage_metadata
     assert result.usage_metadata["output_token_details"]["reasoning"] == 50
-    assert result.usage_metadata["output_token_details"]["accepted_prediction"] == 20
-    assert result.usage_metadata["output_token_details"]["rejected_prediction"] == 5
 
 
 def test_streaming_without_usage_metadata() -> None:
