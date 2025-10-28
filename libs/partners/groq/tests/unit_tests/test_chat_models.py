@@ -330,10 +330,6 @@ def test_create_usage_metadata_with_cached_tokens() -> None:
     assert "output_token_details" not in result
 
 
-
-
-
-
 def test_create_usage_metadata_with_all_details() -> None:
     """Test usage metadata with all available details."""
     token_usage = {
