@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class CustomAddTextsVectorstore(VectorStore):
-    """A vectorstore that only implements add texts."""
+    """A VectorStore that only implements add texts."""
 
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
@@ -72,7 +72,7 @@ class CustomAddTextsVectorstore(VectorStore):
 
 
 class CustomAddDocumentsVectorstore(VectorStore):
-    """A vectorstore that only implements add documents."""
+    """A VectorStore that only implements add documents."""
 
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
@@ -249,7 +249,7 @@ def test_default_from_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # from_documents with ids in args
+    # from_documents with IDs in args
     store = vs_class.from_documents(
         [Document(page_content="hello", metadata={"foo": "bar"})], embeddings, ids=["1"]
     )
@@ -278,7 +278,7 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # from_documents with ids in args
+    # from_documents with IDs in args
     store = await vs_class.afrom_documents(
         [Document(page_content="hello", metadata={"foo": "bar"})], embeddings, ids=["1"]
     )
@@ -287,7 +287,7 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # Test afrom_documents with id specified in both document and ids
+    # Test afrom_documents with id specified in both document and IDs
     original_document = Document(id="7", page_content="baz")
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
