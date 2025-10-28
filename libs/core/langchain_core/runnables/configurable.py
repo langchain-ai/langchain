@@ -19,7 +19,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
@@ -41,6 +41,7 @@ from langchain_core.runnables.utils import (
     gather_with_concurrency,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import TypeBaseModel
 
 if TYPE_CHECKING:
     from langchain_core.runnables.graph import Graph
@@ -90,14 +91,12 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         return self.default.OutputType
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnable, config = self.prepare(config)
         return runnable.get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnable, config = self.prepare(config)
         return runnable.get_output_schema(config)
 

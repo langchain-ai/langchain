@@ -485,7 +485,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     foo_ = RunnableLambda(foo)
 
-    assert foo_.assign(bar=lambda _: "foo").get_output_schema().model_json_schema() == {
+    assert foo_.assign(bar=lambda _: "foo").get_output_jsonschema() == {
         "properties": {"bar": {"title": "Bar"}, "root": {"title": "Root"}},
         "required": ["root", "bar"],
         "title": "RunnableAssignOutput",

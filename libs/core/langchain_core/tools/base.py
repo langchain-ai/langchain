@@ -284,7 +284,7 @@ def create_schema_from_function(
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create a Pydantic schema from a function's signature.
 
     Args:
@@ -530,11 +530,8 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
-        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
-            json_schema = self.args_schema.schema()
         else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
+            json_schema = self.get_input_jsonschema()
         return json_schema["properties"]
 
     @property
@@ -565,7 +562,7 @@ class ChildTool(BaseTool):
     # --- Runnable ---
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         """The tool's input schema.
 
         Args:
@@ -656,7 +653,12 @@ class ChildTool(BaseTool):
                         tool_input[k] = tool_call_id
                 result = input_args.model_validate(tool_input)
                 result_dict = result.model_dump()
-            elif issubclass(input_args, BaseModelV1):
+                return {
+                    k: getattr(result, k)
+                    for k, v in result_dict.items()
+                    if k in tool_input
+                }
+            if issubclass(input_args, BaseModelV1):
                 for k, v in get_all_basemodel_annotations(input_args).items():
                     if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
@@ -669,16 +671,15 @@ class ChildTool(BaseTool):
                             )
                             raise ValueError(msg)
                         tool_input[k] = tool_call_id
-                result = input_args.parse_obj(tool_input)
-                result_dict = result.dict()
-            else:
-                msg = (
-                    f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
-                )
-                raise NotImplementedError(msg)
-            return {
-                k: getattr(result, k) for k, v in result_dict.items() if k in tool_input
-            }
+                result_v1 = input_args.parse_obj(tool_input)
+                result_dict = result_v1.dict()
+                return {
+                    k: getattr(result_v1, k)
+                    for k, v in result_dict.items()
+                    if k in tool_input
+                }
+            msg = f"args_schema must be a Pydantic BaseModel, got {self.args_schema}"
+            raise NotImplementedError(msg)
         return tool_input
 
     @abstractmethod
