@@ -6,14 +6,14 @@ from typing import cast
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
+from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.todo import TodoListMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request(system_prompt: str | None = None) -> ModelRequest:
@@ -26,7 +26,7 @@ def _make_request(system_prompt: str | None = None) -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=cast("AgentState", {}),
         runtime=_fake_runtime(),
         model_settings={},
     )

@@ -7,14 +7,14 @@ from typing import cast
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
+from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
-from langchain.agents.middleware.types import ModelRequest, ModelResponse
-from langgraph.runtime import Runtime
+from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
 
 def _fake_runtime() -> Runtime:
-    return cast(Runtime, object())
+    return cast("Runtime", object())
 
 
 def _make_request() -> ModelRequest:
@@ -27,7 +27,7 @@ def _make_request() -> ModelRequest:
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {}),  # type: ignore[name-defined]
+        state=cast("AgentState", {}),
         runtime=_fake_runtime(),
         model_settings={},
     )
@@ -58,7 +58,8 @@ def test_fallback_on_primary_failure() -> None:
 
     class FailingPrimaryModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = FailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -82,7 +83,8 @@ def test_multiple_fallbacks() -> None:
 
     class FailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = FailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = FailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -107,7 +109,8 @@ def test_all_models_fail() -> None:
 
     class AlwaysFailingModel(GenericFakeChatModel):
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AlwaysFailingModel(messages=iter([]))
     fallback_model = AlwaysFailingModel(messages=iter([]))
@@ -149,7 +152,8 @@ async def test_fallback_on_primary_failure_async() -> None:
 
     class AsyncFailingPrimaryModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingPrimaryModel(messages=iter([AIMessage(content="should not see")]))
     fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback response")]))
@@ -173,7 +177,8 @@ async def test_multiple_fallbacks_async() -> None:
 
     class AsyncFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncFailingModel(messages=iter([AIMessage(content="should not see")]))
     fallback1 = AsyncFailingModel(messages=iter([AIMessage(content="fallback1")]))
@@ -198,7 +203,8 @@ async def test_all_models_fail_async() -> None:
 
     class AsyncAlwaysFailingModel(GenericFakeChatModel):
         async def _agenerate(self, messages, **kwargs):
-            raise ValueError("Model failed")
+            msg = "Model failed"
+            raise ValueError(msg)
 
     primary_model = AsyncAlwaysFailingModel(messages=iter([]))
     fallback_model = AsyncAlwaysFailingModel(messages=iter([]))

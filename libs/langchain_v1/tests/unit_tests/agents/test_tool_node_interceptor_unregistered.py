@@ -504,7 +504,6 @@ def test_interceptor_with_dict_input_format() -> None:
 
 def test_interceptor_verifies_tool_is_none_for_unregistered() -> None:
     """Test that request.tool is None for unregistered tools."""
-
     captured_requests: list[ToolCallRequest] = []
 
     def capturing_interceptor(
