@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class LLMToolEmulator(AgentMiddleware):
-    """Middleware that emulates specified tools using an LLM instead of executing them.
+    """Emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
     By default (when tools=None), all tools are emulated. You can specify which

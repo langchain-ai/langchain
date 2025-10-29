@@ -1535,7 +1535,11 @@ class ChatAnthropic(BaseChatModel):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "anthropic"]`
+        """
         return ["langchain", "chat_models", "anthropic"]
 
     @property

@@ -530,44 +530,65 @@ def create_agent(  # noqa: PLR0915
 
     Args:
         model: The language model for the agent. Can be a string identifier
-            (e.g., `"openai:gpt-4"`) or a chat model instance (e.g., `ChatOpenAI()`).
+            (e.g., `"openai:gpt-4"`) or a direct chat model instance (e.g.,
+            [`ChatOpenAI`][langchain_openai.ChatOpenAI] or other another
+            [chat model](https://docs.langchain.com/oss/python/integrations/chat)).
+
             For a full list of supported model strings, see
             [`init_chat_model`][langchain.chat_models.init_chat_model(model_provider)].
-        tools: A list of tools, `dicts`, or `Callable`. If `None` or an empty list,
-            the agent will consist of a model node without a tool calling loop.
-        system_prompt: An optional system prompt for the LLM. Prompts are converted to a
-            `SystemMessage` and added to the beginning of the message list.
+        tools: A list of tools, `dicts`, or `Callable`.
+
+            If `None` or an empty list, the agent will consist of a model node without a
+            tool calling loop.
+        system_prompt: An optional system prompt for the LLM.
+
+            Prompts are converted to a
+            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
+            beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
-            Middleware can intercept and modify agent behavior at various stages.
+
+            Middleware can intercept and modify agent behavior at various stages. See
+            the [full guide](https://docs.langchain.com/oss/python/langchain/middleware).
         response_format: An optional configuration for structured responses.
+
             Can be a `ToolStrategy`, `ProviderStrategy`, or a Pydantic model class.
+
             If provided, the agent will handle structured output during the
             conversation flow. Raw schemas will be wrapped in an appropriate strategy
             based on model capabilities.
         state_schema: An optional `TypedDict` schema that extends `AgentState`.
+
             When provided, this schema is used instead of `AgentState` as the base
             schema for merging with middleware state schemas. This allows users to
             add custom state fields without needing to create custom middleware.
-            Generally, it's recommended to use state_schema extensions via middleware
+            Generally, it's recommended to use `state_schema` extensions via middleware
             to keep relevant extensions scoped to corresponding hooks / tools.
+
             The schema must be a subclass of `AgentState[ResponseT]`.
         context_schema: An optional schema for runtime context.
-        checkpointer: An optional checkpoint saver object. This is used for persisting
-            the state of the graph (e.g., as chat memory) for a single thread
-            (e.g., a single conversation).
-        store: An optional store object. This is used for persisting data
-            across multiple threads (e.g., multiple conversations / users).
+        checkpointer: An optional checkpoint saver object.
+
+            Used for persisting the state of the graph (e.g., as chat memory) for a
+            single thread (e.g., a single conversation).
+        store: An optional store object.
+
+            Used for persisting data across multiple threads (e.g., multiple
+            conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
+
             Useful if you want to add a user confirmation or other interrupt
             before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
+
             Useful if you want to return directly or run additional processing
             on an output.
-        debug: Whether to enable verbose logging for graph execution. When enabled,
-            prints detailed information about each node execution, state updates,
-            and transitions during agent runtime. Useful for debugging middleware
-            behavior and understanding agent execution flow.
+        debug: Whether to enable verbose logging for graph execution.
+
+            When enabled, prints detailed information about each node execution, state
+            updates, and transitions during agent runtime. Useful for debugging
+            middleware behavior and understanding agent execution flow.
         name: An optional name for the `CompiledStateGraph`.
+
             This name will be automatically used when adding the agent graph to
             another graph as a subgraph node - particularly useful for building
             multi-agent systems.
@@ -577,11 +598,12 @@ def create_agent(  # noqa: PLR0915
         A compiled `StateGraph` that can be used for chat interactions.
 
     The agent node calls the language model with the messages list (after applying
-    the system prompt). If the resulting `AIMessage` contains `tool_calls`, the graph
-    will then call the tools. The tools node executes the tools and adds the responses
-    to the messages list as `ToolMessage` objects. The agent node then calls the
-    language model again. The process repeats until no more `tool_calls` are
-    present in the response. The agent then returns the full list of messages.
+    the system prompt). If the resulting [`AIMessage`][langchain.messages.AIMessage]
+    contains `tool_calls`, the graph will then call the tools. The tools node executes
+    the tools and adds the responses to the messages list as
+    [`ToolMessage`][langchain.messages.ToolMessage] objects. The agent node then calls
+    the language model again. The process repeats until no more `tool_calls` are present
+    in the response. The agent then returns the full list of messages.
 
     Example:
         ```python
