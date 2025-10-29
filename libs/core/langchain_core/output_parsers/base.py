@@ -135,6 +135,9 @@ class BaseOutputParser(
 
     Example:
         ```python
+        # Implement a simple boolean output parser
+
+
         class BooleanOutputParser(BaseOutputParser[bool]):
             true_val: str = "YES"
             false_val: str = "NO"
