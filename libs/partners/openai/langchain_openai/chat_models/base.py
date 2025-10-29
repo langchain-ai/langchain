@@ -551,7 +551,7 @@ class BaseChatOpenAI(BaseChatModel):
         Enabled for default base URL and client.
     """
     model_provider: str | None = "openai"
-    """THe model provider name (openai)."""
+    """The model provider name (openai)."""
     max_retries: int | None = None
     """Maximum number of retries to make when generating."""
     presence_penalty: float | None = None
