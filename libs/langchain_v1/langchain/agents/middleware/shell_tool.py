@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 
     from langgraph.runtime import Runtime
     from langgraph.types import Command
+
     from langchain.agents.middleware.types import ToolCallRequest
 
 LOGGER = logging.getLogger(__name__)

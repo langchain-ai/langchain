@@ -11,6 +11,7 @@ from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
@@ -37,7 +38,6 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
-from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
