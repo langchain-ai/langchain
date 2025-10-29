@@ -16,6 +16,7 @@ from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
+from langchain.agents.middleware.shell_tool import ShellToolMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -1300,6 +1301,19 @@ def create_agent(  # noqa: PLR0915
             end_destination=exit_node,
             can_jump_to=_get_can_jump_to(middleware_w_before_agent[-1], "before_agent"),
         )
+        last_mw = middleware_w_before_agent[-1]
+        if isinstance(last_mw, ShellToolMiddleware):
+            graph.add_node("restore_shell", last_mw.restore_from_metadata) # type: ignore[attr-defined]
+
+            graph.add_conditional_edges(
+                f"{last_mw.name}.before_agent", # type: ignore[attr-defined]
+                lambda state: state.get("resume_from") == "interrupt",
+                {
+                    True: "restore_shell",
+                    False: loop_entry_node,
+                },
+            )
+            graph.add_edge("restore_shell", loop_entry_node)
 
     # Add before_model middleware edges
     if middleware_w_before_model:

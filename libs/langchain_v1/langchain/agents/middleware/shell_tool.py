@@ -16,7 +16,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import BaseTool, ToolException
@@ -394,6 +394,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         tool_description: str | None = None,
         shell_command: Sequence[str] | str | None = None,
         env: Mapping[str, Any] | None = None,
+        name: str = "shell",
     ) -> None:
         """Initialize the middleware.
 
@@ -412,8 +413,11 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             env: Optional environment variables to supply to the shell session. Values are
                 coerced to strings before command execution. If omitted, the session inherits the
                 parent process environment.
+            name: Unique name for this middleware instance (default: "shell").
         """
         super().__init__()
+        self._session: ShellSession | None = None
+        self._tempdir: tempfile.TemporaryDirectory | None = None
         self._workspace_root = Path(workspace_root) if workspace_root else None
         self._shell_command = self._normalize_shell_command(shell_command)
         self._environment = self._normalize_env(env)
@@ -425,12 +429,25 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         self._redaction_rules: tuple[ResolvedRedactionRule, ...] = tuple(
             rule.resolve() for rule in rules
         )
+        self._name = name
         self._startup_commands = self._normalize_commands(startup_commands)
         self._shutdown_commands = self._normalize_commands(shutdown_commands)
 
         description = tool_description or DEFAULT_TOOL_DESCRIPTION
         self._tool = _PersistentShellTool(self, description=description)
         self.tools = [self._tool]
+
+    @property
+    def name(self) -> str:
+        """Unique name of the middleware instance.
+
+        Used by LangGraph to identify nodes in the execution graph
+        (e.g., `shell.before_agent`). Defaults to `"shell"`.
+
+        Returns:
+            The configured name of this middleware.
+        """
+        return self._name
 
     @staticmethod
     def _normalize_commands(
@@ -467,9 +484,26 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return normalized
 
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
-        """Start the shell session and run startup commands."""
-        resources = self._create_resources()
-        return {"shell_session_resources": resources}
+        """"Prepare the shell session before agent execution.
+
+        Starts the persistent shell session if not already running and saves
+        its configuration to checkpoint metadata for reliable restoration
+        after human-in-the-loop (HIL) interrupts.
+
+        This method is called automatically by LangGraph before the agent
+        runs. The session is cached in the middleware instance — not returned
+        in state — to avoid serialization issues.
+
+        Args:
+            state: Current agent state, used to access checkpoint metadata.
+            runtime: LangGraph runtime (unused, but required by interface).
+
+        Returns:
+            None: Session is managed internally.
+        """
+        self._ensure_session()
+        self._save_session_metadata(state)
+        return None
 
     async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Async counterpart to `before_agent`."""
@@ -492,13 +526,80 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         if resources is not None and not isinstance(resources, _SessionResources):
             resources = None
         if resources is None:
-            msg = (
-                "Shell session resources are unavailable. Ensure `before_agent` ran successfully "
-                "before invoking the shell tool."
-            )
-            raise ToolException(msg)
+            return self._get_or_create_resources()
         return resources
+    def _get_or_create_resources(self) -> _SessionResources:
+        if self._session is None:
+            self._ensure_session()
+        session = cast("ShellSession", self._session)
+        return _SessionResources(
+            session=session,
+            tempdir=self._tempdir,
+            policy=self._execution_policy,
+        )
 
+    def _ensure_session(self) -> None:
+        if self._session is not None:
+            return
+        workspace = self._workspace_root
+        tempdir: tempfile.TemporaryDirectory | None = None
+        if workspace is None:
+            tempdir = tempfile.TemporaryDirectory(prefix=SHELL_TEMP_PREFIX)
+            workspace = Path(tempdir.name)
+        else:
+            workspace = Path(workspace)
+            workspace.mkdir(parents=True, exist_ok=True)
+
+        session = ShellSession(
+            workspace,
+            self._execution_policy,
+            self._shell_command,
+            self._environment or {},
+        )
+        session.start()
+        self._run_startup_commands(session)
+        self._session = session
+        self._tempdir = tempdir
+
+    def _save_session_metadata(self, state: ShellToolState) -> None:
+        checkpoint = getattr(state, "checkpoint", None)
+        if checkpoint is None:
+            return
+        metadata = checkpoint.metadata
+        if metadata is None:
+            return
+        if self._session is None:
+            return
+        metadata["shell_session"] = {
+            "workspace": str(self._session._workspace),
+            "command": self._shell_command,
+            "env": dict(self._session._environment),
+            "policy": self._execution_policy.to_dict(),
+        }
+
+    def restore_from_metadata(self, state: ShellToolState) -> None:
+        """Restore shell session from checkpoint metadata on HIL resume."""
+        checkpoint = getattr(state, "checkpoint", None)
+        if checkpoint is None:
+            return
+        data = checkpoint.metadata.get("shell_session")
+        if not data:
+            return
+        try:
+            policy = BaseExecutionPolicy.from_dict(data["policy"])
+            workspace = Path(data["workspace"])
+            session = ShellSession(
+                workspace,
+                policy,
+                tuple(data["command"]),
+                data["env"],
+            )
+            session.start()
+            self._session = session
+            self._tempdir = None
+            LOGGER.info("Restored shell session from checkpoint")
+        except Exception:
+            LOGGER.exception("Failed to restore shell session")  # ← logs traceback
     def _create_resources(self) -> _SessionResources:
         workspace = self._workspace_root
         tempdir: tempfile.TemporaryDirectory[str] | None = None
