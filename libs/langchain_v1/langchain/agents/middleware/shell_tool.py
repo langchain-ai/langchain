@@ -484,7 +484,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         return normalized
 
     def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
-        """"Prepare the shell session before agent execution.
+        """Prepare the shell session before agent execution.
 
         Starts the persistent shell session if not already running and saves
         its configuration to checkpoint metadata for reliable restoration
@@ -521,7 +521,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async counterpart to `after_agent`."""
         return self.after_agent(state, runtime)
 
-    def _ensure_resources(self, state : ShellToolState) -> _SessionResources: # noqa: ARG002
+    def _ensure_resources(self, state: ShellToolState) -> _SessionResources:  # noqa: ARG002
         """Always return live resources from middleware cache.
 
         State is ignored — session is managed internally to support restart and HIL resume.
@@ -600,6 +600,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             LOGGER.info("Restored shell session from checkpoint")
         except Exception:
             LOGGER.exception("Failed to restore shell session")  # ← logs traceback
+
     def _create_resources(self) -> _SessionResources:
         workspace = self._workspace_root
         tempdir: tempfile.TemporaryDirectory[str] | None = None
@@ -677,17 +678,17 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         if payload.get("restart"):
             LOGGER.info("Restarting shell session on request.")
             try:
-                 session.stop(self._execution_policy.termination_timeout)
-                 new_session = ShellSession(
+                session.stop(self._execution_policy.termination_timeout)
+                new_session = ShellSession(
                     session._workspace,
                     self._execution_policy,
                     self._shell_command,
                     self._environment or {},
                 )
-                 new_session.start()
-                 self._run_startup_commands(new_session)
-                 self._session = new_session
-                 resources.session = new_session
+                new_session.start()
+                self._run_startup_commands(new_session)
+                self._session = new_session
+                resources.session = new_session
             except BaseException as err:
                 LOGGER.exception("Restarting shell session failed; session remains unavailable.")
                 msg = "Failed to restart shell session."
