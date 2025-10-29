@@ -58,6 +58,8 @@ typing = [
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
 langchain = { path = "../../langchain_v1", editable = true }
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", branch = "main", subdirectory = "libs/langgraph" }
+langgraph-prebuilt = { git = "https://github.com/langchain-ai/langgraph.git", branch = "main", subdirectory = "libs/prebuilt" }
 
 [tool.mypy]
 disallow_untyped_defs = "True"

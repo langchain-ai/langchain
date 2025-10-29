@@ -274,7 +274,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -477,7 +477,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.0rc2"
+version = "1.0.2"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -496,16 +496,17 @@ requires-dist = [
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
     { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
+    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
-    { name = "langgraph", specifier = ">=1.0.0a4,<2.0.0" },
+    { name = "langgraph", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=main" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -597,7 +598,7 @@ test = [
     { name = "langchain", editable = "../../langchain_v1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-tests", editable = "../../standard-tests" },
-    { name = "langgraph-prebuilt", specifier = ">=0.7.0a2" },
+    { name = "langgraph-prebuilt", git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=main" },
     { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
@@ -621,7 +622,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -724,8 +725,8 @@ typing = [
 
 [[package]]
 name = "langgraph"
-version = "1.0.0rc1"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.2"
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=main#2d848ffddda24411649181adcd9891fb8d1a42e0" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -734,48 +735,32 @@ dependencies = [
     { name = "pydantic" },
     { name = "xxhash" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/06/6b/27863bc2197fe2cae5ae3241a79e1868b98f8dfa03991eea4f607dba177a/langgraph-1.0.0rc1.tar.gz", hash = "sha256:0acc0eddbed6b353334a93de6943bb49820054cf14e1ca7dab0a91ac7add1ce2", size = 466052, upload-time = "2025-10-17T00:56:12.222Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/5b/7d4aaf30f8c08d14ec16a49e89530c05ab9ccd7c00a54da6bd8adabefd26/langgraph-1.0.0rc1-py3-none-any.whl", hash = "sha256:9d84da21ae8bcc5b05dfa2e63396eb642d39c54d670406b7319810ede0c5ab26", size = 155229, upload-time = "2025-10-17T00:56:10.956Z" },
-]
 
 [[package]]
 name = "langgraph-checkpoint"
-version = "2.1.2"
-source = { registry = "https://pypi.org/simple" }
+version = "3.0.0"
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=main#2d848ffddda24411649181adcd9891fb8d1a42e0" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/29/83/6404f6ed23a91d7bc63d7df902d144548434237d017820ceaa8d014035f2/langgraph_checkpoint-2.1.2.tar.gz", hash = "sha256:112e9d067a6eff8937caf198421b1ffba8d9207193f14ac6f89930c1260c06f9", size = 142420, upload-time = "2025-10-07T17:45:17.129Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/f2/06bf5addf8ee664291e1b9ffa1f28fc9d97e59806dc7de5aea9844cbf335/langgraph_checkpoint-2.1.2-py3-none-any.whl", hash = "sha256:911ebffb069fd01775d4b5184c04aaafc2962fcdf50cf49d524cd4367c4d0c60", size = 45763, upload-time = "2025-10-07T17:45:16.19Z" },
-]
 
 [[package]]
 name = "langgraph-prebuilt"
-version = "0.7.0rc1"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.2"
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=main#2d848ffddda24411649181adcd9891fb8d1a42e0" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/d3/6474eecd1cc95cead25fe0f1717f0b76e1f6edbc8631fc773f6bf7ac03ad/langgraph_prebuilt-0.7.0rc1.tar.gz", hash = "sha256:23f2c1c0a3f0c643a45f90d99ac951a5e1d1be3e711ae10d91b03e34c05b306b", size = 114860, upload-time = "2025-10-17T00:51:56.719Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/70/6a46ebd63304028617b1de1377a159dedd95f0ce2e68a6d8b50c3378448c/langgraph_prebuilt-0.7.0rc1-py3-none-any.whl", hash = "sha256:7a2032683f1cab23d19f11f89805bc84b668502c491b6f041afb6932c8870e70", size = 28387, upload-time = "2025-10-17T00:51:55.75Z" },
 ]
 
 [[package]]
 name = "langgraph-sdk"
 version = "0.2.9"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fsdk-py&branch=main#2d848ffddda24411649181adcd9891fb8d1a42e0" }
 dependencies = [
     { name = "httpx" },
     { name = "orjson" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/23/d8/40e01190a73c564a4744e29a6c902f78d34d43dad9b652a363a92a67059c/langgraph_sdk-0.2.9.tar.gz", hash = "sha256:b3bd04c6be4fa382996cd2be8fbc1e7cc94857d2bc6b6f4599a7f2a245975303", size = 99802, upload-time = "2025-09-20T18:49:14.734Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/05/b2d34e16638241e6f27a6946d28160d4b8b641383787646d41a3727e0896/langgraph_sdk-0.2.9-py3-none-any.whl", hash = "sha256:fbf302edadbf0fb343596f91c597794e936ef68eebc0d3e1d358b6f9f72a1429", size = 56752, upload-time = "2025-09-20T18:49:13.346Z" },
 ]
 
 [[package]]
