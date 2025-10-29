@@ -19,7 +19,6 @@ from typing import (
 )
 
 import pytest
-from langgraph.prebuilt.tool_node import ToolRuntime
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -2979,6 +2978,10 @@ async def test_filter_injected_args_async() -> None:
 
 def test_filter_tool_runtime_directly_injected_arg() -> None:
     """Test that ToolRuntime (a _DirectlyInjectedToolArg) is filtered."""
+
+    pytest.importorskip("langgraph")
+
+    from langgraph.prebuilt.tool_node import ToolRuntime
 
     @tool
     def tool_with_runtime(

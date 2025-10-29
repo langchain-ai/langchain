@@ -719,9 +719,6 @@ class ChildTool(BaseTool):
         Returns:
             A filtered dictionary with injected arguments removed.
         """
-        if not isinstance(tool_input, dict):
-            return tool_input
-
         # Start with filtered args from the constant
         filtered_keys = set(FILTERED_ARGS)
 
