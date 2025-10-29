@@ -73,6 +73,8 @@ class RunInfo(TypedDict):
     """The inputs to the run."""
     parent_run_id: UUID | None
     """The ID of the parent run."""
+    tool_call_id: NotRequired[str | None]
+    """The tool call ID associated with the run."""
 
 
 def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
@@ -703,22 +705,20 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         if tool_call_id is None:
             tool_call_id = run_info.get("tool_call_id")
 
-        self._send(
-            {
-                "event": "on_tool_error",
-                "data": {
-                    "error": error,
-                    "input": inputs,
-                    "tool_call_id": tool_call_id,
-                },
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+        event: StandardStreamEvent = {
+            "event": "on_tool_error",
+            "data": {
+                "error": error,
+                "input": inputs,
+                "tool_call_id": tool_call_id,
             },
-            "tool",
-        )
+            "run_id": str(run_id),
+            "name": run_info["name"],
+            "tags": run_info["tags"],
+            "metadata": run_info["metadata"],
+            "parent_ids": self._get_parent_ids(run_id),
+        }
+        self._send(event, "tool")
 
     @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
