@@ -1217,3 +1217,57 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_model_provider_on_metadata(output_version: str) -> None:
+    """Test we assign model_provider to response metadata."""
+    messages = [AIMessage("hello")]
+    chunks = [AIMessageChunk(content="good"), AIMessageChunk(content="bye")]
+
+    model = _AnotherFakeChatModel(
+        responses=iter(messages),
+        chunks=iter(chunks),
+        output_version=output_version,
+        model_provider="provider_foo",
+    )
+
+    response = model.invoke("hello")
+    assert response.response_metadata["model_provider"] == "provider_foo"
+
+    response = model.invoke("hello", stream=True)
+    assert response.response_metadata["model_provider"] == "provider_foo"
+
+    model.chunks = iter([AIMessageChunk(content="good"), AIMessageChunk(content="bye")])
+    full: AIMessageChunk | None = None
+    for chunk in model.stream("hello"):
+        full = chunk if full is None else full + chunk
+    assert full is not None
+    assert full.response_metadata["model_provider"] == "provider_foo"
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+async def test_model_provider_on_metadata_async(output_version: str) -> None:
+    """Test we assign model_provider to response metadata."""
+    messages = [AIMessage("hello")]
+    chunks = [AIMessageChunk(content="good"), AIMessageChunk(content="bye")]
+
+    model = _AnotherFakeChatModel(
+        responses=iter(messages),
+        chunks=iter(chunks),
+        output_version=output_version,
+        model_provider="provider_foo",
+    )
+
+    response = await model.ainvoke("hello")
+    assert response.response_metadata["model_provider"] == "provider_foo"
+
+    response = await model.ainvoke("hello", stream=True)
+    assert response.response_metadata["model_provider"] == "provider_foo"
+
+    model.chunks = iter([AIMessageChunk(content="good"), AIMessageChunk(content="bye")])
+    full: AIMessageChunk | None = None
+    async for chunk in model.astream("hello"):
+        full = chunk if full is None else full + chunk
+    assert full is not None
+    assert full.response_metadata["model_provider"] == "provider_foo"
