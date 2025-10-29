@@ -213,3 +213,59 @@ async def test_all_models_fail_async() -> None:
 
     with pytest.raises(ValueError, match="Model failed"):
         await middleware.awrap_model_call(request, mock_handler)
+
+
+def test_model_settings_cleared_on_fallback() -> None:
+    """Test that model_settings are cleared when falling back to another model."""
+
+    class FailingPrimaryModel(GenericFakeChatModel):
+        def _generate(self, messages, **kwargs):
+            raise ValueError("Primary model failed")
+
+    primary_model = FailingPrimaryModel(messages=iter([]))
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback")]))
+
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request()
+    request.model = primary_model
+    request.model_settings = {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        # Verify model_settings are empty for fallback model
+        if req.model is fallback_model:
+            assert req.model_settings == {}
+        result = req.model.invoke([])
+        return ModelResponse(result=[result])
+
+    response = middleware.wrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert request.model_settings == {}
+
+
+async def test_model_settings_cleared_on_fallback_async() -> None:
+    """Test async version - model_settings are cleared when falling back."""
+
+    class AsyncFailingPrimaryModel(GenericFakeChatModel):
+        async def _agenerate(self, messages, **kwargs):
+            raise ValueError("Primary model failed")
+
+    primary_model = AsyncFailingPrimaryModel(messages=iter([]))
+    fallback_model = GenericFakeChatModel(messages=iter([AIMessage(content="fallback")]))
+
+    middleware = ModelFallbackMiddleware(fallback_model)
+    request = _make_request()
+    request.model = primary_model
+    request.model_settings = {"cache_control": {"type": "ephemeral", "ttl": "5m"}}
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        # Verify model_settings are empty for fallback model
+        if req.model is fallback_model:
+            assert req.model_settings == {}
+        result = await req.model.ainvoke([])
+        return ModelResponse(result=[result])
+
+    response = await middleware.awrap_model_call(request, mock_handler)
+
+    assert isinstance(response, ModelResponse)
+    assert request.model_settings == {}

@@ -93,6 +93,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
         # Try fallback models
         for fallback_model in self.models:
             request.model = fallback_model
+            request.model_settings = {}
             try:
                 return handler(request)
             except Exception as e:  # noqa: BLE001
@@ -128,6 +129,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
         # Try fallback models
         for fallback_model in self.models:
             request.model = fallback_model
+            request.model_settings = {}
             try:
                 return await handler(request)
             except Exception as e:  # noqa: BLE001
