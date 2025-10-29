@@ -2978,10 +2978,9 @@ async def test_filter_injected_args_async() -> None:
 
 def test_filter_tool_runtime_directly_injected_arg() -> None:
     """Test that ToolRuntime (a _DirectlyInjectedToolArg) is filtered."""
-
     pytest.importorskip("langgraph")
 
-    from langgraph.prebuilt.tool_node import ToolRuntime
+    from langgraph.prebuilt.tool_node import ToolRuntime  # noqa: PLC0415
 
     @tool
     def tool_with_runtime(
