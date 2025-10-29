@@ -75,6 +75,8 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import uuid
 
+    from langchain_model_profiles import ModelProfile  # type: ignore[import-not-found]
+
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
@@ -1667,6 +1669,27 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+    @property
+    def profile(self) -> ModelProfile:
+        """Return profiling information for the model."""
+        try:
+            from langchain_model_profiles import get_model_profile  # noqa: PLC0415
+        except ImportError as err:
+            informative_error_message = (
+                "To access model profiling information, please install the "
+                "`langchain-model-profiles` package: "
+                "`pip install langchain-model-profiles`."
+            )
+            raise ImportError(informative_error_message) from err
+
+        provider_id = self._llm_type
+        model_name = (
+            getattr(self, "model", None)
+            or getattr(self, "model_name", None)
+            or getattr(self, "model_id", "")
+        )
+        return get_model_profile(provider_id, model_name) or {}
 
 
 class SimpleChatModel(BaseChatModel):
