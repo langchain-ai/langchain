@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+from functools import reduce
 from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -158,9 +159,7 @@ def _chain_model_call_handlers(
         return composed
 
     # Compose right-to-left: outer(inner(innermost(handler)))
-    result = handlers[-1]
-    for handler in reversed(handlers[:-1]):
-        result = compose_two(handler, result)
+    result = reduce(lambda handler1, handler2: compose_two(handler2, handler1), reversed(handlers))
 
     # Wrap to ensure final return type is exactly ModelResponse
     def final_normalized(
@@ -243,9 +242,7 @@ def _chain_async_model_call_handlers(
         return composed
 
     # Compose right-to-left: outer(inner(innermost(handler)))
-    result = handlers[-1]
-    for handler in reversed(handlers[:-1]):
-        result = compose_two(handler, result)
+    result = reduce(lambda handler1, handler2: compose_two(handler2, handler1), reversed(handlers))
 
     # Wrap to ensure final return type is exactly ModelResponse
     async def final_normalized(
@@ -432,11 +429,7 @@ def _chain_tool_call_wrappers(
         return composed
 
     # Chain all wrappers: first -> second -> ... -> last
-    result = wrappers[-1]
-    for wrapper in reversed(wrappers[:-1]):
-        result = compose_two(wrapper, result)
-
-    return result
+    return reduce(lambda wrapper1, wrapper2: compose_two(wrapper2, wrapper1), reversed(wrappers))
 
 
 def _chain_async_tool_call_wrappers(
@@ -496,11 +489,7 @@ def _chain_async_tool_call_wrappers(
         return composed
 
     # Chain all wrappers: first -> second -> ... -> last
-    result = wrappers[-1]
-    for wrapper in reversed(wrappers[:-1]):
-        result = compose_two(wrapper, result)
-
-    return result
+    return reduce(lambda wrapper1, wrapper2: compose_two(wrapper2, wrapper1), reversed(wrappers))
 
 
 def create_agent(  # noqa: PLR0915
