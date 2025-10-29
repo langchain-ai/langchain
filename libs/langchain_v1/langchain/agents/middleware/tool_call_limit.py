@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
+from langchain_core.messages import AIMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from typing_extensions import NotRequired
 
@@ -31,53 +31,6 @@ class ToolCallLimitState(AgentState):
 
     thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
     run_tool_call_count: NotRequired[Annotated[dict[str, int], UntrackedValue, PrivateStateAttr]]
-
-
-def _count_tool_calls_in_messages(messages: list[AnyMessage], tool_name: str | None = None) -> int:
-    """Count tool calls in a list of messages.
-
-    Args:
-        messages: List of messages to count tool calls in.
-        tool_name: If specified, only count calls to this specific tool.
-            If `None`, count all tool calls.
-
-    Returns:
-        The total number of tool calls (optionally filtered by tool_name).
-    """
-    count = 0
-    for message in messages:
-        if isinstance(message, AIMessage) and message.tool_calls:
-            if tool_name is None:
-                # Count all tool calls
-                count += len(message.tool_calls)
-            else:
-                # Count only calls to the specified tool
-                count += sum(1 for tc in message.tool_calls if tc["name"] == tool_name)
-    return count
-
-
-def _get_run_messages(messages: list[AnyMessage]) -> list[AnyMessage]:
-    """Get messages from the current run (after the last HumanMessage).
-
-    Args:
-        messages: Full list of messages.
-
-    Returns:
-        Messages from the current run (after last HumanMessage).
-    """
-    # Find the last HumanMessage
-    last_human_index = -1
-    for i in range(len(messages) - 1, -1, -1):
-        if isinstance(messages[i], HumanMessage):
-            last_human_index = i
-            break
-
-    # If no HumanMessage found, return all messages
-    if last_human_index == -1:
-        return messages
-
-    # Return messages after the last HumanMessage
-    return messages[last_human_index + 1 :]
 
 
 def _build_tool_limit_exceeded_message(
