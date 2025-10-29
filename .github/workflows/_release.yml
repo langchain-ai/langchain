@@ -442,7 +442,7 @@ jobs:
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
-            | grep -E '[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z]+[0-9]+)?$' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
             | sort -Vr \
             | head -n 1
           )"
