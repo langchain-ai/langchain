@@ -146,7 +146,7 @@ class ToolCallLimitExceededError(Exception):
 
 
 class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState, Any]):
-    """Middleware that tracks tool call counts and enforces limits.
+    """Tracks tool call counts and enforces limits.
 
     This middleware monitors the number of tool calls made during agent execution
     and can terminate the agent when specified limits are reached. It supports
