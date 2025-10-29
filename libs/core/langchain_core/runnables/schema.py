@@ -45,6 +45,15 @@ class EventData(TypedDict, total=False):
     chunks support addition in general, and adding them up should result
     in the output of the `Runnable` that generated the event.
     """
+    tool_call_id: NotRequired[str | None]
+    """The tool call ID associated with the tool execution.
+
+    This field is only available for tool-related events (e.g., `on_tool_error`)
+    and can be used to link errors to specific tool calls in stateless agent
+    implementations.
+
+    !!! version-added "Added in version 1.0.0"
+    """
 
 
 class BaseStreamEvent(TypedDict):
