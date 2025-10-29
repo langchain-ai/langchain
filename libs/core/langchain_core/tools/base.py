@@ -833,9 +833,16 @@ class ChildTool(BaseTool):
             else None
         )
 
+        # Use filtered inputs for the input_str parameter as well
+        callback_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(callback_inputs if callback_inputs is not None else tool_input)
+        )
+
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            tool_input if isinstance(tool_input, str) else str(tool_input),
+            callback_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
@@ -948,9 +955,16 @@ class ChildTool(BaseTool):
             else None
         )
 
+        # Use filtered inputs for the input_str parameter as well
+        callback_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(callback_inputs if callback_inputs is not None else tool_input)
+        )
+
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            tool_input if isinstance(tool_input, str) else str(tool_input),
+            callback_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
