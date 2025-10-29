@@ -55,17 +55,17 @@ def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FB
 
 def test_anthropic_client_caching() -> None:
     """Test that the OpenAI client is cached."""
-    llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
-    llm2 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm1 = ChatAnthropic(model="claude-sonnet-4-5")
+    llm2 = ChatAnthropic(model="claude-sonnet-4-5")
     assert llm1._client._client is llm2._client._client
 
-    llm3 = ChatAnthropic(model="claude-3-5-sonnet-latest", base_url="foo")
+    llm3 = ChatAnthropic(model="claude-sonnet-4-5", base_url="foo")
     assert llm1._client._client is not llm3._client._client
 
-    llm4 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=None)
+    llm4 = ChatAnthropic(model="claude-sonnet-4-5", timeout=None)
     assert llm1._client._client is llm4._client._client
 
-    llm5 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=3)
+    llm5 = ChatAnthropic(model="claude-sonnet-4-5", timeout=3)
     assert llm1._client._client is not llm5._client._client
 
 
@@ -75,7 +75,7 @@ def test_anthropic_proxy_support() -> None:
 
     # Test sync client with proxy
     llm_sync = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+        model="claude-sonnet-4-5", anthropic_proxy=proxy_url
     )
     sync_client = llm_sync._client
     assert sync_client is not None
@@ -85,9 +85,9 @@ def test_anthropic_proxy_support() -> None:
     assert async_client is not None
 
     # Test that clients with different proxy settings are not cached together
-    llm_no_proxy = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm_no_proxy = ChatAnthropic(model="claude-sonnet-4-5")
     llm_with_proxy = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+        model="claude-sonnet-4-5", anthropic_proxy=proxy_url
     )
 
     # Different proxy settings should result in different cached clients
@@ -100,7 +100,7 @@ def test_anthropic_proxy_from_environment() -> None:
 
     # Test with environment variable set
     with patch.dict(os.environ, {"ANTHROPIC_PROXY": proxy_url}):
-        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        llm = ChatAnthropic(model="claude-sonnet-4-5")
         assert llm.anthropic_proxy == proxy_url
 
         # Should be able to create clients successfully
@@ -113,7 +113,7 @@ def test_anthropic_proxy_from_environment() -> None:
     with patch.dict(os.environ, {"ANTHROPIC_PROXY": "http://env-proxy.com"}):
         explicit_proxy = "http://explicit-proxy.com"
         llm = ChatAnthropic(
-            model="claude-3-5-sonnet-latest", anthropic_proxy=explicit_proxy
+            model="claude-sonnet-4-5", anthropic_proxy=explicit_proxy
         )
         assert llm.anthropic_proxy == explicit_proxy
 
@@ -133,7 +133,7 @@ def test_set_default_max_tokens() -> None:
     assert llm.max_tokens == 64000
 
     # Test claude-3-5-sonnet models
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", anthropic_api_key="test")
+    llm = ChatAnthropic(model="claude-sonnet-4-5", anthropic_api_key="test")
     assert llm.max_tokens == 8192
 
     # Test claude-3-5-haiku models
@@ -146,13 +146,13 @@ def test_set_default_max_tokens() -> None:
 
     # Test that existing max_tokens values are preserved
     llm = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test"
+        model="claude-sonnet-4-5", max_tokens=2048, anthropic_api_key="test"
     )
     assert llm.max_tokens == 2048
 
     # Test that explicitly set max_tokens values are preserved
     llm = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test"
+        model="claude-sonnet-4-5", max_tokens=4096, anthropic_api_key="test"
     )
     assert llm.max_tokens == 4096
 

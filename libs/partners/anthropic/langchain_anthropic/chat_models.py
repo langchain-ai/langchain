@@ -820,7 +820,7 @@ class ChatAnthropic(BaseChatModel):
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        model = ChatAnthropic(model="claude-sonnet-4-5")
         message = HumanMessage(
             content=[
                 {
@@ -887,7 +887,7 @@ class ChatAnthropic(BaseChatModel):
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         data = b64encode(requests.get(url).content).decode()
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        model = ChatAnthropic(model="claude-sonnet-4-5")
         ai_msg = model.invoke(
             [
                 HumanMessage(
@@ -1948,7 +1948,7 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
             model_with_tools = model.bind_tools([GetWeather, GetPrice])
             model_with_tools.invoke(
                 "What is the weather like in San Francisco",
@@ -1958,7 +1958,7 @@ class ChatAnthropic(BaseChatModel):
             #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
             #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
             #     ],
-            #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+            #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-sonnet-4-5', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
             #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
             # )
             ```
@@ -1982,7 +1982,7 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+            model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
             model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="any")
             model_with_tools.invoke(
                 "what is the weather like in San Francisco",
@@ -2008,7 +2008,7 @@ class ChatAnthropic(BaseChatModel):
             product: str = Field(..., description="The product to look up.")
 
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
         model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
         model_with_tools.invoke("What is the weather like in San Francisco")
         ```
@@ -2043,7 +2043,7 @@ class ChatAnthropic(BaseChatModel):
         # We need to pass in extra headers to enable use of the beta cache
         # control API.
         model = ChatAnthropic(
-            model="claude-3-5-sonnet-latest",
+            model="claude-sonnet-4-5",
             temperature=0,
         )
         model_with_tools = model.bind_tools([GetWeather, cached_price_tool])
@@ -2068,7 +2068,7 @@ class ChatAnthropic(BaseChatModel):
             ],
             response_metadata={
                 "id": "msg_01Xg7Wr5inFWgBxE5jH9rpRo",
-                "model": "claude-3-5-sonnet-latest",
+                "model": "claude-sonnet-4-5",
                 "stop_reason": "tool_use",
                 "stop_sequence": None,
                 "usage": {
@@ -2113,7 +2113,7 @@ class ChatAnthropic(BaseChatModel):
             ],
             response_metadata={
                 "id": "msg_016RfWHrRvW6DAGCdwB6Ac64",
-                "model": "claude-3-5-sonnet-latest",
+                "model": "claude-sonnet-4-5",
                 "stop_reason": "tool_use",
                 "stop_sequence": None,
                 "usage": {
@@ -2240,7 +2240,7 @@ class ChatAnthropic(BaseChatModel):
             justification: str
 
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
         structured_model = model.with_structured_output(AnswerWithJustification)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2265,7 +2265,7 @@ class ChatAnthropic(BaseChatModel):
             justification: str
 
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
         structured_model = model.with_structured_output(AnswerWithJustification, include_raw=True)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2293,7 +2293,7 @@ class ChatAnthropic(BaseChatModel):
                 "required": ["answer", "justification"],
             },
         }
-        model = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
         structured_model = model.with_structured_output(schema)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2365,7 +2365,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
         from langchain_core.messages import HumanMessage, SystemMessage
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
         messages = [
             SystemMessage(content="You are a scientist"),
@@ -2385,7 +2385,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_core.messages import HumanMessage
         from langchain_core.tools import tool
 
-        model = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
         @tool(parse_docstring=True)
         def get_weather(location: str) -> str:
