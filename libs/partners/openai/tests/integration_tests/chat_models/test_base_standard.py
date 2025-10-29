@@ -75,7 +75,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return _invoke(llm, input_, stream)
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        llm = ChatOpenAI(model="o1-mini", stream_usage=True, temperature=1)
+        llm = ChatOpenAI(model="gpt-5-nano", reasoning_effort="medium")
         input_ = (
             "explain  the relationship between the 2008/9 economic crisis and the "
             "startup ecosystem in the early 2010s"
