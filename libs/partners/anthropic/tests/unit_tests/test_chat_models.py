@@ -74,9 +74,7 @@ def test_anthropic_proxy_support() -> None:
     proxy_url = "http://proxy.example.com:8080"
 
     # Test sync client with proxy
-    llm_sync = ChatAnthropic(
-        model="claude-sonnet-4-5", anthropic_proxy=proxy_url
-    )
+    llm_sync = ChatAnthropic(model="claude-sonnet-4-5", anthropic_proxy=proxy_url)
     sync_client = llm_sync._client
     assert sync_client is not None
 
@@ -86,9 +84,7 @@ def test_anthropic_proxy_support() -> None:
 
     # Test that clients with different proxy settings are not cached together
     llm_no_proxy = ChatAnthropic(model="claude-sonnet-4-5")
-    llm_with_proxy = ChatAnthropic(
-        model="claude-sonnet-4-5", anthropic_proxy=proxy_url
-    )
+    llm_with_proxy = ChatAnthropic(model="claude-sonnet-4-5", anthropic_proxy=proxy_url)
 
     # Different proxy settings should result in different cached clients
     assert llm_no_proxy._client._client is not llm_with_proxy._client._client
@@ -112,9 +108,7 @@ def test_anthropic_proxy_from_environment() -> None:
     # Test that explicit parameter overrides environment variable
     with patch.dict(os.environ, {"ANTHROPIC_PROXY": "http://env-proxy.com"}):
         explicit_proxy = "http://explicit-proxy.com"
-        llm = ChatAnthropic(
-            model="claude-sonnet-4-5", anthropic_proxy=explicit_proxy
-        )
+        llm = ChatAnthropic(model="claude-sonnet-4-5", anthropic_proxy=explicit_proxy)
         assert llm.anthropic_proxy == explicit_proxy
 
 
