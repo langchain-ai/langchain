@@ -25,9 +25,9 @@ from typing import TypeAlias
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper  # noqa: TC002
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
-from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
