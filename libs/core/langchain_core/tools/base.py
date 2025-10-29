@@ -720,7 +720,7 @@ class ChildTool(BaseTool):
             A filtered dictionary with injected arguments removed.
         """
         # Start with filtered args from the constant
-        filtered_keys = set(FILTERED_ARGS)
+        filtered_keys = set[str](FILTERED_ARGS)
 
         # If we have an args_schema, use it to identify injected args
         if self.args_schema is not None:
@@ -824,26 +824,28 @@ class ChildTool(BaseTool):
         )
 
         # Filter out injected arguments from callback inputs
-        callback_inputs = (
+        filtered_tool_input = (
             self._filter_injected_args(tool_input)
             if isinstance(tool_input, dict)
             else None
         )
 
         # Use filtered inputs for the input_str parameter as well
-        callback_input_str = (
+        tool_input_str = (
             tool_input
             if isinstance(tool_input, str)
-            else str(callback_inputs if callback_inputs is not None else tool_input)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
         )
 
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            callback_input_str,
+            tool_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
-            inputs=callback_inputs,
+            inputs=filtered_tool_input,
             **kwargs,
         )
 
@@ -946,26 +948,28 @@ class ChildTool(BaseTool):
         )
 
         # Filter out injected arguments from callback inputs
-        callback_inputs = (
+        filtered_tool_input = (
             self._filter_injected_args(tool_input)
             if isinstance(tool_input, dict)
             else None
         )
 
         # Use filtered inputs for the input_str parameter as well
-        callback_input_str = (
+        tool_input_str = (
             tool_input
             if isinstance(tool_input, str)
-            else str(callback_inputs if callback_inputs is not None else tool_input)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
         )
 
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            callback_input_str,
+            tool_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
-            inputs=callback_inputs,
+            inputs=filtered_tool_input,
             **kwargs,
         )
         content = None

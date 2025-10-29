@@ -70,6 +70,13 @@ from langchain_core.utils.pydantic import (
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 
+try:
+    from langgraph.prebuilt import ToolRuntime  # type: ignore[import-not-found]
+
+    HAS_LANGGRAPH = True
+except ImportError:
+    HAS_LANGGRAPH = False
+
 
 def _get_tool_call_json_schema(tool: BaseTool) -> dict:
     tool_schema = tool.tool_call_schema
@@ -2976,18 +2983,12 @@ async def test_filter_injected_args_async() -> None:
     assert captured["query"] == "async test"
 
 
+@pytest.mark.skipif(not HAS_LANGGRAPH, reason="langgraph not installed")
 def test_filter_tool_runtime_directly_injected_arg() -> None:
     """Test that ToolRuntime (a _DirectlyInjectedToolArg) is filtered."""
-    pytest.importorskip("langgraph")
-
-    from langgraph.prebuilt.tool_node import ToolRuntime  # noqa: PLC0415
 
     @tool
-    def tool_with_runtime(
-        query: str,
-        limit: int,
-        runtime: ToolRuntime,
-    ) -> str:
+    def tool_with_runtime(query: str, limit: int, runtime: ToolRuntime) -> str:
         """Tool with ToolRuntime parameter.
 
         Args:
