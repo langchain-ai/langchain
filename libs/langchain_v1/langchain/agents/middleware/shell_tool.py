@@ -22,7 +22,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.tools.base import BaseTool, ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -78,10 +78,10 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    _finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self._finalizer = weakref.finalize(
+        self.finalizer = weakref.finalize(
             self,
             _cleanup_resources,
             self.session,
@@ -466,7 +466,8 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             normalized[key] = str(value)
         return normalized
 
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+    @override
+    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
         """Start the shell session and run startup commands."""
         resources = self._create_resources()
         return {"shell_session_resources": resources}
@@ -475,13 +476,14 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async counterpart to `before_agent`."""
         return self.before_agent(state, runtime)
 
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:  # noqa: ARG002
+    @override
+    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = self._ensure_resources(state)
         try:
             self._run_shutdown_commands(resources.session)
         finally:
-            resources._finalizer()
+            resources.finalizer()
 
     async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
         """Async counterpart to `after_agent`."""

@@ -2,7 +2,6 @@
 
 from collections.abc import Callable
 
-import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
@@ -24,13 +23,6 @@ def search(query: str) -> str:
 def calculator(expression: str) -> str:
     """Calculate an expression."""
     return f"Result: {expression}"
-
-
-@tool
-def failing_tool(input: str) -> str:
-    """Tool that always fails."""
-    msg = f"Failed: {input}"
-    raise ValueError(msg)
 
 
 def test_simple_logging_middleware() -> None:
@@ -380,7 +372,7 @@ def test_middleware_without_wrap_tool() -> None:
 
         def before_model(self, state, runtime):
             """Just a dummy hook."""
-            return None
+            return
 
     model = FakeToolCallingModel(
         tool_calls=[
@@ -420,15 +412,14 @@ def test_generator_composition_immediate_outer_return() -> None:
         ) -> ToolMessage | Command:
             call_log.append("outer_yield")
             # Call handler, receive response from inner
-            response = handler(request)
+            handler(request)
             call_log.append("outer_got_response")
             # Return modified message
-            modified = ToolMessage(
+            return ToolMessage(
                 content="Outer intercepted",
                 tool_call_id=request.tool_call["id"],
                 name=request.tool_call["name"],
             )
-            return modified
 
     class InnerMiddleware(AgentMiddleware):
         """Inner middleware."""
@@ -487,12 +478,11 @@ def test_generator_composition_short_circuit() -> None:
             call_log.append("outer_after")
             # Modify response from inner
             if isinstance(response, ToolMessage):
-                modified = ToolMessage(
+                return ToolMessage(
                     content=f"outer_wrapped: {response.content}",
                     tool_call_id=response.tool_call_id,
                     name=response.name,
                 )
-                return modified
             return response
 
     class InnerShortCircuitMiddleware(AgentMiddleware):

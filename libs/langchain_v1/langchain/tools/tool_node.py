@@ -80,7 +80,7 @@ from langchain_core.tools.base import (
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.errors import GraphBubbleUp
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.store.base import BaseStore  # noqa: TC002
+from langgraph.store.base import BaseStore
 from langgraph.types import Command, Send, StreamWriter
 from pydantic import BaseModel, ValidationError
 from typing_extensions import TypeVar, Unpack
@@ -293,7 +293,7 @@ def msg_content_output(output: Any) -> str | list[dict]:
     # any existing ToolNode usage.
     try:
         return json.dumps(output, ensure_ascii=False)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return str(output)
 
 
@@ -386,13 +386,13 @@ def _handle_tool_error(
     elif isinstance(flag, str):
         content = flag
     elif callable(flag):
-        content = flag(e)  # type: ignore [assignment, call-arg]
+        content = flag(e)  # type: ignore[assignment, call-arg]
     else:
         msg = (
-            f"Got unexpected type of `handle_tool_error`. Expected bool, str "
+            "Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
     return content
 
 
@@ -424,7 +424,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
     params = list(sig.parameters.values())
     if params:
         # If it's a method, the first argument is typically 'self' or 'cls'
-        if params[0].name in ["self", "cls"] and len(params) == 2:
+        if params[0].name in {"self", "cls"} and len(params) == 2:  # noqa: PLR2004
             first_param = params[1]
         else:
             first_param = params[0]
@@ -432,7 +432,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
         type_hints = get_type_hints(handler)
         if first_param.name in type_hints:
             origin = get_origin(first_param.annotation)
-            if origin in [Union, UnionType]:
+            if origin in {Union, UnionType}:
                 args = get_args(first_param.annotation)
                 if all(issubclass(arg, Exception) for arg in args):
                     return tuple(args)
@@ -530,7 +530,8 @@ class _ToolNode(RunnableCallable):
         2. **Message List**: `[AIMessage(..., tool_calls=[...])]`
             - List of messages with tool calls in the last AIMessage
 
-        3. **Direct Tool Calls**: `[{"name": "tool", "args": {...}, "id": "1", "type": "tool_call"}]`
+        3. **Direct Tool Calls**:
+           `[{"name": "tool", "args": {...}, "id": "1", "type": "tool_call"}]`
             - Bypasses message parsing for direct tool execution
             - For programmatic tool invocation and testing
 
@@ -548,7 +549,8 @@ class _ToolNode(RunnableCallable):
     Args:
         tools: A sequence of tools that can be invoked by this node. Supports:
             - **BaseTool instances**: Tools with schemas and metadata
-            - **Plain functions**: Automatically converted to tools with inferred schemas
+            - **Plain functions**: Automatically converted to tools with inferred
+              schemas
         name: The name identifier for this node in the graph. Used for debugging
             and visualization. Defaults to "tools".
         tags: Optional metadata tags to associate with the node for filtering
@@ -570,7 +572,9 @@ class _ToolNode(RunnableCallable):
                 propagate.
 
             Defaults to a callable that:
-                - catches tool invocation errors (due to invalid arguments provided by the model) and returns a descriptive error message
+                - catches tool invocation errors
+                  (due to invalid arguments provided by the model) and returns a
+                  descriptive error message
                 - ignores tool execution errors (they will be re-raised)
 
         messages_key: The key in the state dictionary that contains the message list.
@@ -616,7 +620,7 @@ class _ToolNode(RunnableCallable):
 
         tool_node = ToolNode([my_tool], handle_tool_errors=handle_errors)
         ```
-    """  # noqa: E501
+    """
 
     name: str = "tools"
 
@@ -675,7 +679,7 @@ class _ToolNode(RunnableCallable):
 
     def _func(
         self,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,  # noqa: A002
         config: RunnableConfig,
         runtime: Runtime,
     ) -> Any:
@@ -705,7 +709,7 @@ class _ToolNode(RunnableCallable):
 
     async def _afunc(
         self,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,  # noqa: A002
         config: RunnableConfig,
         runtime: Runtime,
     ) -> Any:
@@ -1096,27 +1100,27 @@ class _ToolNode(RunnableCallable):
 
     def _parse_input(
         self,
-        input: list[AnyMessage] | dict[str, Any] | BaseModel,
+        input_: list[AnyMessage] | dict[str, Any] | BaseModel,
     ) -> tuple[list[ToolCall], Literal["list", "dict", "tool_calls"]]:
         input_type: Literal["list", "dict", "tool_calls"]
-        if isinstance(input, list):
-            if isinstance(input[-1], dict) and input[-1].get("type") == "tool_call":
+        if isinstance(input_, list):
+            if isinstance(input_[-1], dict) and input_[-1].get("type") == "tool_call":
                 input_type = "tool_calls"
-                tool_calls = cast("list[ToolCall]", input)
+                tool_calls = cast("list[ToolCall]", input_)
                 return tool_calls, input_type
             input_type = "list"
-            messages = input
-        elif isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
+            messages = input_
+        elif isinstance(input_, dict) and input_.get("__type") == "tool_call_with_context":
             # Handle ToolCallWithContext from Send API
             # mypy will not be able to type narrow correctly since the signature
             # for input contains dict[str, Any]. We'd need to narrow dict[str, Any]
             # before we can apply correct typing.
-            input_with_ctx = cast("ToolCallWithContext", input)
+            input_with_ctx = cast("ToolCallWithContext", input_)
             input_type = "tool_calls"
             return [input_with_ctx["tool_call"]], input_type
-        elif isinstance(input, dict) and (messages := input.get(self._messages_key, [])):
+        elif isinstance(input_, dict) and (messages := input_.get(self._messages_key, [])):
             input_type = "dict"
-        elif messages := getattr(input, self._messages_key, []):
+        elif messages := getattr(input_, self._messages_key, []):
             # Assume dataclass-like state that can coerce from dict
             input_type = "dict"
         else:
@@ -1125,9 +1129,9 @@ class _ToolNode(RunnableCallable):
 
         try:
             latest_ai_message = next(m for m in reversed(messages) if isinstance(m, AIMessage))
-        except StopIteration:
+        except StopIteration as e:
             msg = "No AIMessage found in input"
-            raise ValueError(msg)
+            raise ValueError(msg) from e
 
         tool_calls = list(latest_ai_message.tool_calls)
         return tool_calls, input_type
@@ -1146,19 +1150,19 @@ class _ToolNode(RunnableCallable):
         return None
 
     def _extract_state(
-        self, input: list[AnyMessage] | dict[str, Any] | BaseModel
+        self, input_: list[AnyMessage] | dict[str, Any] | BaseModel
     ) -> list[AnyMessage] | dict[str, Any] | BaseModel:
         """Extract state from input, handling ToolCallWithContext if present.
 
         Args:
-            input: The input which may be raw state or ToolCallWithContext.
+            input_: The input which may be raw state or ToolCallWithContext.
 
         Returns:
             The actual state to pass to wrap_tool_call wrappers.
         """
-        if isinstance(input, dict) and input.get("__type") == "tool_call_with_context":
-            return input["state"]
-        return input
+        if isinstance(input_, dict) and input_.get("__type") == "tool_call_with_context":
+            return input_["state"]
+        return input_
 
     def _inject_state(
         self,
@@ -1290,7 +1294,7 @@ class _ToolNode(RunnableCallable):
         if isinstance(command.update, dict):
             # input type is dict when ToolNode is invoked with a dict input
             # (e.g. {"messages": [AIMessage(..., tool_calls=[...])]})
-            if input_type not in ("dict", "tool_calls"):
+            if input_type not in {"dict", "tool_calls"}:
                 msg = (
                     "Tools can provide a dict in Command.update only when using dict "
                     f"with '{self._messages_key}' key as ToolNode input, "
@@ -1706,8 +1710,6 @@ def _get_state_args(tool: BaseTool) -> dict[str, str | None]:
                 tool_args_to_state_fields[name] = injection.field
             else:
                 tool_args_to_state_fields[name] = None
-        else:
-            pass
     return tool_args_to_state_fields
 
 

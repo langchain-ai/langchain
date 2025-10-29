@@ -182,7 +182,7 @@ class TestSyncAsyncMiddlewareComposition:
 
         # Sync path
         call_log.clear()
-        result_sync = agent.invoke(
+        agent.invoke(
             {"messages": [HumanMessage("Search")]},
             {"configurable": {"thread_id": "test1"}},
         )
@@ -220,7 +220,7 @@ class TestSyncAsyncMiddlewareComposition:
 
         # Async path
         call_log.clear()
-        result_async = await agent.ainvoke(
+        await agent.ainvoke(
             {"messages": [HumanMessage("Search")]},
             {"configurable": {"thread_id": "test2"}},
         )

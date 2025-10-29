@@ -1,13 +1,11 @@
 """Unit tests for the @wrap_model_call decorator."""
 
-import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    AgentState,
     ModelRequest,
     wrap_model_call,
 )
@@ -52,7 +50,8 @@ class TestOnModelCallDecorator:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] == 1:
-                    raise ValueError("First call fails")
+                    msg = "First call fails"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         @wrap_model_call
@@ -93,7 +92,8 @@ class TestOnModelCallDecorator:
 
         class AlwaysFailModel(GenericFakeChatModel):
             def _generate(self, messages, **kwargs):
-                raise ValueError("Model error")
+                msg = "Model error"
+                raise ValueError(msg)
 
         @wrap_model_call
         def error_to_fallback(request, handler):
@@ -259,24 +259,23 @@ class TestOnModelCallDecorator:
             def _generate(self, messages, **kwargs):
                 call_count["value"] += 1
                 if call_count["value"] <= 2:
-                    raise ValueError(f"Attempt {call_count['value']} failed")
+                    msg = f"Attempt {call_count['value']} failed"
+                    raise ValueError(msg)
                 return super()._generate(messages, **kwargs)
 
         @wrap_model_call
         def retry_with_tracking(request, handler):
             max_retries = 3
-            last_exception = None
             for attempt in range(max_retries):
                 attempts.append(attempt + 1)
                 try:
                     return handler(request)
-                except Exception as e:
-                    last_exception = e
+                except Exception:
                     # On error, continue to next attempt
                     if attempt < max_retries - 1:
                         continue  # Retry
-                    else:
-                        raise  # All retries failed
+                    raise  # All retries failed
+            return None
 
         model = UnreliableModel(messages=iter([AIMessage(content="Finally worked")]))
         agent = create_agent(model=model, middleware=[retry_with_tracking])

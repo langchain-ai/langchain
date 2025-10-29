@@ -1,13 +1,11 @@
-import warnings
+import re
+import sys
 from collections.abc import Awaitable, Callable
-from types import ModuleType
-from typing import Any
+from typing import Annotated, Any, cast
 from unittest.mock import patch
 
-import sys
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -15,49 +13,45 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from typing import cast
-
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import InjectedToolCallId, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
-from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import Annotated
+from typing_extensions import override
 
+from langchain.agents.factory import create_agent
 from langchain.agents.middleware.human_in_the_loop import (
     Action,
     HumanInTheLoopMiddleware,
 )
-from langchain.agents.middleware.todo import (
-    TodoListMiddleware,
-    PlanningState,
-    WRITE_TODOS_SYSTEM_PROMPT,
-    write_todos,
-    WRITE_TODOS_TOOL_DESCRIPTION,
-)
 from langchain.agents.middleware.model_call_limit import (
-    ModelCallLimitMiddleware,
     ModelCallLimitExceededError,
+    ModelCallLimitMiddleware,
 )
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.todo import (
+    WRITE_TODOS_SYSTEM_PROMPT,
+    WRITE_TODOS_TOOL_DESCRIPTION,
+    PlanningState,
+    TodoListMiddleware,
+    write_todos,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    hook_config,
+    ModelCallResult,
     ModelRequest,
+    ModelResponse,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
-    ModelResponse,
-    ModelCallResult,
+    hook_config,
 )
-from langchain.agents.factory import create_agent
 from langchain.agents.structured_output import ToolStrategy
 from langchain.tools import InjectedState
 
@@ -286,16 +280,16 @@ def test_create_agent_invoke(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
                 [
-                    {"args": {"input": "yo"}, "id": "1", "name": "my_tool"},
+                    {"args": {"value": "yo"}, "id": "1", "name": "my_tool"},
                 ],
                 [],
             ]
@@ -318,7 +312,7 @@ def test_create_agent_invoke(
                 tool_calls=[
                     {
                         "name": "my_tool",
-                        "args": {"input": "yo"},
+                        "args": {"value": "yo"},
                         "id": "1",
                         "type": "tool_call",
                     }
@@ -389,14 +383,14 @@ def test_create_agent_jump(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"value": "yo"})]],
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
@@ -463,7 +457,6 @@ def test_agent_graph_with_jump_to_end_as_after_agent(snapshot: SnapshotAssertion
 # Tests for HumanInTheLoopMiddleware
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -477,7 +470,6 @@ def test_human_in_the_loop_middleware_initialization() -> None:
 
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -504,7 +496,6 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -572,7 +563,6 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -602,7 +592,6 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -652,7 +641,6 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allowed_decisions": ["approve", "edit", "reject"]},
@@ -706,7 +694,6 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -760,17 +747,22 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     def mock_unknown(requests):
         return {"decisions": [{"type": "unknown"}]}
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'unknown'}. Decision type 'unknown' is not allowed for tool 'test_tool'. Expected one of \['approve', 'edit', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'unknown'}. "
+                "Decision type 'unknown' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'edit', 'reject'] based on the tool's configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_disallowed_action() -> None:
     """Test HumanInTheLoopMiddleware with action not allowed by tool config."""
-
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "reject"]}}
@@ -795,20 +787,26 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
             ]
         }
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        side_effect=mock_disallowed_action,
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_disallowed_action,
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human decision: {'type': 'edit', 'edited_action': {'name': 'test_tool', 'args': {'input': 'modified'}}}. Decision type 'edit' is not allowed for tool 'test_tool'. Expected one of \['approve', 'reject'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Unexpected human decision: {'type': 'edit', 'edited_action': "
+                "{'name': 'test_tool', 'args': {'input': 'modified'}}}. "
+                "Decision type 'edit' is not allowed for tool 'test_tool'. "
+                "Expected one of ['approve', 'reject'] based on the tool's configuration.",
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> None:
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"interrupt_tool": {"allowed_decisions": ["approve", "edit", "reject"]}}
     )
@@ -840,7 +838,6 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
 
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={"test_tool": {"allowed_decisions": ["approve", "edit", "reject"]}},
         description_prefix="Custom prefix",
@@ -942,31 +939,39 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     # Test with too few responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={"decisions": []},  # No responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={"decisions": []},  # No responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(0\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (0) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
     # Test with too many responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value={
-            "decisions": [
-                {"type": "approve"},
-                {"type": "approve"},
-            ]
-        },  # 2 responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value={
+                "decisions": [
+                    {"type": "approve"},
+                    {"type": "approve"},
+                ]
+            },  # 2 responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human decisions \(2\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state, None)
+            match=re.escape(
+                "Number of human decisions (2) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state, None)
 
 
 def test_human_in_the_loop_middleware_description_as_callable() -> None:
@@ -1149,10 +1154,10 @@ def test_summarization_middleware_summary_creation() -> None:
     """Test SummarizationMiddleware summary creation."""
 
     class MockModel(BaseChatModel):
-        def invoke(self, prompt):
+        def invoke(self, *args, **kwargs):
             return AIMessage(content="Generated summary")
 
-        def _generate(self, messages, **kwargs):
+        def _generate(self, *args, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1172,10 +1177,12 @@ def test_summarization_middleware_summary_creation() -> None:
 
     # Test error handling
     class ErrorModel(BaseChatModel):
-        def invoke(self, prompt):
-            raise Exception("Model error")
+        @override
+        def invoke(self, *args, **kwargs):
+            msg = "Model error"
+            raise ValueError(msg)
 
-        def _generate(self, messages, **kwargs):
+        def _generate(self, *args, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1191,10 +1198,10 @@ def test_summarization_middleware_full_workflow() -> None:
     """Test SummarizationMiddleware complete summarization workflow."""
 
     class MockModel(BaseChatModel):
-        def invoke(self, prompt):
+        def invoke(self, *args, **kwargs):
             return AIMessage(content="Generated summary")
 
-        def _generate(self, messages, **kwargs):
+        def _generate(self, *args, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1267,7 +1274,11 @@ def test_on_model_call() -> None:
 
 
 def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
-    """Test that when there are both structured and regular tool calls, we execute regular and jump to END."""
+    """Test tools to model edge with structured and regular tool calls.
+
+    Test that when there are both structured and regular tool calls,
+    we execute regular and jump to END.
+    """
 
     class WeatherResponse(BaseModel):
         """Weather response."""
@@ -1377,7 +1388,6 @@ def test_runtime_injected_into_middleware() -> None:
     class CustomMiddleware(AgentMiddleware):
         def before_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
 
         def wrap_model_call(
             self,
@@ -1389,9 +1399,6 @@ def test_runtime_injected_into_middleware() -> None:
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
-
-    middleware = CustomMiddleware()
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent.invoke({"messages": [HumanMessage("Hello")]})
@@ -1436,9 +1443,11 @@ agent = create_agent(
 )
 def test_injected_state_in_middleware_agent() -> None:
     """Test that custom state is properly injected into tools when using middleware."""
-
     result = agent.invoke(
-        {"custom_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+        {
+            "custom_state": "I love pizza",
+            "messages": [HumanMessage("Call the test state tool")],
+        }
     )
 
     messages = result["messages"]
@@ -1500,7 +1509,7 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
@@ -1526,7 +1535,8 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
                 {"content": "Task 1", "status": "pending"},
                 {"content": "Task 2", "status": "in_progress"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}]",
+            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, "
+            "{'content': 'Task 2', 'status': 'in_progress'}]",
         ),
         (
             [
@@ -1534,7 +1544,9 @@ def test_todo_middleware_on_model_call(original_prompt, expected_prompt_prefix) 
                 {"content": "Task 2", "status": "in_progress"},
                 {"content": "Task 3", "status": "completed"},
             ],
-            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}, {'content': 'Task 3', 'status': 'completed'}]",
+            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, "
+            "{'content': 'Task 2', 'status': 'in_progress'}, "
+            "{'content': 'Task 3', 'status': 'completed'}]",
         ),
     ],
 )
@@ -1566,7 +1578,7 @@ def test_todo_middleware_write_todos_tool_validation_errors(invalid_todos) -> No
         "type": "tool_call",
         "id": "test_call",
     }
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="1 validation error for write_todos"):
         write_todos.invoke(tool_call)
 
 
@@ -1635,7 +1647,7 @@ def test_todo_middleware_custom_system_prompt() -> None:
         response_format=None,
         model_settings={},
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
     )
 
     def mock_handler(req: ModelRequest) -> AIMessage:
@@ -1678,7 +1690,7 @@ def test_todo_middleware_custom_system_prompt_and_tool_description() -> None:
         tools=[],
         response_format=None,
         state=state,
-        runtime=cast(Runtime, object()),
+        runtime=cast("Runtime", object()),
         model_settings={},
     )
 
@@ -1737,9 +1749,9 @@ def test_todo_middleware_custom_system_prompt_in_agent() -> None:
 
 
 @tool
-def simple_tool(input: str) -> str:
-    """A simple tool"""
-    return input
+def simple_tool(value: str) -> str:
+    """A simple tool."""
+    return value
 
 
 def test_middleware_unit_functionality():
@@ -1836,7 +1848,7 @@ def test_run_limit_with_create_agent():
     # Create a model that will make 2 calls
     model = FakeToolCallingModel(
         tool_calls=[
-            [{"name": "simple_tool", "args": {"input": "test"}, "id": "1"}],
+            [{"name": "simple_tool", "args": {"value": "test"}, "id": "1"}],
             [],  # No tool calls on second call
         ]
     )
@@ -1926,8 +1938,11 @@ def test_exception_error_message():
 
 
 def test_run_limit_resets_between_invocations() -> None:
-    """Test that run_model_call_count resets between invocations, but thread_model_call_count accumulates."""
+    """Test run limit resets between invocations.
 
+    Test that run_model_call_count resets between invocations,
+    but thread_model_call_count accumulates.
+    """
     # First: No tool calls per invocation, so model does not increment call counts internally
     middleware = ModelCallLimitMiddleware(thread_limit=3, run_limit=1, exit_behavior="error")
     model = FakeToolCallingModel(
@@ -1970,15 +1985,15 @@ async def test_create_agent_async_invoke() -> None:
             calls.append("AsyncMiddleware.aafter_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
-                [{"args": {"input": "yo"}, "id": "1", "name": "my_tool"}],
+                [{"args": {"value": "yo"}, "id": "1", "name": "my_tool"}],
                 [],
             ]
         ),
@@ -2051,7 +2066,7 @@ async def test_create_agent_async_invoke_multiple_middleware() -> None:
         middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
     )
 
-    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+    await agent.ainvoke({"messages": [HumanMessage("hello")]})
 
     assert calls == [
         "AsyncMiddlewareOne.abefore_model",
@@ -2078,14 +2093,14 @@ async def test_create_agent_async_jump() -> None:
             return {"jump_to": "end"}
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"value": "yo"})]],
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
@@ -2173,7 +2188,8 @@ def test_wrap_model_call_hook() -> None:
         def _generate(self, messages, **kwargs):
             call_count["value"] += 1
             if call_count["value"] == 1:
-                raise ValueError("First call fails")
+                msg = "First call fails"
+                raise ValueError(msg)
             return ChatResult(
                 generations=[ChatGeneration(message=AIMessage(content="Success on retry"))]
             )
@@ -2216,7 +2232,8 @@ def test_wrap_model_call_retry_count() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Always fails")
+            msg = "Always fails"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2242,6 +2259,7 @@ def test_wrap_model_call_retry_count() -> None:
             # All retries failed, re-raise the last exception
             if last_exception:
                 raise last_exception
+            pytest.fail("Should have raised an exception")
 
     model = AlwaysFailingModel()
     tracker = AttemptTrackingMiddleware()
@@ -2262,7 +2280,8 @@ def test_wrap_model_call_no_retry() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model error")
+            msg = "Model error"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2285,7 +2304,8 @@ def test_model_fallback_middleware() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Primary model failed")
+            msg = "Primary model failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2329,7 +2349,8 @@ def test_model_fallback_middleware_exhausted() -> None:
             self.name = name
 
         def _generate(self, messages, **kwargs):
-            raise ValueError(f"{self.name} failed")
+            msg = f"{self.name} failed"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2351,7 +2372,6 @@ def test_model_fallback_middleware_exhausted() -> None:
 
 def test_model_fallback_middleware_initialization() -> None:
     """Test ModelFallbackMiddleware initialization."""
-
     # Test with no models - now a TypeError (missing required argument)
     with pytest.raises(TypeError):
         ModelFallbackMiddleware()  # type: ignore[call-arg]
@@ -2372,7 +2392,8 @@ def test_wrap_model_call_max_attempts() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Always fails")
+            msg = "Always fails"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2388,7 +2409,7 @@ def test_wrap_model_call_max_attempts() -> None:
 
         def wrap_model_call(self, request, handler):
             last_exception = None
-            for attempt in range(self.max_retries):
+            for _attempt in range(self.max_retries):
                 self.attempt_count += 1
                 try:
                     return handler(request)
@@ -2399,6 +2420,7 @@ def test_wrap_model_call_max_attempts() -> None:
             # All retries exhausted, re-raise the last error
             if last_exception:
                 raise last_exception
+            pytest.fail("Should have raised an exception")
 
     model = AlwaysFailingModel()
     middleware = LimitedRetryMiddleware(max_retries=10)
@@ -2426,7 +2448,8 @@ async def test_wrap_model_call_async() -> None:
         async def _agenerate(self, messages, **kwargs):
             call_count["value"] += 1
             if call_count["value"] == 1:
-                raise ValueError("First async call fails")
+                msg = "First async call fails"
+                raise ValueError(msg)
             return ChatResult(
                 generations=[ChatGeneration(message=AIMessage(content="Async retry success"))]
             )
@@ -2506,7 +2529,8 @@ def test_wrap_model_call_convert_error_to_response() -> None:
         """Model that always fails."""
 
         def _generate(self, messages, **kwargs):
-            raise ValueError("Model error")
+            msg = "Model error"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):
@@ -2591,7 +2615,7 @@ def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
         middleware=[MixedMiddleware()],
     )
 
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    agent.invoke({"messages": [HumanMessage("hello")]})
 
     # In sync mode, only sync methods should be called
     assert calls == [
