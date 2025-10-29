@@ -7,22 +7,6 @@
     {
       "source": "/docs/integrations(/?)",
       "destination": "/docs/integrations/platforms/"
-    },
-    {
-      "source": "/v0.1",
-      "destination": "https://langchain-v01.vercel.app/v0.1"
-    },
-    {
-      "source": "/v0.1/:path(.*/?)*",
-      "destination": "https://langchain-v01.vercel.app/v0.1/:path*"
-    },
-    {
-      "source": "/v0.2",
-      "destination": "https://langchain-v02.vercel.app/v0.2"
-    },
-    {
-      "source": "/v0.2/:path(.*/?)*",
-      "destination": "https://langchain-v02.vercel.app/v0.2/:path*"
     }
   ],
   "redirects": [
@@ -31,16 +15,96 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
-      "source": "/v0.2/docs/templates/:path(.*/?)*",
-      "destination": "https://github.com/langchain-ai/langchain"
+      "source": "/docs/integrations/platforms/anthropic/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
     },
     {
-      "source": "/docs/integrations/platforms/:path((?:anthropic|aws|google|huggingface|microsoft|openai)?/?)*",
-      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+      "source": "/docs/integrations/platforms/anthropic",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
     },
     {
-      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS|INVALID_CHAT_HISTORY)/?)*",
-      "destination": "https://langchain-ai.github.io/langgraph/"
+      "source": "/docs/integrations/platforms/aws/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/aws"
+    },
+    {
+      "source": "/docs/integrations/platforms/aws",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/aws"
+    },
+    {
+      "source": "/docs/integrations/platforms/google/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/google"
+    },
+    {
+      "source": "/docs/integrations/platforms/google",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/google"
+    },
+    {
+      "source": "/docs/integrations/platforms/huggingface/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
+    },
+    {
+      "source": "/docs/integrations/platforms/huggingface",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
+    },
+    {
+      "source": "/docs/integrations/platforms/microsoft/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/microsoft"
+    },
+    {
+      "source": "/docs/integrations/platforms/microsoft",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/microsoft"
+    },
+    {
+      "source": "/docs/integrations/platforms/openai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/openai"
+    },
+    {
+      "source": "/docs/integrations/platforms/openai",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/openai"
+    },
+    {
+      "source": "/docs/integrations/platforms/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT/",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_CONCURRENT_GRAPH_UPDATE",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_CONCURRENT_GRAPH_UPDATE/",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_GRAPH_NODE_RETURN_VALUE"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE/",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_GRAPH_NODE_RETURN_VALUE"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/MULTIPLE_SUBGRAPHS"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS/",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/MULTIPLE_SUBGRAPHS"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_CHAT_HISTORY",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CHAT_HISTORY"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_CHAT_HISTORY/",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CHAT_HISTORY"
     },
     {
       "source": "/docs/contributing/:path((?:code|documentation|integrations|testing)(?:/|/.*/?)?)",
@@ -52,7 +116,7 @@
     },
     {
       "source": "/api_reference/mongodb/:path(.*/?)*",
-      "destination": "https://reference.langchain.com/python/"
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
     },
     {
       "source": "/api_reference/tests/:path(.*/?)*",
@@ -63,11 +127,279 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
-      "source": "/v0.2/docs/:path(.*/?)*",
+      "source": "/docs/templates/:path*",
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
-      "source": "/v0.1/docs/:path(.*/?)*",
+      "source": "/docs/guides/productionization/:path*",
+      "destination": "https://docs.langchain.com/langsmith/home"
+    },
+    {
+      "source": "/docs/guides/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/langsmith/:path*",
+      "destination": "https://docs.langchain.com/langsmith/home"
+    },
+    {
+      "source": "/docs/integrations/toolkits/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/tools"
+    },
+    {
+      "source": "/docs/integrations/providers/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/docs/integrations/retrievers/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/retrievers"
+    },
+    {
+      "source": "/docs/modules/agents/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+    },
+    {
+      "source": "/docs/modules/memory/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/short-term-memory"
+    },
+    {
+      "source": "/docs/modules/model_io/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/docs/use_cases/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/docs/expression_language/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/integrations/llms/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/models"
+    },
+    {
+      "source": "/docs/tutorials/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/rag"
+    },
+    {
+      "source": "/docs/integrations/document_loaders/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders"
+    },
+    {
+      "source": "/docs/integrations/chat/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/chat"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/vectorstores"
+    },
+    {
+      "source": "/docs/integrations/text_embedding/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/text_embedding"
+    },
+    {
+      "source": "/docs/modules/chains/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/google_community/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/google_vertexai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/cohere/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/text_splitters/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/splitters"
+    },
+    {
+      "source": "/v0.2/api_reference/prompty/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/ai21/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/nvidia_ai_endpoints/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/google_genai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/anthropic/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/qdrant/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/openai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/huggingface/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/couchbase/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/postgres/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/ollama/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/fireworks/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/mistralai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/pinecone/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/together/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/chroma/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/voyageai/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/azure_dynamic_sessions/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/community/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/core/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/langchain/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/experimental/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/_modules/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/v0.2/api_reference/:path*",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/v0.1/api_reference/:path*",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/api_reference/:path*",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/v0.2/:path((?!api_reference).*)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/v0.1/:path((?!api_reference).*)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/en/latest/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/modules/:path*",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/integrations/:path*",
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+    },
+    {
+      "source": "/docs/how_to/graph_mapping(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/docs/how_to/graph_prompting(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
+    },
+    {
+      "source": "/docs/langgraph(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/overview"
+    },
+    {
+      "source": "/",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/how_to/migrate_chains(/?)",
+      "destination": "https://docs.langchain.com/oss/python/migrate/langchain-v1"
+    },
+    {
+      "source": "/docs/",
+      "destination": "https://docs.langchain.com/oss/python/langchain/overview"
+    },
+    {
+      "source": "/docs/security/",
+      "destination": "https://docs.langchain.com/oss/python/security-policy"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_PROMPT_INPUT/",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_PROMPT_INPUT"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/INVALID_TOOL_RESULTS/",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_TOOL_RESULTS"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MESSAGE_COERCION_FAILURE",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/MESSAGE_COERCION_FAILURE"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MODEL_AUTHENTICATION",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_AUTHENTICATION"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MODEL_NOT_FOUND",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_NOT_FOUND"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/MODEL_RATE_LIMIT",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/MODEL_RATE_LIMIT"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE",
+      "destination": "https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE"
+    },
+    {
+      "source": "/:path((?!api_reference).*)",
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     }
   ]
