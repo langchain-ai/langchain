@@ -47,9 +47,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         Use a custom model for emulation:
         ```python
-        middleware = LLMToolEmulator(
-            tools=["get_weather"], model="anthropic:claude-sonnet-4-5"
-        )
+        middleware = LLMToolEmulator(tools=["get_weather"], model="anthropic:claude-sonnet-4-5")
         ```
 
         Emulate specific tools by passing tool instances:
