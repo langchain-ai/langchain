@@ -550,6 +550,8 @@ class BaseChatOpenAI(BaseChatModel):
     !!! warning "Behavior changed in 0.3.35"
         Enabled for default base URL and client.
     """
+    model_provider: str | None = "openai"
+    """THe model provider name (openai)."""
     max_retries: int | None = None
     """Maximum number of retries to make when generating."""
     presence_penalty: float | None = None
@@ -1034,7 +1036,6 @@ class BaseChatOpenAI(BaseChatModel):
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 
-        message_chunk.response_metadata["model_provider"] = "openai"
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -1398,7 +1399,6 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_provider": "openai",
             "model_name": response_dict.get("model", self.model_name),
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
@@ -4081,7 +4081,6 @@ def _construct_lc_result_from_responses_api(
     if metadata:
         response_metadata.update(metadata)
     # for compatibility with chat completion calls.
-    response_metadata["model_provider"] = "openai"
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
         usage_metadata = _create_usage_metadata_responses(
@@ -4277,7 +4276,6 @@ def _convert_responses_chunk_to_generation_chunk(
     tool_call_chunks: list = []
     additional_kwargs: dict = {}
     response_metadata = metadata or {}
-    response_metadata["model_provider"] = "openai"
     usage_metadata = None
     chunk_position: Literal["last"] | None = None
     id = None
