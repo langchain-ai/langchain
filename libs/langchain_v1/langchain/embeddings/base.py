@@ -126,26 +126,27 @@ def init_embeddings(
     provider: str | None = None,
     **kwargs: Any,
 ) -> Embeddings:
-    """Initialize an embeddings model from a model name and optional provider.
+    """Initialize an embedding model from a model name and optional provider.
 
     !!! note
-        Must have the integration package corresponding to the model provider
-        installed.
+        Requires the integration package for the chosen model provider to be installed.
+
+        See the `model_provider` parameter below for specific package names
+        (e.g., `pip install langchain-openai`).
+
+        Refer to the [provider integration's API reference](https://docs.langchain.com/oss/python/integrations/providers)
+        for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: Name of the model to use.
+        model: The name of the model, e.g. `'openai:text-embedding-3-small'`.
 
-            Can be either:
+            You can also specify model and model provider in a single argument using
+            `'{model_provider}:{model}'` format, e.g. `'openai:text-embedding-3-small'`.
+        provider: The model provider if not specified as part of the model arg
+            (see above).
 
-            - A model string like `"openai:text-embedding-3-small"`
-            - Just the model name if the provider is specified separately or can be
-                inferred.
-
-            See supported providers under the `provider` arg description.
-        provider: Optional explicit provider name. If not specified, will attempt to
-            parse from the model string in the `model` arg.
-
-            Supported providers:
+            Supported `provider` values and the corresponding integration package
+            are:
 
             - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
@@ -157,7 +158,10 @@ def init_embeddings(
             - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
-            These vary by provider, see the provider-specific documentation for details.
+
+            These vary by provider. Refer to the specific model provider's
+            [integration reference](https://reference.langchain.com/python/integrations/)
+            for all available parameters.
 
     Returns:
         An `Embeddings` instance that can generate embeddings for text.
@@ -166,9 +170,11 @@ def init_embeddings(
         ValueError: If the model provider is not supported or cannot be determined
         ImportError: If the required provider package is not installed
 
-    ???+ note "Example Usage"
+    ???+ example
 
         ```python
+        # pip install langchain langchain-openai
+
         # Using a model string
         model = init_embeddings("openai:text-embedding-3-small")
         model.embed_query("Hello, world!")

@@ -15,12 +15,12 @@ if TYPE_CHECKING:
 
     from langgraph.types import Command
 
+    from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
-    from langchain.tools.tool_node import ToolCallRequest
 
 
 class LLMToolEmulator(AgentMiddleware):
-    """Middleware that emulates specified tools using an LLM instead of executing them.
+    """Emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
     By default (when tools=None), all tools are emulated. You can specify which
