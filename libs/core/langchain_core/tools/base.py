@@ -707,6 +707,38 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
+    def _filter_injected_args(self, tool_input: dict) -> dict:
+        """Filter out injected tool arguments from the input dictionary.
+
+        Injected arguments are those annotated with InjectedToolArg or its
+        subclasses, or arguments in FILTERED_ARGS like run_manager and callbacks.
+
+        Args:
+            tool_input: The tool input dictionary to filter.
+
+        Returns:
+            A filtered dictionary with injected arguments removed.
+        """
+        if not isinstance(tool_input, dict):
+            return tool_input
+
+        # Start with filtered args from the constant
+        filtered_keys = set(FILTERED_ARGS)
+
+        # If we have an args_schema, use it to identify injected args
+        if self.args_schema is not None:
+            try:
+                annotations = get_all_basemodel_annotations(self.args_schema)
+                for field_name, field_type in annotations.items():
+                    if _is_injected_arg_type(field_type):
+                        filtered_keys.add(field_name)
+            except Exception:
+                # If we can't get annotations, just use FILTERED_ARGS
+                pass
+
+        # Filter out the injected keys from tool_input
+        return {k: v for k, v in tool_input.items() if k not in filtered_keys}
+
     def _to_args_and_kwargs(
         self, tool_input: str | dict, tool_call_id: str | None
     ) -> tuple[tuple, dict]:
@@ -794,17 +826,20 @@ class ChildTool(BaseTool):
             self.metadata,
         )
 
+        # Filter out injected arguments from callback inputs
+        callback_inputs = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
             run_id=run_id,
-            # Inputs by definition should always be dicts.
-            # For now, it's unclear whether this assumption is ever violated,
-            # but if it is we will send a `None` value to the callback instead
-            # TODO: will need to address issue via a patch.
-            inputs=tool_input if isinstance(tool_input, dict) else None,
+            inputs=callback_inputs,
             **kwargs,
         )
 
@@ -905,17 +940,21 @@ class ChildTool(BaseTool):
             metadata,
             self.metadata,
         )
+
+        # Filter out injected arguments from callback inputs
+        callback_inputs = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
             run_id=run_id,
-            # Inputs by definition should always be dicts.
-            # For now, it's unclear whether this assumption is ever violated,
-            # but if it is we will send a `None` value to the callback instead
-            # TODO: will need to address issue via a patch.
-            inputs=tool_input if isinstance(tool_input, dict) else None,
+            inputs=callback_inputs,
             **kwargs,
         )
         content = None
