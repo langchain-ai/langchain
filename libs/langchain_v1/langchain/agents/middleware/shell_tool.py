@@ -521,13 +521,13 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         """Async counterpart to `after_agent`."""
         return self.after_agent(state, runtime)
 
-    def _ensure_resources(self, state: ShellToolState) -> _SessionResources:
-        resources = state.get("shell_session_resources")
-        if resources is not None and not isinstance(resources, _SessionResources):
-            resources = None
-        if resources is None:
-            return self._get_or_create_resources()
-        return resources
+    def _ensure_resources(self, state : ShellToolState) -> _SessionResources: # noqa: ARG002
+        """Always return live resources from middleware cache.
+
+        State is ignored — session is managed internally to support restart and HIL resume.
+        """
+        return self._get_or_create_resources()
+
     def _get_or_create_resources(self) -> _SessionResources:
         if self._session is None:
             self._ensure_session()
@@ -677,8 +677,10 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         if payload.get("restart"):
             LOGGER.info("Restarting shell session on request.")
             try:
-                session.restart()
+                session.stop(self._execution_policy.termination_timeout)
+                session.start()
                 self._run_startup_commands(session)
+                self._session = session
             except BaseException as err:
                 LOGGER.exception("Restarting shell session failed; session remains unavailable.")
                 msg = "Failed to restart shell session."
