@@ -50,7 +50,7 @@ typing = [
 ]
 
 [tool.uv.sources]
-langchain-core = { git = "https://github.com/langchain-ai/langchain", subdirectory = "libs/core" , branch = "cc/model_profiles"}
+langchain-core = { path = "../core", editable = true }
 
 [tool.ruff.format]
 docstring-code-format = true
