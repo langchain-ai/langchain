@@ -677,8 +677,10 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         if payload.get("restart"):
             LOGGER.info("Restarting shell session on request.")
             try:
-                session.restart()
+                session.stop(self._execution_policy.termination_timeout)
+                session.start()
                 self._run_startup_commands(session)
+                self._session = session
             except BaseException as err:
                 LOGGER.exception("Restarting shell session failed; session remains unavailable.")
                 msg = "Failed to restart shell session."
