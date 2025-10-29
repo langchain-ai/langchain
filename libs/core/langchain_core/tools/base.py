@@ -725,7 +725,6 @@ class ChildTool(BaseTool):
         # Start with filtered args from the constant
         filtered_keys = set(FILTERED_ARGS)
 
-<<<<<<< Updated upstream
         # If we have an args_schema, use it to identify injected args
         if self.args_schema is not None:
             try:
@@ -739,19 +738,6 @@ class ChildTool(BaseTool):
 
         # Filter out the injected keys from tool_input
         return {k: v for k, v in tool_input.items() if k not in filtered_keys}
-=======
-            # Filter out injected arguments and FILTERED_ARGS
-            return {
-                k: v
-                for k, v in tool_input.items()
-                if k not in FILTERED_ARGS
-                and (k not in annotations or not _is_injected_arg_type(annotations[k]))
-            }
-        except Exception:
-            # If we can't determine the schema, return the input as-is
-            # but at least filter out FILTERED_ARGS
-            return {k: v for k, v in tool_input.items() if k not in FILTERED_ARGS}
->>>>>>> Stashed changes
 
     def _to_args_and_kwargs(
         self, tool_input: str | dict, tool_call_id: str | None
