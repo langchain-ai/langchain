@@ -31,7 +31,7 @@ class ModelFallbackMiddleware(AgentMiddleware):
 
         fallback = ModelFallbackMiddleware(
             "openai:gpt-4o-mini",  # Try first on error
-            "anthropic:claude-3-5-sonnet-20241022",  # Then this
+            "anthropic:claude-sonnet-4-5-20250929",  # Then this
         )
 
         agent = create_agent(

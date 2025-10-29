@@ -588,7 +588,7 @@ class GenerateUsername(BaseModel):
 
 
 def test_disable_parallel_tool_calling() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
     result = llm_with_tools.invoke(
         "Use the GenerateUsername tool to generate user names for:\n\n"
@@ -665,7 +665,7 @@ def test_with_structured_output() -> None:
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
 
     # Test simple case
     messages = [

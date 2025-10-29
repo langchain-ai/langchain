@@ -9,86 +9,8 @@ from langchain.agents.factory import create_agent
 from langchain.agents.middleware.tool_call_limit import (
     ToolCallLimitExceededError,
     ToolCallLimitMiddleware,
-    _count_tool_calls_in_messages,
-    _get_run_messages,
 )
 from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
-
-
-def test_count_tool_calls_in_messages():
-    """Test counting tool calls in messages."""
-    # Test with no messages
-    assert _count_tool_calls_in_messages([]) == 0
-
-    # Test with messages but no tool calls
-    messages = [
-        HumanMessage("Hello"),
-        AIMessage("Hi there"),
-    ]
-    assert _count_tool_calls_in_messages(messages) == 0
-
-    # Test with tool calls
-    messages = [
-        HumanMessage("Search for something"),
-        AIMessage(
-            "Searching...",
-            tool_calls=[
-                {"name": "search", "args": {"query": "test"}, "id": "1"},
-                {"name": "calculator", "args": {"expression": "1+1"}, "id": "2"},
-            ],
-        ),
-        ToolMessage("Result 1", tool_call_id="1"),
-        ToolMessage("Result 2", tool_call_id="2"),
-        AIMessage(
-            "More searching...",
-            tool_calls=[
-                {"name": "search", "args": {"query": "another"}, "id": "3"},
-            ],
-        ),
-    ]
-    # Total: 3 tool calls (2 from first AI message, 1 from second)
-    assert _count_tool_calls_in_messages(messages) == 3
-
-    # Test filtering by tool name
-    assert _count_tool_calls_in_messages(messages, tool_name="search") == 2
-    assert _count_tool_calls_in_messages(messages, tool_name="calculator") == 1
-    assert _count_tool_calls_in_messages(messages, tool_name="nonexistent") == 0
-
-
-def test_get_run_messages():
-    """Test extracting run messages after last HumanMessage."""
-    # Test with no messages
-    assert _get_run_messages([]) == []
-
-    # Test with no HumanMessage
-    messages = [
-        AIMessage("Hello"),
-        AIMessage("World"),
-    ]
-    assert _get_run_messages(messages) == messages
-
-    # Test with HumanMessage at the end
-    messages = [
-        AIMessage("Previous"),
-        HumanMessage("New question"),
-    ]
-    assert _get_run_messages(messages) == []
-
-    # Test with messages after HumanMessage
-    messages = [
-        AIMessage("Previous"),
-        ToolMessage("Previous result", tool_call_id="0"),
-        HumanMessage("New question"),
-        AIMessage(
-            "Response",
-            tool_calls=[{"name": "search", "args": {}, "id": "1"}],
-        ),
-        ToolMessage("Result", tool_call_id="1"),
-    ]
-    run_messages = _get_run_messages(messages)
-    assert len(run_messages) == 2
-    assert isinstance(run_messages[0], AIMessage)
-    assert isinstance(run_messages[1], ToolMessage)
 
 
 def test_middleware_initialization_validation():
