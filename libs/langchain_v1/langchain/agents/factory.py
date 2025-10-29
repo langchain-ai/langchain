@@ -1312,10 +1312,11 @@ def create_agent(  # noqa: PLR0915
         )
         last_mw = middleware_w_before_agent[-1]
         if isinstance(last_mw, ShellToolMiddleware):
-            graph.add_node("restore_shell", last_mw.restore_from_metadata)  # type: ignore[attr-defined]
+            mw: ShellToolMiddleware = last_mw
+            graph.add_node("restore_shell", mw.restore_from_metadata)
 
             graph.add_conditional_edges(
-                f"{last_mw.name}.before_agent",  # type: ignore[attr-defined]
+                f"{mw.name}.before_agent",
                 lambda state: state.get("resume_from") == "interrupt",
                 {
                     True: "restore_shell",
