@@ -19,6 +19,7 @@ from typing import (
 )
 
 import pytest
+from langgraph.prebuilt.tool_node import ToolRuntime
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
@@ -2978,13 +2979,6 @@ async def test_filter_injected_args_async() -> None:
 
 def test_filter_tool_runtime_directly_injected_arg() -> None:
     """Test that ToolRuntime (a _DirectlyInjectedToolArg) is filtered."""
-    # Import here to avoid requiring langgraph for all tests
-    pytest.importorskip("langgraph")
-
-    try:
-        from langgraph.prebuilt.tool_node import ToolRuntime
-    except ImportError:
-        pytest.skip("ToolRuntime not available in this version of langgraph")
 
     @tool
     def tool_with_runtime(
@@ -3008,8 +3002,8 @@ def test_filter_tool_runtime_directly_injected_arg() -> None:
         """Mock ToolRuntime for testing."""
 
         agent_name = "test_agent"
-        context = {}
-        state = {}
+        context: dict[str, Any] = {}
+        state: dict[str, Any] = {}
 
     result = tool_with_runtime.invoke(
         {

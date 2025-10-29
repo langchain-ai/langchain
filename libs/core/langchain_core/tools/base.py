@@ -732,7 +732,7 @@ class ChildTool(BaseTool):
                 for field_name, field_type in annotations.items():
                     if _is_injected_arg_type(field_type):
                         filtered_keys.add(field_name)
-            except Exception:
+            except Exception:  # noqa: S110
                 # If we can't get annotations, just use FILTERED_ARGS
                 pass
 
