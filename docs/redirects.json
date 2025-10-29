@@ -28772,7 +28772,7 @@
     "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders"
   },
   {
-    "source": "/:path*",
+    "source": "/:path((?!api_reference).*)",
     "destination": "https://docs.langchain.com/oss/python/langchain/overview"
   }
 ]
