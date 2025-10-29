@@ -499,12 +499,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         and HuggingFace tokenizer based on the tiktoken_enabled flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: A list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
@@ -551,12 +551,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         `tiktoken` and HuggingFace `tokenizer` based on the tiktoken_enabled flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: A list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
