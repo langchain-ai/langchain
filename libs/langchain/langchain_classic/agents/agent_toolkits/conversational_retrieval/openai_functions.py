@@ -1,7 +1,6 @@
 from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.memory import BaseMemory
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts.chat import MessagesPlaceholder
 from langchain_core.tools import BaseTool
@@ -11,6 +10,7 @@ from langchain_classic.agents.openai_functions_agent.agent_token_buffer_memory i
     AgentTokenBufferMemory,
 )
 from langchain_classic.agents.openai_functions_agent.base import OpenAIFunctionsAgent
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.memory.token_buffer import ConversationTokenBufferMemory
 
 
@@ -37,7 +37,7 @@ def create_conversational_retrieval_agent(
     """A convenience method for creating a conversational retrieval agent.
 
     Args:
-        llm: The language model to use, should be ChatOpenAI
+        llm: The language model to use, should be `ChatOpenAI`
         tools: A list of tools the agent has access to
         remember_intermediate_steps: Whether the agent should remember intermediate
             steps or not. Intermediate steps refer to prior action/observation
@@ -47,11 +47,9 @@ def create_conversational_retrieval_agent(
         memory_key: The name of the memory key in the prompt.
         system_message: The system message to use. By default, a basic one will
             be used.
-        verbose: Whether or not the final AgentExecutor should be verbose or not,
-            defaults to False.
+        verbose: Whether or not the final AgentExecutor should be verbose or not.
         max_token_limit: The max number of tokens to keep around in memory.
-            Defaults to 2000.
-        **kwargs: Additional keyword arguments to pass to the AgentExecutor.
+        **kwargs: Additional keyword arguments to pass to the `AgentExecutor`.
 
     Returns:
         An agent executor initialized appropriately

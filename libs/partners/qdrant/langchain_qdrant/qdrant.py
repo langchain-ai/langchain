@@ -10,13 +10,10 @@ from typing import (
     Any,
 )
 
-import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
-
-from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Sequence
@@ -40,171 +37,169 @@ class QdrantVectorStore(VectorStore):
     """Qdrant vector store integration.
 
     Setup:
-        Install ``langchain-qdrant`` package.
+        Install `langchain-qdrant` package.
 
-        .. code-block:: bash
-
-            pip install -qU langchain-qdrant
+        ```bash
+        pip install -qU langchain-qdrant
+        ```
 
     Key init args — indexing params:
-        collection_name: str
+        collection_name:
             Name of the collection.
-        embedding: Embeddings
+        embedding:
             Embedding function to use.
-        sparse_embedding: SparseEmbeddings
+        sparse_embedding:
             Optional sparse embedding function to use.
 
     Key init args — client params:
-        client: QdrantClient
+        client:
             Qdrant client to use.
-        retrieval_mode: RetrievalMode
+        retrieval_mode:
             Retrieval mode to use.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_qdrant import QdrantVectorStore
+        from qdrant_client import QdrantClient
+        from qdrant_client.http.models import Distance, VectorParams
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_qdrant import QdrantVectorStore
-            from qdrant_client import QdrantClient
-            from qdrant_client.http.models import Distance, VectorParams
-            from langchain_openai import OpenAIEmbeddings
+        client = QdrantClient(":memory:")
 
-            client = QdrantClient(":memory:")
+        client.create_collection(
+            collection_name="demo_collection",
+            vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+        )
 
-            client.create_collection(
-                collection_name="demo_collection",
-                vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
-            )
-
-            vector_store = QdrantVectorStore(
-                client=client,
-                collection_name="demo_collection",
-                embedding=OpenAIEmbeddings(),
-            )
+        vector_store = QdrantVectorStore(
+            client=client,
+            collection_name="demo_collection",
+            embedding=OpenAIEmbeddings(),
+        )
+        ```
 
     Add Documents:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
+        from uuid import uuid4
 
-            from langchain_core.documents import Document
-            from uuid import uuid4
+        document_1 = Document(page_content="foo", metadata={"baz": "bar"})
+        document_2 = Document(page_content="thud", metadata={"bar": "baz"})
+        document_3 = Document(page_content="i will be deleted :(")
 
-            document_1 = Document(page_content="foo", metadata={"baz": "bar"})
-            document_2 = Document(page_content="thud", metadata={"bar": "baz"})
-            document_3 = Document(page_content="i will be deleted :(")
-
-            documents = [document_1, document_2, document_3]
-            ids = [str(uuid4()) for _ in range(len(documents))]
-            vector_store.add_documents(documents=documents, ids=ids)
+        documents = [document_1, document_2, document_3]
+        ids = [str(uuid4()) for _ in range(len(documents))]
+        vector_store.add_documents(documents=documents, ids=ids)
+        ```
 
     Delete Documents:
-        .. code-block:: python
-
-            vector_store.delete(ids=[ids[-1]])
+        ```python
+        vector_store.delete(ids=[ids[-1]])
+        ```
 
     Search:
-        .. code-block:: python
+        ```python
+        results = vector_store.similarity_search(
+            query="thud",
+            k=1,
+        )
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
 
-            results = vector_store.similarity_search(
-                query="thud",
-                k=1,
-            )
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            *thud[
-                {
-                    "bar": "baz",
-                    "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
-                    "_collection_name": "demo_collection",
-                }
-            ]
+        ```python
+        *thud[
+            {
+                "bar": "baz",
+                "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                "_collection_name": "demo_collection",
+            }
+        ]
+        ```
 
     Search with filter:
-        .. code-block:: python
+        ```python
+        from qdrant_client.http import models
 
-            from qdrant_client.http import models
+        results = vector_store.similarity_search(
+            query="thud",
+            k=1,
+            filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="metadata.bar",
+                        match=models.MatchValue(value="baz"),
+                    )
+                ]
+            ),
+        )
+        for doc in results:
+            print(f"* {doc.page_content} [{doc.metadata}]")
+        ```
 
-            results = vector_store.similarity_search(
-                query="thud",
-                k=1,
-                filter=models.Filter(
-                    must=[
-                        models.FieldCondition(
-                            key="metadata.bar",
-                            match=models.MatchValue(value="baz"),
-                        )
-                    ]
-                ),
-            )
-            for doc in results:
-                print(f"* {doc.page_content} [{doc.metadata}]")
+        ```python
+        *thud[
+            {
+                "bar": "baz",
+                "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                "_collection_name": "demo_collection",
+            }
+        ]
+        ```
 
-        .. code-block:: python
+    Search with score:
+        ```python
+        results = vector_store.similarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
 
-            *thud[
-                {
+        ```python
+        * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
+        ```
+
+    Async:
+        ```python
+        # add documents
+        # await vector_store.aadd_documents(documents=documents, ids=ids)
+
+        # delete documents
+        # await vector_store.adelete(ids=["3"])
+
+        # search
+        # results = vector_store.asimilarity_search(query="thud",k=1)
+
+        # search with score
+        results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+        for doc, score in results:
+            print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+        ```
+
+        ```python
+        * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
+        ```
+
+    Use as Retriever:
+        ```python
+        retriever = vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+        )
+        retriever.invoke("thud")
+        ```
+
+        ```python
+        [
+            Document(
+                metadata={
                     "bar": "baz",
                     "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
                     "_collection_name": "demo_collection",
-                }
-            ]
-
-
-    Search with score:
-        .. code-block:: python
-
-            results = vector_store.similarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
-
-    Async:
-        .. code-block:: python
-
-            # add documents
-            # await vector_store.aadd_documents(documents=documents, ids=ids)
-
-            # delete documents
-            # await vector_store.adelete(ids=["3"])
-
-            # search
-            # results = vector_store.asimilarity_search(query="thud",k=1)
-
-            # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
-            for doc, score in results:
-                print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-
-        .. code-block:: python
-
-            * [SIM=0.832268] foo [{'baz': 'bar', '_id': '44ec7094-b061-45ac-8fbf-014b0f18e8aa', '_collection_name': 'demo_collection'}]
-
-    Use as Retriever:
-        .. code-block:: python
-
-            retriever = vector_store.as_retriever(
-                search_type="mmr",
-                search_kwargs={"k": 1, "fetch_k": 2, "lambda_mult": 0.5},
+                },
+                page_content="thud",
             )
-            retriever.invoke("thud")
-
-        .. code-block:: python
-
-            [
-                Document(
-                    metadata={
-                        "bar": "baz",
-                        "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
-                        "_collection_name": "demo_collection",
-                    },
-                    page_content="thud",
-                )
-            ]
-
+        ]
+        ```
     """  # noqa: E501
 
     CONTENT_KEY: str = "page_content"
@@ -229,16 +224,15 @@ class QdrantVectorStore(VectorStore):
     ) -> None:
         """Initialize a new instance of `QdrantVectorStore`.
 
-        Example:
-            .. code-block:: python
-            qdrant = Qdrant(
-                client=client,
-                collection_name="my-collection",
-                embedding=OpenAIEmbeddings(),
-                retrieval_mode=RetrievalMode.HYBRID,
-                sparse_embedding=FastEmbedSparse(),
-            )
-
+        ```python
+        qdrant = Qdrant(
+            client=client,
+            collection_name="my-collection",
+            embedding=OpenAIEmbeddings(),
+            retrieval_mode=RetrievalMode.HYBRID,
+            sparse_embedding=FastEmbedSparse(),
+        )
+        ```
         """
         if validate_embeddings:
             self._validate_embeddings(retrieval_mode, embedding, sparse_embedding)
@@ -270,7 +264,7 @@ class QdrantVectorStore(VectorStore):
         """Get the Qdrant client instance that is being used.
 
         Returns:
-            QdrantClient: An instance of ``QdrantClient``.
+            QdrantClient: An instance of `QdrantClient`.
 
         """
         return self._client
@@ -280,7 +274,7 @@ class QdrantVectorStore(VectorStore):
         """Get the dense embeddings instance that is being used.
 
         Returns:
-            Embeddings: An instance of ``Embeddings``, or None for SPARSE mode.
+            Embeddings: An instance of `Embeddings`, or None for SPARSE mode.
 
         """
         return self._embeddings
@@ -330,7 +324,7 @@ class QdrantVectorStore(VectorStore):
             ValueError: If sparse embeddings are `None`.
 
         Returns:
-            SparseEmbeddings: An instance of ``SparseEmbeddings``.
+            SparseEmbeddings: An instance of `SparseEmbeddings`.
 
         """
         if self._sparse_embeddings is None:
@@ -376,23 +370,23 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of ``QdrantVectorStore`` from a list of texts.
+        """Construct an instance of `QdrantVectorStore` from a list of texts.
 
         This is a user-friendly interface that:
+
         1. Creates embeddings, one for each text
         2. Creates a Qdrant collection if it doesn't exist.
         3. Adds the text embeddings to the Qdrant database
 
         This is intended to be a quick way to get started.
 
-        Example:
-            .. code-block:: python
+        ```python
+        from langchain_qdrant import Qdrant
+        from langchain_openai import OpenAIEmbeddings
 
-            from langchain_qdrant import Qdrant
-            from langchain_openai import OpenAIEmbeddings
-            embeddings = OpenAIEmbeddings()
-            qdrant = Qdrant.from_texts(texts, embeddings, url="http://localhost:6333")
-
+        embeddings = OpenAIEmbeddings()
+        qdrant = Qdrant.from_texts(texts, embeddings, url="http://localhost:6333")
+        ```
         """
         if sparse_vector_params is None:
             sparse_vector_params = {}
@@ -463,10 +457,10 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct ``QdrantVectorStore`` from existing collection without adding data.
+        """Construct `QdrantVectorStore` from existing collection without adding data.
 
         Returns:
-            QdrantVectorStore: A new instance of ``QdrantVectorStore``.
+            QdrantVectorStore: A new instance of `QdrantVectorStore`.
         """
         client = QdrantClient(
             location=location,
@@ -506,10 +500,10 @@ class QdrantVectorStore(VectorStore):
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str | int]:
-        """Add texts with embeddings to the vectorstore.
+        """Add texts with embeddings to the `VectorStore`.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the `VectorStore`.
 
         """
         added_ids = []
@@ -538,7 +532,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to query.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score(
@@ -662,7 +656,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query and distance for each.
+            List of `Document` objects most similar to the query and distance for each.
 
         """
         qdrant_filter = filter
@@ -716,7 +710,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score_by_vector(
@@ -749,7 +743,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         self._validate_collection_for_dense(
@@ -792,7 +786,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
@@ -826,16 +820,18 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
-
+            List of `Document` objects selected by maximal marginal relevance and
+                distance for each.
         """
         results = self.client.query_points(
             collection_name=self.collection_name,
-            query=embedding,
+            query=models.NearestQuery(
+                nearest=embedding,
+                mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
+            ),
             query_filter=filter,
             search_params=search_params,
-            limit=fetch_k,
+            limit=k,
             with_payload=True,
             with_vectors=True,
             score_threshold=score_threshold,
@@ -844,26 +840,17 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         ).points
 
-        embeddings = [
-            result.vector
-            if isinstance(result.vector, list)
-            else result.vector.get(self.vector_name)  # type: ignore[union-attr]
-            for result in results
-        ]
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
-        )
         return [
             (
                 self._document_from_point(
-                    results[i],
+                    result,
                     self.collection_name,
                     self.content_payload_key,
                     self.metadata_payload_key,
                 ),
-                results[i].score,
+                result.score,
             )
-            for i in mmr_selected
+            for result in results
         ]
 
     def delete(  # type: ignore[override]
@@ -878,7 +865,7 @@ class QdrantVectorStore(VectorStore):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise.
+            True if deletion is successful, `False` otherwise.
 
         """
         result = self.client.delete(
@@ -1011,7 +998,7 @@ class QdrantVectorStore(VectorStore):
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale ``[0, 1]``."""
+        """Normalize the distance to a score on a scale `[0, 1]`."""
         return (distance + 1.0) / 2.0
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:

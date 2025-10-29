@@ -14,30 +14,27 @@ from langchain_core.documents import Document
 
 
 class LangSmithLoader(BaseLoader):
-    """Load LangSmith Dataset examples as Documents.
+    """Load LangSmith Dataset examples as `Document` objects.
 
-    Loads the example inputs as the Document page content and places the entire example
-    into the Document metadata. This allows you to easily create few-shot example
-    retrievers from the loaded documents.
+    Loads the example inputs as the `Document` page content and places the entire
+    example into the `Document` metadata. This allows you to easily create few-shot
+    example retrievers from the loaded documents.
 
-    ??? note "Lazy load"
+    ??? note "Lazy loading example"
 
-        .. code-block:: python
+        ```python
+        from langchain_core.document_loaders import LangSmithLoader
 
-            from langchain_core.document_loaders import LangSmithLoader
+        loader = LangSmithLoader(dataset_id="...", limit=100)
+        docs = []
+        for doc in loader.lazy_load():
+            docs.append(doc)
+        ```
 
-            loader = LangSmithLoader(dataset_id="...", limit=100)
-            docs = []
-            for doc in loader.lazy_load():
-                docs.append(doc)
-
-        .. code-block:: python
-
-            # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
-
-    !!! version-added "Added in version 0.2.34"
-
-    """  # noqa: E501
+        ```python
+        # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
+        ```
+    """
 
     def __init__(
         self,
@@ -60,26 +57,25 @@ class LangSmithLoader(BaseLoader):
         """Create a LangSmith loader.
 
         Args:
-            dataset_id: The ID of the dataset to filter by. Defaults to `None`.
-            dataset_name: The name of the dataset to filter by. Defaults to `None`.
+            dataset_id: The ID of the dataset to filter by.
+            dataset_name: The name of the dataset to filter by.
             content_key: The inputs key to set as Document page content. `'.'` characters
                 are interpreted as nested keys. E.g. `content_key="first.second"` will
                 result in
                 `Document(page_content=format_content(example.inputs["first"]["second"]))`
             format_content: Function for converting the content extracted from the example
                 inputs into a string. Defaults to JSON-encoding the contents.
-            example_ids: The IDs of the examples to filter by. Defaults to `None`.
-            as_of: The dataset version tag OR
-                timestamp to retrieve the examples as of.
-                Response examples will only be those that were present at the time
-                of the tagged (or timestamped) version.
+            example_ids: The IDs of the examples to filter by.
+            as_of: The dataset version tag or timestamp to retrieve the examples as of.
+                Response examples will only be those that were present at the time of
+                the tagged (or timestamped) version.
             splits: A list of dataset splits, which are
-                divisions of your dataset such as 'train', 'test', or 'validation'.
+                divisions of your dataset such as `train`, `test`, or `validation`.
                 Returns examples only from the specified splits.
-            inline_s3_urls: Whether to inline S3 URLs. Defaults to `True`.
-            offset: The offset to start from. Defaults to 0.
+            inline_s3_urls: Whether to inline S3 URLs.
+            offset: The offset to start from.
             limit: The maximum number of examples to return.
-            metadata: Metadata to filter by. Defaults to `None`.
+            metadata: Metadata to filter by.
             filter: A structured filter string to apply to the examples.
             client: LangSmith Client. If not provided will be initialized from below args.
             client_kwargs: Keyword args to pass to LangSmith client init. Should only be

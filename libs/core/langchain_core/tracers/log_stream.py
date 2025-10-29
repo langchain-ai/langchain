@@ -96,10 +96,10 @@ class RunLogPatch:
     """Patch to the run log."""
 
     ops: list[dict[str, Any]]
-    """List of jsonpatch operations, which describe how to create the run state
+    """List of JSONPatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
     be serialized as JSON and sent over the wire to reconstruct the log on the other
-    side. Reconstruction of the state can be done with any jsonpatch-compliant library,
+    side. Reconstruction of the state can be done with any JSONPatch-compliant library,
     see https://jsonpatch.com for more information."""
 
     def __init__(self, *ops: dict[str, Any]) -> None:
@@ -111,16 +111,16 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: RunLogPatch | Any) -> RunLog:
-        """Combine two ``RunLogPatch`` instances.
+        """Combine two `RunLogPatch` instances.
 
         Args:
-            other: The other ``RunLogPatch`` to combine with.
+            other: The other `RunLogPatch` to combine with.
 
         Raises:
-            TypeError: If the other object is not a ``RunLogPatch``.
+            TypeError: If the other object is not a `RunLogPatch`.
 
         Returns:
-            A new ``RunLog`` representing the combination of the two.
+            A new `RunLog` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -159,16 +159,16 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: RunLogPatch | Any) -> RunLog:
-        """Combine two ``RunLog``s.
+        """Combine two `RunLog`s.
 
         Args:
-            other: The other ``RunLog`` or ``RunLogPatch`` to combine with.
+            other: The other `RunLog` or `RunLogPatch` to combine with.
 
         Raises:
-            TypeError: If the other object is not a ``RunLog`` or ``RunLogPatch``.
+            TypeError: If the other object is not a `RunLog` or `RunLogPatch`.
 
         Returns:
-            A new ``RunLog`` representing the combination of the two.
+            A new `RunLog` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -184,13 +184,13 @@ class RunLog(RunLogPatch):
 
     @override
     def __eq__(self, other: object) -> bool:
-        """Check if two ``RunLog``s are equal.
+        """Check if two `RunLog`s are equal.
 
         Args:
-            other: The other ``RunLog`` to compare to.
+            other: The other `RunLog` to compare to.
 
         Returns:
-            True if the ``RunLog``s are equal, False otherwise.
+            `True` if the `RunLog`s are equal, `False` otherwise.
         """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
@@ -264,7 +264,10 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         memory_stream = _MemoryStream[RunLogPatch](loop)
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
@@ -288,8 +291,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             *ops: The operations to send to the stream.
 
         Returns:
-            bool: True if the patch was sent successfully, False if the stream
-                is closed.
+            `True` if the patch was sent successfully, False if the stream is closed.
         """
         # We will likely want to wrap this in try / except at some point
         # to handle exceptions that might arise at run time.
@@ -308,7 +310,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             output: The output async iterator.
 
         Yields:
-            T: The output value.
+            The output value.
         """
         async for chunk in output:
             # root run is handled in .astream_log()
@@ -339,7 +341,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             output: The output iterator.
 
         Yields:
-            T: The output value.
+            The output value.
         """
         for chunk in output:
             # root run is handled in .astream_log()
@@ -369,7 +371,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             run: The Run to check.
 
         Returns:
-            bool: True if the run should be included, False otherwise.
+            `True` if the run should be included, `False` otherwise.
         """
         if run.id == self.root_id:
             return False
@@ -667,7 +669,7 @@ async def _astream_log_implementation(
         ValueError: If the callbacks in the config are of an unexpected type.
 
     Yields:
-        The run log patches or states, depending on the value of ``diff``.
+        The run log patches or states, depending on the value of `diff`.
     """
     # Assign the stream handler to the config
     config = ensure_config(config)

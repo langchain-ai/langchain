@@ -44,18 +44,16 @@ class PromptTemplate(StringPromptTemplate):
         from untrusted sources.
 
     Example:
+        ```python
+        from langchain_core.prompts import PromptTemplate
 
-        .. code-block:: python
+        # Instantiation using from_template (recommended)
+        prompt = PromptTemplate.from_template("Say {foo}")
+        prompt.format(foo="bar")
 
-            from langchain_core.prompts import PromptTemplate
-
-            # Instantiation using from_template (recommended)
-            prompt = PromptTemplate.from_template("Say {foo}")
-            prompt.format(foo="bar")
-
-            # Instantiation using initializer
-            prompt = PromptTemplate(template="Say {foo}")
-
+        # Instantiation using initializer
+        prompt = PromptTemplate(template="Say {foo}")
+        ```
     """
 
     @property
@@ -68,10 +66,10 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "prompt"]``
+            `["langchain", "prompts", "prompt"]`
         """
         return ["langchain", "prompts", "prompt"]
 
@@ -144,10 +142,10 @@ class PromptTemplate(StringPromptTemplate):
         Raises:
             ValueError: If the template formats are not f-string or if there are
                 conflicting partial variables.
-            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+            NotImplementedError: If the other object is not a `PromptTemplate` or str.
 
         Returns:
-            A new ``PromptTemplate`` that is the combination of the two.
+            A new `PromptTemplate` that is the combination of the two.
         """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
@@ -191,7 +189,7 @@ class PromptTemplate(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -222,7 +220,7 @@ class PromptTemplate(StringPromptTemplate):
             example_separator: The separator to use in between examples. Defaults
                 to two new line characters.
             prefix: String that should go before any examples. Generally includes
-                examples. Default to an empty string.
+                examples.
 
         Returns:
             The final prompt generated.
@@ -277,14 +275,13 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
-                             `mustache` for mustache, and `f-string` for f-strings.
-                             Defaults to `f-string`.
+                `mustache` for mustache, and `f-string` for f-strings.
             partial_variables: A dictionary of variables that can be used to partially
-                               fill in the template. For example, if the template is
-                              `"{variable1} {variable2}"`, and `partial_variables` is
-                              `{"variable1": "foo"}`, then the final prompt will be
-                              `"foo {variable2}"`. Defaults to `None`.
-            kwargs: Any other arguments to pass to the prompt template.
+                fill in the template. For example, if the template is
+                `"{variable1} {variable2}"`, and `partial_variables` is
+                `{"variable1": "foo"}`, then the final prompt will be
+                `"foo {variable2}"`.
+            **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:
             The prompt template loaded from the template.

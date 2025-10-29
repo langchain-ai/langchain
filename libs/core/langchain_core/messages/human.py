@@ -7,33 +7,27 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class HumanMessage(BaseMessage):
-    """Message from a human.
+    """Message from the user.
 
-    `HumanMessage`s are messages that are passed in from a human to the model.
+    A `HumanMessage` is a message that is passed in from a user to the model.
 
     Example:
+        ```python
+        from langchain_core.messages import HumanMessage, SystemMessage
 
-        .. code-block:: python
+        messages = [
+            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+            HumanMessage(content="What is your name?"),
+        ]
 
-            from langchain_core.messages import HumanMessage, SystemMessage
-
-            messages = [
-                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
-                HumanMessage(content="What is your name?"),
-            ]
-
-            # Instantiate a chat model and invoke it with the messages
-            model = ...
-            print(model.invoke(messages))
-
+        # Instantiate a chat model and invoke it with the messages
+        model = ...
+        print(model.invoke(messages))
+        ```
     """
 
     type: Literal["human"] = "human"
-    """The type of the message (used for serialization).
-
-    Defaults to ``'human'``.
-
-    """
+    """The type of the message (used for serialization)."""
 
     @overload
     def __init__(
@@ -56,7 +50,7 @@ class HumanMessage(BaseMessage):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        """Specify `content` as positional arg or `content_blocks` for typing."""
         if content_blocks is not None:
             super().__init__(
                 content=cast("str | list[str | dict]", content_blocks),
@@ -73,5 +67,4 @@ class HumanMessageChunk(HumanMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["HumanMessageChunk"] = "HumanMessageChunk"  # type: ignore[assignment]
-    """The type of the message (used for serialization).
-    Defaults to "HumanMessageChunk"."""
+    """The type of the message (used for serialization)."""

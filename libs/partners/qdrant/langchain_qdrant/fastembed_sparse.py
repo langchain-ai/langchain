@@ -23,28 +23,28 @@ class FastEmbedSparse(SparseEmbeddings):
     ) -> None:
         """Sparse encoder implementation using FastEmbed.
 
-        Uses `FastEmbed <https://qdrant.github.io/fastembed/>`__ for sparse text
+        Uses [FastEmbed](https://qdrant.github.io/fastembed/) for sparse text
         embeddings.
-        For a list of available models, see `the Qdrant docs <https://qdrant.github.io/fastembed/examples/Supported_Models/>`__.
+        For a list of available models, see [the Qdrant docs](https://qdrant.github.io/fastembed/examples/Supported_Models/).
 
         Args:
-            model_name (str): The name of the model to use. Defaults to `"Qdrant/bm25"`.
-            batch_size (int): Batch size for encoding. Defaults to 256.
+            model_name (str): The name of the model to use.
+            batch_size (int): Batch size for encoding.
             cache_dir (str, optional): The path to the model cache directory.\
-                                       Can also be set using the\
-                                       `FASTEMBED_CACHE_PATH` env variable.
+                Can also be set using the\
+                `FASTEMBED_CACHE_PATH` env variable.
             threads (int, optional): The number of threads onnxruntime session can use.
             providers (Sequence[Any], optional): List of ONNX execution providers.\
             parallel (int, optional): If `>1`, data-parallel encoding will be used, r\
-                                      Recommended for encoding of large datasets.\
-                                      If `0`, use all available cores.\
-                                      If `None`, don't use data-parallel processing,\
-                                      use default onnxruntime threading instead.\
-                                      Defaults to `None`.
-            kwargs: Additional options to pass to fastembed.SparseTextEmbedding
-        Raises:
-            ValueError: If the model_name is not supported in SparseTextEmbedding.
+                Recommended for encoding of large datasets.\
+                If `0`, use all available cores.\
+                If `None`, don't use data-parallel processing,\
+                use default onnxruntime threading instead.\
 
+            kwargs: Additional options to pass to `fastembed.SparseTextEmbedding`
+
+        Raises:
+            ValueError: If the `model_name` is not supported in `SparseTextEmbedding`.
         """
         try:
             from fastembed import (  # type: ignore[import-not-found] # noqa: PLC0415

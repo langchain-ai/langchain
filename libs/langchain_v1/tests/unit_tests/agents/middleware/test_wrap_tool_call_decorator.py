@@ -4,7 +4,6 @@ These tests verify the decorator-based approach for wrapping tool calls,
 focusing on the handler pattern (not generators).
 """
 
-import pytest
 from collections.abc import Callable
 
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
@@ -210,7 +209,7 @@ def test_wrap_tool_call_access_runtime() -> None:
 
     # Middleware should have accessed runtime
     assert len(runtime_data) >= 1
-    assert runtime_data[0] == "Runtime"
+    assert runtime_data[0] == "ToolRuntime"
 
 
 def test_wrap_tool_call_retry_on_error() -> None:

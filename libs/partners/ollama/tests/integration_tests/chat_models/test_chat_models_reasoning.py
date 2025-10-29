@@ -13,7 +13,7 @@ REASONING_MODEL_NAME = "deepseek-r1:1.5b"
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=False``."""
+    """Test streaming with `reasoning=False`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
     messages = [
         {
@@ -46,7 +46,7 @@ async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=None``."""
+    """Test streaming with `reasoning=None`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
     messages = [
         {
@@ -71,17 +71,14 @@ async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
             result += chunk
     assert isinstance(result, AIMessageChunk)
     assert result.content
-    assert "<think>" in result.content
-    assert "</think>" in result.content
+    # reasoning_content is only captured when reasoning=True
     assert "reasoning_content" not in result.additional_kwargs
-    assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-    assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_stream(model: str, use_async: bool) -> None:
-    """Test streaming with ``reasoning=True``."""
+    """Test streaming with `reasoning=True`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
     messages = [
         {
@@ -125,7 +122,7 @@ async def test_reasoning_stream(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=False``."""
+    """Test invoke with `reasoning=False`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -141,7 +138,7 @@ async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=None``."""
+    """Test invoke with `reasoning=None`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -149,17 +146,14 @@ async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
     else:
         result = llm.invoke([message])
     assert result.content
+    # reasoning_content is only captured when reasoning=True
     assert "reasoning_content" not in result.additional_kwargs
-    assert "<think>" in result.content
-    assert "</think>" in result.content
-    assert "<think>" not in result.additional_kwargs.get("reasoning_content", "")
-    assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_invoke(model: str, use_async: bool) -> None:
-    """Test invoke with ``reasoning=True``."""
+    """Test invoke with `reasoning=True`."""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
     message = HumanMessage(content=SAMPLE)
     if use_async:
@@ -184,40 +178,49 @@ async def test_reasoning_invoke(model: str, use_async: bool) -> None:
 
 
 @pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
-def test_think_tag_stripping_necessity(model: str) -> None:
-    """Test that demonstrates why ``_strip_think_tags`` is necessary.
+def test_reasoning_modes_behavior(model: str) -> None:
+    """Test the behavior differences between reasoning modes.
 
-    DeepSeek R1 models include reasoning/thinking as their default behavior.
-    When ``reasoning=False`` is set, the user explicitly wants no reasoning content,
-    but Ollama cannot disable thinking at the API level for these models.
-    Therefore, post-processing is required to strip the ``<think>`` tags.
+    This test documents how the Ollama API and LangChain handle reasoning content
+    for DeepSeek R1 models across different reasoning settings.
 
-    This test documents the specific behavior that necessitates the
-    ``_strip_think_tags`` function in the chat_models.py implementation.
+    Current Ollama API behavior:
+    - Ollama automatically separates reasoning content into a 'thinking' field
+    - No <think> tags are present in responses
+    - `think=False` prevents the 'thinking' field from being included
+    - `think=None` includes the 'thinking' field (model default)
+    - `think=True` explicitly requests the 'thinking' field
+
+    LangChain behavior:
+    - `reasoning=False`: Does not capture reasoning content
+    - `reasoning=None`: Does not capture reasoning content (model default behavior)
+    - `reasoning=True`: Captures reasoning in `additional_kwargs['reasoning_content']`
     """
-    # Test with reasoning=None (default behavior - should include think tags)
-    llm_default = ChatOllama(model=model, reasoning=None, num_ctx=2**12)
     message = HumanMessage(content=SAMPLE)
 
+    # Test with reasoning=None (model default - no reasoning captured)
+    llm_default = ChatOllama(model=model, reasoning=None, num_ctx=2**12)
     result_default = llm_default.invoke([message])
-
-    # With reasoning=None, the model's default behavior includes <think> tags
-    # This demonstrates why we need the stripping logic
-    assert "<think>" in result_default.content
-    assert "</think>" in result_default.content
+    assert result_default.content
+    assert "<think>" not in result_default.content
+    assert "</think>" not in result_default.content
     assert "reasoning_content" not in result_default.additional_kwargs
 
-    # Test with reasoning=False (explicit disable - should NOT include think tags)
+    # Test with reasoning=False (explicit disable - no reasoning captured)
     llm_disabled = ChatOllama(model=model, reasoning=False, num_ctx=2**12)
-
     result_disabled = llm_disabled.invoke([message])
-
-    # With reasoning=False, think tags should be stripped from content
-    # This verifies that _strip_think_tags is working correctly
+    assert result_disabled.content
     assert "<think>" not in result_disabled.content
     assert "</think>" not in result_disabled.content
     assert "reasoning_content" not in result_disabled.additional_kwargs
 
-    # Verify the difference: same model, different reasoning settings
-    # Default includes tags, disabled strips them
-    assert result_default.content != result_disabled.content
+    # Test with reasoning=True (reasoning captured separately)
+    llm_enabled = ChatOllama(model=model, reasoning=True, num_ctx=2**12)
+    result_enabled = llm_enabled.invoke([message])
+    assert result_enabled.content
+    assert "<think>" not in result_enabled.content
+    assert "</think>" not in result_enabled.content
+    assert "reasoning_content" in result_enabled.additional_kwargs
+    assert len(result_enabled.additional_kwargs["reasoning_content"]) > 0
+    assert "<think>" not in result_enabled.additional_kwargs["reasoning_content"]
+    assert "</think>" not in result_enabled.additional_kwargs["reasoning_content"]

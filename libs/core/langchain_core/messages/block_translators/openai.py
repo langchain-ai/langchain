@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
+    """Convert `ImageContentBlock` to format expected by OpenAI Chat Completions."""
     if "url" in block:
         return {
             "type": "image_url",
@@ -155,12 +155,12 @@ def _convert_to_v1_from_chat_completions_input(
 ) -> list[types.ContentBlock]:
     """Convert OpenAI Chat Completions format blocks to v1 format.
 
-    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
-    block as a ``'non_standard'`` block with the original block stored in the ``value``
+    During the `content_blocks` parsing process, we wrap blocks not recognized as a v1
+    block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any blocks that
     might be OpenAI format to v1 ContentBlocks.
 
-    If conversion fails, the block is left as a ``'non_standard'`` block.
+    If conversion fails, the block is left as a `'non_standard'` block.
 
     Args:
         content: List of content blocks to process.
@@ -263,7 +263,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
-    """Convert v0 AIMessage into ``output_version="responses/v1"`` format."""
+    """Convert v0 AIMessage into `output_version="responses/v1"` format."""
     from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
     # Only update ChatOpenAI v0.3 AIMessages

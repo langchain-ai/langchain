@@ -29,83 +29,81 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     Here is a template:
 
-    .. code-block:: python
+    ```python
+    from typing import Generator
 
-        from typing import Generator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_parrot_link.vectorstores import ParrotVectorStore
-        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
+    import pytest
+    from langchain_core.vectorstores import VectorStore
+    from langchain_parrot_link.vectorstores import ParrotVectorStore
+    from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 
-        class TestParrotVectorStore(VectorStoreIntegrationTests):
-            @pytest.fixture()
-            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore.\"\"\"
-                store = ParrotVectorStore(self.get_embeddings())
-                # note: store should be EMPTY at this point
-                # if you need to delete data, you may do so here
-                try:
-                    yield store
-                finally:
-                    # cleanup operations, or deleting data
-                    pass
+    class TestParrotVectorStore(VectorStoreIntegrationTests):
+        @pytest.fixture()
+        def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+            \"\"\"Get an empty vectorstore.\"\"\"
+            store = ParrotVectorStore(self.get_embeddings())
+            # note: store should be EMPTY at this point
+            # if you need to delete data, you may do so here
+            try:
+                yield store
+            finally:
+                # cleanup operations, or deleting data
+                pass
+    ```
 
     In the fixture, before the `yield` we instantiate an empty vector store. In the
     `finally` block, we call whatever logic is necessary to bring the vector store
     to a clean state.
 
-    Example:
+    ```python
+    from typing import Generator
 
-    .. code-block:: python
+    import pytest
+    from langchain_core.vectorstores import VectorStore
+    from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
-        from typing import Generator
-
-        import pytest
-        from langchain_core.vectorstores import VectorStore
-        from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
-
-        from langchain_chroma import Chroma
+    from langchain_chroma import Chroma
 
 
-        class TestChromaStandard(VectorStoreIntegrationTests):
-            @pytest.fixture()
-            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                \"\"\"Get an empty vectorstore for unit tests.\"\"\"
-                store = Chroma(embedding_function=self.get_embeddings())
-                try:
-                    yield store
-                finally:
-                    store.delete_collection()
-                    pass
+    class TestChromaStandard(VectorStoreIntegrationTests):
+        @pytest.fixture()
+        def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+            \"\"\"Get an empty VectorStore for unit tests.\"\"\"
+            store = Chroma(embedding_function=self.get_embeddings())
+            try:
+                yield store
+            finally:
+                store.delete_collection()
+                pass
+    ```
 
     Note that by default we enable both sync and async tests. To disable either,
     override the `has_sync` or `has_async` properties to `False` in the
     subclass. For example:
 
-    .. code-block:: python
+    ```python
+    class TestParrotVectorStore(VectorStoreIntegrationTests):
+        @pytest.fixture()
+        def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+            ...
 
-       class TestParrotVectorStore(VectorStoreIntegrationTests):
-           @pytest.fixture()
-           def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-               ...
-
-           @property
-           def has_async(self) -> bool:
-               return False
+        @property
+        def has_async(self) -> bool:
+            return False
+    ```
 
     !!! note
-          API references for individual test methods include troubleshooting tips.
+        API references for individual test methods include troubleshooting tips.
 
     """  # noqa: E501
 
     @abstractmethod
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
-        """Get the vectorstore class to test.
+        """Get the VectorStore class to test.
 
-        The returned vectorstore should be EMPTY.
+        The returned VectorStore should be empty.
         """
 
     @property
@@ -139,7 +137,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the VectorStore is empty.
 
         ??? note "Troubleshooting"
 
@@ -153,18 +151,18 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
             If this test fails, check that:
 
             1. We correctly initialize an empty vector store in the `vectorestore`
-               fixture.
+                fixture.
             2. Calling `.similarity_search` for the top `k` similar documents does
-               not threshold by score.
+                not threshold by score.
             3. We do not mutate the original document object when adding it to the
-               vector store (e.g., by adding an ID).
+                vector store (e.g., by adding an ID).
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -187,7 +185,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the VectorStore is still empty.
 
         This test should follow a test that adds documents.
 
@@ -206,7 +204,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -344,12 +342,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -384,12 +381,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -402,7 +398,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert documents == []
 
     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -418,12 +414,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -444,7 +439,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 
@@ -454,9 +449,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             This test also verifies that:
 
             1. IDs specified in the `Document.id` field are assigned when adding
-               documents.
+                documents.
             2. If some documents include IDs and others don't string IDs are generated
-               for the latter.
+                for the latter.
 
             !!! note
                 `get_by_ids` was added to the `VectorStore` interface in
@@ -464,12 +459,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
@@ -491,7 +485,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the VectorStore is empty.
 
         ??? note "Troubleshooting"
 
@@ -505,18 +499,18 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
             If this test fails, check that:
 
             1. We correctly initialize an empty vector store in the `vectorestore`
-               fixture.
+                fixture.
             2. Calling `.asimilarity_search` for the top `k` similar documents does
-               not threshold by score.
+                not threshold by score.
             3. We do not mutate the original document object when adding it to the
-               vector store (e.g., by adding an ID).
+                vector store (e.g., by adding an ID).
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
@@ -542,7 +536,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_vectorstore_still_empty_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the VectorStore is still empty.
 
         This test should follow a test that adds documents.
 
@@ -561,7 +555,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -703,12 +697,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
@@ -743,12 +736,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
@@ -762,7 +754,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_documents_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -778,12 +770,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
@@ -806,7 +797,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 
@@ -816,9 +807,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             This test also verifies that:
 
             1. IDs specified in the `Document.id` field are assigned when adding
-               documents.
+                documents.
             2. If some documents include IDs and others don't string IDs are generated
-               for the latter.
+                for the latter.
 
             !!! note
                 `get_by_ids` was added to the `VectorStore` interface in
@@ -826,12 +817,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 test can be skipped by setting the `has_get_by_ids` property to
                 `False`.
 
-                .. code-block:: python
-
-                    @property
-                    def has_get_by_ids(self) -> bool:
-                        return False
-
+                ```python
+                @property
+                def has_get_by_ids(self) -> bool:
+                    return False
+                ```
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")

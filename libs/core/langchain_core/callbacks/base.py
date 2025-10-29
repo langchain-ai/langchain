@@ -35,10 +35,10 @@ class RetrieverManagerMixin:
         """Run when Retriever errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_retriever_end(
@@ -52,10 +52,10 @@ class RetrieverManagerMixin:
         """Run when Retriever ends running.
 
         Args:
-            documents (Sequence[Document]): The documents retrieved.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            documents: The documents retrieved.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
 
@@ -76,12 +76,11 @@ class LLMManagerMixin:
         For both chat models and non-chat models (legacy LLMs).
 
         Args:
-            token (str): The new token.
-            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
-              containing content and other information.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            token: The new token.
+            chunk: The new generated chunk, containing content and other information.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_llm_end(
@@ -95,10 +94,10 @@ class LLMManagerMixin:
         """Run when LLM ends running.
 
         Args:
-            response (LLMResult): The response which was generated.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            response: The response which was generated.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_llm_error(
@@ -112,10 +111,10 @@ class LLMManagerMixin:
         """Run when LLM errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
 
@@ -133,10 +132,10 @@ class ChainManagerMixin:
         """Run when chain ends running.
 
         Args:
-            outputs (dict[str, Any]): The outputs of the chain.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            outputs: The outputs of the chain.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_chain_error(
@@ -150,10 +149,10 @@ class ChainManagerMixin:
         """Run when chain errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_agent_action(
@@ -167,10 +166,10 @@ class ChainManagerMixin:
         """Run on agent action.
 
         Args:
-            action (AgentAction): The agent action.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            action: The agent action.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_agent_finish(
@@ -184,10 +183,10 @@ class ChainManagerMixin:
         """Run on the agent end.
 
         Args:
-            finish (AgentFinish): The agent finish.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            finish: The agent finish.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
 
@@ -205,10 +204,10 @@ class ToolManagerMixin:
         """Run when the tool ends running.
 
         Args:
-            output (Any): The output of the tool.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            output: The output of the tool.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_tool_error(
@@ -222,10 +221,10 @@ class ToolManagerMixin:
         """Run when tool errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
 
@@ -248,16 +247,16 @@ class CallbackManagerMixin:
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
-            serialized (dict[str, Any]): The serialized LLM.
-            prompts (list[str]): The prompts.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized LLM.
+            prompts: The prompts.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_chat_model_start(
@@ -275,16 +274,16 @@ class CallbackManagerMixin:
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
-            serialized (dict[str, Any]): The serialized chat model.
-            messages (list[list[BaseMessage]]): The messages.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chat model.
+            messages: The messages.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
@@ -305,13 +304,13 @@ class CallbackManagerMixin:
         """Run when the Retriever starts running.
 
         Args:
-            serialized (dict[str, Any]): The serialized Retriever.
-            query (str): The query.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized Retriever.
+            query: The query.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_chain_start(
@@ -328,13 +327,13 @@ class CallbackManagerMixin:
         """Run when a chain starts running.
 
         Args:
-            serialized (dict[str, Any]): The serialized chain.
-            inputs (dict[str, Any]): The inputs.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chain.
+            inputs: The inputs.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_tool_start(
@@ -352,14 +351,14 @@ class CallbackManagerMixin:
         """Run when the tool starts running.
 
         Args:
-            serialized (dict[str, Any]): The serialized tool.
-            input_str (str): The input string.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            inputs (dict[str, Any] | None): The inputs.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chain.
+            input_str: The input string.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            inputs: The inputs.
+            **kwargs: Additional keyword arguments.
         """
 
 
@@ -377,10 +376,10 @@ class RunManagerMixin:
         """Run on an arbitrary text.
 
         Args:
-            text (str): The text.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            text: The text.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_retry(
@@ -394,10 +393,10 @@ class RunManagerMixin:
         """Run on a retry event.
 
         Args:
-            retry_state (RetryCallState): The retry state.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            retry_state: The retry state.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     def on_custom_event(
@@ -415,14 +414,12 @@ class RunManagerMixin:
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
-
-        !!! version-added "Added in version 0.2.15"
         """
 
 
@@ -497,16 +494,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
-            ``on_chat_model_start`` instead.
+            `on_chat_model_start` instead.
 
         Args:
-            serialized (dict[str, Any]): The serialized LLM.
-            prompts (list[str]): The prompts.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized LLM.
+            prompts: The prompts.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_chat_model_start(
@@ -524,16 +521,16 @@ class AsyncCallbackHandler(BaseCallbackHandler):
 
         !!! warning
             This method is called for chat models. If you're implementing a handler for
-            a non-chat model, you should use ``on_llm_start`` instead.
+            a non-chat model, you should use `on_llm_start` instead.
 
         Args:
-            serialized (dict[str, Any]): The serialized chat model.
-            messages (list[list[BaseMessage]]): The messages.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chat model.
+            messages: The messages.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
         # NotImplementedError is thrown intentionally
         # Callback handler will fall back to on_llm_start if this is exception is thrown
@@ -555,13 +552,12 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         For both chat models and non-chat models (legacy LLMs).
 
         Args:
-            token (str): The new token.
-            chunk (GenerationChunk | ChatGenerationChunk): The new generated chunk,
-              containing content and other information.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            token: The new token.
+            chunk: The new generated chunk, containing content and other information.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_llm_end(
@@ -576,11 +572,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when the model ends running.
 
         Args:
-            response (LLMResult): The response which was generated.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            response: The response which was generated.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_llm_error(
@@ -599,7 +595,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             run_id: The run ID. This is the ID of the current run.
             parent_run_id: The parent run ID. This is the ID of the parent run.
             tags: The tags.
-            kwargs (Any): Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
                 - response (LLMResult): The response which was generated before
                     the error occurred.
         """
@@ -618,13 +614,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when a chain starts running.
 
         Args:
-            serialized (dict[str, Any]): The serialized chain.
-            inputs (dict[str, Any]): The inputs.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized chain.
+            inputs: The inputs.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_chain_end(
@@ -639,11 +635,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when a chain ends running.
 
         Args:
-            outputs (dict[str, Any]): The outputs of the chain.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            outputs: The outputs of the chain.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_chain_error(
@@ -658,11 +654,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when chain errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_tool_start(
@@ -680,14 +676,14 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when the tool starts running.
 
         Args:
-            serialized (dict[str, Any]): The serialized tool.
-            input_str (str): The input string.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            inputs (dict[str, Any] | None): The inputs.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized tool.
+            input_str: The input string.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            inputs: The inputs.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_tool_end(
@@ -702,11 +698,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when the tool ends running.
 
         Args:
-            output (Any): The output of the tool.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            output: The output of the tool.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_tool_error(
@@ -721,11 +717,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run when tool errors.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_text(
@@ -740,11 +736,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on an arbitrary text.
 
         Args:
-            text (str): The text.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            text: The text.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_retry(
@@ -758,10 +754,10 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on a retry event.
 
         Args:
-            retry_state (RetryCallState): The retry state.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            kwargs (Any): Additional keyword arguments.
+            retry_state: The retry state.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_agent_action(
@@ -776,11 +772,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on agent action.
 
         Args:
-            action (AgentAction): The agent action.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            action: The agent action.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_agent_finish(
@@ -795,11 +791,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on the agent end.
 
         Args:
-            finish (AgentFinish): The agent finish.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            finish: The agent finish.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_retriever_start(
@@ -816,13 +812,13 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on the retriever start.
 
         Args:
-            serialized (dict[str, Any]): The serialized retriever.
-            query (str): The query.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            metadata (dict[str, Any] | None): The metadata.
-            kwargs (Any): Additional keyword arguments.
+            serialized: The serialized retriever.
+            query: The query.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            metadata: The metadata.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_retriever_end(
@@ -837,11 +833,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on the retriever end.
 
         Args:
-            documents (Sequence[Document]): The documents retrieved.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            documents: The documents retrieved.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_retriever_error(
@@ -856,11 +852,11 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         """Run on retriever error.
 
         Args:
-            error (BaseException): The error that occurred.
-            run_id (UUID): The run ID. This is the ID of the current run.
-            parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
-            tags (list[str] | None): The tags.
-            kwargs (Any): Additional keyword arguments.
+            error: The error that occurred.
+            run_id: The run ID. This is the ID of the current run.
+            parent_run_id: The parent run ID. This is the ID of the parent run.
+            tags: The tags.
+            **kwargs: Additional keyword arguments.
         """
 
     async def on_custom_event(
@@ -878,14 +874,12 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         Args:
             name: The name of the custom event.
             data: The data for the custom event. Format will match
-                  the format specified by the user.
+                the format specified by the user.
             run_id: The ID of the run.
             tags: The tags associated with the custom event
                 (includes inherited tags).
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
-
-        !!! version-added "Added in version 0.2.15"
         """
 
 
@@ -943,35 +937,29 @@ class BaseCallbackManager(CallbackManagerMixin):
         within merge_configs.
 
         Returns:
-            BaseCallbackManager: The merged callback manager of the same type
-                as the current object.
+            The merged callback manager of the same type as the current object.
 
         Example: Merging two callback managers.
 
-            .. code-block:: python
+            ```python
+            from langchain_core.callbacks.manager import (
+                CallbackManager,
+                trace_as_chain_group,
+            )
+            from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                from langchain_core.callbacks.manager import (
-                    CallbackManager,
-                    trace_as_chain_group,
-                )
-                from langchain_core.callbacks.stdout import StdOutCallbackHandler
+            manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
+            with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                merged_manager = group_manager.merge(manager)
+                print(merged_manager.handlers)
+                # [
+                #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
+                #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
+                # ]
 
-                manager = CallbackManager(
-                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
-                )
-                with trace_as_chain_group(
-                    "My Group Name", tags=["tag1"]
-                ) as group_manager:
-                    merged_manager = group_manager.merge(manager)
-                    print(merged_manager.handlers)
-                    # [
-                    #    <langchain_core.callbacks.stdout.StdOutCallbackHandler object at ...>,
-                    #    <langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler object at ...>,
-                    # ]
-
-                    print(merged_manager.tags)
-                    #    ['tag2', 'tag1']
-
+                print(merged_manager.tags)
+                #    ['tag2', 'tag1']
+            ```
         """  # noqa: E501
         manager = self.__class__(
             parent_run_id=self.parent_run_id or other.parent_run_id,
@@ -1008,8 +996,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Add a handler to the callback manager.
 
         Args:
-            handler (BaseCallbackHandler): The handler to add.
-            inherit (bool): Whether to inherit the handler. Default is True.
+            handler: The handler to add.
+            inherit: Whether to inherit the handler.
         """
         if handler not in self.handlers:
             self.handlers.append(handler)
@@ -1020,7 +1008,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Remove a handler from the callback manager.
 
         Args:
-            handler (BaseCallbackHandler): The handler to remove.
+            handler: The handler to remove.
         """
         if handler in self.handlers:
             self.handlers.remove(handler)
@@ -1035,8 +1023,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Set handlers as the only handlers on the callback manager.
 
         Args:
-            handlers (list[BaseCallbackHandler]): The handlers to set.
-            inherit (bool): Whether to inherit the handlers. Default is True.
+            handlers: The handlers to set.
+            inherit: Whether to inherit the handlers.
         """
         self.handlers = []
         self.inheritable_handlers = []
@@ -1051,8 +1039,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Set handler as the only handler on the callback manager.
 
         Args:
-            handler (BaseCallbackHandler): The handler to set.
-            inherit (bool): Whether to inherit the handler. Default is True.
+            handler: The handler to set.
+            inherit: Whether to inherit the handler.
         """
         self.set_handlers([handler], inherit=inherit)
 
@@ -1064,8 +1052,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Add tags to the callback manager.
 
         Args:
-            tags (list[str]): The tags to add.
-            inherit (bool): Whether to inherit the tags. Default is True.
+            tags: The tags to add.
+            inherit: Whether to inherit the tags.
         """
         for tag in tags:
             if tag in self.tags:
@@ -1078,7 +1066,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Remove tags from the callback manager.
 
         Args:
-            tags (list[str]): The tags to remove.
+            tags: The tags to remove.
         """
         for tag in tags:
             if tag in self.tags:
@@ -1094,8 +1082,8 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Add metadata to the callback manager.
 
         Args:
-            metadata (dict[str, Any]): The metadata to add.
-            inherit (bool): Whether to inherit the metadata. Default is True.
+            metadata: The metadata to add.
+            inherit: Whether to inherit the metadata.
         """
         self.metadata.update(metadata)
         if inherit:
@@ -1105,7 +1093,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         """Remove metadata from the callback manager.
 
         Args:
-            keys (list[str]): The keys to remove.
+            keys: The keys to remove.
         """
         for key in keys:
             self.metadata.pop(key, None)

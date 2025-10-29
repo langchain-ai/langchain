@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from string import Formatter
 from typing import Any, Literal
 
@@ -122,13 +122,16 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
 def mustache_template_vars(
     template: str,
 ) -> set[str]:
-    """Get the variables from a mustache template.
+    """Get the top-level variables from a mustache template.
+
+    For nested variables like `{{person.name}}`, only the top-level
+    key (`person`) is returned.
 
     Args:
         template: The template string.
 
     Returns:
-        The variables from the template.
+       The top-level variables from the template.
     """
     variables: set[str] = set()
     section_depth = 0
@@ -149,9 +152,7 @@ def mustache_template_vars(
 Defs = dict[str, "Defs"]
 
 
-def mustache_schema(
-    template: str,
-) -> type[BaseModel]:
+def mustache_schema(template: str) -> type[BaseModel]:
     """Get the variables from a mustache template.
 
     Args:
@@ -175,6 +176,11 @@ def mustache_schema(
             fields[prefix] = False
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
+
+    for fkey, fval in fields.items():
+        fields[fkey] = fval and not any(
+            is_subsequence(fkey, k) for k in fields if k != fkey
+        )
     defs: Defs = {}  # None means leaf node
     while fields:
         field, is_leaf = fields.popitem()
@@ -273,10 +279,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "base"]``
+            `["langchain", "prompts", "base"]`
         """
         return ["langchain", "prompts", "base"]
 
@@ -284,7 +290,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -295,7 +301,7 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -327,3 +333,12 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
     def pretty_print(self) -> None:
         """Print a pretty representation of the prompt."""
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
+
+def is_subsequence(child: Sequence, parent: Sequence) -> bool:
+    """Return True if child is subsequence of parent."""
+    if len(child) == 0 or len(parent) == 0:
+        return False
+    if len(parent) < len(child):
+        return False
+    return all(child[i] == parent[i] for i in range(len(child)))

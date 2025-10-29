@@ -108,15 +108,15 @@ def test_no_more_changes_to_proxy_community() -> None:
 
 
 def extract_deprecated_lookup(file_path: str) -> dict[str, Any] | None:
-    """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP.
+    """Detect and extracts the value of a dictionary named `DEPRECATED_LOOKUP`.
 
     This variable is located in the global namespace of a Python file.
 
     Args:
-        file_path (str): The path to the Python file.
+        file_path: The path to the Python file.
 
     Returns:
-        dict or None: The value of DEPRECATED_LOOKUP if it exists, None otherwise.
+        The value of `DEPRECATED_LOOKUP` if it exists, `None` otherwise.
     """
     tree = ast.parse(Path(file_path).read_text(encoding="utf-8"), filename=file_path)
 
@@ -136,10 +136,10 @@ def _dict_from_ast(node: ast.Dict) -> dict[str, str]:
     """Convert an AST dict node to a Python dictionary, assuming str to str format.
 
     Args:
-        node (ast.Dict): The AST node representing a dictionary.
+        node: The AST node representing a dictionary.
 
     Returns:
-        dict: The corresponding Python dictionary.
+        The corresponding Python dictionary.
     """
     result: dict[str, str] = {}
     for key, value in zip(node.keys, node.values, strict=False):
@@ -153,15 +153,12 @@ def _literal_eval_str(node: ast.AST) -> str:
     """Evaluate an AST literal node to its corresponding string value.
 
     Args:
-        node (ast.AST): The AST node representing a literal value.
+        node: The AST node representing a literal value.
 
     Returns:
-        str: The corresponding string value.
+        The corresponding string value.
     """
-    if (
-        isinstance(node, ast.Constant)  # Python 3.8+
-        and isinstance(node.value, str)
-    ):
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
     msg = f"Invalid DEPRECATED_LOOKUP format: expected str, got {type(node).__name__}"
     raise AssertionError(msg)

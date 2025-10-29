@@ -51,8 +51,7 @@ def create_qa_with_structure_chain(
     Args:
         llm: Language model to use for the chain.
         schema: Pydantic schema to use for the output.
-        output_parser: Output parser to use. Should be one of `pydantic` or `base`.
-            Default to `base`.
+        output_parser: Output parser to use. Should be one of `'pydantic'` or `'base'`.
         prompt: Optional prompt to use for the chain.
         verbose: Whether to run the chain in verbose mode.
 

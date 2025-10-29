@@ -11,12 +11,10 @@ def format_log_to_str(
     Args:
         intermediate_steps: List of tuples of AgentAction and observation strings.
         observation_prefix: Prefix to append the observation with.
-             Defaults to "Observation: ".
         llm_prefix: Prefix to append the llm call with.
-                Defaults to "Thought: ".
 
     Returns:
-        str: The scratchpad.
+        The scratchpad.
     """
     thoughts = ""
     for action, observation in intermediate_steps:

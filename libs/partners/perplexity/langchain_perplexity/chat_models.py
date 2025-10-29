@@ -28,7 +28,11 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessageChunk,
 )
-from langchain_core.messages.ai import UsageMetadata, subtract_usage
+from langchain_core.messages.ai import (
+    OutputTokenDetails,
+    UsageMetadata,
+    subtract_usage,
+)
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -49,13 +53,28 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
+    """Create UsageMetadata from Perplexity token usage data.
+
+    Args:
+        token_usage: Dictionary containing token usage information from Perplexity API.
+
+    Returns:
+        UsageMetadata with properly structured token counts and details.
+    """
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
     total_tokens = token_usage.get("total_tokens", input_tokens + output_tokens)
+
+    # Build output_token_details for Perplexity-specific fields
+    output_token_details: OutputTokenDetails = {}
+    output_token_details["reasoning"] = token_usage.get("reasoning_tokens", 0)
+    output_token_details["citation_tokens"] = token_usage.get("citation_tokens", 0)  # type: ignore[typeddict-unknown-key]
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        output_token_details=output_token_details,
     )
 
 
@@ -63,84 +82,87 @@ class ChatPerplexity(BaseChatModel):
     """`Perplexity AI` Chat models API.
 
     Setup:
-        To use, you should have the environment variable ``PPLX_API_KEY`` set to your API key.
+        To use, you should have the environment variable `PPLX_API_KEY` set to your API key.
         Any parameters that are valid to be passed to the openai.create call
         can be passed in, even if not explicitly saved on this class.
 
-        .. code-block:: bash
-
-            export PPLX_API_KEY=your_api_key
+        ```bash
+        export PPLX_API_KEY=your_api_key
+        ```
 
         Key init args - completion params:
-            model: str
+            model:
                 Name of the model to use. e.g. "sonar"
-            temperature: float
-                Sampling temperature to use. Default is 0.7
-            max_tokens: int | None
+            temperature:
+                Sampling temperature to use.
+            max_tokens:
                 Maximum number of tokens to generate.
-            streaming: bool
+            streaming:
                 Whether to stream the results or not.
 
         Key init args - client params:
-            pplx_api_key: str | None
-                API key for PerplexityChat API. Default is None.
-            request_timeout: float | Tuple[float, float] | None
-                Timeout for requests to PerplexityChat completion API. Default is None.
-            max_retries: int
+            pplx_api_key:
+                API key for PerplexityChat API.
+            request_timeout:
+                Timeout for requests to PerplexityChat completion API.
+            max_retries:
                 Maximum number of retries to make when generating.
 
         See full list of supported init args and their descriptions in the params section.
 
         Instantiate:
-            .. code-block:: python
 
-                from langchain_perplexity import ChatPerplexity
+        ```python
+        from langchain_perplexity import ChatPerplexity
 
-                llm = ChatPerplexity(model="sonar", temperature=0.7)
+        model = ChatPerplexity(model="sonar", temperature=0.7)
+        ```
 
         Invoke:
-            .. code-block:: python
 
-                messages = [("system", "You are a chatbot."), ("user", "Hello!")]
-                llm.invoke(messages)
+        ```python
+        messages = [("system", "You are a chatbot."), ("user", "Hello!")]
+        model.invoke(messages)
+        ```
 
         Invoke with structured output:
-            .. code-block:: python
 
-                from pydantic import BaseModel
-
-
-                class StructuredOutput(BaseModel):
-                    role: str
-                    content: str
+        ```python
+        from pydantic import BaseModel
 
 
-                llm.with_structured_output(StructuredOutput)
-                llm.invoke(messages)
+        class StructuredOutput(BaseModel):
+            role: str
+            content: str
+
+
+        model.with_structured_output(StructuredOutput)
+        model.invoke(messages)
+        ```
 
         Invoke with perplexity-specific params:
-            .. code-block:: python
 
-                llm.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```python
+        model.invoke(messages, extra_body={"search_recency_filter": "week"})
+        ```
 
         Stream:
-            .. code-block:: python
-
-                for chunk in llm.stream(messages):
-                    print(chunk.content)
+        ```python
+        for chunk in model.stream(messages):
+            print(chunk.content)
+        ```
 
         Token usage:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.usage_metadata
+        ```python
+        response = model.invoke(messages)
+        response.usage_metadata
+        ```
 
         Response metadata:
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.response_metadata
-
+        ```python
+        response = model.invoke(messages)
+        response.response_metadata
+        ```
     """  # noqa: E501
 
     client: Any = None  #: :meta private:
@@ -156,7 +178,7 @@ class ChatPerplexity(BaseChatModel):
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
     request_timeout: float | tuple[float, float] | None = Field(None, alias="timeout")
-    """Timeout for requests to PerplexityChat completion API. Default is None."""
+    """Timeout for requests to PerplexityChat completion API."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
@@ -298,6 +320,7 @@ class ChatPerplexity(BaseChatModel):
         prev_total_usage: UsageMetadata | None = None
 
         added_model_name: bool = False
+        added_search_queries: bool = False
         for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -328,6 +351,13 @@ class ChatPerplexity(BaseChatModel):
             if (model_name := chunk.get("model")) and not added_model_name:
                 generation_info["model_name"] = model_name
                 added_model_name = True
+
+            # Add num_search_queries to generation_info if present
+            if total_usage := chunk.get("usage"):
+                if num_search_queries := total_usage.get("num_search_queries"):
+                    if not added_search_queries:
+                        generation_info["num_search_queries"] = num_search_queries
+                        added_search_queries = True
 
             chunk = self._convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
@@ -366,20 +396,29 @@ class ChatPerplexity(BaseChatModel):
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(messages=message_dicts, **params)
         if usage := getattr(response, "usage", None):
-            usage_metadata = _create_usage_metadata(usage.model_dump())
+            usage_dict = usage.model_dump()
+            usage_metadata = _create_usage_metadata(usage_dict)
         else:
             usage_metadata = None
+            usage_dict = {}
 
         additional_kwargs = {}
         for attr in ["citations", "images", "related_questions", "search_results"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
+        # Build response_metadata with model_name and num_search_queries
+        response_metadata: dict[str, Any] = {
+            "model_name": getattr(response, "model", self.model)
+        }
+        if num_search_queries := usage_dict.get("num_search_queries"):
+            response_metadata["num_search_queries"] = num_search_queries
+
         message = AIMessage(
             content=response.choices[0].message.content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,
-            response_metadata={"model_name": getattr(response, "model", self.model)},
+            response_metadata=response_metadata,
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -405,7 +444,7 @@ class ChatPerplexity(BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
         Currently, Perplexity only supports "json_schema" method for structured output
-        as per their `official documentation <https://docs.perplexity.ai/guides/structured-outputs>`__.
+        as per their [official documentation](https://docs.perplexity.ai/guides/structured-outputs).
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -416,16 +455,18 @@ class ChatPerplexity(BaseChatModel):
 
             method: The method for steering model generation, currently only support:
 
-                - ``'json_schema'``: Use the JSON Schema to parse the model output
+                - `'json_schema'`: Use the JSON Schema to parse the model output
 
 
             include_raw:
                 If `False` then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             strict:
                 Unsupported: whether to enable strict schema adherence when generating
@@ -435,17 +476,18 @@ class ChatPerplexity(BaseChatModel):
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: BaseException | None
-
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):
             method = "json_schema"

@@ -33,7 +33,7 @@ def create_react_agent(
        For a more robust and feature-rich implementation, we recommend using the
        `create_react_agent` function from the LangGraph library.
        See the
-       `reference doc <https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent>`__
+       [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
        for more information.
 
     Args:
@@ -42,13 +42,13 @@ def create_react_agent(
         prompt: The prompt to use. See Prompt section below for more.
         output_parser: AgentOutputParser for parse the LLM output.
         tools_renderer: This controls how the tools are converted into a string and
-            then passed into the LLM. Default is `render_text_description`.
+            then passed into the LLM.
         stop_sequence: bool or list of str.
             If `True`, adds a stop token of "Observation:" to avoid hallucinates.
             If `False`, does not add a stop token.
             If a list of str, uses the provided list as the stop tokens.
 
-            Default is True. You may to set this to False if the LLM you are using
+            You may to set this to False if the LLM you are using
             does not support stop sequences.
 
     Returns:
@@ -57,33 +57,32 @@ def create_react_agent(
         AgentAction or AgentFinish.
 
     Examples:
+        ```python
+        from langchain_classic import hub
+        from langchain_community.llms import OpenAI
+        from langchain_classic.agents import AgentExecutor, create_react_agent
 
-        .. code-block:: python
+        prompt = hub.pull("hwchase17/react")
+        model = OpenAI()
+        tools = ...
 
-            from langchain_classic import hub
-            from langchain_community.llms import OpenAI
-            from langchain_classic.agents import AgentExecutor, create_react_agent
+        agent = create_react_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools)
 
-            prompt = hub.pull("hwchase17/react")
-            model = OpenAI()
-            tools = ...
+        agent_executor.invoke({"input": "hi"})
 
-            agent = create_react_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools)
+        # Use with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
 
-            agent_executor.invoke({"input": "hi"})
-
-            # Use with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    # Notice that chat_history is a string
-                    # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
-                }
-            )
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                # Notice that chat_history is a string
+                # since this prompt is aimed at LLMs, not chat models
+                "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
+            }
+        )
+        ```
 
     Prompt:
 
@@ -91,36 +90,35 @@ def create_react_agent(
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
             * `agent_scratchpad`: contains previous agent actions and tool outputs as a
-               string.
+                string.
 
         Here's an example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.prompts import PromptTemplate
+        template = '''Answer the following questions as best you can. You have access to the following tools:
 
-            template = '''Answer the following questions as best you can. You have access to the following tools:
+        {tools}
 
-            {tools}
+        Use the following format:
 
-            Use the following format:
+        Question: the input question you must answer
+        Thought: you should always think about what to do
+        Action: the action to take, should be one of [{tool_names}]
+        Action Input: the input to the action
+        Observation: the result of the action
+        ... (this Thought/Action/Action Input/Observation can repeat N times)
+        Thought: I now know the final answer
+        Final Answer: the final answer to the original input question
 
-            Question: the input question you must answer
-            Thought: you should always think about what to do
-            Action: the action to take, should be one of [{tool_names}]
-            Action Input: the input to the action
-            Observation: the result of the action
-            ... (this Thought/Action/Action Input/Observation can repeat N times)
-            Thought: I now know the final answer
-            Final Answer: the final answer to the original input question
+        Begin!
 
-            Begin!
+        Question: {input}
+        Thought:{agent_scratchpad}'''
 
-            Question: {input}
-            Thought:{agent_scratchpad}'''
-
-            prompt = PromptTemplate.from_template(template)
-
+        prompt = PromptTemplate.from_template(template)
+        ```
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

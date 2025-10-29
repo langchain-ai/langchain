@@ -20,22 +20,21 @@ _MIN_OPTIMUM_VERSION = "1.22"
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the `sentence_transformers` python package installed.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEmbeddings
 
-            from langchain_huggingface import HuggingFaceEmbeddings
-
-            model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {"device": "cpu"}
-            encode_kwargs = {"normalize_embeddings": False}
-            hf = HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs,
-            )
-
+        model_name = "sentence-transformers/all-mpnet-base-v2"
+        model_kwargs = {"device": "cpu"}
+        encode_kwargs = {"normalize_embeddings": False}
+        hf = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+        )
+        ```
     """
 
     model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")

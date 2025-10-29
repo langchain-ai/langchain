@@ -94,7 +94,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
 
-    It replaces run ids with deterministic UUIDs for snapshotting.
+    It replaces run IDs with deterministic UUIDs for snapshotting.
     """
 
     def __init__(self) -> None:
@@ -314,15 +314,14 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "Example:\n"
+                "    ```python\n"
+                "    from langchain_core.documents import Document\n"
                 "\n"
-                "    .. code-block:: python\n"
-                "\n"
-                "        from langchain_core.documents import Document\n"
-                "\n"
-                "        document = Document(\n"
-                '            page_content="Hello, world!", '
+                "    document = Document(\n"
+                '        page_content="Hello, world!", '
                 'metadata={"source": "https://example.com"}\n'
-                "        )",
+                "    )\n"
+                "    ```",
                 "properties": {
                     "id": {
                         "anyOf": [{"type": "string"}, {"type": "null"}],
@@ -2074,7 +2073,7 @@ async def test_prompt_with_llm(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2285,7 +2284,7 @@ async def test_prompt_with_llm_parser(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2473,7 +2472,7 @@ async def test_stream_log_retriever() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2506,7 +2505,7 @@ async def test_stream_log_lists() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (

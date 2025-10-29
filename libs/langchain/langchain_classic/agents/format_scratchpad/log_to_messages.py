@@ -11,10 +11,10 @@ def format_log_to_messages(
     Args:
         intermediate_steps: List of tuples of AgentAction and observation strings.
         template_tool_response: Template to format the observation with.
-             Defaults to "{observation}".
+            Defaults to `"{observation}"`.
 
     Returns:
-        List[BaseMessage]: The scratchpad.
+        The scratchpad.
     """
     thoughts: list[BaseMessage] = []
     for action, observation in intermediate_steps:

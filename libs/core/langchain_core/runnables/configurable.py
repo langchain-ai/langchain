@@ -72,10 +72,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -123,11 +123,10 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         """Prepare the Runnable for invocation.
 
         Args:
-            config: The configuration to use. Defaults to `None`.
+            config: The configuration to use.
 
         Returns:
-            tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
-            configuration.
+            The prepared Runnable and configuration.
         """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
@@ -384,7 +383,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         """Get the configuration specs for the RunnableConfigurableFields.
 
         Returns:
-            list[ConfigurableFieldSpec]: The configuration specs.
+            The configuration specs.
         """
         config_specs = []
 
@@ -476,11 +475,11 @@ _enums_for_spec_lock = threading.Lock()
 class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """Runnable that can be dynamically configured.
 
-    A RunnableConfigurableAlternatives should be initiated using the
+    A `RunnableConfigurableAlternatives` should be initiated using the
     `configurable_alternatives` method of a Runnable or can be
     initiated directly as well.
 
-    Here is an example of using a RunnableConfigurableAlternatives that uses
+    Here is an example of using a `RunnableConfigurableAlternatives` that uses
     alternative prompts to illustrate its functionality:
 
         ```python
@@ -507,7 +506,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
         ```
 
-    Equivalently, you can initialize RunnableConfigurableAlternatives directly
+    Equivalently, you can initialize `RunnableConfigurableAlternatives` directly
     and use in LCEL in the same way:
 
         ```python
@@ -541,7 +540,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to `'default'`."""
+    """The enum value to use for the default option."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace
@@ -656,7 +655,7 @@ def prefix_config_spec(
         prefix: The prefix to add.
 
     Returns:
-        ConfigurableFieldSpec: The prefixed ConfigurableFieldSpec.
+        The prefixed ConfigurableFieldSpec.
     """
     return (
         ConfigurableFieldSpec(

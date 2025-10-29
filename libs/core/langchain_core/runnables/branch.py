@@ -40,13 +40,13 @@ from langchain_core.runnables.utils import (
 class RunnableBranch(RunnableSerializable[Input, Output]):
     """Runnable that selects which branch to run based on a condition.
 
-    The Runnable is initialized with a list of (condition, Runnable) pairs and
+    The Runnable is initialized with a list of `(condition, Runnable)` pairs and
     a default branch.
 
     When operating on an input, the first condition that evaluates to True is
-    selected, and the corresponding Runnable is run on the input.
+    selected, and the corresponding `Runnable` is run on the input.
 
-    If no condition evaluates to True, the default branch is run on the input.
+    If no condition evaluates to `True`, the default branch is run on the input.
 
     Examples:
         ```python
@@ -65,9 +65,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
-    """A list of (condition, Runnable) pairs."""
+    """A list of `(condition, Runnable)` pairs."""
     default: Runnable[Input, Output]
-    """A Runnable to run if no condition is met."""
+    """A `Runnable` to run if no condition is met."""
 
     def __init__(
         self,
@@ -79,15 +79,15 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         ]
         | RunnableLike,
     ) -> None:
-        """A Runnable that runs one of two branches based on a condition.
+        """A `Runnable` that runs one of two branches based on a condition.
 
         Args:
-            *branches: A list of (condition, Runnable) pairs.
-                Defaults a Runnable to run if no condition is met.
+            *branches: A list of `(condition, Runnable)` pairs.
+                Defaults a `Runnable` to run if no condition is met.
 
         Raises:
             ValueError: If the number of branches is less than 2.
-            TypeError: If the default branch is not Runnable, Callable or Mapping.
+            TypeError: If the default branch is not `Runnable`, `Callable` or `Mapping`.
             TypeError: If a branch is not a tuple or list.
             ValueError: If a branch is not of length 2.
         """
@@ -146,10 +146,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "runnable"]``
+            `["langchain", "schema", "runnable"]`
         """
         return ["langchain", "schema", "runnable"]
 
@@ -191,8 +191,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Returns:
             The output of the branch that was run.
@@ -301,8 +301,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the branch that was run.
@@ -385,8 +385,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Args:
             input: The input to the Runnable.
-            config: The configuration for the Runnable. Defaults to `None`.
-            kwargs: Additional keyword arguments to pass to the Runnable.
+            config: The configuration for the Runnable.
+            **kwargs: Additional keyword arguments to pass to the Runnable.
 
         Yields:
             The output of the branch that was run.

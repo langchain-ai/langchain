@@ -1,4 +1,4 @@
-"""Interface with the `LangChain Hub <https://smith.langchain.com/hub>`__."""
+"""Interface with the [LangChain Hub](https://smith.langchain.com/hub)."""
 
 from __future__ import annotations
 
@@ -15,6 +15,21 @@ def _get_client(
     api_key: str | None = None,
     api_url: str | None = None,
 ) -> Any:
+    """Get a client for interacting with the LangChain Hub.
+
+    Attempts to use LangSmith client if available, otherwise falls back to
+    the legacy `langchainhub` client.
+
+    Args:
+        api_key: API key to authenticate with the LangChain Hub API.
+        api_url: URL of the LangChain Hub API.
+
+    Returns:
+        Client instance for interacting with the hub.
+
+    Raises:
+        ImportError: If neither `langsmith` nor `langchainhub` can be imported.
+    """
     try:
         from langsmith import Client as LangSmithClient
 
@@ -51,18 +66,22 @@ def push(
 ) -> str:
     """Push an object to the hub and returns the URL it can be viewed at in a browser.
 
-    :param repo_full_name: The full name of the prompt to push to in the format of
-        `owner/prompt_name` or `prompt_name`.
-    :param object: The LangChain to serialize and push to the hub.
-    :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
-        if you have an api key set, or a localhost instance if not.
-    :param api_key: The API key to use to authenticate with the LangChain Hub API.
-    :param parent_commit_hash: The commit hash of the parent commit to push to. Defaults
-        to the latest commit automatically.
-    :param new_repo_is_public: Whether the prompt should be public. Defaults to
-        False (Private by default).
-    :param new_repo_description: The description of the prompt. Defaults to an empty
-        string.
+    Args:
+        repo_full_name: The full name of the prompt to push to in the format of
+            `owner/prompt_name` or `prompt_name`.
+        object: The LangChain object to serialize and push to the hub.
+        api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
+            if you have an API key set, or a localhost instance if not.
+        api_key: The API key to use to authenticate with the LangChain Hub API.
+        parent_commit_hash: The commit hash of the parent commit to push to. Defaults
+            to the latest commit automatically.
+        new_repo_is_public: Whether the prompt should be public.
+        new_repo_description: The description of the prompt.
+        readme: README content for the repository.
+        tags: Tags to associate with the prompt.
+
+    Returns:
+        URL where the pushed object can be viewed in a browser.
     """
     client = _get_client(api_key=api_key, api_url=api_url)
 
@@ -98,12 +117,17 @@ def pull(
 ) -> Any:
     """Pull an object from the hub and returns it as a LangChain object.
 
-    :param owner_repo_commit: The full name of the prompt to pull from in the format of
-        `owner/prompt_name:commit_hash` or `owner/prompt_name`
-        or just `prompt_name` if it's your own prompt.
-    :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
-        if you have an api key set, or a localhost instance if not.
-    :param api_key: The API key to use to authenticate with the LangChain Hub API.
+    Args:
+        owner_repo_commit: The full name of the prompt to pull from in the format of
+            `owner/prompt_name:commit_hash` or `owner/prompt_name`
+            or just `prompt_name` if it's your own prompt.
+        include_model: Whether to include the model configuration in the pulled prompt.
+        api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
+            if you have an API key set, or a localhost instance if not.
+        api_key: The API key to use to authenticate with the LangChain Hub API.
+
+    Returns:
+        The pulled LangChain object.
     """
     client = _get_client(api_key=api_key, api_url=api_url)
 

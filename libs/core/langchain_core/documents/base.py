@@ -32,14 +32,12 @@ class BaseMedia(Serializable):
 
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
-    # it has been adopted by enough vectorstore implementations.
+    # it has been adopted by enough VectorStore implementations.
     id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 
     Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
-
-    !!! version-added "Added in version 0.2.11"
     """
 
     metadata: dict = Field(default_factory=dict)
@@ -53,66 +51,65 @@ class Blob(BaseMedia):
     help to decouple the development of data loaders from the downstream parsing of
     the raw data.
 
-    Inspired by: https://developer.mozilla.org/en-US/docs/Web/API/Blob
+    Inspired by [Mozilla's `Blob`](https://developer.mozilla.org/en-US/docs/Web/API/Blob)
 
     Example: Initialize a blob from in-memory data
 
-        .. code-block:: python
+    ```python
+    from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
+    blob = Blob.from_data("Hello, world!")
 
-            blob = Blob.from_data("Hello, world!")
+    # Read the blob as a string
+    print(blob.as_string())
 
-            # Read the blob as a string
-            print(blob.as_string())
+    # Read the blob as bytes
+    print(blob.as_bytes())
 
-            # Read the blob as bytes
-            print(blob.as_bytes())
-
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
+    # Read the blob as a byte stream
+    with blob.as_bytes_io() as f:
+        print(f.read())
+    ```
 
     Example: Load from memory and specify mime-type and metadata
 
-        .. code-block:: python
+    ```python
+    from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
-
-            blob = Blob.from_data(
-                data="Hello, world!",
-                mime_type="text/plain",
-                metadata={"source": "https://example.com"},
-            )
+    blob = Blob.from_data(
+        data="Hello, world!",
+        mime_type="text/plain",
+        metadata={"source": "https://example.com"},
+    )
+    ```
 
     Example: Load the blob from a file
 
-        .. code-block:: python
+    ```python
+    from langchain_core.documents import Blob
 
-            from langchain_core.documents import Blob
+    blob = Blob.from_path("path/to/file.txt")
 
-            blob = Blob.from_path("path/to/file.txt")
+    # Read the blob as a string
+    print(blob.as_string())
 
-            # Read the blob as a string
-            print(blob.as_string())
+    # Read the blob as bytes
+    print(blob.as_bytes())
 
-            # Read the blob as bytes
-            print(blob.as_bytes())
-
-            # Read the blob as a byte stream
-            with blob.as_bytes_io() as f:
-                print(f.read())
-
+    # Read the blob as a byte stream
+    with blob.as_bytes_io() as f:
+        print(f.read())
+    ```
     """
 
     data: bytes | str | None = None
-    """Raw data associated with the blob."""
+    """Raw data associated with the `Blob`."""
     mimetype: str | None = None
     """MimeType not to be confused with a file extension."""
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
-    Use utf-8 as default encoding, if decoding to string.
+    Use `utf-8` as default encoding, if decoding to string.
     """
     path: PathLike | None = None
     """Location where the original content was found."""
@@ -126,9 +123,9 @@ class Blob(BaseMedia):
     def source(self) -> str | None:
         """The source location of the blob as string if known otherwise none.
 
-        If a path is associated with the blob, it will default to the path location.
+        If a path is associated with the `Blob`, it will default to the path location.
 
-        Unless explicitly set via a metadata field called "source", in which
+        Unless explicitly set via a metadata field called `"source"`, in which
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
@@ -212,15 +209,15 @@ class Blob(BaseMedia):
         """Load the blob from a path like object.
 
         Args:
-            path: path like object to file to be read
+            path: Path-like object to file to be read
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
-            guess_type: If `True`, the mimetype will be guessed from the file extension,
-                        if a mime-type was not provided
-            metadata: Metadata to associate with the blob
+            mime_type: If provided, will be set as the MIME type of the data
+            guess_type: If `True`, the MIME type will be guessed from the file
+                extension, if a mime-type was not provided
+            metadata: Metadata to associate with the `Blob`
 
         Returns:
-            Blob instance
+            `Blob` instance
         """
         if mime_type is None and guess_type:
             mimetype = mimetypes.guess_type(path)[0] if guess_type else None
@@ -246,17 +243,17 @@ class Blob(BaseMedia):
         path: str | None = None,
         metadata: dict | None = None,
     ) -> Blob:
-        """Initialize the blob from in-memory data.
+        """Initialize the `Blob` from in-memory data.
 
         Args:
-            data: the in-memory data associated with the blob
+            data: The in-memory data associated with the `Blob`
             encoding: Encoding to use if decoding the bytes into a string
-            mime_type: if provided, will be set as the mime-type of the data
-            path: if provided, will be set as the source from which the data came
-            metadata: Metadata to associate with the blob
+            mime_type: If provided, will be set as the MIME type of the data
+            path: If provided, will be set as the source from which the data came
+            metadata: Metadata to associate with the `Blob`
 
         Returns:
-            Blob instance
+            `Blob` instance
         """
         return cls(
             data=data,
@@ -278,15 +275,13 @@ class Document(BaseMedia):
     """Class for storing a piece of text and associated metadata.
 
     Example:
+        ```python
+        from langchain_core.documents import Document
 
-        .. code-block:: python
-
-            from langchain_core.documents import Document
-
-            document = Document(
-                page_content="Hello, world!", metadata={"source": "https://example.com"}
-            )
-
+        document = Document(
+            page_content="Hello, world!", metadata={"source": "https://example.com"}
+        )
+        ```
     """
 
     page_content: str
@@ -306,7 +301,7 @@ class Document(BaseMedia):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             ["langchain", "schema", "document"]

@@ -64,7 +64,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.
@@ -85,7 +85,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.

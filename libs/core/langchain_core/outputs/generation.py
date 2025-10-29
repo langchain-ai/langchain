@@ -11,9 +11,8 @@ from langchain_core.utils._merge import merge_dicts
 class Generation(Serializable):
     """A single text generation output.
 
-    Generation represents the response from an
-    `"old-fashioned" LLM <https://python.langchain.com/docs/concepts/text_llms/>__` that
-    generates regular text (not chat messages).
+    Generation represents the response from an "old-fashioned" LLM (string-in,
+    string-out) that generates regular text (not chat messages).
 
     This model is used internally by chat model and will eventually
     be mapped to a more general `LLMResult` object, and then projected into
@@ -44,10 +43,10 @@ class Generation(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "output"]``
+            `["langchain", "schema", "output"]`
         """
         return ["langchain", "schema", "output"]
 
@@ -56,16 +55,16 @@ class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
-        """Concatenate two ``GenerationChunk``s.
+        """Concatenate two `GenerationChunk`s.
 
         Args:
-            other: Another ``GenerationChunk`` to concatenate with.
+            other: Another `GenerationChunk` to concatenate with.
 
         Raises:
-            TypeError: If other is not a ``GenerationChunk``.
+            TypeError: If other is not a `GenerationChunk`.
 
         Returns:
-            A new ``GenerationChunk`` concatenated from self and other.
+            A new `GenerationChunk` concatenated from self and other.
         """
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(

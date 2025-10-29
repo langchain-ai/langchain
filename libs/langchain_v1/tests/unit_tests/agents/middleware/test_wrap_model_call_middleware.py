@@ -153,7 +153,9 @@ class TestResponseRewriting:
         class UppercaseMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 result = handler(request)
-                return AIMessage(content=result.content.upper())
+                # result is ModelResponse, extract AIMessage from it
+                ai_message = result.result[0]
+                return AIMessage(content=ai_message.content.upper())
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
         agent = create_agent(model=model, middleware=[UppercaseMiddleware()])
@@ -172,7 +174,9 @@ class TestResponseRewriting:
 
             def wrap_model_call(self, request, handler):
                 result = handler(request)
-                return AIMessage(content=f"{self.prefix}{result.content}")
+                # result is ModelResponse, extract AIMessage from it
+                ai_message = result.result[0]
+                return AIMessage(content=f"{self.prefix}{ai_message.content}")
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Response")]))
         agent = create_agent(model=model, middleware=[PrefixMiddleware(prefix="[BOT]: ")])
@@ -388,7 +392,7 @@ class TestStateAndRuntime:
         result = agent.invoke({"messages": [HumanMessage("Test")]})
 
         assert len(state_values) == 1
-        assert state_values[0]["messages_count"] == 1  # Just the human message
+        assert state_values[0]["messages_count"] == 1  # Just The HumanMessage
         assert result["messages"][1].content == "Response"
 
     def test_retry_with_state_tracking(self) -> None:
@@ -511,12 +515,16 @@ class TestMiddlewareComposition:
         class PrefixMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 result = handler(request)
-                return AIMessage(content=f"[PREFIX] {result.content}")
+                # result is ModelResponse, extract AIMessage from it
+                ai_message = result.result[0]
+                return AIMessage(content=f"[PREFIX] {ai_message.content}")
 
         class SuffixMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 result = handler(request)
-                return AIMessage(content=f"{result.content} [SUFFIX]")
+                # result is ModelResponse, extract AIMessage from it
+                ai_message = result.result[0]
+                return AIMessage(content=f"{ai_message.content} [SUFFIX]")
 
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Middle")]))
         # Prefix is outer, Suffix is inner
@@ -551,7 +559,9 @@ class TestMiddlewareComposition:
         class UppercaseMiddleware(AgentMiddleware):
             def wrap_model_call(self, request, handler):
                 result = handler(request)
-                return AIMessage(content=result.content.upper())
+                # result is ModelResponse, extract AIMessage from it
+                ai_message = result.result[0]
+                return AIMessage(content=ai_message.content.upper())
 
         model = FailOnceThenSucceed(messages=iter([AIMessage(content="success")]))
         # Retry outer, Uppercase inner

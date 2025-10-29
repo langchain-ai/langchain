@@ -76,7 +76,7 @@ def function_docstring_annotations() -> Callable:
         """Dummy function.
 
         Args:
-            arg1 (int): foo
+            arg1: foo
             arg2: one of 'bar', 'baz'
         """
 
@@ -1154,4 +1154,17 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
         ]
 
     actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected
+
+
+def test_convert_to_openai_function_strict_required() -> None:
+    class MyModel(BaseModel):
+        """Dummy schema."""
+
+        arg1: int = Field(..., description="foo")
+        arg2: str | None = Field(None, description="bar")
+
+    expected = ["arg1", "arg2"]
+    func = convert_to_openai_function(MyModel, strict=True)
+    actual = func["parameters"]["required"]
     assert actual == expected

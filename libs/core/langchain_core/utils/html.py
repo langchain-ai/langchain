@@ -43,7 +43,7 @@ def find_all_links(
         pattern: Regex to use for extracting links from raw HTML.
 
     Returns:
-        list[str]: all links
+        all links
     """
     pattern = pattern or DEFAULT_LINK_REGEX
     return list(set(re.findall(pattern, raw_html)))
@@ -73,7 +73,7 @@ def extract_sub_links(
             exception. Otherwise, raise the exception.
 
     Returns:
-        list[str]: sub links.
+        sub links.
     """
     base_url_to_use = base_url if base_url is not None else url
     parsed_base_url = urlparse(base_url_to_use)

@@ -87,15 +87,13 @@ class ConversationalChatAgent(Agent):
 
         Args:
             tools: The tools to use.
-            system_message: The system message to use.
-                Defaults to the PREFIX.
-            human_message: The human message to use.
-                Defaults to the SUFFIX.
-            input_variables: The input variables to use. Defaults to `None`.
-            output_parser: The output parser to use. Defaults to `None`.
+            system_message: The `SystemMessage` to use.
+            human_message: The `HumanMessage` to use.
+            input_variables: The input variables to use.
+            output_parser: The output parser to use.
 
         Returns:
-            A PromptTemplate.
+            A `PromptTemplate`.
         """
         tool_strings = "\n".join(
             [f"> {tool.name}: {tool.description}" for tool in tools],
@@ -150,11 +148,11 @@ class ConversationalChatAgent(Agent):
         Args:
             llm: The language model to use.
             tools: A list of tools to use.
-            callback_manager: The callback manager to use. Default is None.
-            output_parser: The output parser to use. Default is None.
-            system_message: The system message to use. Default is PREFIX.
-            human_message: The human message to use. Default is SUFFIX.
-            input_variables: The input variables to use. Default is None.
+            callback_manager: The callback manager to use.
+            output_parser: The output parser to use.
+            system_message: The `SystemMessage` to use.
+            human_message: The `HumanMessage` to use.
+            input_variables: The input variables to use.
             **kwargs: Any additional arguments.
 
         Returns:

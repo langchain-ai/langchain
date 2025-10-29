@@ -38,57 +38,60 @@ def create_tool_calling_agent(
         AgentAction or AgentFinish.
 
     Example:
+        ```python
+        from langchain_classic.agents import (
+            AgentExecutor,
+            create_tool_calling_agent,
+            tool,
+        )
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.prompts import ChatPromptTemplate
 
-        .. code-block:: python
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are a helpful assistant"),
+                ("placeholder", "{chat_history}"),
+                ("human", "{input}"),
+                ("placeholder", "{agent_scratchpad}"),
+            ]
+        )
+        model = ChatAnthropic(model="claude-3-opus-20240229")
 
-            from langchain_classic.agents import (
-                AgentExecutor,
-                create_tool_calling_agent,
-                tool,
-            )
-            from langchain_anthropic import ChatAnthropic
-            from langchain_core.prompts import ChatPromptTemplate
+        @tool
+        def magic_function(input: int) -> int:
+            \"\"\"Applies a magic function to an input.\"\"\"
+            return input + 2
 
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", "You are a helpful assistant"),
-                    ("placeholder", "{chat_history}"),
-                    ("human", "{input}"),
-                    ("placeholder", "{agent_scratchpad}"),
-                ]
-            )
-            model = ChatAnthropic(model="claude-3-opus-20240229")
+        tools = [magic_function]
 
-            @tool
-            def magic_function(input: int) -> int:
-                \"\"\"Applies a magic function to an input.\"\"\"
-                return input + 2
+        agent = create_tool_calling_agent(model, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-            tools = [magic_function]
+        agent_executor.invoke({"input": "what is the value of magic_function(3)?"})
 
-            agent = create_tool_calling_agent(model, tools, prompt)
-            agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-            agent_executor.invoke({"input": "what is the value of magic_function(3)?"})
-
-            # Using with chat history
-            from langchain_core.messages import AIMessage, HumanMessage
-            agent_executor.invoke(
-                {
-                    "input": "what's my name?",
-                    "chat_history": [
-                        HumanMessage(content="hi! my name is bob"),
-                        AIMessage(content="Hello Bob! How can I assist you today?"),
-                    ],
-                }
-            )
+        # Using with chat history
+        from langchain_core.messages import AIMessage, HumanMessage
+        agent_executor.invoke(
+            {
+                "input": "what's my name?",
+                "chat_history": [
+                    HumanMessage(content="hi! my name is bob"),
+                    AIMessage(content="Hello Bob! How can I assist you today?"),
+                ],
+            }
+        )
+        ```
 
     Prompt:
-
         The agent prompt must have an `agent_scratchpad` key that is a
-            ``MessagesPlaceholder``. Intermediate agent actions and tool output
+            `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
+    Troubleshooting:
+        - If you encounter `invalid_tool_calls` errors, ensure that your tool
+          functions return properly formatted responses. Tool outputs should be
+          serializable to JSON. For custom objects, implement proper __str__ or
+          to_dict methods.
     """
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

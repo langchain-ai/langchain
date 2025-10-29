@@ -278,6 +278,53 @@ def test_system_invoke() -> None:
     assert isinstance(result.content, str)
 
 
+def test_handle_empty_aimessage() -> None:
+    # Anthropic can generate empty AIMessages, which are not valid unless in the last
+    # message in a sequence.
+    llm = ChatAnthropic(model=MODEL_NAME)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage([]),
+        HumanMessage("My name is Bob."),
+    ]
+    _ = llm.invoke(messages)
+
+    # Test tool call sequence
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "name": "get_weather",
+                "description": "Get weather report for a city",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {"location": {"type": "string"}},
+                },
+            },
+        ],
+    )
+    _ = llm_with_tools.invoke(
+        [
+            HumanMessage("What's the weather in Boston?"),
+            AIMessage(
+                content=[],
+                tool_calls=[
+                    {
+                        "name": "get_weather",
+                        "args": {"location": "Boston"},
+                        "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
+            ToolMessage(
+                content="It's sunny.", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"
+            ),
+            AIMessage([]),
+            HumanMessage("Thanks!"),
+        ]
+    )
+
+
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
@@ -487,7 +534,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
+    # https://docs.claude.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
@@ -1371,7 +1418,7 @@ def test_web_fetch() -> None:
         "role": "user",
         "content": (
             "Fetch https://docs.langchain.com and then try to fetch "
-            "https://python.langchain.com"
+            "https://langchain.com"
         ),
     }
     max_uses_response = llm_with_tools.invoke([multi_fetch_message])
@@ -1763,7 +1810,7 @@ def test_search_result_top_level() -> None:
 
 def test_memory_tool() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
     )
     llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
@@ -1777,7 +1824,7 @@ def test_memory_tool() -> None:
 def test_context_management() -> None:
     # TODO: update example to trigger action
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
         context_management={
             "edits": [

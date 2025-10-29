@@ -22,8 +22,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
             if "title" in annotation:
                 out["title"] = annotation["title"]
             out["type"] = "web_search_result_location"
-            if "url" in annotation:
-                out["url"] = annotation["url"]
+            out["url"] = annotation.get("url")
 
             for key, value in annotation.get("extras", {}).items():
                 if key not in out:

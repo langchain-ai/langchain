@@ -27,27 +27,27 @@ class FileCallbackHandler(BaseCallbackHandler):
     Examples:
         Using as a context manager (recommended):
 
-        .. code-block:: python
-
-            with FileCallbackHandler("output.txt") as handler:
-                # Use handler with your chain/agent
-                chain.invoke(inputs, config={"callbacks": [handler]})
+        ```python
+        with FileCallbackHandler("output.txt") as handler:
+            # Use handler with your chain/agent
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        ```
 
         Direct instantiation (deprecated):
 
-        .. code-block:: python
-
-            handler = FileCallbackHandler("output.txt")
-            # File remains open until handler is garbage collected
-            try:
-                chain.invoke(inputs, config={"callbacks": [handler]})
-            finally:
-                handler.close()  # Explicit cleanup recommended
+        ```python
+        handler = FileCallbackHandler("output.txt")
+        # File remains open until handler is garbage collected
+        try:
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        finally:
+            handler.close()  # Explicit cleanup recommended
+        ```
 
     Args:
         filename: The file path to write to.
         mode: The file open mode. Defaults to `'a'` (append).
-        color: Default color for text output. Defaults to `None`.
+        color: Default color for text output.
 
     !!! note
         When not used as a context manager, a deprecation warning will be issued
@@ -64,7 +64,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             filename: Path to the output file.
             mode: File open mode (e.g., `'w'`, `'a'`, `'x'`). Defaults to `'a'`.
-            color: Default text color for output. Defaults to `None`.
+            color: Default text color for output.
 
         """
         self.filename = filename
@@ -132,7 +132,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             text: The text to write to the file.
             color: Optional color for the text. Defaults to `self.color`.
-            end: String appended after the text. Defaults to `""`.
+            end: String appended after the text.
             file: Optional file to write to. Defaults to `self.file`.
 
         Raises:
@@ -239,7 +239,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             text: The text to write.
             color: Color override for this specific output. If `None`, uses
                 `self.color`.
-            end: String appended after the text. Defaults to `""`.
+            end: String appended after the text.
             **kwargs: Additional keyword arguments.
 
         """

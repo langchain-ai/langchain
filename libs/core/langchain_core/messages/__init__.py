@@ -1,19 +1,4 @@
-"""**Messages** are objects used in prompts and chat conversations.
-
-**Class hierarchy:**
-
-.. code-block::
-
-    BaseMessage --> SystemMessage, AIMessage, HumanMessage, ChatMessage, FunctionMessage, ToolMessage
-                --> BaseMessageChunk --> SystemMessageChunk, AIMessageChunk, HumanMessageChunk, ChatMessageChunk, FunctionMessageChunk, ToolMessageChunk
-
-**Main helpers:**
-
-.. code-block::
-
-    ChatPromptTemplate
-
-"""  # noqa: E501
+"""**Messages** are objects used in prompts and chat conversations."""
 
 from typing import TYPE_CHECKING
 
@@ -24,6 +9,9 @@ if TYPE_CHECKING:
     from langchain_core.messages.ai import (
         AIMessage,
         AIMessageChunk,
+        InputTokenDetails,
+        OutputTokenDetails,
+        UsageMetadata,
     )
     from langchain_core.messages.base import (
         BaseMessage,
@@ -102,10 +90,12 @@ __all__ = (
     "HumanMessage",
     "HumanMessageChunk",
     "ImageContentBlock",
+    "InputTokenDetails",
     "InvalidToolCall",
     "MessageLikeRepresentation",
     "NonStandardAnnotation",
     "NonStandardContentBlock",
+    "OutputTokenDetails",
     "PlainTextContentBlock",
     "ReasoningContentBlock",
     "RemoveMessage",
@@ -119,6 +109,7 @@ __all__ = (
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "UsageMetadata",
     "VideoContentBlock",
     "_message_from_dict",
     "convert_to_messages",
@@ -160,6 +151,7 @@ _dynamic_imports = {
     "HumanMessageChunk": "human",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
+    "OutputTokenDetails": "ai",
     "PlainTextContentBlock": "content",
     "ReasoningContentBlock": "content",
     "RemoveMessage": "modifier",
@@ -169,12 +161,14 @@ _dynamic_imports = {
     "SystemMessage": "system",
     "SystemMessageChunk": "system",
     "ImageContentBlock": "content",
+    "InputTokenDetails": "ai",
     "InvalidToolCall": "tool",
     "TextContentBlock": "content",
     "ToolCall": "tool",
     "ToolCallChunk": "tool",
     "ToolMessage": "tool",
     "ToolMessageChunk": "tool",
+    "UsageMetadata": "ai",
     "VideoContentBlock": "content",
     "AnyMessage": "utils",
     "MessageLikeRepresentation": "utils",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import sys
 import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from contextvars import Context
@@ -80,7 +81,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a run_manager argument, False otherwise.
+        `True` if the callable accepts a run_manager argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("run_manager") is not None
@@ -95,7 +96,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a config argument, False otherwise.
+        `True` if the callable accepts a config argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("config") is not None
@@ -110,7 +111,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a context argument, False otherwise.
+        `True` if the callable accepts a context argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("context") is not None
@@ -118,15 +119,13 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         return False
 
 
-@lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
+    """Check if asyncio.create_task accepts a `context` arg.
 
     Returns:
-        bool: True if ``asyncio.create_task`` accepts a context argument, False
-            otherwise.
+        True if `asyncio.create_task` accepts a context argument, `False` otherwise.
     """
-    return accepts_context(asyncio.create_task)
+    return sys.version_info >= (3, 11)
 
 
 def coro_with_context(
@@ -137,7 +136,7 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task. Defaults to `False`.
+        create_task: Whether to create a task.
 
     Returns:
         The coroutine with the context.
@@ -363,8 +362,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
         func: The function to check.
 
     Returns:
-        list[str] | None: The keys of the first argument if it is a dict,
-            None otherwise.
+        The keys of the first argument if it is a dict, None otherwise.
     """
     try:
         code = inspect.getsource(func)
@@ -383,7 +381,7 @@ def get_lambda_source(func: Callable) -> str | None:
         func: a Callable that can be a lambda function.
 
     Returns:
-        str: the source code of the lambda function.
+        the source code of the lambda function.
     """
     try:
         name = func.__name__ if func.__name__ != "<lambda>" else None
@@ -407,7 +405,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         func: The function to check.
 
     Returns:
-        list[Any]: The nonlocal variables accessed by the function.
+        The nonlocal variables accessed by the function.
     """
     try:
         code = inspect.getsource(func)
@@ -450,7 +448,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
         prefix: Used to determine the number of spaces to indent.
 
     Returns:
-        str: The indented text.
+        The indented text.
     """
     n_spaces = len(prefix)
     spaces = " " * n_spaces
@@ -554,13 +552,13 @@ class ConfigurableField(NamedTuple):
     id: str
     """The unique identifier of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     annotation: Any | None = None
-    """The annotation of the field. Defaults to `None`."""
+    """The annotation of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -577,11 +575,11 @@ class ConfigurableFieldSingleOption(NamedTuple):
     default: str
     """The default value for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -598,11 +596,11 @@ class ConfigurableFieldMultiOption(NamedTuple):
     default: Sequence[str]
     """The default values for the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -622,15 +620,15 @@ class ConfigurableFieldSpec(NamedTuple):
     annotation: Any
     """The annotation of the field."""
     name: str | None = None
-    """The name of the field. Defaults to `None`."""
+    """The name of the field. """
     description: str | None = None
-    """The description of the field. Defaults to `None`."""
+    """The description of the field. """
     default: Any = None
-    """The default value for the field. Defaults to `None`."""
+    """The default value for the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to `False`."""
+    """Whether the field is shared."""
     dependencies: list[str] | None = None
-    """The dependencies of the field. Defaults to `None`."""
+    """The dependencies of the field. """
 
 
 def get_unique_config_specs(
@@ -642,7 +640,7 @@ def get_unique_config_specs(
         specs: The config specs.
 
     Returns:
-        list[ConfigurableFieldSpec]: The unique config specs.
+        The unique config specs.
 
     Raises:
         ValueError: If the runnable sequence contains conflicting config specs.
@@ -729,8 +727,7 @@ def is_async_generator(
         func: The function to check.
 
     Returns:
-        TypeGuard[Callable[..., AsyncIterator]: True if the function is
-            an async generator, False otherwise.
+        `True` if the function is an async generator, `False` otherwise.
     """
     return inspect.isasyncgenfunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
@@ -747,8 +744,7 @@ def is_async_callable(
         func: The function to check.
 
     Returns:
-        TypeGuard[Callable[..., Awaitable]: True if the function is async,
-            False otherwise.
+        `True` if the function is async, `False` otherwise.
     """
     return asyncio.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004

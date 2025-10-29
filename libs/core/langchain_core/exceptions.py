@@ -16,7 +16,7 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
     """Exception that output parsers should raise to signify a parsing error.
 
     This exists to differentiate parsing errors from other code or execution errors
-    that also may arise inside the output parser. OutputParserExceptions will be
+    that also may arise inside the output parser. `OutputParserException` will be
     available to catch and handle in ways to fix the parsing error, while other
     errors will be raised.
     """
@@ -28,24 +28,23 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         llm_output: str | None = None,
         send_to_llm: bool = False,  # noqa: FBT001,FBT002
     ):
-        """Create an OutputParserException.
+        """Create an `OutputParserException`.
 
         Args:
             error: The error that's being re-raised or an error message.
             observation: String explanation of error which can be passed to a
-                model to try and remediate the issue. Defaults to `None`.
+                model to try and remediate the issue.
             llm_output: String model output which is error-ing.
-                Defaults to `None`.
+
             send_to_llm: Whether to send the observation and llm_output back to an Agent
-                after an OutputParserException has been raised.
+                after an `OutputParserException` has been raised.
                 This gives the underlying model driving the agent the context that the
                 previous output was improperly structured, in the hopes that it will
                 update the output to the correct format.
-                Defaults to `False`.
 
         Raises:
-            ValueError: If ``send_to_llm`` is True but either observation or
-                ``llm_output`` are not provided.
+            ValueError: If `send_to_llm` is True but either observation or
+                `llm_output` are not provided.
         """
         if isinstance(error, str):
             error = create_message(
@@ -87,6 +86,6 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
     """
     return (
         f"{message}\n"
-        "For troubleshooting, visit: https://python.langchain.com/docs/"
-        f"troubleshooting/errors/{error_code.value} "
+        "For troubleshooting, visit: https://docs.langchain.com/oss/python/langchain"
+        f"/errors/{error_code.value} "
     )

@@ -11,12 +11,12 @@ from langchain_classic.storage.encoder_backed import EncoderBackedStore
 
 
 def _dump_as_bytes(obj: Serializable) -> bytes:
-    """Return a bytes representation of a document."""
+    """Return a bytes representation of a `Document`."""
     return dumps(obj).encode("utf-8")
 
 
 def _dump_document_as_bytes(obj: Any) -> bytes:
-    """Return a bytes representation of a document."""
+    """Return a bytes representation of a `Document`."""
     if not isinstance(obj, Document):
         msg = "Expected a Document instance"
         raise TypeError(msg)
@@ -50,14 +50,14 @@ def create_lc_store(
     *,
     key_encoder: Callable[[str], str] | None = None,
 ) -> BaseStore[str, Serializable]:
-    """Create a store for langchain serializable objects from a bytes store.
+    """Create a store for LangChain serializable objects from a bytes store.
 
     Args:
         store: A bytes store to use as the underlying store.
-        key_encoder: A function to encode keys; if None uses identity function.
+        key_encoder: A function to encode keys; if `None` uses identity function.
 
     Returns:
-        A key-value store for documents.
+        A key-value store for `Document` objects.
     """
     return EncoderBackedStore(
         store,
@@ -72,17 +72,17 @@ def create_kv_docstore(
     *,
     key_encoder: Callable[[str], str] | None = None,
 ) -> BaseStore[str, Document]:
-    """Create a store for langchain Document objects from a bytes store.
+    """Create a store for langchain `Document` objects from a bytes store.
 
     This store does run time type checking to ensure that the values are
-    Document objects.
+    `Document` objects.
 
     Args:
         store: A bytes store to use as the underlying store.
-        key_encoder: A function to encode keys; if None uses identity function.
+        key_encoder: A function to encode keys; if `None`, uses identity function.
 
     Returns:
-        A key-value store for documents.
+        A key-value store for `Document` objects.
     """
     return EncoderBackedStore(
         store,
