@@ -19,14 +19,13 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langchain.tools.tool_node import ToolCallRequest
-
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
@@ -45,6 +44,8 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "ToolCallRequest",
+    "ToolCallWrapper",
     "after_agent",
     "after_model",
     "before_agent",
