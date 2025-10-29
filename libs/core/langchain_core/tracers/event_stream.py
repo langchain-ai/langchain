@@ -301,6 +301,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             # vs. None value.
             info["inputs"] = kwargs["inputs"]
 
+        if "tool_call_id" in kwargs:
+            # Store tool_call_id in run info for linking errors to tool calls
+            info["tool_call_id"] = kwargs["tool_call_id"]
+
         self.run_map[run_id] = info
         self.parent_map[run_id] = parent_run_id
 
@@ -663,6 +667,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             name_=name_,
             run_type="tool",
             inputs=inputs,
+            tool_call_id=kwargs.get("tool_call_id"),
         )
 
         self._send(
@@ -691,7 +696,12 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
+        # Extract tool_call_id from kwargs first, fallback to run_info if available
+        tool_call_id = kwargs.get("tool_call_id")
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
+        # If not in kwargs, check run_info (fallback for backward compatibility)
+        if tool_call_id is None:
+            tool_call_id = run_info.get("tool_call_id")
 
         self._send(
             {
@@ -699,6 +709,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "data": {
                     "error": error,
                     "input": inputs,
+                    "tool_call_id": tool_call_id,
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
