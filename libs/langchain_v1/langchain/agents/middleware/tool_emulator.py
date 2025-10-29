@@ -47,9 +47,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         Use a custom model for emulation:
         ```python
-        middleware = LLMToolEmulator(
-            tools=["get_weather"], model="anthropic:claude-3-5-sonnet-latest"
-        )
+        middleware = LLMToolEmulator(tools=["get_weather"], model="anthropic:claude-sonnet-4-5")
         ```
 
         Emulate specific tools by passing tool instances:
@@ -71,7 +69,7 @@ class LLMToolEmulator(AgentMiddleware):
                 If None (default), ALL tools will be emulated.
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
-                Defaults to "anthropic:claude-3-5-sonnet-latest".
+                Defaults to "anthropic:claude-sonnet-4-5".
                 Can be a model identifier string or BaseChatModel instance.
         """
         super().__init__()
@@ -91,7 +89,7 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Initialize emulator model
         if model is None:
-            self.model = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=1)
+            self.model = init_chat_model("anthropic:claude-sonnet-4-5", temperature=1)
         elif isinstance(model, BaseChatModel):
             self.model = model
         else:
