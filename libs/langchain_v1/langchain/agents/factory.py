@@ -33,6 +33,7 @@ from langchain.agents.structured_output import (
     ProviderStrategy,
     ProviderStrategyBinding,
     ResponseFormat,
+    StructuredOutputError,
     StructuredOutputValidationError,
     ToolStrategy,
 )
@@ -797,8 +798,16 @@ def create_agent(  # noqa: PLR0915
                 provider_strategy_binding = ProviderStrategyBinding.from_schema_spec(
                     effective_response_format.schema_spec
                 )
-                structured_response = provider_strategy_binding.parse(output)
-                return {"messages": [output], "structured_response": structured_response}
+                try:
+                    structured_response = provider_strategy_binding.parse(output)
+                except Exception as exc:  # noqa: BLE001
+                    schema_name = getattr(
+                        effective_response_format.schema_spec.schema, "__name__", "response_format"
+                    )
+                    validation_error = StructuredOutputValidationError(schema_name, exc, output)
+                    raise validation_error
+                else:
+                    return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
 
         # Handle structured output with tool strategy
@@ -812,11 +821,11 @@ def create_agent(  # noqa: PLR0915
             ]
 
             if structured_tool_calls:
-                exception: Exception | None = None
+                exception: StructuredOutputError | None = None
                 if len(structured_tool_calls) > 1:
                     # Handle multiple structured outputs error
                     tool_names = [tc["name"] for tc in structured_tool_calls]
-                    exception = MultipleStructuredOutputsError(tool_names)
+                    exception = MultipleStructuredOutputsError(tool_names, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
@@ -858,7 +867,7 @@ def create_agent(  # noqa: PLR0915
                         "structured_response": structured_response,
                     }
                 except Exception as exc:  # noqa: BLE001
-                    exception = StructuredOutputValidationError(tool_call["name"], exc)
+                    exception = StructuredOutputValidationError(tool_call["name"], exc, output)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, effective_response_format
                     )
