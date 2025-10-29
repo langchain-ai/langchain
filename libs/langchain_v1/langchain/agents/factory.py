@@ -18,6 +18,7 @@ from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
+    AgentRuntime,
     AgentState,
     JumpTo,
     ModelRequest,
@@ -1027,6 +1028,9 @@ def create_agent(  # noqa: PLR0915
 
     def model_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
+        # Create flat AgentRuntime with all runtime properties
+        agent_runtime = AgentRuntime.from_runtime(name or "agent", runtime)
+
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1035,7 +1039,7 @@ def create_agent(  # noqa: PLR0915
             messages=state["messages"],
             tool_choice=None,
             state=state,
-            runtime=runtime,
+            runtime=agent_runtime,
         )
 
         if wrap_model_call_handler is None:
@@ -1080,6 +1084,9 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_node(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
+        # Create flat AgentRuntime with all runtime properties
+        agent_runtime = AgentRuntime.from_runtime(name or "agent", runtime)
+
         request = ModelRequest(
             model=model,
             tools=default_tools,
@@ -1088,7 +1095,7 @@ def create_agent(  # noqa: PLR0915
             messages=state["messages"],
             tool_choice=None,
             state=state,
-            runtime=runtime,
+            runtime=agent_runtime,
         )
 
         if awrap_model_call_handler is None:
