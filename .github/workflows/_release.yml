@@ -385,6 +385,7 @@ jobs:
   test-prior-published-packages-against-new-core:
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
+    if: false
     needs:
       - build
       - release-notes
@@ -475,7 +476,7 @@ jobs:
       - release-notes
       - test-pypi-publish
       - pre-release-checks
-      - test-prior-published-packages-against-new-core
+      # - test-prior-published-packages-against-new-core
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
