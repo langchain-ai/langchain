@@ -341,9 +341,9 @@ class Tokenizer:
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
     decode: Callable[[list[int]], str]
-    """ Function to decode a list of token ids to a string"""
+    """ Function to decode a list of token IDs to a string"""
     encode: Callable[[str], list[int]]
-    """ Function to encode a string to a list of token ids"""
+    """ Function to encode a string to a list of token IDs"""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:

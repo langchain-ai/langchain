@@ -776,42 +776,41 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     Use to create flexible templated prompts for chat models.
 
-    Examples:
-        !!! warning "Behavior changed in 0.2.24"
-            You can pass any Message-like formats supported by
-            `ChatPromptTemplate.from_messages()` directly to `ChatPromptTemplate()`
-            init.
+    !!! warning "Behavior changed in 0.2.24"
+        You can pass any Message-like formats supported by
+        `ChatPromptTemplate.from_messages()` directly to `ChatPromptTemplate()`
+        init.
 
-        ```python
-        from langchain_core.prompts import ChatPromptTemplate
+    ```python
+    from langchain_core.prompts import ChatPromptTemplate
 
-        template = ChatPromptTemplate(
-            [
-                ("system", "You are a helpful AI bot. Your name is {name}."),
-                ("human", "Hello, how are you doing?"),
-                ("ai", "I'm doing well, thanks!"),
-                ("human", "{user_input}"),
-            ]
-        )
+    template = ChatPromptTemplate(
+        [
+            ("system", "You are a helpful AI bot. Your name is {name}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{user_input}"),
+        ]
+    )
 
-        prompt_value = template.invoke(
-            {
-                "name": "Bob",
-                "user_input": "What is your name?",
-            }
-        )
-        # Output:
-        # ChatPromptValue(
-        #    messages=[
-        #        SystemMessage(content='You are a helpful AI bot. Your name is Bob.'),
-        #        HumanMessage(content='Hello, how are you doing?'),
-        #        AIMessage(content="I'm doing well, thanks!"),
-        #        HumanMessage(content='What is your name?')
-        #    ]
-        # )
-        ```
+    prompt_value = template.invoke(
+        {
+            "name": "Bob",
+            "user_input": "What is your name?",
+        }
+    )
+    # Output:
+    # ChatPromptValue(
+    #    messages=[
+    #        SystemMessage(content='You are a helpful AI bot. Your name is Bob.'),
+    #        HumanMessage(content='Hello, how are you doing?'),
+    #        AIMessage(content="I'm doing well, thanks!"),
+    #        HumanMessage(content='What is your name?')
+    #    ]
+    # )
+    ```
 
-    Messages Placeholder:
+    !!! note "Messages Placeholder"
 
         ```python
         # In addition to Human/AI/Tool/Function messages,
@@ -852,12 +851,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         # )
         ```
 
-    Single-variable template:
+    !!! note "Single-variable template"
 
         If your prompt has only a single input variable (i.e., 1 instance of "{variable_nams}"),
         and you invoke the template with a non-dict object, the prompt template will
         inject the provided argument into that variable location.
-
 
         ```python
         from langchain_core.prompts import ChatPromptTemplate

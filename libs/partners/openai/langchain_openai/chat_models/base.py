@@ -2777,7 +2777,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         **Use `extra_body` for:**
 
         - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio,
-            etc.)
+            OpenRouter, etc.)
         - Parameters that need to be nested under `extra_body` in the request
         - Any non-standard OpenAI API parameters
 

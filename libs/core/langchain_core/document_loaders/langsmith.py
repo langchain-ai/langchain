@@ -14,13 +14,13 @@ from langchain_core.documents import Document
 
 
 class LangSmithLoader(BaseLoader):
-    """Load LangSmith Dataset examples as Documents.
+    """Load LangSmith Dataset examples as `Document` objects.
 
-    Loads the example inputs as the Document page content and places the entire example
-    into the Document metadata. This allows you to easily create few-shot example
-    retrievers from the loaded documents.
+    Loads the example inputs as the `Document` page content and places the entire
+    example into the `Document` metadata. This allows you to easily create few-shot
+    example retrievers from the loaded documents.
 
-    ??? note "Lazy load"
+    ??? note "Lazy loading example"
 
         ```python
         from langchain_core.document_loaders import LangSmithLoader
@@ -66,12 +66,11 @@ class LangSmithLoader(BaseLoader):
             format_content: Function for converting the content extracted from the example
                 inputs into a string. Defaults to JSON-encoding the contents.
             example_ids: The IDs of the examples to filter by.
-            as_of: The dataset version tag OR
-                timestamp to retrieve the examples as of.
-                Response examples will only be those that were present at the time
-                of the tagged (or timestamped) version.
+            as_of: The dataset version tag or timestamp to retrieve the examples as of.
+                Response examples will only be those that were present at the time of
+                the tagged (or timestamped) version.
             splits: A list of dataset splits, which are
-                divisions of your dataset such as 'train', 'test', or 'validation'.
+                divisions of your dataset such as `train`, `test`, or `validation`.
                 Returns examples only from the specified splits.
             inline_s3_urls: Whether to inline S3 URLs.
             offset: The offset to start from.
