@@ -6,6 +6,9 @@ from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState, tool as dec_tool
 from .model import FakeToolCallingModel
 from langchain_core.messages import HumanMessage
+from langgraph.prebuilt import InjectedStore, ToolRuntime
+from langgraph.store.base import BaseStore
+from langgraph.store.memory import InMemoryStore
 
 
 @pytest.mark.skipif(
