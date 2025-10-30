@@ -86,7 +86,7 @@ AnyMessage = Annotated[
     | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
-""""A type representing any defined `Message` or `MessageChunk` type."""
+"""A type representing any defined `Message` or `MessageChunk` type."""
 
 
 def get_buffer_string(
