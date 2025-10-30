@@ -13,7 +13,7 @@ def test_chat_model(monkeypatch: pytest.MonkeyPatch) -> None:
         return {"openai": {"models": {"gpt-5": {"limit": {"context": 1024}}}}}
 
     monkeypatch.setattr(
-        "langchain_model_profiles.models_dev_sdk._ModelsDevClient._fetch_data",
+        "langchain_model_profiles._models_dev_sdk._ModelsDevClient._fetch_data",
         fake_fetch_data,
     )
 
@@ -29,7 +29,7 @@ def test_chat_model_no_data(monkeypatch: pytest.MonkeyPatch) -> None:
         return {"openai": {"models": {"gpt-5": {"limit": {"context": 1024}}}}}
 
     monkeypatch.setattr(
-        "langchain_model_profiles.models_dev_sdk._ModelsDevClient._fetch_data",
+        "langchain_model_profiles._models_dev_sdk._ModelsDevClient._fetch_data",
         fake_fetch_data,
     )
 
