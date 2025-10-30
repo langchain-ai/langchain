@@ -25,7 +25,7 @@ from typing_extensions import Self
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None  #: :meta private:
     async_client: Any = None  #: :meta private:
-    model: str = Field(default="claude-sonnet-4-5-20250929", alias="model_name")
+    model: str = Field(default="claude-sonnet-4-5", alias="model_name")
     """Model name to use."""
 
     max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
