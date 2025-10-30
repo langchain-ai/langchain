@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -1671,8 +1672,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         return llm | output_parser
 
     @property
+    @beta()
     def profile(self) -> ModelProfile:
-        """Return profiling information for the model."""
+        """Return profiling information for the model.
+
+        This property will relies on the `langchain-model-profiles` package to
+        retrieve chat model capabilities, such as context window sizes and supported
+        features.
+
+        Raises:
+            ImportError: If `langchain-model-profiles` is not installed.
+
+        Returns:
+            A `ModelProfile` object containing profiling information for the model.
+        """
         try:
             from langchain_model_profiles import get_model_profile  # noqa: PLC0415
         except ImportError as err:
