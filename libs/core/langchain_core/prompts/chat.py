@@ -776,11 +776,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     Use to create flexible templated prompts for chat models.
 
-    !!! warning "Behavior changed in 0.2.24"
-        You can pass any Message-like formats supported by
-        `ChatPromptTemplate.from_messages()` directly to `ChatPromptTemplate()`
-        init.
-
     ```python
     from langchain_core.prompts import ChatPromptTemplate
 
@@ -896,25 +891,35 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Create a chat prompt template from a variety of message formats.
 
         Args:
-            messages: sequence of message representations.
+            messages: Sequence of message representations.
+
                 A message can be represented using the following formats:
-                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                (message type, template); e.g., ("human", "{user_input}"),
-                (4) 2-tuple of (message class, template), (5) a string which is
-                shorthand for ("human", template); e.g., "{user_input}".
-            template_format: format of the template.
+
+                1. `BaseMessagePromptTemplate`
+                2. `BaseMessage`
+                3. 2-tuple of `(message type, template)`; e.g.,
+                    `("human", "{user_input}")`
+                4. 2-tuple of `(message class, template)`
+                5. A string which is shorthand for `("human", template)`; e.g.,
+                    `"{user_input}"`
+            template_format: Format of the template.
             input_variables: A list of the names of the variables whose values are
                 required as inputs to the prompt.
             optional_variables: A list of the names of the variables for placeholder
                 or MessagePlaceholder that are optional.
+
                 These variables are auto inferred from the prompt and user need not
                 provide them.
             partial_variables: A dictionary of the partial variables the prompt
-                template carries. Partial variables populate the template so that you
-                don't need to pass them in every time you call the prompt.
+                template carries.
+
+                Partial variables populate the template so that you don't need to pass
+                them in every time you call the prompt.
             validate_template: Whether to validate the template.
             input_types: A dictionary of the types of the variables the prompt template
-                expects. If not provided, all variables are assumed to be strings.
+                expects.
+
+                If not provided, all variables are assumed to be strings.
 
         Examples:
             Instantiation from a list of message templates:
@@ -1119,12 +1124,17 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
             ```
         Args:
-            messages: sequence of message representations.
+            messages: Sequence of message representations.
+
                 A message can be represented using the following formats:
-                (1) BaseMessagePromptTemplate, (2) BaseMessage, (3) 2-tuple of
-                (message type, template); e.g., ("human", "{user_input}"),
-                (4) 2-tuple of (message class, template), (5) a string which is
-                shorthand for ("human", template); e.g., "{user_input}".
+
+                1. `BaseMessagePromptTemplate`
+                2. `BaseMessage`
+                3. 2-tuple of `(message type, template)`; e.g.,
+                    `("human", "{user_input}")`
+                4. 2-tuple of `(message class, template)`
+                5. A string which is shorthand for `("human", template)`; e.g.,
+                    `"{user_input}"`
             template_format: format of the template.
 
         Returns:
@@ -1236,7 +1246,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Extend the chat template with a sequence of messages.
 
         Args:
-            messages: sequence of message representations to append.
+            messages: Sequence of message representations to append.
         """
         self.messages.extend(
             [_convert_to_message_template(message) for message in messages]

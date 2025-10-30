@@ -87,7 +87,7 @@ class ModelCallLimitExceededError(Exception):
 
 
 class ModelCallLimitMiddleware(AgentMiddleware[ModelCallLimitState, Any]):
-    """Middleware that tracks model call counts and enforces limits.
+    """Tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution
     and can terminate the agent when specified limits are reached. It supports

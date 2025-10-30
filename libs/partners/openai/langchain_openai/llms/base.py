@@ -799,7 +799,11 @@ class OpenAI(BaseOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "llms", "openai"]`
+        """
         return ["langchain", "llms", "openai"]
 
     @classmethod
