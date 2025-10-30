@@ -18,6 +18,7 @@ class _ModelsDevClient:
     @cached_property
     def _data(self) -> dict[str, Any]:
         """Fetch data from the API (cached)."""
+        # TODO: ttl
         response = httpx.get(self.API_URL, timeout=self._timeout)
         response.raise_for_status()
         return response.json()
