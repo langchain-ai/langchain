@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Script to refresh model profile data from models.dev.
+"""Refresh model profile data from models.dev.
 
-Run this script to update the bundled model data:
+Update the bundled model data by running:
     python scripts/refresh_data.py
 """
 

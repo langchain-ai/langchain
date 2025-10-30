@@ -8,7 +8,7 @@ from langchain_model_profiles._data_loader import _DataLoader
 class ModelProfile(TypedDict, total=False):
     """Model profile."""
 
-    # Input constraints
+    # --- Input constraints ---
     max_input_tokens: int
     image_inputs: bool
     image_url_inputs: bool
@@ -18,18 +18,18 @@ class ModelProfile(TypedDict, total=False):
     image_tool_message: bool
     pdf_tool_message: bool
 
-    # Output constraints
+    # --- Output constraints ---
     max_output_tokens: int
     reasoning_output: bool
     image_outputs: bool
     audio_outputs: bool
     video_outputs: bool
 
-    # Tool calling
+    # --- Tool calling ---
     tool_calling: bool
     tool_choice: bool
 
-    # Structured output
+    # --- Structured output ---
     structured_output: bool
 
 
@@ -45,11 +45,11 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
     """Get the model capabilities for a given model.
 
     Args:
-        provider_id: identifier for provider (e.g., "openai", "anthropic").
-        model_id: identifier for model (e.g., "gpt-5", "claude-sonnet-4-5-20250929").
+        provider_id: Identifier for provider (e.g., `'openai'`, `'anthropic'`).
+        model_id: Identifier for model (e.g., `'gpt-5'`, `'claude-sonnet-4-5-20250929'`).
 
     Returns:
-        The model capabilities or None if not found.
+        The model capabilities or `None` if not found in the data.
     """
     if not provider_id or not model_id:
         return None

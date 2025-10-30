@@ -13,10 +13,14 @@ else:
 
 
 class _DataLoader:
-    """Loads and merges model profile data from base and augmentations."""
+    """Loads and merges model profile data from base and augmentations.
+
+    See the README in `data/augmentations` directory for more details on the
+    augmentation structure and merge priority.
+    """
 
     def __init__(self) -> None:
-        """Initialize the data loader."""
+        """Initialize the loader."""
         self._data_dir = Path(__file__).parent / "data"
 
     @property
@@ -63,7 +67,7 @@ class _DataLoader:
         """Load all provider-level augmentations.
 
         Returns:
-            Dictionary mapping provider IDs to their augmentation data.
+            `dict` mapping provider IDs to their augmentation data.
         """
         augmentations: dict[str, dict[str, Any]] = {}
         providers_dir = self._augmentations_dir / "providers"
@@ -84,7 +88,7 @@ class _DataLoader:
         """Load all model-level augmentations.
 
         Returns:
-            Nested dictionary: provider_id -> model_id -> augmentation data.
+            Nested `dict`: `provider_id` -> `model_id` -> augmentation data.
         """
         augmentations: dict[str, dict[str, dict[str, Any]]] = {}
         models_dir = self._augmentations_dir / "models"
@@ -118,7 +122,7 @@ class _DataLoader:
             model_id: The model identifier.
 
         Returns:
-            Merged model data dictionary or None if not found.
+            Merged model data `dict` or `None` if not found.
         """
         provider = self._merged_data.get(provider_id)
         if provider is None:
