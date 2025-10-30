@@ -478,7 +478,7 @@ openai = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -539,8 +539,8 @@ name = "langchain-model-profiles"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "langchain-core" },
-    { name = "requests" },
 ]
 
 [package.dev-dependencies]
@@ -559,7 +559,6 @@ test = [
     { name = "pytest-xdist" },
     { name = "syrupy" },
     { name = "toml" },
-    { name = "types-requests" },
 ]
 test-integration = [
     { name = "langchain-core" },
@@ -571,8 +570,8 @@ typing = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "langchain-core", editable = "../core" },
-    { name = "requests" },
 ]
 
 [package.metadata.requires-dev]
@@ -589,7 +588,6 @@ test = [
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
-    { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
 ]
 test-integration = [{ name = "langchain-core", editable = "../core" }]
 typing = [
@@ -1538,18 +1536,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
-]
-
-[[package]]
-name = "types-requests"
-version = "2.32.4.20250913"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/36/27/489922f4505975b11de2b5ad07b4fe1dca0bca9be81a703f26c5f3acfce5/types_requests-2.32.4.20250913.tar.gz", hash = "sha256:abd6d4f9ce3a9383f269775a9835a4c24e5cd6b9f647d64f88aa4613c33def5d", size = 23113, upload-time = "2025-09-13T02:40:02.309Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/20/9a227ea57c1285986c4cf78400d0a91615d25b24e257fd9e2969606bdfae/types_requests-2.32.4.20250913-py3-none-any.whl", hash = "sha256:78c9c1fffebbe0fa487a418e0fa5252017e9c60d1a2da394077f1780f655d7e1", size = 20658, upload-time = "2025-09-13T02:40:01.115Z" },
 ]
 
 [[package]]

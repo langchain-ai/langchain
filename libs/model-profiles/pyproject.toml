@@ -8,7 +8,7 @@ license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
-    "requests",
+    "httpx>=0.23.0, <1",
 ]
 
 name = "langchain-model-profiles"
@@ -32,7 +32,6 @@ test = [
     "pytest-socket>=0.6.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
     "pytest-mock",
-    "types-requests>=2.31.0,<3.0.0",
     "syrupy>=4.0.2,<5.0.0",
     "toml>=0.10.2,<1.0.0",
     "langchain[openai]>=1.0.2",

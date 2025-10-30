@@ -3,30 +3,24 @@
 Temporary solution until we persist data in the package.
 """
 
+from functools import cached_property
 from typing import Any
 
-import requests
+import httpx
 
 
 class _ModelsDevClient:
-    """Client for interacting with the models.dev API."""
-
     API_URL = "https://models.dev/api.json"
 
-    def __init__(self) -> None:
-        """Initialize the client."""
-        self._data: dict[str, Any] | None = None
+    def __init__(self, timeout: int = 30) -> None:
+        self._timeout = timeout
 
-    def _fetch_data(self) -> dict[str, Any]:
-        """Fetch data from the API (with caching)."""
-        if self._data is not None:
-            return self._data
-
-        response = requests.get(self.API_URL, timeout=30)
+    @cached_property
+    def _data(self) -> dict[str, Any]:
+        """Fetch data from the API (cached)."""
+        response = httpx.get(self.API_URL, timeout=self._timeout)
         response.raise_for_status()
-        self._data = response.json()
-
-        return self._data
+        return response.json()
 
     def get_profile_data(
         self, provider_id: str, model_id: str
@@ -40,14 +34,9 @@ class _ModelsDevClient:
         Returns:
             Model data dictionary or None if not found.
         """
-        data = self._fetch_data()
-        provider = data.get(provider_id)
+        provider = self._data.get(provider_id)
         if provider is None:
             return None
 
         models = provider.get("models", {})
         return models.get(model_id)
-
-    def clear_cache(self) -> None:
-        """Clear the cached API data."""
-        self._data = None
