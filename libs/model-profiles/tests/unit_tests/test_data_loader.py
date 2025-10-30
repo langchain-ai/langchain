@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from langchain.model_profiles._data_loader import _DataLoader
+from langchain_model_profiles._data_loader import _DataLoader
 
 
 @pytest.fixture

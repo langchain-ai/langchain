@@ -76,7 +76,7 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import uuid
 
-    from langchain.model_profiles import ModelProfile  # type: ignore[import-not-found]
+    from langchain_model_profiles import ModelProfile  # type: ignore[import-not-found]
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -1687,7 +1687,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             A `ModelProfile` object containing profiling information for the model.
         """
         try:
-            from langchain.model_profiles import get_model_profile  # noqa: PLC0415
+            from langchain_model_profiles import get_model_profile  # noqa: PLC0415
         except ImportError as err:
             informative_error_message = (
                 "To access model profiling information, please install the "

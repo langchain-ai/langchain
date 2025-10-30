@@ -7,8 +7,8 @@ Centralized reference of LLM capabilities for LangChain chat models.
 
 ## Overview
 
-`langchain-model-profiles` is a namespace package that enables programmatic access to
-model capabilities through a `.profile` property on LangChain chat models.
+`langchain-model-profiles` enables programmatic access to model capabilities through a
+`.profile` property on LangChain chat models.
 
 This allows you to query model-specific features such as context window sizes, supported
 input/output modalities, structured output support, tool calling capabilities, and more.
@@ -24,13 +24,13 @@ This package augments the data from models.dev with some additional fields.
 ## Installation
 
 ```bash
-pip install langchain-model-profiles
+pip install "langchain[model-profiles]"
 ```
 
 Or with uv:
 
 ```bash
-uv add langchain-model-profiles
+uv add "langchain[model-profiles]"
 ```
 
 ## Usage
@@ -84,21 +84,6 @@ The `ModelProfile` TypedDict includes the following fields:
 
 ### Structured Output
 - `structured_output` (bool): Supports dedicated structured output features
-
-## Direct API Usage
-
-You can also use the package API directly without a chat model instance:
-
-```python
-from langchain.model_profiles import get_model_profile
-
-# Get profile for a specific model
-profile = get_model_profile("openai", "gpt-5")
-
-if profile:
-    print(f"Max input tokens: {profile.get('max_input_tokens')}")
-    print(f"Supports images: {profile.get('image_inputs')}")
-```
 
 ## Development
 

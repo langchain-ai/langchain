@@ -2,9 +2,6 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-packages = ["langchain"]
-
 [project]
 authors = []
 license = { text = "MIT" }
@@ -91,11 +88,6 @@ flake8-annotations.allow-star-arg-any = true
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
-
-[tool.mypy]
-namespace_packages = true
-explicit_package_bases = true
-mypy_path = "."
 
 [tool.coverage.run]
 omit = ["tests/*"]
