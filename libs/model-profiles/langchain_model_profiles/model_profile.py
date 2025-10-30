@@ -33,7 +33,7 @@ class ModelProfile(TypedDict, total=False):
     structured_output: bool
 
 
-_loader = _DataLoader()
+_LOADER = _DataLoader()
 
 _lc_type_to_provider_id = {
     "openai-chat": "openai",
@@ -54,7 +54,7 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
     if not provider_id or not model_id:
         return None
 
-    data = _loader.get_profile_data(
+    data = _LOADER.get_profile_data(
         _lc_type_to_provider_id.get(provider_id, provider_id), model_id
     )
     if not data:
