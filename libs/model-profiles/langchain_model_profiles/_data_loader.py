@@ -25,7 +25,10 @@ class _DataLoader:
 
     @property
     def _base_data_path(self) -> Path:
-        """Get path to base data file."""
+        """Get path to base data file.
+
+        `models.json` is the downloaded data from models.dev.
+        """
         return self._data_dir / "models.json"
 
     @property
@@ -37,17 +40,23 @@ class _DataLoader:
     def _merged_data(self) -> dict[str, Any]:
         """Load and merge all data once at startup.
 
+        Merging order:
+
+        1. Base data from `models.json`
+        2. Provider-level augmentations from `augmentations/providers/{provider}.toml`
+        3. Model-level augmentations from `augmentations/models/{provider}/{model}.toml`
+
         Returns:
             Fully merged provider data with all augmentations applied.
         """
-        # Load base data
+        # Load base data; let exceptions propagate to user
         with self._base_data_path.open("r") as f:
             data = json.load(f)
 
         provider_augmentations = self._load_provider_augmentations()
         model_augmentations = self._load_model_augmentations()
 
-        # Merge everything
+        # Merge contents
         for provider_id, provider_data in data.items():
             models = provider_data.get("models", {})
             provider_aug = provider_augmentations.get(provider_id, {})
