@@ -750,25 +750,13 @@ def create_agent(  # noqa: PLR0915
         if m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
         or m.__class__.awrap_model_call is not AgentMiddleware.awrap_model_call
     ]
-    # Collect middleware with awrap_model_call or wrap_model_call hooks
-    # Include middleware with either implementation to ensure NotImplementedError is raised
-    # when middleware doesn't support the execution path
-    middleware_w_awrap_model_call = [
-        m
-        for m in middleware
-        if m.__class__.awrap_model_call is not AgentMiddleware.awrap_model_call
-        or m.__class__.wrap_model_call is not AgentMiddleware.wrap_model_call
-    ]
 
     # Compose wrap_model_call handlers into a single middleware stack (sync)
     wrap_model_call_handler = None
+    awrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [m.wrap_model_call for m in middleware_w_wrap_model_call]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
-
-    # Compose awrap_model_call handlers into a single middleware stack (async)
-    awrap_model_call_handler = None
-    if middleware_w_awrap_model_call:
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
