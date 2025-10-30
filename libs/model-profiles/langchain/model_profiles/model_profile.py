@@ -2,7 +2,7 @@
 
 from typing_extensions import TypedDict
 
-from langchain.model_profiles._models_dev_sdk import _ModelsDevClient
+from langchain.model_profiles._data_loader import _DataLoader
 
 
 class ModelProfile(TypedDict, total=False):
@@ -33,7 +33,7 @@ class ModelProfile(TypedDict, total=False):
     structured_output: bool
 
 
-_client = _ModelsDevClient()
+_loader = _DataLoader()
 
 _lc_type_to_provider_id = {
     "openai-chat": "openai",
@@ -54,7 +54,7 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
     if not provider_id or not model_id:
         return None
 
-    data = _client.get_profile_data(
+    data = _loader.get_profile_data(
         _lc_type_to_provider_id.get(provider_id, provider_id), model_id
     )
     if not data:
@@ -63,7 +63,11 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
     profile = {
         "max_input_tokens": data.get("limit", {}).get("context"),
         "image_inputs": "image" in data.get("modalities", {}).get("input", []),
+        "image_url_inputs": data.get("image_url_inputs"),
+        "image_tool_message": data.get("image_tool_message"),
         "audio_inputs": "audio" in data.get("modalities", {}).get("input", []),
+        "pdf_inputs": "pdf" in data.get("modalities", {}).get("input", []),
+        "pdf_tool_message": data.get("pdf_tool_message"),
         "video_inputs": "video" in data.get("modalities", {}).get("input", []),
         "max_output_tokens": data.get("limit", {}).get("output"),
         "reasoning_output": data.get("reasoning"),
@@ -71,6 +75,8 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
         "audio_outputs": "audio" in data.get("modalities", {}).get("output", []),
         "video_outputs": "video" in data.get("modalities", {}).get("output", []),
         "tool_calling": data.get("tool_call"),
+        "tool_choice": data.get("tool_choice"),
+        "structured_output": data.get("structured_output"),
     }
 
     return ModelProfile(**{k: v for k, v in profile.items() if v is not None})  # type: ignore[typeddict-item]

@@ -485,6 +485,7 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
+    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -493,7 +494,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity", "model-profiles"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -587,11 +588,14 @@ name = "langchain-model-profiles"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "httpx" },
     { name = "langchain-core" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
 [package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+]
 lint = [
     { name = "langchain" },
     { name = "ruff" },
@@ -619,11 +623,12 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.23.0,<1" },
     { name = "langchain-core", editable = "../core" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
 ]
 
 [package.metadata.requires-dev]
+dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
 lint = [
     { name = "langchain", editable = "../langchain_v1" },
     { name = "ruff", specifier = ">=0.12.2,<0.13.0" },

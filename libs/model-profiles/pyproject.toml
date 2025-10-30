@@ -11,7 +11,7 @@ license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
-    "httpx>=0.23.0, <1",
+    "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
 ]
 
 name = "langchain-model-profiles"
@@ -27,6 +27,10 @@ Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
+dev = [
+    "httpx>=0.23.0,<1",  # For refresh_data.py script
+]
+
 test = [
     "pytest>=8.0.0,<9.0.0",
     "pytest-cov>=4.0.0,<8.0.0",
