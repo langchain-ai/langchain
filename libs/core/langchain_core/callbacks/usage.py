@@ -24,7 +24,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
         from langchain_core.callbacks import UsageMetadataCallbackHandler
 
         llm_1 = init_chat_model(model="openai:gpt-4o-mini")
-        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
+        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-20241022")
 
         callback = UsageMetadataCallbackHandler()
         result_1 = llm_1.invoke("Hello", config={"callbacks": [callback]})
@@ -109,7 +109,7 @@ def get_usage_metadata_callback(
         from langchain_core.callbacks import get_usage_metadata_callback
 
         llm_1 = init_chat_model(model="openai:gpt-4o-mini")
-        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-latest")
+        llm_2 = init_chat_model(model="anthropic:claude-3-5-haiku-20241022")
 
         with get_usage_metadata_callback() as cb:
             llm_1.invoke("Hello")
