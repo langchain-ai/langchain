@@ -757,7 +757,7 @@ def create_agent(  # noqa: PLR0915
     if middleware_w_wrap_model_call:
         sync_handlers = [m.wrap_model_call for m in middleware_w_wrap_model_call]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
-        async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
+        async_handlers = [m.awrap_model_call for m in middleware_w_wrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
     state_schemas = {m.state_schema for m in middleware}
