@@ -1,8 +1,7 @@
 # 🦜🪪 langchain-model-profiles
 
-!!! warning "Beta API"
-
-    This package is currently in development and the API is subject to change.
+> [!WARNING]
+> This package is currently in development and the API is subject to change.
 
 Centralized reference of LLM capabilities for LangChain chat models.
 
@@ -59,9 +58,8 @@ if profile.get("max_input_tokens"):
 
 The `ModelProfile` TypedDict includes the following fields:
 
-!!! warning "Beta API"
-
-    These fields are subject to change while the package is in development.
+> [!WARNING]
+> This package is currently in development and these fields are subject to change.
 
 ### Input Constraints
 - `max_input_tokens` (int): Maximum number of input tokens
