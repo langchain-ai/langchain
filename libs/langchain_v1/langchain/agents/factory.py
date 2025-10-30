@@ -677,24 +677,11 @@ def create_agent(  # noqa: PLR0915
 
     # Chain all wrap_tool_call handlers into a single composed handler
     wrap_tool_call_wrapper = None
+    awrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [m.wrap_tool_call for m in middleware_w_wrap_tool_call]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
-
-    # Collect middleware with awrap_tool_call or wrap_tool_call hooks
-    # Include middleware with either implementation to ensure NotImplementedError is raised
-    # when middleware doesn't support the execution path
-    middleware_w_awrap_tool_call = [
-        m
-        for m in middleware
-        if m.__class__.awrap_tool_call is not AgentMiddleware.awrap_tool_call
-        or m.__class__.wrap_tool_call is not AgentMiddleware.wrap_tool_call
-    ]
-
-    # Chain all awrap_tool_call handlers into a single composed async handler
-    awrap_tool_call_wrapper = None
-    if middleware_w_awrap_tool_call:
-        async_wrappers = [m.awrap_tool_call for m in middleware_w_awrap_tool_call]
+        async_wrappers = [m.awrap_tool_call for m in middleware_w_wrap_tool_call]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
 
     # Setup tools
