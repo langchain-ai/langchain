@@ -2,7 +2,7 @@
 
 from typing_extensions import TypedDict
 
-from langchain_model_profiles._models_dev_sdk import _ModelsDevClient
+from langchain.model_profiles._models_dev_sdk import _ModelsDevClient
 
 
 class ModelProfile(TypedDict, total=False):

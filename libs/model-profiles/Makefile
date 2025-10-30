@@ -35,7 +35,7 @@ PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
 lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/model-profiles --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=langchain_model_profiles
+lint_package: PYTHON_FILES=langchain/model_profiles
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -48,7 +48,7 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
-check_imports: $(shell find langchain_model_profiles -name '*.py')
+check_imports: $(shell find langchain/model_profiles -name '*.py')
 	uv run --all-groups python ./scripts/check_imports.py $^
 
 ######################
