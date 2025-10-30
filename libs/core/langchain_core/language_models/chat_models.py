@@ -1685,6 +1685,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         provider_id = self._llm_type
         model_name = (
+            # Model name is not standardized across integrations. New integrations
+            # should prefer `model`.
             getattr(self, "model", None)
             or getattr(self, "model_name", None)
             or getattr(self, "model_id", "")
