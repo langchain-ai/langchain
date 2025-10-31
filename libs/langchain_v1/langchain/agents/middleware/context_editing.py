@@ -259,7 +259,7 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
                 system_msg = [SystemMessage(content=request.system_prompt)]
-            elif isinstance(request.system_prompt, SystemMessage):
+            elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
                 system_msg = [request.system_prompt]
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
