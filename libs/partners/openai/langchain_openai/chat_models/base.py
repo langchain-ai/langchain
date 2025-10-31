@@ -1347,6 +1347,17 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+
+        wrap_text = lambda text :{"type":"text","text":text} if isinstance(text,str) else {**text}
+        if "cache_control" in payload:
+            dup_message = {** payload["messages"][-1]}
+            last_message_content = dup_message["content"]
+            if isinstance(last_message_content,str):
+                dup_message["content"]=[wrap_text(last_message_content)]
+            elif isinstance(last_message_content,list):
+                dup_message["content"] = [wrap_text(content) for content in last_message_content]
+            dup_message["content"][-1]["cache_control"] = payload.pop("cache_control")
+            payload["messages"][-1] = dup_message
         return payload
 
     def _create_chat_result(
