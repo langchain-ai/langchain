@@ -1,6 +1,5 @@
 """End to end test for fetching model profiles from a chat model."""
 
-import pytest
 from langchain.chat_models import init_chat_model
 
 
@@ -12,7 +11,7 @@ def test_chat_model() -> None:
     assert model.profile["structured_output"]
 
 
-def test_chat_model_no_data(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_chat_model_no_data() -> None:
     """Test that chat model handles missing profile data."""
     model = init_chat_model("openai:gpt-fake", api_key="foo")
     assert model.profile == {}
