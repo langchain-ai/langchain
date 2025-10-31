@@ -2782,6 +2782,35 @@
         "release_date": "2025-07-23",
         "temperature": true,
         "tool_call": true
+      },
+      "zai-glm-4.6": {
+        "attachment": false,
+        "cost": {
+          "cache_read": 0,
+          "cache_write": 0,
+          "input": 0,
+          "output": 0
+        },
+        "id": "zai-glm-4.6",
+        "last_updated": "2025-11-05",
+        "limit": {
+          "context": 131072,
+          "output": 40960
+        },
+        "modalities": {
+          "input": [
+            "text"
+          ],
+          "output": [
+            "text"
+          ]
+        },
+        "name": "Z.AI GLM-4.6",
+        "open_weights": true,
+        "reasoning": false,
+        "release_date": "2025-11-05",
+        "temperature": true,
+        "tool_call": true
       }
     },
     "name": "Cerebras",
@@ -6710,7 +6739,7 @@
         "tool_call": true
       }
     },
-    "name": "Vertex",
+    "name": "Vertex (Anthropic)",
     "npm": "@ai-sdk/google-vertex"
   },
   "groq": {

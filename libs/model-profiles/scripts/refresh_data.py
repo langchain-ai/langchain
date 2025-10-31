@@ -42,7 +42,7 @@ PROVIDER_SUBSET = [
 def main() -> None:
     """Download and save the latest model data from models.dev."""
     api_url = "https://models.dev/api.json"
-    output_dir = Path(__file__).parent.parent / "langchain" / "model_profiles" / "data"
+    output_dir = Path(__file__).parent.parent / "langchain_model_profiles" / "data"
     output_file = output_dir / "models.json"
 
     print(f"Downloading data from {api_url}...")  # noqa: T201
