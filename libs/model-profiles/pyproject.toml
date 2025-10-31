@@ -18,7 +18,8 @@ readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
-Source = "https://github.com/langchain-ai/langchain-model-profiles"
+Documentation = "https://reference.langchain.com/python/langchain_model_profiles/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/model-profiles"
 Twitter = "https://x.com/LangChainAI"
 Slack = "https://www.langchain.com/join-community"
 Reddit = "https://www.reddit.com/r/LangChain/"
@@ -38,7 +39,7 @@ test = [
     "pytest-mock",
     "syrupy>=4.0.2,<5.0.0",
     "toml>=0.10.2,<1.0.0",
-    "langchain[openai]>=1.0.2",
+    "langchain[openai]>=1.0.2,<2.0.0",
     "langchain-core",
 ]
 

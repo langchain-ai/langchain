@@ -1,10 +1,10 @@
-# Model Profile Augmentations
+# Profile augmentations
 
 This directory contains LangChain-specific augmentations to the base model data from models.dev.
 
 ## Structure
 
-```
+```txt
 augmentations/
 ├── providers/          # Provider-level augmentations (apply to all models from a provider)
 │   ├── anthropic.toml
@@ -17,7 +17,7 @@ augmentations/
         └── o1.toml
 ```
 
-## Merge Priority
+## Merge priority
 
 Data is merged in the following order (later overrides earlier):
 
@@ -25,7 +25,7 @@ Data is merged in the following order (later overrides earlier):
 2. Provider-level augmentations from `augmentations/providers/{provider}.toml`
 3. Model-level augmentations from `augmentations/models/{provider}/{model}.toml`
 
-## TOML Format
+## TOML format
 
 All augmentation files should use the following structure:
 
