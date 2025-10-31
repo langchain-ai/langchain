@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.2"
+version = "1.0.3"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -606,7 +606,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -664,7 +664,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
