@@ -319,6 +319,286 @@
       "destination": "https://reference.langchain.com/python/"
     },
     {
+      "source": "/api_reference/core/:path*",
+      "destination": "https://reference.langchain.com/python/langchain_core/"
+    },
+    {
+      "source": "/api_reference/core",
+      "destination": "https://reference.langchain.com/python/langchain_core/"
+    },
+    {
+      "source": "/api_reference/community/:path*",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/api_reference/community",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/api_reference/langchain/:path*",
+      "destination": "https://reference.langchain.com/python/langchain/"
+    },
+    {
+      "source": "/api_reference/langchain",
+      "destination": "https://reference.langchain.com/python/langchain/"
+    },
+    {
+      "source": "/api_reference/experimental/:path*",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/api_reference/experimental",
+      "destination": "https://reference.langchain.com/python/"
+    },
+    {
+      "source": "/api_reference/text_splitters/:path*",
+      "destination": "https://reference.langchain.com/python/langchain_text_splitters/"
+    },
+    {
+      "source": "/api_reference/text_splitters",
+      "destination": "https://reference.langchain.com/python/langchain_text_splitters/"
+    },
+    {
+      "source": "/api_reference/anthropic/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_anthropic/"
+    },
+    {
+      "source": "/api_reference/anthropic",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_anthropic/"
+    },
+    {
+      "source": "/api_reference/openai/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_openai/"
+    },
+    {
+      "source": "/api_reference/openai",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_openai/"
+    },
+    {
+      "source": "/api_reference/cohere/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_cohere/"
+    },
+    {
+      "source": "/api_reference/cohere",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_cohere/"
+    },
+    {
+      "source": "/api_reference/google_community/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_community/"
+    },
+    {
+      "source": "/api_reference/google_community",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_community/"
+    },
+    {
+      "source": "/api_reference/google_vertexai/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_vertexai/"
+    },
+    {
+      "source": "/api_reference/google_vertexai",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_vertexai/"
+    },
+    {
+      "source": "/api_reference/google_genai/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_genai/"
+    },
+    {
+      "source": "/api_reference/google_genai",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_google_genai/"
+    },
+    {
+      "source": "/api_reference/huggingface/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_huggingface/"
+    },
+    {
+      "source": "/api_reference/huggingface",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_huggingface/"
+    },
+    {
+      "source": "/api_reference/aws/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_aws/"
+    },
+    {
+      "source": "/api_reference/aws",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_aws/"
+    },
+    {
+      "source": "/api_reference/azure_dynamic_sessions/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/azure_dynamic_sessions",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/pinecone/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_pinecone/"
+    },
+    {
+      "source": "/api_reference/pinecone",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_pinecone/"
+    },
+    {
+      "source": "/api_reference/qdrant/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_qdrant/"
+    },
+    {
+      "source": "/api_reference/qdrant",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_qdrant/"
+    },
+    {
+      "source": "/api_reference/chroma/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_chroma/"
+    },
+    {
+      "source": "/api_reference/chroma",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_chroma/"
+    },
+    {
+      "source": "/api_reference/milvus/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_milvus/"
+    },
+    {
+      "source": "/api_reference/milvus",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_milvus/"
+    },
+    {
+      "source": "/api_reference/postgres/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_postgres/"
+    },
+    {
+      "source": "/api_reference/postgres",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_postgres/"
+    },
+    {
+      "source": "/api_reference/mongodb/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_mongodb/"
+    },
+    {
+      "source": "/api_reference/mongodb",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_mongodb/"
+    },
+    {
+      "source": "/api_reference/elasticsearch/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_elasticsearch/"
+    },
+    {
+      "source": "/api_reference/elasticsearch",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_elasticsearch/"
+    },
+    {
+      "source": "/api_reference/astradb/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_astradb/"
+    },
+    {
+      "source": "/api_reference/astradb",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_astradb/"
+    },
+    {
+      "source": "/api_reference/couchbase/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/couchbase",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/ollama/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_ollama/"
+    },
+    {
+      "source": "/api_reference/ollama",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_ollama/"
+    },
+    {
+      "source": "/api_reference/fireworks/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_fireworks/"
+    },
+    {
+      "source": "/api_reference/fireworks",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_fireworks/"
+    },
+    {
+      "source": "/api_reference/mistralai/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_mistralai/"
+    },
+    {
+      "source": "/api_reference/mistralai",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_mistralai/"
+    },
+    {
+      "source": "/api_reference/together/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_together/"
+    },
+    {
+      "source": "/api_reference/together",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_together/"
+    },
+    {
+      "source": "/api_reference/voyageai/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/voyageai",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/ai21/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/ai21",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/nvidia_ai_endpoints/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_nvidia_ai_endpoints/"
+    },
+    {
+      "source": "/api_reference/nvidia_ai_endpoints",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_nvidia_ai_endpoints/"
+    },
+    {
+      "source": "/api_reference/prompty/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_prompty/"
+    },
+    {
+      "source": "/api_reference/prompty",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_prompty/"
+    },
+    {
+      "source": "/api_reference/box/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/box",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/exa/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_exa/"
+    },
+    {
+      "source": "/api_reference/exa",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_exa/"
+    },
+    {
+      "source": "/api_reference/robocorp/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/robocorp",
+      "destination": "https://reference.langchain.com/python/integrations/"
+    },
+    {
+      "source": "/api_reference/unstructured/:path*",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_unstructured/"
+    },
+    {
+      "source": "/api_reference/unstructured",
+      "destination": "https://reference.langchain.com/python/integrations/langchain_unstructured/"
+    },
+    {
       "source": "/api_reference/:path*",
       "destination": "https://reference.langchain.com/python/"
     },
