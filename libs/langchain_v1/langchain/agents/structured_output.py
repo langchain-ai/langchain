@@ -31,6 +31,23 @@ SchemaT = TypeVar("SchemaT")
 SchemaKind = Literal["pydantic", "dataclass", "typeddict", "json_schema"]
 
 
+def _supports_provider_strategy(model_name: str) -> bool:
+    """Check if a model supports provider-specific structured output.
+
+    Args:
+        model_name: Model name string.
+
+    Returns:
+        `True` if the model supports provider-specific structured output, `False` otherwise.
+    """
+    return (
+        "grok" in model_name.lower()
+        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
+        if model_name
+        else False
+    )
+
+
 class StructuredOutputError(Exception):
     """Base class for structured output errors."""
 
@@ -244,7 +261,56 @@ class ToolStrategy(Generic[SchemaT]):
 
 @dataclass(init=False)
 class ProviderStrategy(Generic[SchemaT]):
-    """Use the model provider's native structured output method."""
+    """Use the model provider's native structured output method.
+
+    `ProviderStrategy` uses provider-specific structured output APIs that enforce
+    JSON schema validation at the model level. This provides stronger guarantees
+    than tool-based approaches but is only supported by certain providers.
+
+    Supported Providers:
+        - **OpenAI**: All models that support structured outputs (requires `strict=True`)
+        - **X.AI (Grok)**: All models that support structured outputs (requires `strict=True`)
+
+    Important:
+        When using `ProviderStrategy`, the agent will validate at runtime that the
+        model provider is supported. If you're using an unsupported provider, consider:
+
+        - Using a **raw schema** (recommended): Automatically selects the best strategy
+          based on model capabilities
+        - Using **`ToolStrategy`**: Explicitly use tool-based structured output for any
+          provider
+
+    Example:
+        ```python
+        from langchain.agents import create_agent
+        from langchain.agents.structured_output import ProviderStrategy
+        from pydantic import BaseModel
+
+
+        class WeatherResponse(BaseModel):
+            temperature: float
+            condition: str
+
+
+        # Explicitly use provider strategy (only for OpenAI/Grok)
+        agent = create_agent(
+            model="openai:gpt-4", tools=[], response_format=ProviderStrategy(WeatherResponse)
+        )
+
+        # Or use raw schema for automatic strategy selection (recommended)
+        # This will auto-select ProviderStrategy for OpenAI/Grok, ToolStrategy for others
+        agent = create_agent(
+            model="openai:gpt-4",
+            tools=[],
+            response_format=WeatherResponse,  # Auto-selects best strategy
+        )
+        ```
+
+    Note:
+        `ProviderStrategy` can be used with middleware that changes the model at runtime.
+        Validation occurs after the model is resolved, allowing dynamic model selection
+        while ensuring provider compatibility.
+    """
 
     schema: type[SchemaT]
     """Schema for native mode."""
@@ -261,9 +327,19 @@ class ProviderStrategy(Generic[SchemaT]):
         self.schema_spec = _SchemaSpec(schema)
 
     def to_model_kwargs(self) -> dict[str, Any]:
-        """Convert to kwargs to bind to a model to force structured output."""
-        # OpenAI:
-        # - see https://platform.openai.com/docs/guides/structured-outputs
+        """Convert to kwargs to bind to a model to force structured output.
+
+        Args:
+            model: The model instance to check provider for conditional `strict` param.
+
+        Returns:
+            Model kwargs with `response_format` and optionally `strict`.
+        """
+        # Provider-specific structured output:
+        # - OpenAI: https://platform.openai.com/docs/guides/structured-outputs
+        #   - Uses strict=True for schema validation
+        # - X.AI (Grok): https://docs.x.ai/docs/guides/structured-outputs
+        #   - Uses strict=True for schema validation (required)
         response_format = {
             "type": "json_schema",
             "json_schema": {
@@ -271,7 +347,8 @@ class ProviderStrategy(Generic[SchemaT]):
                 "schema": self.schema_spec.json_schema,
             },
         }
-        return {"response_format": response_format}
+
+        return {"response_format": response_format, "strict": True}
 
 
 @dataclass
