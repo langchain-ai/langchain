@@ -1031,8 +1031,8 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
-            messages = [SystemMessage(request.system_prompt), *messages]
-        elif isinstance(request.system_prompt, SystemMessage):
+            messages = [SystemMessage(content=request.system_prompt), *messages]
+        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
             messages = [request.system_prompt, *messages]
 
         output = model_.invoke(messages)
@@ -1086,8 +1086,8 @@ def create_agent(  # noqa: PLR0915
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
-            messages = [SystemMessage(request.system_prompt), *messages]
-        elif isinstance(request.system_prompt, SystemMessage):
+            messages = [SystemMessage(content=request.system_prompt), *messages]
+        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
             messages = [request.system_prompt, *messages]
 
         output = await model_.ainvoke(messages)
