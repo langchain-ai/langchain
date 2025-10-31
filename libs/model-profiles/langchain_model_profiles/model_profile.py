@@ -84,6 +84,8 @@ _lc_type_to_provider_id = {
     "anthropic-chat": "anthropic",
     "chat-google-generative-ai": "google",
     "vertexai": "google-vertex",
+    "amazon_bedrock_chat": "amazon-bedrock",
+    "amazon_bedrock_converse_chat": "amazon-bedrock",
 }
 
 
@@ -102,6 +104,9 @@ def _translate_provider_and_model_id(provider: str, model: str) -> tuple[str, st
     if provider_id in ("google", "google-vertex"):
         # convert models/gemini-2.0-flash-001 to gemini-2.0-flash
         model_id = re.sub(r"-\d{3}$", "", model.replace("models/", ""))
+    elif provider_id == "amazon-bedrock":
+        # strip region prefixes like "us."
+        model_id = re.sub(r"^[A-Za-z]{2}\.", "", model)
     else:
         model_id = model
 
