@@ -149,8 +149,8 @@ jobs:
             fi
           fi
 
-          # if PREV_TAG is empty, let it be empty
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or came out to 0.0.0, let it be empty
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             echo "No previous tag found - first release"
           else
             # confirm prev-tag actually exists in git repo with git tag
