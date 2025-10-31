@@ -202,7 +202,15 @@ class TodoListMiddleware(AgentMiddleware):
             request.system_prompt = self.system_prompt
         elif isinstance(request.system_prompt, str):
             request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        elif isinstance(request.system_prompt, SystemMessage):
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, str
+        ):
+            request.system_prompt = SystemMessage(
+                content=request.system_prompt.content + self.system_prompt
+            )
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, list
+        ):
             request.system_prompt = SystemMessage(
                 content=[*request.system_prompt.content, self.system_prompt]
             )
