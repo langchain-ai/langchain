@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -202,8 +202,10 @@ class TodoListMiddleware(AgentMiddleware):
             request.system_prompt = self.system_prompt
         elif isinstance(request.system_prompt, str):
             request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        else:
-            request.system_prompt = [*request.system_prompt, self.system_prompt]
+        elif isinstance(request.system_prompt, SystemMessage):
+            request.system_prompt = SystemMessage(
+                content=[*request.system_prompt.content, self.system_prompt]
+            )
         return handler(request)
 
     async def awrap_model_call(
@@ -216,6 +218,16 @@ class TodoListMiddleware(AgentMiddleware):
             request.system_prompt = self.system_prompt
         elif isinstance(request.system_prompt, str):
             request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-        else:
-            request.system_prompt = [*request.system_prompt, self.system_prompt]
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, str
+        ):
+            request.system_prompt = SystemMessage(
+                content=request.system_prompt.content + self.system_prompt
+            )
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, list
+        ):
+            request.system_prompt = SystemMessage(
+                content=[*request.system_prompt.content, self.system_prompt]
+            )
         return await handler(request)

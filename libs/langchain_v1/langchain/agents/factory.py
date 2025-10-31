@@ -508,7 +508,7 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | list[str | dict] | None = None,
+    system_prompt: str | SystemMessage | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
@@ -540,11 +540,9 @@ def create_agent(  # noqa: PLR0915
 
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
-        system_prompt: An optional system prompt for the LLM.
+        system_prompt: An optional system prompt for the LLM or
+        can already be a [`SystemMessage`][langchain.messages.SystemMessage] object.
 
-            Prompts are converted to a
-            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
-            beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
 
             Middleware can intercept and modify agent behavior at various stages. See
@@ -1032,8 +1030,10 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
+        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
             messages = [SystemMessage(request.system_prompt), *messages]
+        elif isinstance(request.system_prompt, SystemMessage):
+            messages = [request.system_prompt, *messages]
 
         output = model_.invoke(messages)
 
@@ -1085,8 +1085,10 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
+        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
             messages = [SystemMessage(request.system_prompt), *messages]
+        elif isinstance(request.system_prompt, SystemMessage):
+            messages = [request.system_prompt, *messages]
 
         output = await model_.ainvoke(messages)
 
