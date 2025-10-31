@@ -588,6 +588,7 @@ version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -620,7 +621,10 @@ typing = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" }]
+requires-dist = [
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
+    { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
