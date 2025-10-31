@@ -1,5 +1,7 @@
 """Model profiles package."""
 
+import re
+
 from typing_extensions import TypedDict
 
 from langchain_model_profiles._data_loader import _DataLoader
@@ -80,26 +82,48 @@ _LOADER = _DataLoader()
 _lc_type_to_provider_id = {
     "openai-chat": "openai",
     "anthropic-chat": "anthropic",
+    "chat-google-generative-ai": "google",
+    "vertexai": "google-vertex",
 }
 
 
-def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
+def _translate_provider_and_model_id(provider: str, model: str) -> tuple[str, str]:
+    """Translate LangChain provider and model to models.dev equivalents.
+
+    Args:
+        provider: LangChain provider ID.
+        model: LangChain model ID.
+
+    Returns:
+        A tuple containing the models.dev provider ID and model ID.
+    """
+    provider_id = _lc_type_to_provider_id.get(provider, provider)
+
+    if provider_id in ("google", "google-vertex"):
+        # convert models/gemini-2.0-flash-001 to gemini-2.0-flash
+        model_id = re.sub(r"-\d{3}$", "", model.replace("models/", ""))
+    else:
+        model_id = model
+
+    return provider_id, model_id
+
+
+def get_model_profile(provider: str, model: str) -> ModelProfile | None:
     """Get the model capabilities for a given model.
 
     Args:
-        provider_id: Identifier for provider (e.g., `'openai'`, `'anthropic'`).
-        model_id: Identifier for model (e.g., `'gpt-5'`,
+        provider: Identifier for provider (e.g., `'openai'`, `'anthropic'`).
+        model: Identifier for model (e.g., `'gpt-5'`,
             `'claude-sonnet-4-5-20250929'`).
 
     Returns:
         The model capabilities or `None` if not found in the data.
     """
-    if not provider_id or not model_id:
+    if not provider or not model:
         return None
 
-    data = _LOADER.get_profile_data(
-        _lc_type_to_provider_id.get(provider_id, provider_id), model_id
-    )
+    provider_id, model_id = _translate_provider_and_model_id(provider, model)
+    data = _LOADER.get_profile_data(provider_id, model_id)
     if not data:
         # If either (1) provider not found or (2) model not found under matched provider
         return None
