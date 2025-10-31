@@ -1,6 +1,7 @@
 """End to end test for fetching model profiles from a chat model."""
 
 import pytest
+
 from langchain.chat_models import init_chat_model
 
 

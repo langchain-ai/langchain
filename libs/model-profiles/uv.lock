@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -587,7 +587,6 @@ name = "langchain-model-profiles"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "langchain-core" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 
@@ -621,10 +620,7 @@ typing = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "langchain-core", editable = "../core" },
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
-]
+requires-dist = [{ name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
