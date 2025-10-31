@@ -71,7 +71,8 @@ class ModelProfile(TypedDict, total=False):
 
     # --- Structured output ---
     structured_output: bool
-    """Whether the model supports [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)"""
+    """Whether the model supports a native [structured output](https://docs.langchain.com/oss/python/langchain/models#structured-outputs)
+    feature"""
 
 
 _LOADER = _DataLoader()

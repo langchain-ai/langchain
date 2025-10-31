@@ -20,7 +20,7 @@ This allows you to query model-specific features such as context window sizes, s
 
 This package is built on top of the excellent work by the [models.dev](https://github.com/sst/models.dev) project, an open source initiative that provides model capability data.
 
-This package augments the data from models.dev with some additional fields. (If these fields become part of the official models.dev dataset in the future, we will remove our augmentations.)
+This package augments the data from models.dev with some additional fields. We intend to keep this aligned with the upstream project as it evolves.
 
 ## Installation
 
@@ -39,11 +39,11 @@ uv add "langchain[model-profiles]"
 Access model capabilities through the `.profile` property on any LangChain chat model:
 
 ```python
-# pip install langchain-openai
+# pip install "langchain[openai]"
 
 from langchain.chat_models import init_chat_model
 
-model = init_chat_model("gpt-5")
+model = init_chat_model("openai:gpt-5")
 profile = model.profile
 
 # Check specific capabilities
@@ -59,7 +59,7 @@ if profile.get("..."):
 
 ## Available fields
 
-See `ModelProfile` in `model_profile.py` for the full list of available fields and their descriptions.
+See `ModelProfile` in [`model_profile.py`](./langchain_model_profiles/model_profile.py) for the full list of available fields and their descriptions.
 
 ## License
 
