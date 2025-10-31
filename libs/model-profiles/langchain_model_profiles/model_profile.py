@@ -18,18 +18,22 @@ class ModelProfile(TypedDict, total=False):
     # TODO: add more detail about formats?
 
     image_url_inputs: bool
-    """Whether [image URL inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [image URL inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
 
     pdf_inputs: bool
-    """Whether [PDF inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [PDF inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
     # TODO: add more detail about formats? e.g. bytes or base64
 
     audio_inputs: bool
-    """Whether [audio inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [audio inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
     # TODO: add more detail about formats? e.g. bytes or base64
 
     video_inputs: bool
-    """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
     # TODO: add more detail about formats? e.g. bytes or base64
 
     image_tool_message: bool
@@ -47,13 +51,16 @@ class ModelProfile(TypedDict, total=False):
     """Whether the model supports [reasoning / chain-of-thought](https://docs.langchain.com/oss/python/langchain/models#reasoning)"""
 
     image_outputs: bool
-    """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [image outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
 
     audio_outputs: bool
-    """Whether [audio outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [audio outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
 
     video_outputs: bool
-    """Whether [video outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal) are supported."""
+    """Whether [video outputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
+    are supported."""
 
     # --- Tool calling ---
     tool_calling: bool
@@ -80,7 +87,8 @@ def get_model_profile(provider_id: str, model_id: str) -> ModelProfile | None:
 
     Args:
         provider_id: Identifier for provider (e.g., `'openai'`, `'anthropic'`).
-        model_id: Identifier for model (e.g., `'gpt-5'`, `'claude-sonnet-4-5-20250929'`).
+        model_id: Identifier for model (e.g., `'gpt-5'`,
+            `'claude-sonnet-4-5-20250929'`).
 
     Returns:
         The model capabilities or `None` if not found in the data.
