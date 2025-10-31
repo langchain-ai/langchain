@@ -81,6 +81,7 @@ jobs:
             langchain
             langchain_v1
             langchain-classic
+            model-profiles
             standard-tests
             text-splitters
             docs
