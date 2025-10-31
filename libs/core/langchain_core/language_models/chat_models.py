@@ -76,7 +76,7 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import uuid
 
-    from langchain_model_profiles import ModelProfile  # type: ignore[import-not-found]
+    from langchain_model_profiles import ModelProfile  # type: ignore[import-untyped]
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
