@@ -81,11 +81,24 @@ _LOADER = _DataLoader()
 
 _lc_type_to_provider_id = {
     "openai-chat": "openai",
+    "azure-openai-chat": "azure",
     "anthropic-chat": "anthropic",
     "chat-google-generative-ai": "google",
     "vertexai": "google-vertex",
+    "anthropic-chat-vertexai": "google-vertex-anthropic",
     "amazon_bedrock_chat": "amazon-bedrock",
     "amazon_bedrock_converse_chat": "amazon-bedrock",
+    "chat-ai21": "ai21",
+    "chat-deepseek": "deepseek",
+    "fireworks-chat": "fireworks-ai",
+    "groq-chat": "groq",
+    "huggingface-chat-wrapper": "huggingface",
+    "mistralai-chat": "mistral",
+    "chat-ollama": "ollama",
+    "perplexitychat": "perplexity",
+    "together-chat": "togetherai",
+    "upstage-chat": "upstage",
+    "xai-chat": "xai",
 }
 
 
