@@ -403,8 +403,8 @@ class RunnableAgent(BaseSingleActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -445,7 +445,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -481,7 +481,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
@@ -511,8 +511,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -557,7 +557,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -593,7 +593,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(

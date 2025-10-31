@@ -231,15 +231,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """
 
     client: Any = Field(default_factory=_get_openai_client)
-    """OpenAI or AzureOpenAI client."""
+    """`OpenAI` or `AzureOpenAI` client."""
     async_client: Any = None
-    """OpenAI or AzureOpenAI async client."""
+    """`OpenAI` or `AzureOpenAI` async client."""
     assistant_id: str
     """OpenAI assistant id."""
     check_every_ms: float = 1_000.0
     """Frequency with which to check run progress in ms."""
     as_agent: bool = False
-    """Use as a LangChain agent, compatible with the AgentExecutor."""
+    """Use as a LangChain agent, compatible with the `AgentExecutor`."""
 
     @model_validator(mode="after")
     def _validate_async_client(self) -> Self:
