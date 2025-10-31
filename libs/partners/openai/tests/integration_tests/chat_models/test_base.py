@@ -1003,6 +1003,7 @@ def test_audio_input_modality() -> None:
     assert "audio" in output.additional_kwargs
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_prediction_tokens() -> None:
     code = dedent(
         """

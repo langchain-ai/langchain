@@ -6,12 +6,13 @@ LangChain has two main classes to work with language models: chat models and
 **Chat models**
 
 Language models that use a sequence of messages as inputs and return chat messages
-as outputs (as opposed to using plain text). Chat models support the assignment of
-distinct roles to conversation messages, helping to distinguish messages from the AI,
-users, and instructions such as system messages.
+as outputs (as opposed to using plain text).
 
-The key abstraction for chat models is `BaseChatModel`. Implementations
-should inherit from this class.
+Chat models support the assignment of distinct roles to conversation messages, helping
+to distinguish messages from the AI, users, and instructions such as system messages.
+
+The key abstraction for chat models is `BaseChatModel`. Implementations should inherit
+from this class.
 
 See existing [chat model integrations](https://docs.langchain.com/oss/python/integrations/chat).
 

@@ -97,11 +97,14 @@ class Serializable(BaseModel, ABC):
         by default. This is to prevent accidental serialization of objects that should
         not be serialized.
     - `get_lc_namespace`: Get the namespace of the LangChain object.
+
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
+
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
+
     - `lc_secrets`: A map of constructor argument names to secret ids.
     - `lc_attributes`: List of additional attribute names that should be included
         as part of the serialized representation.

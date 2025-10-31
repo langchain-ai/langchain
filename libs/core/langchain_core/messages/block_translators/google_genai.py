@@ -368,7 +368,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     else:
                         # Assume it's raw base64 without data URI
                         try:
-                            # Validate base64 and decode for mime type detection
+                            # Validate base64 and decode for MIME type detection
                             decoded_bytes = base64.b64decode(url, validate=True)
 
                             image_url_b64_block = {
@@ -379,7 +379,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                             try:
                                 import filetype  # type: ignore[import-not-found] # noqa: PLC0415
 
-                                # Guess mime type based on file bytes
+                                # Guess MIME type based on file bytes
                                 mime_type = None
                                 kind = filetype.guess(decoded_bytes)
                                 if kind:
@@ -458,6 +458,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 if outcome is not None:
                     server_tool_result_block["extras"]["outcome"] = outcome
                 converted_blocks.append(server_tool_result_block)
+            elif item_type == "text":
+                converted_blocks.append(cast("types.TextContentBlock", item))
             else:
                 # Unknown type, preserve as non-standard
                 converted_blocks.append({"type": "non_standard", "value": item})

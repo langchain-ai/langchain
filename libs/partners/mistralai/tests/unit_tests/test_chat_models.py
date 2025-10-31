@@ -219,7 +219,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             InvalidToolCall(
                 name="GenerateUsername",
                 args="oops",
-                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
                 id="ssAbar4Dr",
                 type="invalid_tool_call",
             ),
@@ -349,4 +349,4 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     # Ensure there are no duplicate ids
     ids = [tc.get("id") for tc in tool_calls if isinstance(tc, dict)]
     assert len(ids) == 2
-    assert len(set(ids)) == 2, f"Duplicate tool call ids found: {ids}"
+    assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"

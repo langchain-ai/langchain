@@ -202,7 +202,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     calling or multi-modality) by selectively overriding the following properties.
     Expand to see details:
 
-    ??? note "`has_tool_calling`"
+    ??? info "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
@@ -217,7 +217,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`tool_choice_value`"
+    ??? info "`tool_choice_value`"
 
         Value to use for tool choice when used in tests.
 
@@ -235,7 +235,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return "any"
         ```
 
-    ??? note "`has_tool_choice`"
+    ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
         calling via a `tool_choice` parameter.
@@ -255,7 +255,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return False
         ```
 
-    ??? note "`has_structured_output`"
+    ??? info "`has_structured_output`"
 
         Boolean property indicating whether the chat model supports structured
         output.
@@ -272,7 +272,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`structured_output_kwargs`"
+    ??? info "`structured_output_kwargs`"
 
         Dict property that can be used to specify additional kwargs for
         `with_structured_output`. Useful for testing different models.
@@ -283,7 +283,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return {"method": "function_calling"}
         ```
 
-    ??? note "`supports_json_mode`"
+    ??? info "`supports_json_mode`"
 
         Boolean property indicating whether the chat model supports JSON mode in
         `with_structured_output`.
@@ -296,7 +296,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`supports_image_inputs`"
+    ??? info "`supports_image_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
 
@@ -309,7 +309,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         {
             "type": "image",
             "base64": "<base64 image data>",
-            "mime_type": "image/jpeg",  # or appropriate mime-type
+            "mime_type": "image/jpeg",  # or appropriate MIME type
         }
         ```
 
@@ -330,7 +330,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`supports_image_urls`"
+    ??? info "`supports_image_urls`"
 
         Boolean property indicating whether the chat model supports image inputs from
         URLs.
@@ -355,7 +355,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`supports_pdf_inputs`"
+    ??? info "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
 
@@ -380,7 +380,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`supports_audio_inputs`"
+    ??? info "`supports_audio_inputs`"
 
         Boolean property indicating whether the chat model supports audio inputs.
 
@@ -393,7 +393,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         {
             "type": "audio",
             "base64": "<base64 audio data>",
-            "mime_type": "audio/wav",  # or appropriate mime-type
+            "mime_type": "audio/wav",  # or appropriate MIME type
         }
         ```
 
@@ -405,13 +405,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             return True
         ```
 
-    ??? note "`supports_video_inputs`"
+    ??? info "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
 
         Defaults to `False`. No current tests are written for this feature.
 
-    ??? note "`returns_usage_metadata`"
+    ??? info "`returns_usage_metadata`"
 
         Boolean property indicating whether the chat model returns usage metadata
         on invoke and streaming responses.
@@ -420,7 +420,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
-        [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
+        [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         ```python
         @property
@@ -431,7 +431,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         Models supporting `usage_metadata` should also return the name of the
         underlying model in the `response_metadata` of the `AIMessage`.
 
-    ??? note "`supports_anthropic_inputs`"
+    ??? info "`supports_anthropic_inputs`"
 
         Boolean property indicating whether the chat model supports Anthropic-style
         inputs.
@@ -459,7 +459,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return False
         ```
 
-    ??? note "`supports_image_tool_message`"
+    ??? info "`supports_image_tool_message`"
 
         Boolean property indicating whether the chat model supports a `ToolMessage`
         that includes image content, e.g. in the OpenAI Chat Completions format:
@@ -502,7 +502,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             return False
         ```
 
-    ??? note "`supports_pdf_tool_message`"
+    ??? info "`supports_pdf_tool_message`"
 
         Boolean property indicating whether the chat model supports a `ToolMessage
         that include PDF content using the LangChain `FileContentBlock` format:
@@ -530,14 +530,14 @@ class ChatModelIntegrationTests(ChatModelTests):
             return False
         ```
 
-    ??? note "`supported_usage_metadata_details`"
+    ??? info "`supported_usage_metadata_details`"
 
         Property controlling what usage metadata details are emitted in both invoke
         and stream.
 
         `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
         input and output tokens.
-        [See more](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html).
+        [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
         It includes optional keys `input_token_details` and `output_token_details`
         that can track usage details associated with special types of tokens, such as
@@ -545,7 +545,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Only needs to be overridden if these details are supplied.
 
-    ??? note "`enable_vcr_tests`"
+    ??? info "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
         [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
@@ -706,7 +706,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         This should pass for all integrations.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, you should make sure your `_generate` method
             does not raise any exceptions, and that it returns a valid
@@ -732,7 +732,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         a "natively async" implementation, but rather that the model can be used
         in an async context.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
@@ -763,7 +763,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         a "streaming" implementation, but rather that the model can be used in a
         streaming context.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
@@ -801,7 +801,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         a "natively async" or "streaming" implementation, but rather that the model can
         be used in an async streaming context.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
@@ -840,7 +840,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
@@ -868,7 +868,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch asynchronously.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
@@ -899,7 +899,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         a sequence of alternating human and AI messages as context for generating
         the next response.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
@@ -930,7 +930,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         a sequence of double-system, double-human, and double-ai messages as context
         for generating the next response.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             First, debug
             `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
@@ -1013,11 +1013,11 @@ class ChatModelIntegrationTests(ChatModelTests):
                     }
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, first verify that your model returns
             `langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in `_generate`:
+            attached to the returned `AIMessage` object in `_generate`:
 
             ```python
             return ChatResult(
@@ -1185,11 +1185,11 @@ class ChatModelIntegrationTests(ChatModelTests):
                     }
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, first verify that your model yields
             `langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in `_stream`
+            attached to the returned `AIMessage` object in `_stream`
             that sum up to the total usage metadata.
 
             Note that `input_tokens` should only be included on one of the chunks
@@ -1307,7 +1307,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         This should pass for all integrations.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the function signature for `_generate`
             (as well as `_stream` and async variants) accepts the `stop` parameter:
@@ -1357,7 +1357,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
@@ -1419,7 +1419,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
@@ -1482,7 +1482,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
@@ -1552,7 +1552,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
@@ -1641,7 +1641,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
@@ -1721,7 +1721,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check whether the `test_tool_calling` test is passing.
             If it is not, refer to the troubleshooting steps in that test first.
@@ -1773,7 +1773,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
@@ -1846,7 +1846,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the `status` field on `ToolMessage`
             objects is either ignored or passed to the model appropriately.
@@ -1907,7 +1907,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             This test uses [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html).
             in `langchain_core` to generate a sequence of messages representing
@@ -1971,7 +1971,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             By default, `has_structured_output` is True if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
@@ -2054,7 +2054,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             By default, `has_structured_output` is True if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
@@ -2136,7 +2136,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             By default, `has_structured_output` is True if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V1 models.
@@ -2202,7 +2202,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             By default, `has_structured_output` is True if a model overrides the
             `with_structured_output` or `bind_tools` methods.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, ensure that the model's `bind_tools` method
             properly handles Pydantic V2 models with optional parameters.
@@ -2271,7 +2271,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             See example implementation of `with_structured_output` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
 
@@ -2355,7 +2355,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with pdf content blocks, including base64-encoded files. Otherwise, set
@@ -2412,7 +2412,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         {
             "type": "audio",
             "base64": "<base64 audio data>",
-            "mime_type": "audio/wav",  # or appropriate mime-type
+            "mime_type": "audio/wav",  # or appropriate MIME type
         }
         ```
 
@@ -2441,7 +2441,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with audio content blocks, specifically base64-encoded files. Otherwise,
@@ -2495,7 +2495,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         {
             "type": "image",
             "base64": "<base64 image data>",
-            "mime_type": "image/jpeg",  # or appropriate mime-type
+            "mime_type": "image/jpeg",  # or appropriate MIME type
         }
         ```
 
@@ -2541,7 +2541,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with image content blocks, including base64-encoded images. Otherwise, set
@@ -2643,7 +2643,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with image content blocks in `ToolMessage` objects, including base64-encoded
@@ -2742,7 +2742,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with PDF content blocks in `ToolMessage` objects, specifically
@@ -2848,7 +2848,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
@@ -2984,7 +2984,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         If possible, the `name` field should be parsed and passed appropriately
         to the model. Otherwise, it should be ignored.
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that the `name` field on `HumanMessage`
             objects is either ignored or passed to the model appropriately.
@@ -3018,7 +3018,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
             ```
 
-        ??? note "Troubleshooting"
+        ??? question "Troubleshooting"
 
             If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
@@ -3043,7 +3043,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         @tool
         def get_weather(location: str) -> str:  # noqa: ARG001
-            """Call to surf the web."""
+            """Get the weather at a location."""
             return "It's sunny."
 
         llm_with_tools = model.bind_tools([get_weather])

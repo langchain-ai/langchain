@@ -2777,7 +2777,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         **Use `extra_body` for:**
 
         - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio,
-            etc.)
+            OpenRouter, etc.)
         - Parameters that need to be nested under `extra_body` in the request
         - Any non-standard OpenAI API parameters
 
@@ -2839,7 +2839,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "openai"]`
+        """
         return ["langchain", "chat_models", "openai"]
 
     @property

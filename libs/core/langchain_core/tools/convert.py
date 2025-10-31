@@ -89,6 +89,7 @@ def tool(
         runnable: Optional runnable to convert to a tool. Must be provided as a
             positional argument.
         description: Optional description for the tool.
+
             Precedence for the tool description value is as follows:
 
             - `description` argument
@@ -105,11 +106,13 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
-        response_format: The tool response format. If `"content"` then the output of
-            the tool is interpreted as the contents of a `ToolMessage`. If
-            `"content_and_artifact"` then the output is expected to be a two-tuple
-            corresponding to the `(content, artifact)` of a `ToolMessage`.
-        parse_docstring: if `infer_schema` and `parse_docstring`, will attempt to
+        response_format: The tool response format.
+
+            If `"content"` then the output of the tool is interpreted as the contents of
+            a `ToolMessage`. If `"content_and_artifact"` then the output is expected to
+            be a two-tuple corresponding to the `(content, artifact)` of a
+            `ToolMessage`.
+        parse_docstring: If `infer_schema` and `parse_docstring`, will attempt to
             parse parameter descriptions from Google Style function docstrings.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
             whether to raise `ValueError` on invalid Google Style docstrings.
