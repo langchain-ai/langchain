@@ -369,7 +369,9 @@ class TestLLMToolEmulatorModelConfiguration:
         """Test passing a model string for emulation."""
         # Just test that initialization works - don't require anthropic package
         try:
-            emulator = LLMToolEmulator(tools=["get_weather"], model="anthropic:claude-sonnet-4-5")
+            emulator = LLMToolEmulator(
+                tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
+            )
             assert emulator.model is not None
             assert "get_weather" in emulator.tools_to_emulate
         except ImportError:
