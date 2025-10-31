@@ -417,9 +417,7 @@ def test_handles_system_message_prompt() -> None:
     tool_message = ToolMessage(content="12345", tool_call_id=tool_call_id)
 
     system_prompt = SystemMessage(content="You are a helpful assistant.")
-    state, request = _make_state_and_request(
-        [ai_message, tool_message], system_prompt=None
-    )
+    state, request = _make_state_and_request([ai_message, tool_message], system_prompt=None)
     # Manually set SystemMessage as system_prompt
     request.system_prompt = system_prompt
 
@@ -449,9 +447,7 @@ def test_does_not_double_wrap_system_message() -> None:
     tool_message = ToolMessage(content="x" * 100, tool_call_id=tool_call_id)
 
     system_prompt = SystemMessage(content="Original system prompt")
-    state, request = _make_state_and_request(
-        [ai_message, tool_message], system_prompt=None
-    )
+    state, request = _make_state_and_request([ai_message, tool_message], system_prompt=None)
     request.system_prompt = system_prompt
 
     middleware = ContextEditingMiddleware(
@@ -480,9 +476,7 @@ async def test_handles_system_message_prompt_async() -> None:
     tool_message = ToolMessage(content="12345", tool_call_id=tool_call_id)
 
     system_prompt = SystemMessage(content="You are a helpful assistant.")
-    state, request = _make_state_and_request(
-        [ai_message, tool_message], system_prompt=None
-    )
+    state, request = _make_state_and_request([ai_message, tool_message], system_prompt=None)
     # Manually set SystemMessage as system_prompt
     request.system_prompt = system_prompt
 
@@ -512,9 +506,7 @@ async def test_does_not_double_wrap_system_message_async() -> None:
     tool_message = ToolMessage(content="x" * 100, tool_call_id=tool_call_id)
 
     system_prompt = SystemMessage(content="Original system prompt")
-    state, request = _make_state_and_request(
-        [ai_message, tool_message], system_prompt=None
-    )
+    state, request = _make_state_and_request([ai_message, tool_message], system_prompt=None)
     request.system_prompt = system_prompt
 
     middleware = ContextEditingMiddleware(
