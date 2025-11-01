@@ -1,3 +1,5 @@
+"""LangChain CLI."""
+
 from __future__ import annotations
 
 import logging
@@ -19,15 +21,17 @@ PORT_MIN = 1
 PORT_MAX = 65_535
 MSG_INVALID_PORT = "Port must be between 1 and 65_535."
 
+
 def _version_callback(*, show_version: bool) -> None:
+    """Print version and exit when requested."""
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
         raise typer.Exit
 
+
 VERSION_OPT = typer.Option(
-    False,
-    "--version",
-    "-v",
+    default=False,
+    *["--version", "-v"],
     help="Print the current CLI version.",
     callback=lambda show: _version_callback(show_version=show),
     is_eager=True,
@@ -44,27 +48,33 @@ HOST_OPT: Annotated[str | None, typer.Option] = typer.Option(
 )
 
 RELOAD_OPT: Annotated[bool, typer.Option] = typer.Option(
-    False,
-    "--reload/--no-reload",
+    default=False,
+    *["--reload/--no-reload"],
     help="Enable autoreload if supported.",
 )
 
+
 class LogLevel(str, Enum):
+    """Supported logging levels."""
+
     critical = "CRITICAL"
     error = "ERROR"
     warning = "WARNING"
     info = "INFO"
     debug = "DEBUG"
 
+
 def _configure_logging(level: LogLevel) -> None:
+    """Configure root logging."""
     logging.basicConfig(
         level=getattr(logging, level.value, logging.INFO),
         format="%(levelname)s | %(name)s | %(message)s",
     )
 
+
 LOG_LEVEL_OPT = typer.Option(
-    LogLevel.info,
-    "--log-level",
+    default=LogLevel.info,
+    *["--log-level"],
     help="Logging verbosity for this command (default: INFO).",
     show_default=False,
     case_sensitive=False,
@@ -89,20 +99,25 @@ app.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )(migrate_namespace.migrate)
 
+
 @app.callback()
 def _main(
     *,
     _version: bool = VERSION_OPT,
     log_level: LogLevel = LOG_LEVEL_OPT,
 ) -> None:
+    """Top-level CLI callback."""
     _configure_logging(log_level)
 
+
 def _validate_port(port: int | None) -> int | None:
+    """Validate a TCP port value."""
     if port is None:
         return None
     if not (PORT_MIN <= port <= PORT_MAX):
         raise typer.BadParameter(MSG_INVALID_PORT)
     return port
+
 
 @app.command()
 def serve(
@@ -111,6 +126,7 @@ def serve(
     host: Annotated[str | None, typer.Option] = HOST_OPT,
     reload: Annotated[bool, typer.Option] = RELOAD_OPT,
 ) -> None:
+    """Start LangServe for a template or an app."""
     if host is None:
         host = os.getenv("LANGCHAIN_CLI_HOST") or None
     if port is None:
@@ -131,6 +147,7 @@ def serve(
             template_namespace.serve, host=host, port=port, reload=reload
         )
 
+
 def _serve_with_reload_passthrough(
     func: Callable[..., Any],
     *,
@@ -138,10 +155,12 @@ def _serve_with_reload_passthrough(
     port: int | None,
     reload: bool,
 ) -> None:
+    """Call a serve function, passing reload only if accepted."""
     try:
         func(port=port, host=host, reload=reload)  # type: ignore[call-arg]
     except TypeError:
         func(port=port, host=host)
+
 
 if __name__ == "__main__":
     app()
