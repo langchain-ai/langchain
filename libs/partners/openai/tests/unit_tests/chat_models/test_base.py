@@ -3002,3 +3002,45 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+def test_cache_control_with_string_content() -> None:
+    """Test cache_control is applied to last content block when content is a string."""
+    llm = ChatOpenAI(model="gpt-4o", api_key="test-key")
+    messages = [HumanMessage(content="Hello")]
+
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "5m"}
+    )
+
+    assert "cache_control" not in payload
+    assert isinstance(payload["messages"][-1]["content"], list)
+    assert payload["messages"][-1]["content"][-1]["cache_control"] == {
+        "type": "ephemeral",
+        "ttl": "5m",
+    }
+
+
+def test_cache_control_with_list_content() -> None:
+    """Test cache_control is applied to last content block when content is a list."""
+    llm = ChatOpenAI(model="gpt-4o", api_key="test-key")
+    messages = [
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "Hello"},
+                {"type": "text", "text": "World"},
+            ]
+        )
+    ]
+
+    payload = llm._get_request_payload(
+        messages, cache_control={"type": "ephemeral", "ttl": "1h"}
+    )
+
+    assert "cache_control" not in payload
+    assert isinstance(payload["messages"][-1]["content"], list)
+    assert len(payload["messages"][-1]["content"]) == 2
+    assert payload["messages"][-1]["content"][-1]["cache_control"] == {
+        "type": "ephemeral",
+        "ttl": "1h",
+    }

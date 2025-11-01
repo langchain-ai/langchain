@@ -1348,14 +1348,15 @@ class BaseChatOpenAI(BaseChatModel):
                 for m in messages
             ]
 
-        wrap_text = lambda text :{"type":"text","text":text} if isinstance(text,str) else {**text}
+        def _wrap_text(text):
+            return {"type": "text", "text": text} if isinstance(text, str) else {**text}
         if "cache_control" in payload:
             dup_message = {** payload["messages"][-1]}
             last_message_content = dup_message["content"]
             if isinstance(last_message_content,str):
-                dup_message["content"]=[wrap_text(last_message_content)]
+                dup_message["content"]=[_wrap_text(last_message_content)]
             elif isinstance(last_message_content,list):
-                dup_message["content"] = [wrap_text(content) for content in last_message_content]
+                dup_message["content"] = [_wrap_text(content) for content in last_message_content]
             dup_message["content"][-1]["cache_control"] = payload.pop("cache_control")
             payload["messages"][-1] = dup_message
         return payload
@@ -2065,10 +2066,13 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError(msg)
 
         if include_raw:
+            def _parsing_error_handler(_):
+                return None
+
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+                parsed=itemgetter("raw") | output_parser, parsing_error=_parsing_error_handler
             )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_none = RunnablePassthrough.assign(parsed=_parsing_error_handler)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
