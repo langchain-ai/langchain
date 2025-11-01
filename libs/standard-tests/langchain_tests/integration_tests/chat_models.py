@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import json
+import os
+import warnings
 from typing import Annotated, Any, Literal
 from unittest.mock import MagicMock
 
@@ -132,6 +134,21 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
     assert tool_call.get("type") == "tool_call"
+
+
+def _get_base64_from_url(url: str) -> str:
+    user_agent = os.environ.get("LANGCHAIN_TESTS_USER_AGENT")
+    if not user_agent:
+        warning_message = (
+            "LANGCHAIN_TESTS_USER_AGENT environment variable not set. "
+            "langchain-tests pulls (CC0 License) audio data from wikimedia.org. "
+            "Consider setting a user agent to identify your requests. See "
+            "https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy"
+        )
+        warnings.warn(warning_message, stacklevel=2)
+    headers = {"User-Agent": user_agent} if user_agent else {}
+    httpx_response = httpx.get(url, headers=headers).content
+    return base64.b64encode(httpx_response).decode("utf-8")
 
 
 @tool
@@ -2451,8 +2468,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_audio_inputs:
             pytest.skip("Model does not support audio inputs.")
 
-        url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
-        audio_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        # https://commons.wikimedia.org/wiki/File:Northern_Flicker_202280456.wav
+        # License: CC0 1.0 Universal
+        url = "https://upload.wikimedia.org/wikipedia/commons/6/6a/Northern_Flicker_202280456.wav"
+        audio_data = _get_base64_from_url(url)
 
         message = HumanMessage(
             [
@@ -2551,16 +2570,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
 
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
         # OpenAI CC format, base64 data
         message = HumanMessage(
             content=[
-                {"type": "text", "text": "describe the weather in this image"},
+                {"type": "text", "text": "Give a concise description of this image."},
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
                 },
             ],
         )
@@ -2569,11 +2588,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Standard LangChain format, base64 data
         message = HumanMessage(
             content=[
-                {"type": "text", "text": "describe the weather in this image"},
+                {"type": "text", "text": "Give a concise description of this image."},
                 {
                     "type": "image",
                     "base64": image_data,
-                    "mime_type": "image/jpeg",
+                    "mime_type": "image/png",
                 },
             ],
         )
@@ -2583,7 +2602,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         if self.supports_image_urls:
             message = HumanMessage(
                 content=[
-                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "text",
+                        "text": "Give a concise description of this image.",
+                    },
                     {
                         "type": "image",
                         "url": image_url,
@@ -2654,7 +2676,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_image_tool_message:
             pytest.skip("Model does not support image tool message.")
 
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
         # OpenAI CC format, base64 data
@@ -2662,7 +2684,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             content=[
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
                 },
             ],
             tool_call_id="1",
@@ -2675,7 +2697,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {
                     "type": "image",
                     "base64": image_data,
-                    "mime_type": "image/jpeg",
+                    "mime_type": "image/png",
                 },
             ],
             tool_call_id="1",
@@ -2685,7 +2707,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         for tool_message in [oai_format_message, standard_format_message]:
             messages = [
                 HumanMessage(
-                    "get a random image using the tool and describe the weather"
+                    "get a random image using the tool and give it a concise "
+                    "description"
                 ),
                 AIMessage(
                     [],
@@ -2888,14 +2911,14 @@ class ChatModelIntegrationTests(ChatModelTests):
             },
         ]
         if self.supports_image_inputs:
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
             image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
             human_content.append(
                 {
                     "type": "image",
                     "source": {
                         "type": "base64",
-                        "media_type": "image/jpeg",
+                        "media_type": "image/png",
                         "data": image_data,
                     },
                 }
@@ -2908,7 +2931,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {"type": "text", "text": "Hmm let me think about that"},
                     {
                         "type": "tool_use",
-                        "input": {"fav_color": "green"},
+                        "input": {"fav_color": "purple"},
                         "id": "foo",
                         "name": "color_picker",
                     },
@@ -2916,7 +2939,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_calls=[
                     {
                         "name": "color_picker",
-                        "args": {"fav_color": "green"},
+                        "args": {"fav_color": "purple"},
                         "id": "foo",
                         "type": "tool_call",
                     }
