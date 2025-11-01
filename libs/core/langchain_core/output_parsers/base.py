@@ -294,10 +294,9 @@ class BaseOutputParser(
         """
         return await run_in_executor(None, self.parse, text)
 
-    # TODO: rename 'completion' -> 'text'.
     def parse_with_prompt(
         self,
-        completion: str,
+        text: str,
         prompt: PromptValue,  # noqa: ARG002
     ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
@@ -307,13 +306,13 @@ class BaseOutputParser(
         the prompt to do so.
 
         Args:
-            completion: String output of a language model.
+            text: String output of a language model.
             prompt: Input `PromptValue`.
 
         Returns:
             Structured output.
         """
-        return self.parse(completion)
+        return self.parse(text)
 
     def get_format_instructions(self) -> str:
         """Instructions on how the LLM output should be formatted."""
