@@ -79,7 +79,7 @@ def _content_blocks_equal_ignore_id(
 
 
 @pytest.fixture
-def messages() -> list:
+def messages() -> list[BaseMessage]:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I am a test user."),
@@ -87,14 +87,14 @@ def messages() -> list:
 
 
 @pytest.fixture
-def messages_2() -> list:
+def messages_2() -> list[BaseMessage]:
     return [
         SystemMessage(content="You are a test user."),
         HumanMessage(content="Hello, I not a test user."),
     ]
 
 
-def test_batch_size(messages: list, messages_2: list) -> None:
+def test_batch_size(messages: list[BaseMessage], messages_2: list[BaseMessage]) -> None:
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
@@ -118,7 +118,9 @@ def test_batch_size(messages: list, messages_2: list) -> None:
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-async def test_async_batch_size(messages: list, messages_2: list) -> None:
+async def test_async_batch_size(
+    messages: list[BaseMessage], messages_2: list[BaseMessage]
+) -> None:
     llm = FakeListChatModel(responses=[str(i) for i in range(100)])
     # The base endpoint doesn't support native batching,
     # so we expect batch_size to always be 1
@@ -310,7 +312,7 @@ async def test_astream_implementation_uses_astream() -> None:
 class FakeTracer(BaseTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.traced_run_ids: list = []
+        self.traced_run_ids: list[uuid.UUID] = []
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
@@ -472,7 +474,7 @@ async def test_disable_streaming_no_streaming_model_async(
 class FakeChatModelStartTracer(FakeTracer):
     def __init__(self) -> None:
         super().__init__()
-        self.messages: list = []
+        self.messages: list[list[list[BaseMessage]]] = []
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         _, messages = args
