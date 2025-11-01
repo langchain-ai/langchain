@@ -804,8 +804,23 @@ def create_agent(  # noqa: PLR0915
         context_schema=context_schema,
     )
 
+    def _set_agent_name_on_message(msg: AIMessage, agent_name: str | None) -> AIMessage:
+        """Set agent name on AIMessage if agent_name is provided and message doesn't have one."""
+        if agent_name is not None and isinstance(msg, AIMessage) and msg.name is None:
+            return AIMessage(
+                content=msg.content,
+                tool_calls=msg.tool_calls,
+                invalid_tool_calls=msg.invalid_tool_calls,
+                additional_kwargs=msg.additional_kwargs,
+                response_metadata=msg.response_metadata,
+                usage_metadata=msg.usage_metadata,
+                name=agent_name,
+                id=msg.id,
+            )
+        return msg
+
     def _handle_model_output(
-        output: AIMessage, effective_response_format: ResponseFormat | None
+        output: AIMessage, effective_response_format: ResponseFormat | None, agent_name: str | None = None
     ) -> dict[str, Any]:
         """Handle model output including structured responses.
 
@@ -813,7 +828,10 @@ def create_agent(  # noqa: PLR0915
             output: The AI message output from the model.
             effective_response_format: The actual strategy used
                 (may differ from initial if auto-detected).
+            agent_name: Optional agent name to set on AIMessage objects.
         """
+        # Set agent name on output if provided
+        output = _set_agent_name_on_message(output, agent_name)
         # Handle structured output with provider strategy
         if isinstance(effective_response_format, ProviderStrategy):
             if not output.tool_calls:
@@ -1038,7 +1056,7 @@ def create_agent(  # noqa: PLR0915
         output = model_.invoke(messages)
 
         # Handle model output to get messages and structured_response
-        handled_output = _handle_model_output(output, effective_response_format)
+        handled_output = _handle_model_output(output, effective_response_format, name)
         messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
@@ -1091,7 +1109,7 @@ def create_agent(  # noqa: PLR0915
         output = await model_.ainvoke(messages)
 
         # Handle model output to get messages and structured_response
-        handled_output = _handle_model_output(output, effective_response_format)
+        handled_output = _handle_model_output(output, effective_response_format, name)
         messages_list = handled_output["messages"]
         structured_response = handled_output.get("structured_response")
 
