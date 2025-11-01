@@ -101,7 +101,6 @@ ignore = [
     "ANN401",  # No Any types
     "BLE",     # Blind exceptions
     "ERA",     # No commented-out code
-    "PLR2004", # Comparison to magic number
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
@@ -122,7 +121,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "S", "SLF",]
+"tests/**" = [ "D1", "PLR2004", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
 
 [tool.coverage.run]
