@@ -3006,7 +3006,7 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
 
 def test_cache_control_with_string_content() -> None:
     """Test cache_control is applied to last content block when content is a string."""
-    llm = ChatOpenAI(model="gpt-4o", api_key="test-key")
+    llm = ChatOpenAI(model="gpt-4o", api_key=None)
     messages = [HumanMessage(content="Hello")]
 
     payload = llm._get_request_payload(
@@ -3023,7 +3023,7 @@ def test_cache_control_with_string_content() -> None:
 
 def test_cache_control_with_list_content() -> None:
     """Test cache_control is applied to last content block when content is a list."""
-    llm = ChatOpenAI(model="gpt-4o", api_key="test-key")
+    llm = ChatOpenAI(model="gpt-4o", api_key=None)
     messages = [
         HumanMessage(
             content=[
