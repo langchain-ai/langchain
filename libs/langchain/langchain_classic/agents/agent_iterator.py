@@ -24,6 +24,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.load.dump import dumpd
 from langchain_core.outputs import RunInfo
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
@@ -52,6 +53,7 @@ class AgentExecutorIterator:
         run_id: UUID | None = None,
         include_run_info: bool = False,
         yield_actions: bool = False,
+        config: RunnableConfig | None = None,
     ):
         """Initialize the `AgentExecutorIterator`.
 
@@ -78,6 +80,7 @@ class AgentExecutorIterator:
         self.run_id = run_id
         self.include_run_info = include_run_info
         self.yield_actions = yield_actions
+        self._config: RunnableConfig = ensure_config(config) or {}
         self.reset()
 
     _inputs: dict[str, str]
@@ -203,6 +206,7 @@ class AgentExecutorIterator:
                     self.inputs,
                     self.intermediate_steps,
                     run_manager,
+                    config=self._config,
                 ):
                     next_step_seq.append(chunk)
                     # if we're yielding actions, yield them as they come
@@ -272,6 +276,7 @@ class AgentExecutorIterator:
                         self.inputs,
                         self.intermediate_steps,
                         run_manager,
+                        config=self._config,
                     ):
                         next_step_seq.append(chunk)
                         # if we're yielding actions, yield them as they come
