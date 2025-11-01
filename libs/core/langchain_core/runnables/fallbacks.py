@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
 from typing import TYPE_CHECKING, Any, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -29,6 +29,7 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 from langchain_core.utils.aiter import py_anext
+from langchain_core.utils.pydantic import TypeBaseModel
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
@@ -116,13 +117,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.OutputType
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         return self.runnable.get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         return self.runnable.get_output_schema(config)
 
     @property
