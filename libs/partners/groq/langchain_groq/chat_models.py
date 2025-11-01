@@ -37,6 +37,10 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.ai import (
+    InputTokenDetails,
+    UsageMetadata,
+)
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -704,15 +708,7 @@ class ChatGroq(BaseChatModel):
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
-                input_tokens = token_usage.get("prompt_tokens", 0)
-                output_tokens = token_usage.get("completion_tokens", 0)
-                message.usage_metadata = {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": token_usage.get(
-                        "total_tokens", input_tokens + output_tokens
-                    ),
-                }
+                message.usage_metadata = _create_usage_metadata(token_usage)
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -1303,13 +1299,7 @@ def _convert_chunk_to_message_chunk(
                         {k: executed_tool[k] for k in executed_tool if k != "output"}
                     )
         if usage := (chunk.get("x_groq") or {}).get("usage"):
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
-            usage_metadata = {
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
-            }
+            usage_metadata = _create_usage_metadata(usage)
         else:
             usage_metadata = None
         return AIMessageChunk(
@@ -1409,3 +1399,31 @@ def _lc_invalid_tool_call_to_groq_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
+    """Create usage metadata from Groq token usage response.
+
+    Args:
+        groq_token_usage: Token usage dict from Groq API response.
+
+    Returns:
+        Usage metadata dict with input/output token details.
+    """
+    input_tokens = groq_token_usage.get("prompt_tokens") or 0
+    output_tokens = groq_token_usage.get("completion_tokens") or 0
+    total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
+    input_token_details: dict = {
+        "cache_read": (groq_token_usage.get("prompt_tokens_details") or {}).get(
+            "cached_tokens"
+        ),
+    }
+    usage_metadata: UsageMetadata = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+    }
+
+    if filtered_input := {k: v for k, v in input_token_details.items() if v}:
+        usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
+    return usage_metadata
