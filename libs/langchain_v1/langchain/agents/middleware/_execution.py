@@ -12,6 +12,7 @@ import typing
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 try:  # pragma: no cover - optional dependency on POSIX platforms
     import resource
@@ -83,6 +84,38 @@ class BaseExecutionPolicy(abc.ABC):
         command: Sequence[str],
     ) -> subprocess.Popen[str]:
         """Launch the persistent shell process."""
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the policy to a JSON-serialisable dict."""
+        return {
+            "type": self.__class__.__name__,
+            "command_timeout": self.command_timeout,
+            "startup_timeout": self.startup_timeout,
+            "termination_timeout": self.termination_timeout,
+            "max_output_lines": self.max_output_lines,
+            "max_output_bytes": self.max_output_bytes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> BaseExecutionPolicy:
+        """Re-create a policy from the dict stored in checkpoint metadata."""
+        typ = data["type"]
+        kwargs = {
+            "command_timeout": data["command_timeout"],
+            "startup_timeout": data["startup_timeout"],
+            "termination_timeout": data["termination_timeout"],
+            "max_output_lines": data.get("max_output_lines"),
+            "max_output_bytes": data.get("max_output_bytes"),
+        }
+
+        if typ == "HostExecutionPolicy":
+            return HostExecutionPolicy(**kwargs)
+        if typ == "DockerExecutionPolicy":
+            return DockerExecutionPolicy(**kwargs)
+        if typ == "CodexSandboxExecutionPolicy":
+            return CodexSandboxExecutionPolicy(**kwargs)
+
+        return HostExecutionPolicy(**kwargs)
 
 
 @dataclass
