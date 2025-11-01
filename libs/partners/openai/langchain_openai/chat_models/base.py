@@ -1350,14 +1350,16 @@ class BaseChatOpenAI(BaseChatModel):
 
         def _wrap_text(text: Any) -> dict:
             return {"type": "text", "text": text} if isinstance(text, str) else {**text}
+
         if "cache_control" in payload:
-            dup_message = {** payload["messages"][-1]}
+            dup_message = {**payload["messages"][-1]}
             last_message_content = dup_message["content"]
-            if isinstance(last_message_content,str):
-                dup_message["content"]=[_wrap_text(last_message_content)]
-            elif isinstance(last_message_content,list):
-                dup_message["content"] = [_wrap_text(content)
-                                          for content in last_message_content]
+            if isinstance(last_message_content, str):
+                dup_message["content"] = [_wrap_text(last_message_content)]
+            elif isinstance(last_message_content, list):
+                dup_message["content"] = [
+                    _wrap_text(content) for content in last_message_content
+                ]
             dup_message["content"][-1]["cache_control"] = payload.pop("cache_control")
             payload["messages"][-1] = dup_message
         return payload
