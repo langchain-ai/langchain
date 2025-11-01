@@ -392,11 +392,10 @@ class VectorStore(ABC):
 
     @staticmethod
     def _max_inner_product_relevance_score_fn(similarity: float) -> float:
-        """
-        Convert raw MAX_INNER_PRODUCT scores into a normalized relevance score.
-        
-        For similarity-based metrics, higher scores are already better, so we
-        simply return the similarity (optionally clamp to 0-1 if needed).
+        """Convert raw MAX_INNER_PRODUCT scores into a normalized relevance score.
+
+        For similarity-based metrics, higher scores are already better,
+        so we simply return the similarity (optionally clamp to 0-1 if needed).
         """
         return max(0.0, min(1.0, similarity))
 
