@@ -2484,7 +2484,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             with audio content blocks, specifically base64-encoded files. Otherwise,
             set the `supports_audio_inputs` property to False.
 
-        """
+        """  # noqa: E501
         if not self.supports_audio_inputs:
             pytest.skip("Model does not support audio inputs.")
 
