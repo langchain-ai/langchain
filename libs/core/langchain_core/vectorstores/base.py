@@ -391,12 +391,14 @@ class VectorStore(ABC):
         return 1.0 - distance
 
     @staticmethod
-    def _max_inner_product_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale [0, 1]."""
-        if distance > 0:
-            return 1.0 - distance
-
-        return -1.0 * distance
+    def _max_inner_product_relevance_score_fn(similarity: float) -> float:
+        """
+        Convert raw MAX_INNER_PRODUCT scores into a normalized relevance score.
+        
+        For similarity-based metrics, higher scores are already better, so we
+        simply return the similarity (optionally clamp to 0-1 if needed).
+        """
+        return max(0.0, min(1.0, similarity))
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """The 'correct' relevance function.
