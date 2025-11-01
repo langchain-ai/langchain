@@ -204,14 +204,14 @@ def test_format_instructions_preserves_language() -> None:
     """Test format instructions does not attempt to encode into ascii."""
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
+        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
     )
 
     class Foo(BaseModel):
         hello: str = Field(
             description=(
                 "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
+                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
             )
         )
 

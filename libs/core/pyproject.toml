@@ -122,8 +122,11 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "S", "SLF",]
+"tests/**" = [ "D1", "S", "SLF", "DTZ", "FBT", "PLC0415", "RUF001",]
 "scripts/**" = [ "INP", "S",]
+"langchain_core/toon/langchain_support.py" = [ "PLC0415",]
+"langchain_core/toon/normalize.py" = [ "PLC0415",]
+"langchain_core/toon/encoder.py" = [ "FBT002",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
