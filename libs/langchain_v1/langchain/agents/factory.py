@@ -820,7 +820,9 @@ def create_agent(  # noqa: PLR0915
         return msg
 
     def _handle_model_output(
-        output: AIMessage, effective_response_format: ResponseFormat | None, agent_name: str | None = None
+        output: AIMessage,
+        effective_response_format: ResponseFormat | None,
+        agent_name: str | None = None,
     ) -> dict[str, Any]:
         """Handle model output including structured responses.
 
