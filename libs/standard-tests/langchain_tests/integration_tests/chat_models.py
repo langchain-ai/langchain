@@ -2707,7 +2707,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for tool_message in [oai_format_message, standard_format_message]:
             messages = [
                 HumanMessage(
-                    "get a random image using the tool and give it a concise "
+                    "get a random diagram using the tool and give it a concise "
                     "description"
                 ),
                 AIMessage(
