@@ -149,8 +149,8 @@ jobs:
             fi
           fi
 
-          # if PREV_TAG is empty, let it be empty
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or came out to 0.0.0, let it be empty
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             echo "No previous tag found - first release"
           else
             # confirm prev-tag actually exists in git repo with git tag
@@ -179,8 +179,8 @@ jobs:
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
         run: |
           PREAMBLE="Changes since $PREV_TAG"
-          # if PREV_TAG is empty, then we are releasing the first version
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or 0.0.0, then we are releasing the first version
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             PREAMBLE="Initial release"
             PREV_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
