@@ -48,7 +48,7 @@ def get_from_dict_or_env(
             if value := data.get(k):
                 return value
 
-    if isinstance(key, str) and key in data and data[key]:
+    if isinstance(key, str) and key in data and data[key] is not None:
         return data[key]
 
     key_for_err = key[0] if isinstance(key, (list, tuple)) else key
