@@ -75,3 +75,4 @@ To improve your LLM application development, pair LangChain with:
 - [API Reference](https://reference.langchain.com/python): Detailed reference on navigating base packages and integrations for LangChain.
 - [Integrations](https://docs.langchain.com/oss/python/integrations/providers/overview): List of LangChain integrations, including chat & embedding models, tools & toolkits, and more
 - [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview): Learn how to contribute to LangChain and find good first issues.
+- [Code of Conduct](https://github.com/langchain-ai/langchain/blob/master/.github/CODE_OF_CONDUCT.md): Our community guidelines and standards for participation.
