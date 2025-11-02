@@ -439,9 +439,25 @@ def _init_chat_model_helper(
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+         chat_params = {
+            k: v
+            for k, v in kwargs.items()
+            if k
+            in (
+                "tokenizer",
+                "system_message",
+                "custom_get_token_ids",
+                "verbose",
+                "metadata",
+                "tags",
+            )
+        }
+        endpoint_params = {
+            k: v for k, v in kwargs.items() if k not in chat_params
+        }
 
-        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
-        return ChatHuggingFace(llm=llm)
+        llm = HuggingFaceEndpoint(repo_id=model, **endpoint_params)
+        return ChatHuggingFace(llm=llm, **chat_params)
 
     if model_provider == "groq":
         _check_pkg("langchain_groq")
