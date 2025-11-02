@@ -45,8 +45,8 @@ def get_from_dict_or_env(
     """
     if isinstance(key, (list, tuple)):
         for k in key:
-            if value := data.get(k):
-                return value
+            if k in data and data[k] is not None:
+                return data[k]
 
     if isinstance(key, str) and key in data and data[key] is not None:
         return data[key]
