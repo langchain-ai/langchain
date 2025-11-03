@@ -144,15 +144,15 @@
     },
     {
       "source": "/docs/integrations/toolkits/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/tools"
+      "destination": "https://docs.langchain.com/oss/python/integrations/tools/:path"
     },
     {
       "source": "/docs/integrations/providers/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/:path"
     },
     {
       "source": "/docs/integrations/retrievers/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/retrievers"
+      "destination": "https://docs.langchain.com/oss/python/integrations/retrievers/:path"
     },
     {
       "source": "/docs/modules/agents/:path(.*)",
@@ -184,19 +184,27 @@
     },
     {
       "source": "/docs/integrations/document_loaders/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders"
+      "destination": "https://docs.langchain.com/oss/python/integrations/document_loaders/:path"
     },
     {
       "source": "/docs/integrations/chat/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/chat"
+      "destination": "https://docs.langchain.com/oss/python/integrations/chat/:path"
     },
     {
       "source": "/docs/integrations/vectorstores/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/vectorstores"
+      "destination": "https://docs.langchain.com/oss/python/integrations/vectorstores/:path"
+    },
+    {
+      "source": "/docs/integrations/stores/:path(.*)",
+      "destination": "https://docs.langchain.com/oss/python/integrations/stores/:path"
     },
     {
       "source": "/docs/integrations/text_embedding/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/text_embedding"
+      "destination": "https://docs.langchain.com/oss/python/integrations/text_embedding/:path"
+    },
+    {
+      "source": "/docs/integrations/splitters/:path(.*)",
+      "destination": "https://docs.langchain.com/oss/python/integrations/splitters/:path"
     },
     {
       "source": "/docs/modules/chains/:path(.*)",
