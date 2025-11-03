@@ -610,6 +610,35 @@ class TestResponseFormatAsToolStrategy:
         )
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
+    def test_validation_error_with_invalid_response(self) -> None:
+        """Test that StructuredOutputValidationError is raised when tool strategy receives invalid response."""
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": {"invalid_field": "wrong_data", "another_bad_field": 123},
+                },
+            ],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=False,  # Disable retry to ensure error is raised
+            ),
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=".*WeatherBaseModel.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
@@ -629,6 +658,28 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
         assert len(response["messages"]) == 4
+
+    def test_validation_error_with_invalid_response(self) -> None:
+        """Test that StructuredOutputValidationError is raised when provider strategy receives invalid response."""
+        tool_calls = [
+            [{"args": {}, "id": "1", "name": "get_weather"}],
+        ]
+
+        # But we're using WeatherBaseModel which has different field requirements
+        model = FakeToolCallingModel[dict](
+            tool_calls=tool_calls,
+            structured_response={"invalid": "data"},  # Wrong structure
+        )
+
+        agent = create_agent(
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
+        )
+
+        with pytest.raises(
+            StructuredOutputValidationError,
+            match=".*WeatherBaseModel.*",
+        ):
+            agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
     def test_dataclass(self) -> None:
         """Test response_format as ProviderStrategy with dataclass."""

@@ -228,7 +228,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
                 If `True`, the output will be a JSON object containing
-                all the keys that have been returned so far.
+                    all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
 
         Raises:
@@ -311,7 +311,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
                 If `True`, the output will be a JSON object containing
-                all the keys that have been returned so far.
+                    all the keys that have been returned so far.
                 If `False`, the output will be the full JSON object.
 
         Returns:

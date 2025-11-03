@@ -153,6 +153,7 @@ ignore = [
     "TC003",   # Doesn't play well with Pydantic
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link in TODO
+    "RUF002",  # Em-dash in docstring
 
     # TODO rules
     "ANN401",  # No type Any

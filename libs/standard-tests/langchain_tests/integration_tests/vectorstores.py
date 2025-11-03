@@ -69,7 +69,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     class TestChromaStandard(VectorStoreIntegrationTests):
         @pytest.fixture()
         def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-            \"\"\"Get an empty vectorstore for unit tests.\"\"\"
+            \"\"\"Get an empty VectorStore for unit tests.\"\"\"
             store = Chroma(embedding_function=self.get_embeddings())
             try:
                 yield store
@@ -101,9 +101,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     @abstractmethod
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
-        """Get the vectorstore class to test.
+        """Get the VectorStore class to test.
 
-        The returned vectorstore should be empty.
+        The returned VectorStore should be empty.
         """
 
     @property
@@ -137,7 +137,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the VectorStore is empty.
 
         ??? note "Troubleshooting"
 
@@ -185,7 +185,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the VectorStore is still empty.
 
         This test should follow a test that adds documents.
 
@@ -204,7 +204,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -485,7 +485,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the VectorStore is empty.
 
         ??? note "Troubleshooting"
 
@@ -536,7 +536,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_vectorstore_still_empty_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the VectorStore is still empty.
 
         This test should follow a test that adds documents.
 
@@ -555,7 +555,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 

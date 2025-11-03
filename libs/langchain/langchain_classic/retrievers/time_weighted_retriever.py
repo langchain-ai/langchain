@@ -25,7 +25,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """
 
     vectorstore: VectorStore
-    """The vectorstore to store documents and determine salience."""
+    """The `VectorStore` to store documents and determine salience."""
 
     search_kwargs: dict = Field(default_factory=lambda: {"k": 100})
     """Keyword arguments to pass to the `VectorStore` similarity search."""
@@ -35,7 +35,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
     """The memory_stream of documents to search through."""
 
     decay_rate: float = Field(default=0.01)
-    """The exponential decay factor used as (1.0-decay_rate)**(hrs_passed)."""
+    """The exponential decay factor used as `(1.0-decay_rate)**(hrs_passed)`."""
 
     k: int = 4
     """The maximum number of documents to retrieve in a given call."""

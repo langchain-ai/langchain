@@ -604,7 +604,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_anthropic import ChatAnthropic
 
             gpt_4o = ChatOpenAI(model="gpt-4o")
-            claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+            claude_3_sonnet = ChatAnthropic(model="claude-sonnet-4-5-20250929")
             model = gpt_4o.with_fallbacks([claude_3_sonnet])
 
             model.model_name

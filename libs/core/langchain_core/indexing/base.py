@@ -25,7 +25,7 @@ class RecordManager(ABC):
     The record manager abstraction is used by the langchain indexing API.
 
     The record manager keeps track of which documents have been
-    written into a vectorstore and when they were written.
+    written into a `VectorStore` and when they were written.
 
     The indexing API computes hashes for each document and stores the hash
     together with the write time and the source id in the record manager.
@@ -37,7 +37,7 @@ class RecordManager(ABC):
     already been indexed, and to only index new documents.
 
     The main benefit of this abstraction is that it works across many vectorstores.
-    To be supported, a vectorstore needs to only support the ability to add and
+    To be supported, a `VectorStore` needs to only support the ability to add and
     delete documents by ID. Using the record manager, the indexing API will
     be able to delete outdated documents and avoid redundant indexing of documents
     that have already been indexed.
@@ -45,13 +45,13 @@ class RecordManager(ABC):
     The main constraints of this abstraction are:
 
     1. It relies on the time-stamps to determine which documents have been
-       indexed and which have not. This means that the time-stamps must be
-       monotonically increasing. The timestamp should be the timestamp
-       as measured by the server to minimize issues.
+        indexed and which have not. This means that the time-stamps must be
+        monotonically increasing. The timestamp should be the timestamp
+        as measured by the server to minimize issues.
     2. The record manager is currently implemented separately from the
-       vectorstore, which means that the overall system becomes distributed
-       and may create issues with consistency. For example, writing to
-       record manager succeeds, but corresponding writing to vectorstore fails.
+        vectorstore, which means that the overall system becomes distributed
+        and may create issues with consistency. For example, writing to
+        record manager succeeds, but corresponding writing to `VectorStore` fails.
     """
 
     def __init__(
@@ -460,7 +460,7 @@ class UpsertResponse(TypedDict):
 class DeleteResponse(TypedDict, total=False):
     """A generic response for delete operation.
 
-    The fields in this response are optional and whether the vectorstore
+    The fields in this response are optional and whether the `VectorStore`
     returns them or not is up to the implementation.
     """
 
@@ -518,7 +518,7 @@ class DocumentIndex(BaseRetriever):
         if it is provided. If the ID is not provided, the upsert method is free
         to generate an ID for the content.
 
-        When an ID is specified and the content already exists in the vectorstore,
+        When an ID is specified and the content already exists in the `VectorStore`,
         the upsert method should update the content with the new data. If the content
         does not exist, the upsert method should add the item to the `VectorStore`.
 
@@ -528,20 +528,20 @@ class DocumentIndex(BaseRetriever):
 
         Returns:
             A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
+            successfully added or updated in the `VectorStore` and the list of IDs that
             failed to be added or updated.
         """
 
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any
     ) -> UpsertResponse:
-        """Add or update documents in the vectorstore. Async version of upsert.
+        """Add or update documents in the `VectorStore`. Async version of `upsert`.
 
         The upsert functionality should utilize the ID field of the item
         if it is provided. If the ID is not provided, the upsert method is free
         to generate an ID for the item.
 
-        When an ID is specified and the item already exists in the vectorstore,
+        When an ID is specified and the item already exists in the `VectorStore`,
         the upsert method should update the item with the new data. If the item
         does not exist, the upsert method should add the item to the `VectorStore`.
 
@@ -551,7 +551,7 @@ class DocumentIndex(BaseRetriever):
 
         Returns:
             A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
+            successfully added or updated in the `VectorStore` and the list of IDs that
             failed to be added or updated.
         """
         return await run_in_executor(
@@ -568,7 +568,7 @@ class DocumentIndex(BaseRetriever):
         Calling delete without any input parameters should raise a ValueError!
 
         Args:
-            ids: List of ids to delete.
+            ids: List of IDs to delete.
             **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index,
                 or else issue a non-blocking delete etc.
@@ -586,7 +586,7 @@ class DocumentIndex(BaseRetriever):
         Calling adelete without any input parameters should raise a ValueError!
 
         Args:
-            ids: List of ids to delete.
+            ids: List of IDs to delete.
             **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index.
 

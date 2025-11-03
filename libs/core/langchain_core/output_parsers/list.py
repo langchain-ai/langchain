@@ -41,7 +41,7 @@ def droplastn(
 
 
 class ListOutputParser(BaseTransformOutputParser[list[str]]):
-    """Parse the output of an LLM call to a list."""
+    """Parse the output of a model to a list."""
 
     @property
     def _type(self) -> str:
@@ -74,30 +74,30 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         buffer = ""
         for chunk in input:
             if isinstance(chunk, BaseMessage):
-                # extract text
+                # Extract text
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
                 buffer += chunk_content
             else:
-                # add current chunk to buffer
+                # Add current chunk to buffer
                 buffer += chunk
-            # parse buffer into a list of parts
+            # Parse buffer into a list of parts
             try:
                 done_idx = 0
-                # yield only complete parts
+                # Yield only complete parts
                 for m in droplastn(self.parse_iter(buffer), 1):
                     done_idx = m.end()
                     yield [m.group(1)]
                 buffer = buffer[done_idx:]
             except NotImplementedError:
                 parts = self.parse(buffer)
-                # yield only complete parts
+                # Yield only complete parts
                 if len(parts) > 1:
                     for part in parts[:-1]:
                         yield [part]
                     buffer = parts[-1]
-        # yield the last part
+        # Yield the last part
         for part in self.parse(buffer):
             yield [part]
 
@@ -108,40 +108,40 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         buffer = ""
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
-                # extract text
+                # Extract text
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
                 buffer += chunk_content
             else:
-                # add current chunk to buffer
+                # Add current chunk to buffer
                 buffer += chunk
-            # parse buffer into a list of parts
+            # Parse buffer into a list of parts
             try:
                 done_idx = 0
-                # yield only complete parts
+                # Yield only complete parts
                 for m in droplastn(self.parse_iter(buffer), 1):
                     done_idx = m.end()
                     yield [m.group(1)]
                 buffer = buffer[done_idx:]
             except NotImplementedError:
                 parts = self.parse(buffer)
-                # yield only complete parts
+                # Yield only complete parts
                 if len(parts) > 1:
                     for part in parts[:-1]:
                         yield [part]
                     buffer = parts[-1]
-        # yield the last part
+        # Yield the last part
         for part in self.parse(buffer):
             yield [part]
 
 
 class CommaSeparatedListOutputParser(ListOutputParser):
-    """Parse the output of an LLM call to a comma-separated list."""
+    """Parse the output of a model to a comma-separated list."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -177,7 +177,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             )
             return [item for sublist in reader for item in sublist]
         except csv.Error:
-            # keep old logic for backup
+            # Keep old logic for backup
             return [part.strip() for part in text.split(",")]
 
     @property
