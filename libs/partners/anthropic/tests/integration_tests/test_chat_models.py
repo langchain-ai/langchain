@@ -1700,6 +1700,7 @@ def test_files_api_pdf(block_format: str) -> None:
     _ = llm.invoke([input_message])
 
 
+@pytest.mark.vcr
 def test_search_result_tool_message() -> None:
     """Test that we can pass a search result tool message to the model."""
     llm = ChatAnthropic(
