@@ -679,8 +679,7 @@ class ChatHuggingFace(BaseChatModel):
                 messages=message_dicts, **params
             ):
                 if len(chunk["choices"]) == 0:
-                    usage = chunk.get("usage")
-                    if usage:
+                    if usage := chunk.get("usage"):
                         usage_msg = AIMessageChunk(
                             content="",
                             additional_kwargs={},
@@ -689,8 +688,6 @@ class ChatHuggingFace(BaseChatModel):
                                 "input_tokens": usage.get("prompt_tokens", 0),
                                 "output_tokens": usage.get("completion_tokens", 0),
                                 "total_tokens": usage.get("total_tokens", 0),
-                                "input_token_details": {"audio": 0, "cache_read": 0},
-                                "output_token_details": {"audio": 0, "reasoning": 0},
                             },
                         )
                         yield ChatGenerationChunk(message=usage_msg)
@@ -749,8 +746,7 @@ class ChatHuggingFace(BaseChatModel):
             messages=message_dicts, **params
         ):
             if len(chunk["choices"]) == 0:
-                usage = chunk.get("usage")
-                if usage:
+                if usage := chunk.get("usage"):
                     usage_msg = AIMessageChunk(
                         content="",
                         additional_kwargs={},
@@ -759,8 +755,6 @@ class ChatHuggingFace(BaseChatModel):
                             "input_tokens": usage.get("prompt_tokens", 0),
                             "output_tokens": usage.get("completion_tokens", 0),
                             "total_tokens": usage.get("total_tokens", 0),
-                            "input_token_details": {"audio": 0, "cache_read": 0},
-                            "output_token_details": {"audio": 0, "reasoning": 0},
                         },
                     )
                     yield ChatGenerationChunk(message=usage_msg)
