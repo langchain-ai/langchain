@@ -58,7 +58,7 @@ class Crawler:
         Make sure to scope permissions to the minimal permissions necessary for
         the application.
 
-        See https://python.langchain.com/docs/security for more information.
+        See https://docs.langchain.com/oss/python/security-policy for more information.
     """
 
     def __init__(self) -> None:

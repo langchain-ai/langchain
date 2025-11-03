@@ -147,11 +147,11 @@ class Runnable(ABC, Generic[Input, Output]):
     the `input_schema` property, the `output_schema` property and `config_schema`
     method.
 
-    LCEL and Composition
-    ====================
+    Composition
+    ===========
 
-    The LangChain Expression Language (LCEL) is a declarative way to compose
-    `Runnable` objectsinto chains.
+    Runnable objects can be composed together to create chains in a declarative way.
+
     Any chain constructed this way will automatically have sync, async, batch, and
     streaming support.
 
@@ -235,21 +235,21 @@ class Runnable(ABC, Generic[Input, Output]):
 
     You can set the global debug flag to True to enable debug output for all chains:
 
-        ```python
-        from langchain_core.globals import set_debug
+    ```python
+    from langchain_core.globals import set_debug
 
-        set_debug(True)
-        ```
+    set_debug(True)
+    ```
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
 
-        ```python
-        from langchain_core.tracers import ConsoleCallbackHandler
+    ```python
+    from langchain_core.tracers import ConsoleCallbackHandler
 
-        chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
-        ```
+    chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
+    ```
 
-    For a UI (and much more) checkout [LangSmith](https://docs.smith.langchain.com/).
+    For a UI (and much more) checkout [LangSmith](https://docs.langchain.com/langsmith/home).
 
     """
 
@@ -2637,7 +2637,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_openai import ChatOpenAI
 
         model = ChatAnthropic(
-            model_name="claude-3-7-sonnet-20250219"
+            model_name="claude-sonnet-4-5-20250929"
         ).configurable_alternatives(
             ConfigurableField(id="llm"),
             default_key="anthropic",
@@ -3500,7 +3500,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
     Returns a mapping of their outputs.
 
-    `RunnableParallel` is one of the two main composition primitives for the LCEL,
+    `RunnableParallel` is one of the two main composition primitives,
     alongside `RunnableSequence`. It invokes `Runnable`s concurrently, providing the
     same input to each.
 

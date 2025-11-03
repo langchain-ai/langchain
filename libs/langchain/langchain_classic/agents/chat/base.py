@@ -95,7 +95,7 @@ class ChatAgent(Agent):
             tools: A list of tools.
             system_message_prefix: The system message prefix.
             system_message_suffix: The system message suffix.
-            human_message: The human message.
+            human_message: The `HumanMessage`.
             format_instructions: The format instructions.
             input_variables: The input variables.
 
@@ -142,7 +142,7 @@ class ChatAgent(Agent):
             output_parser: The output parser.
             system_message_prefix: The system message prefix.
             system_message_suffix: The system message suffix.
-            human_message: The human message.
+            human_message: The `HumanMessage`.
             format_instructions: The format instructions.
             input_variables: The input variables.
             kwargs: Additional keyword arguments.

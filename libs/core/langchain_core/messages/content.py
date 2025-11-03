@@ -644,7 +644,7 @@ class AudioContentBlock(TypedDict):
 
 
 class PlainTextContentBlock(TypedDict):
-    """Plaintext data (e.g., from a document).
+    """Plaintext data (e.g., from a `.txt` or `.md` document).
 
     !!! note
         A `PlainTextContentBlock` existed in `langchain-core<1.0.0`. Although the
@@ -767,7 +767,7 @@ class FileContentBlock(TypedDict):
 
 
 class NonStandardContentBlock(TypedDict):
-    """Provider-specific data.
+    """Provider-specific content data.
 
     This block contains data for which there is not yet a standard type.
 
@@ -802,7 +802,7 @@ class NonStandardContentBlock(TypedDict):
     """
 
     value: dict[str, Any]
-    """Provider-specific data."""
+    """Provider-specific content data."""
 
     index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
@@ -1399,7 +1399,7 @@ def create_non_standard_block(
     """Create a `NonStandardContentBlock`.
 
     Args:
-        value: Provider-specific data.
+        value: Provider-specific content data.
         id: Content block identifier. Generated automatically if not provided.
         index: Index of block in aggregate response. Used during streaming.
 

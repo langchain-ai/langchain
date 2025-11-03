@@ -55,7 +55,7 @@ def create_tool_calling_agent(
                 ("placeholder", "{agent_scratchpad}"),
             ]
         )
-        model = ChatAnthropic(model="claude-3-opus-20240229")
+        model = ChatAnthropic(model="claude-opus-4-1-20250805")
 
         @tool
         def magic_function(input: int) -> int:
@@ -83,11 +83,15 @@ def create_tool_calling_agent(
         ```
 
     Prompt:
-
         The agent prompt must have an `agent_scratchpad` key that is a
             `MessagesPlaceholder`. Intermediate agent actions and tool output
             messages will be passed in here.
 
+    Troubleshooting:
+        - If you encounter `invalid_tool_calls` errors, ensure that your tool
+          functions return properly formatted responses. Tool outputs should be
+          serializable to JSON. For custom objects, implement proper __str__ or
+          to_dict methods.
     """
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),
