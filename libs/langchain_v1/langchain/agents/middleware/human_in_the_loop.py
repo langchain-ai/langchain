@@ -345,7 +345,25 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             if tool_message:
                 artificial_tool_messages.append(tool_message)
 
-        # Update the AI message to only include approved tool calls
-        last_ai_msg.tool_calls = revised_tool_calls
+        # Create a new AIMessage with updated tool calls instead of mutating the original
+        # This ensures LangGraph's state management properly persists the changes
+        # (fixes Issues #33787 and #33784 where edits weren't persisted correctly)
+        #
+        # CRITICAL: We must ensure last_ai_msg has an ID for the add_messages reducer
+        # to properly replace it (not append a duplicate). If no ID exists, generate one.
+        if last_ai_msg.id is None:
+            import uuid
 
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+            last_ai_msg.id = str(uuid.uuid4())
+
+        updated_ai_msg = AIMessage(
+            content=last_ai_msg.content,
+            tool_calls=revised_tool_calls,
+            id=last_ai_msg.id,  # Same ID ensures replacement, not appending
+            name=last_ai_msg.name,
+            additional_kwargs=last_ai_msg.additional_kwargs,
+            response_metadata=last_ai_msg.response_metadata,
+            usage_metadata=last_ai_msg.usage_metadata,
+        )
+
+        return {"messages": [updated_ai_msg, *artificial_tool_messages]}

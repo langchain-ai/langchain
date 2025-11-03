@@ -1024,6 +1024,161 @@ def test_human_in_the_loop_middleware_description_as_callable() -> None:
         assert captured_request["action_requests"][1]["description"] == "Static description"
 
 
+def test_human_in_the_loop_middleware_edit_actually_executes_with_edited_args(
+    sync_checkpointer: BaseCheckpointSaver,
+) -> None:
+    """Test that HITL edit decision properly replaces original tool call (Issues #33787, #33784).
+
+    This test reproduces the bug where after editing a tool call:
+    1. The edited tool executes correctly
+    2. BUT the agent's next model call sees the ORIGINAL (unedited) tool_calls in the AIMessage
+    3. This causes the agent to re-attempt the original tool call
+
+    The bug happens because HumanInTheLoopMiddleware directly modifies the AIMessage
+    object's tool_calls attribute, but LangGraph's state management may not properly
+    persist this mutation, causing subsequent reads to see the original values.
+    """
+    # Track what arguments tools were actually called with
+    send_email_calls = []
+
+    @tool
+    def send_email_tool(to: str, subject: str, body: str) -> str:
+        """Send an email to a recipient.
+
+        Args:
+            to: Email address of the recipient
+            subject: Subject line of the email
+            body: Body content of the email
+        """
+        send_email_calls.append({"to": to, "subject": subject, "body": body})
+        return f"Email sent successfully to {to} with subject: {subject}"
+
+    # Create agent with HITL middleware
+    # Simulate the exact scenario from issue #33787:
+    # 1. First model call: agent wants to send email to alice@example.com
+    # 2. After edit (to alice@test.com), the model should see the edited params
+    #    and not re-attempt the original call
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                # First call: agent proposes sending to alice@example.com
+                [
+                    {
+                        "args": {"to": "alice@example.com", "subject": "Test", "body": "Hello"},
+                        "id": "call_001",
+                        "name": "send_email_tool",
+                    }
+                ],
+                # Second call (after edited tool execution): Agent should see the EDITED
+                # tool call in message history. If model still had original params in its
+                # context, it might try again. But with the fix, it sees edited params.
+                # For testing, we configure model to not make additional tool calls
+                # (empty list) to verify the agent loop completes successfully.
+                [],  # No more tools - task completed
+            ]
+        ),
+        tools=[send_email_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={
+                    "send_email_tool": {"allowed_decisions": ["approve", "edit", "reject"]}
+                }
+            )
+        ],
+        checkpointer=sync_checkpointer,
+    )
+
+    thread = {"configurable": {"thread_id": "test-hitl-bug-33787"}}
+
+    # === STEP 1: First invocation - should interrupt before sending email ===
+    result = agent.invoke(
+        {
+            "messages": [
+                HumanMessage(
+                    "Send an email to alice@example.com with subject 'Test' and body 'Hello'"
+                )
+            ]
+        },
+        thread,
+    )
+
+    # Verify we got an interrupt (email not sent yet)
+    assert len(send_email_calls) == 0, "Email should not have been sent yet"
+    last_ai_msg = result["messages"][-1]
+    assert isinstance(last_ai_msg, AIMessage)
+    assert len(last_ai_msg.tool_calls) == 1
+    assert last_ai_msg.tool_calls[0]["args"]["to"] == "alice@example.com"
+
+    # === STEP 2: Resume with edit decision - change recipient to alice@test.com ===
+    from langgraph.types import Command
+
+    result = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "message": "Changing recipient to test address",
+                        "edited_action": Action(
+                            name="send_email_tool",
+                            args={
+                                "to": "alice@test.com",
+                                "subject": "this is a test",
+                                "body": "don't reply",
+                            },
+                        ),
+                    }
+                ]
+            }
+        ),
+        thread,
+    )
+
+    # CRITICAL ASSERTION 1: Email should be sent to EDITED address (alice@test.com)
+    assert len(send_email_calls) == 1, "Exactly one email should have been sent"
+    assert send_email_calls[0]["to"] == "alice@test.com", (
+        f"Email should be sent to edited address 'alice@test.com', got '{send_email_calls[0]['to']}'"
+    )
+    assert send_email_calls[0]["subject"] == "this is a test"
+
+    # Verify the tool message reflects the edited execution
+    tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    assert len(tool_messages) >= 1
+    assert "alice@test.com" in tool_messages[-1].content
+
+    # CRITICAL ASSERTION 2: Verify the AIMessage in history was properly updated
+    # This is the core fix - the AIMessage with original params should be replaced
+    # with the edited version so that subsequent model calls see the correct context
+    ai_msg_with_original_id = None
+    for msg in result["messages"]:
+        if isinstance(msg, AIMessage) and getattr(msg, "id", None) == "0":
+            ai_msg_with_original_id = msg
+            break
+
+    assert ai_msg_with_original_id is not None, "Should find the AIMessage that was edited"
+    assert len(ai_msg_with_original_id.tool_calls) == 1
+
+    # THE KEY ASSERTION: The AIMessage stored in state should have EDITED params
+    # Without the fix, this would still have alice@example.com due to mutation issues
+    assert ai_msg_with_original_id.tool_calls[0]["args"]["to"] == "alice@test.com", (
+        f"BUG DETECTED (Issue #33787): AIMessage in state still has original params "
+        f"'{ai_msg_with_original_id.tool_calls[0]['args']['to']}' instead of edited 'alice@test.com'. "
+        f"The middleware should have created a NEW AIMessage with edited params to replace the original."
+    )
+
+    # CRITICAL ASSERTION 3: Agent should not have re-executed original tool call
+    # Only the EDITED call should have been executed
+    assert len(send_email_calls) == 1, (
+        f"Expected exactly 1 email (the edited one), but {len(send_email_calls)} were sent. "
+        f"This suggests the agent re-attempted the original tool call."
+    )
+
+    # Final verification: the execution log confirms only edited params were used
+    assert send_email_calls[0]["to"] == "alice@test.com"
+    assert send_email_calls[0]["subject"] == "this is a test"
+    assert send_email_calls[0]["body"] == "don't reply"
+
+
 # Tests for SummarizationMiddleware
 def test_summarization_middleware_initialization() -> None:
     """Test SummarizationMiddleware initialization."""
