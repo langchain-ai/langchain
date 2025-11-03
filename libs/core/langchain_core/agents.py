@@ -118,12 +118,12 @@ class AgentActionMessageLog(AgentAction):
 
 
 class AgentStep(Serializable):
-    """Result of running an AgentAction."""
+    """Result of running an `AgentAction`."""
 
     action: AgentAction
-    """The AgentAction that was executed."""
+    """The `AgentAction` that was executed."""
     observation: Any
-    """The result of the AgentAction."""
+    """The result of the `AgentAction`."""
 
     @property
     def messages(self) -> Sequence[BaseMessage]:
