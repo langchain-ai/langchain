@@ -18,10 +18,11 @@ description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.optional-dependencies]
+model-profiles = ["langchain-model-profiles"]
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-#azure-ai = ["langchain-azure-ai"]
+azure-ai = ["langchain-azure-ai"]
 #cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
