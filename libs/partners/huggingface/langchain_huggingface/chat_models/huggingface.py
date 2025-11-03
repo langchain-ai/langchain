@@ -638,8 +638,8 @@ class ChatHuggingFace(BaseChatModel):
         return self._to_chat_result(llm_result)
 
     def _should_stream_usage(
-        self, *, stream_usage: Optional[bool] = None, **kwargs: Any
-    ) -> bool:
+        self, *, stream_usage: bool | None = None, **kwargs: Any
+    ) -> bool | None:
         """Determine whether to include usage metadata in streaming output.
 
         For backwards compatibility, we check for `stream_options` passed
@@ -662,11 +662,10 @@ class ChatHuggingFace(BaseChatModel):
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: bool | None = True,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if _is_huggingface_endpoint(self.llm):
-            kwargs["stream"] = True
             stream_usage = self._should_stream_usage(
                 stream_usage=stream_usage, **kwargs
             )
@@ -679,25 +678,24 @@ class ChatHuggingFace(BaseChatModel):
             for chunk in self.llm.client.chat_completion(
                 messages=message_dicts, **params
             ):
-                usage = chunk.get("usage")
-                if usage:
-                    usage_msg = AIMessageChunk(
-                        content="",
-                        additional_kwargs={},
-                        response_metadata={},
-                        usage_metadata={
-                            "input_tokens": usage.get("prompt_tokens", 0),
-                            "output_tokens": usage.get("completion_tokens", 0),
-                            "total_tokens": usage.get("total_tokens", 0),
-                            "input_token_details": {"audio": 0, "cache_read": 0},
-                            "output_token_details": {"audio": 0, "reasoning": 0},
-                        },
-                    )
-                    yield ChatGenerationChunk(message=usage_msg)
+                if len(chunk["choices"]) == 0:
+                    usage = chunk.get("usage")
+                    if usage:
+                        usage_msg = AIMessageChunk(
+                            content="",
+                            additional_kwargs={},
+                            response_metadata={},
+                            usage_metadata={
+                                "input_tokens": usage.get("prompt_tokens", 0),
+                                "output_tokens": usage.get("completion_tokens", 0),
+                                "total_tokens": usage.get("total_tokens", 0),
+                                "input_token_details": {"audio": 0, "cache_read": 0},
+                                "output_token_details": {"audio": 0, "reasoning": 0},
+                            },
+                        )
+                        yield ChatGenerationChunk(message=usage_msg)
                     continue
 
-                if len(chunk["choices"]) == 0:
-                    continue
                 choice = chunk["choices"][0]
                 message_chunk = _convert_chunk_to_message_chunk(
                     chunk, default_chunk_class
@@ -736,13 +734,10 @@ class ChatHuggingFace(BaseChatModel):
         stop: list[str] | None = None,
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: bool | None = True,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        kwargs["stream"] = True
-        stream_usage = self._should_stream_usage(
-            stream_usage=stream_usage, **kwargs
-        )
+        stream_usage = self._should_stream_usage(stream_usage=stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -753,25 +748,24 @@ class ChatHuggingFace(BaseChatModel):
         async for chunk in await self.llm.async_client.chat_completion(
             messages=message_dicts, **params
         ):
-            usage = chunk.get("usage")
-            if usage:
-                usage_msg = AIMessageChunk(
-                    content="",
-                    additional_kwargs={},
-                    response_metadata={},
-                    usage_metadata={
-                        "input_tokens": usage.get("prompt_tokens", 0),
-                        "output_tokens": usage.get("completion_tokens", 0),
-                        "total_tokens": usage.get("total_tokens", 0),
-                        "input_token_details": {"audio": 0, "cache_read": 0},
-                        "output_token_details": {"audio": 0, "reasoning": 0},
-                    },
-                )
-                yield ChatGenerationChunk(message=usage_msg)
+            if len(chunk["choices"]) == 0:
+                usage = chunk.get("usage")
+                if usage:
+                    usage_msg = AIMessageChunk(
+                        content="",
+                        additional_kwargs={},
+                        response_metadata={},
+                        usage_metadata={
+                            "input_tokens": usage.get("prompt_tokens", 0),
+                            "output_tokens": usage.get("completion_tokens", 0),
+                            "total_tokens": usage.get("total_tokens", 0),
+                            "input_token_details": {"audio": 0, "cache_read": 0},
+                            "output_token_details": {"audio": 0, "reasoning": 0},
+                        },
+                    )
+                    yield ChatGenerationChunk(message=usage_msg)
                 continue
 
-            if len(chunk["choices"]) == 0:
-                continue
             choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
