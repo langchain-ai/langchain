@@ -30,6 +30,7 @@ LANGCHAIN_DIRS = [
     "libs/text-splitters",
     "libs/langchain",
     "libs/langchain_v1",
+    "libs/model-profiles",
 ]
 
 # When set to True, we are ignoring core dependents

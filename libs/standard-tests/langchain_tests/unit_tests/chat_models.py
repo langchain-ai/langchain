@@ -515,6 +515,16 @@ class ChatModelUnitTests(ChatModelTests):
             return True
         ```
 
+        Note: this test downloads audio data from wikimedia.org. You may need to set
+        the `LANGCHAIN_TESTS_USER_AGENT` environment variable to identify these
+        requests, e.g.,
+
+        ```bash
+        export LANGCHAIN_TESTS_USER_AGENT="CoolBot/0.0 (https://example.org/coolbot/; coolbot@example.org) generic-library/0.0"
+        ```
+
+        Refer to the [Wikimedia Foundation User-Agent Policy](https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy).
+
     ??? info "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
