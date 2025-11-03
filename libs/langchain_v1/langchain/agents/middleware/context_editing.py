@@ -228,6 +228,7 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
             system_msg = (
                 [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
@@ -256,6 +257,7 @@ class ContextEditingMiddleware(AgentMiddleware):
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
+
         else:
             system_msg = (
                 [SystemMessage(content=request.system_prompt)] if request.system_prompt else []

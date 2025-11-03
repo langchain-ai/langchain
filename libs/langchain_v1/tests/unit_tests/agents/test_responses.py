@@ -97,7 +97,7 @@ class TestOutputToolBinding:
         tool_binding = OutputToolBinding.from_schema_spec(schema_spec)
 
         # Should use empty description when model has default BaseModel docstring
-        assert tool_binding.tool.description == ""
+        assert not tool_binding.tool.description
 
     def test_parse_payload_pydantic_success(self) -> None:
         """Test successful parsing for Pydantic model."""
@@ -137,4 +137,4 @@ class TestEdgeCases:
         """Test that BASE_MODEL_DOC constant is set correctly."""
         binding = OutputToolBinding.from_schema_spec(_SchemaSpec(EmptyDocModel))
         assert binding.tool.name == "EmptyDocModel"
-        assert binding.tool.description[:5] == ""  # Should be empty for default docstring
+        assert not binding.tool.description[:5]  # Should be empty for default docstring

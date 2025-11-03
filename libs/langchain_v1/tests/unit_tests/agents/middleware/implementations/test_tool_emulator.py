@@ -3,38 +3,40 @@
 import typing
 from collections.abc import Callable
 from itertools import cycle
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
-from pydantic import BaseModel
-
-from langchain.agents import create_agent
-from langchain.agents.middleware import LLMToolEmulator
-from langchain.messages import AIMessage
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool, tool
+from pydantic import BaseModel
+
+from langchain.agents import create_agent
+from langchain.agents.middleware import LLMToolEmulator
+from langchain.messages import AIMessage
 
 
 @tool
 def get_weather(location: str) -> str:
     """Get current weather for a location."""
-    raise NotImplementedError("This tool should be emulated")
+    msg = "This tool should be emulated"
+    raise NotImplementedError(msg)
 
 
 @tool
 def search_web(query: str) -> str:
     """Search the web for information."""
-    raise NotImplementedError("This tool should be emulated")
+    msg = "This tool should be emulated"
+    raise NotImplementedError(msg)
 
 
 @tool
 def calculator(expression: str) -> str:
     """Perform mathematical calculations."""
     # This tool executes normally (not emulated)
-    return f"Result: {eval(expression)}"
+    return f"Result: {eval(expression)}"  # noqa: S307
 
 
 class FakeModel(GenericFakeChatModel):
@@ -44,7 +46,7 @@ class FakeModel(GenericFakeChatModel):
 
     def bind_tools(
         self,
-        tools: typing.Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:
@@ -52,11 +54,11 @@ class FakeModel(GenericFakeChatModel):
             raise ValueError(msg)
 
         tool_dicts = []
-        for tool in tools:
-            if isinstance(tool, dict):
-                tool_dicts.append(tool)
+        for tool_ in tools:
+            if isinstance(tool_, dict):
+                tool_dicts.append(tool_)
                 continue
-            if not isinstance(tool, BaseTool):
+            if not isinstance(tool_, BaseTool):
                 msg = "Only BaseTool and dict is supported by FakeModel.bind_tools"
                 raise TypeError(msg)
 
@@ -66,14 +68,14 @@ class FakeModel(GenericFakeChatModel):
                     {
                         "type": "function",
                         "function": {
-                            "name": tool.name,
+                            "name": tool_.name,
                         },
                     }
                 )
             elif self.tool_style == "anthropic":
                 tool_dicts.append(
                     {
-                        "name": tool.name,
+                        "name": tool_.name,
                     }
                 )
 

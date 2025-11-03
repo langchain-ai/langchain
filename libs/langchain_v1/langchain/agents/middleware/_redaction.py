@@ -179,11 +179,14 @@ BUILTIN_DETECTORS: dict[str, Detector] = {
 }
 """Registry of built-in detectors keyed by type name."""
 
+_CARD_NUMBER_MIN_DIGITS = 13
+_CARD_NUMBER_MAX_DIGITS = 19
+
 
 def _passes_luhn(card_number: str) -> bool:
     """Validate credit card number using the Luhn checksum."""
     digits = [int(d) for d in card_number if d.isdigit()]
-    if not 13 <= len(digits) <= 19:
+    if not _CARD_NUMBER_MIN_DIGITS <= len(digits) <= _CARD_NUMBER_MAX_DIGITS:
         return False
 
     checksum = 0
@@ -191,7 +194,7 @@ def _passes_luhn(card_number: str) -> bool:
         value = digit
         if index % 2 == 1:
             value *= 2
-            if value > 9:
+            if value > 9:  # noqa: PLR2004
                 value -= 9
         checksum += value
     return checksum % 10 == 0
@@ -205,6 +208,10 @@ def _apply_redact_strategy(content: str, matches: list[PIIMatch]) -> str:
     return result
 
 
+_UNMASKED_CHAR_NUMBER = 4
+_IPV4_PARTS_NUMBER = 4
+
+
 def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
     result = content
     for match in sorted(matches, key=lambda item: item["start"], reverse=True):
@@ -212,11 +219,11 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
         pii_type = match["type"]
         if pii_type == "email":
             parts = value.split("@")
-            if len(parts) == 2:
+            if len(parts) == 2:  # noqa: PLR2004
                 domain_parts = parts[1].split(".")
                 masked = (
                     f"{parts[0]}@****.{domain_parts[-1]}"
-                    if len(domain_parts) >= 2
+                    if len(domain_parts) > 1
                     else f"{parts[0]}@****"
                 )
             else:
@@ -225,12 +232,15 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
             digits_only = "".join(c for c in value if c.isdigit())
             separator = "-" if "-" in value else " " if " " in value else ""
             if separator:
-                masked = f"****{separator}****{separator}****{separator}{digits_only[-4:]}"
+                masked = (
+                    f"****{separator}****{separator}****{separator}"
+                    f"{digits_only[-_UNMASKED_CHAR_NUMBER:]}"
+                )
             else:
-                masked = f"************{digits_only[-4:]}"
+                masked = f"************{digits_only[-_UNMASKED_CHAR_NUMBER:]}"
         elif pii_type == "ip":
             octets = value.split(".")
-            masked = f"*.*.*.{octets[-1]}" if len(octets) == 4 else "****"
+            masked = f"*.*.*.{octets[-1]}" if len(octets) == _IPV4_PARTS_NUMBER else "****"
         elif pii_type == "mac_address":
             separator = ":" if ":" in value else "-"
             masked = (
@@ -239,7 +249,11 @@ def _apply_mask_strategy(content: str, matches: list[PIIMatch]) -> str:
         elif pii_type == "url":
             masked = "[MASKED_URL]"
         else:
-            masked = f"****{value[-4:]}" if len(value) > 4 else "****"
+            masked = (
+                f"****{value[-_UNMASKED_CHAR_NUMBER:]}"
+                if len(value) > _UNMASKED_CHAR_NUMBER
+                else "****"
+            )
         result = result[: match["start"]] + masked + result[match["end"] :]
     return result
 

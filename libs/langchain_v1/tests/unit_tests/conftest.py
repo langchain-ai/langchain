@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from langchain_tests.conftest import CustomPersister, CustomSerializer
 from langchain_tests.conftest import (
-    _base_vcr_config as _base_vcr_config,
+    _base_vcr_config as _base_vcr_config,  # noqa: PLC0414
 )
 from vcr import VCR
 

@@ -68,8 +68,8 @@ def init_chat_model(
 
     **Two main use cases:**
 
-    1. **Fixed model** – specify the model upfront and get a ready-to-use chat model.
-    2. **Configurable model** – choose to specify parameters (including model name) at
+    1. **Fixed model** - specify the model upfront and get a ready-to-use chat model.
+    2. **Configurable model** - choose to specify parameters (including model name) at
         runtime via `config`. Makes it easy to switch between models/providers without
         changing your code
 
@@ -503,8 +503,12 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
 
 def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
-    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
-        model_provider = model.split(":")[0]
+    if (
+        not model_provider
+        and ":" in model
+        and model.split(":", maxsplit=1)[0] in _SUPPORTED_PROVIDERS
+    ):
+        model_provider = model.split(":", maxsplit=1)[0]
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
@@ -633,6 +637,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this `Runnable`."""
         from langchain_core.prompt_values import ChatPromptValueConcrete, StringPromptValue
@@ -817,6 +822,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             yield x
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,
@@ -834,6 +840,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
+    @override
     def astream_log(
         self,
         input: Any,
