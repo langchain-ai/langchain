@@ -1056,10 +1056,16 @@ def test_summarization_middleware_no_summarization_cases() -> None:
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(model=model, max_tokens_before_summary=1000)
 
-    # Test when summarization is disabled
+    # Test when summarization is disabled with few messages
     middleware_disabled = SummarizationMiddleware(model=model, max_tokens_before_summary=None)
     state = {"messages": [HumanMessage(content="Hello"), AIMessage(content="Hi")]}
     result = middleware_disabled.before_model(state, None)
+    assert result is None
+
+    # Test when summarization is disabled with many messages (exceeding messages_to_keep)
+    many_messages = [HumanMessage(content=f"Message {i}") for i in range(25)]
+    state_many = {"messages": many_messages}
+    result = middleware_disabled.before_model(state_many, None)
     assert result is None
 
     # Test when token count is below threshold

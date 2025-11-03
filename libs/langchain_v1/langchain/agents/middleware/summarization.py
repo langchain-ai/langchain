@@ -104,11 +104,12 @@ class SummarizationMiddleware(AgentMiddleware):
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
+        # If max_tokens_before_summary is None, summarization is disabled
+        if self.max_tokens_before_summary is None:
+            return None
+
         total_tokens = self.token_counter(messages)
-        if (
-            self.max_tokens_before_summary is not None
-            and total_tokens < self.max_tokens_before_summary
-        ):
+        if total_tokens < self.max_tokens_before_summary:
             return None
 
         cutoff_index = self._find_safe_cutoff(messages)
