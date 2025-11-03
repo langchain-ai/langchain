@@ -639,6 +639,10 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/knowledge-base"
     },
     {
+      "source": "/docs/how_to/multimodal_inputs(/?)",
+      "destination": "https://docs.langchain.com/oss/python/langchain/messages#multimodal"
+    },
+    {
       "source": "/docs/langgraph(/?)",
       "destination": "https://docs.langchain.com/oss/python/langgraph/overview"
     },
