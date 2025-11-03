@@ -8,8 +8,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
     from langchain_model_profiles import ModelProfile
@@ -182,7 +181,8 @@ def test_summarization_middleware_summary_creation() -> None:
     # Test error handling
     class ErrorModel(BaseChatModel):
         def invoke(self, prompt):
-            raise Exception("Model error")
+            msg = "Model error"
+            raise ValueError(msg)
 
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
@@ -217,7 +217,9 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
 
 def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     """Ensure automatic profile inference triggers summarization when limits are exceeded."""
-    token_counter = lambda messages: len(messages) * 200
+
+    def token_counter(messages):
+        return len(messages) * 200
 
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
@@ -236,14 +238,14 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     }
 
     # Test we don't engage summarization
-    # total_tokens = 4 * 200 = 800
-    # max_input_tokens = 1000
-    # 0.81 * 1000 == 810 > 800 -> summarization not triggered
+    # we have total_tokens = 4 * 200 = 800
+    # and max_input_tokens = 1000
+    # since 0.81 * 1000 == 810 > 800 -> summarization not triggered
     result = middleware.before_model(state, None)
     assert result is None
 
     # Engage summarization
-    # 0.80 * 1000 == 800 <= 800
+    # since 0.80 * 1000 == 800 <= 800
     middleware = SummarizationMiddleware(
         model=ProfileChatModel(),
         trigger=("fraction", 0.80),
@@ -370,7 +372,8 @@ def test_summarization_middleware_missing_profile() -> None:
 
         @property
         def profile(self):
-            raise ImportError("Profile not available")
+            msg = "Profile not available"
+            raise ImportError(msg)
 
     with pytest.raises(
         ValueError,
@@ -509,7 +512,7 @@ def test_summarization_middleware_keep_messages() -> None:
     assert [message.content for message in result["messages"][2:]] == ["4", "5"]
 
     # Above threshold - should also trigger summarization
-    messages_above = messages_at_threshold + [HumanMessage(content="6")]
+    messages_above = [*messages_at_threshold, HumanMessage(content="6")]
     state_above = {"messages": messages_above}
     result = middleware.before_model(state_above, None)
     assert result is not None
@@ -655,7 +658,8 @@ def test_summarization_middleware_trim_messages_error_fallback() -> None:
 
     # Create a mock token counter that raises an exception
     def failing_token_counter(messages):
-        raise Exception("Token counting failed")
+        msg = "Token counting failed"
+        raise ValueError(msg)
 
     middleware.token_counter = failing_token_counter
 
@@ -796,7 +800,6 @@ def test_summarization_middleware_zero_and_negative_target_tokens() -> None:
 
     # Should set threshold to 1 when calculated value is <= 0
     messages = [HumanMessage(content="test")]
-    state = {"messages": messages}
 
     # The trigger fraction calculation: int(1000 * 0.0001) = 0, but should be set to 1
     # Token count of 1 message should exceed threshold of 1
@@ -815,7 +818,8 @@ async def test_summarization_middleware_async_error_handling() -> None:
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         async def _agenerate(self, messages, **kwargs):
-            raise Exception("Async model error")
+            msg = "Async model error"
+            raise ValueError(msg)
 
         @property
         def _llm_type(self):

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
-from langchain_core.messages import (  # noqa: TC002
+from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     BaseMessage,
@@ -31,7 +31,7 @@ from langchain_core.messages import (  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
-from langgraph.types import Command  # noqa: TC002
+from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
 
@@ -799,7 +799,7 @@ def before_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -824,7 +824,7 @@ def before_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -940,7 +940,7 @@ def after_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -963,7 +963,7 @@ def after_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1091,7 +1091,7 @@ def before_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1116,7 +1116,7 @@ def before_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1234,7 +1234,7 @@ def after_agent(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -1257,7 +1257,7 @@ def after_agent(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -1364,7 +1364,7 @@ def dynamic_prompt(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
@@ -1385,7 +1385,7 @@ def dynamic_prompt(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
@@ -1394,7 +1394,7 @@ def dynamic_prompt(
             return handler(request)
 
         async def async_wrapped_from_sync(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
@@ -1536,7 +1536,7 @@ def wrap_model_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
             ) -> ModelCallResult:
@@ -1557,7 +1557,7 @@ def wrap_model_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
@@ -1696,7 +1696,7 @@ def wrap_tool_call(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware,  # noqa: ARG001
+                _self: AgentMiddleware,
                 request: ToolCallRequest,
                 handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
             ) -> ToolMessage | Command:
@@ -1717,7 +1717,7 @@ def wrap_tool_call(
             )()
 
         def wrapped(
-            self: AgentMiddleware,  # noqa: ARG001
+            _self: AgentMiddleware,
             request: ToolCallRequest,
             handler: Callable[[ToolCallRequest], ToolMessage | Command],
         ) -> ToolMessage | Command:

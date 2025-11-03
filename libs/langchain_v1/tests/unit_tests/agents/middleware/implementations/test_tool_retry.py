@@ -1,6 +1,5 @@
 """Tests for ToolRetryMiddleware functionality."""
 
-import asyncio
 import time
 from collections.abc import Callable
 
@@ -8,6 +7,8 @@ import pytest
 from langchain_core.messages import HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.prebuilt.tool_node import ToolCallRequest
+from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
@@ -16,15 +17,15 @@ from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool
-def working_tool(input: str) -> str:
+def working_tool(value: str) -> str:
     """Tool that always succeeds."""
-    return f"Success: {input}"
+    return f"Success: {value}"
 
 
 @tool
-def failing_tool(input: str) -> str:
+def failing_tool(value: str) -> str:
     """Tool that always fails."""
-    msg = f"Failed: {input}"
+    msg = f"Failed: {value}"
     raise ValueError(msg)
 
 
@@ -40,11 +41,11 @@ class TemporaryFailureTool:
         self.fail_count = fail_count
         self.attempt = 0
 
-    def __call__(self, input: str) -> str:
+    def __call__(self, value: str) -> str:
         """Execute the tool.
 
         Args:
-            input: Input string.
+            value: Input string.
 
         Returns:
             Success message if attempt >= fail_count.
@@ -56,7 +57,7 @@ class TemporaryFailureTool:
         if self.attempt <= self.fail_count:
             msg = f"Temporary failure {self.attempt}"
             raise ValueError(msg)
-        return f"Success after {self.attempt} attempts: {input}"
+        return f"Success after {self.attempt} attempts: {value}"
 
 
 def test_tool_retry_initialization_defaults() -> None:
@@ -151,7 +152,7 @@ def test_tool_retry_working_tool_no_retry_needed() -> None:
     """Test ToolRetryMiddlewarewith a working tool (no retry needed)."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="working_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="working_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -180,7 +181,7 @@ def test_tool_retry_failing_tool_returns_message() -> None:
     """Test ToolRetryMiddlewarewith failing tool returns error message."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -217,7 +218,7 @@ def test_tool_retry_failing_tool_raises() -> None:
     """Test ToolRetryMiddlewarewith on_failure='error' re-raises exception."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -252,7 +253,7 @@ def test_tool_retry_custom_failure_formatter() -> None:
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -286,13 +287,13 @@ def test_tool_retry_succeeds_after_retries() -> None:
     temp_fail = TemporaryFailureTool(fail_count=2)
 
     @tool
-    def temp_failing_tool(input: str) -> str:
+    def temp_failing_tool(value: str) -> str:
         """Tool that fails temporarily."""
-        return temp_fail(input)
+        return temp_fail(value)
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="temp_failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="temp_failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -327,8 +328,8 @@ def test_tool_retry_specific_tools_only() -> None:
     model = FakeToolCallingModel(
         tool_calls=[
             [
-                ToolCall(name="failing_tool", args={"input": "test1"}, id="1"),
-                ToolCall(name="working_tool", args={"input": "test2"}, id="2"),
+                ToolCall(name="failing_tool", args={"value": "test1"}, id="1"),
+                ToolCall(name="working_tool", args={"value": "test2"}, id="2"),
             ],
             [],
         ]
@@ -374,8 +375,8 @@ def test_tool_retry_specific_tools_with_base_tool() -> None:
     model = FakeToolCallingModel(
         tool_calls=[
             [
-                ToolCall(name="failing_tool", args={"input": "test1"}, id="1"),
-                ToolCall(name="working_tool", args={"input": "test2"}, id="2"),
+                ToolCall(name="failing_tool", args={"value": "test1"}, id="1"),
+                ToolCall(name="working_tool", args={"value": "test2"}, id="2"),
             ],
             [],
         ]
@@ -420,22 +421,22 @@ def test_tool_retry_specific_exceptions() -> None:
     """Test ToolRetryMiddlewareonly retries specific exception types."""
 
     @tool
-    def value_error_tool(input: str) -> str:
+    def value_error_tool(value: str) -> str:
         """Tool that raises ValueError."""
-        msg = f"ValueError: {input}"
+        msg = f"ValueError: {value}"
         raise ValueError(msg)
 
     @tool
-    def runtime_error_tool(input: str) -> str:
+    def runtime_error_tool(value: str) -> str:
         """Tool that raises RuntimeError."""
-        msg = f"RuntimeError: {input}"
+        msg = f"RuntimeError: {value}"
         raise RuntimeError(msg)
 
     model = FakeToolCallingModel(
         tool_calls=[
             [
-                ToolCall(name="value_error_tool", args={"input": "test1"}, id="1"),
-                ToolCall(name="runtime_error_tool", args={"input": "test2"}, id="2"),
+                ToolCall(name="value_error_tool", args={"value": "test1"}, id="1"),
+                ToolCall(name="runtime_error_tool", args={"value": "test2"}, id="2"),
             ],
             [],
         ]
@@ -480,7 +481,7 @@ def test_tool_retry_custom_exception_filter() -> None:
     class CustomError(Exception):
         """Custom exception with retry_me attribute."""
 
-        def __init__(self, message: str, retry_me: bool):
+        def __init__(self, message: str, *, retry_me: bool):
             """Initialize custom error.
 
             Args:
@@ -493,19 +494,21 @@ def test_tool_retry_custom_exception_filter() -> None:
     attempt_count = {"value": 0}
 
     @tool
-    def custom_error_tool(input: str) -> str:
+    def custom_error_tool(val: str) -> str:
         """Tool that raises CustomError."""
         attempt_count["value"] += 1
         if attempt_count["value"] == 1:
-            raise CustomError("Retryable error", retry_me=True)
-        raise CustomError("Non-retryable error", retry_me=False)
+            msg = "Retryable error"
+            raise CustomError(msg, retry_me=True)
+        msg = "Non-retryable error"
+        raise CustomError(msg, retry_me=False)
 
     def should_retry(exc: Exception) -> bool:
         return isinstance(exc, CustomError) and exc.retry_me
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="custom_error_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="custom_error_tool", args={"val": "test"}, id="1")],
             [],
         ]
     )
@@ -543,13 +546,13 @@ def test_tool_retry_backoff_timing() -> None:
     temp_fail = TemporaryFailureTool(fail_count=3)
 
     @tool
-    def temp_failing_tool(input: str) -> str:
+    def temp_failing_tool(value: str) -> str:
         """Tool that fails temporarily."""
-        return temp_fail(input)
+        return temp_fail(value)
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="temp_failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="temp_failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -588,13 +591,13 @@ def test_tool_retry_constant_backoff() -> None:
     temp_fail = TemporaryFailureTool(fail_count=2)
 
     @tool
-    def temp_failing_tool(input: str) -> str:
+    def temp_failing_tool(value: str) -> str:
         """Tool that fails temporarily."""
-        return temp_fail(input)
+        return temp_fail(value)
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="temp_failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="temp_failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -680,12 +683,11 @@ def test_tool_retry_jitter_variation() -> None:
     assert len(set(delays)) > 1
 
 
-@pytest.mark.asyncio
 async def test_tool_retry_async_working_tool() -> None:
     """Test ToolRetryMiddlewarewith async execution and working tool."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="working_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="working_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -709,12 +711,11 @@ async def test_tool_retry_async_working_tool() -> None:
     assert "Success: test" in tool_messages[0].content
 
 
-@pytest.mark.asyncio
 async def test_tool_retry_async_failing_tool() -> None:
     """Test ToolRetryMiddlewarewith async execution and failing tool."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -745,19 +746,18 @@ async def test_tool_retry_async_failing_tool() -> None:
     assert tool_messages[0].status == "error"
 
 
-@pytest.mark.asyncio
 async def test_tool_retry_async_succeeds_after_retries() -> None:
     """Test ToolRetryMiddlewareasync execution succeeds after temporary failures."""
     temp_fail = TemporaryFailureTool(fail_count=2)
 
     @tool
-    def temp_failing_tool(input: str) -> str:
+    def temp_failing_tool(value: str) -> str:
         """Tool that fails temporarily."""
-        return temp_fail(input)
+        return temp_fail(value)
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="temp_failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="temp_failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -785,19 +785,18 @@ async def test_tool_retry_async_succeeds_after_retries() -> None:
     assert "Success after 3 attempts" in tool_messages[0].content
 
 
-@pytest.mark.asyncio
 async def test_tool_retry_async_backoff_timing() -> None:
     """Test ToolRetryMiddlewareasync applies correct backoff delays."""
     temp_fail = TemporaryFailureTool(fail_count=3)
 
     @tool
-    def temp_failing_tool(input: str) -> str:
+    def temp_failing_tool(value: str) -> str:
         """Tool that fails temporarily."""
-        return temp_fail(input)
+        return temp_fail(value)
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="temp_failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="temp_failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -834,7 +833,7 @@ def test_tool_retry_zero_retries() -> None:
     """Test ToolRetryMiddlewarewith max_retries=0 (no retries)."""
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="failing_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="failing_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -871,9 +870,7 @@ def test_tool_retry_multiple_middleware_composition() -> None:
     from langchain.agents.middleware.types import wrap_tool_call
 
     @wrap_tool_call
-    def logging_middleware(
-        request: "ToolCallRequest", handler: Callable
-    ) -> "ToolMessage | Command":
+    def logging_middleware(request: ToolCallRequest, handler: Callable) -> ToolMessage | Command:
         call_log.append(f"before_{request.tool.name}")
         response = handler(request)
         call_log.append(f"after_{request.tool.name}")
@@ -881,7 +878,7 @@ def test_tool_retry_multiple_middleware_composition() -> None:
 
     model = FakeToolCallingModel(
         tool_calls=[
-            [ToolCall(name="working_tool", args={"input": "test"}, id="1")],
+            [ToolCall(name="working_tool", args={"value": "test"}, id="1")],
             [],
         ]
     )
@@ -921,7 +918,11 @@ def test_tool_retry_deprecated_raise_keyword() -> None:
 
 
 def test_tool_retry_deprecated_return_message_keyword() -> None:
-    """Test ToolRetryMiddleware with deprecated 'return_message' keyword shows deprecation warning."""
+    """Test tool retry with deprecated 'return_message' keyword.
+
+    Test ToolRetryMiddleware with deprecated 'return_message' keyword shows deprecation
+    warning.
+    """
     # Use string concatenation to avoid batch replace affecting test code
     deprecated_value = "return" + "_message"
     with pytest.warns(DeprecationWarning, match="on_failure='return_message' is deprecated"):

@@ -5,17 +5,16 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.model_call_limit import (
-    ModelCallLimitMiddleware,
     ModelCallLimitExceededError,
+    ModelCallLimitMiddleware,
 )
-
-from ...model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool
-def simple_tool(input: str) -> str:
-    """A simple tool"""
-    return input
+def simple_tool(value: str) -> str:
+    """A simple tool."""
+    return value
 
 
 def test_middleware_unit_functionality():
@@ -202,8 +201,11 @@ def test_exception_error_message():
 
 
 def test_run_limit_resets_between_invocations() -> None:
-    """Test that run_model_call_count resets between invocations, but thread_model_call_count accumulates."""
+    """Test run limit resets between invocations.
 
+    Test that run_model_call_count resets between invocations, but
+    thread_model_call_count accumulates.
+    """
     # First: No tool calls per invocation, so model does not increment call counts internally
     middleware = ModelCallLimitMiddleware(thread_limit=3, run_limit=1, exit_behavior="error")
     model = FakeToolCallingModel(

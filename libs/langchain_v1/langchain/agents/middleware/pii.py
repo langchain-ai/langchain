@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
     PIIDetectionError,
@@ -92,7 +93,7 @@ class PIIMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        pii_type: Literal["email", "credit_card", "ip", "mac_address", "url"] | str,  # noqa: PYI051
+        pii_type: str,
         *,
         strategy: Literal["block", "redact", "mask", "hash"] = "redact",
         detector: Callable[[str], list[PIIMatch]] | str | None = None,
@@ -158,10 +159,11 @@ class PIIMiddleware(AgentMiddleware):
         return sanitized, matches
 
     @hook_config(can_jump_to=["end"])
+    @override
     def before_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check user messages and tool results for PII before model invocation.
 
@@ -273,10 +275,11 @@ class PIIMiddleware(AgentMiddleware):
         """
         return self.before_model(state, runtime)
 
+    @override
     def after_model(
         self,
         state: AgentState,
-        runtime: Runtime,  # noqa: ARG002
+        runtime: Runtime,
     ) -> dict[str, Any] | None:
         """Check AI messages for PII after model invocation.
 
