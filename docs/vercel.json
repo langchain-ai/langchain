@@ -15,56 +15,8 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
-      "source": "/docs/integrations/platforms/anthropic/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
-    },
-    {
-      "source": "/docs/integrations/platforms/anthropic",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/anthropic"
-    },
-    {
-      "source": "/docs/integrations/platforms/aws/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/aws"
-    },
-    {
-      "source": "/docs/integrations/platforms/aws",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/aws"
-    },
-    {
-      "source": "/docs/integrations/platforms/google/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/google"
-    },
-    {
-      "source": "/docs/integrations/platforms/google",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/google"
-    },
-    {
-      "source": "/docs/integrations/platforms/huggingface/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
-    },
-    {
-      "source": "/docs/integrations/platforms/huggingface",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/huggingface"
-    },
-    {
-      "source": "/docs/integrations/platforms/microsoft/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/microsoft"
-    },
-    {
-      "source": "/docs/integrations/platforms/microsoft",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/microsoft"
-    },
-    {
-      "source": "/docs/integrations/platforms/openai/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/openai"
-    },
-    {
-      "source": "/docs/integrations/platforms/openai",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/openai"
-    },
-    {
       "source": "/docs/integrations/platforms/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/integrations/providers/overview"
+      "destination": "https://docs.langchain.com/oss/python/integrations/providers/:path"
     },
     {
       "source": "/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT",
@@ -127,6 +79,18 @@
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
+      "source": "/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter",
+      "destination": "https://reference.langchain.com/python/langchain_text_splitters/#langchain_text_splitters.RecursiveCharacterTextSplitter"
+    },
+    {
+      "source": "/docs/modules/data_connection/document_loaders/",
+      "destination": "https://reference.langchain.com/python/langchain_core/document_loaders/"
+    },
+    {
+      "source": "/docs/modules/data_connection/retrievers/parent_document_retriever",
+      "destination": "https://reference.langchain.com/python/langchain_core/retrievers/"
+    },
+    {
       "source": "/docs/templates/:path(.*)",
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
@@ -156,7 +120,7 @@
     },
     {
       "source": "/docs/modules/agents/:path(.*)",
-      "destination": "https://docs.langchain.com/oss/python/langchain/agents"
+      "destination": "https://reference.langchain.com/python/langchain/agents/"
     },
     {
       "source": "/docs/modules/memory/:path(.*)",
@@ -662,6 +626,19 @@
       "source": "/docs/security/",
       "destination": "https://docs.langchain.com/oss/python/security-policy"
     },
+    {
+      "source": "docs/introduction/%23%EF%B8%8F-langgraph",
+      "destination": "https://docs.langchain.com/oss/python/langgraph/overview"
+    },
+    {
+      "source": "docs/introduction/%23%EF%B8%8F-langsmith",
+      "destination": "https://docs.langchain.com/langsmith/home"
+    },
+    {
+      "source": "/docs/get_started/introduction",
+      "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
+    },
+
     {
       "source": "/docs/troubleshooting/errors/INVALID_PROMPT_INPUT/",
       "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_PROMPT_INPUT"
