@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import uuid
-from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 
@@ -34,7 +33,7 @@ async def test_qdrant_aadd_texts_returns_all_ids(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_aadd_texts_stores_duplicated_texts(
-    vector_name: Optional[str], qdrant_location: str
+    vector_name: str | None, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.aadd_texts stores duplicated texts separately."""
     from qdrant_client import QdrantClient
@@ -85,7 +84,9 @@ async def test_qdrant_aadd_texts_stores_ids(
         ["abc", "def"], ids=ids, batch_size=batch_size
     )
 
-    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert all(
+        first == second for first, second in zip(ids, returned_ids, strict=False)
+    )
     assert client.count(collection_name).count == 2
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)

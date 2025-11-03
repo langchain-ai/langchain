@@ -1,7 +1,6 @@
 from langchain import embeddings
 
 EXPECTED_ALL = [
-    "CacheBackedEmbeddings",
     "Embeddings",
     "init_embeddings",
 ]

@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Coroutine, Generator
+from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
 from inspect import isasyncgenfunction
-from typing import Any, Callable, Optional
+from typing import Any, Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,7 +13,6 @@ from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
-from typing_extensions import Literal
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
@@ -40,8 +39,8 @@ def _get_posts(client: Client) -> list:
 
 
 def _create_tracer_with_mocked_client(
-    project_name: Optional[str] = None,
-    tags: Optional[list[str]] = None,
+    project_name: str | None = None,
+    tags: list[str] | None = None,
 ) -> LangChainTracer:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -57,15 +56,20 @@ def test_tracing_context() -> None:
     )
 
     @RunnableLambda
-    def my_function(a: int) -> int:
+    def my_lambda(a: int) -> int:
         return a + 1
+
+    @RunnableLambda
+    def my_function(a: int) -> int:
+        with tracing_context(enabled=False):
+            return my_lambda.invoke(a)
 
     name = uuid.uuid4().hex
     project_name = f"Some project {name}"
     with tracing_context(project_name=project_name, client=mock_client_, enabled=True):
         assert my_function.invoke(1) == 2
     posts = _get_posts(mock_client_)
-    assert posts
+    assert len(posts) == 1
     assert all(post["session_name"] == project_name for post in posts)
 
 
@@ -221,7 +225,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, *, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: bool | None, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(

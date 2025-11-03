@@ -1,58 +1,67 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.74",
-    "openai<2.0.0,>=1.99.9",
-    "tiktoken<1,>=0.7",
+    "langchain-core>=1.0.2,<2.0.0",
+    "openai>=1.109.1,<3.0.0",
+    "tiktoken>=0.7.0,<1.0.0",
 ]
 name = "langchain-openai"
-version = "0.3.32"
+version = "1.0.2"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-openai%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/openai"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_openai/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-openai%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-cov<5.0.0,>=4.1.0",
-    "pytest-retry<1.8.0,>=1.7.0",
-    "pytest-socket<1.0.0,>=0.6.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "vcrpy>=7.0",
+    "pytest>=7.3.0,<8.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pytest-retry>=1.7.0,<1.8.0",
+    "pytest-socket>=0.6.0,<1.0.0",
+    "pytest-xdist>=3.6.1,<4.0.0",
+    "vcrpy>=7.0.0,<8.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "langchain",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<0.13,>=0.12.8"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = [
-    "httpx<1.0.0,>=0.27.0",
-    "pillow<11.0.0,>=10.3.0",
+    "httpx>=0.27.0,<1.0.0",
+    "pillow>=10.3.0,<12.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
-typing = ["mypy<2.0,>=1.17.1", "types-tqdm<5.0.0.0,>=4.66.0.5", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "types-tqdm>=4.66.0.5,<5.0.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 langchain-tests = { path = "../../standard-tests", editable = true }
+langchain = { path = "../../langchain_v1", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
@@ -60,19 +69,53 @@ disallow_untyped_defs = "True"
 module = "transformers"
 ignore_missing_imports = true
 
-[tool.ruff]
-target-version = "py39"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", "UP045" ]
-
 [tool.ruff.format]
 docstring-code-format = true
-skip-magic-trailing-comma = true
 
-[tool.ruff.lint.isort]
-split-on-trailing-comma = false
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "SIM105",  # Rarely useful
+    "FIX",     # TODOs
+    "TD",      # TODOs
+    "C901",    # Complex functions
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments
+    "PLR0914", # Too many local variables
+    "PLR0915", # Too many statements
+    "ARG001",
+    "RUF001",
+    "ERA001",
+    "PLR0911",
+    "FA100",  # from __future__ import annotations breaks some schema conversion logic
+
+    # TODO
+    "PLR2004", # Comparison to magic number
+    "ANN401",
+    "ARG002",
+    "BLE001",
+    "TC",
+    "PLC0415",
+    "PT011",
+    "PT013",
+    "TRY",
+    "PLW",
+    "PLE",
+    "FBT",
+    "A001",
+    "B028",
+    "YTT203",
+    "RUF012",
+    "B904",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -93,4 +136,17 @@ filterwarnings = [
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001", # Private member access in tests
+    "D",     # Docstring checks in tests
+
+    # TODO
+    "B018",
+    "PGH003",
+    "PERF401",
+    "PT017",
+    "RUF012",
+    "B017",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]
