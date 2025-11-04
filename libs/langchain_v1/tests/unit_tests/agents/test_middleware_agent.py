@@ -1,7 +1,7 @@
 import warnings
 from collections.abc import Awaitable, Callable
 from types import ModuleType
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from unittest.mock import patch
 
 import sys
@@ -63,6 +63,9 @@ from langchain.tools import InjectedState
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
+
+if TYPE_CHECKING:
+    from langchain_model_profiles import ModelProfile
 
 
 def test_create_agent_diagram(
@@ -1041,6 +1044,10 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.messages_to_keep == 10
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.summary_prefix == "Custom prefix:"
+    assert middleware.buffer_tokens == 0
+
+    middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
+    assert middleware_with_buffer.buffer_tokens == 25
 
     # Test with string model
     with patch(
@@ -1185,6 +1192,95 @@ def test_summarization_middleware_summary_creation() -> None:
     middleware_error = SummarizationMiddleware(model=ErrorModel(), max_tokens_before_summary=1000)
     summary = middleware_error._create_summary(messages)
     assert "Error generating summary: Model error" in summary
+
+
+def test_summarization_middleware_profile_inference_triggers_summary() -> None:
+    """Ensure automatic profile inference triggers summarization when limits are exceeded."""
+
+    class ProfileModel(BaseChatModel):
+        def invoke(self, prompt: str) -> AIMessage:
+            return AIMessage(content="Generated summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self) -> "ModelProfile":
+            return {"max_input_tokens": 1000, "max_output_tokens": 200}
+
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(),
+        messages_to_keep=1,
+        buffer_tokens=10,
+    )
+    middleware.token_counter = lambda _messages: 795
+
+    state = {
+        "messages": [
+            HumanMessage(content="Message 1"),
+            AIMessage(content="Message 2"),
+            HumanMessage(content="Message 3"),
+            AIMessage(content="Message 4"),
+        ]
+    }
+
+    result = middleware.before_model(state, None)
+    assert result is not None
+    assert isinstance(result["messages"][0], RemoveMessage)
+    summary_messages = [msg for msg in result["messages"] if isinstance(msg, HumanMessage)]
+    assert any(
+        "Here is a summary of the conversation to date:" in msg.content for msg in summary_messages
+    )
+
+
+def test_summarization_middleware_profile_inference_fallbacks() -> None:
+    """Ensure automatic profile inference falls back when profiles are unavailable."""
+
+    class ImportErrorProfileModel(BaseChatModel):
+        def invoke(self, prompt: str) -> AIMessage:
+            raise AssertionError("Summarization should not run when profile is unavailable.")
+
+        def _generate(self, messages, **kwargs):
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self):
+            raise ImportError("Profile not available")
+
+    class MissingKeysProfileModel(BaseChatModel):
+        def invoke(self, prompt: str) -> AIMessage:
+            raise AssertionError("Summarization should not run when profile keys are missing.")
+
+        def _generate(self, messages, **kwargs):
+            raise NotImplementedError
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self) -> "ModelProfile":
+            return {"max_input_tokens": 1000}
+
+    models = [
+        ImportErrorProfileModel(),
+        MissingKeysProfileModel(),
+    ]
+
+    for model in models:
+        middleware = SummarizationMiddleware(model=model, messages_to_keep=1)
+        middleware.token_counter = lambda _messages: 10_000
+        state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
+        result = middleware.before_model(state, None)
+        assert result is None
 
 
 def test_summarization_middleware_full_workflow() -> None:

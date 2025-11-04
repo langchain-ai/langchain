@@ -1,8 +1,8 @@
 """Summarization middleware."""
 
 import uuid
-from collections.abc import Callable, Iterable
-from typing import Any, cast
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any, Final, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -59,6 +59,16 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 
+class _UnsetType:
+    """Sentinel indicating that max tokens should be inferred from the model profile."""
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+
+UNSET: Final = _UnsetType()
+
+
 class SummarizationMiddleware(AgentMiddleware):
     """Summarizes conversation history when token limits are approached.
 
@@ -70,22 +80,25 @@ class SummarizationMiddleware(AgentMiddleware):
     def __init__(
         self,
         model: str | BaseChatModel,
-        max_tokens_before_summary: int | None = None,
+        max_tokens_before_summary: int | None | _UnsetType = UNSET,
         messages_to_keep: int = _DEFAULT_MESSAGES_TO_KEEP,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
+        buffer_tokens: int = 0,
     ) -> None:
         """Initialize the summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.
             max_tokens_before_summary: Token threshold to trigger summarization.
-                If `None`, summarization is disabled.
+                If `None`, summarization is disabled. If `UNSET`, limits are inferred
+                from the model profile when available.
             messages_to_keep: Number of recent messages to preserve after summarization.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
+            buffer_tokens: Additional buffer to reserve when estimating token usage.
         """
         super().__init__()
 
@@ -98,6 +111,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
+        self.buffer_tokens = buffer_tokens
 
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
@@ -105,10 +119,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self._ensure_message_ids(messages)
 
         total_tokens = self.token_counter(messages)
-        if (
-            self.max_tokens_before_summary is not None
-            and total_tokens < self.max_tokens_before_summary
-        ):
+        if not self._should_summarize(total_tokens):
             return None
 
         cutoff_index = self._find_safe_cutoff(messages)
@@ -128,6 +139,34 @@ class SummarizationMiddleware(AgentMiddleware):
                 *preserved_messages,
             ]
         }
+
+    def _should_summarize(self, total_tokens: int) -> bool:
+        """Determine whether summarization should run for the current token usage."""
+        if self.max_tokens_before_summary is UNSET:
+            return self._should_summarize_with_profile(total_tokens)
+
+        if self.max_tokens_before_summary is None:
+            return False
+
+        return total_tokens >= cast("int", self.max_tokens_before_summary)
+
+    def _should_summarize_with_profile(self, total_tokens: int) -> bool:
+        """Infer summarization threshold from the model profile when available."""
+        try:
+            profile = self.model.profile
+        except (AttributeError, ImportError):
+            return False
+
+        if not isinstance(profile, Mapping):
+            return False
+
+        max_input_tokens = profile.get("max_input_tokens")
+        max_output_tokens = profile.get("max_output_tokens")
+
+        if not isinstance(max_input_tokens, int) or not isinstance(max_output_tokens, int):
+            return False
+
+        return total_tokens + max_output_tokens + self.buffer_tokens > max_input_tokens
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [
