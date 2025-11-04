@@ -1,4 +1,4 @@
-"""Test suite to test vectostores."""
+"""Test suite to test `VectorStore` integrations."""
 
 from abc import abstractmethod
 
@@ -95,7 +95,6 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     !!! note
         API references for individual test methods include troubleshooting tips.
-
     """  # noqa: E501
 
     @abstractmethod
