@@ -1290,6 +1290,33 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         "Message 4",
     ]
 
+    # With target_retention_frac = 0.6 the target token allowance becomes 600,
+    # so the cutoff shifts to keep the last three messages instead of two.
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(),
+        buffer_tokens=51,
+        target_retention_frac=0.6,
+        token_counter=lambda messages: len(messages) * 200,
+    )
+    result = middleware.before_model(state, None)
+    assert result is not None
+    assert [message.content for message in result["messages"][2:]] == [
+        "Message 2",
+        "Message 3",
+        "Message 4",
+    ]
+
+    # Once target_retention_frac reaches 0.8 the inferred limit equals the full
+    # context (target tokens = 800), so token-based retention keeps everything
+    # and summarization is skipped entirely.
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(),
+        buffer_tokens=51,
+        target_retention_frac=0.8,
+        token_counter=lambda messages: len(messages) * 200,
+    )
+    assert middleware.before_model(state, None) is None
+
 
 def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> None:
     """Ensure token retention keeps pairs together even if exceeding target tokens."""
