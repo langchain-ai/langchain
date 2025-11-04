@@ -1,4 +1,4 @@
-"""Human in the loop middleware."""
+l"""Human in the loop middleware."""
 
 from typing import Any, Literal, Protocol
 
@@ -236,23 +236,41 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-    ) -> tuple[ToolCall | None, ToolMessage | None]:
-        """Process a single decision and return the revised tool call and optional tool message."""
+    ) -> tuple[ToolCall | None, ToolMessage | None, AIMessage | None]:
+        """Process a single decision and return the revised tool call, optional tool message, and optional context message.
+        
+        Returns:
+            A tuple of (revised_tool_call, tool_message, context_message) where:
+            - revised_tool_call: The tool call to execute (None if rejected without executing)
+            - tool_message: An artificial tool message (for reject decisions)
+            - context_message: An AI message explaining the decision to the agent (for edit decisions)
+        """
         allowed_decisions = config["allowed_decisions"]
 
         if decision["type"] == "approve" and "approve" in allowed_decisions:
-            return tool_call, None
+            return tool_call, None, None
         if decision["type"] == "edit" and "edit" in allowed_decisions:
             edited_action = decision["edited_action"]
-            return (
-                ToolCall(
-                    type="tool_call",
-                    name=edited_action["name"],
-                    args=edited_action["args"],
-                    id=tool_call["id"],
-                ),
-                None,
+            edited_tool_call = ToolCall(
+                type="tool_call",
+                name=edited_action["name"],
+                args=edited_action["args"],
+                id=tool_call["id"],
             )
+            
+            # Create a context message to inform the agent about the edit
+            # This prevents the agent from retrying the original tool call
+            context_message = AIMessage(
+                content=(
+                    f"Note: The requested action was modified by human review. "
+                    f"Original request: {tool_call['name']}({tool_call['args']}). "
+                    f"Modified to: {edited_action['name']}({edited_action['args']}). "
+                    f"Proceeding with the modified version."
+                ),
+                name="human_review_system",
+            )
+            
+            return edited_tool_call, None, context_message
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
             content = decision.get("message") or (
@@ -264,7 +282,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 tool_call_id=tool_call["id"],
                 status="error",
             )
-            return tool_call, tool_message
+            return tool_call, tool_message, None
         msg = (
             f"Unexpected human decision: {decision}. "
             f"Decision type '{decision.get('type')}' "
@@ -299,6 +317,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Process all tool calls that require interrupts
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage] = []
+        context_messages: list[AIMessage] = []
 
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
@@ -339,13 +358,19 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             tool_call = interrupt_tool_calls[i]
             config = self.interrupt_on[tool_call["name"]]
 
-            revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
+            revised_tool_call, tool_message, context_message = self._process_decision(
+                decision, tool_call, config
+            )
             if revised_tool_call:
                 revised_tool_calls.append(revised_tool_call)
             if tool_message:
                 artificial_tool_messages.append(tool_message)
+            if context_message:
+                context_messages.append(context_message)
 
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+        # Return context messages first to inform the agent about any edits,
+        # then the updated AI message, then any artificial tool messages
+        return {"messages": [*context_messages, last_ai_msg, *artificial_tool_messages]}
