@@ -1783,6 +1783,7 @@ source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph" },
+    { name = "langgraph-prebuilt" },
     { name = "pydantic" },
 ]
 
@@ -1891,6 +1892,7 @@ requires-dist = [
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
+    { name = "langgraph-prebuilt", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
 provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
