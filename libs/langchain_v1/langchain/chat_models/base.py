@@ -68,8 +68,8 @@ def init_chat_model(
 
     **Two main use cases:**
 
-    1. **Fixed model** - specify the model upfront and get a ready-to-use chat model.
-    2. **Configurable model** - choose to specify parameters (including model name) at
+    1. **Fixed model** – specify the model upfront and get a ready-to-use chat model.
+    2. **Configurable model** – choose to specify parameters (including model name) at
         runtime via `config`. Makes it easy to switch between models/providers without
         changing your code
 
@@ -298,7 +298,7 @@ def init_chat_model(
         # Use Sonnet 4.5
         ```
 
-    """  # noqa: E501
+    """  # noqa: E501,RUF002
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
     config_prefix = config_prefix or ""
