@@ -289,20 +289,24 @@ def test_run_limit_with_multiple_human_messages():
     )
 
     # First invocation - test1 executes (count=1), then model proposes test2
-    # which would make count=2 > limit of 1, so after_model jumps to end
+    # which would make count=2 > limit of 1, so after_model injects artificial error
+    # ToolMessage for test2 and jumps to end
     result1 = agent.invoke(
         {"messages": [HumanMessage("Question 1")]},
         {"configurable": {"thread_id": "test_thread"}},
     )
     messages = result1["messages"]
-    # Should have 1 tool message (test1 successful), then hit limit when test2 proposed
+    # Should have 2 tool messages: test1 (successful) and test2 (artificial error)
     tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    successful_tool_messages = [m for m in tool_messages if m.status != "error"]
+    error_tool_messages = [m for m in tool_messages if m.status == "error"]
     ai_limit_messages = [
         m
         for m in messages
         if isinstance(m, AIMessage) and "limit" in m.content.lower() and not m.tool_calls
     ]
-    assert len(tool_messages) == 1, "Should have 1 tool execution (test1)"
+    assert len(successful_tool_messages) == 1, "Should have 1 successful tool execution (test1)"
+    assert len(error_tool_messages) == 1, "Should have 1 artificial error ToolMessage (test2)"
     assert len(ai_limit_messages) == 1, "Should have AI limit message after test2 proposed"
 
     # Second invocation in same thread - run limit resets
@@ -616,12 +620,14 @@ def test_end_behavior_creates_artificial_messages():
 
     # With "end" behavior, after_model checks limits AFTER tool calls are proposed by model
     # but BEFORE they execute. So q1 and q2 execute (count=2), then model proposes q3+q4,
-    # after_model sees count would be 4 > 2, and jumps to end WITHOUT executing q3 and q4
+    # after_model sees count would be 4 > 2, injects artificial error ToolMessages for q3+q4,
+    # then adds AI message and jumps to end
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
-    limit_tool_messages = [msg for msg in tool_messages if "limit" in msg.content.lower()]
+    successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
+    error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
 
-    # Should have only 2 successful tool executions (q1, q2), no artificial error messages
-    assert len(tool_messages) == 2, "Should have 2 successful tool messages (q1, q2) before limit"
-    assert len(limit_tool_messages) == 0, (
-        "'end' behavior should not create artificial error tool messages"
+    # Should have 2 successful tool executions (q1, q2) and 2 artificial error messages (q3, q4)
+    assert len(successful_tool_messages) == 2, "Should have 2 successful tool messages (q1, q2)"
+    assert len(error_tool_messages) == 2, (
+        "Should have 2 artificial error tool messages (q3, q4) with 'end' behavior"
     )

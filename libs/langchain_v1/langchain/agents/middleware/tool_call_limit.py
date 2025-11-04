@@ -298,34 +298,57 @@ class ToolCallLimitMiddleware(
                     run_limit=self.run_limit,
                     tool_name=self.tool_name,
                 )
+
+            # For both "continue" and "end", inject artificial error ToolMessages
+            # for tool calls that exceeded their limits
+            artificial_messages: list[ToolMessage | AIMessage] = []
+            for tool_call in last_ai_message.tool_calls:
+                # Only inject errors for tool calls that match our filter
+                if self.tool_name is None or tool_call["name"] == self.tool_name:
+                    artificial_messages.extend(
+                        [
+                            ToolMessage(
+                                content=limit_message,
+                                tool_call_id=tool_call["id"],
+                                name=tool_call.get("name"),
+                                status="error",
+                            )
+                        ]
+                    )
+
             if self.exit_behavior == "end":
-                # Add an AI message explaining why we're stopping and jump to end
-                limit_ai_message = AIMessage(content=limit_message)
+                # For "end" behavior, also inject artificial success ToolMessages for
+                # non-exceeded tools, then add an AI message explaining why we're stopping
+                for tool_call in last_ai_message.tool_calls:
+                    # Add success messages for tools that didn't match our filter
+                    if self.tool_name is not None and tool_call["name"] != self.tool_name:
+                        artificial_messages.extend(
+                            [
+                                ToolMessage(
+                                    content="Tool call skipped due to limit on another tool.",
+                                    tool_call_id=tool_call["id"],
+                                    name=tool_call.get("name"),
+                                    status="success",
+                                )
+                            ]
+                        )
+
+                # Add final AI message explaining why we're stopping
+                artificial_messages.append(AIMessage(content=limit_message))
 
                 return {
                     "thread_tool_call_count": thread_counts,
                     "run_tool_call_count": run_counts,
                     "jump_to": "end",
-                    "messages": [limit_ai_message],
+                    "messages": artificial_messages,
                 }
-            # For exit_behavior="continue", inject error ToolMessages for exceeded tool calls
-            # This prevents the tools from being called but lets the model see the errors
-            error_messages: list[ToolMessage] = []
-            for tool_call in last_ai_message.tool_calls:
-                # Only inject errors for tool calls that match our filter
-                if self.tool_name is None or tool_call["name"] == self.tool_name:
-                    error_tool_message = ToolMessage(
-                        content=limit_message,
-                        tool_call_id=tool_call["id"],
-                        name=tool_call.get("name"),
-                        status="error",
-                    )
-                    error_messages.append(error_tool_message)
 
+            # For exit_behavior="continue", just return the error messages
+            # This prevents exceeded tools from being called but lets the model continue
             return {
                 "thread_tool_call_count": thread_counts,
                 "run_tool_call_count": run_counts,
-                "messages": error_messages,
+                "messages": artificial_messages,
             }
 
         return {
