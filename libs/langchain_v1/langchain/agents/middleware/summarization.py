@@ -199,15 +199,27 @@ class SummarizationMiddleware(AgentMiddleware):
         if target_token_count <= 0:
             target_token_count = 1
 
-        running_total = 0
-        cutoff_candidate = 0
-        for idx in range(len(messages) - 1, -1, -1):
-            running_total += self.token_counter([messages[idx]])
-            if running_total > target_token_count:
-                cutoff_candidate = idx + 1
+        if self.token_counter(messages) <= target_token_count:
+            return 0
+
+        # Use binary search to identify the earliest message index that keeps the
+        # suffix within the token budget.
+        left, right = 0, len(messages)
+        cutoff_candidate = len(messages)
+        max_iterations = len(messages).bit_length() + 1
+        for _ in range(max_iterations):
+            if left >= right:
                 break
-        else:
-            cutoff_candidate = 0
+
+            mid = (left + right) // 2
+            if self.token_counter(messages[mid:]) <= target_token_count:
+                cutoff_candidate = mid
+                right = mid
+            else:
+                left = mid + 1
+
+        if cutoff_candidate == len(messages):
+            cutoff_candidate = left
 
         if cutoff_candidate >= len(messages):
             if len(messages) == 1:
