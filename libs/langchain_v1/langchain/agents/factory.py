@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -15,7 +23,7 @@ from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -24,6 +32,7 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    ResponseT,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -52,8 +61,6 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
-
-ResponseT = TypeVar("ResponseT")
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -509,7 +516,7 @@ def create_agent(  # noqa: PLR0915
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
+    middleware: Sequence[AgentMiddleware[Any, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,

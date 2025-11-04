@@ -49,6 +49,7 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "ResponseT",
     "ToolCallRequest",
     "ToolCallWrapper",
     "after_agent",

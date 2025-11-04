@@ -19,15 +19,11 @@ def test_middleware_initialization_validation():
     with pytest.raises(ValueError, match="At least one limit must be specified"):
         ToolCallLimitMiddleware()
 
-    # Test invalid exit behavior
-    with pytest.raises(ValueError, match="Invalid exit_behavior"):
-        ToolCallLimitMiddleware(thread_limit=5, exit_behavior="invalid")  # type: ignore[arg-type]
-
     # Test valid initialization
     middleware = ToolCallLimitMiddleware(thread_limit=5, run_limit=3)
     assert middleware.thread_limit == 5
     assert middleware.run_limit == 3
-    assert middleware.exit_behavior == "end"
+    assert middleware.exit_behavior == "continue"
     assert middleware.tool_name is None
 
     # Test with tool name
@@ -35,6 +31,16 @@ def test_middleware_initialization_validation():
     assert middleware.tool_name == "search"
     assert middleware.thread_limit == 5
     assert middleware.run_limit is None
+
+    # Test different exit behaviors
+    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="error")
+    assert middleware.exit_behavior == "error"
+
+    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="end")
+    assert middleware.exit_behavior == "end"
+
+    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="continue")
+    assert middleware.exit_behavior == "continue"
 
 
 def test_middleware_name_property():
@@ -57,8 +63,8 @@ def test_middleware_name_property():
 
 def test_middleware_unit_functionality():
     """Test that the middleware works as expected in isolation."""
-    # Test with end behavior - global tool limit, allow_other_tools=False for old behavior
-    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, allow_other_tools=False)
+    # Test with exit_behavior="end" - exit immediately when limit exceeded
+    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, exit_behavior="end")
 
     # Mock runtime (not used in current implementation)
     runtime = None
@@ -134,9 +140,9 @@ def test_middleware_unit_functionality():
 
 def test_middleware_with_specific_tool():
     """Test middleware that limits a specific tool."""
-    # Limit only the "search" tool, use allow_other_tools=False for old behavior
+    # Limit only the "search" tool with exit_behavior="end"
     middleware = ToolCallLimitMiddleware(
-        tool_name="search", thread_limit=2, run_limit=1, allow_other_tools=False
+        tool_name="search", thread_limit=2, run_limit=1, exit_behavior="end"
     )
 
     runtime = None
@@ -310,8 +316,8 @@ def test_run_limit_with_multiple_human_messages():
         ]
     )
 
-    # Run limit of 2 tool calls per run, allow_other_tools=False to trigger on before_model
-    middleware = ToolCallLimitMiddleware(run_limit=2, allow_other_tools=False)
+    # Run limit of 2 tool calls per run, exit_behavior="end" to trigger on before_model
+    middleware = ToolCallLimitMiddleware(run_limit=2, exit_behavior="end")
 
     agent = create_agent(
         model=model, tools=[search], middleware=[middleware], checkpointer=InMemorySaver()
@@ -391,8 +397,8 @@ def test_exception_error_messages():
 
 def test_limit_reached_but_not_exceeded():
     """Test that limits are only triggered when exceeded (>), not when reached (==)."""
-    # Use allow_other_tools=False to test the before_model behavior
-    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, allow_other_tools=False)
+    # Use exit_behavior="end" to test the before_model behavior
+    middleware = ToolCallLimitMiddleware(thread_limit=3, run_limit=2, exit_behavior="end")
 
     runtime = None
 
@@ -446,8 +452,8 @@ def test_limit_reached_but_not_exceeded():
     assert result["jump_to"] == "end"
 
 
-def test_allow_other_tools_true():
-    """Test that allow_other_tools=True allows other tools to continue."""
+def test_exit_behavior_continue():
+    """Test that exit_behavior='continue' allows other tools to continue."""
 
     @tool
     def search(query: str) -> str:
@@ -480,7 +486,7 @@ def test_allow_other_tools_true():
 
     # Limit search to 2 calls, but allow other tools to continue
     search_limiter = ToolCallLimitMiddleware(
-        tool_name="search", thread_limit=2, allow_other_tools=True
+        tool_name="search", thread_limit=2, exit_behavior="continue"
     )
 
     agent = create_agent(
@@ -510,8 +516,8 @@ def test_allow_other_tools_true():
     assert len(limit_error_messages) >= 1  # At least one search hit the limit
 
 
-def test_allow_other_tools_false():
-    """Test that allow_other_tools=False ends execution immediately."""
+def test_exit_behavior_end():
+    """Test that exit_behavior='end' ends execution immediately."""
 
     @tool
     def search(query: str) -> str:
@@ -543,7 +549,7 @@ def test_allow_other_tools_false():
 
     # Limit search to 2 calls, end immediately when exceeded
     search_limiter = ToolCallLimitMiddleware(
-        tool_name="search", thread_limit=2, allow_other_tools=False
+        tool_name="search", thread_limit=2, exit_behavior="end"
     )
 
     agent = create_agent(
