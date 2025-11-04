@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
@@ -134,7 +134,7 @@ class ToolCallLimitExceededError(Exception):
 
 
 class ToolCallLimitMiddleware(
-    AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
+    AgentMiddleware[AgentState[ResponseT], ContextT],
     Generic[ResponseT, ContextT],
 ):
     """Tracks tool call counts and enforces limits during agent execution.
@@ -188,7 +188,7 @@ class ToolCallLimitMiddleware(
 
     """
 
-    state_schema = ToolCallLimitState  # type: ignore[assignment]
+    state_schema = cast("type[AgentState[ResponseT]]", ToolCallLimitState)
 
     def __init__(
         self,
@@ -242,7 +242,7 @@ class ToolCallLimitMiddleware(
     @hook_config(can_jump_to=["end"])
     def before_model(
         self,
-        state: ToolCallLimitState[ResponseT],
+        state: AgentState[ResponseT],
         runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> dict[str, Any] | None:
         """Check tool call limits before making a model call.
@@ -262,8 +262,10 @@ class ToolCallLimitMiddleware(
         # Get the count key for this middleware instance
         count_key = self.tool_name if self.tool_name else "__all__"
 
-        thread_counts = state.get("thread_tool_call_count", {})
-        run_counts = state.get("run_tool_call_count", {})
+        # Cast to access ToolCallLimitState fields
+        limit_state = cast("ToolCallLimitState[ResponseT]", state)
+        thread_counts = limit_state.get("thread_tool_call_count", {})
+        run_counts = limit_state.get("run_tool_call_count", {})
 
         thread_count = thread_counts.get(count_key, 0)
         run_count = run_counts.get(count_key, 0)
@@ -294,7 +296,7 @@ class ToolCallLimitMiddleware(
 
     def after_model(
         self,
-        state: ToolCallLimitState[ResponseT],
+        state: AgentState[ResponseT],
         runtime: Runtime[ContextT],  # noqa: ARG002
     ) -> dict[str, Any] | None:
         """Increment tool call counts after a model call (when tool calls are made).
@@ -333,9 +335,10 @@ class ToolCallLimitMiddleware(
         # Get the count key for this middleware instance
         count_key = self.tool_name if self.tool_name else "__all__"
 
-        # Get current counts
-        thread_counts = state.get("thread_tool_call_count", {}).copy()
-        run_counts = state.get("run_tool_call_count", {}).copy()
+        # Get current counts - cast to access ToolCallLimitState fields
+        limit_state = cast("ToolCallLimitState[ResponseT]", state)
+        thread_counts = limit_state.get("thread_tool_call_count", {}).copy()
+        run_counts = limit_state.get("run_tool_call_count", {}).copy()
 
         # Increment counts for this key
         thread_counts[count_key] = thread_counts.get(count_key, 0) + tool_call_count

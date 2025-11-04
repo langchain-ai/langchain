@@ -516,7 +516,7 @@ def create_agent(  # noqa: PLR0915
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[Any, ContextT]] = (),
+    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
