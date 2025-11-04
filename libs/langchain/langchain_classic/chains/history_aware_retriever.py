@@ -20,14 +20,14 @@ def create_history_aware_retriever(
 
     Args:
         llm: Language model to use for generating a search term given chat history
-        retriever: RetrieverLike object that takes a string as input and outputs
-            a list of Documents.
+        retriever: `RetrieverLike` object that takes a string as input and outputs
+            a list of `Document` objects.
         prompt: The prompt used to generate the search query for the retriever.
 
     Returns:
         An LCEL Runnable. The runnable input must take in `input`, and if there
         is chat history should take it in the form of `chat_history`.
-        The Runnable output is a list of Documents
+        The `Runnable` output is a list of `Document` objects
 
     Example:
         ```python
