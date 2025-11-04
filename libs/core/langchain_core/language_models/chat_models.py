@@ -1676,9 +1676,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def profile(self) -> ModelProfile:
         """Return profiling information for the model.
 
-        This property will relies on the `langchain-model-profiles` package to
-        retrieve chat model capabilities, such as context window sizes and supported
-        features.
+        This property relies on the `langchain-model-profiles` package to retrieve chat
+        model capabilities, such as context window sizes and supported features.
 
         Raises:
             ImportError: If `langchain-model-profiles` is not installed.
