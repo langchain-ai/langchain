@@ -30,7 +30,7 @@ class PromptValue(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -48,7 +48,7 @@ class PromptValue(Serializable, ABC):
 
     @abstractmethod
     def to_messages(self) -> list[BaseMessage]:
-        """Return prompt as a list of Messages."""
+        """Return prompt as a list of messages."""
 
 
 class StringPromptValue(PromptValue):
