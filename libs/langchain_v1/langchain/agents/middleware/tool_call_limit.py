@@ -20,13 +20,14 @@ from langchain.agents.middleware.types import (
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
-ExitBehavior = Literal["error", "end", "continue"]
+ExitBehavior = Literal["continue", "error", "end"]
 """How to handle execution when tool call limits are exceeded.
 
+- `"continue"`: Block exceeded tools with error messages, let other tools continue (default)
 - `"error"`: Raise a `ToolCallLimitExceededError` exception
 - `"end"`: Stop execution immediately, injecting a ToolMessage and an AI message
-    indicating that the limit was exceeded.
-- `"continue"`: Block exceeded tools with error messages, let other tools continue (default)
+    for the single tool call that exceeded the limit. Raises `NotImplementedError`
+    if there are multiple tool calls.
 """
 
 
@@ -128,8 +129,10 @@ class ToolCallLimitMiddleware(
     Configuration:
         - `exit_behavior`: How to handle when limits are exceeded
           - `"continue"`: Block exceeded tools, let execution continue (default)
-          - `"end"`: Stop immediately with an AI message
           - `"error"`: Raise an exception
+          - `"end"`: Stop immediately with a ToolMessage + AI message for the single
+            tool call that exceeded the limit (raises `NotImplementedError` if there
+            are multiple tool calls)
 
     Examples:
         Continue execution with blocked tools (default):
@@ -192,8 +195,10 @@ class ToolCallLimitMiddleware(
             exit_behavior: How to handle when limits are exceeded.
                 - `"continue"`: Block exceeded tools with error messages, let other
                   tools continue. Model decides when to end. (default)
-                - `"end"`: Stop execution immediately with an AI message
                 - `"error"`: Raise a `ToolCallLimitExceededError` exception
+                - `"end"`: Stop execution immediately with a ToolMessage + AI message
+                  for the single tool call that exceeded the limit. Raises
+                  `NotImplementedError` if there are multiple tool calls.
 
         Raises:
             ValueError: If both limits are `None`.
@@ -235,11 +240,14 @@ class ToolCallLimitMiddleware(
 
         Returns:
             State updates with incremented tool call counts. If limits are exceeded
-            and exit_behavior is "end", also includes a jump to end with an AI message.
+            and exit_behavior is "end", also includes a jump to end with a ToolMessage
+            and AI message for the single exceeded tool call.
 
         Raises:
             ToolCallLimitExceededError: If limits are exceeded and exit_behavior
                 is "error".
+            NotImplementedError: If limits are exceeded, exit_behavior is "end",
+                and there are multiple tool calls.
         """
         # Get the last AIMessage to check for tool calls
         messages = state.get("messages", [])
@@ -317,21 +325,14 @@ class ToolCallLimitMiddleware(
                     )
 
             if self.exit_behavior == "end":
-                # For "end" behavior, also inject artificial success ToolMessages for
-                # non-exceeded tools, then add an AI message explaining why we're stopping
-                for tool_call in last_ai_message.tool_calls:
-                    # Add success messages for tools that didn't match our filter
-                    if self.tool_name is not None and tool_call["name"] != self.tool_name:
-                        artificial_messages.extend(
-                            [
-                                ToolMessage(
-                                    content="Tool call skipped due to limit on another tool.",
-                                    tool_call_id=tool_call["id"],
-                                    name=tool_call.get("name"),
-                                    status="success",
-                                )
-                            ]
-                        )
+                # For "end" behavior, only support single tool call scenarios
+                if len(last_ai_message.tool_calls) > 1:
+                    msg = (
+                        "The 'end' exit behavior only supports a single tool call. "
+                        f"Found {len(last_ai_message.tool_calls)} tool calls. "
+                        "Use 'continue' or 'error' behavior instead."
+                    )
+                    raise NotImplementedError(msg)
 
                 # Add final AI message explaining why we're stopping
                 artificial_messages.append(AIMessage(content=limit_message))

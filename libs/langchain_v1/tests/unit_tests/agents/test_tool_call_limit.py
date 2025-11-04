@@ -88,7 +88,7 @@ def test_middleware_unit_functionality():
     assert result["run_tool_call_count"] == {"__all__": 1}
     assert "jump_to" not in result  # No limit exceeded
 
-    # Test when thread limit is exceeded
+    # Test when thread limit is exceeded with single tool call
     state = {
         "messages": [
             HumanMessage("Question 2"),
@@ -96,21 +96,20 @@ def test_middleware_unit_functionality():
                 "Response 2",
                 tool_calls=[
                     {"name": "search", "args": {}, "id": "3"},
-                    {"name": "calculator", "args": {}, "id": "4"},
                 ],
             ),
         ],
-        "thread_tool_call_count": {"__all__": 2},  # 2 calls so far
-        "run_tool_call_count": {"__all__": 2},  # 2 calls in run
+        "thread_tool_call_count": {"__all__": 3},  # 3 calls so far
+        "run_tool_call_count": {"__all__": 1},  # 1 call in run
     }
-    # After incrementing by 2 more, thread count will be 4 > 3
+    # After incrementing by 1 more, thread count will be 4 > 3
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "limit reached" in result["messages"][0].content.lower()
+    assert "limit reached" in result["messages"][-1].content.lower()
     assert result["thread_tool_call_count"] == {"__all__": 4}
 
-    # Test when run limit is exceeded
+    # Test when run limit is exceeded with single tool call
     state = {
         "messages": [
             HumanMessage("Question"),
@@ -118,19 +117,65 @@ def test_middleware_unit_functionality():
                 "Response",
                 tool_calls=[
                     {"name": "search", "args": {}, "id": "1"},
-                    {"name": "calculator", "args": {}, "id": "2"},
-                    {"name": "search", "args": {}, "id": "3"},
                 ],
             ),
         ],
         "thread_tool_call_count": {"__all__": 0},  # Within thread limit
-        "run_tool_call_count": {"__all__": 0},  # Starting fresh
+        "run_tool_call_count": {"__all__": 2},  # At limit
     }
-    # After incrementing by 3, run count will be 3 > 2
+    # After incrementing by 1, run count will be 3 > 2
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "run limit exceeded (3/2 calls)" in result["messages"][0].content
+    assert "run limit exceeded (3/2 calls)" in result["messages"][-1].content
+
+
+def test_middleware_end_behavior_multiple_tool_calls_raises_error():
+    """Test that 'end' behavior raises NotImplementedError with multiple tool calls."""
+    middleware = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="end")
+
+    runtime = None
+
+    # Test with multiple tool calls that will exceed the limit
+    state = {
+        "messages": [
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "1"},
+                    {"name": "calculator", "args": {}, "id": "2"},
+                ],
+            ),
+        ],
+        "thread_tool_call_count": {"__all__": 1},  # 1 call so far
+        "run_tool_call_count": {"__all__": 1},
+    }
+
+    # After incrementing by 2, count will be 3 > 2, and there are 2 tool calls
+    # This should raise NotImplementedError because "end" only supports single tool calls
+    with pytest.raises(NotImplementedError, match="only supports a single tool call"):
+        middleware.after_model(state, runtime)  # type: ignore[arg-type]
+
+    # Test with 3 tool calls
+    state_three = {
+        "messages": [
+            AIMessage(
+                "Response",
+                tool_calls=[
+                    {"name": "search", "args": {}, "id": "1"},
+                    {"name": "search", "args": {}, "id": "2"},
+                    {"name": "calculator", "args": {}, "id": "3"},
+                ],
+            ),
+        ],
+        "thread_tool_call_count": {"__all__": 0},
+        "run_tool_call_count": {"__all__": 0},
+    }
+
+    # After incrementing by 3, there are 3 tool calls which exceeds limit
+    # Should raise NotImplementedError because there are multiple tool calls
+    with pytest.raises(NotImplementedError, match="Found 3 tool calls"):
+        middleware.after_model(state_three, runtime)  # type: ignore[arg-type]
 
 
 def test_middleware_with_specific_tool():
@@ -582,10 +627,9 @@ def test_end_behavior_creates_artificial_messages():
             [ToolCall(name="search", args={"query": "q1"}, id="1")],
             [ToolCall(name="search", args={"query": "q2"}, id="2")],
             [
-                ToolCall(name="search", args={"query": "q3"}, id="3"),  # These will execute
-                ToolCall(name="search", args={"query": "q4"}, id="4"),  # pushing count to 4 > 2
+                ToolCall(name="search", args={"query": "q3"}, id="3"),  # This will exceed limit
             ],
-            [],  # This won't be reached - limit exceeded after q3+q4
+            [],  # This won't be reached - limit exceeded after q3
         ]
     )
 
@@ -619,15 +663,15 @@ def test_end_behavior_creates_artificial_messages():
     )
 
     # With "end" behavior, after_model checks limits AFTER tool calls are proposed by model
-    # but BEFORE they execute. So q1 and q2 execute (count=2), then model proposes q3+q4,
-    # after_model sees count would be 4 > 2, injects artificial error ToolMessages for q3+q4,
+    # but BEFORE they execute. So q1 and q2 execute (count=2), then model proposes q3,
+    # after_model sees count would be 3 > 2, injects artificial error ToolMessage for q3,
     # then adds AI message and jumps to end
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
     successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
     error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
 
-    # Should have 2 successful tool executions (q1, q2) and 2 artificial error messages (q3, q4)
+    # Should have 2 successful tool executions (q1, q2) and 1 artificial error message (q3)
     assert len(successful_tool_messages) == 2, "Should have 2 successful tool messages (q1, q2)"
-    assert len(error_tool_messages) == 2, (
-        "Should have 2 artificial error tool messages (q3, q4) with 'end' behavior"
+    assert len(error_tool_messages) == 1, (
+        "Should have 1 artificial error tool message (q3) with 'end' behavior"
     )
