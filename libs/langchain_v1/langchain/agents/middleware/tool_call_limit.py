@@ -45,7 +45,13 @@ class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
     run_tool_call_count: NotRequired[Annotated[dict[str, int], UntrackedValue, PrivateStateAttr]]
 
 
-def _build_tool_message_content(tool_name: str | None) -> str:
+def _build_tool_message_content(
+    tool_name: str | None,
+    thread_count: int,
+    run_count: int,
+    thread_limit: int | None,
+    run_limit: int | None,
+) -> str:
     """Build the error message content for ToolMessage when limit is exceeded.
 
     This message is sent to the model, so it should not reference thread/run concepts
@@ -53,10 +59,28 @@ def _build_tool_message_content(tool_name: str | None) -> str:
 
     Args:
         tool_name: Tool name being limited (if specific tool), or None for all tools.
+        thread_count: Current thread tool call count.
+        run_count: Current run tool call count.
+        thread_limit: Thread tool call limit (if set).
+        run_limit: Run tool call limit (if set).
 
     Returns:
-        A concise message instructing the model not to call the tool again.
+        A concise message. If only run limit is exceeded (not thread limit),
+        returns a simple "limit exceeded" message without instructing model to stop.
+        If thread limit is exceeded, includes instruction not to call again.
     """
+    # Check if thread limit is exceeded
+    thread_exceeded = thread_limit is not None and thread_count > thread_limit
+    # Check if only run limit is exceeded (not thread limit)
+    only_run_exceeded = run_limit is not None and run_count > run_limit and not thread_exceeded
+
+    if only_run_exceeded:
+        # Run limit exceeded but thread limit not exceeded - simpler message
+        if tool_name:
+            return f"Tool call limit exceeded for '{tool_name}'."
+        return "Tool call limit exceeded."
+
+    # Thread limit exceeded (or both) - include instruction not to call again
     if tool_name:
         return f"Tool call limit exceeded. Do not call '{tool_name}' again."
     return "Tool call limit exceeded. Do not make additional tool calls."
@@ -379,7 +403,13 @@ class ToolCallLimitMiddleware(
             )
 
         # Build tool message content (sent to model - no thread/run details)
-        tool_msg_content = _build_tool_message_content(self.tool_name)
+        tool_msg_content = _build_tool_message_content(
+            self.tool_name,
+            final_thread_count,
+            final_run_count,
+            self.thread_limit,
+            self.run_limit,
+        )
 
         # Inject artificial error ToolMessages for blocked tool calls
         artificial_messages: list[ToolMessage | AIMessage] = [

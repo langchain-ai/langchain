@@ -97,8 +97,13 @@ def test_middleware_unit_functionality():
     assert result is not None
     assert result["jump_to"] == "end"
     # Check the ToolMessage (sent to model - no thread/run details)
-    assert result["messages"][0].status == "error"
-    assert "Tool call limit exceeded" in result["messages"][0].content
+    tool_msg = result["messages"][0]
+    assert tool_msg.status == "error"
+    assert "Tool call limit exceeded" in tool_msg.content
+    # When thread limit exceeded, should include "Do not" instruction
+    assert "Do not" in tool_msg.content, (
+        "Tool message should include 'Do not' instruction when thread limit exceeded"
+    )
     # Check the final AI message (displayed to user - includes thread/run details)
     assert "limit" in result["messages"][-1].content.lower()
     assert "thread limit exceeded" in result["messages"][-1].content.lower()
@@ -119,6 +124,14 @@ def test_middleware_unit_functionality():
     # Check the final AI message includes run limit details
     assert "run limit exceeded" in result["messages"][-1].content
     assert "3/2 calls" in result["messages"][-1].content
+    # Check the tool message (sent to model) - when only run limit exceeded,
+    # should not include "Do not" instruction since run is ending anyway
+    tool_msg = result["messages"][0]
+    assert isinstance(tool_msg, ToolMessage)
+    assert "Tool call limit exceeded" in tool_msg.content
+    assert "Do not" not in tool_msg.content, (
+        "Tool message should not include 'Do not' instruction when only run limit exceeded"
+    )
 
 
 def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
