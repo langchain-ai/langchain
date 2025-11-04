@@ -1207,9 +1207,6 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
     """Verify disabling trim limit preserves full message sequence."""
 
     class MockModel(BaseChatModel):
-        def invoke(self, prompt):
-            return AIMessage(content="Generated summary")
-
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1232,9 +1229,6 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     """Ensure automatic profile inference triggers summarization when limits are exceeded."""
 
     class ProfileModel(BaseChatModel):
-        def invoke(self, prompt: str) -> AIMessage:
-            return AIMessage(content="Generated summary")
-
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1322,9 +1316,6 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
     """Ensure token retention keeps pairs together even if exceeding target tokens."""
 
     class ProfileModel(BaseChatModel):
-        def invoke(self, prompt: str) -> AIMessage:
-            return AIMessage(content="Generated summary")
-
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1374,9 +1365,6 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
     """Ensure automatic profile inference falls back when profiles are unavailable."""
 
     class ImportErrorProfileModel(BaseChatModel):
-        def invoke(self, prompt: str) -> AIMessage:
-            raise AssertionError("Summarization should not run when profile is unavailable.")
-
         def _generate(self, messages, **kwargs):
             raise NotImplementedError
 
@@ -1389,9 +1377,6 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
             raise ImportError("Profile not available")
 
     class MissingKeysProfileModel(BaseChatModel):
-        def invoke(self, prompt: str) -> AIMessage:
-            raise AssertionError("Summarization should not run when profile keys are missing.")
-
         def _generate(self, messages, **kwargs):
             raise NotImplementedError
 
@@ -1420,9 +1405,6 @@ def test_summarization_middleware_token_retention_pct_without_profile_falls_back
     """Token retention gracefully falls back to message-based retention when profile missing."""
 
     class NoProfileModel(BaseChatModel):
-        def invoke(self, prompt: str) -> AIMessage:
-            return AIMessage(content="Summary")
-
         def _generate(self, messages, **kwargs):
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
