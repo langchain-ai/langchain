@@ -1046,16 +1046,16 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.summary_prefix == "Custom prefix:"
     assert middleware.buffer_tokens == 0
-    assert middleware.target_retention_pct is None
+    assert middleware.target_retention_frac is None
 
     middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
     assert middleware_with_buffer.buffer_tokens == 25
 
-    middleware_with_retention = SummarizationMiddleware(model=model, target_retention_pct=0.5)
-    assert middleware_with_retention.target_retention_pct == 0.5
+    middleware_with_retention = SummarizationMiddleware(model=model, target_retention_frac=0.5)
+    assert middleware_with_retention.target_retention_frac == 0.5
 
     with pytest.raises(ValueError):
-        SummarizationMiddleware(model=model, target_retention_pct=1.5)
+        SummarizationMiddleware(model=model, target_retention_frac=1.5)
 
     # Test with string model
     with patch(
@@ -1224,7 +1224,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         model=ProfileModel(),
         messages_to_keep=1,
         buffer_tokens=10,
-        target_retention_pct=0.5,
+        target_retention_frac=0.5,
     )
     middleware.token_counter = lambda messages: len(messages) * 250
 
@@ -1269,7 +1269,7 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        target_retention_pct=0.5,
+        target_retention_frac=0.5,
     )
     middleware.token_counter = token_counter
 
@@ -1362,7 +1362,7 @@ def test_summarization_middleware_token_retention_pct_without_profile_falls_back
         model=NoProfileModel(),
         max_tokens_before_summary=5,
         messages_to_keep=2,
-        target_retention_pct=0.5,
+        target_retention_frac=0.5,
     )
     middleware.token_counter = lambda messages: len(messages) * 10
 
