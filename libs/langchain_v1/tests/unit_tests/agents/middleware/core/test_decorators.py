@@ -497,7 +497,7 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
 def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAssertion) -> None:
     """Test async middleware with can_jump_to graph snapshot.
 
-    Test that async middleware with can_jump_to creates correct graph structure with
+    Test that async middleware with `can_jump_to` creates correct graph structure with
     conditional edges.
     """
 
@@ -709,7 +709,7 @@ def test_dynamic_prompt_multiple_in_sequence() -> None:
 def test_async_dynamic_prompt_skipped_on_sync_invoke() -> None:
     """Test async dynamic_prompt skipped on sync invoke.
 
-    Test that async dynamic_prompt raises NotImplementedError when invoked via sync
+    Test that async `dynamic_prompt` raises `NotImplementedError` when invoked via sync
     path (.invoke).
 
     When an async-only middleware is defined, it cannot be called from the sync path.
