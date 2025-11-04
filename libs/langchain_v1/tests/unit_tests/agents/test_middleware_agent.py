@@ -1047,6 +1047,7 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prefix == "Custom prefix:"
     assert middleware.buffer_tokens == 0
     assert middleware.target_retention_frac is None
+    assert middleware.trim_token_limit == 4000
 
     middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
     assert middleware_with_buffer.buffer_tokens == 25
@@ -1200,6 +1201,31 @@ def test_summarization_middleware_summary_creation() -> None:
     middleware_error = SummarizationMiddleware(model=ErrorModel(), max_tokens_before_summary=1000)
     summary = middleware_error._create_summary(messages)
     assert "Error generating summary: Model error" in summary
+
+
+def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
+    """Verify disabling trim limit preserves full message sequence."""
+
+    class MockModel(BaseChatModel):
+        def invoke(self, prompt):
+            return AIMessage(content="Generated summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    messages = [HumanMessage(content=str(i)) for i in range(10)]
+    middleware = SummarizationMiddleware(
+        model=MockModel(),
+        trim_token_limit=None,
+    )
+    middleware.token_counter = lambda msgs: len(msgs)
+
+    trimmed = middleware._trim_messages_for_summary(messages)
+    assert trimmed is messages
 
 
 def test_summarization_middleware_profile_inference_triggers_summary() -> None:

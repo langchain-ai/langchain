@@ -88,6 +88,7 @@ class SummarizationMiddleware(AgentMiddleware):
         *,
         buffer_tokens: int = 0,
         target_retention_frac: float | None = None,
+        trim_token_limit: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
     ) -> None:
         """Initialize the summarization middleware.
 
@@ -105,6 +106,9 @@ class SummarizationMiddleware(AgentMiddleware):
             target_retention_frac: Optional fraction (0, 1) of `max_input_tokens` to retain
                 in context. If the model profile is missing or incomplete, this falls
                 back to the `messages_to_keep` strategy.
+            trim_token_limit: Maximum tokens to keep when preparing messages for the
+                summarization call. Pass `None` to skip trimming entirely (risking
+                summary model overflows if the history is too long).
         """
         super().__init__()
 
@@ -118,6 +122,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
         self.buffer_tokens = buffer_tokens
+        self.trim_token_limit = trim_token_limit
 
         if target_retention_frac is not None and not (0 < target_retention_frac < 1):
             error_msg = "target_retention_frac must be between 0 and 1."
@@ -340,9 +345,11 @@ class SummarizationMiddleware(AgentMiddleware):
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""
         try:
+            if self.trim_token_limit is None:
+                return messages
             return trim_messages(
                 messages,
-                max_tokens=_DEFAULT_TRIM_TOKEN_LIMIT,
+                max_tokens=self.trim_token_limit,
                 token_counter=self.token_counter,
                 start_on="human",
                 strategy="last",
