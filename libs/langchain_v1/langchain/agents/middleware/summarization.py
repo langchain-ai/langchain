@@ -97,12 +97,14 @@ class SummarizationMiddleware(AgentMiddleware):
                 If `None`, summarization is disabled. If `UNSET`, limits are inferred
                 from the model profile when available.
             messages_to_keep: Number of recent messages to preserve after summarization.
+                Used whenever token-based retention is unavailable or disabled.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
             buffer_tokens: Additional buffer to reserve when estimating token usage.
-            target_retention_frac: Optional fraction (0, 1) of `max_input_tokens` to
-                retain when summarizing based on model profile limits.
+            target_retention_frac: Optional fraction (0, 1) of `max_input_tokens` to retain
+                in context. If the model profile is missing or incomplete, this falls
+                back to the `messages_to_keep` strategy.
         """
         super().__init__()
 
