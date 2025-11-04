@@ -1244,15 +1244,14 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
 
         @property
         def profile(self) -> "ModelProfile":
-            return {"max_input_tokens": 1000, "max_output_tokens": 200}
+            return {"max_input_tokens": 1000, "max_output_tokens": 150}
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        messages_to_keep=1,
-        buffer_tokens=10,
+        buffer_tokens=50,
         target_retention_frac=0.5,
+        token_counter=lambda messages: len(messages) * 200,
     )
-    middleware.token_counter = lambda messages: len(messages) * 250
 
     state = {
         "messages": [
@@ -1263,13 +1262,33 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         ]
     }
 
+    # Test we don't engage summarization
+    # total_tokens = 4 * 200 = 800
+    # max_output_tokens = 150
+    # buffer_tokens = 50
+    # 800 + 150 + 50 <= 1000 -> summarization not triggered
+    result = middleware.before_model(state, None)
+    assert result is None
+
+    # Engage summarization
+    # 800 + 150 + 51 > 1000
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(),
+        buffer_tokens=51,
+        target_retention_frac=0.5,
+        token_counter=lambda messages: len(messages) * 200,
+    )
     result = middleware.before_model(state, None)
     assert result is not None
     assert isinstance(result["messages"][0], RemoveMessage)
-    summary_messages = [msg for msg in result["messages"] if isinstance(msg, HumanMessage)]
-    assert any(
-        "Here is a summary of the conversation to date:" in msg.content for msg in summary_messages
-    )
+    summary_message = result["messages"][1]
+    assert isinstance(summary_message, HumanMessage)
+    assert summary_message.text.startswith("Here is a summary of the conversation")
+    assert len(result["messages"][2:]) == 2  # Preserved messages
+    assert [message.content for message in result["messages"][2:]] == [
+        "Message 3",
+        "Message 4",
+    ]
 
 
 def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> None:
