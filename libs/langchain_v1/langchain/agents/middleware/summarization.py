@@ -350,7 +350,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         try:
             response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
-            return cast("str", response.content).strip()
+            return response.text.strip()
         except Exception as e:  # noqa: BLE001
             return f"Error generating summary: {e!s}"
 
