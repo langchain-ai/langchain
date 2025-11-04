@@ -54,7 +54,7 @@ Messages to summarize:
 SUMMARY_PREFIX = "## Previous conversation summary:"
 
 _DEFAULT_MESSAGES_TO_KEEP = 20
-_DEFAULT_trim_tokens_to_summarize = 4000
+_DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
@@ -88,7 +88,7 @@ class SummarizationMiddleware(AgentMiddleware):
         summary_prefix: str = SUMMARY_PREFIX,
         buffer_tokens: int = 0,
         target_retention_frac: float | None = None,
-        trim_tokens_to_summarize: int | None = _DEFAULT_trim_tokens_to_summarize,
+        trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
     ) -> None:
         """Initialize the summarization middleware.
 
