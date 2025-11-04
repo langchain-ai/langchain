@@ -237,13 +237,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         tool_call: ToolCall,
         config: InterruptOnConfig,
     ) -> tuple[ToolCall | None, ToolMessage | None, AIMessage | None]:
-        """Process a single decision and return the revised tool call, optional tool message, and optional context message.
-        
-        Returns:
-            A tuple of (revised_tool_call, tool_message, context_message) where:
-            - revised_tool_call: The tool call to execute (None if rejected without executing)
-            - tool_message: An artificial tool message (for reject decisions)
-            - context_message: An AI message explaining the decision to the agent (for edit decisions)
+        """Process a single decision and return the revised tool call.
+
+        Returns a tuple of (revised_tool_call, tool_message, context_message) where:
+        - revised_tool_call: The tool call to execute (None if rejected)
+        - tool_message: An artificial tool message (for reject decisions)
+        - context_message: An AI message explaining the decision (for edit decisions)
         """
         allowed_decisions = config["allowed_decisions"]
 
@@ -257,7 +256,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 args=edited_action["args"],
                 id=tool_call["id"],
             )
-            
+
             # Create a context message to inform the agent about the edit
             # This prevents the agent from retrying the original tool call
             context_message = AIMessage(
@@ -269,7 +268,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 ),
                 name="human_review_system",
             )
-            
+
             return edited_tool_call, None, context_message
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
