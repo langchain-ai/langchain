@@ -64,13 +64,9 @@ def _build_tool_limit_exceeded_message(
     exceeded_limits = []
 
     if thread_limit is not None and thread_count > thread_limit:
-        exceeded_limits.append(
-            f"thread limit exceeded ({thread_count}/{thread_limit} calls)"
-        )
+        exceeded_limits.append(f"thread limit exceeded ({thread_count}/{thread_limit} calls)")
     if run_limit is not None and run_count > run_limit:
-        exceeded_limits.append(
-            f"run limit exceeded ({run_count}/{run_limit} calls)"
-        )
+        exceeded_limits.append(f"run limit exceeded ({run_count}/{run_limit} calls)")
 
     limits_text = " and ".join(exceeded_limits)
 
@@ -167,8 +163,11 @@ class ToolCallLimitMiddleware(
 
         # Limit a specific tool, end immediately when exceeded
         search_limiter = ToolCallLimitMiddleware(
-            tool_name="search", thread_limit=5, run_limit=3,
-            exit_behavior="end", allow_other_tools=False
+            tool_name="search",
+            thread_limit=5,
+            run_limit=3,
+            exit_behavior="end",
+            allow_other_tools=False,
         )
 
         # Use both in the same agent
@@ -496,13 +495,9 @@ class ToolCallLimitMiddleware(
         limit_info_parts = []
 
         if self.tool_name:
-            limit_info_parts.append(
-                f"IMPORTANT: The '{self.tool_name}' tool has usage limits:"
-            )
+            limit_info_parts.append(f"IMPORTANT: The '{self.tool_name}' tool has usage limits:")
         else:
-            limit_info_parts.append(
-                "IMPORTANT: Tool usage is limited during this conversation:"
-            )
+            limit_info_parts.append("IMPORTANT: Tool usage is limited during this conversation:")
 
         limit_details = []
         if self.thread_limit is not None:
@@ -514,8 +509,7 @@ class ToolCallLimitMiddleware(
         if self.run_limit is not None:
             remaining_run = max(0, self.run_limit - run_count)
             limit_details.append(
-                f"- Run limit: {run_count}/{self.run_limit} calls used, "
-                f"{remaining_run} remaining"
+                f"- Run limit: {run_count}/{self.run_limit} calls used, {remaining_run} remaining"
             )
 
         limit_info_parts.extend(limit_details)
@@ -571,13 +565,9 @@ class ToolCallLimitMiddleware(
         limit_info_parts = []
 
         if self.tool_name:
-            limit_info_parts.append(
-                f"IMPORTANT: The '{self.tool_name}' tool has usage limits:"
-            )
+            limit_info_parts.append(f"IMPORTANT: The '{self.tool_name}' tool has usage limits:")
         else:
-            limit_info_parts.append(
-                "IMPORTANT: Tool usage is limited during this conversation:"
-            )
+            limit_info_parts.append("IMPORTANT: Tool usage is limited during this conversation:")
 
         limit_details = []
         if self.thread_limit is not None:
@@ -589,8 +579,7 @@ class ToolCallLimitMiddleware(
         if self.run_limit is not None:
             remaining_run = max(0, self.run_limit - run_count)
             limit_details.append(
-                f"- Run limit: {run_count}/{self.run_limit} calls used, "
-                f"{remaining_run} remaining"
+                f"- Run limit: {run_count}/{self.run_limit} calls used, {remaining_run} remaining"
             )
 
         limit_info_parts.extend(limit_details)

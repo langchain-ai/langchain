@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import SystemMessage, ToolMessage
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -198,23 +198,11 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
-        if request.system_prompt:
-            if isinstance(request.system_prompt, str):
-                request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-            else:
-                # For SystemMessage, convert to string, append, and create new SystemMessage
-                existing_content = request.system_prompt.content
-                if isinstance(existing_content, list):
-                    # Convert list content to string representation
-                    content_str = "\n".join(
-                        block.get("text", str(block)) if isinstance(block, dict) else str(block)
-                        for block in existing_content
-                    )
-                else:
-                    content_str = str(existing_content)
-                request.system_prompt = SystemMessage(content_str + "\n\n" + self.system_prompt)
-        else:
-            request.system_prompt = self.system_prompt
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
         return handler(request)
 
     async def awrap_model_call(
@@ -223,21 +211,9 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt (async version)."""
-        if request.system_prompt:
-            if isinstance(request.system_prompt, str):
-                request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
-            else:
-                # For SystemMessage, convert to string, append, and create new SystemMessage
-                existing_content = request.system_prompt.content
-                if isinstance(existing_content, list):
-                    # Convert list content to string representation
-                    content_str = "\n".join(
-                        block.get("text", str(block)) if isinstance(block, dict) else str(block)
-                        for block in existing_content
-                    )
-                else:
-                    content_str = str(existing_content)
-                request.system_prompt = SystemMessage(content_str + "\n\n" + self.system_prompt)
-        else:
-            request.system_prompt = self.system_prompt
+        request.system_prompt = (
+            request.system_prompt + "\n\n" + self.system_prompt
+            if request.system_prompt
+            else self.system_prompt
+        )
         return await handler(request)

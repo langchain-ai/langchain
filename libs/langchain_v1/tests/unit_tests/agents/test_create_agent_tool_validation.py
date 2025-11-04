@@ -5,7 +5,7 @@ from typing import Annotated
 from langchain.agents import AgentState, create_agent
 from langchain.tools import InjectedState, tool as dec_tool
 from .model import FakeToolCallingModel
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import InjectedStore, ToolRuntime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
@@ -368,88 +368,3 @@ async def test_create_agent_error_only_model_controllable_params() -> None:
     assert "super_secret_password" not in content, (
         "Error should NOT contain password value (from system-injected state)"
     )
-
-
-def test_create_agent_with_system_message_string() -> None:
-    """Test that create_agent accepts a string system_prompt."""
-    model = FakeToolCallingModel(tool_calls=[[]])
-
-    agent = create_agent(
-        model=model,
-        system_prompt="You are a helpful assistant.",
-    )
-
-    result = agent.invoke({"messages": [HumanMessage("Hello")]})
-
-    # Verify the system prompt is in the messages sent to the model
-    messages = result["messages"]
-    assert len(messages) >= 1
-    # The system message should be prepended, so check if it appears in the AI response
-    ai_message = messages[1]
-    assert "You are a helpful assistant." in ai_message.content
-
-
-def test_create_agent_with_system_message_instance() -> None:
-    """Test that create_agent accepts a SystemMessage instance for system_prompt."""
-    model = FakeToolCallingModel(tool_calls=[[]])
-
-    # Create a SystemMessage with a simple string content
-    system_msg = SystemMessage("You are a helpful assistant.")
-
-    agent = create_agent(
-        model=model,
-        system_prompt=system_msg,
-    )
-
-    result = agent.invoke({"messages": [HumanMessage("Hello")]})
-
-    # Verify the system message was used
-    messages = result["messages"]
-    assert len(messages) >= 1
-    # The system message should be prepended, so check if it appears in the AI response
-    ai_message = messages[1]
-    assert "You are a helpful assistant." in ai_message.content
-
-
-def test_create_agent_with_system_message_list_content() -> None:
-    """Test that create_agent accepts a SystemMessage with list content (e.g., for multimodal).
-
-    This allows for complex system prompts with multiple content blocks,
-    which is useful for multimodal models that can handle text, images, etc.
-    """
-    from unittest.mock import MagicMock
-    from langchain_core.messages import AIMessage
-
-    # Create a mock model that can handle list content
-    mock_model = MagicMock(spec=["invoke", "bind"])
-    mock_model.bind.return_value = mock_model
-    mock_model.invoke.return_value = AIMessage("Response")
-
-    # Create a SystemMessage with list content (simulating multimodal content)
-    system_msg = SystemMessage(
-        content=[
-            {"type": "text", "text": "You are a helpful assistant."},
-            {"type": "text", "text": "Always be concise."},
-        ]
-    )
-
-    agent = create_agent(
-        model=mock_model,
-        system_prompt=system_msg,
-    )
-
-    result = agent.invoke({"messages": [HumanMessage("Hello")]})
-
-    # Verify the agent runs successfully with list content
-    messages = result["messages"]
-    assert len(messages) >= 2  # At least HumanMessage and AIMessage
-
-    # Verify the mock model was called with the system message
-    assert mock_model.invoke.called
-    call_args = mock_model.invoke.call_args[0][0]
-    # The first message should be our SystemMessage with list content
-    assert call_args[0].type == "system"
-    assert isinstance(call_args[0].content, list)
-    assert len(call_args[0].content) == 2
-    assert call_args[0].content[0]["text"] == "You are a helpful assistant."
-    assert call_args[0].content[1]["text"] == "Always be concise."

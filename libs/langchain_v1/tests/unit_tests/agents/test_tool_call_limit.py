@@ -135,7 +135,9 @@ def test_middleware_unit_functionality():
 def test_middleware_with_specific_tool():
     """Test middleware that limits a specific tool."""
     # Limit only the "search" tool, use allow_other_tools=False for old behavior
-    middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=2, run_limit=1, allow_other_tools=False)
+    middleware = ToolCallLimitMiddleware(
+        tool_name="search", thread_limit=2, run_limit=1, allow_other_tools=False
+    )
 
     runtime = None
 
@@ -375,9 +377,7 @@ def test_exception_error_messages():
             ToolMessage("Result", tool_call_id="3"),
             AIMessage("R", tool_calls=[{"name": "search", "args": {}, "id": "4"}]),
         ],
-        "thread_tool_call_count": {
-            "search": 3
-        },  # 3 search calls total (exceeds limit of 2)
+        "thread_tool_call_count": {"search": 3},  # 3 search calls total (exceeds limit of 2)
         "run_tool_call_count": {"search": 2},  # 2 search calls in current run
     }
 
@@ -499,14 +499,10 @@ def test_allow_other_tools_true():
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
 
     # Count successful calculator calls (those that have "Result:" in content)
-    calc_tool_messages = [
-        m for m in tool_messages if "Result:" in m.content
-    ]
+    calc_tool_messages = [m for m in tool_messages if "Result:" in m.content]
 
     # Count search error messages (those that have "limit" in content)
-    limit_error_messages = [
-        m for m in tool_messages if "limit" in m.content
-    ]
+    limit_error_messages = [m for m in tool_messages if "limit" in m.content]
 
     # We should have 3 calculator calls that succeeded
     # and at least 1 search call that got a limit error

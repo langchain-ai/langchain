@@ -190,7 +190,7 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
     structured_response: NotRequired[ResponseT]
 
 
-StateT = TypeVar("StateT", bound=AgentState, default=AgentState, covariant=True)
+StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
