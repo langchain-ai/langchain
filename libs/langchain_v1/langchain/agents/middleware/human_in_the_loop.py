@@ -370,9 +370,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        # Return context messages and artificial tool messages only.
-        # The last_ai_msg is already in the state and has been modified in place.
+        # Return context and artificial tool messages.
+        # The AI message has been modified in place, so we don't return it.
         # Context messages come first to inform the agent about any edits.
-        if context_messages or artificial_tool_messages:
-            return {"messages": [*context_messages, *artificial_tool_messages]}
-        return None
+        return {"messages": [*context_messages, *artificial_tool_messages]}

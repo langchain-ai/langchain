@@ -520,11 +520,11 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state, None)
-        assert result is not None
-        assert "messages" in result
-        assert len(result["messages"]) == 1
-        assert result["messages"][0] == ai_message
-        assert result["messages"][0].tool_calls == ai_message.tool_calls
+        # When all tools are approved, only the AI message is modified in place
+        # No new messages are returned
+        assert result is None or (result and len(result.get("messages", [])) == 0)
+        # Verify the AI message tool calls are preserved
+        assert len(ai_message.tool_calls) == 1
 
     state["messages"].append(
         ToolMessage(content="Tool message", name="test_tool", tool_call_id="1")
@@ -601,12 +601,14 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 2
-        assert isinstance(result["messages"][0], AIMessage)
-        assert isinstance(result["messages"][1], ToolMessage)
-        assert result["messages"][1].content == "Custom response message"
-        assert result["messages"][1].name == "test_tool"
-        assert result["messages"][1].tool_call_id == "1"
+        # Should have 1 artificial tool message for the rejection
+        assert len(result["messages"]) == 1
+        # The AI message tool calls should include the original (rejected) tool
+        assert len(ai_message.tool_calls) == 1
+        assert isinstance(result["messages"][0], ToolMessage)
+        assert result["messages"][0].content == "Custom response message"
+        assert result["messages"][0].name == "test_tool"
+        assert result["messages"][0].tool_call_id == "1"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
@@ -642,18 +644,14 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert (
-            len(result["messages"]) == 2
-        )  # AI message with accepted tool call + tool message for rejected
+        # Should have 1 artificial tool message for the rejected tool
+        assert len(result["messages"]) == 1
+        # AI message should have 1 tool call (the approved one)
+        assert len(ai_message.tool_calls) == 1
+        assert ai_message.tool_calls[0]["name"] == "get_forecast"
 
-        # First message should be the AI message with both tool calls
-        updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 2  # Both tool calls remain
-        assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
-        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Got response
-
-        # Second message should be the tool message for the rejected tool call
-        tool_message = result["messages"][1]
+        # The only message should be the tool message for the rejected tool call
+        tool_message = result["messages"][0]
         assert isinstance(tool_message, ToolMessage)
         assert tool_message.content == "User rejected this tool call"
         assert tool_message.name == "get_temperature"
@@ -756,9 +754,6 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have: context message + AI message with edited tool call
-        assert len(result["messages"]) == 2
-
         # Should have only the context message (AI message is modified in place)
         assert len(result["messages"]) == 1
 
@@ -769,6 +764,8 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         # The original AI message should have been modified in place
         assert ai_message.tool_calls[0]["args"] == {"input": "modified"}
         assert ai_message.tool_calls[0]["id"] == "1"  # ID preserved
+
+
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     middleware = HumanInTheLoopMiddleware(
@@ -851,15 +848,13 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state, None)
-        assert result is not None
-        assert "messages" in result
-        assert len(result["messages"]) == 1
-
-        updated_ai_message = result["messages"][0]
-        # Should have both tools: auto-approved first, then interrupt tool
-        assert len(updated_ai_message.tool_calls) == 2
-        assert updated_ai_message.tool_calls[0]["name"] == "auto_tool"
-        assert updated_ai_message.tool_calls[1]["name"] == "interrupt_tool"
+        # When mixed tools (auto-approved + interrupt), the AI message is modified in place
+        # No new messages are returned for approved tools
+        assert result is None or (result and len(result.get("messages", [])) == 0)
+        # AI message should have both tool calls
+        assert len(ai_message.tool_calls) == 2
+        assert ai_message.tool_calls[0]["name"] == "auto_tool"
+        assert ai_message.tool_calls[1]["name"] == "interrupt_tool"
 
 
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
@@ -922,10 +917,10 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         return_value={"decisions": [{"type": "approve"}]},
     ):
         result = middleware.after_model(state, None)
-        assert result is not None
-        assert "messages" in result
-        assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls == ai_message.tool_calls
+        # When approved, AI message is modified in place, no new messages returned
+        assert result is None or (result and len(result.get("messages", [])) == 0)
+        # AI message should have the original tool call
+        assert ai_message.tool_calls == [{"name": "test_tool", "args": {"input": "test"}, "id": "1"}]
 
     # Test edit
     with patch(
