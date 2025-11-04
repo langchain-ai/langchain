@@ -33,7 +33,7 @@ def create_history_aware_retriever(
         ```python
         # pip install -U langchain langchain-community
 
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.chains import create_history_aware_retriever
         from langchain_classic import hub
 

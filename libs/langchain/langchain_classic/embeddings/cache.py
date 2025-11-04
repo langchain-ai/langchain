@@ -122,7 +122,7 @@ class CacheBackedEmbeddings(Embeddings):
         ```python
         from langchain_classic.embeddings import CacheBackedEmbeddings
         from langchain_classic.storage import LocalFileStore
-        from langchain_community.embeddings import OpenAIEmbeddings
+        from langchain_openai import OpenAIEmbeddings
 
         store = LocalFileStore("./my_cache")
 
