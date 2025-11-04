@@ -1142,7 +1142,7 @@ class Chroma(VectorStore):
             ids: List of ids to retrieve.
 
         Returns:
-            List of Documents.
+            List of `Document` objects.
 
         !!! version-added "Added in 0.2.1"
         """

@@ -476,6 +476,7 @@ openai = [
 requires-dist = [
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
+    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
@@ -485,6 +486,7 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
+    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -493,7 +495,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -526,7 +528,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.2"
+version = "1.0.3"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -586,7 +588,7 @@ typing = [
 
 [[package]]
 name = "langchain-model-profiles"
-version = "0.0.2"
+version = "0.0.3"
 source = { editable = "." }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
@@ -655,7 +657,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "langchain-core" },
