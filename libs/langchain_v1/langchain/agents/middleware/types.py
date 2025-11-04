@@ -22,7 +22,12 @@ if TYPE_CHECKING:
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
+from langchain_core.messages import (  # noqa: TC002
+    AIMessage,
+    AnyMessage,
+    BaseMessage,
+    ToolMessage,
+)
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
@@ -96,7 +101,7 @@ class ModelRequest:
         Args:
             **overrides: Keyword arguments for attributes to override. Supported keys:
                 - model: BaseChatModel instance
-                - system_prompt: Optional system prompt string
+                - system_prompt: Optional system prompt string or SystemMessage instance
                 - messages: List of messages
                 - tool_choice: Tool choice configuration
                 - tools: List of available tools
@@ -185,7 +190,7 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
     structured_response: NotRequired[ResponseT]
 
 
-StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
+StateT = TypeVar("StateT", bound=AgentState, default=AgentState, covariant=True)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
