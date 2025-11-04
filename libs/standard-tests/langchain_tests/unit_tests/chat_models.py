@@ -185,7 +185,6 @@ class ChatModelTests(BaseStandardTests):
         Whether the chat model supports video inputs, defaults to `False`.
 
         No current tests are written for this feature.
-
         """
         return False
 
@@ -210,7 +209,6 @@ class ChatModelTests(BaseStandardTests):
 
         Whether the chat model supports `ToolMessage` objects that include image
         content.
-
         """
         return False
 
@@ -220,7 +218,6 @@ class ChatModelTests(BaseStandardTests):
 
         Whether the chat model supports `ToolMessage` objects that include PDF
         content.
-
         """
         return False
 
@@ -231,7 +228,6 @@ class ChatModelTests(BaseStandardTests):
         !!! warning
             See `enable_vcr_tests` dropdown `above <ChatModelTests>` for more
             information.
-
         """
         return False
 
@@ -382,7 +378,9 @@ class ChatModelUnitTests(ChatModelTests):
     ??? info "`structured_output_kwargs`"
 
         Dict property that can be used to specify additional kwargs for
-        `with_structured_output`. Useful for testing different models.
+        `with_structured_output`.
+
+        Useful for testing different models.
 
         ```python
         @property
@@ -529,7 +527,9 @@ class ChatModelUnitTests(ChatModelTests):
 
         Boolean property indicating whether the chat model supports image inputs.
 
-        Defaults to `False`. No current tests are written for this feature.
+        Defaults to `False`.
+
+        No current tests are written for this feature.
 
     ??? info "`returns_usage_metadata`"
 
@@ -786,7 +786,7 @@ class ChatModelUnitTests(ChatModelTests):
                 gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
                 ```
 
-                or by using the serializer:
+                ...or by using the serializer:
 
                 ```python
                 from langchain_tests.conftest import (

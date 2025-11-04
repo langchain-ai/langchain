@@ -38,9 +38,9 @@ from langchain_core.runnables.utils import (
 
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
-    """Runnable that selects which branch to run based on a condition.
+    """`Runnable` that selects which branch to run based on a condition.
 
-    The Runnable is initialized with a list of `(condition, Runnable)` pairs and
+    The `Runnable` is initialized with a list of `(condition, Runnable)` pairs and
     a default branch.
 
     When operating on an input, the first condition that evaluates to True is
@@ -86,10 +86,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 Defaults a `Runnable` to run if no condition is met.
 
         Raises:
-            ValueError: If the number of branches is less than 2.
+            ValueError: If the number of branches is less than `2`.
             TypeError: If the default branch is not `Runnable`, `Callable` or `Mapping`.
-            TypeError: If a branch is not a tuple or list.
-            ValueError: If a branch is not of length 2.
+            TypeError: If a branch is not a `tuple` or `list`.
+            ValueError: If a branch is not of length `2`.
         """
         if len(branches) < 2:
             msg = "RunnableBranch requires at least two branches"
@@ -140,7 +140,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -187,12 +187,12 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
-        """First evaluates the condition, then delegate to true or false branch.
+        """First evaluates the condition, then delegate to `True` or `False` branch.
 
         Args:
-            input: The input to the Runnable.
-            config: The configuration for the Runnable.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            input: The input to the `Runnable`.
+            config: The configuration for the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Returns:
             The output of the branch that was run.
@@ -297,12 +297,12 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> Iterator[Output]:
-        """First evaluates the condition, then delegate to true or false branch.
+        """First evaluates the condition, then delegate to `True` or `False` branch.
 
         Args:
-            input: The input to the Runnable.
-            config: The configuration for the Runnable.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            input: The input to the `Runnable`.
+            config: The configuration for the Runna`ble.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the branch that was run.
@@ -381,12 +381,12 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         config: RunnableConfig | None = None,
         **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
-        """First evaluates the condition, then delegate to true or false branch.
+        """First evaluates the condition, then delegate to `True` or `False` branch.
 
         Args:
-            input: The input to the Runnable.
-            config: The configuration for the Runnable.
-            **kwargs: Additional keyword arguments to pass to the Runnable.
+            input: The input to the `Runnable`.
+            config: The configuration for the `Runnable`.
+            **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
         Yields:
             The output of the branch that was run.
