@@ -1047,7 +1047,7 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prefix == "Custom prefix:"
     assert middleware.buffer_tokens == 0
     assert middleware.target_retention_frac is None
-    assert middleware.trim_token_limit == 4000
+    assert middleware.trim_tokens_to_summarize == 4000
 
     middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
     assert middleware_with_buffer.buffer_tokens == 25
@@ -1217,7 +1217,7 @@ def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
     messages = [HumanMessage(content=str(i)) for i in range(10)]
     middleware = SummarizationMiddleware(
         model=MockModel(),
-        trim_token_limit=None,
+        trim_tokens_to_summarize=None,
     )
     middleware.token_counter = lambda msgs: len(msgs)
 
