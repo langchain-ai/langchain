@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
 
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired
@@ -27,7 +27,7 @@ ExitBehavior = Literal["continue", "error", "end"]
 - `"error"`: Raise a `ToolCallLimitExceededError` exception
 - `"end"`: Stop execution immediately, injecting a ToolMessage and an AI message
     for the single tool call that exceeded the limit. Raises `NotImplementedError`
-    if there are multiple tool calls.
+    if there are other pending tool calls (due to parallel tool calling).
 """
 
 
@@ -120,7 +120,7 @@ class ToolCallLimitMiddleware(
     AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
     Generic[ResponseT, ContextT],
 ):
-    """Tracks tool call counts and enforces limits during agent execution.
+    """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
     restrict execution when limits are exceeded. It supports both thread-level
@@ -132,7 +132,7 @@ class ToolCallLimitMiddleware(
           - `"error"`: Raise an exception
           - `"end"`: Stop immediately with a ToolMessage + AI message for the single
             tool call that exceeded the limit (raises `NotImplementedError` if there
-            are multiple tool calls)
+            are other pending tool calls (due to parallel tool calling).
 
     Examples:
         Continue execution with blocked tools (default):
@@ -198,7 +198,8 @@ class ToolCallLimitMiddleware(
                 - `"error"`: Raise a `ToolCallLimitExceededError` exception
                 - `"end"`: Stop execution immediately with a ToolMessage + AI message
                   for the single tool call that exceeded the limit. Raises
-                  `NotImplementedError` if there are multiple tool calls.
+                  `NotImplementedError` if there are multiple parallel tool
+                  calls to other tools or multiple pending tool calls.
 
         Raises:
             ValueError: If both limits are `None`.
@@ -225,6 +226,63 @@ class ToolCallLimitMiddleware(
         if self.tool_name:
             return f"{base_name}[{self.tool_name}]"
         return base_name
+
+    def _would_exceed_limit(self, thread_count: int, run_count: int) -> bool:
+        """Check if incrementing the counts would exceed any configured limit.
+
+        Args:
+            thread_count: Current thread call count.
+            run_count: Current run call count.
+
+        Returns:
+            True if either limit would be exceeded by one more call.
+        """
+        return (
+            (self.thread_limit is not None and thread_count + 1 > self.thread_limit)
+            or (self.run_limit is not None and run_count + 1 > self.run_limit)
+        )
+
+    def _matches_tool_filter(self, tool_call: ToolCall) -> bool:
+        """Check if a tool call matches this middleware's tool filter.
+
+        Args:
+            tool_call: The tool call to check.
+
+        Returns:
+            True if this middleware should track this tool call.
+        """
+        return self.tool_name is None or tool_call["name"] == self.tool_name
+
+    def _separate_tool_calls(
+        self, tool_calls: list[ToolCall], thread_count: int, run_count: int
+    ) -> tuple[list[ToolCall], list[ToolCall], int, int]:
+        """Separate tool calls into allowed and blocked based on limits.
+
+        Args:
+            tool_calls: List of tool calls to evaluate.
+            thread_count: Current thread call count.
+            run_count: Current run call count.
+
+        Returns:
+            Tuple of (allowed_calls, blocked_calls, final_thread_count, final_run_count).
+        """
+        allowed_calls: list[ToolCall] = []
+        blocked_calls: list[ToolCall] = []
+        temp_thread_count = thread_count
+        temp_run_count = run_count
+
+        for tool_call in tool_calls:
+            if not self._matches_tool_filter(tool_call):
+                continue
+
+            if self._would_exceed_limit(temp_thread_count, temp_run_count):
+                blocked_calls.append(tool_call)
+            else:
+                allowed_calls.append(tool_call)
+                temp_thread_count += 1
+                temp_run_count += 1
+
+        return allowed_calls, blocked_calls, temp_thread_count, temp_run_count
 
     @hook_config(can_jump_to=["end"])
     def after_model(
@@ -264,95 +322,96 @@ class ToolCallLimitMiddleware(
         if not last_ai_message or not last_ai_message.tool_calls:
             return None
 
-        # Count relevant tool calls (filter by tool_name if specified)
-        tool_call_count = 0
-        for tool_call in last_ai_message.tool_calls:
-            if self.tool_name is None or tool_call["name"] == self.tool_name:
-                tool_call_count += 1
-
-        if tool_call_count == 0:
-            return None
-
         # Get the count key for this middleware instance
         count_key = self.tool_name if self.tool_name else "__all__"
 
         # Get current counts
         thread_counts = state.get("thread_tool_call_count", {}).copy()
         run_counts = state.get("run_tool_call_count", {}).copy()
+        current_thread_count = thread_counts.get(count_key, 0)
+        current_run_count = run_counts.get(count_key, 0)
 
-        # Increment counts for this key
-        new_thread_count = thread_counts.get(count_key, 0) + tool_call_count
-        new_run_count = run_counts.get(count_key, 0) + tool_call_count
-
-        thread_counts[count_key] = new_thread_count
-        run_counts[count_key] = new_run_count
-
-        # Check if any limits are exceeded after incrementing
-        thread_limit_exceeded = (
-            self.thread_limit is not None and new_thread_count > self.thread_limit
-        )
-        run_limit_exceeded = self.run_limit is not None and new_run_count > self.run_limit
-
-        if thread_limit_exceeded or run_limit_exceeded:
-            limit_message = _build_tool_limit_exceeded_message(
-                new_thread_count, new_run_count, self.thread_limit, self.run_limit, self.tool_name
+        # Separate tool calls into allowed and blocked
+        allowed_calls, blocked_calls, new_thread_count, new_run_count = (
+            self._separate_tool_calls(
+                last_ai_message.tool_calls, current_thread_count, current_run_count
             )
+        )
 
-            if self.exit_behavior == "error":
-                raise ToolCallLimitExceededError(
-                    thread_count=new_thread_count,
-                    run_count=new_run_count,
-                    thread_limit=self.thread_limit,
-                    run_limit=self.run_limit,
-                    tool_name=self.tool_name,
-                )
+        # Update counts to include ALL tool call attempts (both allowed and blocked)
+        thread_counts[count_key] = new_thread_count + len(blocked_calls)
+        run_counts[count_key] = new_run_count + len(blocked_calls)
 
-            # For both "continue" and "end", inject artificial error ToolMessages
-            # for tool calls that exceeded their limits
-            artificial_messages: list[ToolMessage | AIMessage] = []
-            for tool_call in last_ai_message.tool_calls:
-                # Only inject errors for tool calls that match our filter
-                if self.tool_name is None or tool_call["name"] == self.tool_name:
-                    artificial_messages.extend(
-                        [
-                            ToolMessage(
-                                content=limit_message,
-                                tool_call_id=tool_call["id"],
-                                name=tool_call.get("name"),
-                                status="error",
-                            )
-                        ]
-                    )
-
-            if self.exit_behavior == "end":
-                # For "end" behavior, only support single tool call scenarios
-                if len(last_ai_message.tool_calls) > 1:
-                    msg = (
-                        "The 'end' exit behavior only supports a single tool call. "
-                        f"Found {len(last_ai_message.tool_calls)} tool calls. "
-                        "Use 'continue' or 'error' behavior instead."
-                    )
-                    raise NotImplementedError(msg)
-
-                # Add final AI message explaining why we're stopping
-                artificial_messages.append(AIMessage(content=limit_message))
-
+        # If no tool calls are blocked, just update counts
+        if not blocked_calls:
+            if allowed_calls:
                 return {
                     "thread_tool_call_count": thread_counts,
                     "run_tool_call_count": run_counts,
-                    "jump_to": "end",
-                    "messages": artificial_messages,
                 }
+            return None
 
-            # For exit_behavior="continue", just return the error messages
-            # This prevents exceeded tools from being called but lets the model continue
+        # Build the limit exceeded message once
+        final_thread_count = thread_counts[count_key]
+        final_run_count = run_counts[count_key]
+        limit_message = _build_tool_limit_exceeded_message(
+            final_thread_count,
+            final_run_count,
+            self.thread_limit,
+            self.run_limit,
+            self.tool_name,
+        )
+
+        # Handle different exit behaviors
+        if self.exit_behavior == "error":
+            raise ToolCallLimitExceededError(
+                thread_count=final_thread_count,
+                run_count=final_run_count,
+                thread_limit=self.thread_limit,
+                run_limit=self.run_limit,
+                tool_name=self.tool_name,
+            )
+
+        # Inject artificial error ToolMessages for blocked tool calls
+        artificial_messages: list[ToolMessage | AIMessage] = [
+            ToolMessage(
+                content=limit_message,
+                tool_call_id=tool_call["id"],
+                name=tool_call.get("name"),
+                status="error",
+            )
+            for tool_call in blocked_calls
+        ]
+
+        if self.exit_behavior == "end":
+            # Check if there are tool calls to other tools that would continue executing
+            other_tools = [
+                tc
+                for tc in last_ai_message.tool_calls
+                if self.tool_name is not None and tc["name"] != self.tool_name
+            ]
+
+            if other_tools:
+                tool_names = ", ".join(set(tc["name"] for tc in other_tools))
+                msg = (
+                    f"Cannot end execution with other tool calls pending. "
+                    f"Found calls to: {tool_names}. Use 'continue' or 'error' behavior instead."
+                )
+                raise NotImplementedError(msg)
+
+            # Add final AI message explaining why we're stopping
+            artificial_messages.append(AIMessage(content=limit_message))
+
             return {
                 "thread_tool_call_count": thread_counts,
                 "run_tool_call_count": run_counts,
+                "jump_to": "end",
                 "messages": artificial_messages,
             }
 
+        # For exit_behavior="continue", return error messages to block exceeded tools
         return {
             "thread_tool_call_count": thread_counts,
             "run_tool_call_count": run_counts,
+            "messages": artificial_messages,
         }

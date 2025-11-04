@@ -114,16 +114,18 @@ def test_middleware_unit_functionality():
     assert "run limit exceeded (3/2 calls)" in result["messages"][-1].content
 
 
-def test_middleware_end_behavior_multiple_tool_calls_raises_error():
-    """Test that 'end' behavior raises NotImplementedError with multiple tool calls.
+def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
+    """Test that 'end' behavior raises NotImplementedError when there are parallel calls to unrelated tools.
 
-    The 'end' behavior can only inject an artificial error for a single tool call.
-    When multiple tool calls exceed the limit, it raises NotImplementedError.
+    When limiting a specific tool with "end" behavior and the model proposes parallel calls
+    to BOTH the limited tool AND other tools, we can't handle this scenario (we'd be stopping
+    execution while other tools should run).
     """
-    middleware = ToolCallLimitMiddleware(thread_limit=2, exit_behavior="end")
+    # Limit search tool specifically
+    middleware = ToolCallLimitMiddleware(tool_name="search", thread_limit=1, exit_behavior="end")
     runtime = None
 
-    # Test with 2 tool calls exceeding limit
+    # Test with search + calculator calls when search exceeds limit
     state = {
         "messages": [
             AIMessage(
@@ -134,31 +136,12 @@ def test_middleware_end_behavior_multiple_tool_calls_raises_error():
                 ],
             ),
         ],
-        "thread_tool_call_count": {"__all__": 1},
-        "run_tool_call_count": {"__all__": 1},
+        "thread_tool_call_count": {"search": 1},
+        "run_tool_call_count": {"search": 1},
     }
 
-    with pytest.raises(NotImplementedError, match="only supports a single tool call"):
+    with pytest.raises(NotImplementedError, match="Cannot end execution with other tool calls pending"):
         middleware.after_model(state, runtime)  # type: ignore[arg-type]
-
-    # Test with 3 tool calls exceeding limit
-    state_three = {
-        "messages": [
-            AIMessage(
-                "Response",
-                tool_calls=[
-                    {"name": "search", "args": {}, "id": "1"},
-                    {"name": "search", "args": {}, "id": "2"},
-                    {"name": "calculator", "args": {}, "id": "3"},
-                ],
-            ),
-        ],
-        "thread_tool_call_count": {"__all__": 0},
-        "run_tool_call_count": {"__all__": 0},
-    }
-
-    with pytest.raises(NotImplementedError, match="Found 3 tool calls"):
-        middleware.after_model(state_three, runtime)  # type: ignore[arg-type]
 
 
 def test_middleware_with_specific_tool():
