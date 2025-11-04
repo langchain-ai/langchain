@@ -102,7 +102,7 @@ class ModelRequest:
         Args:
             **overrides: Keyword arguments for attributes to override. Supported keys:
                 - model: BaseChatModel instance
-                - system_prompt: Optional system prompt string or SystemMessage instance
+                - system_prompt: Optional system prompt string
                 - messages: List of messages
                 - tool_choice: Tool choice configuration
                 - tools: List of available tools
