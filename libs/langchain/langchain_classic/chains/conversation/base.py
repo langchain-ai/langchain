@@ -97,7 +97,7 @@ class ConversationChain(LLMChain):
     Example:
         ```python
         from langchain_classic.chains import ConversationChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         conversation = ConversationChain(llm=OpenAI())
         ```

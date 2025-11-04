@@ -774,7 +774,7 @@ class Runnable(ABC, Generic[Input, Output]):
         """Assigns new fields to the `dict` output of this `Runnable`.
 
         ```python
-        from langchain_community.llms.fake import FakeStreamingListLLM
+        from langchain_core.language_models.fake import FakeStreamingListLLM
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.prompts import SystemMessagePromptTemplate
         from langchain_core.runnables import Runnable
@@ -5766,7 +5766,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
         ```python
         # Create a Runnable binding that invokes the chat model with the
         # additional kwarg `stop=['-']` when running it.
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
 
         model = ChatOpenAI()
         model.invoke('Say "Parrot-MAGIC"', stop=["-"])  # Should return `Parrot`
