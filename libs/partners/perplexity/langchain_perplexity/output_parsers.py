@@ -1,3 +1,4 @@
+import re
 from typing import Any, Generic
 
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -6,40 +7,32 @@ from langchain_core.utils.pydantic import TBaseModel
 
 
 def strip_think_tags(text: str) -> str:
-    """Removes <think>...</think> tags from text.
+    """Removes all <think>...</think> tags and their content from text.
+
+    This function removes all occurrences of think tags, preserving text
+    before, between, and after the tags. It also handles markdown code fences.
 
     Args:
         text: The input text that may contain think tags.
+
+    Returns:
+        The text with all `<think>...</think>` blocks removed.
     """
+    # Remove all <think>...</think> blocks using regex
+    # The pattern matches <think> followed by any content (non-greedy) until </think>
+    result = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
 
-    def remove_think_tags(text: str) -> str:
-        """Remove content between <think> and </think> tags more safely."""
-        result = []
-        i = 0
-        while i < len(text):
-            # Look for opening tag
-            open_tag_pos = text.find("<think>", i)
-            if open_tag_pos == -1:
-                # No more opening tags, add the rest and break
-                result.append(text[i:])
-                break
+    # Remove markdown code fence markers if present
+    result = result.strip()
+    if result.startswith("```json"):
+        result = result[len("```json") :].strip()
+    elif result.startswith("```"):
+        result = result[3:].strip()
 
-            # Add text before the opening tag
-            result.append(text[i:open_tag_pos])
+    if result.endswith("```"):
+        result = result[:-3].strip()
 
-            # Look for closing tag
-            close_tag_pos = text.find("</think>", open_tag_pos + 7)
-            if close_tag_pos == -1:
-                # No closing tag found, treat opening tag as literal text
-                result.append("<think>")
-                i = open_tag_pos + 7
-            else:
-                # Skip the content between tags and move past closing tag
-                i = close_tag_pos + 8  # "</think>" is 8 characters
-
-        return "".join(result).strip()
-
-    return remove_think_tags(text)
+    return result
 
 
 class ReasoningJsonOutputParser(JsonOutputParser):
