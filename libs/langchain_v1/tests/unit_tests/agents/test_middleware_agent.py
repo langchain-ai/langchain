@@ -565,23 +565,20 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have: context message + AI message with edited tool call
-        assert len(result["messages"]) == 2
-        
-        # First message should be the context message explaining the edit
+        # Should have only the context message (AI message is modified in place)
+        assert len(result["messages"]) == 1
+
+        # First (and only) message should be the context message explaining the edit
         context_msg = result["messages"][0]
         assert isinstance(context_msg, AIMessage)
         assert context_msg.name == "human_review_system"
         assert "modified by human review" in context_msg.content
         assert "test_tool({'input': 'test'})" in context_msg.content
         assert "test_tool({'input': 'edited'})" in context_msg.content
-        
-        # Second message should be the updated AI message with edited tool call
-        updated_ai = result["messages"][1]
-        assert updated_ai.tool_calls[0]["args"] == {"input": "edited"}
-        assert updated_ai.tool_calls[0]["id"] == "1"  # ID should be preserved
 
-
+        # The original AI message should have been modified in place
+        assert ai_message.tool_calls[0]["args"] == {"input": "edited"}
+        assert ai_message.tool_calls[0]["id"] == "1"  # ID should be preserved
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
 
@@ -707,28 +704,25 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have: 2 context messages + 1 AI message with edited tool calls
-        assert len(result["messages"]) == 3
-        
+        # Should have: 2 context messages (AI message is modified in place)
+        assert len(result["messages"]) == 2
+
         # First two messages should be context messages
         assert isinstance(result["messages"][0], AIMessage)
         assert result["messages"][0].name == "human_review_system"
         assert "modified by human review" in result["messages"][0].content
         assert "San Francisco" in result["messages"][0].content
         assert "New York" in result["messages"][0].content
-        
+
         assert isinstance(result["messages"][1], AIMessage)
         assert result["messages"][1].name == "human_review_system"
         assert "modified by human review" in result["messages"][1].content
 
-        # Third message should be the updated AI message with edited tool calls
-        updated_ai_message = result["messages"][2]
-        assert updated_ai_message.tool_calls[0]["args"] == {"location": "New York"}
-        assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
-        assert updated_ai_message.tool_calls[1]["args"] == {"location": "New York"}
-        assert updated_ai_message.tool_calls[1]["id"] == "2"  # ID preserved
-
-
+        # The original AI message should have been modified in place with edited tool calls
+        assert ai_message.tool_calls[0]["args"] == {"location": "New York"}
+        assert ai_message.tool_calls[0]["id"] == "1"  # ID preserved
+        assert ai_message.tool_calls[1]["args"] == {"location": "New York"}
+        assert ai_message.tool_calls[1]["id"] == "2"  # ID preserved
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
 
@@ -765,16 +759,16 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         # Should have: context message + AI message with edited tool call
         assert len(result["messages"]) == 2
 
+        # Should have only the context message (AI message is modified in place)
+        assert len(result["messages"]) == 1
+
         # First message should be context message
         assert isinstance(result["messages"][0], AIMessage)
         assert result["messages"][0].name == "human_review_system"
-        
-        # Second message should have modified args
-        updated_ai_message = result["messages"][1]
-        assert updated_ai_message.tool_calls[0]["args"] == {"input": "modified"}
-        assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
 
-
+        # The original AI message should have been modified in place
+        assert ai_message.tool_calls[0]["args"] == {"input": "modified"}
+        assert ai_message.tool_calls[0]["id"] == "1"  # ID preserved
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     middleware = HumanInTheLoopMiddleware(
@@ -951,8 +945,17 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
+        # Should have only the context message (AI message is modified in place)
         assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
+
+        # First (and only) message should be the context message explaining the edit
+        context_msg = result["messages"][0]
+        assert isinstance(context_msg, AIMessage)
+        assert context_msg.name == "human_review_system"
+        assert "modified by human review" in context_msg.content
+
+        # The original AI message should have been modified in place
+        assert ai_message.tool_calls[0]["args"] == {"input": "edited"}
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
@@ -1107,37 +1110,43 @@ def test_human_in_the_loop_middleware_edit_doesnt_cause_retry() -> None:
             {"configurable": {"thread_id": "test_thread"}}
         )
     
+
     messages = result["messages"]
-    
+
     # Verify the message flow:
     # 1. HumanMessage: "Send email to alice@example.com"
-    # 2. AIMessage: Context message explaining the edit
-    # 3. AIMessage: Original AI message with edited tool call
+    # 2. AIMessage: Original AI message with edited tool call (modified in place)
+    # 3. AIMessage: Context message explaining the edit
     # 4. ToolMessage: Result of sending to alice@test.com
     # 5. AIMessage: Final response (no tool calls)
-    
+
     assert len(messages) == 5
-    
+
+    # Check the AI message with tool call has the edited args
+    ai_with_tool_call = messages[1]
+    assert isinstance(ai_with_tool_call, AIMessage)
+    assert len(ai_with_tool_call.tool_calls) == 1
+    assert ai_with_tool_call.tool_calls[0]["args"]["to"] == "alice@test.com"
+
     # Check the context message exists and explains the edit
-    context_msg = messages[1]
+    context_msg = messages[2]
     assert isinstance(context_msg, AIMessage)
     assert context_msg.name == "human_review_system"
     assert "modified by human review" in context_msg.content
     assert "alice@example.com" in context_msg.content
     assert "alice@test.com" in context_msg.content
-    
+
     # Check the tool was called with edited args
     tool_msg = messages[3]
     assert isinstance(tool_msg, ToolMessage)
     assert "alice@test.com" in tool_msg.content
-    
+
     # Most importantly: verify the final AI message has NO tool calls
     # (it should not retry the original alice@example.com request)
     final_ai_msg = messages[4]
     assert isinstance(final_ai_msg, AIMessage)
     assert len(final_ai_msg.tool_calls) == 0, \
         "Agent should not retry original tool call after edit with context message"
-
 
 # Tests for SummarizationMiddleware
 def test_summarization_middleware_initialization() -> None:
