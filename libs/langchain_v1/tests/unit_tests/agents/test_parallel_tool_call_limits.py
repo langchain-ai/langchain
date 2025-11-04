@@ -114,11 +114,12 @@ def test_parallel_tool_calls_with_limit_end_mode():
     assert len(successful_tool_messages) == 0, "No tools execute when we jump to end"
     assert len(error_tool_messages) == 2, "Should have 2 blocked tool messages (q2, q3)"
 
-    # Verify error messages explain the limit
+    # Verify error tool messages (sent to model - include "Do not" instruction)
     for error_msg in error_tool_messages:
-        assert "limit" in error_msg.content.lower()
+        assert "Tool call limit exceeded" in error_msg.content
+        assert "Do not" in error_msg.content
 
-    # Verify AI message explaining why execution stopped
+    # Verify AI message explaining why execution stopped (displayed to user - includes thread/run details)
     ai_limit_messages = [
         msg
         for msg in messages
@@ -127,8 +128,8 @@ def test_parallel_tool_calls_with_limit_end_mode():
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
     ai_msg_content = ai_limit_messages[0].content.lower()
-    assert "do not" in ai_msg_content or "don't" in ai_msg_content, (
-        "Should instruct model not to call tool again"
+    assert "thread limit exceeded" in ai_msg_content or "run limit exceeded" in ai_msg_content, (
+        "AI message should include thread/run limit details for the user"
     )
 
 

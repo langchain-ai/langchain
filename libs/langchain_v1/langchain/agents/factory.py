@@ -33,6 +33,7 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     OmitFromSchema,
     ResponseT,
+    StateT_co,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -516,7 +517,7 @@ def create_agent(  # noqa: PLR0915
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
@@ -792,7 +793,7 @@ def create_agent(  # noqa: PLR0915
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas = {m.state_schema for m in middleware}
+    state_schemas: set[type] = {m.state_schema for m in middleware}
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)

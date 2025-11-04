@@ -96,7 +96,12 @@ def test_middleware_unit_functionality():
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "limit reached" in result["messages"][-1].content.lower()
+    # Check the ToolMessage (sent to model - no thread/run details)
+    assert result["messages"][0].status == "error"
+    assert "Tool call limit exceeded" in result["messages"][0].content
+    # Check the final AI message (displayed to user - includes thread/run details)
+    assert "limit" in result["messages"][-1].content.lower()
+    assert "thread limit exceeded" in result["messages"][-1].content.lower()
     assert result["thread_tool_call_count"] == {"__all__": 4}
 
     # Test run limit exceeded
@@ -111,7 +116,9 @@ def test_middleware_unit_functionality():
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
-    assert "run limit exceeded (3/2 calls)" in result["messages"][-1].content
+    # Check the final AI message includes run limit details
+    assert "run limit exceeded" in result["messages"][-1].content
+    assert "3/2 calls" in result["messages"][-1].content
 
 
 def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
@@ -140,7 +147,9 @@ def test_middleware_end_behavior_with_unrelated_parallel_tool_calls():
         "run_tool_call_count": {"search": 1},
     }
 
-    with pytest.raises(NotImplementedError, match="Cannot end execution with other tool calls pending"):
+    with pytest.raises(
+        NotImplementedError, match="Cannot end execution with other tool calls pending"
+    ):
         middleware.after_model(state, runtime)  # type: ignore[arg-type]
 
 
@@ -463,7 +472,7 @@ def test_end_behavior_creates_artificial_messages():
     )
     messages = result["messages"]
 
-    # Verify AI message explaining the limit
+    # Verify AI message explaining the limit (displayed to user - includes thread/run details)
     ai_limit_messages = [
         msg
         for msg in messages
@@ -472,8 +481,8 @@ def test_end_behavior_creates_artificial_messages():
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
 
     ai_msg_content = ai_limit_messages[0].content.lower()
-    assert "do not" in ai_msg_content or "don't" in ai_msg_content, (
-        "Should instruct model not to call tool again"
+    assert "thread limit exceeded" in ai_msg_content or "run limit exceeded" in ai_msg_content, (
+        "AI message should include thread/run limit details for the user"
     )
 
     # Verify tool message counts
@@ -483,3 +492,10 @@ def test_end_behavior_creates_artificial_messages():
 
     assert len(successful_tool_messages) == 2, "Should have 2 successful tool messages (q1, q2)"
     assert len(error_tool_messages) == 1, "Should have 1 artificial error tool message (q3)"
+
+    # Verify the error tool message (sent to model - no thread/run details, includes instruction)
+    error_msg_content = error_tool_messages[0].content
+    assert "Tool call limit exceeded" in error_msg_content
+    assert "Do not" in error_msg_content, (
+        "Tool message should instruct model not to call tool again"
+    )
