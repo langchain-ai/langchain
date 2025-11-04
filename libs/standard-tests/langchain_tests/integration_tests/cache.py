@@ -1,6 +1,7 @@
-"""Standard tests for the BaseCache abstraction.
+"""Standard tests for the `BaseCache` abstraction.
 
-We don't recommend implementing externally managed BaseCache abstractions at this time.
+We don't recommend implementing externally managed `BaseCache` abstractions at this
+time.
 """
 
 from abc import abstractmethod
@@ -13,7 +14,7 @@ from langchain_tests.base import BaseStandardTests
 
 
 class SyncCacheTestSuite(BaseStandardTests):
-    """Test suite for checking the BaseCache API of a caching layer for LLMs.
+    """Test suite for checking the `BaseCache` API of a caching layer for LLMs.
 
     This test suite verifies the basic caching API of a caching layer for LLMs.
 
@@ -106,9 +107,9 @@ class SyncCacheTestSuite(BaseStandardTests):
 
 
 class AsyncCacheTestSuite(BaseStandardTests):
-    """Test suite for checking the BaseCache API of a caching layer for LLMs.
+    """Test suite for checking the `BaseCache` API of a caching layer for LLMs.
 
-    This test suite verifies the basic caching API of a caching layer for LLMs.
+    Verifies the basic caching API of a caching layer for LLMs.
 
     The test suite is designed for synchronous caching layers.
 
