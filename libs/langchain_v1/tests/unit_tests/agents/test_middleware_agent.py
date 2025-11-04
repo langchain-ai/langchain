@@ -565,9 +565,16 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
-        assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
+        # Should return 2 messages: context AIMessage + updated AIMessage
+        assert len(result["messages"]) == 2
+        # First message should be context explaining the edit
+        assert isinstance(result["messages"][0], AIMessage)
+        assert "modified by human review" in result["messages"][0].content
+        assert result["messages"][0].name == "human_review_system"
+        # Second message should be the updated AIMessage with edited tool calls
+        assert isinstance(result["messages"][1], AIMessage)
+        assert result["messages"][1].tool_calls[0]["args"] == {"input": "edited"}
+        assert result["messages"][1].tool_calls[0]["id"] == "1"  # ID should be preserved
 
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
@@ -695,9 +702,23 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1
+        # Should return 3 messages: 2 context AIMessages (one per edit) + 1 updated AIMessage
+        assert len(result["messages"]) == 3
 
-        updated_ai_message = result["messages"][0]
+        # First two messages should be context explaining the edits
+        assert isinstance(result["messages"][0], AIMessage)
+        assert "modified by human review" in result["messages"][0].content
+        assert "get_forecast" in result["messages"][0].content
+        assert result["messages"][0].name == "human_review_system"
+
+        assert isinstance(result["messages"][1], AIMessage)
+        assert "modified by human review" in result["messages"][1].content
+        assert "get_temperature" in result["messages"][1].content
+        assert result["messages"][1].name == "human_review_system"
+
+        # Third message should be the updated AIMessage with edited tool calls
+        updated_ai_message = result["messages"][2]
+        assert isinstance(updated_ai_message, AIMessage)
         assert updated_ai_message.tool_calls[0]["args"] == {"location": "New York"}
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
         assert updated_ai_message.tool_calls[1]["args"] == {"location": "New York"}
@@ -737,10 +758,17 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1
+        # Should return 2 messages: context AIMessage + updated AIMessage
+        assert len(result["messages"]) == 2
 
-        # Should have modified args
-        updated_ai_message = result["messages"][0]
+        # First message should be context explaining the edit
+        assert isinstance(result["messages"][0], AIMessage)
+        assert "modified by human review" in result["messages"][0].content
+        assert result["messages"][0].name == "human_review_system"
+
+        # Second message should be the updated AIMessage with modified args
+        updated_ai_message = result["messages"][1]
+        assert isinstance(updated_ai_message, AIMessage)
         assert updated_ai_message.tool_calls[0]["args"] == {"input": "modified"}
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
 
@@ -874,7 +902,9 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert action_request["args"] == {"input": "test", "location": "SF"}
         assert "Custom prefix" in action_request["description"]
         assert "Tool: test_tool" in action_request["description"]
-        assert "Args: {'input': 'test', 'location': 'SF'}" in action_request["description"]
+        # Args should now be in JSON format (Comment 5: JSON formatting)
+        assert '"input": "test"' in action_request["description"]
+        assert '"location": "SF"' in action_request["description"]
 
         assert len(captured_request["review_configs"]) == 1
         review_config = captured_request["review_configs"][0]
@@ -921,8 +951,15 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
+        # Should return 2 messages: context AIMessage + updated AIMessage
+        assert len(result["messages"]) == 2
+        # First message should be context explaining the edit
+        assert isinstance(result["messages"][0], AIMessage)
+        assert "modified by human review" in result["messages"][0].content
+        assert result["messages"][0].name == "human_review_system"
+        # Second message should be the updated AIMessage with edited tool calls
+        assert isinstance(result["messages"][1], AIMessage)
+        assert result["messages"][1].tool_calls[0]["args"] == {"input": "edited"}
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 

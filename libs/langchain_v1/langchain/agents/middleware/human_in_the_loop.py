@@ -1,5 +1,6 @@
 """Human in the loop middleware."""
 
+import json
 from typing import Any, Literal, Protocol
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
@@ -202,7 +203,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         state: AgentState,
         runtime: Runtime,
     ) -> tuple[ActionRequest, ReviewConfig]:
-        """Create an ActionRequest and ReviewConfig for a tool call."""
+        """Create an ActionRequest and ReviewConfig for a tool call.
+
+        Args:
+            tool_call: The tool call to create an action request for.
+            config: The interrupt configuration for this tool.
+            state: Current agent state.
+            runtime: Runtime context.
+
+        Returns:
+            Tuple of (ActionRequest, ReviewConfig) for human review.
+        """
         tool_name = tool_call["name"]
         tool_args = tool_call["args"]
 
@@ -213,7 +224,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         elif description_value is not None:
             description = description_value
         else:
-            description = f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
+            # Format args as readable JSON for better readability and safety
+            formatted_args = json.dumps(tool_args, indent=2, sort_keys=True)
+            description = f"{self.description_prefix}\n\nTool: {tool_name}\nArgs:\n{formatted_args}"
 
         # Create ActionRequest with description
         action_request = ActionRequest(
@@ -222,12 +235,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             description=description,
         )
 
-        # Create ReviewConfig
-        # eventually can get tool information and populate args_schema from there
+        # Create ReviewConfig with args_schema if provided
         review_config = ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
         )
+        if "args_schema" in config:
+            review_config["args_schema"] = config["args_schema"]
 
         return action_request, review_config
 
@@ -236,23 +250,108 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-    ) -> tuple[ToolCall | None, ToolMessage | None]:
-        """Process a single decision and return the revised tool call and optional tool message."""
+    ) -> tuple[ToolCall | None, ToolMessage | None, AIMessage | None]:
+        """Process a single decision and return the revised tool call.
+
+        Returns optional tool message and context AIMessage.
+
+        This method handles three types of decisions from human review:
+
+        1. **approve**: Returns the original tool call unchanged with no
+           additional messages.
+        2. **edit**: Returns the edited tool call with a context AIMessage
+           explaining what was changed. The context message helps the model
+           understand that the edit was intentional and prevents it from
+           retrying the original action.
+        3. **reject**: Returns the original tool call with an artificial
+           ToolMessage marked as error status, explaining why it was rejected.
+
+        Args:
+            decision: The human decision (approve/edit/reject).
+            tool_call: The original tool call being reviewed.
+            config: The interrupt configuration including allowed decisions
+                and optional args_schema.
+
+        Returns:
+            A 3-tuple of:
+            - ToolCall | None: The revised tool call (or None if fully rejected)
+            - ToolMessage | None: An artificial tool message for rejects
+              (or None otherwise)
+            - AIMessage | None: A context message explaining edits
+              (or None for approve/reject)
+
+        Raises:
+            ValueError: If the decision type is not in the allowed_decisions
+                list or if edited args fail schema validation when args_schema
+                is provided.
+        """
         allowed_decisions = config["allowed_decisions"]
 
         if decision["type"] == "approve" and "approve" in allowed_decisions:
-            return tool_call, None
+            return tool_call, None, None
+
         if decision["type"] == "edit" and "edit" in allowed_decisions:
             edited_action = decision["edited_action"]
-            return (
-                ToolCall(
-                    type="tool_call",
-                    name=edited_action["name"],
-                    args=edited_action["args"],
-                    id=tool_call["id"],
-                ),
-                None,
+
+            # Validate edited args against schema if provided (Comment 4)
+            if "args_schema" in config:
+                args_schema = config["args_schema"]
+                try:
+                    # Attempt basic JSON schema validation using jsonschema if available
+                    try:
+                        import jsonschema
+
+                        jsonschema.validate(edited_action["args"], args_schema)
+                    except ImportError:
+                        # Fallback: basic type checking if jsonschema not available
+                        # At minimum, verify edited_args is a dict
+                        if not isinstance(edited_action["args"], dict):
+                            msg = (
+                                "Edited args must be a dictionary, got "
+                                f"{type(edited_action['args']).__name__}"
+                            )
+                            raise ValueError(msg)
+                except (ValueError, jsonschema.ValidationError) as e:
+                    # Schema validation failed - return error ToolMessage
+                    error_msg = f"Edited arguments failed schema validation: {e}"
+                    tool_message = ToolMessage(
+                        content=error_msg,
+                        name=tool_call["name"],
+                        tool_call_id=tool_call["id"],
+                        status="error",
+                    )
+                    return tool_call, tool_message, None
+
+            # Create edited tool call - preserve original ID for lineage (Comment 3)
+            edited_tool_call = ToolCall(
+                type="tool_call",
+                name=edited_action["name"],
+                args=edited_action["args"],
+                id=tool_call["id"],
             )
+
+            # Create context AIMessage explaining the edit (Comment 1)
+            original_args_json = json.dumps(tool_call["args"], indent=2, sort_keys=True)
+            edited_args_json = json.dumps(edited_action["args"], indent=2, sort_keys=True)
+
+            context_content = (
+                f"The original tool call to '{tool_call['name']}' was modified by human review.\n\n"
+                f"Original action:\n"
+                f"  Tool: {tool_call['name']}\n"
+                f"  Args:\n{original_args_json}\n\n"
+                f"Modified to:\n"
+                f"  Tool: {edited_action['name']}\n"
+                f"  Args:\n{edited_args_json}\n\n"
+                f"This edit is intentional and should not be retried with the original arguments."
+            )
+
+            context_message = AIMessage(
+                content=context_content,
+                name="human_review_system",
+            )
+
+            return edited_tool_call, None, context_message
+
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
             content = decision.get("message") or (
@@ -264,7 +363,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 tool_call_id=tool_call["id"],
                 status="error",
             )
-            return tool_call, tool_message
+            return tool_call, tool_message, None
+
         msg = (
             f"Unexpected human decision: {decision}. "
             f"Decision type '{decision.get('type')}' "
@@ -274,7 +374,40 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         raise ValueError(msg)
 
     def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Trigger interrupt flows for relevant tool calls after an `AIMessage`."""
+        """Trigger interrupt flows for relevant tool calls after an `AIMessage`.
+
+        This method intercepts tool calls from the model's AIMessage and routes
+        them through human review when configured. It handles three types of
+        decisions:
+
+        1. **approve**: Tool call proceeds unchanged
+        2. **edit**: Tool call is modified and a context AIMessage is added
+           explaining the change
+        3. **reject**: Tool call is blocked and an artificial error ToolMessage
+           is added
+
+        The returned dictionary updates the agent state with:
+        - An updated AIMessage containing only approved/edited tool calls
+          (auto-approved tools first, then reviewed tools in order)
+        - Context AIMessages explaining any edits (inserted before the updated
+          AIMessage)
+        - Artificial ToolMessages for any rejections
+
+        This sequencing ensures the model sees:
+        1. Context messages explaining edits
+        2. The updated AIMessage with final tool calls
+        3. Error messages for rejected calls
+
+        Args:
+            state: Current agent state containing message history.
+            runtime: Runtime context for the agent.
+
+        Returns:
+            Dictionary with 'messages' key containing the updated/new messages,
+            or None if no interrupts were needed. The messages list maintains
+            ordering: context messages (if any), then the updated AIMessage,
+            then artificial tool messages (if any).
+        """
         messages = state["messages"]
         if not messages:
             return None
@@ -285,20 +418,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Separate tool calls that need interrupts from those that don't
         interrupt_tool_calls: list[ToolCall] = []
-        auto_approved_tool_calls = []
+        auto_approved_tool_calls: list[ToolCall] = []
 
         for tool_call in last_ai_msg.tool_calls:
-            interrupt_tool_calls.append(tool_call) if tool_call[
-                "name"
-            ] in self.interrupt_on else auto_approved_tool_calls.append(tool_call)
+            if tool_call["name"] in self.interrupt_on:
+                interrupt_tool_calls.append(tool_call)
+            else:
+                auto_approved_tool_calls.append(tool_call)
 
         # If no interrupts needed, return early
         if not interrupt_tool_calls:
             return None
 
         # Process all tool calls that require interrupts
+        # Auto-approved tools go first to maintain consistent ordering (Comment 7)
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage] = []
+        context_messages: list[AIMessage] = []
 
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
@@ -334,18 +470,25 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             )
             raise ValueError(msg)
 
-        # Process each decision using helper method
+        # Process each decision using helper method (Comment 1)
         for i, decision in enumerate(decisions):
             tool_call = interrupt_tool_calls[i]
             config = self.interrupt_on[tool_call["name"]]
 
-            revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
+            revised_tool_call, tool_message, context_msg = self._process_decision(
+                decision, tool_call, config
+            )
             if revised_tool_call:
                 revised_tool_calls.append(revised_tool_call)
             if tool_message:
                 artificial_tool_messages.append(tool_message)
+            if context_msg:
+                context_messages.append(context_msg)
 
-        # Update the AI message to only include approved tool calls
+        # Update the AI message in-place to include only approved/edited tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        return {"messages": [last_ai_msg, *artificial_tool_messages]}
+        # Return messages in order: context messages, updated AI message,
+        # then artificial tool messages. This ensures the model sees edit
+        # explanations before the updated tool calls
+        return {"messages": [*context_messages, last_ai_msg, *artificial_tool_messages]}
