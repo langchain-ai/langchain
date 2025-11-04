@@ -39,6 +39,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import (
     InputTokenDetails,
+    OutputTokenDetails,
     UsageMetadata,
 )
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -748,7 +749,20 @@ class ChatGroq(BaseChatModel):
             if token_usage is not None:
                 for k, v in token_usage.items():
                     if k in overall_token_usage and v is not None:
-                        overall_token_usage[k] += v
+                        # Handle nested dictionaries
+                        if isinstance(v, dict):
+                            if k not in overall_token_usage:
+                                overall_token_usage[k] = {}
+                            for nested_k, nested_v in v.items():
+                                if (
+                                    nested_k in overall_token_usage[k]
+                                    and nested_v is not None
+                                ):
+                                    overall_token_usage[k][nested_k] += nested_v
+                                else:
+                                    overall_token_usage[k][nested_k] = nested_v
+                        else:
+                            overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
@@ -1418,6 +1432,11 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
             "cached_tokens"
         ),
     }
+    output_token_details: dict = {
+        "reasoning": (groq_token_usage.get("completion_tokens_details") or {}).get(
+            "reasoning_tokens"
+        ),
+    }
     usage_metadata: UsageMetadata = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
@@ -1426,4 +1445,6 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
 
     if filtered_input := {k: v for k, v in input_token_details.items() if v}:
         usage_metadata["input_token_details"] = InputTokenDetails(**filtered_input)  # type: ignore[typeddict-item]
+    if filtered_output := {k: v for k, v in output_token_details.items() if v}:
+        usage_metadata["output_token_details"] = OutputTokenDetails(**filtered_output)  # type: ignore[typeddict-item]
     return usage_metadata
