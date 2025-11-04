@@ -9,6 +9,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
     "langgraph>=1.0.2,<1.1.0",
+    "langgraph-prebuilt>=1.0.2,<1.1.0",  # Explicit dependency to avoid version conflicts
     "pydantic>=2.7.4,<3.0.0",
 ]
 
