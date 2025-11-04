@@ -51,6 +51,7 @@ __all__ = [
     "before_agent",
     "before_model",
     "dynamic_prompt",
+    "get_config",
     "hook_config",
     "wrap_tool_call",
 ]
@@ -59,6 +60,58 @@ JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
 ResponseT = TypeVar("ResponseT")
+
+
+def get_config() -> dict[str, Any] | None:
+    """Get the current `RunnableConfig` from the execution context.
+
+    This function provides middleware access to the `RunnableConfig` that was passed
+    to `agent.invoke()`, including metadata, tags, callbacks, and other configuration.
+
+    Returns:
+        The current RunnableConfig dictionary, or `None` if not available.
+        The config dict may contain:
+        - `metadata`: Custom metadata (e.g., `user_id`, `session_id`)
+        - `tags`: List of tags for filtering and organization
+        - `callbacks`: Callback handlers for tracing/monitoring
+        - `run_name`: Name for the current run
+        - `run_id`: Unique identifier for the run
+        - `configurable`: Runtime configuration values
+
+    Examples:
+        Access config in middleware:
+        ```python
+        from langchain.agents.middleware.types import AgentMiddleware, get_config
+
+        class LoggingMiddleware(AgentMiddleware):
+            def before_model(self, state, runtime):
+                config = get_config()
+                if config:
+                    user_id = config.get("metadata", {}).get("user_id")
+                    log_level = config.get("metadata", {}).get("log_level")
+                    if log_level == "debug":
+                        print(f"User {user_id}: processing {len(state['messages'])} messages")
+                return None
+        ```
+
+        Pass config when invoking:
+        ```python
+        from langchain_core.runnables import RunnableConfig
+
+        config = RunnableConfig(
+            metadata={"user_id": "123", "log_level": "debug"},
+            tags=["production", "important"]
+        )
+        result = agent.invoke({"messages": [...]}, config=config)
+        ```
+
+    Note:
+        The `Runtime` object passed to middleware hooks does not directly expose
+        config. Use this function to access it instead.
+    """
+    from langchain_core.runnables.config import var_child_runnable_config
+
+    return var_child_runnable_config.get()
 
 
 class _ModelRequestOverrides(TypedDict, total=False):
@@ -194,6 +247,22 @@ class AgentMiddleware(Generic[StateT, ContextT]):
 
     Subclass this and implement any of the defined methods to customize agent behavior
     between steps in the main agent loop.
+
+    Middleware hooks receive `state` and `runtime` parameters. To access the
+    `RunnableConfig` (including metadata, tags, etc.) passed to `agent.invoke()`,
+    use the `get_config()` function:
+
+    ```python
+    from langchain.agents.middleware.types import AgentMiddleware, get_config
+
+    class MyMiddleware(AgentMiddleware):
+        def before_model(self, state, runtime):
+            config = get_config()
+            if config:
+                user_id = config.get("metadata", {}).get("user_id")
+                # Use user_id for context-aware behavior
+            return None
+    ```
     """
 
     state_schema: type[StateT] = cast("type[StateT]", AgentState)
