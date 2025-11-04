@@ -118,6 +118,8 @@ if TYPE_CHECKING:
 
 Other = TypeVar("Other")
 
+_RUNNABLE_GENERIC_NUM_ARGS = 2  # Input and Output
+
 
 class Runnable(ABC, Generic[Input, Output]):
     """A unit of work that can be invoked, batched, streamed, transformed and composed.
@@ -309,7 +311,10 @@ class Runnable(ABC, Generic[Input, Output]):
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) == 2:
+                if (
+                    "args" in metadata
+                    and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                ):
                     return metadata["args"][0]
 
         # If we didn't find a Pydantic model in the parent classes,
@@ -317,7 +322,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Runnables that are not pydantic models.
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
-            if type_args and len(type_args) == 2:
+            if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
                 return type_args[0]
 
         msg = (
@@ -340,12 +345,15 @@ class Runnable(ABC, Generic[Input, Output]):
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) == 2:
+                if (
+                    "args" in metadata
+                    and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                ):
                     return metadata["args"][1]
 
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
-            if type_args and len(type_args) == 2:
+            if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
                 return type_args[1]
 
         msg = (
@@ -2750,6 +2758,9 @@ def _seq_output_schema(
     return last.get_output_schema(config)
 
 
+_RUNNABLE_SEQUENCE_MIN_STEPS = 2
+
+
 class RunnableSequence(RunnableSerializable[Input, Output]):
     """Sequence of `Runnable` objects, where the output of one is the input of the next.
 
@@ -2859,7 +2870,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name: The name of the `Runnable`.
             first: The first `Runnable` in the sequence.
             middle: The middle `Runnable` objects in the sequence.
-            last: The last Runnable in the sequence.
+            last: The last `Runnable` in the sequence.
 
         Raises:
             ValueError: If the sequence has less than 2 steps.
@@ -2872,8 +2883,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 steps_flat.extend(step.steps)
             else:
                 steps_flat.append(coerce_to_runnable(step))
-        if len(steps_flat) < 2:
-            msg = f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
+        if len(steps_flat) < _RUNNABLE_SEQUENCE_MIN_STEPS:
+            msg = (
+                f"RunnableSequence must have at least {_RUNNABLE_SEQUENCE_MIN_STEPS} "
+                f"steps, got {len(steps_flat)}"
+            )
             raise ValueError(msg)
         super().__init__(
             first=steps_flat[0],
@@ -2904,7 +2918,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -3610,7 +3624,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -4477,7 +4491,7 @@ class RunnableLambda(Runnable[Input, Output]):
             # on itemgetter objects, so we have to parse the repr
             items = str(func).replace("operator.itemgetter(", "")[:-1].split(", ")
             if all(
-                item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
+                item[0] == "'" and item[-1] == "'" and item != "''" for item in items
             ):
                 fields = {item[1:-1]: (Any, ...) for item in items}
                 # It's a dict, lol
@@ -5139,7 +5153,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5322,7 +5336,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[no-redef]
-    """`Runnable` that delegates calls to another `Runnable` with a set of kwargs.
+    """`Runnable` that delegates calls to another `Runnable` with a set of `**kwargs`.
 
     Use only if creating a new `RunnableBinding` subclass with different `__init__`
     args.
@@ -5462,7 +5476,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
