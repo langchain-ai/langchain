@@ -85,7 +85,9 @@ class SummarizationMiddleware(AgentMiddleware):
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
+        *,
         buffer_tokens: int = 0,
+        target_retention_pct: float | None = None,
     ) -> None:
         """Initialize the summarization middleware.
 
@@ -99,6 +101,8 @@ class SummarizationMiddleware(AgentMiddleware):
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
             buffer_tokens: Additional buffer to reserve when estimating token usage.
+            target_retention_pct: Optional fraction (0, 1) of `max_input_tokens` to
+                retain when summarizing based on model profile limits.
         """
         super().__init__()
 
@@ -113,6 +117,12 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prefix = summary_prefix
         self.buffer_tokens = buffer_tokens
 
+        if target_retention_pct is not None and not (0 < target_retention_pct < 1):
+            error_msg = "target_retention_pct must be between 0 and 1."
+            raise ValueError(error_msg)
+
+        self.target_retention_pct = target_retention_pct
+
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
@@ -122,7 +132,7 @@ class SummarizationMiddleware(AgentMiddleware):
         if not self._should_summarize(total_tokens):
             return None
 
-        cutoff_index = self._find_safe_cutoff(messages)
+        cutoff_index = self._determine_cutoff_index(messages)
 
         if cutoff_index <= 0:
             return None
@@ -152,21 +162,74 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _should_summarize_with_profile(self, total_tokens: int) -> bool:
         """Infer summarization threshold from the model profile when available."""
+        limits = self._get_profile_limits()
+        if limits is None:
+            return False
+
+        max_input_tokens, max_output_tokens = limits
+
+        return total_tokens + max_output_tokens + self.buffer_tokens > max_input_tokens
+
+    def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
+        """Choose cutoff index respecting retention configuration."""
+        if self.target_retention_pct is not None:
+            token_based_cutoff = self._find_token_based_cutoff(messages)
+            if token_based_cutoff is not None:
+                return token_based_cutoff
+        return self._find_safe_cutoff(messages)
+
+    def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
+        """Find cutoff index based on target token retention percentage."""
+        if not messages:
+            return 0
+
+        limits = self._get_profile_limits()
+        if limits is None:
+            return None
+
+        max_input_tokens, _ = limits
+        target_token_count = int(max_input_tokens * cast("float", self.target_retention_pct))
+        if target_token_count <= 0:
+            target_token_count = 1
+
+        running_total = 0
+        cutoff_candidate = 0
+        for idx in range(len(messages) - 1, -1, -1):
+            running_total += self.token_counter([messages[idx]])
+            if running_total > target_token_count:
+                cutoff_candidate = idx + 1
+                break
+        else:
+            cutoff_candidate = 0
+
+        if cutoff_candidate >= len(messages):
+            if len(messages) == 1:
+                return 0
+            cutoff_candidate = len(messages) - 1
+
+        for i in range(cutoff_candidate, -1, -1):
+            if self._is_safe_cutoff_point(messages, i):
+                return i
+
+        return 0
+
+    def _get_profile_limits(self) -> tuple[int, int] | None:
+        """Retrieve max input and output token limits from the model profile."""
         try:
             profile = self.model.profile
         except (AttributeError, ImportError):
-            return False
+            return None
 
         if not isinstance(profile, Mapping):
-            return False
+            return None
 
         max_input_tokens = profile.get("max_input_tokens")
         max_output_tokens = profile.get("max_output_tokens")
 
         if not isinstance(max_input_tokens, int) or not isinstance(max_output_tokens, int):
-            return False
+            return None
 
-        return total_tokens + max_output_tokens + self.buffer_tokens > max_input_tokens
+        return max_input_tokens, max_output_tokens
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

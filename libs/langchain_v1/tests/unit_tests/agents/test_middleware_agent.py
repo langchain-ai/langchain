@@ -10,6 +10,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
+    AnyMessage,
     HumanMessage,
     RemoveMessage,
     ToolCall,
@@ -1045,9 +1046,16 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.summary_prefix == "Custom prefix:"
     assert middleware.buffer_tokens == 0
+    assert middleware.target_retention_pct is None
 
     middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
     assert middleware_with_buffer.buffer_tokens == 25
+
+    middleware_with_retention = SummarizationMiddleware(model=model, target_retention_pct=0.5)
+    assert middleware_with_retention.target_retention_pct == 0.5
+
+    with pytest.raises(ValueError):
+        SummarizationMiddleware(model=model, target_retention_pct=1.5)
 
     # Test with string model
     with patch(
@@ -1216,8 +1224,9 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         model=ProfileModel(),
         messages_to_keep=1,
         buffer_tokens=10,
+        target_retention_pct=0.5,
     )
-    middleware.token_counter = lambda _messages: 795
+    middleware.token_counter = lambda messages: len(messages) * 250
 
     state = {
         "messages": [
@@ -1235,6 +1244,58 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     assert any(
         "Here is a summary of the conversation to date:" in msg.content for msg in summary_messages
     )
+
+
+def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> None:
+    """Ensure token retention keeps pairs together even if exceeding target tokens."""
+
+    class ProfileModel(BaseChatModel):
+        def invoke(self, prompt: str) -> AIMessage:
+            return AIMessage(content="Generated summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+        @property
+        def profile(self) -> "ModelProfile":
+            return {"max_input_tokens": 1000, "max_output_tokens": 200}
+
+    def token_counter(messages):
+        return sum(len(getattr(message, "content", "")) for message in messages)
+
+    middleware = SummarizationMiddleware(
+        model=ProfileModel(),
+        target_retention_pct=0.5,
+    )
+    middleware.token_counter = token_counter
+
+    messages: list[AnyMessage] = [
+        HumanMessage(content="H" * 300),
+        AIMessage(
+            content="A" * 200,
+            tool_calls=[{"name": "test", "args": {}, "id": "call-1"}],
+        ),
+        ToolMessage(content="T" * 50, tool_call_id="call-1"),
+        HumanMessage(content="H" * 180),
+        HumanMessage(content="H" * 160),
+    ]
+
+    state = {"messages": messages}
+    result = middleware.before_model(state, None)
+    assert result is not None
+
+    preserved_messages = result["messages"][2:]
+    assert preserved_messages == messages[1:]
+
+    target_token_count = int(1000 * 0.5)
+    preserved_tokens = middleware.token_counter(preserved_messages)
+
+    # Tool pair retention can exceed the target token count but should keep the pair intact.
+    assert preserved_tokens > target_token_count
 
 
 def test_summarization_middleware_profile_inference_fallbacks() -> None:
@@ -1281,6 +1342,42 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
         state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
         result = middleware.before_model(state, None)
         assert result is None
+
+
+def test_summarization_middleware_token_retention_pct_without_profile_falls_back() -> None:
+    """Token retention gracefully falls back to message-based retention when profile missing."""
+
+    class NoProfileModel(BaseChatModel):
+        def invoke(self, prompt: str) -> AIMessage:
+            return AIMessage(content="Summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    middleware = SummarizationMiddleware(
+        model=NoProfileModel(),
+        max_tokens_before_summary=5,
+        messages_to_keep=2,
+        target_retention_pct=0.5,
+    )
+    middleware.token_counter = lambda messages: len(messages) * 10
+
+    messages = [
+        HumanMessage(content="1"),
+        HumanMessage(content="2"),
+        HumanMessage(content="3"),
+        HumanMessage(content="4"),
+    ]
+
+    result = middleware.before_model({"messages": messages}, None)
+    assert result is not None
+
+    preserved_messages = result["messages"][2:]
+    assert preserved_messages == messages[-2:]
 
 
 def test_summarization_middleware_full_workflow() -> None:
