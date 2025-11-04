@@ -80,12 +80,12 @@ class SummarizationMiddleware(AgentMiddleware):
     def __init__(
         self,
         model: str | BaseChatModel,
+        *,
         max_tokens_before_summary: int | None | _UnsetType = UNSET,
         messages_to_keep: int = _DEFAULT_MESSAGES_TO_KEEP,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
-        *,
         buffer_tokens: int = 0,
         target_retention_frac: float | None = None,
         trim_tokens_to_summarize: int | None = _DEFAULT_trim_tokens_to_summarize,
