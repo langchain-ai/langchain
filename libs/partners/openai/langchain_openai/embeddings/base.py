@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal, cast
 
 import openai
@@ -14,6 +14,8 @@ from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+
+from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
 
 logger = logging.getLogger(__name__)
 
@@ -90,21 +92,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         ```
 
     Key init args — embedding params:
-        model: str
+        model:
             Name of OpenAI model to use.
-        dimensions: int | None = None
+        dimensions:
             The number of dimensions the resulting output embeddings should have.
             Only supported in `'text-embedding-3'` and later models.
 
     Key init args — client params:
-        api_key: SecretStr | None = None
+        api_key:
             OpenAI API key.
-        organization: str | None = None
+        organization:
             OpenAI organization ID. If not passed in will be read
             from env var `OPENAI_ORG_ID`.
-        max_retries: int = 2
+        max_retries:
             Maximum number of retries to make when generating.
-        request_timeout: float | Tuple[float, float] | Any | None = None
+        request_timeout:
             Timeout for requests to OpenAI completion API
 
     See full list of supported init args and their descriptions in the params section.
@@ -189,7 +191,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     )
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: SecretStr | None = Field(
+    openai_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
@@ -292,10 +296,19 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
             raise ValueError(msg)
+
+        # Resolve API key from SecretStr or Callable
+        sync_api_key_value: str | Callable[[], str] | None = None
+        async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
+
+        if self.openai_api_key is not None:
+            # Because OpenAI and AsyncOpenAI clients support either sync or async
+            # callables for the API key, we need to resolve separate values here.
+            sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
+                self.openai_api_key
+            )
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -315,18 +328,26 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             raise ValueError(msg)
         if not self.client:
-            if self.openai_proxy and not self.http_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
-                    )
-                    raise ImportError(msg) from e
-                self.http_client = httpx.Client(proxy=self.openai_proxy)
-            sync_specific = {"http_client": self.http_client}
-            self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
+            if sync_api_key_value is None:
+                # No valid sync API key, leave client as None and raise informative
+                # error on invocation.
+                self.client = None
+            else:
+                if self.openai_proxy and not self.http_client:
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        msg = (
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                        raise ImportError(msg) from e
+                    self.http_client = httpx.Client(proxy=self.openai_proxy)
+                sync_specific = {
+                    "http_client": self.http_client,
+                    "api_key": sync_api_key_value,
+                }
+                self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
@@ -338,7 +359,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                     )
                     raise ImportError(msg) from e
                 self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
-            async_specific = {"http_client": self.http_async_client}
+            async_specific = {
+                "http_client": self.http_async_client,
+                "api_key": async_api_key_value,
+            }
             self.async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,  # type: ignore[arg-type]
@@ -351,6 +375,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if self.dimensions is not None:
             params["dimensions"] = self.dimensions
         return params
+
+    def _ensure_sync_client_available(self) -> None:
+        """Check that sync client is available, raise error if not."""
+        if self.client is None:
+            msg = (
+                "Sync client is not available. This happens when an async callable "
+                "was provided for the API key. Use async methods (ainvoke, astream) "
+                "instead, or provide a string or sync callable for the API key."
+            )
+            raise ValueError(msg)
 
     def _tokenize(
         self, texts: list[str], chunk_size: int
@@ -465,12 +499,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         and HuggingFace tokenizer based on the tiktoken_enabled flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: A list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
@@ -517,12 +551,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         `tiktoken` and HuggingFace `tokenizer` based on the tiktoken_enabled flag.
 
         Args:
-            texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
-            chunk_size (int | None): The size of chunks for processing embeddings.
+            texts: A list of texts to embed.
+            engine: The engine or model to use for embeddings.
+            chunk_size: The size of chunks for processing embeddings.
 
         Returns:
-            List[List[float]]: A list of embeddings for each input text.
+            A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
@@ -571,6 +605,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        self._ensure_sync_client_available()
         chunk_size_ = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
@@ -635,6 +670,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
+        self._ensure_sync_client_available()
         return self.embed_documents([text], **kwargs)[0]
 
     async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:

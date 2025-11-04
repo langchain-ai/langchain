@@ -86,7 +86,7 @@ AnyMessage = Annotated[
     | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
-""""A type representing any defined `Message` or `MessageChunk` type."""
+"""A type representing any defined `Message` or `MessageChunk` type."""
 
 
 def get_buffer_string(
@@ -439,8 +439,8 @@ def filter_messages(
         exclude_ids: Message IDs to exclude.
         exclude_tool_calls: Tool call IDs to exclude.
             Can be one of the following:
-            - `True`: all `AIMessage`s with tool calls and all
-                `ToolMessage` objects will be excluded.
+            - `True`: All `AIMessage` objects with tool calls and all `ToolMessage`
+                objects will be excluded.
             - a sequence of tool call IDs to exclude:
                 - `ToolMessage` objects with the corresponding tool call ID will be
                     excluded.
@@ -1025,18 +1025,18 @@ def convert_to_openai_messages(
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
-                - `'string'`:
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type `'text'`, these
-                    are joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type `'text'`, then
-                    all blocks are left as dicts.
-                - `'block'`:
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type `'text'`. If a message has
-                    content blocks these are left as is.
-        include_id: Whether to include message ids in the openai messages, if they
-                    are present in the source messages.
+            - `'string'`:
+                If a message has a string content, this is left as a string. If
+                a message has content blocks that are all of type `'text'`, these
+                are joined with a newline to make a single string. If a message has
+                content blocks and at least one isn't of type `'text'`, then
+                all blocks are left as dicts.
+            - `'block'`:
+                If a message has a string content, this is turned into a list
+                with a single content block of type `'text'`. If a message has
+                content blocks these are left as is.
+        include_id: Whether to include message IDs in the openai messages, if they
+            are present in the source messages.
 
     Raises:
         ValueError: if an unrecognized `text_format` is specified, or if a message
@@ -1678,11 +1678,11 @@ def count_tokens_approximately(
         messages: List of messages to count tokens for.
         chars_per_token: Number of characters per token to use for the approximation.
             One token corresponds to ~4 chars for common English text.
-            You can also specify float values for more fine-grained control.
+            You can also specify `float` values for more fine-grained control.
             [See more here](https://platform.openai.com/tokenizer).
         extra_tokens_per_message: Number of extra tokens to add per message, e.g.
             special tokens, including beginning/end of message.
-            You can also specify float values for more fine-grained control.
+            You can also specify `float` values for more fine-grained control.
             [See more here](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb).
         count_name: Whether to include message names in the count.
             Enabled by default.

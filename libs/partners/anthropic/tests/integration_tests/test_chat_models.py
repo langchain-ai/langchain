@@ -32,8 +32,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-haiku-latest"
-IMAGE_MODEL_NAME = "claude-3-5-haiku-latest"
+MODEL_NAME = "claude-3-5-haiku-20241022"
 
 
 def test_stream() -> None:
@@ -162,7 +161,7 @@ async def test_stream_usage_override() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatAnthropic."""
+    """Test streaming tokens."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -171,7 +170,7 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatAnthropic."""
+    """Test batch tokens."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
@@ -232,7 +231,7 @@ async def test_async_tool_use() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatAnthropic."""
+    """Test batch tokens."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -241,7 +240,7 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatAnthropic."""
+    """Test invoke tokens."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -250,7 +249,7 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatAnthropic."""
+    """Test invoke tokens."""
     llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -396,7 +395,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=IMAGE_MODEL_NAME)  # type: ignore[call-arg]
+    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     messages: list[BaseMessage] = [
         HumanMessage(
             content=[
@@ -562,9 +561,9 @@ def test_tool_use() -> None:
     assert len(chunks) > 1
 
 
-def test_builtin_tools() -> None:
-    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")  # type: ignore[call-arg]
-    tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+def test_builtin_tools_text_editor() -> None:
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
+    tool = {"type": "text_editor_20250728", "name": "str_replace_based_edit_tool"}
     llm_with_tools = llm.bind_tools([tool])
     response = llm_with_tools.invoke(
         "There's a syntax error in my primes.py file. Can you help me fix it?",
@@ -577,7 +576,7 @@ def test_builtin_tools() -> None:
     assert content_blocks[0]["type"] == "text"
     assert content_blocks[0]["text"]
     assert content_blocks[1]["type"] == "tool_call"
-    assert content_blocks[1]["name"] == "str_replace_editor"
+    assert content_blocks[1]["name"] == "str_replace_based_edit_tool"
 
 
 class GenerateUsername(BaseModel):
@@ -588,7 +587,7 @@ class GenerateUsername(BaseModel):
 
 
 def test_disable_parallel_tool_calling() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
     result = llm_with_tools.invoke(
         "Use the GenerateUsername tool to generate user names for:\n\n"
@@ -607,7 +606,7 @@ def test_anthropic_with_empty_text_block() -> None:
         """Type the given letter."""
         return "OK"
 
-    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(  # type: ignore[call-arg]
+    model = ChatAnthropic(model=MODEL_NAME, temperature=0).bind_tools(  # type: ignore[call-arg]
         [type_letter],
     )
 
@@ -646,7 +645,7 @@ def test_anthropic_with_empty_text_block() -> None:
 
 def test_with_structured_output() -> None:
     llm = ChatAnthropic(
-        model="claude-3-opus-20240229",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
     )
 
     structured_llm = llm.with_structured_output(
@@ -665,7 +664,7 @@ def test_with_structured_output() -> None:
 
 
 def test_get_num_tokens_from_messages() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
 
     # Test simple case
     messages = [
@@ -739,7 +738,7 @@ def test_pdf_document_input() -> None:
     url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
     data = b64encode(requests.get(url, timeout=10).content).decode()
 
-    result = ChatAnthropic(model=IMAGE_MODEL_NAME).invoke(  # type: ignore[call-arg]
+    result = ChatAnthropic(model=MODEL_NAME).invoke(  # type: ignore[call-arg]
         [
             HumanMessage(
                 [
@@ -770,7 +769,7 @@ def test_agent_loop(output_version: Literal["v0", "v1"]) -> None:
         """Get the weather for a location."""
         return "It's sunny."
 
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, output_version=output_version)  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
     tool_call_message = llm_with_tools.invoke([input_message])
@@ -800,7 +799,7 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
         return "It's sunny."
 
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",
+        model=MODEL_NAME,
         streaming=True,
         output_version=output_version,  # type: ignore[call-arg]
     )
@@ -828,7 +827,7 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_citations(output_version: Literal["v0", "v1"]) -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, output_version=output_version)  # type: ignore[call-arg]
     messages = [
         {
             "role": "user",
@@ -879,7 +878,7 @@ def test_citations(output_version: Literal["v0", "v1"]) -> None:
 @pytest.mark.vcr
 def test_thinking() -> None:
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
     )
@@ -921,7 +920,7 @@ def test_thinking() -> None:
 @pytest.mark.vcr
 def test_thinking_v1() -> None:
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
         output_version="v1",
@@ -967,6 +966,8 @@ def test_thinking_v1() -> None:
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
+        # It appears that Sonnet 4.5 either: isn't returning redacted thinking blocks,
+        # or the magic string is broken? Retry later once 3-7 finally removed
         model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
@@ -1029,7 +1030,7 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
 
 def test_structured_output_thinking_enabled() -> None:
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
     )
@@ -1052,7 +1053,7 @@ def test_structured_output_thinking_force_tool_use() -> None:
     # when `thinking` is enabled. When this test fails, it means that the feature
     # is supported and the workarounds in `with_structured_output` should be removed.
     llm = ChatAnthropic(
-        model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
     ).bind_tools(
@@ -1077,14 +1078,14 @@ def test_image_tool_calling() -> None:
             "text": "what's your favorite color in this image",
         },
     ]
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     image_data = b64encode(httpx.get(image_url).content).decode("utf-8")
     human_content.append(
         {
             "type": "image",
             "source": {
                 "type": "base64",
-                "media_type": "image/jpeg",
+                "media_type": "image/png",
                 "data": image_data,
             },
         },
@@ -1097,7 +1098,7 @@ def test_image_tool_calling() -> None:
                 {"type": "text", "text": "Hmm let me think about that"},
                 {
                     "type": "tool_use",
-                    "input": {"fav_color": "green"},
+                    "input": {"fav_color": "purple"},
                     "id": "foo",
                     "name": "color_picker",
                 },
@@ -1111,7 +1112,7 @@ def test_image_tool_calling() -> None:
                     "content": [
                         {
                             "type": "text",
-                            "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                            "text": "purple is a great pick! that's my sister's favorite color",  # noqa: E501
                         },
                     ],
                     "is_error": False,
@@ -1120,8 +1121,8 @@ def test_image_tool_calling() -> None:
             ],
         ),
     ]
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
-    llm.bind_tools([color_picker]).invoke(messages)
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    _ = llm.bind_tools([color_picker]).invoke(messages)
 
 
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
@@ -1129,7 +1130,7 @@ def test_image_tool_calling() -> None:
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         max_tokens=1024,
         output_version=output_version,
     )
@@ -1178,68 +1179,6 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
-@pytest.mark.default_cassette("test_web_fetch_v1.yaml.gz")
-@pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
-    """Test that http calls are unchanged between v0 and v1."""
-    llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
-        betas=["web-fetch-2025-09-10"],
-        output_version=output_version,
-    )
-
-    if output_version == "v0":
-        call_key = "server_tool_use"
-        result_key = "web_fetch_tool_result"
-    else:
-        # v1
-        call_key = "server_tool_call"
-        result_key = "server_tool_result"
-
-    tool = {
-        "type": "web_fetch_20250910",
-        "name": "web_fetch",
-        "max_uses": 1,
-        "citations": {"enabled": True},
-    }
-    llm_with_tools = llm.bind_tools([tool])
-
-    input_message = {
-        "role": "user",
-        "content": [
-            {
-                "type": "text",
-                "text": "Fetch the content at https://docs.langchain.com and analyze",
-            },
-        ],
-    }
-    response = llm_with_tools.invoke([input_message])
-    assert all(isinstance(block, dict) for block in response.content)
-    block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", call_key, result_key}
-
-    # Test streaming
-    full: BaseMessageChunk | None = None
-    for chunk in llm_with_tools.stream([input_message]):
-        assert isinstance(chunk, AIMessageChunk)
-        full = chunk if full is None else full + chunk
-
-    assert isinstance(full, AIMessageChunk)
-    assert isinstance(full.content, list)
-    block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", call_key, result_key}
-
-    # Test we can pass back in
-    next_message = {
-        "role": "user",
-        "content": "What does the site you just fetched say about models?",
-    }
-    _ = llm_with_tools.invoke(
-        [input_message, full, next_message],
-    )
-
-
 @pytest.mark.vcr
 def test_web_fetch() -> None:
     """Note: this is a beta feature.
@@ -1247,7 +1186,7 @@ def test_web_fetch() -> None:
     TODO: Update to remove beta once it's generally available.
     """
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         max_tokens=1024,
         betas=["web-fetch-2025-09-10"],
     )
@@ -1418,7 +1357,7 @@ def test_web_fetch() -> None:
         "role": "user",
         "content": (
             "Fetch https://docs.langchain.com and then try to fetch "
-            "https://python.langchain.com"
+            "https://langchain.com"
         ),
     }
     max_uses_response = llm_with_tools.invoke([multi_fetch_message])
@@ -1502,6 +1441,68 @@ def test_web_fetch() -> None:
             assert "data" in content["content"]["source"]
 
 
+@pytest.mark.default_cassette("test_web_fetch_v1.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
+    """Test that http calls are unchanged between v0 and v1."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,  # type: ignore[call-arg]
+        betas=["web-fetch-2025-09-10"],
+        output_version=output_version,
+    )
+
+    if output_version == "v0":
+        call_key = "server_tool_use"
+        result_key = "web_fetch_tool_result"
+    else:
+        # v1
+        call_key = "server_tool_call"
+        result_key = "server_tool_result"
+
+    tool = {
+        "type": "web_fetch_20250910",
+        "name": "web_fetch",
+        "max_uses": 1,
+        "citations": {"enabled": True},
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "Fetch the content at https://docs.langchain.com and analyze",
+            },
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
+    assert block_types == {"text", call_key, result_key}
+
+    # Test streaming
+    full: BaseMessageChunk | None = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", call_key, result_key}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "What does the site you just fetched say about models?",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
@@ -1510,9 +1511,8 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     TODO: Update to remove beta once generally available.
     """
     llm = ChatAnthropic(
-        model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         betas=["code-execution-2025-05-22"],
-        max_tokens=10_000,  # type: ignore[call-arg]
         output_version=output_version,
     )
 
@@ -1581,7 +1581,7 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     ]
 
     llm = ChatAnthropic(
-        model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
         betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
         max_tokens=10_000,  # type: ignore[call-arg]
@@ -1642,7 +1642,7 @@ def test_files_api_image(block_format: str) -> None:
     if not image_file_id:
         pytest.skip()
     llm = ChatAnthropic(
-        model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         betas=["files-api-2025-04-14"],
     )
     if block_format == "anthropic":
@@ -1679,7 +1679,7 @@ def test_files_api_pdf(block_format: str) -> None:
     if not pdf_file_id:
         pytest.skip()
     llm = ChatAnthropic(
-        model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         betas=["files-api-2025-04-14"],
     )
     if block_format == "anthropic":
@@ -1700,10 +1700,11 @@ def test_files_api_pdf(block_format: str) -> None:
     _ = llm.invoke([input_message])
 
 
+@pytest.mark.vcr
 def test_search_result_tool_message() -> None:
     """Test that we can pass a search result tool message to the model."""
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
     )
 
     @tool
@@ -1760,7 +1761,7 @@ def test_search_result_tool_message() -> None:
 
 def test_search_result_top_level() -> None:
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
     )
     input_message = HumanMessage(
         [
@@ -1854,6 +1855,6 @@ def test_context_management() -> None:
 
 
 def test_async_shared_client() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))
     _ = asyncio.run(llm.ainvoke("Hello"))

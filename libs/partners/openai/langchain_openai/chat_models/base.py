@@ -10,7 +10,14 @@ import re
 import ssl
 import sys
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -109,6 +116,7 @@ from typing_extensions import Self
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
+    _resolve_sync_and_async_api_keys,
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
@@ -465,9 +473,57 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: SecretStr | None = Field(
+    openai_api_key: (
+        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+    ) = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
+    """API key to use.
+
+    Can be inferred from the `OPENAI_API_KEY` environment variable, or specified as a
+    string, or sync or async callable that returns a string.
+
+    ??? example "Specify with environment variable"
+
+        ```bash
+        export OPENAI_API_KEY=...
+        ```
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano")
+        ```
+
+    ??? example "Specify with a string"
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key="...")
+        ```
+
+    ??? example "Specify with a sync callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        def get_api_key() -> str:
+            # Custom logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+
+    ??? example "Specify with an async callable"
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        async def get_api_key() -> str:
+            # Custom async logic to retrieve API key
+            return "..."
+
+        model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
+        ```
+    """
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: str | None = Field(default=None, alias="organization")
@@ -776,10 +832,18 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             self.stream_usage = True
 
+        # Resolve API key from SecretStr or Callable
+        sync_api_key_value: str | Callable[[], str] | None = None
+        async_api_key_value: str | Callable[[], Awaitable[str]] | None = None
+
+        if self.openai_api_key is not None:
+            # Because OpenAI and AsyncOpenAI clients support either sync or async
+            # callables for the API key, we need to resolve separate values here.
+            sync_api_key_value, async_api_key_value = _resolve_sync_and_async_api_keys(
+                self.openai_api_key
+            )
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -800,24 +864,33 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
         if not self.client:
-            if self.openai_proxy and not self.http_client:
-                try:
-                    import httpx
-                except ImportError as e:
-                    msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
+            if sync_api_key_value is None:
+                # No valid sync API key, leave client as None and raise informative
+                # error on invocation.
+                self.client = None
+                self.root_client = None
+            else:
+                if self.openai_proxy and not self.http_client:
+                    try:
+                        import httpx
+                    except ImportError as e:
+                        msg = (
+                            "Could not import httpx python package. "
+                            "Please install it with `pip install httpx`."
+                        )
+                        raise ImportError(msg) from e
+                    self.http_client = httpx.Client(
+                        proxy=self.openai_proxy, verify=global_ssl_context
                     )
-                    raise ImportError(msg) from e
-                self.http_client = httpx.Client(
-                    proxy=self.openai_proxy, verify=global_ssl_context
-                )
-            sync_specific = {
-                "http_client": self.http_client
-                or _get_default_httpx_client(self.openai_api_base, self.request_timeout)
-            }
-            self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
-            self.client = self.root_client.chat.completions
+                sync_specific = {
+                    "http_client": self.http_client
+                    or _get_default_httpx_client(
+                        self.openai_api_base, self.request_timeout
+                    ),
+                    "api_key": sync_api_key_value,
+                }
+                self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
+                self.client = self.root_client.chat.completions
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
@@ -835,7 +908,8 @@ class BaseChatOpenAI(BaseChatModel):
                 "http_client": self.http_async_client
                 or _get_default_async_httpx_client(
                     self.openai_api_base, self.request_timeout
-                )
+                ),
+                "api_key": async_api_key_value,
             }
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
@@ -965,6 +1039,16 @@ class BaseChatOpenAI(BaseChatModel):
             message=message_chunk, generation_info=generation_info or None
         )
 
+    def _ensure_sync_client_available(self) -> None:
+        """Check that sync client is available, raise error if not."""
+        if self.client is None:
+            msg = (
+                "Sync client is not available. This happens when an async callable "
+                "was provided for the API key. Use async methods (ainvoke, astream) "
+                "instead, or provide a string or sync callable for the API key."
+            )
+            raise ValueError(msg)
+
     def _stream_responses(
         self,
         messages: list[BaseMessage],
@@ -972,6 +1056,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        self._ensure_sync_client_available()
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         if self.include_response_headers:
@@ -1101,6 +1186,7 @@ class BaseChatOpenAI(BaseChatModel):
         stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        self._ensure_sync_client_available()
         kwargs["stream"] = True
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
@@ -1169,6 +1255,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        self._ensure_sync_client_available()
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None
@@ -1744,9 +1831,11 @@ class BaseChatOpenAI(BaseChatModel):
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1765,8 +1854,10 @@ class BaseChatOpenAI(BaseChatModel):
                 an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - `True`:
@@ -1827,25 +1918,25 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A `Runnable` that takes same inputs as a `BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is `False` and `schema` is a Pydantic class, `Runnable`
-            outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if
-            `include_raw` is `False` then `Runnable` outputs a `dict`.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is `True`, then `Runnable` outputs a dict with keys:
-
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends
-                on the `schema` as described above.
-            - `'parsing_error'`: `BaseException` or `None`
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in 0.3.12"
             Support for `tools` added.
 
         !!! warning "Behavior changed in 0.3.21"
             Pass `kwargs` through to the model.
-        """  # noqa: E501
+        """
         if strict is not None and method == "json_mode":
             msg = "Argument `strict` is not supported with `method`='json_mode'"
             raise ValueError(msg)
@@ -2686,7 +2777,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         **Use `extra_body` for:**
 
         - Custom parameters specific to OpenAI-compatible providers (vLLM, LM Studio,
-            etc.)
+            OpenRouter, etc.)
         - Parameters that need to be nested under `extra_body` in the request
         - Any non-standard OpenAI API parameters
 
@@ -2748,7 +2839,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "openai"]`
+        """
         return ["langchain", "chat_models", "openai"]
 
     @property
@@ -2832,17 +2927,19 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Args:
             schema: The output schema. Can be passed in as:
 
+                - an OpenAI function/tool schema,
                 - a JSON Schema,
                 - a `TypedDict` class,
-                - or a Pydantic class,
-                - an OpenAI function/tool schema.
+                - or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -2864,8 +2961,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 an error occurs during model output parsing it will be raised. If `True`
                 then both the raw model response (a `BaseMessage`) and the parsed model
                 response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                will be caught and returned as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - `True`:
@@ -2931,16 +3030,18 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is `False` and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is `False` then `Runnable` outputs a `dict`.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
-
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: `None` if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: `BaseException` or `None`
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         !!! warning "Behavior changed in 0.3.0"
             `method` default changed from `"function_calling"` to `"json_schema"`.
@@ -3500,7 +3601,8 @@ def _get_last_messages(
 ) -> tuple[Sequence[BaseMessage], str | None]:
     """Get the last part of the conversation after the last `AIMessage` with an `id`.
 
-    Return:
+    Will return:
+
     1. Every message after the most-recent `AIMessage` that has a non-empty
         `response_metadata["id"]` (may be an empty list),
     2. That `id`.

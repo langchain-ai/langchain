@@ -75,7 +75,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return _invoke(llm, input_, stream)
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        llm = ChatOpenAI(model="o1-mini", stream_usage=True, temperature=1)
+        llm = ChatOpenAI(model="gpt-5-nano", reasoning_effort="medium")
         input_ = (
             "explain  the relationship between the 2008/9 economic crisis and the "
             "startup ecosystem in the early 2010s"
@@ -88,6 +88,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         # For now, we test with filename in OpenAI-specific tests
         return False
 
+    @pytest.mark.flaky(retries=3, delay=1)
     def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs."""
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"

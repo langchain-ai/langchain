@@ -76,26 +76,35 @@ def init_chat_model(
     config_prefix: str | None = None,
     **kwargs: Any,
 ) -> BaseChatModel | _ConfigurableModel:
-    """Initialize a chat model in a single line using the model's name and provider.
+    """Initialize a chat model from any supported provider using a unified interface.
+
+    **Two main use cases:**
+
+    1. **Fixed model** – specify the model upfront and get back a ready-to-use chat
+        model.
+    2. **Configurable model** – choose to specify parameters (including model name) at
+        runtime via `config`. Makes it easy to switch between models/providers without
+        changing your code
 
     !!! note
-        Requires the integration package for your model provider to be installed.
+        Requires the integration package for the chosen model provider to be installed.
 
         See the `model_provider` parameter below for specific package names
         (e.g., `pip install langchain-openai`).
 
         Refer to the [provider integration's API reference](https://docs.langchain.com/oss/python/integrations/providers)
-        for supported model parameters.
+        for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
+        model: The name or ID of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
 
-            You can also specify model and model provider in a single argument using:
-
+            You can also specify model and model provider in a single argument using
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
         model_provider: The model provider if not specified as part of the model arg
-            (see above). Supported `model_provider` values and the corresponding
-            integration package are:
+            (see above).
+
+            Supported `model_provider` values and the corresponding integration package
+            are:
 
             - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `anthropic`               -> [`langchain-anthropic`](https://docs.langchain.com/oss/python/integrations/providers/anthropic)
@@ -132,82 +141,95 @@ def init_chat_model(
             - `deepseek...`                       -> `deepseek`
             - `grok...`                           -> `xai`
             - `sonar...`                          -> `perplexity`
-        configurable_fields: Which model parameters are configurable:
+        configurable_fields: Which model parameters are configurable at runtime:
 
-            - `None`: No configurable fields.
+            - `None`: No configurable fields (i.e., a fixed model).
             - `'any'`: All fields are configurable. **See security note below.**
             - `list[str] | Tuple[str, ...]`: Specified fields are configurable.
 
-            Fields are assumed to have `config_prefix` stripped if there is a
-            `config_prefix`. If model is specified, then defaults to `None`. If model is
-            not specified, then defaults to `("model", "model_provider")`.
+            Fields are assumed to have `config_prefix` stripped if a `config_prefix` is
+            specified.
+
+            If `model` is specified, then defaults to `None`.
+
+            If `model` is not specified, then defaults to `("model", "model_provider")`.
 
             !!! warning "Security note"
                 Setting `configurable_fields="any"` means fields like `api_key`,
-                `base_url`, etc. can be altered at runtime, potentially redirecting
-                model requests to a different service/user. Make sure that if you're
-                accepting untrusted configurations that you enumerate the
-                `configurable_fields=(...)` explicitly.
+                `base_url`, etc., can be altered at runtime, potentially redirecting
+                model requests to a different service/user.
 
-        config_prefix: If `'config_prefix'` is a non-empty string then model will be
-            configurable at runtime via the
-            `config["configurable"]["{config_prefix}_{param}"]` keys. If
-            `'config_prefix'` is an empty string then model will be configurable via
+                Make sure that if you're accepting untrusted configurations that you
+                enumerate the `configurable_fields=(...)` explicitly.
+
+        config_prefix: Optional prefix for configuration keys.
+
+            Useful when you have multiple configurable models in the same application.
+
+            If `'config_prefix'` is a non-empty string then `model` will be configurable
+            at runtime via the `config["configurable"]["{config_prefix}_{param}"]` keys.
+            See examples below.
+
+            If `'config_prefix'` is an empty string then model will be configurable via
             `config["configurable"]["{param}"]`.
-        temperature: Model temperature.
-        max_tokens: Max output tokens.
-        timeout: The maximum time (in seconds) to wait for a response from the model
-            before canceling the request.
-        max_retries: The maximum number of attempts the system will make to resend a
-            request if it fails due to issues like network timeouts or rate limits.
-        base_url: The URL of the API endpoint where requests are sent.
-        rate_limiter: A `BaseRateLimiter` to space out requests to avoid exceeding
-            rate limits.
-        kwargs: Additional model-specific keyword args to pass to
-            `<<selected chat model>>.__init__(model=model_name, **kwargs)`.
+        **kwargs: Additional model-specific keyword args to pass to the underlying
+            chat model's `__init__` method. Common parameters include:
+
+            - `temperature`: Model temperature for controlling randomness.
+            - `max_tokens`: Maximum number of output tokens.
+            - `timeout`: Maximum time (in seconds) to wait for a response.
+            - `max_retries`: Maximum number of retry attempts for failed requests.
+            - `base_url`: Custom API endpoint URL.
+            - `rate_limiter`: A
+                [`BaseRateLimiter`][langchain_core.rate_limiters.BaseRateLimiter]
+                instance to control request rate.
+
+            Refer to the specific model provider's
+            [integration reference](https://reference.langchain.com/python/integrations/)
+            for all available parameters.
 
     Returns:
-        A `BaseChatModel` corresponding to the `model_name` and `model_provider`
-            specified if configurability is inferred to be `False`. If configurable, a
-            chat model emulator that initializes the underlying model at runtime once a
-            config is passed in.
+        A [`BaseChatModel`][langchain_core.language_models.BaseChatModel] corresponding
+            to the `model_name` and `model_provider` specified if configurability is
+            inferred to be `False`. If configurable, a chat model emulator that
+            initializes the underlying model at runtime once a config is passed in.
 
     Raises:
         ValueError: If `model_provider` cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    ???+ note "Initialize a non-configurable model"
+    ???+ example "Initialize a non-configurable model"
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
+
         from langchain_classic.chat_models import init_chat_model
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-        claude_sonnet = init_chat_model(
-            "anthropic:claude-sonnet-4-5-20250929", temperature=0
-        )
-        gemini_2_flash = init_chat_model(
+        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=0)
+        gemini_2-5_flash = init_chat_model(
             "google_vertexai:gemini-2.5-flash", temperature=0
         )
 
         o3_mini.invoke("what's your name")
         claude_sonnet.invoke("what's your name")
-        gemini_2_flash.invoke("what's your name")
+        gemini_2-5_flash.invoke("what's your name")
         ```
 
-    ??? note "Partially configurable model with no default"
+    ??? example "Partially configurable model with no default"
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic
+
         from langchain_classic.chat_models import init_chat_model
 
-        # We don't need to specify configurable=True if a model isn't specified.
+        # (We don't need to specify configurable=True if a model isn't specified.)
         configurable_model = init_chat_model(temperature=0)
 
         configurable_model.invoke(
             "what's your name", config={"configurable": {"model": "gpt-4o"}}
         )
-        # GPT-4o response
+        # Use GPT-4o to generate the response
 
         configurable_model.invoke(
             "what's your name",
@@ -215,10 +237,11 @@ def init_chat_model(
         )
         ```
 
-    ??? note "Fully configurable model with a default"
+    ??? example "Fully configurable model with a default"
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic
+
         from langchain_classic.chat_models import init_chat_model
 
         configurable_model_with_default = init_chat_model(
@@ -229,7 +252,7 @@ def init_chat_model(
         )
 
         configurable_model_with_default.invoke("what's your name")
-        # GPT-4o response with temperature 0
+        # GPT-4o response with temperature 0 (as set in default)
 
         configurable_model_with_default.invoke(
             "what's your name",
@@ -240,15 +263,17 @@ def init_chat_model(
                 }
             },
         )
+        # Override default to use Sonnet 4.5 with temperature 0.6 to generate response
         ```
 
-    ??? note "Bind tools to a configurable model"
+    ??? example "Bind tools to a configurable model"
 
         You can call any chat model declarative methods on a configurable model in the
         same way that you would with a normal model:
 
         ```python
         # pip install langchain langchain-openai langchain-anthropic
+
         from langchain_classic.chat_models import init_chat_model
         from pydantic import BaseModel, Field
 
@@ -282,14 +307,14 @@ def init_chat_model(
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
+        # Use GPT-4o
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
             config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
+        # Use Sonnet 4.5
         ```
-
-    !!! version-added "Added in version 0.2.7"
 
     !!! warning "Behavior changed in 0.2.8"
         Support for `configurable_fields` and `config_prefix` added.
@@ -410,11 +435,14 @@ def _init_chat_model_helper(
         from langchain_mistralai import ChatMistralAI
 
         return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg,unused-ignore]
+
     if model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
-        from langchain_huggingface import ChatHuggingFace
+        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
 
-        return ChatHuggingFace(model_id=model, **kwargs)
+        llm = HuggingFacePipeline.from_model_id(model_id=model, **kwargs)
+        return ChatHuggingFace(llm=llm)
+
     if model_provider == "groq":
         _check_pkg("langchain_groq")
         from langchain_groq import ChatGroq

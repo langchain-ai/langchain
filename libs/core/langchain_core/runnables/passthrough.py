@@ -51,10 +51,10 @@ def identity(x: Other) -> Other:
     """Identity function.
 
     Args:
-        x: input.
+        x: Input.
 
     Returns:
-        output.
+        Output.
     """
     return x
 
@@ -63,10 +63,10 @@ async def aidentity(x: Other) -> Other:
     """Async identity function.
 
     Args:
-        x: input.
+        x: Input.
 
     Returns:
-        output.
+        Output.
     """
     return x
 
@@ -74,11 +74,11 @@ async def aidentity(x: Other) -> Other:
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """Runnable to passthrough inputs unchanged or with additional keys.
 
-    This Runnable behaves almost like the identity function, except that it
+    This `Runnable` behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
-    The examples below demonstrate this Runnable works using a few simple
+    The examples below demonstrate this `Runnable` works using a few simple
     chains. The chains rely on simple lambdas to make the examples easy to execute
     and experiment with.
 
@@ -164,7 +164,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         input_type: type[Other] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create e RunnablePassthrough.
+        """Create a `RunnablePassthrough`.
 
         Args:
             func: Function to be called with the input.
@@ -180,7 +180,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -213,11 +213,11 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
-            **kwargs: Runnable, Callable or a Mapping from keys to Runnables
-                or Callables.
+            **kwargs: `Runnable`, `Callable` or a `Mapping` from keys to `Runnable`
+                objects or `Callable`s.
 
         Returns:
-            A Runnable that merges the Dict input with the output produced by the
+            A `Runnable` that merges the `dict` input with the output produced by the
             mapping argument.
         """
         return RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
@@ -350,7 +350,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to `dict[str, Any]` inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -392,7 +392,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     mapper: RunnableParallel
 
     def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
-        """Create a RunnableAssign.
+        """Create a `RunnableAssign`.
 
         Args:
             mapper: A `RunnableParallel` instance that will be used to transform the
@@ -403,7 +403,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -669,9 +669,9 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
-    """Runnable that picks keys from dict[str, Any] inputs.
+    """`Runnable` that picks keys from `dict[str, Any]` inputs.
 
-    RunnablePick class represents a Runnable that selectively picks keys from a
+    `RunnablePick` class represents a `Runnable` that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
     from the input dictionary. It returns a new dictionary containing only
     the selected keys.
@@ -698,7 +698,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     keys: str | list[str]
 
     def __init__(self, keys: str | list[str], **kwargs: Any) -> None:
-        """Create a RunnablePick.
+        """Create a `RunnablePick`.
 
         Args:
             keys: A single key or a list of keys to pick from the input dictionary.
@@ -708,7 +708,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod

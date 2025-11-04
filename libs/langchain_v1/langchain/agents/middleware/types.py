@@ -19,14 +19,13 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langchain.tools.tool_node import ToolCallRequest
-
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
@@ -45,7 +44,8 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
-    "PublicAgentState",
+    "ToolCallRequest",
+    "ToolCallWrapper",
     "after_agent",
     "after_model",
     "before_agent",
@@ -172,11 +172,14 @@ class AgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 
 
-class PublicAgentState(TypedDict, Generic[ResponseT]):
-    """Public state schema for the agent.
+class _InputAgentState(TypedDict):  # noqa: PYI049
+    """Input state schema for the agent."""
 
-    Just used for typing purposes.
-    """
+    messages: Required[Annotated[list[AnyMessage | dict], add_messages]]
+
+
+class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
+    """Output state schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     structured_response: NotRequired[ResponseT]

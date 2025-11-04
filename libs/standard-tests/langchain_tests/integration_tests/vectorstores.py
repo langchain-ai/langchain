@@ -1,4 +1,4 @@
-"""Test suite to test vectostores."""
+"""Test suite to test `VectorStore` integrations."""
 
 from abc import abstractmethod
 
@@ -69,7 +69,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     class TestChromaStandard(VectorStoreIntegrationTests):
         @pytest.fixture()
         def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-            \"\"\"Get an empty vectorstore for unit tests.\"\"\"
+            \"\"\"Get an empty VectorStore for unit tests.\"\"\"
             store = Chroma(embedding_function=self.get_embeddings())
             try:
                 yield store
@@ -95,15 +95,14 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     !!! note
         API references for individual test methods include troubleshooting tips.
-
     """  # noqa: E501
 
     @abstractmethod
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
-        """Get the vectorstore class to test.
+        """Get the `VectorStore` class to test.
 
-        The returned vectorstore should be EMPTY.
+        The returned `VectorStore` should be empty.
         """
 
     @property
@@ -118,7 +117,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     @property
     def has_get_by_ids(self) -> bool:
-        """Whether the vector store supports get_by_ids."""
+        """Whether the `VectorStore` supports `get_by_ids`."""
         return True
 
     @staticmethod
@@ -137,7 +136,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the `VectorStore` is empty.
 
         ??? note "Troubleshooting"
 
@@ -151,7 +150,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -159,7 +158,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             1. We correctly initialize an empty vector store in the `vectorestore`
                 fixture.
-            2. Calling `.similarity_search` for the top `k` similar documents does
+            2. Calling `similarity_search` for the top `k` similar documents does
                 not threshold by score.
             3. We do not mutate the original document object when adding it to the
                 vector store (e.g., by adding an ID).
@@ -185,7 +184,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the `VectorStore` is still empty.
 
         This test should follow a test that adds documents.
 
@@ -204,7 +203,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert vectorstore.similarity_search("foo", k=1) == []
 
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -288,7 +287,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
 
     def test_add_documents_by_id_with_mutation(self, vectorstore: VectorStore) -> None:
-        """Test that we can overwrite by ID using add_documents.
+        """Test that we can overwrite by ID using `add_documents`.
 
         ??? note "Troubleshooting"
 
@@ -398,7 +397,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert documents == []
 
     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -439,7 +438,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 
@@ -485,7 +484,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         )
 
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
-        """Test that the vectorstore is empty.
+        """Test that the `VectorStore` is empty.
 
         ??? note "Troubleshooting"
 
@@ -499,7 +498,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test adding documents into the vectorstore.
+        """Test adding documents into the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -536,7 +535,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_vectorstore_still_empty_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that the vectorstore is still empty.
+        """Test that the `VectorStore` is still empty.
 
         This test should follow a test that adds documents.
 
@@ -555,7 +554,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         assert await vectorstore.asimilarity_search("foo", k=1) == []
 
     async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
-        """Test deleting documents from the vectorstore.
+        """Test deleting documents from the `VectorStore`.
 
         ??? note "Troubleshooting"
 
@@ -643,7 +642,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_by_id_with_mutation_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that we can overwrite by ID using add_documents.
+        """Test that we can overwrite by ID using `add_documents`.
 
         ??? note "Troubleshooting"
 
@@ -754,7 +753,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_documents_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Run add_documents tests.
+        """Run `add_documents` tests.
 
         ??? note "Troubleshooting"
 
@@ -797,7 +796,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """Test that add_documents with existing IDs is idempotent.
+        """Test that `add_documents` with existing IDs is idempotent.
 
         ??? note "Troubleshooting"
 

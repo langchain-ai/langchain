@@ -200,14 +200,14 @@ class BaseLanguageModel(
                 pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
-            each input prompt and additional model provider-specific output.
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -237,14 +237,14 @@ class BaseLanguageModel(
                 pure text generation models and `BaseMessage` objects for chat models).
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
-            each input prompt and additional model provider-specific output.
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -262,15 +262,14 @@ class BaseLanguageModel(
         return self.lc_attributes
 
     def get_token_ids(self, text: str) -> list[int]:
-        """Return the ordered ids of the tokens in a text.
+        """Return the ordered IDs of the tokens in a text.
 
         Args:
             text: The string input to tokenize.
 
         Returns:
-            A list of ids corresponding to the tokens in the text, in order they occur
-            in the text.
-
+            A list of IDs corresponding to the tokens in the text, in order they occur
+                in the text.
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)

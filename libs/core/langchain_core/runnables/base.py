@@ -147,11 +147,11 @@ class Runnable(ABC, Generic[Input, Output]):
     the `input_schema` property, the `output_schema` property and `config_schema`
     method.
 
-    LCEL and Composition
-    ====================
+    Composition
+    ===========
 
-    The LangChain Expression Language (LCEL) is a declarative way to compose
-    `Runnable` objectsinto chains.
+    Runnable objects can be composed together to create chains in a declarative way.
+
     Any chain constructed this way will automatically have sync, async, batch, and
     streaming support.
 
@@ -235,21 +235,21 @@ class Runnable(ABC, Generic[Input, Output]):
 
     You can set the global debug flag to True to enable debug output for all chains:
 
-        ```python
-        from langchain_core.globals import set_debug
+    ```python
+    from langchain_core.globals import set_debug
 
-        set_debug(True)
-        ```
+    set_debug(True)
+    ```
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
 
-        ```python
-        from langchain_core.tracers import ConsoleCallbackHandler
+    ```python
+    from langchain_core.tracers import ConsoleCallbackHandler
 
-        chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
-        ```
+    chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
+    ```
 
-    For a UI (and much more) checkout [LangSmith](https://docs.smith.langchain.com/).
+    For a UI (and much more) checkout [LangSmith](https://docs.langchain.com/langsmith/home).
 
     """
 
@@ -1367,8 +1367,8 @@ class Runnable(ABC, Generic[Input, Output]):
 
         events = [event async for event in chain.astream_events("hello", version="v2")]
 
-        # will produce the following events (run_id, and parent_ids
-        # has been omitted for brevity):
+        # Will produce the following events
+        # (run_id, and parent_ids has been omitted for brevity):
         [
             {
                 "data": {"input": "hello"},
@@ -1423,7 +1423,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         async for event in slow_thing.astream_events("some_input", version="v2"):
             print(event)
-        ``
+        ```
 
         Args:
             input: The input to the `Runnable`.
@@ -1813,7 +1813,7 @@ class Runnable(ABC, Generic[Input, Output]):
             output_type: The output type to bind to the `Runnable`.
 
         Returns:
-            A new Runnable with the types bound.
+            A new `Runnable` with the types bound.
         """
         return RunnableBinding(
             bound=self,
@@ -1840,7 +1840,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 giving up.
             exponential_jitter_params: Parameters for
                 `tenacity.wait_exponential_jitter`. Namely: `initial`, `max`,
-                `exp_base`, and `jitter` (all float values).
+                `exp_base`, and `jitter` (all `float` values).
 
         Returns:
             A new Runnable that retries the original Runnable on exceptions.
@@ -1925,15 +1925,15 @@ class Runnable(ABC, Generic[Input, Output]):
             fallbacks: A sequence of runnables to try if the original `Runnable`
                 fails.
             exceptions_to_handle: A tuple of exception types to handle.
-            exception_key: If string is specified then handled exceptions will be passed
-                to fallbacks as part of the input under the specified key.
+            exception_key: If `string` is specified then handled exceptions will be
+                passed to fallbacks as part of the input under the specified key.
                 If `None`, exceptions will not be passed to fallbacks.
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
-            Fallback in order, upon failures.
+                Fallback in order, upon failures.
 
         Example:
             ```python
@@ -1961,16 +1961,15 @@ class Runnable(ABC, Generic[Input, Output]):
             fallbacks: A sequence of runnables to try if the original `Runnable`
                 fails.
             exceptions_to_handle: A tuple of exception types to handle.
-            exception_key: If string is specified then handled exceptions will be passed
-                to fallbacks as part of the input under the specified key.
+            exception_key: If `string` is specified then handled exceptions will be
+                passed to fallbacks as part of the input under the specified key.
                 If `None`, exceptions will not be passed to fallbacks.
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
         Returns:
             A new `Runnable` that will try the original `Runnable`, and then each
-            Fallback in order, upon failures.
-
+                Fallback in order, upon failures.
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.fallbacks import (  # noqa: PLC0415
@@ -2520,9 +2519,6 @@ class Runnable(ABC, Generic[Input, Output]):
         as_tool = runnable.as_tool()
         as_tool.invoke("b")
         ```
-
-        !!! version-added "Added in version 0.2.14"
-
         """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool  # noqa: PLC0415
@@ -2641,7 +2637,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_openai import ChatOpenAI
 
         model = ChatAnthropic(
-            model_name="claude-3-7-sonnet-20250219"
+            model_name="claude-sonnet-4-5-20250929"
         ).configurable_alternatives(
             ConfigurableField(id="llm"),
             default_key="anthropic",
@@ -2863,7 +2859,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name: The name of the `Runnable`.
             first: The first `Runnable` in the sequence.
             middle: The middle `Runnable` objects in the sequence.
-            last: The last Runnable in the sequence.
+            last: The last `Runnable` in the sequence.
 
         Raises:
             ValueError: If the sequence has less than 2 steps.
@@ -2908,7 +2904,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -3504,7 +3500,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
     Returns a mapping of their outputs.
 
-    `RunnableParallel` is one of the two main composition primitives for the LCEL,
+    `RunnableParallel` is one of the two main composition primitives,
     alongside `RunnableSequence`. It invokes `Runnable`s concurrently, providing the
     same input to each.
 
@@ -3614,7 +3610,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5143,7 +5139,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5326,7 +5322,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[no-redef]
-    """`Runnable` that delegates calls to another `Runnable` with a set of kwargs.
+    """`Runnable` that delegates calls to another `Runnable` with a set of `**kwargs`.
 
     Use only if creating a new `RunnableBinding` subclass with different `__init__`
     args.
@@ -5466,7 +5462,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod

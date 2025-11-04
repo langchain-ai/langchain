@@ -1,4 +1,7 @@
-"""Base interface for large language models to expose."""
+"""Base interface for traditional large language models (LLMs) to expose.
+
+These are traditionally older models (newer models generally are chat models).
+"""
 
 from __future__ import annotations
 
@@ -91,13 +94,17 @@ def create_base_retry_decorator(
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # TODO: Fix RUF006 - this task should have a reference
-                        #  and be awaited somewhere
-                        loop.create_task(coro)  # noqa: RUF006
-                    else:
+                    try:
+                        loop = asyncio.get_event_loop()
+                    except RuntimeError:
                         asyncio.run(coro)
+                    else:
+                        if loop.is_running():
+                            # TODO: Fix RUF006 - this task should have a reference
+                            #  and be awaited somewhere
+                            loop.create_task(coro)  # noqa: RUF006
+                        else:
+                            asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:
@@ -841,7 +848,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -861,8 +868,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
             msg = (
@@ -1111,7 +1118,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             prompts: List of string prompts.
             stop: Stop words to use when generating. Model output is cut off at the
                 first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
+            callbacks: `Callbacks` to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
@@ -1130,8 +1137,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 `run_name` (if provided) does not match the length of prompts.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generations` for each
+                input prompt and additional model provider-specific output.
         """
         if isinstance(metadata, list):
             metadata = [
@@ -1387,11 +1394,6 @@ class LLM(BaseLLM):
         `astream` will use `_astream` if provided, otherwise it will implement
         a fallback behavior that will use `_stream` if `_stream` is implemented,
         and use `_acall` if `_stream` is not implemented.
-
-    Please see the following guide for more information on how to
-    implement a custom LLM:
-
-    https://python.langchain.com/docs/how_to/custom_llm/
     """
 
     @abstractmethod

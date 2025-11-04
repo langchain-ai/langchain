@@ -527,8 +527,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         self,
         fn: Callable[..., T],
         *iterables: Iterable[Any],
-        timeout: float | None = None,
-        chunksize: int = 1,
+        **kwargs: Any,
     ) -> Iterator[T]:
         """Map a function to multiple iterables.
 
@@ -549,8 +548,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         return super().map(
             _wrapped_fn,
             *iterables,
-            timeout=timeout,
-            chunksize=chunksize,
+            **kwargs,
         )
 
 

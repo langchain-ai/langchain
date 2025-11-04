@@ -27,10 +27,10 @@
 #   * release    — prepare a new release
 #
 # Allowed Scopes (optional):
-#   core, cli, langchain, langchain_v1, langchain_legacy, standard-tests,
+#   core, cli, langchain, langchain_v1, langchain-classic, standard-tests,
 #   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
 #   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
-#   xai, infra
+#   xai, infra, deps
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
@@ -80,7 +80,8 @@ jobs:
             cli
             langchain
             langchain_v1
-            langchain_legacy
+            langchain-classic
+            model-profiles
             standard-tests
             text-splitters
             docs

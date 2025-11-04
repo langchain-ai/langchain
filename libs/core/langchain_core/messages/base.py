@@ -93,6 +93,10 @@ class BaseMessage(Serializable):
     """Base abstract message class.
 
     Messages are the inputs and outputs of a chat model.
+
+    Examples include [`HumanMessage`][langchain.messages.HumanMessage],
+    [`AIMessage`][langchain.messages.AIMessage], and
+    [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
     content: str | list[str | dict]
