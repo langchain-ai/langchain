@@ -1,4 +1,7 @@
-"""Base interface for large language models to expose."""
+"""Base interface for traditional large language models (LLMs) to expose.
+
+These are traditionally older models (newer models generally are chat models).
+"""
 
 from __future__ import annotations
 

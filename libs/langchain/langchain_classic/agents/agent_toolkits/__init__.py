@@ -11,8 +11,7 @@ When developing an application, developers should inspect the capabilities and
 permissions of the tools that underlie the given agent toolkit, and determine
 whether permissions of the given toolkit are appropriate for the application.
 
-See [Security](https://docs.langchain.com/oss/python/security-policy) for more
-information.
+See https://docs.langchain.com/oss/python/security-policy for more information.
 """
 
 from pathlib import Path

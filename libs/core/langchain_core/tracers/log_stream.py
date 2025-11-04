@@ -96,10 +96,10 @@ class RunLogPatch:
     """Patch to the run log."""
 
     ops: list[dict[str, Any]]
-    """List of jsonpatch operations, which describe how to create the run state
+    """List of JSONPatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
     be serialized as JSON and sent over the wire to reconstruct the log on the other
-    side. Reconstruction of the state can be done with any jsonpatch-compliant library,
+    side. Reconstruction of the state can be done with any JSONPatch-compliant library,
     see https://jsonpatch.com for more information."""
 
     def __init__(self, *ops: dict[str, Any]) -> None:

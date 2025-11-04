@@ -2645,7 +2645,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_openai import ChatOpenAI
 
         model = ChatAnthropic(
-            model_name="claude-3-7-sonnet-20250219"
+            model_name="claude-sonnet-4-5-20250929"
         ).configurable_alternatives(
             ConfigurableField(id="llm"),
             default_key="anthropic",
@@ -2870,7 +2870,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name: The name of the `Runnable`.
             first: The first `Runnable` in the sequence.
             middle: The middle `Runnable` objects in the sequence.
-            last: The last Runnable in the sequence.
+            last: The last `Runnable` in the sequence.
 
         Raises:
             ValueError: If the sequence has less than 2 steps.
@@ -2918,7 +2918,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -3624,7 +3624,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5153,7 +5153,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5336,7 +5336,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[no-redef]
-    """`Runnable` that delegates calls to another `Runnable` with a set of kwargs.
+    """`Runnable` that delegates calls to another `Runnable` with a set of `**kwargs`.
 
     Use only if creating a new `RunnableBinding` subclass with different `__init__`
     args.
@@ -5476,7 +5476,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod

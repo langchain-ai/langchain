@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
-version = "1.0.1"
+version = "1.0.3"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -35,6 +35,7 @@ typing = [
     "mypy>=1.18.1,<1.19.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
+    "langchain-model-profiles",
     "langchain-text-splitters",
 ]
 dev = [
@@ -56,6 +57,7 @@ test = [
     "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "langchain-model-profiles",
     "langchain-tests",
     "pytest-benchmark",
     "pytest-codspeed",
@@ -63,6 +65,7 @@ test = [
 test_integration = []
 
 [tool.uv.sources]
+langchain-model-profiles = { path = "../model-profiles" }
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
 
@@ -129,7 +132,10 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
