@@ -76,7 +76,7 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 if TYPE_CHECKING:
     import uuid
 
-    from langchain_model_profiles import ModelProfile  # type: ignore[import-not-found]
+    from langchain_model_profiles import ModelProfile  # type: ignore[import-untyped]
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -1676,9 +1676,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def profile(self) -> ModelProfile:
         """Return profiling information for the model.
 
-        This property will relies on the `langchain-model-profiles` package to
-        retrieve chat model capabilities, such as context window sizes and supported
-        features.
+        This property relies on the `langchain-model-profiles` package to retrieve chat
+        model capabilities, such as context window sizes and supported features.
 
         Raises:
             ImportError: If `langchain-model-profiles` is not installed.
@@ -1764,9 +1763,12 @@ def _gen_info_and_msg_metadata(
     }
 
 
+_MAX_CLEANUP_DEPTH = 100
+
+
 def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
-    if depth > 100:  # Don't cooperate for pathological cases
+    if depth > _MAX_CLEANUP_DEPTH:  # Don't cooperate for pathological cases
         return
 
     if not isinstance(serialized, dict):

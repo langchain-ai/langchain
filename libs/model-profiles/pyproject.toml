@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 name = "langchain-model-profiles"
-version = "0.0.2"
+version = "0.0.3"
 description = "Centralized reference of LLM capabilities."
 readme = "README.md"
 

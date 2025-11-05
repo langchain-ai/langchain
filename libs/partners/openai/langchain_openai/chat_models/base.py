@@ -3601,7 +3601,8 @@ def _get_last_messages(
 ) -> tuple[Sequence[BaseMessage], str | None]:
     """Get the last part of the conversation after the last `AIMessage` with an `id`.
 
-    Return:
+    Will return:
+
     1. Every message after the most-recent `AIMessage` that has a non-empty
         `response_metadata["id"]` (may be an empty list),
     2. That `id`.
