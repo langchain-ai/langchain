@@ -87,7 +87,7 @@ class SummarizationMiddleware(AgentMiddleware):
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
         buffer_tokens: int = 0,
-        target_retention_frac: float | None = None,
+        context_fraction_to_keep: float | None = None,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
     ) -> None:
         """Initialize the summarization middleware.
@@ -103,7 +103,7 @@ class SummarizationMiddleware(AgentMiddleware):
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
             buffer_tokens: Additional buffer to reserve when estimating token usage.
-            target_retention_frac: Optional fraction (0, 1) of `max_input_tokens` to retain
+            context_fraction_to_keep: Optional fraction (0, 1) of `max_input_tokens` to retain
                 in context. If the model profile is missing or incomplete, this falls
                 back to the `messages_to_keep` strategy.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
@@ -124,11 +124,11 @@ class SummarizationMiddleware(AgentMiddleware):
         self.buffer_tokens = buffer_tokens
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        if target_retention_frac is not None and not (0 < target_retention_frac < 1):
-            error_msg = "target_retention_frac must be between 0 and 1."
+        if context_fraction_to_keep is not None and not (0 < context_fraction_to_keep < 1):
+            error_msg = "context_fraction_to_keep must be between 0 and 1."
             raise ValueError(error_msg)
 
-        self.target_retention_frac = target_retention_frac
+        self.context_fraction_to_keep = context_fraction_to_keep
 
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
@@ -179,7 +179,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
-        if self.target_retention_frac is not None:
+        if self.context_fraction_to_keep is not None:
             token_based_cutoff = self._find_token_based_cutoff(messages)
             if token_based_cutoff is not None:
                 return token_based_cutoff
@@ -195,7 +195,7 @@ class SummarizationMiddleware(AgentMiddleware):
             return None
 
         max_input_tokens, _ = limits
-        target_token_count = int(max_input_tokens * cast("float", self.target_retention_frac))
+        target_token_count = int(max_input_tokens * cast("float", self.context_fraction_to_keep))
         if target_token_count <= 0:
             target_token_count = 1
 
