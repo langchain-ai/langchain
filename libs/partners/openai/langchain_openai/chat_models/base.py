@@ -123,6 +123,10 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
+from langchain_openai.chat_models.reasoning_parser import (
+    extract_reasoning_content,
+    extract_reasoning_delta,
+)
 
 if TYPE_CHECKING:
     from openai.types.responses import Response
@@ -1035,6 +1039,14 @@ class BaseChatOpenAI(BaseChatModel):
             message_chunk.usage_metadata = usage_metadata
 
         message_chunk.response_metadata["model_provider"] = "openai"
+
+        # Inject streaming reasoning delta
+        if choices := chunk.get("choices"):
+            delta = choices[0].get("delta", {})
+            reasoning_text = extract_reasoning_delta(self.model_name, delta)
+            if reasoning_text and isinstance(message_chunk, AIMessageChunk):
+                message_chunk.additional_kwargs["reasoning_content"] = reasoning_text
+
         return ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -1416,6 +1428,12 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
+        # Inject model-specific reasoning content
+        reasoning_text = extract_reasoning_content(self.model_name, response_dict)
+        if reasoning_text:
+            generations[0].message.additional_kwargs["reasoning_content"] = (
+                reasoning_text
+            )
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
