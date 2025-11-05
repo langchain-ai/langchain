@@ -103,7 +103,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
     # Verify that items were received in a timely manner, proving parallel execution.
     # The key invariant: if items are streamed in parallel, the total time to receive
     # all items should be close to the total production time, NOT cumulative.
-    # 
+    #
     # For sequential execution: total_time ≈ 3 * 0.2s = 0.6s
     # For parallel execution: total_time ≈ 0.6s (last item's receive time)
     #
@@ -112,13 +112,13 @@ async def test_queue_for_streaming_via_sync_call() -> None:
     # subject to thread scheduling variance in CI environments.
     last_item_receive_time = items[-1]["receive_time"]
     last_item_produce_time = items[-1]["produce_time"]
-    
+
     # The last item should arrive within ~200ms of when it was produced
     # (allowing for thread scheduling overhead in CI environments)
     assert last_item_receive_time < 1.0, (
         f"Items not streaming in parallel - last item took {last_item_receive_time}s"
     )
-    
+
     # Additionally verify all items were produced over the expected time span
     assert last_item_produce_time > 0.5, (
         f"Producer didn't run for expected duration: {last_item_produce_time}s"
