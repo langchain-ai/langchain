@@ -1045,14 +1045,15 @@ def test_summarization_middleware_initialization() -> None:
     assert middleware.messages_to_keep == 10
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.summary_prefix == "Custom prefix:"
-    assert middleware.context_fraction_to_keep is None
+    assert middleware.tokens_to_keep is None
     assert middleware.trim_tokens_to_summarize == 4000
 
-    middleware_with_retention = SummarizationMiddleware(model=model, context_fraction_to_keep=0.5)
-    assert middleware_with_retention.context_fraction_to_keep == 0.5
-
     with pytest.raises(ValueError):
-        SummarizationMiddleware(model=model, context_fraction_to_keep=1.5)
+        SummarizationMiddleware(model=model, tokens_to_keep=0.5)  # no model profile
+
+    # Test that both messages_to_keep and tokens_to_keep cannot be specified
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        SummarizationMiddleware(model=model, messages_to_keep=10, tokens_to_keep=0.5)
 
     # Test with string model
     with patch(
@@ -1241,7 +1242,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         tokens_before_summary=0.80,
-        context_fraction_to_keep=0.5,
+        tokens_to_keep=0.5,
         token_counter=token_counter,
     )
 
@@ -1267,7 +1268,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         tokens_before_summary=0.79,
-        context_fraction_to_keep=0.5,
+        tokens_to_keep=0.5,
         token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
@@ -1282,12 +1283,12 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         "Message 4",
     ]
 
-    # With context_fraction_to_keep = 0.6 the target token allowance becomes 600,
+    # With tokens_to_keep = 0.6 the target token allowance becomes 600,
     # so the cutoff shifts to keep the last three messages instead of two.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         tokens_before_summary=0.79,
-        context_fraction_to_keep=0.6,
+        tokens_to_keep=0.6,
         token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
@@ -1298,16 +1299,45 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         "Message 4",
     ]
 
-    # Once context_fraction_to_keep reaches 0.8 the inferred limit equals the full
+    # Once tokens_to_keep reaches 0.8 the inferred limit equals the full
     # context (target tokens = 800), so token-based retention keeps everything
     # and summarization is skipped entirely.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         tokens_before_summary=0.79,
-        context_fraction_to_keep=0.8,
+        tokens_to_keep=0.8,
         token_counter=token_counter,
     )
     assert middleware.before_model(state, None) is None
+
+    # Test with tokens_to_keep as absolute int value
+    middleware_int = SummarizationMiddleware(
+        model=ProfileModel(),
+        tokens_before_summary=0.79,
+        tokens_to_keep=400,  # Keep exactly 400 tokens (2 messages)
+        token_counter=token_counter,
+    )
+    result = middleware_int.before_model(state, None)
+    assert result is not None
+    assert [message.content for message in result["messages"][2:]] == [
+        "Message 3",
+        "Message 4",
+    ]
+
+    # Test with tokens_to_keep as larger int value
+    middleware_int_large = SummarizationMiddleware(
+        model=ProfileModel(),
+        tokens_before_summary=0.79,
+        tokens_to_keep=600,  # Keep 600 tokens (3 messages)
+        token_counter=token_counter,
+    )
+    result = middleware_int_large.before_model(state, None)
+    assert result is not None
+    assert [message.content for message in result["messages"][2:]] == [
+        "Message 2",
+        "Message 3",
+        "Message 4",
+    ]
 
 
 def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> None:
@@ -1331,7 +1361,7 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
         tokens_before_summary=0.1,  # engage summarization
-        context_fraction_to_keep=0.5,
+        tokens_to_keep=0.5,
     )
     middleware.token_counter = token_counter
 
@@ -1398,39 +1428,6 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
         state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
         result = middleware.before_model(state, None)
         assert result is None
-
-
-def test_summarization_middleware_token_retention_pct_without_profile_falls_back() -> None:
-    """Token retention gracefully falls back to message-based retention when profile missing."""
-
-    class NoProfileModel(BaseChatModel):
-        def _generate(self, messages, **kwargs):
-            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
-
-        @property
-        def _llm_type(self) -> str:
-            return "mock"
-
-    middleware = SummarizationMiddleware(
-        model=NoProfileModel(),
-        max_tokens_before_summary=5,
-        messages_to_keep=2,
-        context_fraction_to_keep=0.5,
-    )
-    middleware.token_counter = lambda messages: len(messages) * 10
-
-    messages = [
-        HumanMessage(content="1"),
-        HumanMessage(content="2"),
-        HumanMessage(content="3"),
-        HumanMessage(content="4"),
-    ]
-
-    result = middleware.before_model({"messages": messages}, None)
-    assert result is not None
-
-    preserved_messages = result["messages"][2:]
-    assert preserved_messages == messages[-2:]
 
 
 def test_summarization_middleware_full_workflow() -> None:

@@ -83,11 +83,11 @@ class SummarizationMiddleware(AgentMiddleware):
         *,
         tokens_before_summary: float | None = None,
         messages_before_summary: int | None = None,
-        messages_to_keep: int = _DEFAULT_MESSAGES_TO_KEEP,
+        messages_to_keep: int | None = None,
+        tokens_to_keep: float | None = None,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
-        context_fraction_to_keep: float | None = None,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
         **kwargs: Any,
     ) -> None:
@@ -103,13 +103,15 @@ class SummarizationMiddleware(AgentMiddleware):
             messages_before_summary: Message count threshold to trigger summarization.
                 If `None`, message-based summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
-                Used whenever token-based retention is unavailable or disabled.
+                Cannot be specified together with `tokens_to_keep`. If neither tokens_to_keep
+                nor messages_to_keep is specified, defaults to preserving 20 messages.
+            tokens_to_keep: Number of tokens to preserve after summarization.
+                If a float between 0 and 1, retains `max_input_tokens * tokens_to_keep`.
+                If >= 1, treats as an absolute token count to retain.
+                Cannot be specified together with `messages_to_keep`.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
-            context_fraction_to_keep: Optional fraction (0, 1) of `max_input_tokens` to retain
-                in context. If the model profile is missing or incomplete, this falls
-                back to the `messages_to_keep` strategy.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
                 summarization call. Pass `None` to skip trimming entirely (risking
                 summary model overflows if the history is too long).
@@ -123,6 +125,13 @@ class SummarizationMiddleware(AgentMiddleware):
                 raise ValueError(msg)
             tokens_before_summary = kwargs.pop("max_tokens_before_summary")
 
+        if messages_to_keep is not None and tokens_to_keep is not None:
+            msg = "Cannot specify both 'messages_to_keep' and 'tokens_to_keep'"
+            raise ValueError(msg)
+
+        if messages_to_keep is None and tokens_to_keep is None:
+            messages_to_keep = _DEFAULT_MESSAGES_TO_KEEP
+
         if isinstance(model, str):
             model = init_chat_model(model)
 
@@ -130,16 +139,22 @@ class SummarizationMiddleware(AgentMiddleware):
         self.tokens_before_summary = tokens_before_summary
         self.messages_before_summary = messages_before_summary
         self.messages_to_keep = messages_to_keep
+        self.tokens_to_keep = tokens_to_keep
         self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        if context_fraction_to_keep is not None and not (0 < context_fraction_to_keep < 1):
-            error_msg = "context_fraction_to_keep must be between 0 and 1."
-            raise ValueError(error_msg)
-
-        self.context_fraction_to_keep = context_fraction_to_keep
+        if (
+            (tokens_to_keep is not None and 0 < tokens_to_keep < 1)
+            or (tokens_before_summary is not None and 0 < tokens_before_summary < 1)
+        ) and self._get_profile_limits() is None:
+            msg = (
+                "Model profile information is required to use fractional token limits. "
+                'pip install "langchain[model-profiles]" or use absolute token counts '
+                "instead."
+            )
+            raise ValueError(msg)
 
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Process messages before model invocation, potentially triggering summarization."""
@@ -191,22 +206,28 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
-        if self.context_fraction_to_keep is not None:
+        if self.tokens_to_keep is not None:
             token_based_cutoff = self._find_token_based_cutoff(messages)
             if token_based_cutoff is not None:
                 return token_based_cutoff
         return self._find_safe_cutoff(messages)
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
-        """Find cutoff index based on target token retention percentage."""
+        """Find cutoff index based on target token retention."""
         if not messages:
             return 0
 
-        max_input_tokens = self._get_profile_limits()
-        if max_input_tokens is None:
-            return None
+        tokens_to_keep = cast("float | int", self.tokens_to_keep)
+        if 0 < tokens_to_keep < 1:
+            # fraction of max_input_tokens, if available
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return None
+            target_token_count = int(max_input_tokens * tokens_to_keep)
+        else:
+            # absolute token count
+            target_token_count = int(tokens_to_keep)
 
-        target_token_count = int(max_input_tokens * cast("float", self.context_fraction_to_keep))
         if target_token_count <= 0:
             target_token_count = 1
 
@@ -288,10 +309,11 @@ class SummarizationMiddleware(AgentMiddleware):
         Returns the index where messages can be safely cut without separating
         related AI and Tool messages. Returns 0 if no safe cutoff is found.
         """
-        if len(messages) <= self.messages_to_keep:
+        messages_to_keep = self.messages_to_keep or _DEFAULT_MESSAGES_TO_KEEP
+        if len(messages) <= messages_to_keep:
             return 0
 
-        target_cutoff = len(messages) - self.messages_to_keep
+        target_cutoff = len(messages) - messages_to_keep
 
         for i in range(target_cutoff, -1, -1):
             if self._is_safe_cutoff_point(messages, i):
