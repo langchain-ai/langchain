@@ -1040,7 +1040,7 @@ def test_summarization_middleware_initialization() -> None:
     )
 
     assert middleware.model == model
-    assert middleware.tokens_before_summary == 1000
+    assert middleware.max_tokens_before_summary == 1000
     assert middleware.messages_to_keep == 10
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.tokens_to_keep is None
@@ -1239,7 +1239,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.80,
+        max_tokens_before_summary=0.80,
         tokens_to_keep=0.5,
         token_counter=token_counter,
     )
@@ -1265,7 +1265,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # 800 + 150 + 51 > 1000
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.79,
+        max_tokens_before_summary=0.79,
         tokens_to_keep=0.5,
         token_counter=token_counter,
     )
@@ -1285,7 +1285,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # so the cutoff shifts to keep the last three messages instead of two.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.79,
+        max_tokens_before_summary=0.79,
         tokens_to_keep=0.6,
         token_counter=token_counter,
     )
@@ -1302,7 +1302,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # and summarization is skipped entirely.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.79,
+        max_tokens_before_summary=0.79,
         tokens_to_keep=0.8,
         token_counter=token_counter,
     )
@@ -1311,7 +1311,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # Test with tokens_to_keep as absolute int value
     middleware_int = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.79,
+        max_tokens_before_summary=0.79,
         tokens_to_keep=400,  # Keep exactly 400 tokens (2 messages)
         token_counter=token_counter,
     )
@@ -1325,7 +1325,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # Test with tokens_to_keep as larger int value
     middleware_int_large = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.79,
+        max_tokens_before_summary=0.79,
         tokens_to_keep=600,  # Keep 600 tokens (3 messages)
         token_counter=token_counter,
     )
@@ -1358,7 +1358,7 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        tokens_before_summary=0.1,  # engage summarization
+        max_tokens_before_summary=0.1,  # engage summarization
         tokens_to_keep=0.5,
     )
     middleware.token_counter = token_counter
@@ -1534,7 +1534,7 @@ def test_summarization_middleware_messages_before_summary() -> None:
 
     # Test with both parameters disabled
     middleware_disabled = SummarizationMiddleware(
-        model=MockModel(), messages_before_summary=None, tokens_before_summary=None
+        model=MockModel(), messages_before_summary=None, max_tokens_before_summary=None
     )
     result = middleware_disabled.before_model(state_above, None)
     assert result is None

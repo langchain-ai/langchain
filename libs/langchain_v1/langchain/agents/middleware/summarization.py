@@ -69,24 +69,23 @@ class SummarizationMiddleware(AgentMiddleware):
         self,
         model: str | BaseChatModel,
         *,
-        tokens_before_summary: float | None = None,
+        max_tokens_before_summary: float | None = None,
         messages_before_summary: int | None = None,
         messages_to_keep: int | None = None,
         tokens_to_keep: float | None = None,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
-        **kwargs: Any,
     ) -> None:
         """Initialize the summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.
-            tokens_before_summary: Token threshold to trigger summarization.
+            max_tokens_before_summary: Token threshold to trigger summarization.
                 If `None`, token-based summarization is disabled.
                 If >= 1, treats as an absolute token count threshold.
                 If a float between 0 and 1 and model profile information is available,
-                triggers summarization at `max_input_tokens * tokens_before_summary`.
+                triggers summarization at `max_input_tokens * max_tokens_before_summary`.
             messages_before_summary: Message count threshold to trigger summarization.
                 If `None`, message-based summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
@@ -103,13 +102,6 @@ class SummarizationMiddleware(AgentMiddleware):
         """
         super().__init__()
 
-        if "max_tokens_before_summary" in kwargs:
-            # backwards compatibility
-            if tokens_before_summary is not None:
-                msg = "Cannot specify both 'tokens_before_summary' and 'max_tokens_before_summary'"
-                raise ValueError(msg)
-            tokens_before_summary = kwargs.pop("max_tokens_before_summary")
-
         if messages_to_keep is not None and tokens_to_keep is not None:
             msg = "Cannot specify both 'messages_to_keep' and 'tokens_to_keep'"
             raise ValueError(msg)
@@ -121,7 +113,7 @@ class SummarizationMiddleware(AgentMiddleware):
             model = init_chat_model(model)
 
         self.model = model
-        self.tokens_before_summary = tokens_before_summary
+        self.max_tokens_before_summary = max_tokens_before_summary
         self.messages_before_summary = messages_before_summary
         self.messages_to_keep = messages_to_keep
         self.tokens_to_keep = tokens_to_keep
@@ -131,7 +123,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
         if (
             (tokens_to_keep is not None and 0 < tokens_to_keep < 1)
-            or (tokens_before_summary is not None and 0 < tokens_before_summary < 1)
+            or (max_tokens_before_summary is not None and 0 < max_tokens_before_summary < 1)
         ) and self._get_profile_limits() is None:
             msg = (
                 "Model profile information is required to use fractional token limits. "
@@ -174,19 +166,19 @@ class SummarizationMiddleware(AgentMiddleware):
         ):
             return True
 
-        if self.tokens_before_summary is None:
+        if self.max_tokens_before_summary is None:
             return False
 
         # Handle fractional case
-        if 0 < self.tokens_before_summary < 1:
+        if 0 < self.max_tokens_before_summary < 1:
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens is None:
                 return False
-            threshold = int(max_input_tokens * self.tokens_before_summary)
+            threshold = int(max_input_tokens * self.max_tokens_before_summary)
             return total_tokens > threshold
 
         # Interpret as absolute token count
-        return total_tokens >= self.tokens_before_summary
+        return total_tokens >= self.max_tokens_before_summary
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
