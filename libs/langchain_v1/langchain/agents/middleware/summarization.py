@@ -51,8 +51,6 @@ Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
 
-SUMMARY_PREFIX = "## Previous conversation summary:"
-
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
@@ -87,7 +85,6 @@ class SummarizationMiddleware(AgentMiddleware):
         tokens_to_keep: float | None = None,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
-        summary_prefix: str = SUMMARY_PREFIX,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
         **kwargs: Any,
     ) -> None:
@@ -111,7 +108,6 @@ class SummarizationMiddleware(AgentMiddleware):
                 Cannot be specified together with `messages_to_keep`.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
-            summary_prefix: Prefix added to system message when including summary.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
                 summarization call. Pass `None` to skip trimming entirely (risking
                 summary model overflows if the history is too long).
@@ -142,7 +138,6 @@ class SummarizationMiddleware(AgentMiddleware):
         self.tokens_to_keep = tokens_to_keep
         self.token_counter = token_counter
         self.summary_prompt = summary_prompt
-        self.summary_prefix = summary_prefix
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
         if (

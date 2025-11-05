@@ -1037,14 +1037,12 @@ def test_summarization_middleware_initialization() -> None:
         max_tokens_before_summary=1000,
         messages_to_keep=10,
         summary_prompt="Custom prompt: {messages}",
-        summary_prefix="Custom prefix:",
     )
 
     assert middleware.model == model
     assert middleware.tokens_before_summary == 1000
     assert middleware.messages_to_keep == 10
     assert middleware.summary_prompt == "Custom prompt: {messages}"
-    assert middleware.summary_prefix == "Custom prefix:"
     assert middleware.tokens_to_keep is None
     assert middleware.trim_tokens_to_summarize == 4000
 
