@@ -61,7 +61,6 @@ _EXPECTED = [
     "SupabaseVectorStore",
     "Tair",
     "TencentVectorDB",
-    "Tigris",
     "TileDB",
     "TimescaleVector",
     "Typesense",

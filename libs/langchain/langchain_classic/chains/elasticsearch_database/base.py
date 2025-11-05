@@ -31,7 +31,7 @@ class ElasticsearchDatabaseChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import ElasticsearchDatabaseChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from elasticsearch import Elasticsearch
 
         database = Elasticsearch("http://localhost:9200")
