@@ -81,28 +81,32 @@ class SummarizationMiddleware(AgentMiddleware):
         self,
         model: str | BaseChatModel,
         *,
-        max_tokens_before_summary: int | None | _UnsetType = UNSET,
+        tokens_before_summary: float | None = None,
+        messages_before_summary: int | None = None,
         messages_to_keep: int = _DEFAULT_MESSAGES_TO_KEEP,
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
-        buffer_tokens: int = 0,
         context_fraction_to_keep: float | None = None,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        **kwargs: Any,
     ) -> None:
         """Initialize the summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.
-            max_tokens_before_summary: Token threshold to trigger summarization.
-                If `None`, summarization is disabled. If `UNSET`, limits are inferred
-                from the model profile when available.
+            tokens_before_summary: Token threshold to trigger summarization.
+                If `None`, token-based summarization is disabled.
+                If >= 1, treats as an absolute token count threshold.
+                If a float between 0 and 1 and model profile information is available,
+                triggers summarization at `max_input_tokens * tokens_before_summary`.
+            messages_before_summary: Message count threshold to trigger summarization.
+                If `None`, message-based summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
                 Used whenever token-based retention is unavailable or disabled.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             summary_prefix: Prefix added to system message when including summary.
-            buffer_tokens: Additional buffer to reserve when estimating token usage.
             context_fraction_to_keep: Optional fraction (0, 1) of `max_input_tokens` to retain
                 in context. If the model profile is missing or incomplete, this falls
                 back to the `messages_to_keep` strategy.
@@ -112,16 +116,23 @@ class SummarizationMiddleware(AgentMiddleware):
         """
         super().__init__()
 
+        # Handle backwards compatibility for max_tokens_before_summary
+        if "max_tokens_before_summary" in kwargs:
+            if tokens_before_summary is not None:
+                msg = "Cannot specify both 'tokens_before_summary' and 'max_tokens_before_summary'"
+                raise ValueError(msg)
+            tokens_before_summary = kwargs.pop("max_tokens_before_summary")
+
         if isinstance(model, str):
             model = init_chat_model(model)
 
         self.model = model
-        self.max_tokens_before_summary = max_tokens_before_summary
+        self.tokens_before_summary = tokens_before_summary
+        self.messages_before_summary = messages_before_summary
         self.messages_to_keep = messages_to_keep
         self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
-        self.buffer_tokens = buffer_tokens
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
         if context_fraction_to_keep is not None and not (0 < context_fraction_to_keep < 1):
@@ -136,7 +147,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self._ensure_message_ids(messages)
 
         total_tokens = self.token_counter(messages)
-        if not self._should_summarize(total_tokens):
+        if not self._should_summarize(messages, total_tokens):
             return None
 
         cutoff_index = self._determine_cutoff_index(messages)
@@ -157,25 +168,26 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    def _should_summarize(self, total_tokens: int) -> bool:
+    def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
-        if self.max_tokens_before_summary is UNSET:
-            return self._should_summarize_with_profile(total_tokens)
+        if self.messages_before_summary is not None and (
+            len(messages) >= self.messages_before_summary
+        ):
+            return True
 
-        if self.max_tokens_before_summary is None:
+        if self.tokens_before_summary is None:
             return False
 
-        return total_tokens >= cast("int", self.max_tokens_before_summary)
+        # Handle float (fraction of max_input_tokens)
+        if 0 < self.tokens_before_summary < 1:
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens is None:
+                return False
+            threshold = int(max_input_tokens * self.tokens_before_summary)
+            return total_tokens > threshold
 
-    def _should_summarize_with_profile(self, total_tokens: int) -> bool:
-        """Infer summarization threshold from the model profile when available."""
-        limits = self._get_profile_limits()
-        if limits is None:
-            return False
-
-        max_input_tokens, max_output_tokens = limits
-
-        return total_tokens + max_output_tokens + self.buffer_tokens > max_input_tokens
+        # Handle int (absolute token count)
+        return total_tokens >= self.tokens_before_summary
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
@@ -190,11 +202,10 @@ class SummarizationMiddleware(AgentMiddleware):
         if not messages:
             return 0
 
-        limits = self._get_profile_limits()
-        if limits is None:
+        max_input_tokens = self._get_profile_limits()
+        if max_input_tokens is None:
             return None
 
-        max_input_tokens, _ = limits
         target_token_count = int(max_input_tokens * cast("float", self.context_fraction_to_keep))
         if target_token_count <= 0:
             target_token_count = 1
@@ -232,8 +243,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return 0
 
-    def _get_profile_limits(self) -> tuple[int, int] | None:
-        """Retrieve max input and output token limits from the model profile."""
+    def _get_profile_limits(self) -> int | None:
+        """Retrieve max input token limit from the model profile."""
         try:
             profile = self.model.profile
         except (AttributeError, ImportError):
@@ -243,12 +254,11 @@ class SummarizationMiddleware(AgentMiddleware):
             return None
 
         max_input_tokens = profile.get("max_input_tokens")
-        max_output_tokens = profile.get("max_output_tokens")
 
-        if not isinstance(max_input_tokens, int) or not isinstance(max_output_tokens, int):
+        if not isinstance(max_input_tokens, int):
             return None
 
-        return max_input_tokens, max_output_tokens
+        return max_input_tokens
 
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [

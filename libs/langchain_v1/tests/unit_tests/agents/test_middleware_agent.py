@@ -1041,16 +1041,12 @@ def test_summarization_middleware_initialization() -> None:
     )
 
     assert middleware.model == model
-    assert middleware.max_tokens_before_summary == 1000
+    assert middleware.tokens_before_summary == 1000
     assert middleware.messages_to_keep == 10
     assert middleware.summary_prompt == "Custom prompt: {messages}"
     assert middleware.summary_prefix == "Custom prefix:"
-    assert middleware.buffer_tokens == 0
     assert middleware.context_fraction_to_keep is None
     assert middleware.trim_tokens_to_summarize == 4000
-
-    middleware_with_buffer = SummarizationMiddleware(model=model, buffer_tokens=25)
-    assert middleware_with_buffer.buffer_tokens == 25
 
     middleware_with_retention = SummarizationMiddleware(model=model, context_fraction_to_keep=0.5)
     assert middleware_with_retention.context_fraction_to_keep == 0.5
@@ -1238,13 +1234,15 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
 
         @property
         def profile(self) -> "ModelProfile":
-            return {"max_input_tokens": 1000, "max_output_tokens": 150}
+            return {"max_input_tokens": 1000}
+
+    token_counter = lambda messages: len(messages) * 200
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        buffer_tokens=50,
+        tokens_before_summary=0.80,
         context_fraction_to_keep=0.5,
-        token_counter=lambda messages: len(messages) * 200,
+        token_counter=token_counter,
     )
 
     state = {
@@ -1268,9 +1266,9 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # 800 + 150 + 51 > 1000
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        buffer_tokens=51,
+        tokens_before_summary=0.79,
         context_fraction_to_keep=0.5,
-        token_counter=lambda messages: len(messages) * 200,
+        token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
     assert result is not None
@@ -1288,9 +1286,9 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # so the cutoff shifts to keep the last three messages instead of two.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        buffer_tokens=51,
+        tokens_before_summary=0.79,
         context_fraction_to_keep=0.6,
-        token_counter=lambda messages: len(messages) * 200,
+        token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
     assert result is not None
@@ -1305,9 +1303,9 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # and summarization is skipped entirely.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        buffer_tokens=51,
+        tokens_before_summary=0.79,
         context_fraction_to_keep=0.8,
-        token_counter=lambda messages: len(messages) * 200,
+        token_counter=token_counter,
     )
     assert middleware.before_model(state, None) is None
 
@@ -1325,13 +1323,14 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
 
         @property
         def profile(self) -> "ModelProfile":
-            return {"max_input_tokens": 1000, "max_output_tokens": 200}
+            return {"max_input_tokens": 1000}
 
     def token_counter(messages):
         return sum(len(getattr(message, "content", "")) for message in messages)
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
+        tokens_before_summary=0.1,  # engage summarization
         context_fraction_to_keep=0.5,
     )
     middleware.token_counter = token_counter
@@ -1486,6 +1485,64 @@ def test_summarization_middleware_full_workflow() -> None:
 
     assert summary_message is not None
     assert "Generated summary" in summary_message.content
+
+
+def test_summarization_middleware_messages_before_summary() -> None:
+    """Test SummarizationMiddleware with messages_before_summary parameter."""
+
+    class MockModel(BaseChatModel):
+        def invoke(self, prompt):
+            return AIMessage(content="Generated summary")
+
+        def _generate(self, messages, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
+
+        @property
+        def _llm_type(self):
+            return "mock"
+
+    # Test that summarization is triggered when message count reaches threshold
+    middleware = SummarizationMiddleware(
+        model=MockModel(), messages_before_summary=5, messages_to_keep=2
+    )
+
+    # Below threshold - no summarization
+    messages_below = [
+        HumanMessage(content="1"),
+        HumanMessage(content="2"),
+        HumanMessage(content="3"),
+        HumanMessage(content="4"),
+    ]
+    state_below = {"messages": messages_below}
+    result = middleware.before_model(state_below, None)
+    assert result is None
+
+    # At threshold - should trigger summarization
+    messages_at_threshold = [
+        HumanMessage(content="1"),
+        HumanMessage(content="2"),
+        HumanMessage(content="3"),
+        HumanMessage(content="4"),
+        HumanMessage(content="5"),
+    ]
+    state_at = {"messages": messages_at_threshold}
+    result = middleware.before_model(state_at, None)
+    assert result is not None
+    assert "messages" in result
+
+    # Above threshold - should also trigger summarization
+    messages_above = messages_at_threshold + [HumanMessage(content="6")]
+    state_above = {"messages": messages_above}
+    result = middleware.before_model(state_above, None)
+    assert result is not None
+    assert "messages" in result
+
+    # Test with both parameters disabled
+    middleware_disabled = SummarizationMiddleware(
+        model=MockModel(), messages_before_summary=None, tokens_before_summary=None
+    )
+    result = middleware_disabled.before_model(state_above, None)
+    assert result is None
 
 
 def test_on_model_call() -> None:
