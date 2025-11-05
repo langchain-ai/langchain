@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Final, cast
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -57,16 +57,6 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 
-class _UnsetType:
-    """Sentinel indicating that max tokens should be inferred from the model profile."""
-
-    def __repr__(self) -> str:
-        return "UNSET"
-
-
-UNSET: Final = _UnsetType()
-
-
 class SummarizationMiddleware(AgentMiddleware):
     """Summarizes conversation history when token limits are approached.
 
@@ -100,8 +90,8 @@ class SummarizationMiddleware(AgentMiddleware):
             messages_before_summary: Message count threshold to trigger summarization.
                 If `None`, message-based summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
-                Cannot be specified together with `tokens_to_keep`. If neither tokens_to_keep
-                nor messages_to_keep is specified, defaults to preserving 20 messages.
+                Cannot be specified together with `tokens_to_keep`. If neither `tokens_to_keep`
+                nor `messages_to_keep` is specified, defaults to preserving 20 messages.
             tokens_to_keep: Number of tokens to preserve after summarization.
                 If a float between 0 and 1, retains `max_input_tokens * tokens_to_keep`.
                 If >= 1, treats as an absolute token count to retain.
@@ -109,13 +99,12 @@ class SummarizationMiddleware(AgentMiddleware):
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
-                summarization call. Pass `None` to skip trimming entirely (risking
-                summary model overflows if the history is too long).
+                summarization call. Pass `None` to skip trimming entirely.
         """
         super().__init__()
 
-        # Handle backwards compatibility for max_tokens_before_summary
         if "max_tokens_before_summary" in kwargs:
+            # backwards compatibility
             if tokens_before_summary is not None:
                 msg = "Cannot specify both 'tokens_before_summary' and 'max_tokens_before_summary'"
                 raise ValueError(msg)
@@ -188,7 +177,7 @@ class SummarizationMiddleware(AgentMiddleware):
         if self.tokens_before_summary is None:
             return False
 
-        # Handle float (fraction of max_input_tokens)
+        # Handle fractional case
         if 0 < self.tokens_before_summary < 1:
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens is None:
@@ -196,7 +185,7 @@ class SummarizationMiddleware(AgentMiddleware):
             threshold = int(max_input_tokens * self.tokens_before_summary)
             return total_tokens > threshold
 
-        # Handle int (absolute token count)
+        # Interpret as absolute token count
         return total_tokens >= self.tokens_before_summary
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
