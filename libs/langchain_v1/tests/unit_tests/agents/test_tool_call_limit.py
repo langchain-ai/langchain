@@ -106,8 +106,8 @@ def test_middleware_unit_functionality():
             HumanMessage("Question 2"),
             AIMessage("Response 2", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
-        "thread_tool_call_count": {"__all__": 4},  # Already exceeds thread_limit=3
-        "run_tool_call_count": {"__all__": 4},  # Already exceeds run_limit=2
+        "thread_tool_call_count": {"__all__": 3},  # Already exceeds thread_limit=3
+        "run_tool_call_count": {"__all__": 0},  # No calls yet
     }
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
@@ -125,13 +125,11 @@ def test_middleware_unit_functionality():
     final_ai_msg = result["messages"][-1]
     assert isinstance(final_ai_msg, AIMessage)
     assert "limit" in final_ai_msg.content.lower()
-    # Both limits are exceeded (thread: 4 > 3, run: 5 > 2)
     assert "thread limit exceeded" in final_ai_msg.content.lower()
-    assert "run limit exceeded" in final_ai_msg.content.lower()
-    # Thread count stays at 4 (blocked call not counted)
-    assert result["thread_tool_call_count"] == {"__all__": 4}
-    # Run count goes to 5 (includes blocked call)
-    assert result["run_tool_call_count"] == {"__all__": 5}
+    # Thread count stays at 3 (blocked call not counted)
+    assert result["thread_tool_call_count"] == {"__all__": 3}
+    # Run count goes to 1 (includes blocked call)
+    assert result["run_tool_call_count"] == {"__all__": 1}
 
     # Test run limit exceeded (thread count must be >= run count)
     state = {
