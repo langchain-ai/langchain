@@ -99,7 +99,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         if isinstance(content, tuple):
             content = list(content)
 
-        if not isinstance(content, (str, list)):
+        if not isinstance(content, str | list):
             try:
                 values["content"] = str(content)
             except ValueError as e:
@@ -112,7 +112,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         elif isinstance(content, list):
             values["content"] = []
             for i, x in enumerate(content):
-                if not isinstance(x, (str, dict)):
+                if not isinstance(x, str | dict):
                     try:
                         values["content"].append(str(x))
                     except ValueError as e:
@@ -127,7 +127,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                     values["content"].append(x)
 
         tool_call_id = values["tool_call_id"]
-        if isinstance(tool_call_id, (UUID, int, float)):
+        if isinstance(tool_call_id, UUID | int | float):
             values["tool_call_id"] = str(tool_call_id)
         return values
 

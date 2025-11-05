@@ -89,7 +89,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             Combined prompt template.
         """
         # Import locally to avoid circular import.
-        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
+        from langchain_core.prompts.chat import ChatPromptTemplate
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

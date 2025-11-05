@@ -88,7 +88,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: list[str] | None = None,
-        keep_separator: bool | Literal["start", "end"] = True,  # noqa: FBT001,FBT002
+        keep_separator: bool | Literal["start", "end"] = True,  # noqa: FBT002
         is_separator_regex: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:

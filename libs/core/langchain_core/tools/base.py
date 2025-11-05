@@ -785,7 +785,7 @@ class ChildTool(BaseTool):
     def run(
         self,
         tool_input: str | dict[str, Any],
-        verbose: bool | None = None,  # noqa: FBT001
+        verbose: bool | None = None,
         start_color: str | None = "green",
         color: str | None = "green",
         callbacks: Callbacks = None,
@@ -912,7 +912,7 @@ class ChildTool(BaseTool):
     async def arun(
         self,
         tool_input: str | dict,
-        verbose: bool | None = None,  # noqa: FBT001
+        verbose: bool | None = None,
         start_color: str | None = "green",
         color: str | None = "green",
         callbacks: Callbacks = None,

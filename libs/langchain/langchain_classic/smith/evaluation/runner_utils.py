@@ -557,7 +557,7 @@ def _construct_run_evaluator(
 ) -> RunEvaluator:
     if isinstance(eval_config, RunEvaluator):
         return eval_config
-    if isinstance(eval_config, (EvaluatorType, str)):
+    if isinstance(eval_config, EvaluatorType | str):
         if not isinstance(eval_config, EvaluatorType):
             eval_config = EvaluatorType(eval_config)
         evaluator_ = load_evaluator(eval_config, llm=eval_llm)

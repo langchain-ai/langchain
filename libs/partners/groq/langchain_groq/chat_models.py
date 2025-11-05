@@ -443,7 +443,7 @@ class ChatGroq(BaseChatModel):
         }
 
         try:
-            import groq  # noqa: PLC0415
+            import groq
 
             sync_specific: dict[str, Any] = {"http_client": self.http_client}
             if not self.client:

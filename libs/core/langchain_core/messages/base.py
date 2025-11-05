@@ -203,20 +203,20 @@ class BaseMessage(Serializable):
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
-        from langchain_core.messages import content as types  # noqa: PLC0415
-        from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
+        from langchain_core.messages import content as types
+        from langchain_core.messages.block_translators.anthropic import (
             _convert_to_v1_from_anthropic_input,
         )
-        from langchain_core.messages.block_translators.bedrock_converse import (  # noqa: PLC0415
+        from langchain_core.messages.block_translators.bedrock_converse import (
             _convert_to_v1_from_converse_input,
         )
-        from langchain_core.messages.block_translators.google_genai import (  # noqa: PLC0415
+        from langchain_core.messages.block_translators.google_genai import (
             _convert_to_v1_from_genai_input,
         )
-        from langchain_core.messages.block_translators.langchain_v0 import (  # noqa: PLC0415
+        from langchain_core.messages.block_translators.langchain_v0 import (
             _convert_v0_multimodal_input_to_v1,
         )
-        from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
+        from langchain_core.messages.block_translators.openai import (
             _convert_to_v1_from_chat_completions_input,
         )
 
@@ -298,7 +298,7 @@ class BaseMessage(Serializable):
             A ChatPromptTemplate containing both messages.
         """
         # Import locally to prevent circular imports.
-        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
+        from langchain_core.prompts.chat import ChatPromptTemplate
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

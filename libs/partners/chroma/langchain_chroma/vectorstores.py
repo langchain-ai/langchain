@@ -308,7 +308,7 @@ class Chroma(VectorStore):
         collection_configuration: CreateCollectionConfiguration | None = None,
         client: chromadb.ClientAPI | None = None,
         relevance_score_fn: Callable[[float], float] | None = None,
-        create_collection_if_not_exists: bool | None = True,  # noqa: FBT001, FBT002
+        create_collection_if_not_exists: bool | None = True,  # noqa: FBT002
         *,
         ssl: bool = False,
     ) -> None:

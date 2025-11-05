@@ -218,7 +218,7 @@ class Crawler:
 
         def convert_name(
             node_name: str | None,
-            has_click_handler: bool | None,  # noqa: FBT001
+            has_click_handler: bool | None,
         ) -> str:
             if node_name == "a":
                 return "link"

@@ -34,7 +34,7 @@ class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
     def test_unicode_tool_call_integration(
         self,
         model: BaseChatModel,
-        tool_choice: str | None = None,  # noqa: PT028
-        force_tool_call: bool = True,  # noqa: FBT001, FBT002, PT028
+        tool_choice: str | None = None,
+        force_tool_call: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """Expected failure as ChatParrotLink doesn't support tool calling yet."""

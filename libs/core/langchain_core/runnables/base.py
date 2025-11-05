@@ -582,7 +582,7 @@ class Runnable(ABC, Generic[Input, Output]):
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         """Return a graph representation of this `Runnable`."""
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+        from langchain_core.runnables.graph import Graph
 
         graph = Graph()
         try:
@@ -605,7 +605,7 @@ class Runnable(ABC, Generic[Input, Output]):
     ) -> list[BasePromptTemplate]:
         """Return a list of prompts used by this `Runnable`."""
         # Import locally to prevent circular import
-        from langchain_core.prompts.base import BasePromptTemplate  # noqa: PLC0415
+        from langchain_core.prompts.base import BasePromptTemplate
 
         return [
             node.data
@@ -761,7 +761,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.passthrough import RunnablePick  # noqa: PLC0415
+        from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
 
@@ -808,7 +808,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.passthrough import RunnableAssign  # noqa: PLC0415
+        from langchain_core.runnables.passthrough import RunnableAssign
 
         return self | RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
 
@@ -1882,7 +1882,7 @@ class Runnable(ABC, Generic[Input, Output]):
             ```
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.retry import RunnableRetry  # noqa: PLC0415
+        from langchain_core.runnables.retry import RunnableRetry
 
         return RunnableRetry(
             bound=self,
@@ -1980,7 +1980,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 Fallback in order, upon failures.
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.fallbacks import (  # noqa: PLC0415
+        from langchain_core.runnables.fallbacks import (
             RunnableWithFallbacks,
         )
 
@@ -2529,7 +2529,7 @@ class Runnable(ABC, Generic[Input, Output]):
         ```
         """
         # Avoid circular import
-        from langchain_core.tools import convert_runnable_to_tool  # noqa: PLC0415
+        from langchain_core.tools import convert_runnable_to_tool
 
         return convert_runnable_to_tool(
             self,
@@ -2603,7 +2603,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         ```
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.configurable import (  # noqa: PLC0415
+        from langchain_core.runnables.configurable import (
             RunnableConfigurableFields,
         )
 
@@ -2664,7 +2664,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         ```
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.configurable import (  # noqa: PLC0415
+        from langchain_core.runnables.configurable import (
             RunnableConfigurableAlternatives,
         )
 
@@ -2681,7 +2681,7 @@ def _seq_input_schema(
     steps: list[Runnable[Any, Any]], config: RunnableConfig | None
 ) -> type[BaseModel]:
     # Import locally to prevent circular import
-    from langchain_core.runnables.passthrough import (  # noqa: PLC0415
+    from langchain_core.runnables.passthrough import (
         RunnableAssign,
         RunnablePick,
     )
@@ -2711,7 +2711,7 @@ def _seq_output_schema(
     steps: list[Runnable[Any, Any]], config: RunnableConfig | None
 ) -> type[BaseModel]:
     # Import locally to prevent circular import
-    from langchain_core.runnables.passthrough import (  # noqa: PLC0415
+    from langchain_core.runnables.passthrough import (
         RunnableAssign,
         RunnablePick,
     )
@@ -2994,7 +2994,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+        from langchain_core.runnables.graph import Graph
 
         graph = Graph()
         for step in self.steps:
@@ -3739,7 +3739,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
         """
         # Import locally to prevent circular import
-        from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+        from langchain_core.runnables.graph import Graph
 
         graph = Graph()
         input_node = graph.add_node(self.get_input_schema(config))
@@ -4603,7 +4603,7 @@ class RunnableLambda(Runnable[Input, Output]):
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         if deps := self.deps:
             # Import locally to prevent circular import
-            from langchain_core.runnables.graph import Graph  # noqa: PLC0415
+            from langchain_core.runnables.graph import Graph
 
             graph = Graph()
             input_node = graph.add_node(self.get_input_schema(config))

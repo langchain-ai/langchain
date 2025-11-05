@@ -107,7 +107,7 @@ def is_basemodel_subclass(cls: type) -> bool:
     if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
         return False
 
-    return issubclass(cls, (BaseModel, BaseModelV1))
+    return issubclass(cls, BaseModel | BaseModelV1)
 
 
 def is_basemodel_instance(obj: Any) -> bool:
@@ -121,7 +121,7 @@ def is_basemodel_instance(obj: Any) -> bool:
     Returns:
         `True` if the given class is an instance of Pydantic `BaseModel`.
     """
-    return isinstance(obj, (BaseModel, BaseModelV1))
+    return isinstance(obj, BaseModel | BaseModelV1)
 
 
 # How to type hint this?

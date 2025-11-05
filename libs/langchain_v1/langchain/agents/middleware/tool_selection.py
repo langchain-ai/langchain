@@ -135,7 +135,7 @@ class LLMToolSelectorMiddleware(AgentMiddleware):
         self.max_tools = max_tools
         self.always_include = always_include or []
 
-        if isinstance(model, (BaseChatModel, type(None))):
+        if isinstance(model, BaseChatModel | type(None)):
             self.model: BaseChatModel | None = model
         else:
             self.model = init_chat_model(model)

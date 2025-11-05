@@ -398,14 +398,14 @@ def from_env(
         Returns:
             The value from the environment.
         """
-        if isinstance(key, (list, tuple)):
+        if isinstance(key, list | tuple):
             for k in key:
                 if k in os.environ:
                     return os.environ[k]
         if isinstance(key, str) and key in os.environ:
             return os.environ[key]
 
-        if isinstance(default, (str, type(None))):
+        if isinstance(default, str | type(None)):
             return default
         if error_message:
             raise ValueError(error_message)
@@ -467,7 +467,7 @@ def secret_from_env(
         Returns:
             The secret from the environment.
         """
-        if isinstance(key, (list, tuple)):
+        if isinstance(key, list | tuple):
             for k in key:
                 if k in os.environ:
                     return SecretStr(os.environ[k])

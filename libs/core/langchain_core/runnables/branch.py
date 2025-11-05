@@ -101,7 +101,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         if not isinstance(
             default,
-            (Runnable, Callable, Mapping),  # type: ignore[arg-type]
+            Runnable | Callable | Mapping,  # type: ignore[arg-type]
         ):
             msg = "RunnableBranch default must be Runnable, callable or mapping."
             raise TypeError(msg)
@@ -113,7 +113,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         branches_ = []
 
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):
+            if not isinstance(branch, tuple | list):
                 msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"

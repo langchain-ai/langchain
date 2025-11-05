@@ -43,7 +43,7 @@ def get_from_dict_or_env(
     Returns:
         The dict value or the environment variable value.
     """
-    if isinstance(key, (list, tuple)):
+    if isinstance(key, list | tuple):
         for k in key:
             if value := data.get(k):
                 return value
@@ -51,7 +51,7 @@ def get_from_dict_or_env(
     if isinstance(key, str) and key in data and data[key]:
         return data[key]
 
-    key_for_err = key[0] if isinstance(key, (list, tuple)) else key
+    key_for_err = key[0] if isinstance(key, list | tuple) else key
 
     return get_from_env(key_for_err, env_key, default=default)
 

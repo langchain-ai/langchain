@@ -182,7 +182,7 @@ def _load_refine_chain(
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: bool | None = None,  # noqa: FBT001
+    verbose: bool | None = None,
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load a question answering with sources chain.

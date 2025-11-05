@@ -218,7 +218,7 @@ _MAX_TYPED_DICT_RECURSION = 25
 
 
 def _parse_google_docstring(
-    docstring: Optional[str],
+    docstring: str | None,
     args: list[str],
     *,
     error_on_invalid_docstring: bool = False,
@@ -385,7 +385,7 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
             return _convert_json_schema_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
-        if issubclass(tool.tool_call_schema, (BaseModel, BaseModelV1)):
+        if issubclass(tool.tool_call_schema, BaseModel | BaseModelV1):
             return _convert_pydantic_to_openai_function(
                 tool.tool_call_schema, name=tool.name, description=tool.description
             )
@@ -575,7 +575,7 @@ def convert_to_openai_tool(
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
-    from langchain_core.tools import Tool  # noqa: PLC0415
+    from langchain_core.tools import Tool
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:

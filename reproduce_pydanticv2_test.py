@@ -1,7 +1,7 @@
 import re
 import os
 import json
-from typing import Literal, Optional, Tuple, Union, Annotated
+from typing import Literal, Optional, Union
 from pydantic import (
     BaseModel,
     Field,
@@ -11,7 +11,7 @@ from pydantic import (
     ConfigDict,
 )
 from langchain_core.tools import tool
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
 
 # Ensure you have your OPENAI_API_KEY set as an environment variable
@@ -80,7 +80,7 @@ class DataSoilDashboardQueryPayloadQueryParamWhereFilter(BaseModel):
 
 class DataSoilDashboardQueryPayloadQueryParamWhere(BaseModel):
     time: list[Union[str, int]] = Field(
-        description=f"The target time range...", min_length=2, max_length=2
+        description="The target time range...", min_length=2, max_length=2
     )
     filters: list[DataSoilDashboardQueryPayloadQueryParamWhereFilter] = Field(
         description="Enums filtering or pattern filtering condition..."
@@ -123,50 +123,6 @@ class DataSoilDashboardQueryPayloadQueryParamGroupBy(BaseModel):
     orderBy: Optional[DataSoilDashboardQueryPayloadQueryParamOrderBy] = Field(
         description="Sorting config for query results...", default=None
     )
-
-
-class DataSoilDashboardQueryPayloadQueryParam(BaseModel):
-    queryType: Literal["DETAIL_TABLE"] = Field(
-        description="This is the description about queryType..."
-    )
-    interval: Literal[
-        "BY_ONE_MINUTE",
-        "BY_FIVE_MINUTE",
-        "BY_HOUR",
-        "BY_DAY",
-        "BY_WEEK",
-        "BY_MONTH",
-        "SUM",
-    ] = Field(description="The time granularity for time-based grouping analysis.")
-    resultField: list[str] = Field(default=[])
-    where: DataSoilDashboardQueryPayloadQueryParamWhere = Field(
-        description="Filtering condition for dimensions."
-    )
-    groupBy: list[DataSoilDashboardQueryPayloadQueryParamGroupBy] = Field(
-        description="A list of dimensions grouping analysis info..."
-    )
-    orderBy: DataSoilDashboardQueryPayloadQueryParamOrderBy = Field(
-        description="Sorting config for query results..."
-    )
-    heavyQuery: bool = Field(default=False)
-
-    @field_validator("groupBy")
-    def groupBy_block(
-        cls,
-        v: list[DataSoilDashboardQueryPayloadQueryParamGroupBy],
-        info: ValidationInfo,
-    ) -> list[DataSoilDashboardQueryPayloadQueryParamGroupBy]:
-        if "dt" in {e.field for e in v}:
-            if info.data.get("interval") == "SUM":
-                raise ValueError(
-                    "Instruction: the interval can not be **SUM** when **time-based grouping is required**."
-                )
-        else:
-            if info.data.get("interval") != "SUM":
-                raise ValueError(
-                    "Instruction: the interval must be **SUM** when **time-based grouping is not required**."
-                )
-        return v
 
 
 class DataSoilDashboardQueryPayload(BaseModel):
