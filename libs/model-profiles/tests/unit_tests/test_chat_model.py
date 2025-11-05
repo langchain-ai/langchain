@@ -9,6 +9,7 @@ def test_chat_model() -> None:
     assert model.profile
     assert model.profile["max_input_tokens"] == 400000
     assert model.profile["structured_output"]
+    assert model.profile["pdf_inputs"]
 
 
 def test_chat_model_no_data() -> None:

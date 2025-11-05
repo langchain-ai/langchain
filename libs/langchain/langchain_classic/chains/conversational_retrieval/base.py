@@ -337,17 +337,17 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     The algorithm for this chain consists of three parts:
 
     1. Use the chat history and the new question to create a "standalone question".
-    This is done so that this question can be passed into the retrieval step to fetch
-    relevant documents. If only the new question was passed in, then relevant context
-    may be lacking. If the whole conversation was passed into retrieval, there may
-    be unnecessary information there that would distract from retrieval.
+        This is done so that this question can be passed into the retrieval step to
+        fetch relevant documents. If only the new question was passed in, then relevant
+        context may be lacking. If the whole conversation was passed into retrieval,
+        there may be unnecessary information there that would distract from retrieval.
 
     2. This new question is passed to the retriever and relevant documents are
-    returned.
+        returned.
 
     3. The retrieved documents are passed to an LLM along with either the new question
-    (default behavior) or the original question and chat history to generate a final
-    response.
+        (default behavior) or the original question and chat history to generate a final
+        response.
 
     Example:
         ```python
@@ -357,7 +357,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             ConversationalRetrievalChain,
         )
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         combine_docs_chain = StuffDocumentsChain(...)
         vectorstore = ...

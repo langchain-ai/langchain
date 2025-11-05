@@ -154,7 +154,8 @@ def get_model_profile(provider: str, model: str) -> ModelProfile | None:
         "image_url_inputs": data.get("image_url_inputs"),
         "image_tool_message": data.get("image_tool_message"),
         "audio_inputs": "audio" in data.get("modalities", {}).get("input", []),
-        "pdf_inputs": "pdf" in data.get("modalities", {}).get("input", []),
+        "pdf_inputs": "pdf" in data.get("modalities", {}).get("input", [])
+        or data.get("pdf_inputs"),
         "pdf_tool_message": data.get("pdf_tool_message"),
         "video_inputs": "video" in data.get("modalities", {}).get("input", []),
         "max_output_tokens": data.get("limit", {}).get("output"),

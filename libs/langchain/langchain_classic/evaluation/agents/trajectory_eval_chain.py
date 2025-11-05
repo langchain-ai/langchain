@@ -104,7 +104,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     Example:
     ```python
     from langchain_classic.agents import AgentType, initialize_agent
-    from langchain_community.chat_models import ChatOpenAI
+    from langchain_openai import ChatOpenAI
     from langchain_classic.evaluation import TrajectoryEvalChain
     from langchain_classic.tools import tool
 
