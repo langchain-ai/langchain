@@ -1268,11 +1268,14 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(
-                tool_node=tool_node,
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_tools_to_model_edge(
+                    tool_node=tool_node,
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             tools_to_model_destinations,
         )
@@ -1289,19 +1292,25 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_tools_edge(
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_tools_edge(
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             model_to_tools_destinations,
         )
     elif len(structured_output_tools) > 0:
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_model_edge(
-                model_destination=loop_entry_node,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_model_edge(
+                    model_destination=loop_entry_node,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             [loop_entry_node, exit_node],
         )
@@ -1602,7 +1611,7 @@ def _add_middleware_edge(
         if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
-        graph.add_conditional_edges(name, jump_edge, destinations)
+        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)
 
     else:
         graph.add_edge(name, default_destination)
