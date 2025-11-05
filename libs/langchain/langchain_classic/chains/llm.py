@@ -64,7 +64,7 @@ class LLMChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import LLMChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_core.prompts import PromptTemplate
 
         prompt_template = "Tell me a {adjective} joke"

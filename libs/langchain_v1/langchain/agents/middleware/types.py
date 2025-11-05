@@ -50,6 +50,8 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "ResponseT",
+    "StateT_co",
     "ToolCallRequest",
     "ToolCallWrapper",
     "after_agent",
@@ -192,6 +194,7 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
 
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
+StateT_co = TypeVar("StateT_co", bound=AgentState, default=AgentState, covariant=True)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
