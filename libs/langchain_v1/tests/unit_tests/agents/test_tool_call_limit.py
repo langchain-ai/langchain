@@ -19,7 +19,7 @@ def test_middleware_initialization_validation():
     with pytest.raises(ValueError, match="At least one limit must be specified"):
         ToolCallLimitMiddleware()
 
-    # Test valid initialization
+    # Test valid initialization with both limits
     middleware = ToolCallLimitMiddleware(thread_limit=5, run_limit=3)
     assert middleware.thread_limit == 5
     assert middleware.run_limit == 3
@@ -32,15 +32,10 @@ def test_middleware_initialization_validation():
     assert middleware.thread_limit == 5
     assert middleware.run_limit is None
 
-    # Test different exit behaviors
-    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="error")
-    assert middleware.exit_behavior == "error"
-
-    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="end")
-    assert middleware.exit_behavior == "end"
-
-    middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior="continue")
-    assert middleware.exit_behavior == "continue"
+    # Test exit behaviors
+    for behavior in ["error", "end", "continue"]:
+        middleware = ToolCallLimitMiddleware(thread_limit=5, exit_behavior=behavior)
+        assert middleware.exit_behavior == behavior
 
 
 def test_middleware_name_property():
@@ -91,13 +86,14 @@ def test_middleware_unit_functionality():
             AIMessage("Response 2", tool_calls=[{"name": "search", "args": {}, "id": "3"}]),
         ],
         "thread_tool_call_count": {"__all__": 3},
-        "run_tool_call_count": {"__all__": 1},
+        "run_tool_call_count": {"__all__": 3},
     }
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
     # Check the ToolMessage (sent to model - no thread/run details)
     tool_msg = result["messages"][0]
+    assert isinstance(tool_msg, ToolMessage)
     assert tool_msg.status == "error"
     assert "Tool call limit exceeded" in tool_msg.content
     # When thread limit exceeded, should include "Do not" instruction
@@ -105,25 +101,28 @@ def test_middleware_unit_functionality():
         "Tool message should include 'Do not' instruction when thread limit exceeded"
     )
     # Check the final AI message (displayed to user - includes thread/run details)
-    assert "limit" in result["messages"][-1].content.lower()
-    assert "thread limit exceeded" in result["messages"][-1].content.lower()
+    final_ai_msg = result["messages"][-1]
+    assert isinstance(final_ai_msg, AIMessage)
+    assert "limit" in final_ai_msg.content.lower()
+    assert "thread limit exceeded" in final_ai_msg.content.lower()
     assert result["thread_tool_call_count"] == {"__all__": 4}
 
-    # Test run limit exceeded
+    # Test run limit exceeded (thread count must be >= run count)
     state = {
         "messages": [
             HumanMessage("Question"),
             AIMessage("Response", tool_calls=[{"name": "search", "args": {}, "id": "1"}]),
         ],
-        "thread_tool_call_count": {"__all__": 0},
+        "thread_tool_call_count": {"__all__": 2},
         "run_tool_call_count": {"__all__": 2},
     }
     result = middleware.after_model(state, runtime)  # type: ignore[arg-type]
     assert result is not None
     assert result["jump_to"] == "end"
     # Check the final AI message includes run limit details
-    assert "run limit exceeded" in result["messages"][-1].content
-    assert "3/2 calls" in result["messages"][-1].content
+    final_ai_msg = result["messages"][-1]
+    assert "run limit exceeded" in final_ai_msg.content
+    assert "3/2 calls" in final_ai_msg.content
     # Check the tool message (sent to model) - when only run limit exceeded,
     # should not include "Do not" instruction since run is ending anyway
     tool_msg = result["messages"][0]
@@ -270,14 +269,12 @@ def test_multiple_middleware_instances():
 
     # The agent should stop after the second iteration
     # because search will hit its limit (3 calls > 2 limit)
-    messages = result["messages"]
-    assert len(messages) > 0
-
-    # Look for the limit message
-    limit_messages = [
-        msg for msg in messages if isinstance(msg, AIMessage) and "limit" in msg.content.lower()
+    ai_limit_messages = [
+        msg
+        for msg in result["messages"]
+        if isinstance(msg, AIMessage) and "limit" in msg.content.lower()
     ]
-    assert len(limit_messages) > 0
+    assert len(ai_limit_messages) > 0, "Should have AI message explaining limit was exceeded"
 
 
 def test_run_limit_with_multiple_human_messages():
@@ -310,19 +307,18 @@ def test_run_limit_with_multiple_human_messages():
         {"messages": [HumanMessage("Question 1")]},
         {"configurable": {"thread_id": "test_thread"}},
     )
-    messages = result1["messages"]
-    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
-    successful_tool_messages = [m for m in tool_messages if m.status != "error"]
-    error_tool_messages = [m for m in tool_messages if m.status == "error"]
-    ai_limit_messages = [
-        m
-        for m in messages
-        if isinstance(m, AIMessage) and "limit" in m.content.lower() and not m.tool_calls
+    tool_messages = [msg for msg in result1["messages"] if isinstance(msg, ToolMessage)]
+    successful_tool_msgs = [msg for msg in tool_messages if msg.status != "error"]
+    error_tool_msgs = [msg for msg in tool_messages if msg.status == "error"]
+    ai_limit_msgs = [
+        msg
+        for msg in result1["messages"]
+        if isinstance(msg, AIMessage) and "limit" in msg.content.lower() and not msg.tool_calls
     ]
 
-    assert len(successful_tool_messages) == 1, "Should have 1 successful tool execution (test1)"
-    assert len(error_tool_messages) == 1, "Should have 1 artificial error ToolMessage (test2)"
-    assert len(ai_limit_messages) == 1, "Should have AI limit message after test2 proposed"
+    assert len(successful_tool_msgs) == 1, "Should have 1 successful tool execution (test1)"
+    assert len(error_tool_msgs) == 1, "Should have 1 artificial error ToolMessage (test2)"
+    assert len(ai_limit_msgs) == 1, "Should have AI limit message after test2 proposed"
 
     # Second invocation: run limit should reset, allowing continued execution
     result2 = agent.invoke(
@@ -338,23 +334,21 @@ def test_run_limit_with_multiple_human_messages():
 def test_exception_error_messages():
     """Test that error messages include expected information."""
     # Test for specific tool
-    try:
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
         raise ToolCallLimitExceededError(
             thread_count=5, run_count=3, thread_limit=4, run_limit=2, tool_name="search"
         )
-    except ToolCallLimitExceededError as e:
-        msg = str(e)
-        assert "search" in msg.lower()
-        assert "5/4" in msg or "thread" in msg.lower()
+    msg = str(exc_info.value)
+    assert "search" in msg.lower()
+    assert "5/4" in msg or "thread" in msg.lower()
 
     # Test for all tools
-    try:
+    with pytest.raises(ToolCallLimitExceededError) as exc_info:
         raise ToolCallLimitExceededError(
             thread_count=10, run_count=5, thread_limit=8, run_limit=None, tool_name=None
         )
-    except ToolCallLimitExceededError as e:
-        msg = str(e)
-        assert "10/8" in msg or "thread" in msg.lower()
+    msg = str(exc_info.value)
+    assert "10/8" in msg or "thread" in msg.lower()
 
 
 def test_limit_reached_but_not_exceeded():
@@ -437,19 +431,20 @@ def test_exit_behavior_continue():
         {"configurable": {"thread_id": "test_thread"}},
     )
 
-    messages = result["messages"]
-    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
 
     # Verify search has 2 successful + 1 blocked, calculator has all 3 successful
-    search_success = [m for m in tool_messages if "Search:" in m.content]
-    search_blocked = [
-        m for m in tool_messages if "limit" in m.content.lower() and "search" in m.content.lower()
+    successful_search_msgs = [msg for msg in tool_messages if "Search:" in msg.content]
+    blocked_search_msgs = [
+        msg
+        for msg in tool_messages
+        if "limit" in msg.content.lower() and "search" in msg.content.lower()
     ]
-    calc_success = [m for m in tool_messages if "Calc:" in m.content]
+    successful_calc_msgs = [msg for msg in tool_messages if "Calc:" in msg.content]
 
-    assert len(search_success) == 2, "Should have 2 successful search calls"
-    assert len(search_blocked) == 1, "Should have 1 blocked search call with limit error"
-    assert len(calc_success) == 3, "All calculator calls should succeed"
+    assert len(successful_search_msgs) == 2, "Should have 2 successful search calls"
+    assert len(blocked_search_msgs) == 1, "Should have 1 blocked search call with limit error"
+    assert len(successful_calc_msgs) == 3, "All calculator calls should succeed"
 
 
 def test_end_behavior_creates_artificial_messages():
@@ -457,7 +452,7 @@ def test_end_behavior_creates_artificial_messages():
 
     Verifies that when limit is exceeded with exit_behavior='end', the middleware:
     1. Injects an artificial error ToolMessage for the blocked tool call
-    2. Adds an AI message instructing the model not to call the tool again
+    2. Adds an AI message explaining the limit to the user
     3. Jumps to end, stopping execution
     """
 
@@ -483,12 +478,11 @@ def test_end_behavior_creates_artificial_messages():
     result = agent.invoke(
         {"messages": [HumanMessage("Test")]}, {"configurable": {"thread_id": "test"}}
     )
-    messages = result["messages"]
 
     # Verify AI message explaining the limit (displayed to user - includes thread/run details)
     ai_limit_messages = [
         msg
-        for msg in messages
+        for msg in result["messages"]
         if isinstance(msg, AIMessage) and "limit" in msg.content.lower() and not msg.tool_calls
     ]
     assert len(ai_limit_messages) == 1, "Should have exactly one AI message explaining the limit"
@@ -499,15 +493,15 @@ def test_end_behavior_creates_artificial_messages():
     )
 
     # Verify tool message counts
-    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
-    successful_tool_messages = [msg for msg in tool_messages if msg.status != "error"]
-    error_tool_messages = [msg for msg in tool_messages if msg.status == "error"]
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    successful_tool_msgs = [msg for msg in tool_messages if msg.status != "error"]
+    error_tool_msgs = [msg for msg in tool_messages if msg.status == "error"]
 
-    assert len(successful_tool_messages) == 2, "Should have 2 successful tool messages (q1, q2)"
-    assert len(error_tool_messages) == 1, "Should have 1 artificial error tool message (q3)"
+    assert len(successful_tool_msgs) == 2, "Should have 2 successful tool messages (q1, q2)"
+    assert len(error_tool_msgs) == 1, "Should have 1 artificial error tool message (q3)"
 
     # Verify the error tool message (sent to model - no thread/run details, includes instruction)
-    error_msg_content = error_tool_messages[0].content
+    error_msg_content = error_tool_msgs[0].content
     assert "Tool call limit exceeded" in error_msg_content
     assert "Do not" in error_msg_content, (
         "Tool message should instruct model not to call tool again"
