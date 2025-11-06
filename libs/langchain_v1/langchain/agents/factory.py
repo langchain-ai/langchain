@@ -364,6 +364,30 @@ def _supports_provider_strategy(model: str | BaseChatModel) -> bool:
     )
 
 
+def _get_forced_tool_choice(model: BaseChatModel) -> str:
+    """Get the appropriate tool_choice value for forcing tool use by provider.
+
+    Different model providers use different values to force tool calling:
+    - OpenAI and most providers: "any"
+    - Cohere: "REQUIRED"
+
+    Args:
+        model: The `BaseChatModel` instance.
+
+    Returns:
+        The provider-specific tool_choice value for forcing tool use.
+    """
+    model_name = getattr(model, "model_name", "").lower()
+
+    # Cohere models use "REQUIRED" instead of "any"
+    # Cohere model names include: command, command-r, command-r-plus, c4ai, aya
+    if any(prefix in model_name for prefix in ["command", "c4ai", "aya"]):
+        return "REQUIRED"
+
+    # Default to OpenAI-style "any" for most providers
+    return "any"
+
+
 def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat,
@@ -1005,7 +1029,11 @@ def create_agent(  # noqa: PLR0915
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            tool_choice = (
+                _get_forced_tool_choice(request.model)
+                if structured_output_tools
+                else request.tool_choice
+            )
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings

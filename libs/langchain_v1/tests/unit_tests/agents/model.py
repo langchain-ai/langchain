@@ -29,6 +29,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
     structured_response: StructuredResponseT | None = None
     index: int = 0
     tool_style: Literal["openai", "anthropic"] = "openai"
+    model_name: str = "fake-model"
 
     def _generate(
         self,
