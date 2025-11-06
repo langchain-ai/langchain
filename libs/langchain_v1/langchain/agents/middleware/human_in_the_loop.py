@@ -1,8 +1,9 @@
 """Human in the loop middleware."""
 
+import json
 from typing import Any, Literal, Protocol
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
@@ -244,15 +245,24 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return tool_call, None
         if decision["type"] == "edit" and "edit" in allowed_decisions:
             edited_action = decision["edited_action"]
-            return (
-                ToolCall(
-                    type="tool_call",
-                    name=edited_action["name"],
-                    args=edited_action["args"],
-                    id=tool_call["id"],
-                ),
-                None,
+            edited_tool_call = ToolCall(
+                type="tool_call",
+                name=edited_action["name"],
+                args=edited_action["args"],
+                id=tool_call["id"],
             )
+            # Create a HumanMessage to inform the AI that the tool call was edited
+            # We use HumanMessage instead of ToolMessage to avoid interfering with
+            # the actual tool execution (ToolMessage with same tool_call_id could
+            # prevent the tool from being executed)
+            edit_context_message = HumanMessage(
+                content=(
+                    f"[System Note] The user edited the proposed tool call '{tool_call['name']}'. "
+                    f"The tool will execute with these modified arguments: "
+                    f"{json.dumps(edited_action['args'], indent=2)}"
+                ),
+            )
+            return edited_tool_call, edit_context_message
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
             content = decision.get("message") or (
