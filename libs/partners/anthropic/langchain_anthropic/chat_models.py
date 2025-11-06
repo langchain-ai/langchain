@@ -2408,7 +2408,7 @@ class ChatAnthropic(BaseChatModel):
         403
         ```
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-anthropic` 0.3.0"
             Uses Anthropic's [token counting API](https://docs.claude.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
         """  # noqa: D214,E501

@@ -955,13 +955,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.0"
             `method` default changed from "function_calling" to "json_schema".
 
-        !!! warning "Behavior changed in 0.3.12"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.12"
             Support for `tools` added.
 
-        !!! warning "Behavior changed in 0.3.21"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.21"
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

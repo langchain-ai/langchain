@@ -298,7 +298,7 @@ def index(
     For the time being, documents are indexed using their hashes, and users
     are not able to specify the uid of the document.
 
-    !!! warning "Behavior changed in 0.3.25"
+    !!! warning "Behavior changed in `langchain-core` 0.3.25"
         Added `scoped_full` cleanup mode.
 
     !!! warning
@@ -636,7 +636,7 @@ async def aindex(
     For the time being, documents are indexed using their hashes, and users
     are not able to specify the uid of the document.
 
-    !!! warning "Behavior changed in 0.3.25"
+    !!! warning "Behavior changed in `langchain-core` 0.3.25"
         Added `scoped_full` cleanup mode.
 
     !!! warning
