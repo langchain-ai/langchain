@@ -1034,24 +1034,19 @@ def test_summarization_middleware_initialization() -> None:
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(
         model=model,
-        max_tokens_before_summary=1000,
-        messages_to_keep=10,
+        trigger=("tokens", 1000),
+        keep=("messages", 10),
         summary_prompt="Custom prompt: {messages}",
     )
 
     assert middleware.model == model
-    assert middleware.max_tokens_before_summary == 1000
-    assert middleware.messages_to_keep == 10
+    assert middleware.trigger == ("tokens", 1000)
+    assert middleware.keep == ("messages", 10)
     assert middleware.summary_prompt == "Custom prompt: {messages}"
-    assert middleware.tokens_to_keep is None
     assert middleware.trim_tokens_to_summarize == 4000
 
     with pytest.raises(ValueError):
-        SummarizationMiddleware(model=model, tokens_to_keep=0.5)  # no model profile
-
-    # Test that both messages_to_keep and tokens_to_keep cannot be specified
-    with pytest.raises(ValueError, match="Cannot specify both"):
-        SummarizationMiddleware(model=model, messages_to_keep=10, tokens_to_keep=0.5)
+        SummarizationMiddleware(model=model, keep=("fraction", 0.5))  # no model profile
 
     # Test with string model
     with patch(
@@ -1065,10 +1060,10 @@ def test_summarization_middleware_initialization() -> None:
 def test_summarization_middleware_no_summarization_cases() -> None:
     """Test SummarizationMiddleware when summarization is not needed or disabled."""
     model = FakeToolCallingModel()
-    middleware = SummarizationMiddleware(model=model, max_tokens_before_summary=1000)
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
 
     # Test when summarization is disabled
-    middleware_disabled = SummarizationMiddleware(model=model, max_tokens_before_summary=None)
+    middleware_disabled = SummarizationMiddleware(model=model, trigger=None)
     state = {"messages": [HumanMessage(content="Hello"), AIMessage(content="Hi")]}
     result = middleware_disabled.before_model(state, None)
     assert result is None
@@ -1085,7 +1080,7 @@ def test_summarization_middleware_no_summarization_cases() -> None:
 def test_summarization_middleware_helper_methods() -> None:
     """Test SummarizationMiddleware helper methods."""
     model = FakeToolCallingModel()
-    middleware = SummarizationMiddleware(model=model, max_tokens_before_summary=1000)
+    middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
 
     # Test message ID assignment
     messages = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
@@ -1132,7 +1127,7 @@ def test_summarization_middleware_tool_call_safety() -> None:
     """Test SummarizationMiddleware tool call safety logic."""
     model = FakeToolCallingModel()
     middleware = SummarizationMiddleware(
-        model=model, max_tokens_before_summary=1000, messages_to_keep=3
+        model=model, trigger=("tokens", 1000), keep=("messages", 3)
     )
 
     # Test safe cutoff point detection with tool calls
@@ -1170,7 +1165,7 @@ def test_summarization_middleware_summary_creation() -> None:
         def _llm_type(self):
             return "mock"
 
-    middleware = SummarizationMiddleware(model=MockModel(), max_tokens_before_summary=1000)
+    middleware = SummarizationMiddleware(model=MockModel(), trigger=("tokens", 1000))
 
     # Test normal summary creation
     messages = [HumanMessage(content="Hello"), AIMessage(content="Hi")]
@@ -1193,9 +1188,15 @@ def test_summarization_middleware_summary_creation() -> None:
         def _llm_type(self):
             return "mock"
 
-    middleware_error = SummarizationMiddleware(model=ErrorModel(), max_tokens_before_summary=1000)
+    middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
     summary = middleware_error._create_summary(messages)
     assert "Error generating summary: Model error" in summary
+
+    # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
+    with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
+        SummarizationMiddleware(model=MockModel(), max_tokens_before_summary=500)
+    with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
+        SummarizationMiddleware(model=MockModel(), messages_to_keep=5)
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
@@ -1239,8 +1240,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.80,
-        tokens_to_keep=0.5,
+        trigger=("fraction", 0.81),
+        keep=("fraction", 0.5),
         token_counter=token_counter,
     )
 
@@ -1265,8 +1266,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # 800 + 150 + 51 > 1000
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.79,
-        tokens_to_keep=0.5,
+        trigger=("fraction", 0.80),
+        keep=("fraction", 0.5),
         token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
@@ -1285,8 +1286,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # so the cutoff shifts to keep the last three messages instead of two.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.79,
-        tokens_to_keep=0.6,
+        trigger=("fraction", 0.80),
+        keep=("fraction", 0.6),
         token_counter=token_counter,
     )
     result = middleware.before_model(state, None)
@@ -1302,8 +1303,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # and summarization is skipped entirely.
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.79,
-        tokens_to_keep=0.8,
+        trigger=("fraction", 0.80),
+        keep=("fraction", 0.8),
         token_counter=token_counter,
     )
     assert middleware.before_model(state, None) is None
@@ -1311,8 +1312,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # Test with tokens_to_keep as absolute int value
     middleware_int = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.79,
-        tokens_to_keep=400,  # Keep exactly 400 tokens (2 messages)
+        trigger=("fraction", 0.80),
+        keep=("tokens", 400),  # Keep exactly 400 tokens (2 messages)
         token_counter=token_counter,
     )
     result = middleware_int.before_model(state, None)
@@ -1325,8 +1326,8 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # Test with tokens_to_keep as larger int value
     middleware_int_large = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.79,
-        tokens_to_keep=600,  # Keep 600 tokens (3 messages)
+        trigger=("fraction", 0.80),
+        keep=("tokens", 600),  # Keep 600 tokens (3 messages)
         token_counter=token_counter,
     )
     result = middleware_int_large.before_model(state, None)
@@ -1358,8 +1359,8 @@ def test_summarization_middleware_token_retention_pct_respects_tool_pairs() -> N
 
     middleware = SummarizationMiddleware(
         model=ProfileModel(),
-        max_tokens_before_summary=0.1,  # engage summarization
-        tokens_to_keep=0.5,
+        trigger=("fraction", 0.1),
+        keep=("fraction", 0.5),
     )
     middleware.token_counter = token_counter
 
@@ -1421,7 +1422,7 @@ def test_summarization_middleware_profile_inference_fallbacks() -> None:
     ]
 
     for model in models:
-        middleware = SummarizationMiddleware(model=model, messages_to_keep=1)
+        middleware = SummarizationMiddleware(model=model, keep=("messages", 1))
         middleware.token_counter = lambda _messages: 10_000
         state = {"messages": [HumanMessage(content=str(i)) for i in range(3)]}
         result = middleware.before_model(state, None)
@@ -1442,9 +1443,11 @@ def test_summarization_middleware_full_workflow() -> None:
         def _llm_type(self):
             return "mock"
 
-    middleware = SummarizationMiddleware(
-        model=MockModel(), max_tokens_before_summary=1000, messages_to_keep=2
-    )
+    with pytest.warns(DeprecationWarning):
+        # keep test for functionality
+        middleware = SummarizationMiddleware(
+            model=MockModel(), max_tokens_before_summary=1000, messages_to_keep=2
+        )
 
     # Mock high token count to trigger summarization
     def mock_token_counter(messages):
@@ -1498,7 +1501,7 @@ def test_summarization_middleware_messages_before_summary() -> None:
 
     # Test that summarization is triggered when message count reaches threshold
     middleware = SummarizationMiddleware(
-        model=MockModel(), messages_before_summary=5, messages_to_keep=2
+        model=MockModel(), trigger=("messages", 5), keep=("messages", 2)
     )
 
     # Below threshold - no summarization
@@ -1533,9 +1536,7 @@ def test_summarization_middleware_messages_before_summary() -> None:
     assert "messages" in result
 
     # Test with both parameters disabled
-    middleware_disabled = SummarizationMiddleware(
-        model=MockModel(), messages_before_summary=None, max_tokens_before_summary=None
-    )
+    middleware_disabled = SummarizationMiddleware(model=MockModel(), trigger=None)
     result = middleware_disabled.before_model(state_above, None)
     assert result is None
 

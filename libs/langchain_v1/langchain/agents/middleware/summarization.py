@@ -1,8 +1,9 @@
 """Summarization middleware."""
 
 import uuid
+import warnings
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from langchain_core.messages import (
     AIMessage,
@@ -56,6 +57,12 @@ _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
+ContextFraction = tuple[Literal["fraction"], float]
+ContextTokens = tuple[Literal["tokens"], int]
+ContextMessages = tuple[Literal["messages"], int]
+
+ContextSize = ContextFraction | ContextTokens | ContextMessages
+
 
 class SummarizationMiddleware(AgentMiddleware):
     """Summarizes conversation history when token limits are approached.
@@ -69,62 +76,79 @@ class SummarizationMiddleware(AgentMiddleware):
         self,
         model: str | BaseChatModel,
         *,
-        max_tokens_before_summary: float | None = None,
-        messages_before_summary: int | None = None,
-        messages_to_keep: int | None = None,
-        tokens_to_keep: float | None = None,
+        trigger: ContextSize | list[ContextSize] | None = None,
+        keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        **deprecated_kwargs: Any,
     ) -> None:
         """Initialize the summarization middleware.
 
         Args:
             model: The language model to use for generating summaries.
-            max_tokens_before_summary: Token threshold to trigger summarization.
-                If `None`, token-based summarization is disabled.
-                If >= 1, treats as an absolute token count threshold.
-                If a float between 0 and 1 and model profile information is available,
-                triggers summarization at `max_input_tokens * max_tokens_before_summary`.
-            messages_before_summary: Message count threshold to trigger summarization.
-                If `None`, message-based summarization is disabled.
-            messages_to_keep: Number of recent messages to preserve after summarization.
-                Cannot be specified together with `tokens_to_keep`. If neither `tokens_to_keep`
-                nor `messages_to_keep` is specified, defaults to preserving 20 messages.
-            tokens_to_keep: Number of tokens to preserve after summarization.
-                If a float between 0 and 1, retains `max_input_tokens * tokens_to_keep`.
-                If >= 1, treats as an absolute token count to retain.
-                Cannot be specified together with `messages_to_keep`.
+            trigger: One or more thresholds that trigger summarization. Provide a single
+                `ContextSize` tuple or a list of tuples, in which case summarization runs
+                when any threshold is breached. Examples: `("messages", 50)`, `("tokens", 3000)`,
+                `[("fraction", 0.8), ("messages", 100)]`.
+            keep: Context retention policy applied after summarization. Provide a
+                `ContextSize` tuple to specify how much history to preserve. Defaults to
+                keeping the most recent 20 messages. Examples: `("messages", 20)`,
+                `("tokens", 3000)`, or `("fraction", 0.3)`.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.
             trim_tokens_to_summarize: Maximum tokens to keep when preparing messages for the
                 summarization call. Pass `None` to skip trimming entirely.
         """
+        # Handle deprecated parameters
+        if "max_tokens_before_summary" in deprecated_kwargs:
+            value = deprecated_kwargs["max_tokens_before_summary"]
+            warnings.warn(
+                "max_tokens_before_summary is deprecated. Use trigger=('tokens', value) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if trigger is None and value is not None:
+                trigger = ("tokens", value)
+
+        if "messages_to_keep" in deprecated_kwargs:
+            value = deprecated_kwargs["messages_to_keep"]
+            warnings.warn(
+                "messages_to_keep is deprecated. Use keep=('messages', value) instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if keep == ("messages", _DEFAULT_MESSAGES_TO_KEEP):
+                keep = ("messages", value)
+
         super().__init__()
-
-        if messages_to_keep is not None and tokens_to_keep is not None:
-            msg = "Cannot specify both 'messages_to_keep' and 'tokens_to_keep'"
-            raise ValueError(msg)
-
-        if messages_to_keep is None and tokens_to_keep is None:
-            messages_to_keep = _DEFAULT_MESSAGES_TO_KEEP
 
         if isinstance(model, str):
             model = init_chat_model(model)
 
         self.model = model
-        self.max_tokens_before_summary = max_tokens_before_summary
-        self.messages_before_summary = messages_before_summary
-        self.messages_to_keep = messages_to_keep
-        self.tokens_to_keep = tokens_to_keep
+        if trigger is None:
+            self.trigger: ContextSize | list[ContextSize] | None = None
+            trigger_conditions: list[ContextSize] = []
+        elif isinstance(trigger, list):
+            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
+            self.trigger = validated_list
+            trigger_conditions = validated_list
+        else:
+            validated = self._validate_context_size(trigger, "trigger")
+            self.trigger = validated
+            trigger_conditions = [validated]
+        self._trigger_conditions = trigger_conditions
+
+        self.keep = self._validate_context_size(keep, "keep")
         self.token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
 
-        if (
-            (tokens_to_keep is not None and 0 < tokens_to_keep < 1)
-            or (max_tokens_before_summary is not None and 0 < max_tokens_before_summary < 1)
-        ) and self._get_profile_limits() is None:
+        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        if self.keep[0] == "fraction":
+            requires_profile = True
+        if requires_profile and self._get_profile_limits() is None:
             msg = (
                 "Model profile information is required to use fractional token limits. "
                 'pip install "langchain[model-profiles]" or use absolute token counts '
@@ -161,48 +185,52 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
-        if self.messages_before_summary is not None and (
-            len(messages) >= self.messages_before_summary
-        ):
-            return True
-
-        if self.max_tokens_before_summary is None:
+        if not self._trigger_conditions:
             return False
 
-        # Handle fractional case
-        if 0 < self.max_tokens_before_summary < 1:
-            max_input_tokens = self._get_profile_limits()
-            if max_input_tokens is None:
-                return False
-            threshold = int(max_input_tokens * self.max_tokens_before_summary)
-            return total_tokens > threshold
-
-        # Interpret as absolute token count
-        return total_tokens >= self.max_tokens_before_summary
+        for kind, value in self._trigger_conditions:
+            if kind == "messages" and len(messages) >= value:
+                return True
+            if kind == "tokens" and total_tokens >= value:
+                return True
+            if kind == "fraction":
+                max_input_tokens = self._get_profile_limits()
+                if max_input_tokens is None:
+                    continue
+                threshold = int(max_input_tokens * value)
+                if threshold <= 0:
+                    threshold = 1
+                if total_tokens >= threshold:
+                    return True
+        return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
         """Choose cutoff index respecting retention configuration."""
-        if self.tokens_to_keep is not None:
+        kind, value = self.keep
+        if kind in {"tokens", "fraction"}:
             token_based_cutoff = self._find_token_based_cutoff(messages)
             if token_based_cutoff is not None:
                 return token_based_cutoff
-        return self._find_safe_cutoff(messages)
+            # None cutoff -> model profile data not available (caught in __init__ but
+            # here for safety), fallback to message count
+            return self._find_safe_cutoff(messages, _DEFAULT_MESSAGES_TO_KEEP)
+        return self._find_safe_cutoff(messages, cast("int", value))
 
     def _find_token_based_cutoff(self, messages: list[AnyMessage]) -> int | None:
         """Find cutoff index based on target token retention."""
         if not messages:
             return 0
 
-        tokens_to_keep = cast("float | int", self.tokens_to_keep)
-        if 0 < tokens_to_keep < 1:
-            # fraction of max_input_tokens, if available
+        kind, value = self.keep
+        if kind == "fraction":
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens is None:
                 return None
-            target_token_count = int(max_input_tokens * tokens_to_keep)
+            target_token_count = int(max_input_tokens * value)
+        elif kind == "tokens":
+            target_token_count = int(value)
         else:
-            # absolute token count
-            target_token_count = int(tokens_to_keep)
+            return None
 
         if target_token_count <= 0:
             target_token_count = 1
@@ -257,6 +285,22 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
+    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+        """Validate context configuration tuples."""
+        kind, value = context
+        if kind == "fraction":
+            if not 0 < value <= 1:
+                msg = f"Fractional {parameter_name} values must be between 0 and 1, got {value}."
+                raise ValueError(msg)
+        elif kind in {"tokens", "messages"}:
+            if value <= 0:
+                msg = f"{parameter_name} thresholds must be greater than 0, got {value}."
+                raise ValueError(msg)
+        else:
+            msg = f"Unsupported context size type {kind} for {parameter_name}."
+            raise ValueError(msg)
+        return context
+
     def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [
             HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
@@ -279,13 +323,12 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return messages_to_summarize, preserved_messages
 
-    def _find_safe_cutoff(self, messages: list[AnyMessage]) -> int:
+    def _find_safe_cutoff(self, messages: list[AnyMessage], messages_to_keep: int) -> int:
         """Find safe cutoff point that preserves AI/Tool message pairs.
 
         Returns the index where messages can be safely cut without separating
         related AI and Tool messages. Returns 0 if no safe cutoff is found.
         """
-        messages_to_keep = self.messages_to_keep or _DEFAULT_MESSAGES_TO_KEEP
         if len(messages) <= messages_to_keep:
             return 0
 
