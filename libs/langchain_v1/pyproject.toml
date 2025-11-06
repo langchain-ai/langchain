@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 name = "langchain"
-version = "1.0.3"
+version = "1.0.4"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
