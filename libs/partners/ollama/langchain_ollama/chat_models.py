@@ -543,7 +543,7 @@ class ChatOllama(BaseChatModel):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in Ollama locally on initialization.
 
-    !!! version-added "Added in version 0.3.4"
+    !!! version-added "Added in `langchain-ollama` 0.3.4"
     """
 
     mirostat: int | None = None

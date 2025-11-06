@@ -545,7 +545,7 @@ class BaseChatOpenAI(BaseChatModel):
     initialized with a custom client, as many chat completions APIs do not support
     streaming token usage.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-openai` 0.3.9"
 
     !!! warning "Behavior changed in 0.3.35"
         Enabled for default base URL and client.
@@ -594,7 +594,7 @@ class BaseChatOpenAI(BaseChatModel):
     }
     ```
 
-    !!! version-added "Added in version 0.3.24"
+    !!! version-added "Added in `langchain-openai` 0.3.24"
     """
     verbosity: str | None = None
     """Controls the verbosity level of responses for reasoning models. For use with the
@@ -602,7 +602,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Currently supported values are `'low'`, `'medium'`, and `'high'`.
 
-    !!! version-added "Added in version 0.3.28"
+    !!! version-added "Added in `langchain-openai` 0.3.28"
     """
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
@@ -677,7 +677,7 @@ class BaseChatOpenAI(BaseChatModel):
     - `'reasoning.encrypted_content'`
     - `'code_interpreter_call.outputs'`
 
-    !!! version-added "Added in version 0.3.24"
+    !!! version-added "Added in `langchain-openai` 0.3.24"
     """
 
     service_tier: str | None = None
@@ -690,7 +690,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Defaults to `True` for the Responses API and `False` for the Chat Completions API.
 
-    !!! version-added "Added in version 0.3.24"
+    !!! version-added "Added in `langchain-openai` 0.3.24"
     """
 
     truncation: str | None = None
@@ -698,7 +698,7 @@ class BaseChatOpenAI(BaseChatModel):
     If `'auto'`, model may drop input items from the middle of the message sequence to
     fit the context window.
 
-    !!! version-added "Added in version 0.3.24"
+    !!! version-added "Added in `langchain-openai` 0.3.24"
     """
 
     use_previous_response_id: bool = False
@@ -729,7 +729,7 @@ class BaseChatOpenAI(BaseChatModel):
     model.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
     ```
 
-    !!! version-added "Added in version 0.3.26"
+    !!! version-added "Added in `langchain-openai` 0.3.26"
     """
 
     use_responses_api: bool | None = None
@@ -737,7 +737,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     If not specified then will be inferred based on invocation params.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-openai` 0.3.9"
     """
 
     output_version: str | None = Field(
@@ -2429,9 +2429,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         ]
         ```
 
-        !!! version-added "Added in version 0.3.9"
+        !!! version-added "Added in `langchain-openai` 0.3.9"
 
-        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+        !!! version-added "Added in `langchain-openai` 0.3.26: Updated `AIMessage` format"
             [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
             allows users to opt-in to an updated `AIMessage` format when using the
             Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will
@@ -2473,9 +2473,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         "Your name is Bob. How can I help you today, Bob?"
         ```
 
-        !!! version-added "Added in version 0.3.9"
+        !!! version-added "Added in `langchain-openai` 0.3.9"
 
-        !!! version-added "Added in version 0.3.26"
+        !!! version-added "Added in `langchain-openai` 0.3.26"
             You can also initialize `ChatOpenAI` with `use_previous_response_id`.
             Input messages up to the most recent response will then be dropped from request
             payloads, and `previous_response_id` will be set using the ID of the most
@@ -2518,7 +2518,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         Reasoning: The user wants to know...
         ```
 
-        !!! version-added "Added in version 0.3.26: Updated `AIMessage` format"
+        !!! version-added "Added in `langchain-openai` 0.3.26: Updated `AIMessage` format"
             [`langchain-openai >= 0.3.26`](https://pypi.org/project/langchain-openai/#history)
             allows users to opt-in to an updated `AIMessage` format when using the
             Responses API. Setting `ChatOpenAI(..., output_version="responses/v1")` will

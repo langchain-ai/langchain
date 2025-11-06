@@ -332,7 +332,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
     field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in version 1.0"
+    !!! version-added "Added in `langchain-core` 1.0"
 
     """
 

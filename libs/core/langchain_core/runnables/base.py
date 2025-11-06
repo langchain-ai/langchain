@@ -432,7 +432,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_input_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_input_schema(config).model_json_schema()
@@ -510,7 +510,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_output_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_output_schema(config).model_json_schema()
@@ -574,7 +574,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A JSON schema that represents the config of the `Runnable`.
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.config_schema(include=include).model_json_schema()
