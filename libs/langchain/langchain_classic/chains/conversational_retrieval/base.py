@@ -357,7 +357,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             ConversationalRetrievalChain,
         )
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         combine_docs_chain = StuffDocumentsChain(...)
         vectorstore = ...

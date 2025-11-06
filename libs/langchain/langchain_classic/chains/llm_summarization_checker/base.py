@@ -80,7 +80,7 @@ class LLMSummarizationCheckerChain(Chain):
 
     Example:
         ```python
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.chains import LLMSummarizationCheckerChain
 
         model = OpenAI(temperature=0.0)

@@ -454,7 +454,10 @@ def _render_mermaid_using_api(
                 return img_bytes
 
             # If we get a server error (5xx), retry
-            if 500 <= response.status_code < 600 and attempt < max_retries:
+            if (
+                requests.codes.internal_server_error <= response.status_code
+                and attempt < max_retries
+            ):
                 # Exponential backoff with jitter
                 sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)

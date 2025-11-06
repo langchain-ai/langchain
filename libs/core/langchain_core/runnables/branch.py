@@ -36,6 +36,8 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 
+_MIN_BRANCHES = 2
+
 
 class RunnableBranch(RunnableSerializable[Input, Output]):
     """`Runnable` that selects which branch to run based on a condition.
@@ -91,7 +93,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             TypeError: If a branch is not a `tuple` or `list`.
             ValueError: If a branch is not of length `2`.
         """
-        if len(branches) < 2:
+        if len(branches) < _MIN_BRANCHES:
             msg = "RunnableBranch requires at least two branches"
             raise ValueError(msg)
 
@@ -118,7 +120,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 )
                 raise TypeError(msg)
 
-            if len(branch) != 2:
+            if len(branch) != _MIN_BRANCHES:
                 msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists of length 2, not {len(branch)}"
