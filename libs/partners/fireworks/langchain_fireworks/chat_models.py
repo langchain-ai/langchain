@@ -708,7 +708,7 @@ class ChatFireworks(BaseChatModel):
                 - `'json_mode'`:
                     Uses Fireworks's [JSON mode feature](https://docs.fireworks.ai/structured-responses/structured-response-formatting).
 
-                !!! warning "Behavior changed in 0.2.8"
+                !!! warning "Behavior changed in `langchain-fireworks` 0.2.8"
                     Added support for `'json_schema'`.
 
             include_raw:
