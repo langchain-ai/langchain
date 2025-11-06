@@ -77,7 +77,7 @@ class LLMCheckerChain(Chain):
 
     Example:
         ```python
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.chains import LLMCheckerChain
 
         model = OpenAI(temperature=0.7)
