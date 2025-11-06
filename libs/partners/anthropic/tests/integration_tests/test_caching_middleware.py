@@ -10,7 +10,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
 
 
-@pytest.mark.integration
 class TestMiddlewareWithFallback:
     """Test middleware behavior with actual model fallback scenarios."""
 
