@@ -309,3 +309,201 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
     assert fake_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "5m"}
     }
+
+
+def test_remove_cache_control_when_present() -> None:
+    """Test that _remove_cache_control removes cache_control from model_settings."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=MagicMock(spec=ChatAnthropic),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={"cache_control": {"type": "ephemeral", "ttl": "5m"}},
+    )
+
+    assert "cache_control" in fake_request.model_settings
+    middleware._remove_cache_control(fake_request)
+    assert "cache_control" not in fake_request.model_settings
+
+
+def test_remove_cache_control_safe_when_absent() -> None:
+    """Test that _remove_cache_control is safe when cache_control is not present."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},  # Empty, no cache_control
+    )
+
+    # Should not raise an error
+    middleware._remove_cache_control(fake_request)
+    assert "cache_control" not in fake_request.model_settings
+
+
+def test_wrap_model_call_cleans_up_for_non_anthropic_model() -> None:
+    """Test cache_control removal on fallback to non-Anthropic model."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    # Simulate post-fallback state: non-Anthropic model with cache_control present
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),  # Non-Anthropic model
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={
+            "cache_control": {"type": "ephemeral", "ttl": "5m"}
+        },  # Present from earlier
+    )
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        # Verify cache_control was removed before handler is called
+        assert "cache_control" not in req.model_settings
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    response = middleware.wrap_model_call(fake_request, mock_handler)
+    assert isinstance(response, ModelResponse)
+    assert "cache_control" not in fake_request.model_settings
+
+
+def test_wrap_model_call_recovers_from_cache_control_type_error() -> None:
+    """Test that middleware recovers from cache_control TypeError and retries."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=MagicMock(spec=ChatAnthropic),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+    call_count = 0
+    mock_response = ModelResponse(result=[AIMessage(content="response")])
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            # First call: simulate cache_control error
+            msg = (
+                "Completions.create() got an unexpected keyword argument "
+                "'cache_control'"
+            )
+            raise TypeError(msg)
+        # Second call: succeed
+        return mock_response
+
+    response = middleware.wrap_model_call(fake_request, mock_handler)
+
+    # Verify handler was called twice (original + retry)
+    assert call_count == 2
+    # Verify cache_control was removed on retry
+    assert "cache_control" not in fake_request.model_settings
+    assert response == mock_response
+
+
+def test_wrap_model_call_reraises_non_cache_control_type_error() -> None:
+    """Test that non-cache_control TypeErrors are re-raised."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=MagicMock(spec=ChatAnthropic),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        msg = "Some other type error"
+        raise TypeError(msg)
+
+    # Should re-raise the error
+    with pytest.raises(TypeError, match="Some other type error"):
+        middleware.wrap_model_call(fake_request, mock_handler)
+
+
+async def test_awrap_model_call_cleans_up_for_non_anthropic_model() -> None:
+    """Test that async version also cleans up cache_control."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={"cache_control": {"type": "ephemeral", "ttl": "5m"}},
+    )
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        # Verify cache_control was removed before handler is called
+        assert "cache_control" not in req.model_settings
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    response = await middleware.awrap_model_call(fake_request, mock_handler)
+    assert isinstance(response, ModelResponse)
+    assert "cache_control" not in fake_request.model_settings
+
+
+async def test_awrap_model_call_recovers_from_type_error() -> None:
+    """Test that async version recovers from cache_control TypeError."""
+    middleware = AnthropicPromptCachingMiddleware()
+
+    fake_request = ModelRequest(
+        model=MagicMock(spec=ChatAnthropic),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=cast(Runtime, object()),
+        model_settings={},
+    )
+
+    call_count = 0
+    mock_response = ModelResponse(result=[AIMessage(content="response")])
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            msg = "got an unexpected keyword argument 'cache_control'"
+            raise TypeError(msg)
+        return mock_response
+
+    response = await middleware.awrap_model_call(fake_request, mock_handler)
+
+    # Verify retry happened
+    assert call_count == 2
+    assert "cache_control" not in fake_request.model_settings
+    assert response == mock_response

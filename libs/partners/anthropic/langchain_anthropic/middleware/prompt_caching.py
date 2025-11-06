@@ -102,6 +102,17 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         """
         request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
 
+    def _remove_cache_control(self, request: ModelRequest) -> None:
+        """Remove cache control settings from the request.
+
+        This reverses the changes made by _apply_cache_control().
+        Useful when a fallback to a non-Anthropic model occurs at runtime.
+
+        Args:
+            request: The model request to clean up.
+        """
+        request.model_settings.pop("cache_control", None)
+
     def wrap_model_call(
         self,
         request: ModelRequest,
@@ -117,10 +128,27 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             The model response from the handler.
         """
         if not self._should_apply_caching(request):
+            # Model is not Anthropic - ensure cache_control is removed
+            # This handles the case where ModelFallbackMiddleware switched
+            # to a non-Anthropic model after we already applied cache_control
+            self._remove_cache_control(request)
             return handler(request)
 
+        # Optimistically apply caching (works for Anthropic models)
         self._apply_cache_control(request)
-        return handler(request)
+
+        try:
+            return handler(request)
+        except TypeError as e:
+            # Check if error is specifically about cache_control parameter
+            # This can occur when ModelFallbackMiddleware switches to a
+            # non-Anthropic model at runtime (e.g., Anthropic → OpenAI)
+            if "cache_control" in str(e):
+                # Remove Anthropic-specific settings and retry without caching
+                self._remove_cache_control(request)
+                return handler(request)
+            # Different TypeError - re-raise
+            raise
 
     async def awrap_model_call(
         self,
@@ -137,7 +165,24 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             The model response from the handler.
         """
         if not self._should_apply_caching(request):
+            # Model is not Anthropic - ensure cache_control is removed
+            # This handles the case where ModelFallbackMiddleware switched
+            # to a non-Anthropic model after we already applied cache_control
+            self._remove_cache_control(request)
             return await handler(request)
 
+        # Optimistically apply caching (works for Anthropic models)
         self._apply_cache_control(request)
-        return await handler(request)
+
+        try:
+            return await handler(request)
+        except TypeError as e:
+            # Check if error is specifically about cache_control parameter
+            # This can occur when ModelFallbackMiddleware switches to a
+            # non-Anthropic model at runtime (e.g., Anthropic → OpenAI)
+            if "cache_control" in str(e):
+                # Remove Anthropic-specific settings and retry without caching
+                self._remove_cache_control(request)
+                return await handler(request)
+            # Different TypeError - re-raise
+            raise
