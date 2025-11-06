@@ -332,7 +332,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
     field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in version 1.0"
+    !!! version-added "Added in `langchain-core` 1.0"
 
     """
 
@@ -845,16 +845,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -963,16 +968,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -1629,7 +1639,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # }
         ```
 
-        !!! warning "Behavior changed in 0.2.26"
+        !!! warning "Behavior changed in `langchain-core` 0.2.26"
             Added support for TypedDict class.
 
         """  # noqa: E501

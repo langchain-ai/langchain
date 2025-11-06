@@ -195,15 +195,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
@@ -232,15 +239,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
