@@ -237,7 +237,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         decision: Decision,
         tool_call: ToolCall,
         config: InterruptOnConfig,
-    ) -> tuple[ToolCall | None, ToolMessage | None]:
+    ) -> tuple[ToolCall | None, ToolMessage | HumanMessage | None]:
         """Process a single decision and return the revised tool call and optional tool message."""
         allowed_decisions = config["allowed_decisions"]
 
@@ -308,7 +308,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Process all tool calls that require interrupts
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
-        artificial_tool_messages: list[ToolMessage] = []
+        artificial_tool_messages: list[ToolMessage | HumanMessage] = []
 
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
