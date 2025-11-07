@@ -1,4 +1,4 @@
-"""Anthropic LLM wrapper. Chat models are in chat_models.py."""
+"""Anthropic LLM wrapper. Chat models are in `chat_models.py`."""
 
 from __future__ import annotations
 
@@ -23,9 +23,11 @@ from typing_extensions import Self
 
 
 class _AnthropicCommon(BaseLanguageModel):
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
-    model: str = Field(default="claude-3-5-sonnet-latest", alias="model_name")
+    client: Any = None
+
+    async_client: Any = None
+
+    model: str = Field(default="claude-sonnet-4-5", alias="model_name")
     """Model name to use."""
 
     max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
@@ -70,8 +72,11 @@ class _AnthropicCommon(BaseLanguageModel):
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
     HUMAN_PROMPT: str | None = None
+
     AI_PROMPT: str | None = None
+
     count_tokens: Callable[[str], int] | None = None
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
@@ -127,7 +132,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
 
 class AnthropicLLM(LLM, _AnthropicCommon):
-    """Anthropic large language model.
+    """Anthropic text completion large language model (legacy LLM).
 
     To use, you should have the environment variable `ANTHROPIC_API_KEY`
     set with your API key, or pass it as a named parameter to the constructor.
@@ -136,7 +141,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         ```python
         from langchain_anthropic import AnthropicLLM
 
-        model = AnthropicLLM()
+        model = AnthropicLLM(model="claude-sonnet-4-5")
         ```
     """
 

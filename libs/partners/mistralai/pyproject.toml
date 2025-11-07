@@ -3,8 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-mistralai"
+description = "An integration package connecting Mistral and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
@@ -13,10 +18,6 @@ dependencies = [
     "httpx-sse>=0.3.1,<1.0.0",
     "pydantic>=2.0.0,<3.0.0",
 ]
-name = "langchain-mistralai"
-version = "1.0.0"
-description = "An integration package connecting Mistral and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/mistralai"

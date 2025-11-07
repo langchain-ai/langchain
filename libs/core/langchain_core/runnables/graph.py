@@ -132,7 +132,7 @@ class Branch(NamedTuple):
     condition: Callable[..., str]
     """A callable that returns a string representation of the condition."""
     ends: dict[str, str] | None
-    """Optional dictionary of end node ids for the branches. """
+    """Optional dictionary of end node IDs for the branches. """
 
 
 class CurveStyle(Enum):
@@ -706,8 +706,10 @@ class Graph:
 def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
 
-    Exclude nodes/sources with ids in the exclude list.
+    Exclude nodes/sources with IDs in the exclude list.
+
     If there is no such node, or there are multiple, return `None`.
+
     When drawing the graph, this node would be the origin.
     """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
@@ -722,8 +724,10 @@ def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
 def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
 
-    Exclude nodes/targets with ids in the exclude list.
+    Exclude nodes/targets with IDs in the exclude list.
+
     If there is no such node, or there are multiple, return `None`.
+
     When drawing the graph, this node would be the destination.
     """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}

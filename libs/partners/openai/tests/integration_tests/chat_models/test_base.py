@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from textwrap import dedent
@@ -62,6 +63,57 @@ def test_chat_openai_model() -> None:
     assert chat.model_name == "foo"
     chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
+
+
+def test_callable_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+
+async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_key = os.environ["OPENAI_API_KEY"]
+
+    calls = {"sync": 0, "async": 0}
+
+    def get_openai_api_key() -> str:
+        calls["sync"] += 1
+        return original_key
+
+    async def get_openai_api_key_async() -> str:
+        calls["async"] += 1
+        return original_key
+
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key)
+    response = model.invoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 1
+
+    response = await model.ainvoke("hello")
+    assert isinstance(response, AIMessage)
+    assert calls["sync"] == 2
+
+    model = ChatOpenAI(model="gpt-4.1-mini", api_key=get_openai_api_key_async)
+    async_response = await model.ainvoke("hello")
+    assert isinstance(async_response, AIMessage)
+    assert calls["async"] == 1
+
+    with pytest.raises(ValueError):
+        # We do not create a sync callable from an async one
+        _ = model.invoke("hello")
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
@@ -657,7 +709,7 @@ async def test_openai_response_headers_async(use_responses_api: bool) -> None:
 
 def test_image_token_counting_jpeg() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/9f99bb977307a1bd5efeb8dc6b67eb13904c4af1/src/oss/images/checkpoints.jpg"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "describe the weather in this image"},
@@ -689,7 +741,7 @@ def test_image_token_counting_jpeg() -> None:
 
 def test_image_token_counting_png() -> None:
     model = ChatOpenAI(model="gpt-4o", temperature=0)
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     message = HumanMessage(
         content=[
             {"type": "text", "text": "how many dice are in this image"},
@@ -951,6 +1003,7 @@ def test_audio_input_modality() -> None:
     assert "audio" in output.additional_kwargs
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_prediction_tokens() -> None:
     code = dedent(
         """

@@ -23,8 +23,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     It provides a simple search API that returns documents by the number of
     counts the given query appears in the document.
-
-    !!! version-added "Added in version 0.2.29"
     """
 
     store: dict[str, Document] = Field(default_factory=dict)
@@ -64,10 +62,10 @@ class InMemoryDocumentIndex(DocumentIndex):
         """Delete by IDs.
 
         Args:
-            ids: List of ids to delete.
+            ids: List of IDs to delete.
 
         Raises:
-            ValueError: If ids is None.
+            ValueError: If IDs is None.
 
         Returns:
             A response object that contains the list of IDs that were successfully

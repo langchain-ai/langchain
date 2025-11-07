@@ -2627,9 +2627,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -2744,7 +2744,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -3257,8 +3259,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -4077,9 +4084,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -4194,7 +4201,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -4726,8 +4735,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -5558,9 +5572,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -5675,7 +5689,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -6207,8 +6223,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -6914,9 +6935,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -7031,7 +7052,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -7544,8 +7567,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -8406,9 +8434,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -8523,7 +8551,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -9055,8 +9085,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -9807,9 +9842,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -9924,7 +9959,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -10437,8 +10474,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -11207,9 +11249,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -11324,7 +11366,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -11867,8 +11911,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({
@@ -12649,9 +12698,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
-          
           May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -12766,7 +12815,9 @@
               }
               ```
           
-          !!! version-added "Added in version 0.3.9"
+          May also hold extra provider-specific keys.
+          
+          !!! version-added "Added in `langchain-core` 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -13298,8 +13349,13 @@
               }
               ```
           
-          !!! warning "Behavior changed in 0.3.9"
+          !!! warning "Behavior changed in `langchain-core` 0.3.9"
               Added `input_token_details` and `output_token_details`.
+          
+          !!! note "LangSmith SDK"
+              The LangSmith SDK also has a `UsageMetadata` class. While the two share fields,
+              LangSmith's `UsageMetadata` has additional fields to capture cost information
+              used by the LangSmith platform.
         ''',
         'properties': dict({
           'input_token_details': dict({

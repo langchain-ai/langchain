@@ -26,7 +26,7 @@ LangChain [agents](https://docs.langchain.com/oss/python/langchain/agents) are b
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_classic).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain/langchain/).
 
 ## 📕 Releases & Versioning
 

@@ -229,7 +229,24 @@ def shielded(func: Func) -> Func:
 
     @functools.wraps(func)
     async def wrapped(*args: Any, **kwargs: Any) -> Any:
-        return await asyncio.shield(func(*args, **kwargs))
+        # Capture the current context to preserve context variables
+        ctx = copy_context()
+
+        # Create the coroutine
+        coro = func(*args, **kwargs)
+
+        # For Python 3.11+, create task with explicit context
+        # For older versions, fallback to original behavior
+        try:
+            # Create a task with the captured context to preserve context variables
+            task = asyncio.create_task(coro, context=ctx)  # type: ignore[call-arg, unused-ignore]
+            # `call-arg` used to not fail 3.9 or 3.10 tests
+            return await asyncio.shield(task)
+        except TypeError:
+            # Python < 3.11 fallback - create task normally then shield
+            # This won't preserve context perfectly but is better than nothing
+            task = asyncio.create_task(coro)
+            return await asyncio.shield(task)
 
     return cast("Func", wrapped)
 
@@ -1566,9 +1583,6 @@ class CallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
-
         """
         if not self.handlers:
             return
@@ -2042,8 +2056,6 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         Raises:
             ValueError: If additional keyword arguments are passed.
-
-        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
@@ -2555,9 +2567,6 @@ async def adispatch_custom_event(
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415
@@ -2630,9 +2639,6 @@ def dispatch_custom_event(
         foo_ = RunnableLambda(foo)
         foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
         ```
-
-    !!! version-added "Added in version 0.2.15"
-
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415

@@ -28,7 +28,7 @@ class EventData(TypedDict, total=False):
 
     This field is only available if the `Runnable` raised an exception.
 
-    !!! version-added "Added in version 1.0.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
     """
     output: Any
     """The output of the `Runnable` that generated the event.
@@ -168,10 +168,7 @@ class StandardStreamEvent(BaseStreamEvent):
 
 
 class CustomStreamEvent(BaseStreamEvent):
-    """Custom stream event created by the user.
-
-    !!! version-added "Added in version 0.2.15"
-    """
+    """Custom stream event created by the user."""
 
     # Overwrite the event field to be more specific.
     event: Literal["on_custom_event"]  # type: ignore[misc]

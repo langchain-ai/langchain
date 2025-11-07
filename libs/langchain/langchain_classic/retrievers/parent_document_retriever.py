@@ -21,7 +21,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
     The ParentDocumentRetriever strikes that balance by splitting and storing
     small chunks of data. During retrieval, it first fetches the small chunks
-    but then looks up the parent ids for those chunks and returns those larger
+    but then looks up the parent IDs for those chunks and returns those larger
     documents.
 
     Note that "parent document" refers to the document that a small chunk
@@ -44,7 +44,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         child_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400, add_start_index=True
         )
-        # The vectorstore to use to index the child chunks
+        # The VectorStore to use to index the child chunks
         vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
         # The storage layer for the parent documents
         store = InMemoryStore()
@@ -85,7 +85,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         if ids is None:
             doc_ids = [str(uuid.uuid4()) for _ in documents]
             if not add_to_docstore:
-                msg = "If ids are not passed in, `add_to_docstore` MUST be True"
+                msg = "If IDs are not passed in, `add_to_docstore` MUST be True"
                 raise ValueError(msg)
         else:
             if len(documents) != len(ids):
@@ -124,11 +124,11 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
         Args:
             documents: List of documents to add
-            ids: Optional list of ids for documents. If provided should be the same
+            ids: Optional list of IDs for documents. If provided should be the same
                 length as the list of documents. Can be provided if parent documents
                 are already in the document store and you don't want to re-add
                 to the docstore. If not provided, random UUIDs will be used as
-                ids.
+                IDs.
             add_to_docstore: Boolean of whether to add documents to docstore.
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore
@@ -155,11 +155,11 @@ class ParentDocumentRetriever(MultiVectorRetriever):
 
         Args:
             documents: List of documents to add
-            ids: Optional list of ids for documents. If provided should be the same
+            ids: Optional list of IDs for documents. If provided should be the same
                 length as the list of documents. Can be provided if parent documents
                 are already in the document store and you don't want to re-add
                 to the docstore. If not provided, random UUIDs will be used as
-                ids.
+                idIDss.
             add_to_docstore: Boolean of whether to add documents to docstore.
                 This can be false if and only if `ids` are provided. You may want
                 to set this to False if the documents are already in the docstore

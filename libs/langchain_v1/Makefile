@@ -28,7 +28,7 @@ coverage:
 		$(TEST_FILE)
 
 test:
-	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered; \
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --no-sync --active --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --cov-report term-missing:skip-covered; \
 	EXIT_CODE=$$?; \
 	make stop_services; \
 	exit $$EXIT_CODE

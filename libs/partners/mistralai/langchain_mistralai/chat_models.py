@@ -364,16 +364,14 @@ def _convert_message_to_mistral_chat_message(
         return {"role": "user", "content": message.content}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
-        tool_calls = []
+        tool_calls: list = []
         if message.tool_calls or message.invalid_tool_calls:
-            for tool_call in message.tool_calls:
+            if message.tool_calls:
                 tool_calls.extend(
-                    [
-                        _format_tool_call_for_mistral(tool_call)
-                        for tool_call in message.tool_calls
-                    ]
+                    _format_tool_call_for_mistral(tool_call)
+                    for tool_call in message.tool_calls
                 )
-            for invalid_tool_call in message.invalid_tool_calls:
+            if message.invalid_tool_calls:
                 tool_calls.extend(
                     _format_invalid_tool_call_for_mistral(invalid_tool_call)
                     for invalid_tool_call in message.invalid_tool_calls
@@ -446,7 +444,7 @@ def _convert_message_to_mistral_chat_message(
 
 
 class ChatMistralAI(BaseChatModel):
-    """A chat model that uses the MistralAI API."""
+    """A chat model that uses the Mistral AI API."""
 
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
@@ -454,27 +452,41 @@ class ChatMistralAI(BaseChatModel):
     client: httpx.Client = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
     )
+
     async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
-    )  #: :meta private:
+    )
+
     mistral_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=None),
     )
+
     endpoint: str | None = Field(default=None, alias="base_url")
+
     max_retries: int = 5
+
     timeout: int = 120
+
     max_concurrent_requests: int = 64
+
     model: str = Field(default="mistral-small", alias="model_name")
+
     temperature: float = 0.7
+
     max_tokens: int | None = None
+
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
     probability sum is at least `top_p`. Must be in the closed interval
     `[0.0, 1.0]`."""
+
     random_seed: int | None = None
+
     safe_mode: bool | None = None
+
     streaming: bool = False
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any invocation parameters not explicitly specified."""
 
@@ -805,10 +817,10 @@ class ChatMistralAI(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -834,15 +846,19 @@ class ChatMistralAI(BaseChatModel):
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
-                !!! warning "Behavior changed in 0.2.5"
+                !!! warning "Behavior changed in `langchain-mistralai` 0.2.5"
                     Added method="json_schema"
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1140,7 +1156,11 @@ class ChatMistralAI(BaseChatModel):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the LangChain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "mistralai"]`
+        """
         return ["langchain", "chat_models", "mistralai"]
 
 

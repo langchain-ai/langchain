@@ -257,10 +257,10 @@ class InMemoryVectorStore(VectorStore):
         """Get documents by their ids.
 
         Args:
-            ids: The ids of the documents to get.
+            ids: The IDs of the documents to get.
 
         Returns:
-            A list of Document objects.
+            A list of `Document` objects.
         """
         documents = []
 
@@ -281,10 +281,10 @@ class InMemoryVectorStore(VectorStore):
         """Async get documents by their ids.
 
         Args:
-            ids: The ids of the documents to get.
+            ids: The IDs of the documents to get.
 
         Returns:
-            A list of Document objects.
+            A list of `Document` objects.
         """
         return self.get_by_ids(ids)
 

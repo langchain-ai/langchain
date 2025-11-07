@@ -27,7 +27,7 @@ class BaseLoader(ABC):  # noqa: B024
     """Interface for Document Loader.
 
     Implementations should implement the lazy-loading method using generators
-    to avoid loading all Documents into memory at once.
+    to avoid loading all documents into memory at once.
 
     `load` is provided just for user convenience and should not be overridden.
     """
@@ -53,9 +53,11 @@ class BaseLoader(ABC):  # noqa: B024
     def load_and_split(
         self, text_splitter: TextSplitter | None = None
     ) -> list[Document]:
-        """Load Documents and split into chunks. Chunks are returned as `Document`.
+        """Load `Document` and split into chunks. Chunks are returned as `Document`.
 
-        Do not override this method. It should be considered to be deprecated!
+        !!! danger
+
+            Do not override this method. It should be considered to be deprecated!
 
         Args:
             text_splitter: `TextSplitter` instance to use for splitting documents.
@@ -135,7 +137,7 @@ class BaseBlobParser(ABC):
         """
 
     def parse(self, blob: Blob) -> list[Document]:
-        """Eagerly parse the blob into a `Document` or `Document` objects.
+        """Eagerly parse the blob into a `Document` or list of `Document` objects.
 
         This is a convenience method for interactive development environment.
 

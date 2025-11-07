@@ -30,7 +30,7 @@
 #   core, cli, langchain, langchain_v1, langchain-classic, standard-tests,
 #   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
 #   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
-#   xai, infra
+#   xai, infra, deps
 #
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
@@ -79,8 +79,8 @@ jobs:
             core
             cli
             langchain
-            langchain_v1
-            langchain-classic
+            langchain_classic
+            model-profiles
             standard-tests
             text-splitters
             docs
