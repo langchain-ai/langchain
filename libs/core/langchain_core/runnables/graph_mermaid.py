@@ -6,10 +6,11 @@ import asyncio
 import base64
 import random
 import re
+import string
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 import yaml
 
@@ -44,50 +45,44 @@ def draw_mermaid(
     nodes: dict[str, Node],
     edges: list[Edge],
     *,
-    first_node: Optional[str] = None,
-    last_node: Optional[str] = None,
+    first_node: str | None = None,
+    last_node: str | None = None,
     with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
-    node_styles: Optional[NodeStyles] = None,
+    node_styles: NodeStyles | None = None,
     wrap_label_n_words: int = 9,
-    frontmatter_config: Optional[dict[str, Any]] = None,
+    frontmatter_config: dict[str, Any] | None = None,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data.
 
     Args:
-        nodes (dict[str, str]): List of node ids.
-        edges (list[Edge]): List of edges, object with a source,
-            target and data.
-        first_node (str, optional): Id of the first node. Defaults to None.
-        last_node (str, optional): Id of the last node. Defaults to None.
-        with_styles (bool, optional): Whether to include styles in the graph.
-            Defaults to True.
-        curve_style (CurveStyle, optional): Curve style for the edges.
-            Defaults to CurveStyle.LINEAR.
-        node_styles (NodeStyles, optional): Node colors for different types.
-            Defaults to NodeStyles().
-        wrap_label_n_words (int, optional): Words to wrap the edge labels.
-            Defaults to 9.
-        frontmatter_config (dict[str, Any], optional): Mermaid frontmatter config.
+        nodes: List of node ids.
+        edges: List of edges, object with a source, target and data.
+        first_node: Id of the first node.
+        last_node: Id of the last node.
+        with_styles: Whether to include styles in the graph.
+        curve_style: Curve style for the edges.
+        node_styles: Node colors for different types.
+        wrap_label_n_words: Words to wrap the edge labels.
+        frontmatter_config: Mermaid frontmatter config.
             Can be used to customize theme and styles. Will be converted to YAML and
-            added to the beginning of the mermaid graph. Defaults to None.
+            added to the beginning of the mermaid graph.
 
             See more here: https://mermaid.js.org/config/configuration.html.
 
             Example config:
 
-            .. code-block:: python
-
+            ```python
             {
                 "config": {
                     "theme": "neutral",
                     "look": "handDrawn",
-                    "themeVariables": { "primaryColor": "#e2e2e2"},
+                    "themeVariables": {"primaryColor": "#e2e2e2"},
                 }
             }
-
+            ```
     Returns:
-        str: Mermaid graph syntax.
+        Mermaid graph syntax.
 
     """
     # Initialize Mermaid graph configuration
@@ -148,7 +143,7 @@ def draw_mermaid(
                 + "</em></small>"
             )
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
-            _escape_node_label(key), label
+            _to_safe_id(key), label
         )
         return f"{indent}{node_label}\n"
 
@@ -163,7 +158,7 @@ def draw_mermaid(
         src_parts = edge.source.split(":")
         tgt_parts = edge.target.split(":")
         common_prefix = ":".join(
-            src for src, tgt in zip(src_parts, tgt_parts) if src == tgt
+            src for src, tgt in zip(src_parts, tgt_parts, strict=False) if src == tgt
         )
         edge_groups.setdefault(common_prefix, []).append(edge)
 
@@ -211,8 +206,7 @@ def draw_mermaid(
                 edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
-                f"\t{_escape_node_label(source)}{edge_label}"
-                f"{_escape_node_label(target)};\n"
+                f"\t{_to_safe_id(source)}{edge_label}{_to_safe_id(target)};\n"
             )
 
         # Recursively add nested subgraphs
@@ -256,9 +250,18 @@ def draw_mermaid(
     return mermaid_graph
 
 
-def _escape_node_label(node_label: str) -> str:
-    """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
+def _to_safe_id(label: str) -> str:
+    """Convert a string into a Mermaid-compatible node id.
+
+    Keep [a-zA-Z0-9_-] characters unchanged.
+    Map every other character -> backslash + lowercase hex codepoint.
+
+    Result is guaranteed to be unique and Mermaid-compatible,
+    so nodes with special characters always render correctly.
+    """
+    allowed = string.ascii_letters + string.digits + "_-"
+    out = [ch if ch in allowed else "\\" + format(ord(ch), "x") for ch in label]
+    return "".join(out)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
@@ -271,31 +274,28 @@ def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
 
 def draw_mermaid_png(
     mermaid_syntax: str,
-    output_file_path: Optional[str] = None,
+    output_file_path: str | None = None,
     draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
-    background_color: Optional[str] = "white",
+    background_color: str | None = "white",
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    base_url: str | None = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
     Args:
-        mermaid_syntax (str): Mermaid graph syntax.
-        output_file_path (str, optional): Path to save the PNG image.
-            Defaults to None.
-        draw_method (MermaidDrawMethod, optional): Method to draw the graph.
-            Defaults to MermaidDrawMethod.API.
-        background_color (str, optional): Background color of the image.
-            Defaults to "white".
-        padding (int, optional): Padding around the image. Defaults to 10.
-        max_retries (int, optional): Maximum number of retries (MermaidDrawMethod.API).
-            Defaults to 1.
-        retry_delay (float, optional): Delay between retries (MermaidDrawMethod.API).
-            Defaults to 1.0.
+        mermaid_syntax: Mermaid graph syntax.
+        output_file_path: Path to save the PNG image.
+        draw_method: Method to draw the graph.
+        background_color: Background color of the image.
+        padding: Padding around the image.
+        max_retries: Maximum number of retries (MermaidDrawMethod.API).
+        retry_delay: Delay between retries (MermaidDrawMethod.API).
+        base_url: Base URL for the Mermaid.ink API.
 
     Returns:
-        bytes: PNG image bytes.
+        PNG image bytes.
 
     Raises:
         ValueError: If an invalid draw method is provided.
@@ -313,6 +313,7 @@ def draw_mermaid_png(
             background_color=background_color,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            base_url=base_url,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -327,8 +328,8 @@ def draw_mermaid_png(
 
 async def _render_mermaid_using_pyppeteer(
     mermaid_syntax: str,
-    output_file_path: Optional[str] = None,
-    background_color: Optional[str] = "white",
+    output_file_path: str | None = None,
+    background_color: str | None = "white",
     padding: int = 10,
     device_scale_factor: int = 3,
 ) -> bytes:
@@ -399,13 +400,17 @@ async def _render_mermaid_using_pyppeteer(
 def _render_mermaid_using_api(
     mermaid_syntax: str,
     *,
-    output_file_path: Optional[str] = None,
-    background_color: Optional[str] = "white",
-    file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
+    output_file_path: str | None = None,
+    background_color: str | None = "white",
+    file_type: Literal["jpeg", "png", "webp"] | None = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    base_url: str | None = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
+    # Defaults to using the public mermaid.ink server.
+    base_url = base_url if base_url is not None else "https://mermaid.ink"
+
     if not _HAS_REQUESTS:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
@@ -425,7 +430,7 @@ def _render_mermaid_using_api(
             background_color = f"!{background_color}"
 
     image_url = (
-        f"https://mermaid.ink/img/{mermaid_syntax_encoded}"
+        f"{base_url}/img/{mermaid_syntax_encoded}"
         f"?type={file_type}&bgColor={background_color}"
     )
 
@@ -449,7 +454,10 @@ def _render_mermaid_using_api(
                 return img_bytes
 
             # If we get a server error (5xx), retry
-            if 500 <= response.status_code < 600 and attempt < max_retries:
+            if (
+                requests.codes.internal_server_error <= response.status_code
+                and attempt < max_retries
+            ):
                 # Exponential backoff with jitter
                 sleep_time = retry_delay * (2**attempt) * (0.5 + 0.5 * random.random())  # noqa: S311 not used for crypto
                 time.sleep(sleep_time)
@@ -457,7 +465,7 @@ def _render_mermaid_using_api(
 
             # For other status codes, fail immediately
             msg = (
-                "Failed to reach https://mermaid.ink/ API while trying to render "
+                f"Failed to reach {base_url} API while trying to render "
                 f"your graph. Status code: {response.status_code}.\n\n"
             ) + error_msg_suffix
             raise ValueError(msg)
@@ -469,14 +477,14 @@ def _render_mermaid_using_api(
                 time.sleep(sleep_time)
             else:
                 msg = (
-                    "Failed to reach https://mermaid.ink/ API while trying to render "
+                    f"Failed to reach {base_url} API while trying to render "
                     f"your graph after {max_retries} retries. "
                 ) + error_msg_suffix
                 raise ValueError(msg) from e
 
     # This should not be reached, but just in case
     msg = (
-        "Failed to reach https://mermaid.ink/ API while trying to render "
+        f"Failed to reach {base_url} API while trying to render "
         f"your graph after {max_retries} retries. "
     ) + error_msg_suffix
     raise ValueError(msg)

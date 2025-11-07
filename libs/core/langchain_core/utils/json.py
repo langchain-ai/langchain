@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable, Union
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 
@@ -19,7 +20,7 @@ def _replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def _custom_parser(multiline_string: Union[str, bytes, bytearray]) -> str:
+def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
     The LLM response for `action_input` may be a multiline
@@ -50,7 +51,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     Args:
         s: The JSON string to parse.
-        strict: Whether to use strict parsing. Defaults to False.
+        strict: Whether to use strict parsing.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -101,7 +102,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
-        if escaped:  # Remoe unterminated escape character
+        if escaped:  # Remove unterminated escape character
             new_chars.pop()
         new_chars.append('"')
 
@@ -190,6 +191,12 @@ def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     except json.JSONDecodeError as e:
         msg = f"Got invalid JSON object. Error: {e}"
         raise OutputParserException(msg) from e
+    if not isinstance(json_obj, dict):
+        error_message = (
+            f"Expected JSON object (dict), but got: {type(json_obj).__name__}. "
+        )
+        raise OutputParserException(error_message, llm_output=text)
+
     for key in expected_keys:
         if key not in json_obj:
             msg = (

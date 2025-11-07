@@ -9,9 +9,9 @@ from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from typing_extensions import override
 
-from langchain.output_parsers.boolean import BooleanOutputParser
-from langchain.output_parsers.datetime import DatetimeOutputParser
-from langchain.output_parsers.retry import (
+from langchain_classic.output_parsers.boolean import BooleanOutputParser
+from langchain_classic.output_parsers.datetime import DatetimeOutputParser
+from langchain_classic.output_parsers.retry import (
     NAIVE_RETRY_PROMPT,
     NAIVE_RETRY_WITH_ERROR_PROMPT,
     RetryOutputParser,
@@ -37,7 +37,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
 def test_retry_output_parser_parse_with_prompt() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n,  # n times to retry, that is, (n+1) times call
@@ -51,7 +51,7 @@ def test_retry_output_parser_parse_with_prompt() -> None:
 def test_retry_output_parser_parse_with_prompt_fail() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n - 1,  # n-1 times to retry, that is, n times call
@@ -65,7 +65,7 @@ def test_retry_output_parser_parse_with_prompt_fail() -> None:
 async def test_retry_output_parser_aparse_with_prompt() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n,  # n times to retry, that is, (n+1) times call
@@ -82,7 +82,7 @@ async def test_retry_output_parser_aparse_with_prompt() -> None:
 async def test_retry_output_parser_aparse_with_prompt_fail() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n - 1,  # n-1 times to retry, that is, n times call
@@ -101,7 +101,7 @@ async def test_retry_output_parser_aparse_with_prompt_fail() -> None:
     ],
 )
 def test_retry_output_parser_output_type(base_parser: BaseOutputParser) -> None:
-    parser = RetryOutputParser[BaseOutputParser](
+    parser = RetryOutputParser[Any](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         legacy=False,
@@ -110,7 +110,7 @@ def test_retry_output_parser_output_type(base_parser: BaseOutputParser) -> None:
 
 
 def test_retry_output_parser_parse_is_not_implemented() -> None:
-    parser = RetryOutputParser[BooleanOutputParser](
+    parser = RetryOutputParser[bool](
         parser=BooleanOutputParser(),
         retry_chain=RunnablePassthrough(),
         legacy=False,
@@ -122,7 +122,7 @@ def test_retry_output_parser_parse_is_not_implemented() -> None:
 def test_retry_with_error_output_parser_parse_with_prompt() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryWithErrorOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryWithErrorOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n,  # n times to retry, that is, (n+1) times call
@@ -136,7 +136,7 @@ def test_retry_with_error_output_parser_parse_with_prompt() -> None:
 def test_retry_with_error_output_parser_parse_with_prompt_fail() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryWithErrorOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryWithErrorOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n - 1,  # n-1 times to retry, that is, n times call
@@ -150,7 +150,7 @@ def test_retry_with_error_output_parser_parse_with_prompt_fail() -> None:
 async def test_retry_with_error_output_parser_aparse_with_prompt() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryWithErrorOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryWithErrorOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n,  # n times to retry, that is, (n+1) times call
@@ -167,7 +167,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt() -> None:
 async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:
     n: int = 5  # Success on the (n+1)-th attempt
     base_parser = SuccessfulParseAfterRetries(attemp_count_before_success=n)
-    parser = RetryWithErrorOutputParser[SuccessfulParseAfterRetries](
+    parser = RetryWithErrorOutputParser[str](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         max_retries=n - 1,  # n-1 times to retry, that is, n times call
@@ -188,7 +188,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:
 def test_retry_with_error_output_parser_output_type(
     base_parser: BaseOutputParser,
 ) -> None:
-    parser = RetryWithErrorOutputParser[BaseOutputParser](
+    parser = RetryWithErrorOutputParser[Any](
         parser=base_parser,
         retry_chain=RunnablePassthrough(),
         legacy=False,
@@ -197,7 +197,7 @@ def test_retry_with_error_output_parser_output_type(
 
 
 def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
-    parser = RetryWithErrorOutputParser[BooleanOutputParser](
+    parser = RetryWithErrorOutputParser[bool](
         parser=BooleanOutputParser(),
         retry_chain=RunnablePassthrough(),
         legacy=False,
@@ -226,7 +226,7 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
     retry_chain: Runnable[dict[str, Any], str],
     expected: dt,
 ) -> None:
-    parser = RetryOutputParser[DatetimeOutputParser](
+    parser = RetryOutputParser[dt](
         parser=base_parser,
         retry_chain=retry_chain,
         legacy=False,
@@ -255,7 +255,7 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
     expected: dt,
 ) -> None:
     # test
-    parser = RetryOutputParser[DatetimeOutputParser](
+    parser = RetryOutputParser[dt](
         parser=base_parser,
         retry_chain=retry_chain,
         legacy=False,
@@ -284,7 +284,7 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
     expected: dt,
 ) -> None:
     # test
-    parser = RetryWithErrorOutputParser[DatetimeOutputParser](
+    parser = RetryWithErrorOutputParser[dt](
         parser=base_parser,
         retry_chain=retry_chain,
         legacy=False,
@@ -312,7 +312,7 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_with_retry_chai
     retry_chain: Runnable[dict[str, Any], str],
     expected: dt,
 ) -> None:
-    parser = RetryWithErrorOutputParser[DatetimeOutputParser](
+    parser = RetryWithErrorOutputParser[dt](
         parser=base_parser,
         retry_chain=retry_chain,
         legacy=False,

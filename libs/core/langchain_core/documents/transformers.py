@@ -16,39 +16,38 @@ if TYPE_CHECKING:
 class BaseDocumentTransformer(ABC):
     """Abstract base class for document transformation.
 
-    A document transformation takes a sequence of Documents and returns a
-    sequence of transformed Documents.
+    A document transformation takes a sequence of `Document` objects and returns a
+    sequence of transformed `Document` objects.
 
     Example:
-        .. code-block:: python
+        ```python
+        class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
+            embeddings: Embeddings
+            similarity_fn: Callable = cosine_similarity
+            similarity_threshold: float = 0.95
 
-            class EmbeddingsRedundantFilter(BaseDocumentTransformer, BaseModel):
-                embeddings: Embeddings
-                similarity_fn: Callable = cosine_similarity
-                similarity_threshold: float = 0.95
+            class Config:
+                arbitrary_types_allowed = True
 
-                class Config:
-                    arbitrary_types_allowed = True
+            def transform_documents(
+                self, documents: Sequence[Document], **kwargs: Any
+            ) -> Sequence[Document]:
+                stateful_documents = get_stateful_documents(documents)
+                embedded_documents = _get_embeddings_from_stateful_docs(
+                    self.embeddings, stateful_documents
+                )
+                included_idxs = _filter_similar_embeddings(
+                    embedded_documents,
+                    self.similarity_fn,
+                    self.similarity_threshold,
+                )
+                return [stateful_documents[i] for i in sorted(included_idxs)]
 
-                def transform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    stateful_documents = get_stateful_documents(documents)
-                    embedded_documents = _get_embeddings_from_stateful_docs(
-                        self.embeddings, stateful_documents
-                    )
-                    included_idxs = _filter_similar_embeddings(
-                        embedded_documents,
-                        self.similarity_fn,
-                        self.similarity_threshold,
-                    )
-                    return [stateful_documents[i] for i in sorted(included_idxs)]
-
-                async def atransform_documents(
-                    self, documents: Sequence[Document], **kwargs: Any
-                ) -> Sequence[Document]:
-                    raise NotImplementedError
-
+            async def atransform_documents(
+                self, documents: Sequence[Document], **kwargs: Any
+            ) -> Sequence[Document]:
+                raise NotImplementedError
+        ```
     """
 
     @abstractmethod
@@ -58,10 +57,10 @@ class BaseDocumentTransformer(ABC):
         """Transform a list of documents.
 
         Args:
-            documents: A sequence of Documents to be transformed.
+            documents: A sequence of `Document` objects to be transformed.
 
         Returns:
-            A sequence of transformed Documents.
+            A sequence of transformed `Document` objects.
         """
 
     async def atransform_documents(
@@ -70,10 +69,10 @@ class BaseDocumentTransformer(ABC):
         """Asynchronously transform a list of documents.
 
         Args:
-            documents: A sequence of Documents to be transformed.
+            documents: A sequence of `Document` objects to be transformed.
 
         Returns:
-            A sequence of transformed Documents.
+            A sequence of transformed `Document` objects.
         """
         return await run_in_executor(
             None, self.transform_documents, documents, **kwargs

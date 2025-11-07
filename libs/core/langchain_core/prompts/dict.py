@@ -2,7 +2,7 @@
 
 import warnings
 from functools import cached_property
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from typing_extensions import override
 
@@ -48,7 +48,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> dict:
         return self._call_with_config(
             lambda x: self.format(**x),
@@ -69,15 +69,15 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain_core", "prompts", "dict"]``
+            `["langchain_core", "prompts", "dict"]`
         """
         return ["langchain_core", "prompts", "dict"]
 
@@ -85,7 +85,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
         """Human-readable representation.
 
         Args:
-            html: Whether to format as HTML. Defaults to False.
+            html: Whether to format as HTML.
 
         Returns:
             Human-readable representation.

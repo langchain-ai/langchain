@@ -1,4 +1,4 @@
-from langchain.schema import __all__
+from langchain_classic.schema import __all__
 
 EXPECTED_ALL = [
     "BaseCache",

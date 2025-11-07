@@ -1,6 +1,6 @@
 """Usage utilities."""
 
-from typing import Callable
+from collections.abc import Callable
 
 
 def _dict_int_op(

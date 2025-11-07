@@ -1,6 +1,6 @@
 """Helper class to draw a state graph into a PNG file."""
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
@@ -15,18 +15,17 @@ except ImportError:
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires ``graphviz`` and ``pygraphviz`` to be installed.
+    It requires `graphviz` and `pygraphviz` to be installed.
 
     Example:
-
-        .. code-block:: python
-
-            drawer = PngDrawer()
-            drawer.draw(state_graph, "graph.png")
+        ```python
+        drawer = PngDrawer()
+        drawer.draw(state_graph, "graph.png")
+        ```
     """
 
     def __init__(
-        self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None
+        self, fontname: str | None = None, labels: LabelsDict | None = None
     ) -> None:
         """Initializes the PNG drawer.
 
@@ -46,7 +45,7 @@ class PngDrawer:
                     }
                 }
                 The keys are the original labels, and the values are the new labels.
-                Defaults to None.
+
         """
         self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
@@ -96,7 +95,7 @@ class PngDrawer:
         viz: Any,
         source: str,
         target: str,
-        label: Optional[str] = None,
+        label: str | None = None,
         conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> None:
         """Adds an edge to the graph.
@@ -105,8 +104,8 @@ class PngDrawer:
             viz: The graphviz object.
             source: The source node.
             target: The target node.
-            label: The label for the edge. Defaults to None.
-            conditional: Whether the edge is conditional. Defaults to False.
+            label: The label for the edge.
+            conditional: Whether the edge is conditional.
         """
         viz.add_edge(
             source,
@@ -117,20 +116,20 @@ class PngDrawer:
             style="dotted" if conditional else "solid",
         )
 
-    def draw(self, graph: Graph, output_path: Optional[str] = None) -> Optional[bytes]:
+    def draw(self, graph: Graph, output_path: str | None = None) -> bytes | None:
         """Draw the given state graph into a PNG file.
 
         Requires `graphviz` and `pygraphviz` to be installed.
 
         Args:
             graph: The graph to draw
-            output_path: The path to save the PNG. If None, PNG bytes are returned.
+            output_path: The path to save the PNG. If `None`, PNG bytes are returned.
 
         Raises:
-            ImportError: If ``pygraphviz`` is not installed.
+            ImportError: If `pygraphviz` is not installed.
 
         Returns:
-            The PNG bytes if ``output_path`` is None, else None.
+            The PNG bytes if `output_path` is None, else None.
         """
         if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."

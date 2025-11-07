@@ -1,14 +1,16 @@
 """Integration tests for chat models."""
 
+from __future__ import annotations
+
 import base64
-import inspect
 import json
-from typing import Annotated, Any, Literal, Optional, cast
+import os
+import warnings
+from typing import Annotated, Any, Literal
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
-from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
@@ -69,7 +71,7 @@ def _get_joke_class(  # noqa: RET503
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[Optional[dict]]
+    options: list[dict | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -81,7 +83,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         serialized: Any,
         messages: Any,
         *,
-        options: Optional[dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self.options.append(options)
@@ -113,6 +115,15 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert tool_call["id"] is not None
     assert tool_call.get("type") == "tool_call"
 
+    content_tool_calls = [
+        block for block in message.content_blocks if block["type"] == "tool_call"
+    ]
+    assert len(content_tool_calls) == 1
+    content_tool_call = content_tool_calls[0]
+    assert content_tool_call["name"] == "magic_function"
+    assert content_tool_call["args"] == {"input": 3}
+    assert content_tool_call["id"] is not None
+
 
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
@@ -123,6 +134,21 @@ def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert tool_call["args"] == {}
     assert tool_call["id"] is not None
     assert tool_call.get("type") == "tool_call"
+
+
+def _get_base64_from_url(url: str) -> str:
+    user_agent = os.environ.get("LANGCHAIN_TESTS_USER_AGENT")
+    if not user_agent:
+        warning_message = (
+            "LANGCHAIN_TESTS_USER_AGENT environment variable not set. "
+            "langchain-tests pulls (CC0 License) audio data from wikimedia.org. "
+            "Consider setting a user agent to identify your requests. See "
+            "https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy"
+        )
+        warnings.warn(warning_message, stacklevel=2)
+    headers = {"User-Agent": user_agent} if user_agent else {}
+    httpx_response = httpx.get(url, headers=headers).content
+    return base64.b64encode(httpx_response).decode("utf-8")
 
 
 @tool
@@ -143,438 +169,488 @@ def unicode_customer(customer_name: str, description: str) -> str:
 class ChatModelIntegrationTests(ChatModelTests):
     '''Base class for chat model integration tests.
 
-    Test subclasses must implement the ``chat_model_class`` and
-    ``chat_model_params`` properties to specify what model to test and its
+    Test subclasses must implement the `chat_model_class` and
+    `chat_model_params` properties to specify what model to test and its
     initialization parameters.
 
-    Example:
+    ```python
+    from typing import Type
 
-    .. code-block:: python
-
-        from typing import Type
-
-        from langchain_tests.integration_tests import ChatModelIntegrationTests
-        from my_package.chat_models import MyChatModel
+    from langchain_tests.integration_tests import ChatModelIntegrationTests
+    from my_package.chat_models import MyChatModel
 
 
-        class TestMyChatModelIntegration(ChatModelIntegrationTests):
-            @property
-            def chat_model_class(self) -> Type[MyChatModel]:
-                # Return the chat model class to test here
-                return MyChatModel
+    class TestMyChatModelIntegration(ChatModelIntegrationTests):
+        @property
+        def chat_model_class(self) -> Type[MyChatModel]:
+            # Return the chat model class to test here
+            return MyChatModel
 
-            @property
-            def chat_model_params(self) -> dict:
-                # Return initialization parameters for the model.
-                return {"model": "model-001", "temperature": 0}
+        @property
+        def chat_model_params(self) -> dict:
+            # Return initialization parameters for the model.
+            return {"model": "model-001", "temperature": 0}
+    ```
 
-    .. note::
-          API references for individual test methods include troubleshooting tips.
+    !!! note
+        API references for individual test methods include troubleshooting tips.
 
 
     Test subclasses **must** implement the following two properties:
 
-    chat_model_class
-        The chat model class to test, e.g., ``ChatParrotLink``.
+    `chat_model_class`: The chat model class to test, e.g., `ChatParrotLink`.
 
-        Example:
+    ```python
+    @property
+    def chat_model_class(self) -> Type[ChatParrotLink]:
+        return ChatParrotLink
+    ```
 
-        .. code-block:: python
+    `chat_model_params`: Initialization parameters for the chat model.
 
-            @property
-            def chat_model_class(self) -> Type[ChatParrotLink]:
-                return ChatParrotLink
-
-    chat_model_params
-        Initialization parameters for the chat model.
-
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def chat_model_params(self) -> dict:
-                return {"model": "bird-brain-001", "temperature": 0}
+    ```python
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "bird-brain-001", "temperature": 0}
+    ```
 
     In addition, test subclasses can control what features are tested (such as tool
     calling or multi-modality) by selectively overriding the following properties.
+
     Expand to see details:
 
-    .. dropdown:: has_tool_calling
+    ??? info "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
         By default, this is determined by whether the chat model's `bind_tools` method
         is overridden. It typically does not need to be overridden on the test class.
 
-        Example override:
+        ```python "Example override"
+        @property
+        def has_tool_calling(self) -> bool:
+            return True
+        ```
 
-        .. code-block:: python
-
-            @property
-            def has_tool_calling(self) -> bool:
-                return True
-
-    .. dropdown:: tool_choice_value
+    ??? info "`tool_choice_value`"
 
         Value to use for tool choice when used in tests.
 
-        .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. If a model supports
-           ``tool_choice``, it should accept ``tool_choice="any"`` and
-           ``tool_choice=<string name of tool>``. If a model does not
-           support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``.
+        !!! warning
+            Deprecated since version 0.3.15.
+            This property will be removed in version 0.3.20. If a model supports
+            `tool_choice`, it should accept `tool_choice="any"` and
+            `tool_choice=<string name of tool>`. If a model does not
+            support forcing tool calling, override the `has_tool_choice` property to
+            return `False`.
 
-        Example:
+        ```python
+        @property
+        def tool_choice_value(self) -> str | None:
+            return "any"
+        ```
 
-        .. code-block:: python
-
-            @property
-            def tool_choice_value(self) -> Optional[str]:
-                return "any"
-
-    .. dropdown:: has_tool_choice
+    ??? info "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
-        calling via a ``tool_choice`` parameter.
+        calling via a `tool_choice` parameter.
 
         By default, this is determined by whether the parameter is included in the
-        signature for the corresponding ``bind_tools`` method.
+        signature for the corresponding `bind_tools` method.
 
-        If ``True``, the minimum requirement for this feature is that
-        ``tool_choice="any"`` will force a tool call, and ``tool_choice=<tool name>``
+        If `True`, the minimum requirement for this feature is that
+        `tool_choice="any"` will force a tool call, and `tool_choice=<tool name>`
         will force a call to a specific tool.
 
-        Example override:
+        ```python "Example override"
+        @property
+        def has_tool_choice(self) -> bool:
+            return False
+        ```
 
-        .. code-block:: python
-
-            @property
-            def has_tool_choice(self) -> bool:
-                return False
-
-    .. dropdown:: has_structured_output
+    ??? info "`has_structured_output`"
 
         Boolean property indicating whether the chat model supports structured
         output.
 
         By default, this is determined by whether the chat model's
-        ``with_structured_output`` method is overridden. If the base implementation is
+        `with_structured_output` method is overridden. If the base implementation is
         intended to be used, this method should be overridden.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
-        Example:
+        ```python
+        @property
+        def has_structured_output(self) -> bool:
+            return True
+        ```
 
-        .. code-block:: python
-
-            @property
-            def has_structured_output(self) -> bool:
-                return True
-
-    .. dropdown:: structured_output_kwargs
+    ??? info "`structured_output_kwargs`"
 
         Dict property that can be used to specify additional kwargs for
-        ``with_structured_output``. Useful for testing different models.
+        `with_structured_output`.
 
-        Example:
+        Useful for testing different models.
 
-        .. code-block:: python
+        ```python
+        @property
+        def structured_output_kwargs(self) -> dict:
+            return {"method": "function_calling"}
+        ```
 
-            @property
-            def structured_output_kwargs(self) -> dict:
-                return {"method": "function_calling"}
-
-    .. dropdown:: supports_json_mode
+    ??? info "`supports_json_mode`"
 
         Boolean property indicating whether the chat model supports JSON mode in
-        ``with_structured_output``.
+        `with_structured_output`.
 
-        See: https://python.langchain.com/docs/concepts/structured_outputs/#json-mode
+        See: https://docs.langchain.com/oss/python/langchain/structured-output
 
-        Example:
+        ```python
+        @property
+        def supports_json_mode(self) -> bool:
+            return True
+        ```
 
-        .. code-block:: python
-
-            @property
-            def supports_json_mode(self) -> bool:
-                return True
-
-    .. dropdown:: supports_image_inputs
+    ??? info "`supports_image_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        Defaults to `False`.
 
-        .. code-block:: python
+        If set to `True`, the chat model will be tested by inputting an
+        `ImageContentBlock` with the shape:
 
-            {
-                "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
-                "mime_type": "image/jpeg",  # or appropriate mime-type
-            }
+        ```python
+        {
+            "type": "image",
+            "base64": "<base64 image data>",
+            "mime_type": "image/jpeg",  # or appropriate MIME type
+        }
+        ```
 
         In addition to OpenAI-style content blocks:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+        }
+        ```
 
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-            }
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        ```python
+        @property
+        def supports_image_inputs(self) -> bool:
+            return True
+        ```
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_image_inputs(self) -> bool:
-                return True
-
-    .. dropdown:: supports_image_urls
+    ??? info "`supports_image_urls`"
 
         Boolean property indicating whether the chat model supports image inputs from
-        URLs. Defaults to ``False``.
+        URLs.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
+        Defaults to `False`.
+
+        If set to `True`, the chat model will be tested using content blocks of the
         form
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "image",
+            "url": "https://...",
+        }
+        ```
 
-            {
-                "type": "image",
-                "source_type": "url",
-                "url": "https://...",
-            }
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        ```python
+        @property
+        def supports_image_urls(self) -> bool:
+            return True
+        ```
 
-        Example:
-
-        .. code-block:: python
-
-            @property
-            def supports_image_urls(self) -> bool:
-                return True
-
-    .. dropdown:: supports_pdf_inputs
+    ??? info "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
-        Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        Defaults to `False`.
 
-        .. code-block:: python
+        If set to `True`, the chat model will be tested by inputting a
+        `FileContentBlock` with the shape:
 
-            {
-                "type": "file",
-                "source_type": "base64",
-                "data": "<base64 file data>",
-                "mime_type": "application/pdf",
-            }
+        ```python
+        {
+            "type": "file",
+            "base64": "<base64 file data>",
+            "mime_type": "application/pdf",
+        }
+        ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
-        Example:
+        ```python
+        @property
+        def supports_pdf_inputs(self) -> bool:
+            return True
+        ```
 
-        .. code-block:: python
-
-            @property
-            def supports_pdf_inputs(self) -> bool:
-                return True
-
-    .. dropdown:: supports_audio_inputs
+    ??? info "`supports_audio_inputs`"
 
         Boolean property indicating whether the chat model supports audio inputs.
-        Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        Defaults to `False`.
 
-        .. code-block:: python
+        If set to `True`, the chat model will be tested by inputting an
+        `AudioContentBlock` with the shape:
 
-            {
-                "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
-                "mime_type": "audio/wav",  # or appropriate mime-type
-            }
+        ```python
+        {
+            "type": "audio",
+            "base64": "<base64 audio data>",
+            "mime_type": "audio/wav",  # or appropriate MIME type
+        }
+        ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        See https://docs.langchain.com/oss/python/langchain/models#multimodal
 
-        Example:
+        ```python
+        @property
+        def supports_audio_inputs(self) -> bool:
+            return True
+        ```
 
-        .. code-block:: python
+        !!! warning
+            This test downloads audio data from wikimedia.org. You may need to set the
+            `LANGCHAIN_TESTS_USER_AGENT` environment variable to identify these tests,
+            e.g.,
 
-            @property
-            def supports_audio_inputs(self) -> bool:
-                return True
+            ```bash
+            export LANGCHAIN_TESTS_USER_AGENT="CoolBot/0.0 (https://example.org/coolbot/; coolbot@example.org) generic-library/0.0"
+            ```
 
-    .. dropdown:: supports_video_inputs
+            Refer to the [Wikimedia Foundation User-Agent Policy](https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy).
+
+    ??? info "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
-        Defaults to ``False``. No current tests are written for this feature.
 
-    .. dropdown:: returns_usage_metadata
+        Defaults to `False`.
+
+        No current tests are written for this feature.
+
+    ??? info "`returns_usage_metadata`"
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses. Defaults to ``True``.
+        on invoke and streaming responses.
 
-        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens.
-        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        Defaults to `True`.
 
-        Example:
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
+        input and output tokens.
+        [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
-        .. code-block:: python
+        ```python
+        @property
+        def returns_usage_metadata(self) -> bool:
+            return False
+        ```
 
-            @property
-            def returns_usage_metadata(self) -> bool:
-                return False
+        Models supporting `usage_metadata` should also return the name of the underlying
+        model in the `response_metadata` of the `AIMessage`.
 
-        Models supporting ``usage_metadata`` should also return the name of the
-        underlying model in the ``response_metadata`` of the ``AIMessage``.
-
-    .. dropdown:: supports_anthropic_inputs
+    ??? info "`supports_anthropic_inputs`"
 
         Boolean property indicating whether the chat model supports Anthropic-style
         inputs.
 
         These inputs might feature "tool use" and "tool result" content blocks, e.g.,
 
-        .. code-block:: python
+        ```python
+        [
+            {"type": "text", "text": "Hmm let me think about that"},
+            {
+                "type": "tool_use",
+                "input": {"fav_color": "green"},
+                "id": "foo",
+                "name": "color_picker",
+            },
+        ]
+        ```
 
-            [
-                {"type": "text", "text": "Hmm let me think about that"},
-                {
-                    "type": "tool_use",
-                    "input": {"fav_color": "green"},
-                    "id": "foo",
-                    "name": "color_picker",
-                },
-            ]
-
-        If set to ``True``, the chat model will be tested using content blocks of this
+        If set to `True`, the chat model will be tested using content blocks of this
         form.
 
-        Example:
+        ```python
+        @property
+        def supports_anthropic_inputs(self) -> bool:
+            return False
+        ```
 
-        .. code-block:: python
+    ??? info "`supports_image_tool_message`"
 
-            @property
-            def supports_anthropic_inputs(self) -> bool:
-                return False
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format:
 
-    .. dropdown:: supports_image_tool_message
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
 
-        Boolean property indicating whether the chat model supports ToolMessages
-        that include image content, e.g.,
+        ...as well as the LangChain `ImageContentBlock` format:
 
-        .. code-block:: python
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
 
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
 
-        (OpenAI Chat Completions format), as well as
+        ```python
+        @property
+        def supports_image_tool_message(self) -> bool:
+            return False
+        ```
 
-        .. code-block:: python
+    ??? info "`supports_pdf_tool_message`"
 
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
-                        "mime_type": "image/jpeg",
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
+        Boolean property indicating whether the chat model supports a `ToolMessage
+        that include PDF content using the LangChain `FileContentBlock` format:
 
-        (standard format).
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
 
-        If set to ``True``, the chat model will be tested with message sequences that
-        include ToolMessages of this form.
+        If set to `True`, the chat model will be tested with message sequences that
+        include `ToolMessage` objects of this form.
 
-        Example:
+        ```python
+        @property
+        def supports_pdf_tool_message(self) -> bool:
+            return False
+        ```
 
-        .. code-block:: python
-
-            @property
-            def supports_image_tool_message(self) -> bool:
-                return False
-
-    .. dropdown:: supported_usage_metadata_details
+    ??? info "`supported_usage_metadata_details`"
 
         Property controlling what usage metadata details are emitted in both invoke
         and stream.
 
-        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens.
-        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        `usage_metadata` is an optional dict attribute on `AIMessage` objects that track
+        input and output tokens.
+        [See more](https://reference.langchain.com/python/langchain_core/language_models/#langchain_core.messages.ai.UsageMetadata).
 
-        It includes optional keys ``input_token_details`` and ``output_token_details``
+        It includes optional keys `input_token_details` and `output_token_details`
         that can track usage details associated with special types of tokens, such as
         cached, audio, or reasoning.
 
         Only needs to be overridden if these details are supplied.
 
-    .. dropdown:: enable_vcr_tests
+    ??? info "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
-        `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
+        [VCR](https://vcrpy.readthedocs.io/en/latest/) caching of HTTP calls, such
         as benchmarking tests.
 
         To enable these tests, follow these steps:
 
-        1. Override the ``enable_vcr_tests`` property to return ``True``:
+        1. Override the `enable_vcr_tests` property to return `True`:
 
-            .. code-block:: python
-
-                @property
-                def enable_vcr_tests(self) -> bool:
-                    return True
+            ```python
+            @property
+            def enable_vcr_tests(self) -> bool:
+                return True
+            ```
 
         2. Configure VCR to exclude sensitive headers and other information from
-           cassettes.
+            cassettes.
 
-            .. important::
+            !!! warning
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. Read below for how to configure what
                 information is recorded in cassettes.
 
-            To add configuration to VCR, add a ``conftest.py`` file to the ``tests/``
-            directory and implement the ``vcr_config`` fixture there.
+            To add configuration to VCR, add a `conftest.py` file to the `tests/`
+            directory and implement the `vcr_config` fixture there.
 
-            ``langchain-tests`` excludes the headers ``'authorization'``,
-            ``'x-api-key'``, and ``'api-key'`` from VCR cassettes. To pick up this
-            configuration, you will need to add ``conftest.py`` as shown below. You can
+            `langchain-tests` excludes the headers `'authorization'`,
+            `'x-api-key'`, and `'api-key'` from VCR cassettes. To pick up this
+            configuration, you will need to add `conftest.py` as shown below. You can
             also exclude additional headers, override the default exclusions, or apply
             other customizations to the VCR configuration. See example below:
 
-            .. code-block:: python
-                :caption: tests/conftest.py
+            ```python title="tests/conftest.py"
+            import pytest
+            from langchain_tests.conftest import (
+                _base_vcr_config as _base_vcr_config,
+            )
 
+            _EXTRA_HEADERS = [
+                # Specify additional headers to redact
+                ("user-agent", "PLACEHOLDER"),
+            ]
+
+
+            def remove_response_headers(response: dict) -> dict:
+                # If desired, remove or modify headers in the response.
+                response["headers"] = {}
+                return response
+
+
+            @pytest.fixture(scope="session")
+            def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
+                """Extend the default configuration from langchain_tests."""
+                config = _base_vcr_config.copy()
+                config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
+                config["before_record_response"] = remove_response_headers
+
+                return config
+            ```
+
+            ??? note "Compressing cassettes"
+
+                `langchain-tests` includes a custom VCR serializer that compresses
+                cassettes using gzip. To use it, register the `yaml.gz` serializer
+                to your VCR fixture and enable this serializer in the config. See
+                example below:
+
+                ```python title="tests/conftest.py"
                 import pytest
+                from langchain_tests.conftest import (
+                    CustomPersister,
+                    CustomSerializer,
+                )
                 from langchain_tests.conftest import (
                     _base_vcr_config as _base_vcr_config,
                 )
+                from vcr import VCR
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -594,252 +670,213 @@ class ChatModelIntegrationTests(ChatModelTests):
                     config = _base_vcr_config.copy()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
+                    # New: enable serializer and set file extension
+                    config["serializer"] = "yaml.gz"
+                    config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
 
                     return config
 
-            .. dropdown:: Compressing cassettes
 
-                ``langchain-tests`` includes a custom VCR serializer that compresses
-                cassettes using gzip. To use it, register the ``yaml.gz`` serializer
-                to your VCR fixture and enable this serializer in the config. See
-                example below:
-
-                .. code-block:: python
-                    :caption: tests/conftest.py
-
-                    import pytest
-                    from langchain_tests.conftest import (
-                        CustomPersister,
-                        CustomSerializer,
-                    )
-                    from langchain_tests.conftest import (
-                        _base_vcr_config as _base_vcr_config,
-                    )
-                    from vcr import VCR
-
-                    _EXTRA_HEADERS = [
-                        # Specify additional headers to redact
-                        ("user-agent", "PLACEHOLDER"),
-                    ]
-
-
-                    def remove_response_headers(response: dict) -> dict:
-                        # If desired, remove or modify headers in the response.
-                        response["headers"] = {}
-                        return response
-
-
-                    @pytest.fixture(scope="session")
-                    def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
-                        """Extend the default configuration from langchain_tests."""
-                        config = _base_vcr_config.copy()
-                        config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
-                        config["before_record_response"] = remove_response_headers
-                        # New: enable serializer and set file extension
-                        config["serializer"] = "yaml.gz"
-                        config["path_transformer"] = VCR.ensure_suffix(".yaml.gz")
-
-                        return config
-
-
-                    def pytest_recording_configure(config: dict, vcr: VCR) -> None:
-                        vcr.register_persister(CustomPersister())
-                        vcr.register_serializer("yaml.gz", CustomSerializer())
-
+                def pytest_recording_configure(config: dict, vcr: VCR) -> None:
+                    vcr.register_persister(CustomPersister())
+                    vcr.register_serializer("yaml.gz", CustomSerializer())
+                ```
 
                 You can inspect the contents of the compressed cassettes (e.g., to
                 ensure no sensitive information is recorded) using
 
-                .. code-block:: bash
+                ```bash
+                gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+                ```
 
-                    gunzip -k /path/to/tests/cassettes/TestClass_test.yaml.gz
+                ...or by using the serializer:
 
-                or by using the serializer:
+                ```python
+                from langchain_tests.conftest import (
+                    CustomPersister,
+                    CustomSerializer,
+                )
 
-                .. code-block:: python
-
-                    from langchain_tests.conftest import (
-                        CustomPersister,
-                        CustomSerializer,
-                    )
-
-                    cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(
-                        path, CustomSerializer()
-                    )
+                cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
+                requests, responses = CustomPersister().load_cassette(
+                    path, CustomSerializer()
+                )
+                ```
 
         3. Run tests to generate VCR cassettes.
 
             Example:
-
-            .. code-block:: bash
-
-                uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+            ```bash
+            uv run python -m pytest tests/integration_tests/test_chat_models.py::TestMyModel::test_stream_time
+            ```
 
             This will generate a VCR cassette for the test in
-            ``tests/integration_tests/cassettes/``.
+            `tests/integration_tests/cassettes/`.
 
-            .. important::
+            !!! warning
                 You should inspect the generated cassette to ensure that it does not
                 contain sensitive information. If it does, you can modify the
-                ``vcr_config`` fixture to exclude headers or modify the response
+                `vcr_config` fixture to exclude headers or modify the response
                 before it is recorded.
 
             You can then commit the cassette to your repository. Subsequent test runs
             will use the cassette instead of making HTTP calls.
-
     '''  # noqa: E501,D214
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """Standard parameters for chat model.
-
-        :private:
-        """
+        """Standard parameters for chat model."""
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
-        """Test to verify that ``model.invoke(simple_message)`` works.
+        """Test to verify that `model.invoke(simple_message)` works.
 
         This should pass for all integrations.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
-            If this test fails, you should make sure your ``_generate`` method
+            If this test fails, you should make sure your `_generate` method
             does not raise any exceptions, and that it returns a valid
-            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+            `langchain_core.outputs.chat_result.ChatResult` like so:
 
-            .. code-block:: python
-
-                return ChatResult(
-                    generations=[
-                        ChatGeneration(message=AIMessage(content="Output text"))
-                    ]
-                )
+            ```python
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Output text"))]
+            )
+            ```
 
         """
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
-        """Test to verify that ``await model.ainvoke(simple_message)`` works.
+        """Test to verify that `await model.ainvoke(simple_message)` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "natively async" implementation, but rather that the model can be used
         in an async context.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
-            because ``ainvoke`` has a default implementation that calls ``invoke`` in an
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            because `ainvoke` has a default implementation that calls `invoke` in an
             async context.
 
-            If that test passes but not this one, you should make sure your _agenerate
+            If that test passes but not this one, you should make sure your `_agenerate`
             method does not raise any exceptions, and that it returns a valid
-            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+            `langchain_core.outputs.chat_result.ChatResult` like so:
 
-            .. code-block:: python
-
-                return ChatResult(
-                    generations=[
-                        ChatGeneration(message=AIMessage(content="Output text"))
-                    ]
-                )
-
+            ```python
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Output text"))]
+            )
+            ```
         """
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_stream(self, model: BaseChatModel) -> None:
-        """Test to verify that ``model.stream(simple_message)`` works.
+        """Test to verify that `model.stream(simple_message)` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "streaming" implementation, but rather that the model can be used in a
         streaming context.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
-            because ``stream`` has a default implementation that calls ``invoke`` and
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            because `stream` has a default implementation that calls `invoke` and
             yields the result as a single chunk.
 
-            If that test passes but not this one, you should make sure your ``_stream``
+            If that test passes but not this one, you should make sure your `_stream`
             method does not raise any exceptions, and that it yields valid
-            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            `langchain_core.outputs.chat_generation.ChatGenerationChunk`
             objects like so:
 
-            .. code-block:: python
-
-                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
-
+            ```python
+            yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
+            ```
         """
         num_chunks = 0
+        full: AIMessageChunk | None = None
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
+            full = chunk if full is None else full + chunk
         assert num_chunks > 0
+        assert isinstance(full, AIMessageChunk)
+        assert full.content
+        assert len(full.content_blocks) == 1
+        assert full.content_blocks[0]["type"] == "text"
 
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
-        """Test to verify that ``await model.astream(simple_message)`` works.
+        """Test to verify that `await model.astream(simple_message)` works.
 
         This should pass for all integrations. Passing this test does not indicate
         a "natively async" or "streaming" implementation, but rather that the model can
         be used in an async streaming context.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
             and
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
-            because ``astream`` has a default implementation that calls ``_stream`` in
-            an async context if it is implemented, or ``ainvoke`` and yields the result
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
+            because `astream` has a default implementation that calls `_stream` in
+            an async context if it is implemented, or `ainvoke` and yields the result
             as a single chunk if not.
 
-            If those tests pass but not this one, you should make sure your ``_astream``
+            If those tests pass but not this one, you should make sure your `_astream`
             method does not raise any exceptions, and that it yields valid
-            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            `langchain_core.outputs.chat_generation.ChatGenerationChunk`
             objects like so:
 
-            .. code-block:: python
-
-                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
-
+            ```python
+            yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
+            ```
         """
         num_chunks = 0
+        full: AIMessageChunk | None = None
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
+            full = chunk if full is None else full + chunk
         assert num_chunks > 0
+        assert isinstance(full, AIMessageChunk)
+        assert full.content
+        assert len(full.content_blocks) == 1
+        assert full.content_blocks[0]["type"] == "text"
 
     def test_batch(self, model: BaseChatModel) -> None:
-        """Test to verify that ``model.batch([messages])`` works.
+        """Test to verify that `model.batch([messages])` works.
 
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
-            because ``batch`` has a default implementation that calls ``invoke`` for
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because `batch` has a default implementation that calls `invoke` for
             each message in the batch.
 
-            If that test passes but not this one, you should make sure your ``batch``
+            If that test passes but not this one, you should make sure your `batch`
             method does not raise any exceptions, and that it returns a list of valid
-            :class:`~langchain_core.messages.AIMessage` objects.
+            `AIMessage` objects.
 
         """
         batch_results = model.batch(["Hello", "Hey"])
@@ -849,27 +886,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
-        """Test to verify that ``await model.abatch([messages])`` works.
+        """Test to verify that `await model.abatch([messages])` works.
 
         This should pass for all integrations. Tests the model's ability to process
         multiple prompts in a single batch asynchronously.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
             and
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
-            because ``abatch`` has a default implementation that calls ``ainvoke`` for
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
+            because `abatch` has a default implementation that calls `ainvoke` for
             each message in the batch.
 
-            If those tests pass but not this one, you should make sure your ``abatch``
+            If those tests pass but not this one, you should make sure your `abatch`
             method does not raise any exceptions, and that it returns a list of valid
-            :class:`~langchain_core.messages.AIMessage` objects.
+            `AIMessage` objects.
 
         """
         batch_results = await model.abatch(["Hello", "Hey"])
@@ -879,26 +916,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
         """Test to verify that the model can handle multi-turn conversations.
 
         This should pass for all integrations. Tests the model's ability to process
-        a sequence of alternating human and AI messages as context for generating
-        the next response.
+        a sequence of alternating `HumanMessage` and `AIMessage` objects as context for
+        generating the next response.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
-            because this test also uses ``model.invoke()``.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke`.
 
             If that test passes but not this one, you should verify that:
+
             1. Your model correctly processes the message history
             2. The model maintains appropriate context from previous messages
-            3. The response is a valid :class:`~langchain_core.messages.AIMessage`
+            3. The response is a valid `langchain_core.messages.AIMessage`
 
         """
         messages = [
@@ -910,7 +948,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
@@ -920,20 +958,21 @@ class ChatModelIntegrationTests(ChatModelTests):
         a sequence of double-system, double-human, and double-ai messages as context
         for generating the next response.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
-            because this test also uses ``model.invoke()``.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            because this test also uses `model.invoke`.
 
             Second, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
+
             1. Your model API can handle double messages, or the integration should
-               merge messages before sending them to the API.
-            2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+                merge messages before sending them to the API.
+            2. The response is a valid `langchain_core.messages.AIMessage`
 
         """
         messages = [
@@ -949,97 +988,95 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
         """Test to verify that the model returns correct usage metadata.
 
         This test is optional and should be skipped if the model does not return
-        usage metadata (see Configuration below).
+        usage metadata (see configuration below).
 
-        .. versionchanged:: 0.3.17
-
-            Additionally check for the presence of ``model_name`` in the response
+        !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+            Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
             By default, this test is run.
 
-            To disable this feature, set ``returns_usage_metadata`` to ``False`` in your
+            To disable this feature, set `returns_usage_metadata` to `False` in your
             test class:
 
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def returns_usage_metadata(self) -> bool:
-                        return False
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def returns_usage_metadata(self) -> bool:
+                    return False
+            ```
 
             This test can also check the format of specific kinds of usage metadata
-            based on the ``supported_usage_metadata_details`` property. This property
-            should be configured as follows with the types of tokens that the model
-            supports tracking:
+            based on the `supported_usage_metadata_details` property.
 
-            .. code-block:: python
+            This property should be configured as follows with the types of tokens that
+            the model supports tracking:
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supported_usage_metadata_details(self) -> dict:
-                        return {
-                            "invoke": [
-                                "audio_input",
-                                "audio_output",
-                                "reasoning_output",
-                                "cache_read_input",
-                                "cache_creation_input",
-                            ],
-                            "stream": [
-                                "audio_input",
-                                "audio_output",
-                                "reasoning_output",
-                                "cache_read_input",
-                                "cache_creation_input",
-                            ],
-                        }
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supported_usage_metadata_details(self) -> dict:
+                    return {
+                        "invoke": [
+                            "audio_input",
+                            "audio_output",
+                            "reasoning_output",
+                            "cache_read_input",
+                            "cache_creation_input",
+                        ],
+                        "stream": [
+                            "audio_input",
+                            "audio_output",
+                            "reasoning_output",
+                            "cache_read_input",
+                            "cache_creation_input",
+                        ],
+                    }
+            ```
 
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, first verify that your model returns
-            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in ``_generate``:
+            `langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned `AIMessage` object in `_generate`:
 
-            .. code-block:: python
-
-                return ChatResult(
-                    generations=[
-                        ChatGeneration(
-                            message=AIMessage(
-                                content="Output text",
-                                usage_metadata={
-                                    "input_tokens": 350,
-                                    "output_tokens": 240,
-                                    "total_tokens": 590,
-                                    "input_token_details": {
-                                        "audio": 10,
-                                        "cache_creation": 200,
-                                        "cache_read": 100,
-                                    },
-                                    "output_token_details": {
-                                        "audio": 10,
-                                        "reasoning": 200,
-                                    },
+            ```python
+            return ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": 350,
+                                "output_tokens": 240,
+                                "total_tokens": 590,
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
                                 },
-                            )
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                },
+                            },
                         )
-                    ]
-                )
+                    )
+                ]
+            )
+            ```
 
-            Check also that the response includes a ``'model_name'`` key in its
-            ``usage_metadata``.
-
+            Check also that the response includes a `model_name` key in its
+            `usage_metadata`.
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
@@ -1134,104 +1171,104 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Test to verify that the model returns correct usage metadata in streaming mode.
 
-        .. versionchanged:: 0.3.17
-
-            Additionally check for the presence of ``model_name`` in the response
+        !!! warning "Behavior changed in `langchain-tests` 0.3.17"
+            Additionally check for the presence of `model_name` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
             By default, this test is run.
-            To disable this feature, set ``returns_usage_metadata`` to ``False`` in your
+            To disable this feature, set `returns_usage_metadata` to `False` in your
             test class:
 
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def returns_usage_metadata(self) -> bool:
-                        return False
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def returns_usage_metadata(self) -> bool:
+                    return False
+            ```
 
             This test can also check the format of specific kinds of usage metadata
-            based on the ``supported_usage_metadata_details`` property. This property
-            should be configured as follows with the types of tokens that the model
-            supports tracking:
+            based on the `supported_usage_metadata_details` property.
 
-            .. code-block:: python
+            This property should be configured as follows with the types of tokens that
+            the model supports tracking:
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supported_usage_metadata_details(self) -> dict:
-                        return {
-                            "invoke": [
-                                "audio_input",
-                                "audio_output",
-                                "reasoning_output",
-                                "cache_read_input",
-                                "cache_creation_input",
-                            ],
-                            "stream": [
-                                "audio_input",
-                                "audio_output",
-                                "reasoning_output",
-                                "cache_read_input",
-                                "cache_creation_input",
-                            ],
-                        }
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supported_usage_metadata_details(self) -> dict:
+                    return {
+                        "invoke": [
+                            "audio_input",
+                            "audio_output",
+                            "reasoning_output",
+                            "cache_read_input",
+                            "cache_creation_input",
+                        ],
+                        "stream": [
+                            "audio_input",
+                            "audio_output",
+                            "reasoning_output",
+                            "cache_read_input",
+                            "cache_creation_input",
+                        ],
+                    }
+            ```
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, first verify that your model yields
-            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
-            attached to the returned AIMessage object in ``_stream``
+            `langchain_core.messages.ai.UsageMetadata` dicts
+            attached to the returned `AIMessage` object in `_stream`
             that sum up to the total usage metadata.
 
-            Note that ``input_tokens`` should only be included on one of the chunks
-            (typically the first or the last chunk), and the rest should have ``0`` or
-            ``None`` to avoid counting input tokens multiple times.
+            Note that `input_tokens` should only be included on one of the chunks
+            (typically the first or the last chunk), and the rest should have `0` or
+            `None` to avoid counting input tokens multiple times.
 
-            ``output_tokens`` typically count the number of tokens in each chunk, not
-            the sum. This test will pass as long as the sum of ``output_tokens`` across
-            all chunks is not ``0``.
+            `output_tokens` typically count the number of tokens in each chunk, not
+            the sum. This test will pass as long as the sum of `output_tokens` across
+            all chunks is not `0`.
 
-            .. code-block:: python
-
-                yield ChatResult(
-                    generations=[
-                        ChatGeneration(
-                            message=AIMessage(
-                                content="Output text",
-                                usage_metadata={
-                                    "input_tokens": (
-                                        num_input_tokens if is_first_chunk else 0
-                                    ),
-                                    "output_tokens": 11,
-                                    "total_tokens": (
-                                        11 + num_input_tokens if is_first_chunk else 11
-                                    ),
-                                    "input_token_details": {
-                                        "audio": 10,
-                                        "cache_creation": 200,
-                                        "cache_read": 100,
-                                    },
-                                    "output_token_details": {
-                                        "audio": 10,
-                                        "reasoning": 200,
-                                    },
+            ```python
+            yield ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(
+                            content="Output text",
+                            usage_metadata={
+                                "input_tokens": (
+                                    num_input_tokens if is_first_chunk else 0
+                                ),
+                                "output_tokens": 11,
+                                "total_tokens": (
+                                    11 + num_input_tokens if is_first_chunk else 11
+                                ),
+                                "input_token_details": {
+                                    "audio": 10,
+                                    "cache_creation": 200,
+                                    "cache_read": 100,
                                 },
-                            )
+                                "output_token_details": {
+                                    "audio": 10,
+                                    "reasoning": 200,
+                                },
+                            },
                         )
-                    ]
-                )
+                    )
+                ]
+            )
+            ```
 
-            Check also that the aggregated response includes a ``'model_name'`` key
-            in its ``usage_metadata``.
+            Check also that the aggregated response includes a `model_name` key
+            in its `usage_metadata`.
 
         """
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
 
-        full: Optional[AIMessageChunk] = None
+        full: AIMessageChunk | None = None
         for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
             # only one chunk is allowed to set usage_metadata.input_tokens
@@ -1245,7 +1282,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
-            full = chunk if full is None else cast("AIMessageChunk", full + chunk)
+            full = chunk if full is None else full + chunk
 
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
@@ -1292,30 +1329,30 @@ class ChatModelIntegrationTests(ChatModelTests):
             )
 
     def test_stop_sequence(self, model: BaseChatModel) -> None:
-        """Test that model does not fail when invoked with the ``stop`` parameter.
+        """Test that model does not fail when invoked with the `stop` parameter.
 
-        The ``stop`` parameter is a standard parameter for stopping generation at a
+        The `stop` parameter is a standard parameter for stopping generation at a
         certain token.
 
-        `More on standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
+        [More on standard parameters](https://python.langchain.com/docs/concepts/chat_models/#standard-parameters).
 
         This should pass for all integrations.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
-            If this test fails, check that the function signature for ``_generate``
-            (as well as ``_stream`` and async variants) accepts the ``stop`` parameter:
+            If this test fails, check that the function signature for `_generate`
+            (as well as `_stream` and async variants) accepts the `stop` parameter:
 
-            .. code-block:: python
+            ```python
+            def _generate(
+                self,
+                messages: List[BaseMessage],
+                stop: list[str] | None = None,
+                run_manager: CallbackManagerForLLMRun | None = None,
+                **kwargs: Any,
+            ) -> ChatResult:
 
-                def _generate(
-                    self,
-                    messages: List[BaseMessage],
-                    stop: Optional[List[str]] = None,
-                    run_manager: Optional[CallbackManagerForLLMRun] = None,
-                    **kwargs: Any,
-                ) -> ChatResult:
-
+            ```
         """
         result = model.invoke("hi", stop=["you"])
         assert isinstance(result, AIMessage)
@@ -1329,67 +1366,53 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_tool_calling(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls.
 
-        This test is skipped if the ``has_tool_calling`` property on the test class is
-        set to False.
+        This test is skipped if the `has_tool_calling` property on the test class is
+        set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
+            If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
             chat model.
 
-            This test may fail if the chat model does not support a ``tool_choice``
+            This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. If
-            ``tool_choice`` is not supported and the model consistently fails this
-            test, you can ``xfail`` the test:
+            `tool_choice` is not supported and the model consistently fails this
+            test, you can `xfail` the test:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling(self, model: BaseChatModel) -> None:
-                    super().test_tool_calling(model)
+            ```python
+            @pytest.mark.xfail(reason=("Does not support tool_choice."))
+            def test_tool_calling(self, model: BaseChatModel) -> None:
+                super().test_tool_calling(model)
+            ```
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+            `tool_choice` supports the string `'any'` to force calling that tool.
 
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
         tool_choice_value = None if not self.has_tool_choice else "any"
-        # Emit warning if tool_choice_value property is overridden
-        if inspect.getattr_static(
-            self, "tool_choice_value"
-        ) is not inspect.getattr_static(ChatModelIntegrationTests, "tool_choice_value"):
-            warn_deprecated(
-                "0.3.15",
-                message=(
-                    "`tool_choice_value` will be removed in version 0.3.20. If a "
-                    "model supports `tool_choice`, it should accept `tool_choice='any' "
-                    "and `tool_choice=<string name of tool>`. If the model does not "
-                    "support `tool_choice`, override the `supports_tool_choice` "
-                    "property to return `False`."
-                ),
-                removal="0.3.20",
-            )
         model_with_tools = model.bind_tools(
             [magic_function], tool_choice=tool_choice_value
         )
@@ -1400,7 +1423,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test stream
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1409,43 +1432,43 @@ class ChatModelIntegrationTests(ChatModelTests):
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls.
 
-        This test is skipped if the ``has_tool_calling`` property on the test class is
-        set to False.
+        This test is skipped if the `has_tool_calling` property on the test class is
+        set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
+            If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
             chat model.
 
-            This test may fail if the chat model does not support a ``tool_choice``
+            This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. If
-            ``tool_choice`` is not supported and the model consistently fails this
-            test, you can ``xfail`` the test:
+            `tool_choice` is not supported and the model consistently fails this
+            test, you can `xfail` the test:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                async def test_tool_calling_async(self, model: BaseChatModel) -> None:
-                    await super().test_tool_calling_async(model)
+            ```python
+            @pytest.mark.xfail(reason=("Does not support tool_choice."))
+            async def test_tool_calling_async(self, model: BaseChatModel) -> None:
+                await super().test_tool_calling_async(model)
+            ```
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+            `tool_choice` supports the string `'any'` to force calling that tool.
 
         """
         if not self.has_tool_calling:
@@ -1462,7 +1485,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test astream
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         async for chunk in model_with_tools.astream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1472,42 +1495,42 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test bind runnables as tools.
 
         Test that the model generates tool calls for tools that are derived from
-        LangChain runnables. This test is skipped if the ``has_tool_calling`` property
-        on the test class is set to False.
+        LangChain runnables. This test is skipped if the `has_tool_calling` property
+        on the test class is set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
+            If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
             chat model.
 
-            This test may fail if the chat model does not support a ``tool_choice``
+            This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. If
-            ``tool_choice`` is not supported and the model consistently fails this
-            test, you can ``xfail`` the test:
+            `tool_choice` is not supported and the model consistently fails this
+            test, you can `xfail` the test:
 
-            .. code-block:: python
+            ```python
+            @pytest.mark.xfail(reason=("Does not support tool_choice."))
+            def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+                super().test_bind_runnables_as_tools(model)
+            ```
 
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
-                    super().test_bind_runnables_as_tools(model)
-
-            Otherwise, ensure that the ``tool_choice_value`` property is correctly
+            Otherwise, ensure that the `tool_choice_value` property is correctly
             specified on the test class.
 
         """
@@ -1524,7 +1547,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Generate a greeting in a particular style of speaking.",
         )
         if self.has_tool_choice:
-            tool_choice: Optional[str] = "any"
+            tool_choice: str | None = "any"
         else:
             tool_choice = None
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
@@ -1546,42 +1569,39 @@ class ChatModelIntegrationTests(ChatModelTests):
         with messages generated from providers following OpenAI format.
 
         This test should be skipped if the model does not support tool calling
-        (see Configuration below).
+        (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
             1. The model can correctly handle message histories that include
-               ``AIMessage`` objects with ``""`` content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
-               handled and passed to the model in an appropriate format.
-            3. The model can correctly handle ``ToolMessage`` objects with string
-               content and arbitrary string values for ``tool_call_id``.
+                `AIMessage` objects with `""` content.
+            2. The `tool_calls` attribute on `AIMessage` objects is correctly
+                handled and passed to the model in an appropriate format.
+            3. The model can correctly handle `ToolMessage` objects with string
+                content and arbitrary string values for `tool_call_id`.
 
-            You can ``xfail`` the test if tool calling is implemented but this format
+            You can `xfail` the test if tool calling is implemented but this format
             is not supported.
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_string_content(
-                    self, *args: Any
-                ) -> None:
-                    super().test_tool_message_histories_string_content(*args)
-
+            ```python
+            @pytest.mark.xfail(reason=("Not implemented."))
+            def test_tool_message_histories_string_content(self, *args: Any) -> None:
+                super().test_tool_message_histories_string_content(*args)
+            ```
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1622,56 +1642,55 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         For instance with Anthropic format contents.
 
-        These message histories will include ``AIMessage`` objects with "tool use" and
+        These message histories will include `AIMessage` objects with "tool use" and
         content blocks, e.g.,
 
-        .. code-block:: python
-
-            [
-                {"type": "text", "text": "Hmm let me think about that"},
-                {
-                    "type": "tool_use",
-                    "input": {"fav_color": "green"},
-                    "id": "foo",
-                    "name": "color_picker",
-                },
-            ]
+        ```python
+        [
+            {"type": "text", "text": "Hmm let me think about that"},
+            {
+                "type": "tool_use",
+                "input": {"fav_color": "green"},
+                "id": "foo",
+                "name": "color_picker",
+            },
+        ]
+        ```
 
         This test should be skipped if the model does not support tool calling
-        (see Configuration below).
+        (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
             1. The model can correctly handle message histories that include
-               ``AIMessage`` objects with list content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
-               handled and passed to the model in an appropriate format.
+                `AIMessage` objects with list content.
+            2. The `tool_calls` attribute on `AIMessage` objects is correctly
+                handled and passed to the model in an appropriate format.
             3. The model can correctly handle ToolMessage objects with string content
-               and arbitrary string values for ``tool_call_id``.
+                and arbitrary string values for `tool_call_id`.
 
-            You can ``xfail`` the test if tool calling is implemented but this format
+            You can `xfail` the test if tool calling is implemented but this format
             is not supported.
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_list_content(self, *args: Any) -> None:
-                    super().test_tool_message_histories_list_content(*args)
-
+            ```python
+            @pytest.mark.xfail(reason=("Not implemented."))
+            def test_tool_message_histories_list_content(self, *args: Any) -> None:
+                super().test_tool_message_histories_list_content(*args)
+            ```
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1712,37 +1731,37 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result_list_content, AIMessage)
 
     def test_tool_choice(self, model: BaseChatModel) -> None:
-        """Test ``tool_choice`` parameter.
+        """Test `tool_choice` parameter.
 
-        Test that the model can force tool calling via the ``tool_choice``
-        parameter. This test is skipped if the ``has_tool_choice`` property on the
-        test class is set to False.
+        Test that the model can force tool calling via the `tool_choice`
+        parameter. This test is skipped if the `has_tool_choice` property on the
+        test class is set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_choice`` to False in your
+            To disable tool calling tests, set `has_tool_choice` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_choice(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_choice(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check whether the ``test_tool_calling`` test is passing.
+            If this test fails, check whether the `test_tool_calling` test is passing.
             If it is not, refer to the troubleshooting steps in that test first.
 
-            If ``test_tool_calling`` is passing, check that the underlying model
-            supports forced tool calling. If it does, ``bind_tools`` should accept a
-            ``tool_choice`` parameter that can be used to force a tool call.
+            If `test_tool_calling` is passing, check that the underlying model
+            supports forced tool calling. If it does, `bind_tools` should accept a
+            `tool_choice` parameter that can be used to force a tool call.
 
-            It should accept (1) the string ``'any'`` to force calling the bound tool,
+            It should accept (1) the string `'any'` to force calling the bound tool,
             and (2) the string name of the tool to force calling that tool.
 
         """
@@ -1767,46 +1786,44 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls for tools with no arguments.
 
-        This test is skipped if the ``has_tool_calling`` property on the test class
-        is set to False.
+        This test is skipped if the `has_tool_calling` property on the test class
+        is set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
+            If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
             chat model. It should correctly handle the case where a tool has no
             arguments.
 
-            This test may fail if the chat model does not support a ``tool_choice``
+            This test may fail if the chat model does not support a `tool_choice`
             parameter. This parameter can be used to force a tool call. It may also
             fail if a provider does not support this form of tool. In these cases,
-            you can ``xfail`` the test:
+            you can `xfail` the test:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling_with_no_arguments(
-                    self, model: BaseChatModel
-                ) -> None:
-                    super().test_tool_calling_with_no_arguments(model)
+            ```python
+            @pytest.mark.xfail(reason=("Does not support tool_choice."))
+            def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+                super().test_tool_calling_with_no_arguments(model)
+            ```
 
             Otherwise, in the case that only one tool is bound, ensure that
-            ``tool_choice`` supports the string ``'any'`` to force calling that tool.
+            `tool_choice` supports the string `'any'` to force calling that tool.
 
         """
         if not self.has_tool_calling:
@@ -1820,7 +1837,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1829,40 +1846,40 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_error_status(
         self, model: BaseChatModel, my_adder_tool: BaseTool
     ) -> None:
-        """Test that ``ToolMessage`` with ``status="error"`` can be handled.
+        """Test that `ToolMessage` with `status="error"` can be handled.
 
         These messages may take the form:
 
-        .. code-block:: python
+        ```python
+        ToolMessage(
+            "Error: Missing required argument 'b'.",
+            name="my_adder_tool",
+            tool_call_id="abc123",
+            status="error",
+        )
+        ```
 
-            ToolMessage(
-                "Error: Missing required argument 'b'.",
-                name="my_adder_tool",
-                tool_call_id="abc123",
-                status="error",
-            )
-
-        If possible, the ``status`` field should be parsed and passed appropriately
+        If possible, the `status` field should be parsed and passed appropriately
         to the model.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that the ``status`` field on ``ToolMessage``
+            If this test fails, check that the `status` field on `ToolMessage`
             objects is either ignored or passed to the model appropriately.
 
         """
@@ -1900,45 +1917,44 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         These are represented as a sequence of messages of the following form:
 
-        - ``HumanMessage`` with string content;
-        - ``AIMessage`` with the ``tool_calls`` attribute populated;
-        - ``ToolMessage`` with string content;
-        - ``AIMessage`` with string content (an answer);
-        - ``HumanMessage`` with string content (a follow-up question).
+        - `HumanMessage` with string content;
+        - `AIMessage` with the `tool_calls` attribute populated;
+        - `ToolMessage` with string content;
+        - `AIMessage` with string content (an answer);
+        - `HumanMessage` with string content (a follow-up question).
 
         This test should be skipped if the model does not support tool calling
-        (see Configuration below).
+        (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            This test uses `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html>`__
-            in ``langchain_core`` to generate a sequence of messages representing
+            This test uses [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.tool_example_to_messages.html).
+            in `langchain_core` to generate a sequence of messages representing
             "few-shot" examples.
 
             If this test fails, check that the model can correctly handle this
             sequence of messages.
 
-            You can ``xfail`` the test if tool calling is implemented but this format
+            You can `xfail` the test if tool calling is implemented but this format
             is not supported.
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Not implemented."))
-                def test_structured_few_shot_examples(self, *args: Any) -> None:
-                    super().test_structured_few_shot_examples(*args)
-
+            ```python
+            @pytest.mark.xfail(reason=("Not implemented."))
+            def test_structured_few_shot_examples(self, *args: Any) -> None:
+                super().test_structured_few_shot_examples(*args)
+            ```
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1969,33 +1985,33 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        structured output (see Configuration below).
+        structured output (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable structured output tests, set ``has_structured_output`` to False
+            To disable structured output tests, set `has_structured_output` to False
             in your test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_structured_output(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_structured_output(self) -> bool:
-                        return False
+            By default, `has_structured_output` is True if a model overrides the
+            `with_structured_output` or `bind_tools` methods.
 
-            By default, ``has_structured_output`` is True if a model overrides the
-            ``with_structured_output`` or ``bind_tools`` methods.
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, ensure that the model's ``bind_tools`` method
+            If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
 
-            ``langchain_core`` implements `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html>`__
+            `langchain_core` implements a [utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
             that will accommodate most formats.
 
-            See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
-            of ``with_structured_output``.
+            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            of `with_structured_output`.
 
         """
         if not self.has_structured_output:
@@ -2052,33 +2068,33 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
-        structured output (see Configuration below).
+        structured output (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable structured output tests, set ``has_structured_output`` to False
+            To disable structured output tests, set `has_structured_output` to False
             in your test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_structured_output(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_structured_output(self) -> bool:
-                        return False
+            By default, `has_structured_output` is True if a model overrides the
+            `with_structured_output` or `bind_tools` methods.
 
-            By default, ``has_structured_output`` is True if a model overrides the
-            ``with_structured_output`` or ``bind_tools`` methods.
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, ensure that the model's ``bind_tools`` method
+            If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V2 models.
 
-            ``langchain_core`` implements `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html>`__
+            `langchain_core` implements a [utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
             that will accommodate most formats.
 
-            See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
-            of ``with_structured_output``.
+            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            of `with_structured_output`.
 
         """
         if not self.has_structured_output:
@@ -2129,38 +2145,38 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         """Test structured output using pydantic.v1.BaseModel.
 
-        Verify we can generate structured output using ``pydantic.v1.BaseModel``.
+        Verify we can generate structured output using `pydantic.v1.BaseModel`.
 
-        ``pydantic.v1.BaseModel`` is available in the Pydantic 2 package.
+        `pydantic.v1.BaseModel` is available in the Pydantic 2 package.
 
         This test is optional and should be skipped if the model does not support
-        structured output (see Configuration below).
+        structured output (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable structured output tests, set ``has_structured_output`` to False
+            To disable structured output tests, set `has_structured_output` to False
             in your test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_structured_output(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_structured_output(self) -> bool:
-                        return False
+            By default, `has_structured_output` is True if a model overrides the
+            `with_structured_output` or `bind_tools` methods.
 
-            By default, ``has_structured_output`` is True if a model overrides the
-            ``with_structured_output`` or ``bind_tools`` methods.
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, ensure that the model's ``bind_tools`` method
+            If this test fails, ensure that the model's `bind_tools` method
             properly handles both JSON Schema and Pydantic V1 models.
 
-            ``langchain_core`` implements `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html>`__
+            `langchain_core` implements [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
             that will accommodate most formats.
 
-            See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
-            of ``with_structured_output``.
+            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            of `with_structured_output`.
 
         """
         if not self.has_structured_output:
@@ -2200,33 +2216,33 @@ class ChatModelIntegrationTests(ChatModelTests):
         parameters.
 
         This test is optional and should be skipped if the model does not support
-        structured output (see Configuration below).
+        structured output (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable structured output tests, set ``has_structured_output`` to False
+            To disable structured output tests, set `has_structured_output` to False
             in your test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_structured_output(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_structured_output(self) -> bool:
-                        return False
+            By default, `has_structured_output` is True if a model overrides the
+            `with_structured_output` or `bind_tools` methods.
 
-            By default, ``has_structured_output`` is True if a model overrides the
-            ``with_structured_output`` or ``bind_tools`` methods.
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, ensure that the model's ``bind_tools`` method
+            If this test fails, ensure that the model's `bind_tools` method
             properly handles Pydantic V2 models with optional parameters.
 
-            ``langchain_core`` implements `a utility function <https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html>`__
+            `langchain_core` implements [a utility function](https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html).
             that will accommodate most formats.
 
-            See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
-            of ``with_structured_output``.
+            See [example implementation](https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output).
+            of `with_structured_output`.
 
         """
         if not self.has_structured_output:
@@ -2237,7 +2253,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: str = Field(description="question to set up a joke")
-            punchline: Optional[str] = Field(
+            punchline: str | None = Field(
                 default=None, description="answer to resolve the joke"
             )
 
@@ -2262,33 +2278,33 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: Annotated[str, ..., "question to set up a joke"]
-            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+            punchline: Annotated[str | None, None, "answer to resolve the joke"]
 
         chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, dict)
 
     def test_json_mode(self, model: BaseChatModel) -> None:
-        """Test structured output via `JSON mode. <https://python.langchain.com/docs/concepts/structured_outputs/#json-mode>`_.
+        """Test structured output via [JSON mode.](https://python.langchain.com/docs/concepts/structured_outputs/#json-mode).
 
         This test is optional and should be skipped if the model does not support
-        the JSON mode feature (see Configuration below).
+        the JSON mode feature (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable this test, set ``supports_json_mode`` to False in your
+            To disable this test, set `supports_json_mode` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_json_mode(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_json_mode(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+            See example implementation of `with_structured_output` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
 
         """
         if not self.supports_json_mode:
@@ -2331,37 +2347,50 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs.
 
-        This test should be skipped (see Configuration below) if the model does not
-        support PDF inputs. These will take the form:
+        This test should be skipped (see configuration below) if the model does not
+        support PDF inputs. These will take the shape of the LangChain
+        `FileContentBlock`:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "image",
+            "base64": "<base64 image data>",
+            "mime_type": "application/pdf",
+        }
+        ```
 
+        Furthermore, for backward-compatibility, we must also support OpenAI chat
+        completions file content blocks:
+
+        ```python
+        (
             {
-                "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
-                "mime_type": "application/pdf",
-            }
+                "type": "file",
+                "file": {
+                    "filename": "test_file.pdf",
+                    "file_data": f"data:application/pdf;base64,{pdf_data}",
+                },
+            },
+        )
+        ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        ??? note "Configuration"
 
-        .. dropdown:: Configuration
-
-            To disable this test, set ``supports_pdf_inputs`` to False in your
+            To disable this test, set `supports_pdf_inputs` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_pdf_inputs(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_pdf_inputs(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with pdf content blocks, including base64-encoded files. Otherwise, set
-            the ``supports_pdf_inputs`` property to False.
+            the `supports_pdf_inputs` property to `False`.
 
         """
         if not self.supports_pdf_inputs:
@@ -2378,9 +2407,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "file",
-                    "source_type": "base64",
+                    "base64": pdf_data,
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
                 },
             ]
         )
@@ -2396,7 +2424,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {
                     "type": "file",
                     "file": {
-                        "filename": "test file.pdf",
+                        "filename": "test_file.pdf",
                         "file_data": f"data:application/pdf;base64,{pdf_data}",
                     },
                 },
@@ -2407,44 +2435,67 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_audio_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process audio inputs.
 
-        This test should be skipped (see Configuration below) if the model does not
-        support audio inputs. These will take the form:
+        This test should be skipped (see configuration below) if the model does not
+        support audio inputs. These will take the shape of the LangChain
+        `AudioContentBlock`:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "audio",
+            "base64": "<base64 audio data>",
+            "mime_type": "audio/wav",  # or appropriate MIME type
+        }
+        ```
 
-            {
-                "type": "audio",
-                "source_type": "base64",
+        Furthermore, for backward-compatibility, we must also support OpenAI chat
+        completions audio content blocks:
+
+        ```python
+        {
+            "type": "input_audio",
+            "input_audio": {
                 "data": "<base64 audio data>",
-                "mime_type": "audio/wav",  # or appropriate mime-type
-            }
+                "format": "wav",  # or appropriate format
+            },
+        }
+        ```
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        Note: this test downloads audio data from wikimedia.org. You may need to set
+        the `LANGCHAIN_TESTS_USER_AGENT` environment variable to identify these
+        requests, e.g.,
 
-        .. dropdown:: Configuration
+        ```bash
+        export LANGCHAIN_TESTS_USER_AGENT="CoolBot/0.0 (https://example.org/coolbot/; coolbot@example.org) generic-library/0.0"
+        ```
 
-            To disable this test, set ``supports_audio_inputs`` to False in your
+        Refer to the [Wikimedia Foundation User-Agent Policy](https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy).
+
+        ??? note "Configuration"
+
+            To disable this test, set `supports_audio_inputs` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_audio_inputs(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_audio_inputs(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with audio content blocks, specifically base64-encoded files. Otherwise,
-            set the ``supports_audio_inputs`` property to False.
+            set the `supports_audio_inputs` property to `False`.
 
-        """
+        """  # noqa: E501
         if not self.supports_audio_inputs:
             pytest.skip("Model does not support audio inputs.")
 
-        url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
-        audio_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        # https://commons.wikimedia.org/wiki/File:Northern_Flicker_202280456.wav
+        # License: CC0 1.0 Universal
+        url = "https://upload.wikimedia.org/wikipedia/commons/6/6a/Northern_Flicker_202280456.wav"
+        audio_data = _get_base64_from_url(url)
 
         message = HumanMessage(
             [
@@ -2454,9 +2505,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "audio",
-                    "source_type": "base64",
                     "mime_type": "audio/wav",
-                    "data": audio_data,
+                    "base64": audio_data,
                 },
             ]
         )
@@ -2480,95 +2530,93 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
 
-        This test should be skipped (see Configuration below) if the model does not
-        support image inputs. These will take the form:
+        This test should be skipped (see configuration below) if the model does not
+        support image inputs. These will take the shape of the LangChain
+        `ImageContentBlock`:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "image",
+            "base64": "<base64 image data>",
+            "mime_type": "image/jpeg",  # or appropriate MIME type
+        }
+        ```
 
+        For backward-compatibility, we must also support OpenAI chat completions
+        image content blocks containing base64-encoded images:
+
+        ```python
+        [
+            {"type": "text", "text": "describe the weather in this image"},
             {
-                "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
-                "mime_type": "image/jpeg",  # or appropriate mime-type
-            }
-
-        For backward-compatibility, we must also support OpenAI-style
-        image content blocks:
-
-        .. code-block:: python
-
-            [
-                {"type": "text", "text": "describe the weather in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                },
-            ]
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+            },
+        ]
+        ```
 
         See https://python.langchain.com/docs/concepts/multimodality/
 
-        If the property ``supports_image_urls`` is set to True, the test will also
+        If the property `supports_image_urls` is set to `True`, the test will also
         check that we can process content blocks of the form:
 
-        .. code-block:: python
+        ```python
+        {
+            "type": "image",
+            "url": "<url>",
+        }
+        ```
 
-            {
-                "type": "image",
-                "source_type": "url",
-                "url": "<url>",
-            }
+        ??? note "Configuration"
 
-        .. dropdown:: Configuration
-
-            To disable this test, set ``supports_image_inputs`` to False in your
+            To disable this test, set `supports_image_inputs` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_image_inputs(self) -> bool:
+                    return False
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_image_inputs(self) -> bool:
-                        return False
+                # Can also explicitly disable testing image URLs:
+                @property
+                def supports_image_urls(self) -> bool:
+                    return False
+            ```
 
-                    # Can also explicitly disable testing image URLs:
-                    @property
-                    def supports_image_urls(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that the model can correctly handle messages
             with image content blocks, including base64-encoded images. Otherwise, set
-            the ``supports_image_inputs`` property to False.
+            the `supports_image_inputs` property to `False`.
 
         """
         if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
 
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        # OpenAI format, base64 data
+        # OpenAI CC format, base64 data
         message = HumanMessage(
             content=[
-                {"type": "text", "text": "describe the weather in this image"},
+                {"type": "text", "text": "Give a concise description of this image."},
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
                 },
             ],
         )
         _ = model.invoke([message])
 
-        # Standard format, base64 data
+        # Standard LangChain format, base64 data
         message = HumanMessage(
             content=[
-                {"type": "text", "text": "describe the weather in this image"},
+                {"type": "text", "text": "Give a concise description of this image."},
                 {
                     "type": "image",
-                    "source_type": "base64",
-                    "mime_type": "image/jpeg",
-                    "data": image_data,
+                    "base64": image_data,
+                    "mime_type": "image/png",
                 },
             ],
         )
@@ -2578,10 +2626,12 @@ class ChatModelIntegrationTests(ChatModelTests):
         if self.supports_image_urls:
             message = HumanMessage(
                 content=[
-                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "text",
+                        "text": "Give a concise description of this image.",
+                    },
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -2589,75 +2639,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             _ = model.invoke([message])
 
     def test_image_tool_message(self, model: BaseChatModel) -> None:
-        """Test that the model can process ToolMessages with image inputs.
+        """Test that the model can process `ToolMessage` objects with image inputs.
 
         This test should be skipped if the model does not support messages of the
-        form:
+        Chat Completions `image_url` format:
 
-        .. code-block:: python
-
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
-
-        containing image content blocks in OpenAI Chat Completions format, in addition
-        to messages of the form:
-
-        .. code-block:: python
-
-            ToolMessage(
-                content=[
-                    {
-                        "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
-                        "mime_type": "image/jpeg",
-                    },
-                ],
-                tool_call_id="1",
-                name="random_image",
-            )
-
-        containing image content blocks in standard format.
-
-        This test can be skipped by setting the ``supports_image_tool_message`` property
-        to False (see Configuration below).
-
-        .. dropdown:: Configuration
-
-            To disable this test, set ``supports_image_tool_message`` to False in your
-            test class:
-
-            .. code-block:: python
-
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_image_tool_message(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that the model can correctly handle messages
-            with image content blocks in ToolMessages, including base64-encoded
-            images. Otherwise, set the ``supports_image_tool_message`` property to
-            False.
-
-        """
-        if not self.supports_image_tool_message:
-            pytest.skip("Model does not support image tool message.")
-
-        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-
-        # Support both OpenAI and standard formats
-        oai_format_message = ToolMessage(
+        ```python
+        ToolMessage(
             content=[
                 {
                     "type": "image_url",
@@ -2667,14 +2655,73 @@ class ChatModelIntegrationTests(ChatModelTests):
             tool_call_id="1",
             name="random_image",
         )
+        ```
 
+        In addition, models should support the standard LangChain `ImageContentBlock`
+        format:
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+        ```
+
+        This test can be skipped by setting the `supports_image_tool_message` property
+        to False (see configuration below).
+
+        ??? note "Configuration"
+
+            To disable this test, set `supports_image_tool_message` to `False` in your
+            test class:
+
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_image_tool_message(self) -> bool:
+                    return False
+            ```
+
+        ??? question "Troubleshooting"
+
+            If this test fails, check that the model can correctly handle messages
+            with image content blocks in `ToolMessage` objects, including base64-encoded
+            images. Otherwise, set the `supports_image_tool_message` property to
+            False.
+
+        """
+        if not self.supports_image_tool_message:
+            pytest.skip("Model does not support image tool message.")
+
+        image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+        # OpenAI CC format, base64 data
+        oai_format_message = ToolMessage(
+            content=[
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
+                },
+            ],
+            tool_call_id="1",
+            name="random_image",
+        )
+
+        # Standard LangChain format, base64 data
         standard_format_message = ToolMessage(
             content=[
                 {
                     "type": "image",
-                    "source_type": "base64",
-                    "data": image_data,
-                    "mime_type": "image/jpeg",
+                    "base64": image_data,
+                    "mime_type": "image/png",
                 },
             ],
             tool_call_id="1",
@@ -2684,7 +2731,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         for tool_message in [oai_format_message, standard_format_message]:
             messages = [
                 HumanMessage(
-                    "get a random image using the tool and describe the weather"
+                    "get a random diagram using the tool and give it a concise "
+                    "description"
                 ),
                 AIMessage(
                     [],
@@ -2706,76 +2754,160 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             _ = model.bind_tools([random_image]).invoke(messages)
 
+    def test_pdf_tool_message(self, model: BaseChatModel) -> None:
+        """Test that the model can process `ToolMessage` objects with PDF inputs.
+
+        This test should be skipped if the model does not support messages of the
+        LangChain `FileContentBlock` format:
+
+        ```python
+        ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+        ```
+
+        This test can be skipped by setting the `supports_pdf_tool_message` property
+        to False (see configuration below).
+
+        ??? note "Configuration"
+
+            To disable this test, set `supports_pdf_tool_message` to `False` in your
+            test class:
+
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_pdf_tool_message(self) -> bool:
+                    return False
+            ```
+
+        ??? question "Troubleshooting"
+
+            If this test fails, check that the model can correctly handle messages
+            with PDF content blocks in `ToolMessage` objects, specifically
+            base64-encoded PDFs. Otherwise, set the `supports_pdf_tool_message` property
+            to False.
+        """
+        if not self.supports_pdf_tool_message:
+            pytest.skip("Model does not support PDF tool message.")
+
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        tool_message = ToolMessage(
+            content_blocks=[
+                {
+                    "type": "file",
+                    "base64": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+
+        messages = [
+            HumanMessage(
+                "Get a random PDF using the tool and relay the title verbatim."
+            ),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "1",
+                        "name": "random_pdf",
+                        "args": {},
+                    }
+                ],
+            ),
+            tool_message,
+        ]
+
+        def random_pdf() -> str:
+            """Return a random PDF."""
+            return ""
+
+        _ = model.bind_tools([random_pdf]).invoke(messages)
+
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.
 
-        These message histories will include ``AIMessage`` objects with ``tool_use``
+        These message histories will include `AIMessage` objects with `tool_use`
         content blocks, e.g.,
 
-        .. code-block:: python
+        ```python
+        AIMessage(
+            [
+                {"type": "text", "text": "Hmm let me think about that"},
+                {
+                    "type": "tool_use",
+                    "input": {"fav_color": "green"},
+                    "id": "foo",
+                    "name": "color_picker",
+                },
+            ]
+        )
+        ```
 
-            AIMessage(
-                [
-                    {"type": "text", "text": "Hmm let me think about that"},
-                    {
-                        "type": "tool_use",
-                        "input": {"fav_color": "green"},
-                        "id": "foo",
-                        "name": "color_picker",
-                    },
-                ]
-            )
+        ...as well as `HumanMessage` objects containing `tool_result` content blocks:
 
-        as well as ``HumanMessage`` objects containing ``tool_result`` content blocks:
-
-        .. code-block:: python
-
-            HumanMessage(
-                [
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": "foo",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "green is a great pick! "
-                                "that's my sister's favorite color",
-                            }
-                        ],
-                        "is_error": False,
-                    },
-                    {"type": "text", "text": "what's my sister's favorite color"},
-                ]
-            )
+        ```python
+        HumanMessage(
+            [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "foo",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "green is a great pick! "
+                            "that's my sister's favorite color",
+                        }
+                    ],
+                    "is_error": False,
+                },
+                {"type": "text", "text": "what's my sister's favorite color"},
+            ]
+        )
+        ```
 
         This test should be skipped if the model does not support messages of this
         form (or doesn't support tool calling generally). See Configuration below.
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable this test, set ``supports_anthropic_inputs`` to False in your
+            To disable this test, set `supports_anthropic_inputs` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def supports_anthropic_inputs(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def supports_anthropic_inputs(self) -> bool:
-                        return False
-
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
             If this test fails, check that:
 
             1. The model can correctly handle message histories that include message
-               objects with list content.
-            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled
-               and passed to the model in an appropriate format.
-            3. ``HumanMessage``s with "tool_result" content blocks are correctly
-               handled.
+                objects with list content.
+            2. The `tool_calls` attribute on AIMessage objects is correctly handled
+                and passed to the model in an appropriate format.
+            3. `HumanMessage`s with "tool_result" content blocks are correctly
+                handled.
 
             Otherwise, if Anthropic tool call and result formats are not supported,
-            set the ``supports_anthropic_inputs`` property to False.
+            set the `supports_anthropic_inputs` property to `False`.
 
         """
         if not self.supports_anthropic_inputs:
@@ -2803,14 +2935,14 @@ class ChatModelIntegrationTests(ChatModelTests):
             },
         ]
         if self.supports_image_inputs:
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
             image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
             human_content.append(
                 {
                     "type": "image",
                     "source": {
                         "type": "base64",
-                        "media_type": "image/jpeg",
+                        "media_type": "image/png",
                         "data": image_data,
                     },
                 }
@@ -2823,7 +2955,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {"type": "text", "text": "Hmm let me think about that"},
                     {
                         "type": "tool_use",
-                        "input": {"fav_color": "green"},
+                        "input": {"fav_color": "purple"},
                         "id": "foo",
                         "name": "color_picker",
                     },
@@ -2831,7 +2963,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_calls=[
                     {
                         "name": "color_picker",
-                        "args": {"fav_color": "green"},
+                        "args": {"fav_color": "purple"},
                         "id": "foo",
                         "type": "tool_call",
                     }
@@ -2856,8 +2988,18 @@ class ChatModelIntegrationTests(ChatModelTests):
                 [
                     {
                         "type": "thinking",
-                        "thinking": "I'm thinking...",
-                        "signature": "abc123",
+                        "thinking": (
+                            "This is a simple greeting. I should respond warmly and "
+                            "professionally, and perhaps ask how I can help the person "
+                            "today."
+                        ),
+                        "signature": (
+                            "ErUBCkYICBgCIkDCTQUXPc3O7nHXd302Zercaz8WrrpddpOqHITxBih5ze"
+                            "FPoJkwKBvkvZ8ID1aAfJftji6+ZI5gBYDo7XmNBIkzEgzVDHKopedAn/sc"
+                            "G80aDFDXVZrDOWgla7lEBiIwLq5kfFjQjvF/CyuL8J5V7dRwsJN5gQIXaM"
+                            "B6xXTs6T+2Zp0VdiyiMb/hcdrHt+7aKh0z2E1UnjiOCoTlofNFHzOnKk0q"
+                            "PIoPmfGgpPgGNRgC"
+                        ),
                     },
                     {
                         "type": "text",
@@ -2878,68 +3020,69 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(response, AIMessage)
 
     def test_message_with_name(self, model: BaseChatModel) -> None:
-        """Test that ``HumanMessage`` with values for the ``name`` field can be handled.
+        """Test that `HumanMessage` with values for the `name` field can be handled.
 
         These messages may take the form:
 
-        .. code-block:: python
+        ```python
+        HumanMessage("hello", name="example_user")
+        ```
 
-            HumanMessage("hello", name="example_user")
-
-        If possible, the ``name`` field should be parsed and passed appropriately
+        If possible, the `name` field should be parsed and passed appropriately
         to the model. Otherwise, it should be ignored.
 
-        .. dropdown:: Troubleshooting
+        ??? question "Troubleshooting"
 
-            If this test fails, check that the ``name`` field on ``HumanMessage``
+            If this test fails, check that the `name` field on `HumanMessage`
             objects is either ignored or passed to the model appropriately.
 
         """
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
+    @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     def test_agent_loop(self, model: BaseChatModel) -> None:
         """Test that the model supports a simple ReAct agent loop.
 
-        This test is skipped if the ``has_tool_calling`` property on the test class is
-        set to False.
+        This test is skipped if the `has_tool_calling` property on the test class is
+        set to `False`.
 
         This test is optional and should be skipped if the model does not support
-        tool calling (see Configuration below).
+        tool calling (see configuration below).
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            To disable tool calling tests, set ``has_tool_calling`` to False in your
+            To disable tool calling tests, set `has_tool_calling` to `False` in your
             test class:
 
-            .. code-block:: python
+            ```python
+            class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                @property
+                def has_tool_calling(self) -> bool:
+                    return False
+            ```
 
-                class TestMyChatModelIntegration(ChatModelIntegrationTests):
-                    @property
-                    def has_tool_calling(self) -> bool:
-                        return False
+        ??? question "Troubleshooting"
 
-        .. dropdown:: Troubleshooting
-
-            If this test fails, check that ``bind_tools`` is implemented to correctly
+            If this test fails, check that `bind_tools` is implemented to correctly
             translate LangChain tool objects into the appropriate schema for your
             chat model.
 
             Check also that all required information (e.g., tool calling identifiers)
-            from ``AIMessage`` objects is propagated correctly to model payloads.
+            from `AIMessage` objects is propagated correctly to model payloads.
 
             This test may fail if the chat model does not consistently generate tool
-            calls in response to an appropriate query. In these cases you can ``xfail``
+            calls in response to an appropriate query. In these cases you can `xfail`
             the test:
 
-            .. code-block:: python
-
-                @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_agent_loop(self, model: BaseChatModel) -> None:
-                    super().test_agent_loop(model)
+            ```python
+            @pytest.mark.xfail(reason=("Does not support tool_choice."))
+            def test_agent_loop(self, model: BaseChatModel) -> None:
+                super().test_agent_loop(model)
+            ```
 
         """
         if not self.has_tool_calling:
@@ -2947,13 +3090,15 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         @tool
         def get_weather(location: str) -> str:  # noqa: ARG001
-            """Call to surf the web."""
+            """Get the weather at a location."""
             return "It's sunny."
 
         llm_with_tools = model.bind_tools([get_weather])
         input_message = HumanMessage("What is the weather in San Francisco, CA?")
         tool_call_message = llm_with_tools.invoke([input_message])
         assert isinstance(tool_call_message, AIMessage)
+        content_blocks = tool_call_message.content_blocks
+        assert any(block["type"] == "tool_call" for block in content_blocks)
         tool_calls = tool_call_message.tool_calls
         assert len(tool_calls) == 1
         tool_call = tool_calls[0]
@@ -2975,25 +3120,24 @@ class ChatModelIntegrationTests(ChatModelTests):
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
-        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelIntegrationTests>`
+        See `enable_vcr_tests` dropdown `above <ChatModelIntegrationTests>`
         for more information.
 
-        .. dropdown:: Configuration
+        ??? note "Configuration"
 
-            This test can be enabled or disabled using the ``enable_vcr_tests``
-            property. For example, to disable the test, set this property to ``False``:
+            This test can be enabled or disabled using the `enable_vcr_tests`
+            property. For example, to disable the test, set this property to `False`:
 
-            .. code-block:: python
+            ```python
+            @property
+            def enable_vcr_tests(self) -> bool:
+                return False
+            ```
 
-                @property
-                def enable_vcr_tests(self) -> bool:
-                    return False
-
-            .. important::
-
+            !!! warning
                 VCR will by default record authentication headers and other sensitive
-                information in cassettes. See ``enable_vcr_tests`` dropdown
-                :class:`above <ChatModelIntegrationTests>` for how to configure what
+                information in cassettes. See `enable_vcr_tests` dropdown
+                `above <ChatModelIntegrationTests>` for how to configure what
                 information is recorded in cassettes.
 
         """
@@ -3010,58 +3154,43 @@ class ChatModelIntegrationTests(ChatModelTests):
             benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with audio input.
-
-        :private:
-        """
+        """Invoke with audio input."""
         raise NotImplementedError
 
     def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with audio output.
-
-        :private:
-        """
+        """Invoke with audio output."""
         raise NotImplementedError
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with reasoning output.
-
-        :private:
-        """
+        """Invoke with reasoning output."""
         raise NotImplementedError
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with cache read input.
-
-        :private:
-        """
+        """Invoke with cache read input."""
         raise NotImplementedError
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with cache creation input.
-
-        :private:
-        """
+        """Invoke with cache creation input."""
         raise NotImplementedError
 
     def test_unicode_tool_call_integration(
         self,
         model: BaseChatModel,
         *,
-        tool_choice: Optional[str] = None,
+        tool_choice: str | None = None,
         force_tool_call: bool = True,
     ) -> None:
         r"""Generic integration test for Unicode characters in tool calls.
 
         Args:
             model: The chat model to test
-            tool_choice: Tool choice parameter to pass to ``bind_tools()``
+            tool_choice: Tool choice parameter to pass to `bind_tools()`
                 (provider-specific)
             force_tool_call: Whether to force a tool call
-                (use ``tool_choice=True`` if None)
+                (use `tool_choice=True` if None)
 
         Tests that Unicode characters in tool call arguments are preserved correctly,
-        not escaped as ``\\uXXXX`` sequences.
+        not escaped as `\\uXXXX` sequences.
 
         """
         if not self.has_tool_calling:
