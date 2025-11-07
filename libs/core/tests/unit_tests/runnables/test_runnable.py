@@ -5728,13 +5728,10 @@ def test_runnable_assign() -> None:
 
 
 def test_runnable_typed_dict_schema() -> None:
-    """Testing that the schema is generated properly(not empty) when using TypedDict
+    """Testing that the schema is generated properly(not empty) when using TypedDict.
 
     subclasses to annotate the arguments of a RunnableParallel children.
     """
-    from typing_extensions import TypedDict
-
-    from langchain_core.runnables import RunnableLambda, RunnableParallel
 
     class Foo(TypedDict):
         foo: str
@@ -5759,6 +5756,6 @@ def test_runnable_typed_dict_schema() -> None:
         other=other_runnable,
     )
     assert (
-        repr(parallel.input_schema.validate({"foo": "Y", "bar": "Z"}))
+        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
