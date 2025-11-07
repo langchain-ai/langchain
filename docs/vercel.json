@@ -23,15 +23,7 @@
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
     },
     {
-      "source": "/docs/troubleshooting/errors/GRAPH_RECURSION_LIMIT/",
-      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
-    },
-    {
       "source": "/docs/troubleshooting/errors/INVALID_CONCURRENT_GRAPH_UPDATE",
-      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
-    },
-    {
-      "source": "/docs/troubleshooting/errors/INVALID_CONCURRENT_GRAPH_UPDATE/",
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CONCURRENT_GRAPH_UPDATE"
     },
     {
@@ -39,23 +31,11 @@
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_GRAPH_NODE_RETURN_VALUE"
     },
     {
-      "source": "/docs/troubleshooting/errors/INVALID_GRAPH_NODE_RETURN_VALUE/",
-      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_GRAPH_NODE_RETURN_VALUE"
-    },
-    {
       "source": "/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS",
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/MULTIPLE_SUBGRAPHS"
     },
     {
-      "source": "/docs/troubleshooting/errors/MULTIPLE_SUBGRAPHS/",
-      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/MULTIPLE_SUBGRAPHS"
-    },
-    {
       "source": "/docs/troubleshooting/errors/INVALID_CHAT_HISTORY",
-      "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CHAT_HISTORY"
-    },
-    {
-      "source": "/docs/troubleshooting/errors/INVALID_CHAT_HISTORY/",
       "destination": "https://docs.langchain.com/oss/python/langgraph/errors/INVALID_CHAT_HISTORY"
     },
     {
@@ -83,7 +63,7 @@
       "destination": "https://reference.langchain.com/python/langchain_text_splitters/#langchain_text_splitters.RecursiveCharacterTextSplitter"
     },
     {
-      "source": "/docs/modules/data_connection/document_loaders/",
+      "source": "/docs/modules/data_connection/document_loaders",
       "destination": "https://reference.langchain.com/python/langchain_core/document_loaders/"
     },
     {
@@ -619,11 +599,11 @@
       "destination": "https://docs.langchain.com/oss/python/migrate/langchain-v1"
     },
     {
-      "source": "/docs/",
+      "source": "/docs",
       "destination": "https://docs.langchain.com/oss/python/langchain/overview"
     },
     {
-      "source": "/docs/security/",
+      "source": "/docs/security",
       "destination": "https://docs.langchain.com/oss/python/security-policy"
     },
     {
@@ -638,13 +618,12 @@
       "source": "/docs/get_started/introduction",
       "destination": "https://docs.langchain.com/oss/python/langchain/quickstart"
     },
-
     {
-      "source": "/docs/troubleshooting/errors/INVALID_PROMPT_INPUT/",
+      "source": "/docs/troubleshooting/errors/INVALID_PROMPT_INPUT",
       "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_PROMPT_INPUT"
     },
     {
-      "source": "/docs/troubleshooting/errors/INVALID_TOOL_RESULTS/",
+      "source": "/docs/troubleshooting/errors/INVALID_TOOL_RESULTS",
       "destination": "https://docs.langchain.com/oss/python/langchain/errors/INVALID_TOOL_RESULTS"
     },
     {
@@ -666,6 +645,14 @@
     {
       "source": "/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE",
       "destination": "https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE"
+    },
+    {
+      "source": "/docs/concepts/chat_models",
+      "destination": "https://docs.langchain.com/oss/python/integrations/chat"
+    },
+    {
+      "source": "/docs/integrations/tools/",
+      "destination": "https://docs.langchain.com/oss/python/integrations/tools"
     },
     {
       "source": "/:path((?!api_reference).*)",
