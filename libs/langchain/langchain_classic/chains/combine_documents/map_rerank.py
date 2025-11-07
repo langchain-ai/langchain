@@ -108,10 +108,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
             _output_keys = [*_output_keys, "intermediate_steps"]

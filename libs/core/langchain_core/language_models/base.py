@@ -131,14 +131,19 @@ class BaseLanguageModel(
 
     Caching is not currently supported for streaming methods of models.
     """
+
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
+
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
+
     tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+
     metadata: dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+
     custom_get_token_ids: Callable[[str], list[int]] | None = Field(
         default=None, exclude=True
     )

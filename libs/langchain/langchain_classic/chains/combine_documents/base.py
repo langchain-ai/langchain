@@ -44,8 +44,8 @@ class BaseCombineDocumentsChain(Chain, ABC):
     that will be longer than the context length).
     """
 
-    input_key: str = "input_documents"  #: :meta private:
-    output_key: str = "output_text"  #: :meta private:
+    input_key: str = "input_documents"
+    output_key: str = "output_text"
 
     @override
     def get_input_schema(
@@ -69,18 +69,12 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return [self.output_key]
 
     def prompt_length(self, docs: list[Document], **kwargs: Any) -> int | None:  # noqa: ARG002
@@ -234,24 +228,18 @@ class AnalyzeDocumentChain(Chain):
         ```
     """
 
-    input_key: str = "input_document"  #: :meta private:
+    input_key: str = "input_document"
     text_splitter: TextSplitter = Field(default_factory=RecursiveCharacterTextSplitter)
     combine_docs_chain: BaseCombineDocumentsChain
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return self.combine_docs_chain.output_keys
 
     @override

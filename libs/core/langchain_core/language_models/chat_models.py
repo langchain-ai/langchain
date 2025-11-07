@@ -1515,10 +1515,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1530,11 +1530,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 when specifying a Pydantic or `TypedDict` class.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1640,7 +1644,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         ```
 
         !!! warning "Behavior changed in `langchain-core` 0.2.26"
-            Added support for TypedDict class.
+            Added support for `TypedDict` class.
 
         """  # noqa: E501
         _ = kwargs.pop("method", None)
