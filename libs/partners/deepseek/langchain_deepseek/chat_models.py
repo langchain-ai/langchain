@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Callable, Literal, Optional, TypeVar, Union
+from typing import Any, Literal
 
 import openai
 from langchain_core.callbacks import (
@@ -372,11 +372,11 @@ class ChatDeepSeek(BaseChatOpenAI):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[Union[dict, str, bool]] = None,
-        strict: Optional[bool] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        tool_choice: dict | str | bool | None = None,
+        strict: bool | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
