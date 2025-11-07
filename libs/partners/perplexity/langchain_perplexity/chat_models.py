@@ -165,24 +165,32 @@ class ChatPerplexity(BaseChatModel):
         ```
     """  # noqa: E501
 
-    client: Any = None  #: :meta private:
+    client: Any = None
+
     model: str = "sonar"
     """Model name."""
+
     temperature: float = 0.7
     """What sampling temperature to use."""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     pplx_api_key: SecretStr | None = Field(
         default_factory=secret_from_env("PPLX_API_KEY", default=None), alias="api_key"
     )
     """Base URL path for API requests,
     leave blank if not using a proxy or service emulator."""
+
     request_timeout: float | tuple[float, float] | None = Field(None, alias="timeout")
     """Timeout for requests to PerplexityChat completion API."""
+
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
 
@@ -459,15 +467,18 @@ class ChatPerplexity(BaseChatModel):
 
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
-
             strict:
                 Unsupported: whether to enable strict schema adherence when generating
                 the output. This parameter is included for compatibility with other

@@ -463,16 +463,23 @@ _DictOrPydantic: TypeAlias = dict | _BM
 class BaseChatOpenAI(BaseChatModel):
     """Base wrapper around OpenAI large language models for chat."""
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    root_async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
+    root_client: Any = Field(default=None, exclude=True)
+
+    root_async_client: Any = Field(default=None, exclude=True)
+
     model_name: str = Field(default="gpt-3.5-turbo", alias="model")
     """Model name to use."""
+
     temperature: float | None = None
     """What sampling temperature to use."""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     openai_api_key: (
         SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
     ) = Field(
@@ -524,19 +531,24 @@ class BaseChatOpenAI(BaseChatModel):
         model = ChatOpenAI(model="gpt-5-nano", api_key=get_api_key)
         ```
     """
+
     openai_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
+
     openai_organization: str | None = Field(default=None, alias="organization")
     """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+
     # to support explicit proxy for OpenAI
     openai_proxy: str | None = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
     )
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to OpenAI completion API. Can be float, `httpx.Timeout` or
     `None`."""
+
     stream_usage: bool | None = None
     """Whether to include usage metadata in streaming output. If enabled, an additional
     message chunk will be generated during the stream including usage metadata.
@@ -550,30 +562,42 @@ class BaseChatOpenAI(BaseChatModel):
     !!! warning "Behavior changed in `langchain-openai` 0.3.35"
         Enabled for default base URL and client.
     """
+
     max_retries: int | None = None
     """Maximum number of retries to make when generating."""
+
     presence_penalty: float | None = None
     """Penalizes repeated tokens."""
+
     frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
+
     seed: int | None = None
     """Seed for generation"""
+
     logprobs: bool | None = None
     """Whether to return logprobs."""
+
     top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with an
     associated log probability. `logprobs` must be set to true if this parameter is
     used."""
+
     logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     n: int | None = None
     """Number of chat completions to generate for each prompt."""
+
     top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
+
     max_tokens: int | None = Field(default=None)
     """Maximum number of tokens to generate."""
+
     reasoning_effort: str | None = None
     """Constrains effort on reasoning for reasoning models. For use with the Chat
     Completions API.
@@ -584,6 +608,7 @@ class BaseChatOpenAI(BaseChatModel):
     `'high'`. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
     """
+
     reasoning: dict[str, Any] | None = None
     """Reasoning parameters for reasoning models. For use with the Responses API.
 
@@ -596,6 +621,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     !!! version-added "Added in `langchain-openai` 0.3.24"
     """
+
     verbosity: str | None = None
     """Controls the verbosity level of responses for reasoning models. For use with the
     Responses API.
@@ -604,6 +630,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     !!! version-added "Added in `langchain-openai` 0.3.28"
     """
+
     tiktoken_model_name: str | None = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -614,19 +641,25 @@ class BaseChatOpenAI(BaseChatModel):
     when using one of the many model providers that expose an OpenAI-like
     API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
+
     default_headers: Mapping[str, str] | None = None
+
     default_query: Mapping[str, object] | None = None
+
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.Client`. Only used for sync invocations. Must specify
     `http_async_client` as well if you'd like a custom client for async invocations.
     """
+
     http_async_client: Any | None = Field(default=None, exclude=True)
     """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
     `http_client` as well if you'd like a custom client for sync invocations."""
+
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+
     extra_body: Mapping[str, Any] | None = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM, LM Studio, or other
@@ -649,6 +682,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     include_response_headers: bool = False
     """Whether to include response headers in the output message `response_metadata`."""
+
     disabled_params: dict[str, Any] | None = Field(default=None)
     """Parameters of the OpenAI client or `chat.completions` endpoint that should be
     disabled for the given model.
@@ -1823,10 +1857,10 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1850,11 +1884,15 @@ class BaseChatOpenAI(BaseChatModel):
                     formatting the output into the desired schema into the model call
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -2957,11 +2995,15 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 Learn more about the [differences between methods](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
