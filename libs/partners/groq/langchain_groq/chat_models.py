@@ -1450,8 +1450,18 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     Returns:
         Usage metadata dict with input/output token details.
     """
-    input_tokens = groq_token_usage.get("prompt_tokens") or 0
-    output_tokens = groq_token_usage.get("completion_tokens") or 0
+    # Support both formats: new Responses API uses "input_tokens",
+    # Chat Completions API uses "prompt_tokens"
+    input_tokens = (
+        groq_token_usage.get("input_tokens")
+        or groq_token_usage.get("prompt_tokens")
+        or 0
+    )
+    output_tokens = (
+        groq_token_usage.get("output_tokens")
+        or groq_token_usage.get("completion_tokens")
+        or 0
+    )
     total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
     input_token_details: dict = {
         "cache_read": (groq_token_usage.get("input_tokens_details") or {}).get(

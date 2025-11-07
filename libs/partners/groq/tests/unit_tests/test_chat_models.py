@@ -309,6 +309,27 @@ def test_create_usage_metadata_basic() -> None:
     assert "output_token_details" not in result
 
 
+def test_create_usage_metadata_responses_api_format() -> None:
+    """Test usage metadata creation with new Responses API format."""
+    token_usage = {
+        "input_tokens": 1590,
+        "output_tokens": 77,
+        "total_tokens": 1667,
+        "input_tokens_details": {"cached_tokens": 1536},
+        "output_tokens_details": {"reasoning_tokens": 0},
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 1590
+    assert result["output_tokens"] == 77
+    assert result["total_tokens"] == 1667
+    assert result.get("input_token_details", {}).get("cache_read") == 1536
+    # reasoning_tokens is 0, so filtered out
+    assert "output_token_details" not in result
+
+
 def test_create_usage_metadata_with_cached_tokens() -> None:
     """Test usage metadata with prompt caching."""
     token_usage = {
