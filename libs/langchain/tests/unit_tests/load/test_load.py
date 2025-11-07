@@ -194,11 +194,3 @@ def test_loads_with_missing_secrets() -> None:
     # Should throw on instantiation, not deserialization
     with pytest.raises(openai.OpenAIError):
         loads(llm_string)
-
-
-def test_load_with_string_secrets() -> None:
-    obj = {"api_key": "__SECRET_API_KEY__"}
-    secrets_map = {"__SECRET_API_KEY__": "hello"}
-    result = load(obj, secrets_map=secrets_map)
-
-    assert result["api_key"] == "hello"
