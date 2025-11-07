@@ -565,13 +565,13 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have AIMessage + ToolMessage context
-        assert len(result["messages"]) == 2
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
-        assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
-        # Check context message
-        assert isinstance(result["messages"][1], HumanMessage)
-        assert "edited" in result["messages"][1].content.lower()
+        # Should have only AIMessage (edit context embedded to comply with OpenAI)
+        assert len(result["messages"]) == 1
+        updated_ai_msg = result["messages"][0]
+        assert updated_ai_msg.tool_calls[0]["args"] == {"input": "edited"}
+        assert updated_ai_msg.tool_calls[0]["id"] == "1"  # ID should be preserved
+        # Check edit context is embedded in AIMessage.content
+        assert "edited" in updated_ai_msg.content.lower()
 
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
@@ -698,8 +698,8 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have: 1 AIMessage + 2 ToolMessages (context for each edit)
-        assert len(result["messages"]) == 3
+        # Should have only 1 AIMessage (edit context embedded in content to comply with OpenAI)
+        assert len(result["messages"]) == 1
 
         updated_ai_message = result["messages"][0]
         assert updated_ai_message.tool_calls[0]["args"] == {"location": "New York"}
@@ -707,14 +707,12 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         assert updated_ai_message.tool_calls[1]["args"] == {"location": "New York"}
         assert updated_ai_message.tool_calls[1]["id"] == "2"  # ID preserved
 
-        # Check context messages for both edits
-        context_msg_1 = result["messages"][1]
-        assert isinstance(context_msg_1, HumanMessage)
-        assert "edited" in context_msg_1.content.lower()
-
-        context_msg_2 = result["messages"][2]
-        assert isinstance(context_msg_2, HumanMessage)
-        assert "edited" in context_msg_2.content.lower()
+        # Check that edit context is embedded in AIMessage.content (not separate HumanMessages)
+        # This ensures compliance with OpenAI's message ordering rule
+        assert "edited" in updated_ai_message.content.lower()
+        assert "get_forecast" in updated_ai_message.content
+        assert "get_temperature" in updated_ai_message.content
+        assert "New York" in updated_ai_message.content
 
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
@@ -750,18 +748,16 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 2  # AIMessage + ToolMessage context
+        assert len(result["messages"]) == 1  # Only AIMessage (edit context embedded)
 
-        # First message should be the AI message with modified args
+        # The AIMessage should have modified args
         updated_ai_message = result["messages"][0]
         assert updated_ai_message.tool_calls[0]["args"] == {"input": "modified"}
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
 
-        # Second message should be a ToolMessage informing about the edit
-        context_message = result["messages"][1]
-        assert isinstance(context_message, HumanMessage)
-        assert "edited" in context_message.content.lower()
-        assert "modified" in context_message.content
+        # Edit context should be embedded in AIMessage.content
+        assert "edited" in updated_ai_message.content.lower()
+        assert "modified" in updated_ai_message.content
 
 
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
@@ -940,12 +936,12 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         result = middleware.after_model(state, None)
         assert result is not None
         assert "messages" in result
-        # Should have AIMessage + ToolMessage context
-        assert len(result["messages"]) == 2
-        assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
-        # Check context message
-        assert isinstance(result["messages"][1], HumanMessage)
-        assert "edited" in result["messages"][1].content.lower()
+        # Should have only AIMessage (edit context embedded)
+        assert len(result["messages"]) == 1
+        updated_ai_msg = result["messages"][0]
+        assert updated_ai_msg.tool_calls[0]["args"] == {"input": "edited"}
+        # Check edit context is embedded in AIMessage.content
+        assert "edited" in updated_ai_msg.content.lower()
 
     middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
@@ -1164,25 +1160,36 @@ def test_human_in_the_loop_middleware_edit_actually_executes_with_edited_args(
     )
     assert send_email_calls[0]["subject"] == "this is a test"
 
-    # Verify there's a HumanMessage context about the edit AND the actual tool execution result
+    # Verify there's context about the edit AND the actual tool execution result
     human_messages = [m for m in result["messages"] if isinstance(m, HumanMessage)]
     tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+    ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
 
-    # Check for context messages (HumanMessage)
-    # We expect TWO context messages for edit decisions:
-    # 1. Pre-execution: "[System Note] The user edited the proposed tool call..."
-    # 2. Post-execution: "[IMPORTANT - DO NOT IGNORE] The tool ... has ALREADY BEEN EXECUTED SUCCESSFULLY..."
+    # Check for context messages:
+    # 1. Pre-execution: Embedded in AIMessage.content (to comply with OpenAI message ordering)
+    # 2. Post-execution: Separate HumanMessage with "[IMPORTANT - DO NOT IGNORE]"
     context_messages = [m for m in human_messages if "edited" in m.content.lower()]
-    assert len(context_messages) == 2, (
-        f"Should have exactly two edit context messages (pre and post execution), "
+    assert len(context_messages) == 1, (
+        f"Should have exactly one edit context HumanMessage (post-execution only), "
         f"but got {len(context_messages)}"
     )
-    # Both should mention the edited email address
-    for msg in context_messages:
-        assert "alice@test.com" in msg.content
-    # Post-execution message should have strong language
-    post_exec_messages = [m for m in context_messages if "ALREADY BEEN EXECUTED" in m.content]
-    assert len(post_exec_messages) == 1, "Should have one strong post-execution reminder"
+    # Post-execution message should have strong language and mention edited params
+    post_exec_msg = context_messages[0]
+    assert "ALREADY BEEN EXECUTED" in post_exec_msg.content
+    assert "alice@test.com" in post_exec_msg.content
+
+    # Check that pre-execution context is embedded in AIMessage.content
+    # (This ensures OpenAI's message ordering rule is respected)
+    ai_msg_with_tool_calls = None
+    for msg in ai_messages:
+        if msg.tool_calls:
+            ai_msg_with_tool_calls = msg
+            break
+    assert ai_msg_with_tool_calls is not None, "Should find AIMessage with tool calls"
+    assert "edited" in ai_msg_with_tool_calls.content.lower(), (
+        "Pre-execution edit context should be embedded in AIMessage.content"
+    )
+    assert "alice@test.com" in ai_msg_with_tool_calls.content
 
     # Check for execution result (ToolMessage)
     exec_messages = [m for m in tool_messages if "Email sent" in m.content]

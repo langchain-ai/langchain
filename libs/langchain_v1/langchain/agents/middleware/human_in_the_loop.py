@@ -279,6 +279,42 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         return action_request, review_config
 
+    def _build_updated_content(
+        self,
+        original_content: str | list[str | dict[Any, Any]],
+        edit_info: dict[str, dict[str, Any]],
+    ) -> str | list[str | dict[Any, Any]]:
+        """Build updated AIMessage content with embedded edit information.
+
+        Args:
+            original_content: The original AIMessage content
+            edit_info: Dictionary mapping tool_call_id to edit information
+
+        Returns:
+            Updated content with edit notices embedded
+        """
+        if not edit_info:
+            return original_content
+
+        # Build edit context message to append to AI's content
+        edit_notices = []
+        for info in edit_info.values():
+            args_json = json.dumps(info["args"], indent=2)
+            edit_notices.append(
+                f"[System Note] The user edited the proposed tool call '{info['name']}'. "
+                f"The tool will execute with these modified arguments: {args_json}"
+            )
+        edit_context = "\n\n".join(edit_notices)
+
+        # For now, only handle string content. If content is a list, return as-is
+        # (this is a rare case and embedding edit info in list content is complex)
+        if isinstance(original_content, str):
+            if original_content:
+                return f"{original_content}\n\n{edit_context}"
+            return edit_context
+        # If content is a list, return original (could be enhanced in future)
+        return original_content
+
     def _process_decision(
         self,
         decision: Decision,
@@ -298,18 +334,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 args=edited_action["args"],
                 id=tool_call["id"],
             )
-            # Create a HumanMessage to inform the AI that the tool call was edited
-            # We use HumanMessage instead of ToolMessage to avoid interfering with
-            # the actual tool execution (ToolMessage with same tool_call_id could
-            # prevent the tool from being executed)
-            edit_context_message = HumanMessage(
-                content=(
-                    f"[System Note] The user edited the proposed tool call '{tool_call['name']}'. "
-                    f"The tool will execute with these modified arguments: "
-                    f"{json.dumps(edited_action['args'], indent=2)}"
-                ),
-            )
-            return edited_tool_call, edit_context_message
+            # Don't create a separate HumanMessage here - it would break OpenAI's
+            # message ordering rule (AIMessage with tool_calls must be immediately
+            # followed by ToolMessage). Instead, we'll embed edit info in AIMessage.content
+            # in the after_model method.
+            return edited_tool_call, None
         if decision["type"] == "reject" and "reject" in allowed_decisions:
             # Create a tool message with the human's text response
             content = decision.get("message") or (
@@ -423,8 +452,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
             last_ai_msg.id = str(uuid.uuid4())
 
+        # Embed edit information in AIMessage.content to comply with OpenAI's message
+        # ordering rule (AIMessage with tool_calls must be immediately followed by ToolMessage)
+        updated_content = self._build_updated_content(last_ai_msg.content, edit_info)
+
         updated_ai_msg = AIMessage(
-            content=last_ai_msg.content,
+            content=updated_content,
             tool_calls=revised_tool_calls,
             id=last_ai_msg.id,  # Same ID ensures replacement, not appending
             name=last_ai_msg.name,
