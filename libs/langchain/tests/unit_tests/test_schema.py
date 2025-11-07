@@ -1,7 +1,5 @@
 """Test formatting functionality."""
 
-from typing import Union
-
 import pytest
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
 from langchain_core.documents import Document
@@ -27,27 +25,25 @@ from pydantic import RootModel, ValidationError
 def test_serialization_of_wellknown_objects() -> None:
     """Test that pydantic is able to serialize and deserialize well known objects."""
     well_known_lc_object = RootModel[
-        Union[
-            Document,
-            HumanMessage,
-            SystemMessage,
-            ChatMessage,
-            FunctionMessage,
-            FunctionMessageChunk,
-            AIMessage,
-            HumanMessageChunk,
-            SystemMessageChunk,
-            ChatMessageChunk,
-            AIMessageChunk,
-            StringPromptValue,
-            ChatPromptValueConcrete,
-            AgentFinish,
-            AgentAction,
-            AgentActionMessageLog,
-            ChatGeneration,
-            Generation,
-            ChatGenerationChunk,
-        ]
+        Document
+        | HumanMessage
+        | SystemMessage
+        | ChatMessage
+        | FunctionMessage
+        | FunctionMessageChunk
+        | AIMessage
+        | HumanMessageChunk
+        | SystemMessageChunk
+        | ChatMessageChunk
+        | AIMessageChunk
+        | StringPromptValue
+        | ChatPromptValueConcrete
+        | AgentFinish
+        | AgentAction
+        | AgentActionMessageLog
+        | ChatGeneration
+        | Generation
+        | ChatGenerationChunk,
     ]
 
     lc_objects = [
@@ -77,7 +73,7 @@ def test_serialization_of_wellknown_objects() -> None:
         ChatPromptValueConcrete(messages=[AIMessage(content="foo")]),
         ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
         ChatPromptValueConcrete(
-            messages=[ToolMessage(content="foo", tool_call_id="bar")]
+            messages=[ToolMessage(content="foo", tool_call_id="bar")],
         ),
         ChatPromptValueConcrete(messages=[SystemMessage(content="foo")]),
         Document(page_content="hello"),

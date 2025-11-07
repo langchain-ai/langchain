@@ -1,7 +1,11 @@
+"""Fake LLMs for testing purposes."""
+
 import asyncio
 import time
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Optional
+from typing import Any
+
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -19,7 +23,7 @@ class FakeListLLM(LLM):
     """List of responses to return in order."""
     # This parameter should be removed from FakeListLLM since
     # it's only used by sub-classes.
-    sleep: Optional[float] = None
+    sleep: float | None = None
     """Sleep time in seconds between responses.
 
     Ignored by FakeListLLM, but used by sub-classes.
@@ -31,18 +35,20 @@ class FakeListLLM(LLM):
     """
 
     @property
+    @override
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "fake-list"
 
+    @override
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
-        """Return next response"""
+        """Return next response."""
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -50,14 +56,15 @@ class FakeListLLM(LLM):
             self.i = 0
         return response
 
+    @override
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
-        """Return next response"""
+        """Return next response."""
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -66,6 +73,7 @@ class FakeListLLM(LLM):
         return response
 
     @property
+    @override
     def _identifying_params(self) -> Mapping[str, Any]:
         return {"responses": self.responses}
 
@@ -83,15 +91,16 @@ class FakeStreamingListLLM(FakeListLLM):
     chunks in a streaming implementation.
     """
 
-    error_on_chunk_number: Optional[int] = None
+    error_on_chunk_number: int | None = None
     """If set, will raise an exception on the specified chunk number."""
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[str]:
         result = self.invoke(input, config)
@@ -106,12 +115,13 @@ class FakeStreamingListLLM(FakeListLLM):
                 raise FakeListLLMError
             yield c
 
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
-        config: Optional[RunnableConfig] = None,
+        config: RunnableConfig | None = None,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         result = await self.ainvoke(input, config)

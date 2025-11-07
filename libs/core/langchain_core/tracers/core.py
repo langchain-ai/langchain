@@ -3,26 +3,18 @@
 from __future__ import annotations
 
 import logging
-import sys
 import traceback
 from abc import ABC, abstractmethod
-from collections.abc import Coroutine, Sequence
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
-from uuid import UUID
-
-from tenacity import RetryCallState
 
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -32,7 +24,13 @@ from langchain_core.outputs import (
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine, Sequence
+    from uuid import UUID
+
+    from tenacity import RetryCallState
+
     from langchain_core.documents import Document
+    from langchain_core.messages import BaseMessage
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +38,7 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 
 class _TracerCore(ABC):
-    """
-    Abstract base class for tracers.
+    """Abstract base class for tracers.
 
     This class provides common methods, and reusable methods for tracers.
     """
@@ -71,7 +68,7 @@ class _TracerCore(ABC):
                   for streaming events.
                 - 'original+chat' is a format that is the same as 'original'
                   except it does NOT raise an attribute error on_chat_model_start
-            kwargs: Additional keyword arguments that will be passed to
+            **kwargs: Additional keyword arguments that will be passed to
                 the superclass.
         """
         super().__init__(**kwargs)
@@ -82,7 +79,7 @@ class _TracerCore(ABC):
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
 
     @abstractmethod
-    def _persist_run(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
+    def _persist_run(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Persist a run."""
 
     @staticmethod
@@ -98,17 +95,12 @@ class _TracerCore(ABC):
         """Get the stacktrace of the parent error."""
         msg = repr(error)
         try:
-            if sys.version_info < (3, 10):
-                tb = traceback.format_exception(
-                    error.__class__, error, error.__traceback__
-                )
-            else:
-                tb = traceback.format_exception(error)
+            tb = traceback.format_exception(error)
             return (msg + "\n\n".join(tb)).strip()
         except:  # noqa: E722
             return msg
 
-    def _start_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # type: ignore[return]
+    def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
         if run.parent_run_id:
             if parent := self.order_map.get(run.parent_run_id):
@@ -119,8 +111,9 @@ class _TracerCore(ABC):
             else:
                 if self.log_missing_parent:
                     logger.debug(
-                        f"Parent run {run.parent_run_id} not found for run {run.id}."
-                        " Treating as a root run."
+                        "Parent run %s not found for run %s. Treating as a root run.",
+                        run.parent_run_id,
+                        run.id,
                     )
                 run.parent_run_id = None
                 run.trace_id = run.id
@@ -131,9 +124,7 @@ class _TracerCore(ABC):
         self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
 
-    def _get_run(
-        self, run_id: UUID, run_type: Union[str, set[str], None] = None
-    ) -> Run:
+    def _get_run(self, run_id: UUID, run_type: str | set[str] | None = None) -> Run:
         try:
             run = self.run_map[str(run_id)]
         except KeyError as exc:
@@ -141,7 +132,7 @@ class _TracerCore(ABC):
             raise TracerException(msg) from exc
 
         if isinstance(run_type, str):
-            run_types: Union[set[str], None] = {run_type}
+            run_types: set[str] | None = {run_type}
         else:
             run_types = run_type
         if run_types is not None and run.run_type not in run_types:
@@ -157,14 +148,14 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         messages: list[list[BaseMessage]],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a chat model run."""
-        if self._schema_format not in ("streaming_events", "original+chat"):
+        if self._schema_format not in {"streaming_events", "original+chat"}:
             # Please keep this un-implemented for backwards compatibility.
             # When it's unimplemented old tracers that use the "original" format
             # fallback on the on_llm_start method implementation if they
@@ -201,10 +192,10 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         prompts: list[str],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a llm run."""
@@ -229,13 +220,10 @@ class _TracerCore(ABC):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,  # noqa: ARG002
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        """Append token event to LLM run and return the run."""
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
@@ -253,7 +241,6 @@ class _TracerCore(ABC):
         self,
         retry_state: RetryCallState,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         llm_run = self._get_run(run_id)
         retry_d: dict[str, Any] = {
@@ -281,22 +268,43 @@ class _TracerCore(ABC):
 
     def _complete_llm_run(self, response: LLMResult, run_id: UUID) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.outputs = response.model_dump()
+        if getattr(llm_run, "outputs", None) is None:
+            llm_run.outputs = {}
+        else:
+            llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
+        if not llm_run.extra.get("__omit_auto_outputs", False):
+            llm_run.outputs.update(response.model_dump())
         for i, generations in enumerate(response.generations):
             for j, generation in enumerate(generations):
                 output_generation = llm_run.outputs["generations"][i][j]
                 if "message" in output_generation:
                     output_generation["message"] = dumpd(
-                        cast(ChatGeneration, generation).message
+                        cast("ChatGeneration", generation).message
                     )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
         return llm_run
 
-    def _errored_llm_run(self, error: BaseException, run_id: UUID) -> Run:
+    def _errored_llm_run(
+        self, error: BaseException, run_id: UUID, response: LLMResult | None = None
+    ) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         llm_run.error = self._get_stacktrace(error)
+        if response:
+            if getattr(llm_run, "outputs", None) is None:
+                llm_run.outputs = {}
+            else:
+                llm_run.outputs = cast("dict[str, Any]", llm_run.outputs)
+            if not llm_run.extra.get("__omit_auto_outputs", False):
+                llm_run.outputs.update(response.model_dump())
+            for i, generations in enumerate(response.generations):
+                for j, generation in enumerate(generations):
+                    output_generation = llm_run.outputs["generations"][i][j]
+                    if "message" in output_generation:
+                        output_generation["message"] = dumpd(
+                            cast("ChatGeneration", generation).message
+                        )
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
@@ -307,11 +315,11 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         inputs: dict[str, Any],
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        run_type: Optional[str] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        run_type: str | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a chain Run."""
@@ -334,38 +342,40 @@ class _TracerCore(ABC):
 
     def _get_chain_inputs(self, inputs: Any) -> Any:
         """Get the inputs for a chain run."""
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             return inputs if isinstance(inputs, dict) else {"input": inputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "input": inputs,
             }
-        else:
-            msg = f"Invalid format: {self._schema_format}"
-            raise ValueError(msg)
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             return outputs if isinstance(outputs, dict) else {"output": outputs}
-        elif self._schema_format == "streaming_events":
+        if self._schema_format == "streaming_events":
             return {
                 "output": outputs,
             }
-        else:
-            msg = f"Invalid format: {self._schema_format}"
-            raise ValueError(msg)
+        msg = f"Invalid format: {self._schema_format}"
+        raise ValueError(msg)
 
     def _complete_chain_run(
         self,
         outputs: dict[str, Any],
         run_id: UUID,
-        inputs: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
+        inputs: dict[str, Any] | None = None,
     ) -> Run:
         """Update a chain run with outputs and end time."""
         chain_run = self._get_run(run_id)
-        chain_run.outputs = self._get_chain_outputs(outputs)
+        if getattr(chain_run, "outputs", None) is None:
+            chain_run.outputs = {}
+        if not chain_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", chain_run.outputs).update(
+                self._get_chain_outputs(outputs)
+            )
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
@@ -375,9 +385,8 @@ class _TracerCore(ABC):
     def _errored_chain_run(
         self,
         error: BaseException,
-        inputs: Optional[dict[str, Any]],
+        inputs: dict[str, Any] | None,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         chain_run = self._get_run(run_id)
         chain_run.error = self._get_stacktrace(error)
@@ -392,11 +401,11 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         input_str: str,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
-        inputs: Optional[dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
+        inputs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
@@ -404,7 +413,7 @@ class _TracerCore(ABC):
         if metadata:
             kwargs.update({"metadata": metadata})
 
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             inputs = {"input": input_str}
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
@@ -431,11 +440,13 @@ class _TracerCore(ABC):
         self,
         output: dict[str, Any],
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a tool run with outputs and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
-        tool_run.outputs = {"output": output}
+        if getattr(tool_run, "outputs", None) is None:
+            tool_run.outputs = {}
+        if not tool_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", tool_run.outputs).update({"output": output})
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run
@@ -444,7 +455,6 @@ class _TracerCore(ABC):
         self,
         error: BaseException,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
@@ -458,10 +468,10 @@ class _TracerCore(ABC):
         serialized: dict[str, Any],
         query: str,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        parent_run_id: UUID | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Create a retrieval run."""
@@ -486,11 +496,15 @@ class _TracerCore(ABC):
         self,
         documents: Sequence[Document],
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         """Update a retrieval run with outputs and end time."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
-        retrieval_run.outputs = {"documents": documents}
+        if getattr(retrieval_run, "outputs", None) is None:
+            retrieval_run.outputs = {}
+        if not retrieval_run.extra.get("__omit_auto_outputs", False):
+            cast("dict[str, Any]", retrieval_run.outputs).update(
+                {"documents": documents}
+            )
         retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         return retrieval_run
@@ -499,7 +513,6 @@ class _TracerCore(ABC):
         self,
         error: BaseException,
         run_id: UUID,
-        **kwargs: Any,
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)
@@ -508,82 +521,152 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict) -> _TracerCore:
-        """Deepcopy the tracer."""
+        """Return self deepcopied."""
         return self
 
     def __copy__(self) -> _TracerCore:
-        """Copy the tracer."""
+        """Return self copied."""
         return self
 
-    def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """End a trace for a run."""
+    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """End a trace for a run.
+
+        Args:
+            run: The run.
+        """
         return None
 
-    def _on_run_create(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process a run upon creation."""
+    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process a run upon creation.
+
+        Args:
+            run: The created run.
+        """
         return None
 
-    def _on_run_update(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process a run upon update."""
+    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process a run upon update.
+
+        Args:
+            run: The updated run.
+        """
         return None
 
-    def _on_llm_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the LLM Run upon start."""
+    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the LLM Run upon start.
+
+        Args:
+            run: The LLM run.
+        """
         return None
 
     def _on_llm_new_token(
         self,
-        run: Run,
-        token: str,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]],
-    ) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process new LLM token."""
+        run: Run,  # noqa: ARG002
+        token: str,  # noqa: ARG002
+        chunk: GenerationChunk | ChatGenerationChunk | None,  # noqa: ARG002
+    ) -> Coroutine[Any, Any, None] | None:
+        """Process new LLM token.
+
+        Args:
+            run: The LLM run.
+            token: The new token.
+            chunk: Optional chunk.
+        """
         return None
 
-    def _on_llm_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the LLM Run."""
+    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the LLM Run.
+
+        Args:
+            run: The LLM run.
+        """
         return None
 
-    def _on_llm_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the LLM Run upon error."""
+    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the LLM Run upon error.
+
+        Args:
+            run: The LLM run.
+        """
         return None
 
-    def _on_chain_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Chain Run upon start."""
+    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Chain Run upon start.
+
+        Args:
+            run: The chain run.
+        """
         return None
 
-    def _on_chain_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Chain Run."""
+    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Chain Run.
+
+        Args:
+            run: The chain run.
+        """
         return None
 
-    def _on_chain_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Chain Run upon error."""
+    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Chain Run upon error.
+
+        Args:
+            run: The chain run.
+        """
         return None
 
-    def _on_tool_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Tool Run upon start."""
+    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Tool Run upon start.
+
+        Args:
+            run: The tool run.
+        """
         return None
 
-    def _on_tool_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Tool Run."""
+    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Tool Run.
+
+        Args:
+            run: The tool run.
+        """
         return None
 
-    def _on_tool_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Tool Run upon error."""
+    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Tool Run upon error.
+
+        Args:
+            run: The tool run.
+        """
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Chat Model Run upon start."""
+    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Chat Model Run upon start.
+
+        Args:
+            run: The chat model run.
+        """
         return None
 
-    def _on_retriever_start(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Retriever Run upon start."""
+    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Retriever Run upon start.
+
+        Args:
+            run: The retriever run.
+        """
         return None
 
-    def _on_retriever_end(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Retriever Run."""
+    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Retriever Run.
+
+        Args:
+            run: The retriever run.
+        """
         return None
 
-    def _on_retriever_error(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:
-        """Process the Retriever Run upon error."""
+    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+        """Process the Retriever Run upon error.
+
+        Args:
+            run: The retriever run.
+        """
         return None

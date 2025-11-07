@@ -10,7 +10,11 @@ from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_core.utils.json import parse_json_markdown, parse_partial_json
+from langchain_core.utils.json import (
+    parse_and_check_json_markdown,
+    parse_json_markdown,
+    parse_partial_json,
+)
 from tests.unit_tests.pydantic_utils import _schema
 
 GOOD_JSON = """```json
@@ -204,11 +208,18 @@ def test_parse_json_with_part_code_blocks() -> None:
 
 def test_parse_json_with_code_blocks_and_newlines() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
-
     assert parsed == {
         "action": "Final Answer",
         "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
     }
+
+
+def test_parse_non_dict_json_output() -> None:
+    text = "```json\n1\n```"
+    with pytest.raises(OutputParserException) as exc_info:
+        parse_and_check_json_markdown(text, expected_keys=["foo"])
+
+    assert "Expected JSON object (dict)" in str(exc_info.value)
 
 
 TEST_CASES_ESCAPED_QUOTES = [
@@ -242,6 +253,7 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
+    ('{"foo":"bar\\', '{"foo": "bar"}'),
 ]
 
 
@@ -613,6 +625,6 @@ def test_unicode_handling() -> None:
 
     parser = SimpleJsonOutputParser(pydantic_object=Sample)
     format_instructions = parser.get_format_instructions()
-    assert (
-        "科学文章的标题" in format_instructions
-    ), "Unicode characters should not be escaped"
+    assert "科学文章的标题" in format_instructions, (
+        "Unicode characters should not be escaped"
+    )

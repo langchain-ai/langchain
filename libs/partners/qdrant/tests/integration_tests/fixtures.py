@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import List
 
 from langchain_qdrant.qdrant import RetrievalMode
 from tests.integration_tests.common import qdrant_running_locally
@@ -8,7 +7,7 @@ from tests.integration_tests.common import qdrant_running_locally
 logger = logging.getLogger(__name__)
 
 
-def qdrant_locations(use_in_memory: bool = True) -> List[str]:
+def qdrant_locations(use_in_memory: bool = True) -> list[str]:  # noqa: FBT001, FBT002
     locations = []
 
     if use_in_memory:
@@ -20,7 +19,7 @@ def qdrant_locations(use_in_memory: bool = True) -> List[str]:
         locations.append("http://localhost:6333")
 
     if qdrant_url := os.getenv("QDRANT_URL"):
-        logger.info(f"Running Qdrant tests with Qdrant instance at {qdrant_url}.")
+        logger.info("Running Qdrant tests with Qdrant instance at %s.", qdrant_url)
         locations.append(qdrant_url)
 
     return locations
@@ -28,7 +27,7 @@ def qdrant_locations(use_in_memory: bool = True) -> List[str]:
 
 def retrieval_modes(
     *, dense: bool = True, sparse: bool = True, hybrid: bool = True
-) -> List[RetrievalMode]:
+) -> list[RetrievalMode]:
     modes = []
 
     if dense:

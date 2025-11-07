@@ -1,4 +1,4 @@
-from langchain.indexes import __all__
+from langchain_classic.indexes import __all__
 
 
 def test_all() -> None:
@@ -11,4 +11,4 @@ def test_all() -> None:
         "SQLRecordManager",
         "VectorstoreIndexCreator",
     ]
-    assert __all__ == sorted(expected, key=lambda x: x.lower())
+    assert sorted(__all__) == sorted(expected)

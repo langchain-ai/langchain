@@ -1,6 +1,7 @@
-import json
+from __future__ import annotations
+
 import os
-from typing import Any, List, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import from_env
@@ -14,34 +15,45 @@ VALID_TASKS = ("feature-extraction",)
 class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
-    To use, you should have the ``huggingface_hub`` python package installed, and the
-    environment variable ``HUGGINGFACEHUB_API_TOKEN`` set with your API token, or pass
+    To use, you should have the `huggingface_hub` python package installed, and the
+    environment variable `HUGGINGFACEHUB_API_TOKEN` set with your API token, or pass
     it as a named parameter to the constructor.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
-            from langchain_huggingface import HuggingFaceEndpointEmbeddings
-            model = "sentence-transformers/all-mpnet-base-v2"
-            hf = HuggingFaceEndpointEmbeddings(
-                model=model,
-                task="feature-extraction",
-                huggingfacehub_api_token="my-api-key",
-            )
+        model = "sentence-transformers/all-mpnet-base-v2"
+        hf = HuggingFaceEndpointEmbeddings(
+            model=model,
+            task="feature-extraction",
+            huggingfacehub_api_token="my-api-key",
+        )
+        ```
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
-    model: Optional[str] = None
+    client: Any = None
+
+    async_client: Any = None
+
+    model: str | None = None
     """Model name to use."""
-    repo_id: Optional[str] = None
+
+    provider: str | None = None
+    """Name of the provider to use for inference with the model specified in
+        `repo_id`. e.g. "sambanova". if not specified, defaults to HF Inference API.
+        available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
+
+    repo_id: str | None = None
     """Huggingfacehub repository id, for backward compatibility."""
-    task: Optional[str] = "feature-extraction"
+
+    task: str | None = "feature-extraction"
     """Task to call the model with."""
-    model_kwargs: Optional[dict] = None
+
+    model_kwargs: dict | None = None
     """Keyword arguments to pass to the model."""
 
-    huggingfacehub_api_token: Optional[str] = Field(
+    huggingfacehub_api_token: str | None = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
 
@@ -74,29 +86,33 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             client = InferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
+                provider=self.provider,  # type: ignore[arg-type]
             )
 
             async_client = AsyncInferenceClient(
                 model=self.model,
                 token=huggingfacehub_api_token,
+                provider=self.provider,  # type: ignore[arg-type]
             )
 
             if self.task not in VALID_TASKS:
-                raise ValueError(
+                msg = (
                     f"Got invalid task {self.task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
+                raise ValueError(msg)
             self.client = client
             self.async_client = async_client
 
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
+            raise ImportError(msg) from e
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
@@ -104,17 +120,16 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
         #  api doc: https://huggingface.github.io/text-embeddings-inference/#/Text%20Embeddings%20Inference/embed
-        responses = self.client.post(
-            json={"inputs": texts, **_model_kwargs}, task=self.task
-        )
-        return json.loads(responses.decode())
+        responses = self.client.feature_extraction(text=texts, **_model_kwargs)
+        return responses.tolist()
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
 
         Args:
@@ -122,16 +137,17 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
+
         """
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
-        responses = await self.async_client.post(
-            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+        responses = await self.async_client.feature_extraction(
+            text=texts, **_model_kwargs
         )
-        return json.loads(responses.decode())
+        return responses.tolist()
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Call out to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:
@@ -139,11 +155,11 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embeddings for the text.
-        """
-        response = self.embed_documents([text])[0]
-        return response
 
-    async def aembed_query(self, text: str) -> List[float]:
+        """
+        return self.embed_documents([text])[0]
+
+    async def aembed_query(self, text: str) -> list[float]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding query text.
 
         Args:
@@ -151,6 +167,6 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         Returns:
             Embeddings for the text.
+
         """
-        response = (await self.aembed_documents([text]))[0]
-        return response
+        return (await self.aembed_documents([text]))[0]

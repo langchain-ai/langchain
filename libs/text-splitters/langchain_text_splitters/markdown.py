@@ -1,7 +1,9 @@
+"""Markdown text splitters."""
+
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Tuple, TypedDict, Union
+from typing import Any, TypedDict
 
 from langchain_core.documents import Document
 
@@ -23,16 +25,20 @@ class MarkdownHeaderTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]],
-        return_each_line: bool = False,
-        strip_headers: bool = True,
-    ):
+        headers_to_split_on: list[tuple[str, str]],
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
+        custom_header_patterns: dict[str, int] | None = None,
+    ) -> None:
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
             headers_to_split_on: Headers we want to track
             return_each_line: Return each line w/ associated headers
             strip_headers: Strip split headers from the content of the chunk
+            custom_header_patterns: Optional dict mapping header patterns to their
+                levels. For example: {"**": 1, "***": 2} to treat **Header** as
+                level 1 and ***Header*** as level 2 headers.
         """
         # Output line-by-line or aggregated into chunks w/ common headers
         self.return_each_line = return_each_line
@@ -43,13 +49,47 @@ class MarkdownHeaderTextSplitter:
         )
         # Strip headers split headers from the content of the chunk
         self.strip_headers = strip_headers
+        # Custom header patterns with their levels
+        self.custom_header_patterns = custom_header_patterns or {}
 
-    def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Document]:
-        """Combine lines with common metadata into chunks
+    def _is_custom_header(self, line: str, sep: str) -> bool:
+        """Check if line matches a custom header pattern.
+
+        Args:
+            line: The line to check
+            sep: The separator pattern to match
+
+        Returns:
+            True if the line matches the custom pattern format
+        """
+        if sep not in self.custom_header_patterns:
+            return False
+
+        # Escape special regex characters in the separator
+        escaped_sep = re.escape(sep)
+        # Create regex pattern to match exactly one separator at start and end
+        # with content in between
+        pattern = (
+            f"^{escaped_sep}(?!{escaped_sep})(.+?)(?<!{escaped_sep}){escaped_sep}$"
+        )
+
+        match = re.match(pattern, line)
+        if match:
+            # Extract the content between the patterns
+            content = match.group(1).strip()
+            # Valid header if there's actual content (not just whitespace or separators)
+            # Check that content doesn't consist only of separator characters
+            if content and not all(c in sep for c in content.replace(" ", "")):
+                return True
+        return False
+
+    def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
+        """Combine lines with common metadata into chunks.
+
         Args:
             lines: Line of text / associated header metadata
         """
-        aggregated_chunks: List[LineType] = []
+        aggregated_chunks: list[LineType] = []
 
         for line in lines:
             if (
@@ -86,22 +126,22 @@ class MarkdownHeaderTextSplitter:
             for chunk in aggregated_chunks
         ]
 
-    def split_text(self, text: str) -> List[Document]:
-        """Split markdown file
-        Args:
-            text: Markdown file"""
+    def split_text(self, text: str) -> list[Document]:
+        """Split markdown file.
 
+        Args:
+            text: Markdown file
+        """
         # Split the input text by newline character ("\n").
         lines = text.split("\n")
         # Final output
-        lines_with_metadata: List[LineType] = []
+        lines_with_metadata: list[LineType] = []
         # Content and metadata of the chunk currently being processed
-        current_content: List[str] = []
-        current_metadata: Dict[str, str] = {}
+        current_content: list[str] = []
+        current_metadata: dict[str, str] = {}
         # Keep track of the nested header structure
-        # header_stack: List[Dict[str, Union[int, str]]] = []
-        header_stack: List[HeaderType] = []
-        initial_metadata: Dict[str, str] = {}
+        header_stack: list[HeaderType] = []
+        initial_metadata: dict[str, str] = {}
 
         in_code_block = False
         opening_fence = ""
@@ -119,10 +159,9 @@ class MarkdownHeaderTextSplitter:
                 elif stripped_line.startswith("~~~"):
                     in_code_block = True
                     opening_fence = "~~~"
-            else:
-                if stripped_line.startswith(opening_fence):
-                    in_code_block = False
-                    opening_fence = ""
+            elif stripped_line.startswith(opening_fence):
+                in_code_block = False
+                opening_fence = ""
 
             if in_code_block:
                 current_content.append(stripped_line)
@@ -130,16 +169,22 @@ class MarkdownHeaderTextSplitter:
 
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
-                # Check if line starts with a header that we intend to split on
-                if stripped_line.startswith(sep) and (
+                is_standard_header = stripped_line.startswith(sep) and (
                     # Header with no text OR header is followed by space
                     # Both are valid conditions that sep is being used a header
                     len(stripped_line) == len(sep) or stripped_line[len(sep)] == " "
-                ):
+                )
+                is_custom_header = self._is_custom_header(stripped_line, sep)
+
+                # Check if line matches either standard or custom header pattern
+                if is_standard_header or is_custom_header:
                     # Ensure we are tracking the header as metadata
                     if name is not None:
                         # Get the current header level
-                        current_header_level = sep.count("#")
+                        if sep in self.custom_header_patterns:
+                            current_header_level = self.custom_header_patterns[sep]
+                        else:
+                            current_header_level = sep.count("#")
 
                         # Pop out headers of lower or same level from the stack
                         while (
@@ -155,10 +200,20 @@ class MarkdownHeaderTextSplitter:
                                 initial_metadata.pop(popped_header["name"])
 
                         # Push the current header to the stack
+                        # Extract header text based on header type
+                        if is_custom_header:
+                            # For custom headers like **Header**, extract text
+                            # between patterns
+                            header_text = stripped_line[len(sep) : -len(sep)].strip()
+                        else:
+                            # For standard headers like # Header, extract text
+                            # after the separator
+                            header_text = stripped_line[len(sep) :].strip()
+
                         header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
-                            "data": stripped_line[len(sep) :].strip(),
+                            "data": header_text,
                         }
                         header_stack.append(header)
                         # Update initial_metadata with the current header
@@ -195,24 +250,26 @@ class MarkdownHeaderTextSplitter:
 
         if current_content:
             lines_with_metadata.append(
-                {"content": "\n".join(current_content), "metadata": current_metadata}
+                {
+                    "content": "\n".join(current_content),
+                    "metadata": current_metadata,
+                }
             )
 
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
         if not self.return_each_line:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
-        else:
-            return [
-                Document(page_content=chunk["content"], metadata=chunk["metadata"])
-                for chunk in lines_with_metadata
-            ]
+        return [
+            Document(page_content=chunk["content"], metadata=chunk["metadata"])
+            for chunk in lines_with_metadata
+        ]
 
 
 class LineType(TypedDict):
     """Line type as typed dict."""
 
-    metadata: Dict[str, str]
+    metadata: dict[str, str]
     content: str
 
 
@@ -225,8 +282,7 @@ class HeaderType(TypedDict):
 
 
 class ExperimentalMarkdownSyntaxTextSplitter:
-    """
-    An experimental text splitter for handling Markdown syntax.
+    """An experimental text splitter for handling Markdown syntax.
 
     This splitter aims to retain the exact whitespace of the original text while
     extracting structured metadata, such as headers. It is a re-implementation of the
@@ -234,32 +290,27 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     additional features.
 
     Key Features:
-    - Retains the original whitespace and formatting of the Markdown text.
-    - Extracts headers, code blocks, and horizontal rules as metadata.
-    - Splits out code blocks and includes the language in the "Code" metadata key.
-    - Splits text on horizontal rules (`---`) as well.
-    - Defaults to sensible splitting behavior, which can be overridden using the
-      `headers_to_split_on` parameter.
 
-    Parameters:
-    ----------
-    headers_to_split_on : List[Tuple[str, str]], optional
-        Headers to split on, defaulting to common Markdown headers if not specified.
-    return_each_line : bool, optional
-        When set to True, returns each line as a separate chunk. Default is False.
+    * Retains the original whitespace and formatting of the Markdown text.
+    * Extracts headers, code blocks, and horizontal rules as metadata.
+    * Splits out code blocks and includes the language in the "Code" metadata key.
+    * Splits text on horizontal rules (`---`) as well.
+    * Defaults to sensible splitting behavior, which can be overridden using the
+        `headers_to_split_on` parameter.
 
-    Usage example:
-    --------------
-    >>> headers_to_split_on = [
-    >>>     ("#", "Header 1"),
-    >>>     ("##", "Header 2"),
-    >>> ]
-    >>> splitter = ExperimentalMarkdownSyntaxTextSplitter(
-    >>>     headers_to_split_on=headers_to_split_on
-    >>> )
-    >>> chunks = splitter.split(text)
-    >>> for chunk in chunks:
-    >>>     print(chunk)
+    Example:
+    ```python
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+    splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    chunks = splitter.split(text)
+    for chunk in chunks:
+        print(chunk)
+    ```
 
     This class is currently experimental and subject to change based on feedback and
     further development.
@@ -276,13 +327,28 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
-        return_each_line: bool = False,
-        strip_headers: bool = True,
-    ):
-        self.chunks: List[Document] = []
+        headers_to_split_on: list[tuple[str, str]] | None = None,
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
+        """Initialize the text splitter with header splitting and formatting options.
+
+        This constructor sets up the required configuration for splitting text into
+        chunks based on specified headers and formatting preferences.
+
+        Args:
+            headers_to_split_on (Union[list[tuple[str, str]], None]):
+                A list of tuples, where each tuple contains a header tag (e.g., "h1")
+                and its corresponding metadata key. If `None`, default headers are used.
+            return_each_line (bool):
+                Whether to return each line as an individual chunk.
+                Defaults to `False`, which aggregates lines into larger chunks.
+            strip_headers (bool):
+                Whether to exclude headers from the resulting chunks.
+        """
+        self.chunks: list[Document] = []
         self.current_chunk = Document(page_content="")
-        self.current_header_stack: List[Tuple[int, str]] = []
+        self.current_header_stack: list[tuple[int, str]] = []
         self.strip_headers = strip_headers
         if headers_to_split_on:
             self.splittable_headers = dict(headers_to_split_on)
@@ -291,7 +357,27 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
         self.return_each_line = return_each_line
 
-    def split_text(self, text: str) -> List[Document]:
+    def split_text(self, text: str) -> list[Document]:
+        """Split the input text into structured chunks.
+
+        This method processes the input text line by line, identifying and handling
+        specific patterns such as headers, code blocks, and horizontal rules to
+        split it into structured chunks based on headers, code blocks, and
+        horizontal rules.
+
+        Args:
+            text: The input text to be split into chunks.
+
+        Returns:
+            A list of `Document` objects representing the structured
+            chunks of the input text. If `return_each_line` is enabled, each line
+            is returned as a separate `Document`.
+        """
+        # Reset the state for each new file processed
+        self.chunks.clear()
+        self.current_chunk = Document(page_content="")
+        self.current_header_stack.clear()
+
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:
@@ -323,7 +409,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
         self._complete_chunk_doc()
         # I don't see why `return_each_line` is a necessary feature of this splitter.
-        # It's easy enough to to do outside of the class and the caller can have more
+        # It's easy enough to do outside of the class and the caller can have more
         # control over it.
         if self.return_each_line:
             return [
@@ -336,13 +422,13 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def _resolve_header_stack(self, header_depth: int, header_text: str) -> None:
         for i, (depth, _) in enumerate(self.current_header_stack):
-            if depth == header_depth:
-                self.current_header_stack[i] = (header_depth, header_text)
-                self.current_header_stack = self.current_header_stack[: i + 1]
-                return
+            if depth >= header_depth:
+                # Truncate everything from this level onward
+                self.current_header_stack = self.current_header_stack[:i]
+                break
         self.current_header_stack.append((header_depth, header_text))
 
-    def _resolve_code_chunk(self, current_line: str, raw_lines: List[str]) -> str:
+    def _resolve_code_chunk(self, current_line: str, raw_lines: list[str]) -> str:
         chunk = current_line
         while raw_lines:
             raw_line = raw_lines.pop(0)
@@ -364,18 +450,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line: str) -> Union[re.Match, None]:
+    def _match_header(self, line: str) -> re.Match[str] | None:
         match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
         return None
 
-    def _match_code(self, line: str) -> Union[re.Match, None]:
+    def _match_code(self, line: str) -> re.Match[str] | None:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> Union[re.Match, None]:
+    def _match_horz(self, line: str) -> re.Match[str] | None:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]

@@ -1,7 +1,8 @@
 """__ModuleName__ retrievers."""
 
-from typing import List
+from typing import Any, List
 
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
@@ -13,12 +14,13 @@ class __ModuleName__Retriever(BaseRetriever):
 
     # TODO: Replace with relevant packages, env vars, etc.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args:
@@ -29,61 +31,77 @@ class __ModuleName__Retriever(BaseRetriever):
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __package_name__ import __ModuleName__Retriever
 
-            from __package_name__ import __ModuleName__Retriever
-
-            retriever = __ModuleName__Retriever(
-                # ...
-            )
+        retriever = __ModuleName__Retriever(
+            # ...
+        )
+        ```
 
     Usage:
-        .. code-block:: python
+        ```python
+        query = "..."
 
-            query = "..."
+        retriever.invoke(query)
+        ```
 
-            retriever.invoke(query)
-
-        .. code-block:: none
-
-            # TODO: Example output.
+        ```txt
+        # TODO: Example output.
+        ```
 
     Use within a chain:
-        .. code-block:: python
+        ```python
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.runnables import RunnablePassthrough
+        from langchain_openai import ChatOpenAI
 
-            from langchain_core.output_parsers import StrOutputParser
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.runnables import RunnablePassthrough
-            from langchain_openai import ChatOpenAI
+        prompt = ChatPromptTemplate.from_template(
+            \"\"\"Answer the question based only on the context provided.
 
-            prompt = ChatPromptTemplate.from_template(
-                \"\"\"Answer the question based only on the context provided.
+        Context: {context}
 
-            Context: {context}
+        Question: {question}\"\"\"
+        )
 
-            Question: {question}\"\"\"
-            )
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-            llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        def format_docs(docs):
+            return "\\n\\n".join(doc.page_content for doc in docs)
 
-            def format_docs(docs):
-                return "\\n\\n".join(doc.page_content for doc in docs)
+        chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | model
+            | StrOutputParser()
+        )
 
-            chain = (
-                {"context": retriever | format_docs, "question": RunnablePassthrough()}
-                | prompt
-                | llm
-                | StrOutputParser()
-            )
+        chain.invoke("...")
+        ```
 
-            chain.invoke("...")
+        ```
+        # TODO: Example output.
+        ```
 
-        .. code-block:: none
+    """
 
-             # TODO: Example output.
-
-    """  # noqa: E501
+    k: int = 3
 
     # TODO: This method must be implemented to retrieve documents.
-    def _get_relevant_documents(self, query: str) -> List[Document]:
-        raise NotImplementedError()
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
+    ) -> List[Document]:
+        k = kwargs.get("k", self.k)
+        return [
+            Document(page_content=f"Result {i} for query: {query}") for i in range(k)
+        ]
+
+    # optional: add custom async implementations here
+    # async def _aget_relevant_documents(
+    #     self,
+    #     query: str,
+    #     *,
+    #     run_manager: AsyncCallbackManagerForRetrieverRun,
+    #     **kwargs: Any,
+    # ) -> List[Document]: ...

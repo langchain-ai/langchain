@@ -1,67 +1,58 @@
+"""Serializable base class."""
+
 import contextlib
+import logging
 from abc import ABC
 from typing import (
     Any,
     Literal,
-    Optional,
     TypedDict,
-    Union,
     cast,
 )
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, override
+
+logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
-    """Base class for serialized objects.
-
-    Parameters:
-        lc: The version of the serialization format.
-        id: The unique identifier of the object.
-        name: The name of the object. Optional.
-        graph: The graph of the object. Optional.
-    """
+    """Base class for serialized objects."""
 
     lc: int
+    """The version of the serialization format."""
     id: list[str]
+    """The unique identifier of the object."""
     name: NotRequired[str]
+    """The name of the object."""
     graph: NotRequired[dict[str, Any]]
+    """The graph of the object."""
 
 
 class SerializedConstructor(BaseSerialized):
-    """Serialized constructor.
-
-    Parameters:
-        type: The type of the object. Must be "constructor".
-        kwargs: The constructor arguments.
-    """
+    """Serialized constructor."""
 
     type: Literal["constructor"]
+    """The type of the object. Must be `'constructor'`."""
     kwargs: dict[str, Any]
+    """The constructor arguments."""
 
 
 class SerializedSecret(BaseSerialized):
-    """Serialized secret.
-
-    Parameters:
-        type: The type of the object. Must be "secret".
-    """
+    """Serialized secret."""
 
     type: Literal["secret"]
+    """The type of the object. Must be `'secret'`."""
 
 
 class SerializedNotImplemented(BaseSerialized):
-    """Serialized not implemented.
-
-    Parameters:
-        type: The type of the object. Must be "not_implemented".
-        repr: The representation of the object. Optional.
-    """
+    """Serialized not implemented."""
 
     type: Literal["not_implemented"]
-    repr: Optional[str]
+    """The type of the object. Must be `'not_implemented'`."""
+    repr: str | None
+    """The representation of the object."""
 
 
 def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
@@ -70,15 +61,12 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Args:
         value: The value.
         key: The key.
-        model: The pydantic model.
+        model: The Pydantic model.
 
     Returns:
         Whether the value is different from the default.
-
-    Raises:
-        Exception: If the key is not in the model.
     """
-    field = model.model_fields[key]
+    field = type(model).model_fields[key]
     return _try_neq_default(value, field)
 
 
@@ -105,15 +93,18 @@ class Serializable(BaseModel, ABC):
     It relies on the following methods and properties:
 
     - `is_lc_serializable`: Is this class serializable?
-        By design, even if a class inherits from Serializable, it is not serializable by
-        default. This is to prevent accidental serialization of objects that should not
-        be serialized.
-    - `get_lc_namespace`: Get the namespace of the langchain object.
+        By design, even if a class inherits from `Serializable`, it is not serializable
+        by default. This is to prevent accidental serialization of objects that should
+        not be serialized.
+    - `get_lc_namespace`: Get the namespace of the LangChain object.
+
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
+
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
-        During deserialization an additional mapping is handle
-        classes that have moved or been renamed across package versions.
+        During deserialization an additional mapping is handle classes that have moved
+        or been renamed across package versions.
+
     - `lc_secrets`: A map of constructor argument names to secret ids.
     - `lc_attributes`: List of additional attribute names that should be included
         as part of the serialized representation.
@@ -121,28 +112,31 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""
+        """"""  # noqa: D419  # Intentional blank docstring
         super().__init__(*args, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Is this class serializable?
 
-        By design, even if a class inherits from Serializable, it is not serializable by
-        default. This is to prevent accidental serialization of objects that should not
-        be serialized.
+        By design, even if a class inherits from `Serializable`, it is not serializable
+        by default. This is to prevent accidental serialization of objects that should
+        not be serialized.
 
         Returns:
-            Whether the class is serializable. Default is False.
+            Whether the class is serializable. Default is `False`.
         """
         return False
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        namespace is `["langchain", "llms", "openai"]`
+
+        Returns:
+            The namespace.
         """
         return cls.__module__.split(".")
 
@@ -150,8 +144,7 @@ class Serializable(BaseModel, ABC):
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example,
-            {"openai_api_key": "OPENAI_API_KEY"}
+        For example, `{"openai_api_key": "OPENAI_API_KEY"}`
         """
         return {}
 
@@ -160,18 +153,20 @@ class Serializable(BaseModel, ABC):
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
+
         Default is an empty dictionary.
         """
         return {}
 
     @classmethod
     def lc_id(cls) -> list[str]:
-        """A unique identifier for this class for serialization purposes.
+        """Return a unique identifier for this class for serialization purposes.
 
         The unique identifier is a list of strings that describes the path
         to the object.
+
         For example, for the class `langchain.llms.openai.OpenAI`, the id is
-        ["langchain", "llms", "openai", "OpenAI"].
+        `["langchain", "llms", "openai", "OpenAI"]`.
         """
         # Pydantic generics change the class name. So we need to do the following
         if (
@@ -187,22 +182,27 @@ class Serializable(BaseModel, ABC):
         extra="ignore",
     )
 
+    @override
     def __repr_args__(self) -> Any:
         return [
             (k, v)
             for k, v in super().__repr_args__()
-            if (k not in self.model_fields or try_neq_default(v, k, self))
+            if (k not in type(self).model_fields or try_neq_default(v, k, self))
         ]
 
-    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+    def to_json(self) -> SerializedConstructor | SerializedNotImplemented:
         """Serialize the object to JSON.
 
+        Raises:
+            ValueError: If the class has deprecated attributes.
+
         Returns:
-            A json serializable object or a SerializedNotImplemented object.
+            A JSON serializable object or a `SerializedNotImplemented` object.
         """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
+        model_fields = type(self).model_fields
         secrets = {}
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {}
@@ -210,7 +210,7 @@ class Serializable(BaseModel, ABC):
             if not _is_field_useful(self, k, v):
                 continue
             # Do nothing if the field is excluded
-            if k in self.model_fields and self.model_fields[k].exclude:
+            if k in model_fields and model_fields[k].exclude:
                 continue
 
             lc_kwargs[k] = getattr(self, k, v)
@@ -237,7 +237,7 @@ class Serializable(BaseModel, ABC):
                         raise ValueError(msg)
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable, self if cls is None else super(cls, self))
+            this = cast("Serializable", self if cls is None else super(cls, self))
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets
@@ -246,10 +246,10 @@ class Serializable(BaseModel, ABC):
             # that are not present in the fields.
             for key in list(secrets):
                 value = secrets[key]
-                if key in this.model_fields:
-                    alias = this.model_fields[key].alias
-                    if alias is not None:
-                        secrets[alias] = value
+                if (key in model_fields) and (
+                    alias := model_fields[key].alias
+                ) is not None:
+                    secrets[alias] = value
             lc_kwargs.update(this.lc_attributes)
 
         # include all secrets, even if not specified in kwargs
@@ -269,6 +269,11 @@ class Serializable(BaseModel, ABC):
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
+        """Serialize a "not implemented" object.
+
+        Returns:
+            `SerializedNotImplemented`.
+        """
         return to_json_not_implemented(self)
 
 
@@ -282,11 +287,11 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
 
     Returns:
         Whether the field is useful. If the field is required, it is useful.
-        If the field is not required, it is useful if the value is not None.
-        If the field is not required and the value is None, it is useful if the
+        If the field is not required, it is useful if the value is not `None`.
+        If the field is not required and the value is `None`, it is useful if the
         default value is different from the value.
     """
-    field = inst.model_fields.get(key)
+    field = type(inst).model_fields.get(key)
     if not field:
         return False
 
@@ -342,24 +347,24 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     """Serialize a "not implemented" object.
 
     Args:
-        obj: object to serialize.
+        obj: Object to serialize.
 
     Returns:
-        SerializedNotImplemented
+        `SerializedNotImplemented`
     """
-    _id: list[str] = []
+    id_: list[str] = []
     try:
         if hasattr(obj, "__name__"):
-            _id = [*obj.__module__.split("."), obj.__name__]
+            id_ = [*obj.__module__.split("."), obj.__name__]
         elif hasattr(obj, "__class__"):
-            _id = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
+            id_ = [*obj.__class__.__module__.split("."), obj.__class__.__name__]
     except Exception:
-        pass
+        logger.debug("Failed to serialize object", exc_info=True)
 
     result: SerializedNotImplemented = {
         "lc": 1,
         "type": "not_implemented",
-        "id": _id,
+        "id": id_,
         "repr": None,
     }
     with contextlib.suppress(Exception):

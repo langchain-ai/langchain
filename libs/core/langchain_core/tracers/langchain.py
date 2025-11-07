@@ -2,37 +2,35 @@
 
 from __future__ import annotations
 
-import copy
 import logging
-import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from langsmith import Client
+from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
-from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential_jitter,
 )
+from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
 from langchain_core.load import dumpd
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
+    from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_EXECUTOR: Optional[ThreadPoolExecutor] = None
+_EXECUTOR: ThreadPoolExecutor | None = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -42,7 +40,6 @@ def log_error_once(method: str, exception: Exception) -> None:
         method: The method that raised the exception.
         exception: The exception that was raised.
     """
-    global _LOGGED
     if (method, type(exception)) in _LOGGED:
         return
     _LOGGED.add((method, type(exception)))
@@ -51,34 +48,25 @@ def log_error_once(method: str, exception: Exception) -> None:
 
 def wait_for_all_tracers() -> None:
     """Wait for all tracers to finish."""
-    if rt._CLIENT is not None and rt._CLIENT.tracing_queue is not None:
-        rt._CLIENT.tracing_queue.join()
+    if rt._CLIENT is not None:  # noqa: SLF001
+        rt._CLIENT.flush()  # noqa: SLF001
 
 
 def get_client() -> Client:
-    """Get the client."""
+    """Get the client.
+
+    Returns:
+        The LangSmith client.
+    """
     return rt.get_cached_client()
 
 
 def _get_executor() -> ThreadPoolExecutor:
     """Get the executor."""
-    global _EXECUTOR
+    global _EXECUTOR  # noqa: PLW0603
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
-
-
-def _run_to_dict(run: Run) -> dict:
-    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
-    # run.model_dump
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-
-        return {
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            "inputs": run.inputs.copy() if run.inputs is not None else None,
-            "outputs": run.outputs.copy() if run.outputs is not None else None,
-        }
 
 
 class LangChainTracer(BaseTracer):
@@ -88,10 +76,10 @@ class LangChainTracer(BaseTracer):
 
     def __init__(
         self,
-        example_id: Optional[Union[UUID, str]] = None,
-        project_name: Optional[str] = None,
-        client: Optional[Client] = None,
-        tags: Optional[list[str]] = None,
+        example_id: UUID | str | None = None,
+        project_name: str | None = None,
+        client: Client | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -101,7 +89,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -110,7 +98,8 @@ class LangChainTracer(BaseTracer):
         self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self.tags = tags or []
-        self.latest_run: Optional[Run] = None
+        self.latest_run: Run | None = None
+        self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:
@@ -122,8 +111,10 @@ class LangChainTracer(BaseTracer):
                 run.tags = self.tags.copy()
 
         super()._start_trace(run)
-        if run._client is None:
-            run._client = self.client  # type: ignore
+        if run.ls_client is None:
+            run.ls_client = self.client
+        if get_tracing_context().get("enabled") is False:
+            run.extra["__disabled"] = True
 
     def on_chat_model_start(
         self,
@@ -131,10 +122,10 @@ class LangChainTracer(BaseTracer):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -143,14 +134,14 @@ class LangChainTracer(BaseTracer):
             serialized: The serialized model.
             messages: The messages.
             run_id: The run ID.
-            tags: The tags. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata. Defaults to None.
-            name: The name. Defaults to None.
-            kwargs: Additional keyword arguments.
+            tags: The tags.
+            parent_run_id: The parent run ID.
+            metadata: The metadata.
+            name: The name.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Run: The run.
+            The run.
         """
         start_time = datetime.now(timezone.utc)
         if metadata:
@@ -172,19 +163,19 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
-        # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.copy for
-        # run.model_copy
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-            run_ = copy.copy(run)
-        run_.reference_example_id = self.example_id
-        self.latest_run = run_
+        # We want to free up more memory by avoiding keeping a reference to the
+        # whole nested run tree.
+        self.latest_run = Run.construct(
+            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+            inputs=run.inputs,
+            outputs=run.outputs,
+        )
 
     def get_run_url(self) -> str:
         """Get the LangSmith root run URL.
 
         Returns:
-            str: The LangSmith root run URL.
+            The LangSmith root run URL.
 
         Raises:
             ValueError: If no traced run is found.
@@ -216,13 +207,14 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
-        run_dict = _run_to_dict(run)
-        run_dict["tags"] = self._get_tags(run)
-        extra = run_dict.get("extra", {})
-        extra["runtime"] = get_runtime_environment()
-        run_dict["extra"] = extra
+        if run.extra.get("__disabled"):
+            return
         try:
-            self.client.create_run(**run_dict, project_name=self.project_name)
+            run.extra["runtime"] = get_runtime_environment()
+            run.tags = self._get_tags(run)
+            if run.ls_client is not self.client:
+                run.ls_client = self.client
+            run.post()
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("post", e)
@@ -230,10 +222,10 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
-            run_dict = _run_to_dict(run)
-            run_dict["tags"] = self._get_tags(run)
-            self.client.update_run(run.id, **run_dict)
+            run.patch(exclude_inputs=run.extra.get("inputs_is_truthy", False))
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("patch", e)
@@ -245,24 +237,25 @@ class LangChainTracer(BaseTracer):
             run.reference_example_id = self.example_id
         self._persist_run_single(run)
 
+    @override
     def _llm_run_with_token_event(
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,
     ) -> Run:
-        """
-        Append token event to LLM run and return the run.
-        """
+        run_id_str = str(run_id)
+        if run_id_str not in self.run_has_token_event_map:
+            self.run_has_token_event_map[run_id_str] = True
+        else:
+            return self._get_run(run_id, run_type={"llm", "chat_model"})
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,
             run_id,
             chunk=None,
             parent_run_id=parent_run_id,
-            **kwargs,
         )
 
     def _on_chat_model_start(self, run: Run) -> None:
@@ -323,5 +316,5 @@ class LangChainTracer(BaseTracer):
 
     def wait_for_futures(self) -> None:
         """Wait for the given futures to complete."""
-        if self.client is not None and self.client.tracing_queue is not None:
-            self.client.tracing_queue.join()
+        if self.client is not None:
+            self.client.flush()

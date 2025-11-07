@@ -1,8 +1,11 @@
+"""Utilities for JSON."""
+
 from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 
@@ -17,24 +20,26 @@ def _replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def _custom_parser(multiline_string: str) -> str:
-    """
+def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
+    r"""Custom parser for multiline strings.
+
     The LLM response for `action_input` may be a multiline
     string containing unescaped newlines, tabs or quotes. This function
     replaces those characters with their escaped counterparts.
-    (newlines in JSON must be double-escaped: `\\n`)
+    (newlines in JSON must be double-escaped: `\\n`).
+
+    Returns:
+        The modified string with escaped newlines, tabs and quotes.
     """
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()
 
-    multiline_string = re.sub(
+    return re.sub(
         r'("action_input"\:\s*")(.*?)(")',
         _replace_new_line,
         multiline_string,
         flags=re.DOTALL,
     )
-
-    return multiline_string
 
 
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
@@ -46,7 +51,7 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     Args:
         s: The JSON string to parse.
-        strict: Whether to use strict parsing. Defaults to False.
+        strict: Whether to use strict parsing.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -65,36 +70,40 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
 
     # Process each character in the string one at a time.
     for char in s:
+        new_char = char
         if is_inside_string:
             if char == '"' and not escaped:
                 is_inside_string = False
             elif char == "\n" and not escaped:
-                char = "\\n"  # Replace the newline character with the escape sequence.
+                new_char = (
+                    "\\n"  # Replace the newline character with the escape sequence.
+                )
             elif char == "\\":
                 escaped = not escaped
             else:
                 escaped = False
-        else:
-            if char == '"':
-                is_inside_string = True
-                escaped = False
-            elif char == "{":
-                stack.append("}")
-            elif char == "[":
-                stack.append("]")
-            elif char == "}" or char == "]":
-                if stack and stack[-1] == char:
-                    stack.pop()
-                else:
-                    # Mismatched closing character; the input is malformed.
-                    return None
+        elif char == '"':
+            is_inside_string = True
+            escaped = False
+        elif char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in {"}", "]"}:
+            if stack and stack[-1] == char:
+                stack.pop()
+            else:
+                # Mismatched closing character; the input is malformed.
+                return None
 
         # Append the processed character to the new string.
-        new_chars.append(char)
+        new_chars.append(new_char)
 
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
+        if escaped:  # Remove unterminated escape character
+            new_chars.pop()
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.
@@ -128,6 +137,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
+        parser: The parser to use. Defaults to `parse_partial_json`.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -161,9 +171,9 @@ def _parse_json(
 
 
 def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
-    """
-    Parse a JSON string from a Markdown string and check that it
-    contains the expected keys.
+    """Parse and check a JSON string from a Markdown string.
+
+    Checks that it contains the expected keys.
 
     Args:
         text: The Markdown string.
@@ -181,6 +191,12 @@ def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     except json.JSONDecodeError as e:
         msg = f"Got invalid JSON object. Error: {e}"
         raise OutputParserException(msg) from e
+    if not isinstance(json_obj, dict):
+        error_message = (
+            f"Expected JSON object (dict), but got: {type(json_obj).__name__}. "
+        )
+        raise OutputParserException(error_message, llm_output=text)
+
     for key in expected_keys:
         if key not in json_obj:
             msg = (

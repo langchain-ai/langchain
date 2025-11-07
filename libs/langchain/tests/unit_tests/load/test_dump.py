@@ -1,8 +1,8 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -21,11 +21,11 @@ class Person(Serializable):
         return True
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"secret": "SECRET"}
 
     @property
-    def lc_attributes(self) -> Dict[str, str]:
+    def lc_attributes(self) -> dict[str, str]:
         return {"you_can_see_me": self.you_can_see_me}
 
 
@@ -35,17 +35,17 @@ class SpecialPerson(Person):
     another_visible: str = "bye"
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         return ["my", "special", "namespace"]
 
     # Gets merged with parent class's secrets
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"another_secret": "ANOTHER_SECRET"}
 
     # Gets merged with parent class's attributes
     @property
-    def lc_attributes(self) -> Dict[str, str]:
+    def lc_attributes(self) -> dict[str, str]:
         return {"another_visible": self.another_visible}
 
 
@@ -54,9 +54,9 @@ class NotSerializable:
 
 
 def test_person(snapshot: Any) -> None:
-    p = Person(secret="hello")
+    p = Person(secret="parrot party")  # noqa: S106
     assert dumps(p, pretty=True) == snapshot
-    sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
+    sp = SpecialPerson(another_secret="Wooo", secret="Hmm")  # noqa: S106
     assert dumps(sp, pretty=True) == snapshot
     assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
     assert SpecialPerson.lc_id() == ["my", "special", "namespace", "SpecialPerson"]
@@ -64,18 +64,22 @@ def test_person(snapshot: Any) -> None:
 
 def test_typeerror() -> None:
     assert (
-        dumps({(1, 2): 3})
-        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+        dumps({(1, 2): 3}) == "{"
+        '"lc": 1, '
+        '"type": "not_implemented", '
+        '"id": ["builtins", "dict"], '
+        '"repr": "{(1, 2): 3}"'
+        "}"
     )
 
 
 def test_person_with_kwargs(snapshot: Any) -> None:
-    person = Person(secret="hello")
+    person = Person(secret="parrot party")  # noqa: S106
     assert dumps(person, separators=(",", ":")) == snapshot
 
 
 def test_person_with_invalid_kwargs() -> None:
-    person = Person(secret="hello")
+    person = Person(secret="parrot party")  # noqa: S106
     with pytest.raises(TypeError):
         dumps(person, invalid_kwarg="hello")
 
@@ -90,7 +94,7 @@ class TestClass(Serializable):
 
     @model_validator(mode="before")
     @classmethod
-    def get_from_env(cls, values: Dict) -> Any:
+    def get_from_env(cls, values: dict) -> Any:
         """Get the values from the environment."""
         if "my_favorite_secret" not in values:
             values["my_favorite_secret"] = os.getenv("MY_FAVORITE_SECRET")
@@ -103,11 +107,11 @@ class TestClass(Serializable):
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         return ["my", "special", "namespace"]
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {
             "my_favorite_secret": "MY_FAVORITE_SECRET",
             "my_other_secret": "MY_OTHER_SECRET",
@@ -115,7 +119,10 @@ class TestClass(Serializable):
 
 
 def test_aliases_hidden() -> None:
-    test_class = TestClass(my_favorite_secret="hello", my_other_secret="world")  # type: ignore[call-arg]
+    test_class = TestClass(
+        my_favorite_secret="hello",  # noqa: S106
+        my_other_secret="world",  # noqa: S106
+    )
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
@@ -133,13 +140,17 @@ def test_aliases_hidden() -> None:
     assert dumped == expected_dump
     # Check while patching the os environment
     with patch.dict(
-        os.environ, {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"}
+        os.environ,
+        {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"},
     ):
         test_class = TestClass()  # type: ignore[call-arg]
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")  # type: ignore[call-arg]
+    test_class = TestClass(  # type: ignore[call-arg]
+        my_favorite_secret_alias="hello",  # noqa: S106
+        my_other_secret="parrot party",  # noqa: S106
+    )
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,

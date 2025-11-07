@@ -1,0 +1,95 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-perplexity"
+description = "An integration package connecting Perplexity and LangChain"
+license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.0"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.0.0,<2.0.0",
+    "openai>=2.0.0,<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/perplexity"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_perplexity/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/perplexity"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-perplexity%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
+
+[dependency-groups]
+test = [
+    "pytest>=7.3.0,<8.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pytest-retry>=1.7.0,<1.8.0",
+    "pytest-socket>=0.6.0,<1.0.0",
+    "pytest-xdist>=3.6.1,<4.0.0",
+    "langchain-core",
+    "langchain-tests",
+]
+lint = ["ruff>=0.13.1,<0.14.0"]
+dev = ["langchain-core"]
+test_integration = [
+    "httpx>=0.27.0,<1.0.0",
+    "pillow>=10.3.0,<12.0.0",
+]
+typing = [
+    "mypy>=1.10.0,<2.0.0",
+    "types-tqdm>=4.66.0.5,<5.0.0.0",
+    "langchain-core"
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+plugins = ['pydantic.mypy']
+[[tool.mypy.overrides]]
+module = "transformers"
+ignore_missing_imports = true
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201", "UP", "S"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_perplexity"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+    "scheduled: mark tests to run in scheduled testing",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

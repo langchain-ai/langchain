@@ -1,7 +1,8 @@
-"""
+"""Asynchronous iterator utilities.
+
 Adapted from
 https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.py
-MIT License
+MIT License.
 """
 
 from collections import deque
@@ -10,20 +11,20 @@ from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
+    Callable,
     Iterator,
 )
 from contextlib import AbstractAsyncContextManager
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Generic,
-    Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
+
+from typing_extensions import override
 
 T = TypeVar("T")
 
@@ -33,8 +34,8 @@ _no_default = object()
 # https://github.com/python/cpython/blob/main/Lib/test/test_asyncgen.py#L54
 # before 3.10, the builtin anext() was not available
 def py_anext(
-    iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, None, Any]]:
+    iterator: AsyncIterator[T], default: T | Any = _no_default
+) -> Awaitable[T | Any | None]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.
@@ -49,15 +50,14 @@ def py_anext(
 
     Returns:
         The next value from the iterator, or the default value
-            if the iterator is exhausted.
+        if the iterator is exhausted.
 
     Raises:
         TypeError: If the iterator is not an async iterator.
     """
-
     try:
         __anext__ = cast(
-            Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
+            "Callable[[AsyncIterator[T]], Awaitable[T]]", type(iterator).__anext__
         )
     except AttributeError as e:
         msg = f"{iterator!r} is not an async iterator"
@@ -66,7 +66,7 @@ def py_anext(
     if default is _no_default:
         return __anext__(iterator)
 
-    async def anext_impl() -> Union[T, Any]:
+    async def anext_impl() -> T | Any:
         try:
             # The C code is way more low-level than this, as it implements
             # all methods of the iterator protocol. In this implementation
@@ -84,9 +84,15 @@ class NoLock:
     """Dummy lock that provides the proper interface but no protection."""
 
     async def __aenter__(self) -> None:
-        pass
+        """Do nothing."""
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        """Return False, exception not suppressed."""
         return False
 
 
@@ -98,10 +104,10 @@ async def tee_peer(
     peers: list[deque[T]],
     lock: AbstractAsyncContextManager[Any],
 ) -> AsyncGenerator[T, None]:
-    """An individual iterator of a :py:func:`~.tee`.
+    """An individual iterator of a `tee`.
 
     This function is a generator that yields items from the shared iterator
-    ``iterator``. It buffers items until the least advanced iterator has
+    `iterator`. It buffers items until the least advanced iterator has
     yielded them as well. The buffer is shared with all other peers.
 
     Args:
@@ -136,7 +142,7 @@ async def tee_peer(
             yield buffer.popleft()
     finally:
         async with lock:
-            # this peer is done – remove its buffer
+            # this peer is done - remove its buffer
             for idx, peer_buffer in enumerate(peers):  # pragma: no branch
                 if peer_buffer is buffer:
                     peers.pop(idx)
@@ -147,41 +153,41 @@ async def tee_peer(
 
 
 class Tee(Generic[T]):
-    """
-    Create ``n`` separate asynchronous iterators over ``iterable``.
+    """Create `n` separate asynchronous iterators over `iterable`.
 
-    This splits a single ``iterable`` into multiple iterators, each providing
+    This splits a single `iterable` into multiple iterators, each providing
     the same items in the same order.
     All child iterators may advance separately but share the same items
-    from ``iterable`` -- when the most advanced iterator retrieves an item,
+    from `iterable` -- when the most advanced iterator retrieves an item,
     it is buffered until the least advanced iterator has yielded it as well.
-    A ``tee`` works lazily and can handle an infinite ``iterable``, provided
+    A `tee` works lazily and can handle an infinite `iterable`, provided
     that all iterators advance.
 
-    .. code-block:: python3
+    ```python
+    async def derivative(sensor_data):
+        previous, current = a.tee(sensor_data, n=2)
+        await a.anext(previous)  # advance one iterator
+        return a.map(operator.sub, previous, current)
+    ```
 
-        async def derivative(sensor_data):
-            previous, current = a.tee(sensor_data, n=2)
-            await a.anext(previous)  # advance one iterator
-            return a.map(operator.sub, previous, current)
-
-    Unlike :py:func:`itertools.tee`, :py:func:`~.tee` returns a custom type instead
-    of a :py:class:`tuple`. Like a tuple, it can be indexed, iterated and unpacked
-    to get the child iterators. In addition, its :py:meth:`~.tee.aclose` method
-    immediately closes all children, and it can be used in an ``async with`` context
+    Unlike `itertools.tee`, `.tee` returns a custom type instead
+    of a :py`tuple`. Like a tuple, it can be indexed, iterated and unpacked
+    to get the child iterators. In addition, its `.tee.aclose` method
+    immediately closes all children, and it can be used in an `async with` context
     for the same effect.
 
-    If ``iterable`` is an iterator and read elsewhere, ``tee`` will *not*
-    provide these items. Also, ``tee`` must internally buffer each item until the
+    If `iterable` is an iterator and read elsewhere, `tee` will *not*
+    provide these items. Also, `tee` must internally buffer each item until the
     last iterator has yielded it; if the most and least advanced iterator differ
-    by most data, using a :py:class:`list` is more efficient (but not lazy).
+    by most data, using a :py`list` is more efficient (but not lazy).
 
-    If the underlying iterable is concurrency safe (``anext`` may be awaited
+    If the underlying iterable is concurrency safe (`anext` may be awaited
     concurrently) the resulting iterators are concurrency safe as well. Otherwise,
     the iterators are safe if there is only ever one single "most advanced" iterator.
-    To enforce sequential use of ``anext``, provide a ``lock``
-    - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
+    To enforce sequential use of `anext`, provide a `lock`
+    - e.g. an :py`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
+
     """
 
     def __init__(
@@ -189,8 +195,16 @@ class Tee(Generic[T]):
         iterable: AsyncIterator[T],
         n: int = 2,
         *,
-        lock: Optional[AbstractAsyncContextManager[Any]] = None,
+        lock: AbstractAsyncContextManager[Any] | None = None,
     ):
+        """Create a `tee`.
+
+        Args:
+            iterable: The iterable to split.
+            n: The number of iterators to create.
+            lock: The lock to synchronise access to the shared buffers.
+
+        """
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
@@ -204,6 +218,7 @@ class Tee(Generic[T]):
         )
 
     def __len__(self) -> int:
+        """Return the number of child iterators."""
         return len(self._children)
 
     @overload
@@ -213,17 +228,34 @@ class Tee(Generic[T]):
     def __getitem__(self, item: slice) -> tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
-        self, item: Union[int, slice]
-    ) -> Union[AsyncIterator[T], tuple[AsyncIterator[T], ...]]:
+        self, item: int | slice
+    ) -> AsyncIterator[T] | tuple[AsyncIterator[T], ...]:
+        """Return the child iterator(s) for the given index or slice."""
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
+        """Iterate over the child iterators.
+
+        Yields:
+            The child iterators.
+        """
         yield from self._children
 
     async def __aenter__(self) -> "Tee[T]":
+        """Return the tee instance."""
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
+        """Close all child iterators.
+
+        Returns:
+            False, exceptions not suppressed.
+        """
         await self.aclose()
         return False
 
@@ -237,37 +269,45 @@ atee = Tee
 
 
 class aclosing(AbstractAsyncContextManager):  # noqa: N801
-    """Async context manager for safely finalizing an asynchronously cleaned-up
-    resource such as an async generator, calling its ``aclose()`` method.
+    """Async context manager to wrap an AsyncGenerator that has a `aclose()` method.
 
     Code like this:
 
-        async with aclosing(<module>.fetch(<arguments>)) as agen:
-            <block>
+    ```python
+    async with aclosing(<module>.fetch(<arguments>)) as agen:
+        <block>
+    ```
 
     is equivalent to this:
 
-        agen = <module>.fetch(<arguments>)
-        try:
-            <block>
-        finally:
-            await agen.aclose()
+    ```python
+    agen = <module>.fetch(<arguments>)
+    try:
+        <block>
+    finally:
+        await agen.aclose()
 
+    ```
     """
 
-    def __init__(
-        self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
-    ) -> None:
+    def __init__(self, thing: AsyncGenerator[Any, Any] | AsyncIterator[Any]) -> None:
+        """Create the context manager.
+
+        Args:
+            thing: The resource to wrap.
+        """
         self.thing = thing
 
-    async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
+    @override
+    async def __aenter__(self) -> AsyncGenerator[Any, Any] | AsyncIterator[Any]:
         return self.thing
 
+    @override
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if hasattr(self.thing, "aclose"):
             await self.thing.aclose()
@@ -282,8 +322,8 @@ async def abatch_iterate(
         size: The size of the batch.
         iterable: The async iterable to batch.
 
-    Returns:
-        An async iterator over the batches.
+    Yields:
+        The batches.
     """
     batch: list[T] = []
     async for element in iterable:

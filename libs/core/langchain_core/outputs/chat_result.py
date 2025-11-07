@@ -1,4 +1,4 @@
-from typing import Optional
+"""Chat result schema."""
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class ChatResult(BaseModel):
     Generations is a list to allow for multiple candidate generations for a single
     input prompt.
     """
-    llm_output: Optional[dict] = None
+    llm_output: dict | None = None
     """For arbitrary LLM provider specific output.
 
     This dictionary is a free-form dictionary that can contain any information that the

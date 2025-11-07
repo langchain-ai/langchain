@@ -1,5 +1,9 @@
+"""Nomic partner integration for LangChain."""
+
+from __future__ import annotations
+
 import os
-from typing import List, Literal, Optional, overload
+from typing import Literal, overload
 
 import nomic  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
@@ -7,14 +11,14 @@ from nomic import embed
 
 
 class NomicEmbeddings(Embeddings):
-    """NomicEmbeddings embedding model.
+    """`NomicEmbeddings` embedding model.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_nomic import NomicEmbeddings
 
-            from langchain_nomic import NomicEmbeddings
-
-            model = NomicEmbeddings()
+        model = NomicEmbeddings()
+        ```
     """
 
     @overload
@@ -22,60 +26,64 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: Literal["remote"] = ...,
-    ):
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: Literal["local", "dynamic"],
-        device: Optional[str] = ...,
-    ):
-        ...
+        device: str | None = ...,
+    ) -> None: ...
 
     @overload
     def __init__(
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = ...,
-        dimensionality: Optional[int] = ...,
+        nomic_api_key: str | None = ...,
+        dimensionality: int | None = ...,
         inference_mode: str,
-        device: Optional[str] = ...,
-    ):
-        ...
+        device: str | None = ...,
+    ) -> None: ...
 
     def __init__(
         self,
         *,
         model: str,
-        nomic_api_key: Optional[str] = None,
-        dimensionality: Optional[int] = None,
+        nomic_api_key: str | None = None,
+        dimensionality: int | None = None,
         inference_mode: str = "remote",
-        device: Optional[str] = None,
-        vision_model: Optional[str] = None,
+        device: str | None = None,
+        vision_model: str | None = None,
     ):
-        """Initialize NomicEmbeddings model.
+        """Initialize `NomicEmbeddings` model.
 
         Args:
-            model: model name
-            nomic_api_key: optionally, set the Nomic API key. Uses the NOMIC_API_KEY
+            model: Model name
+            nomic_api_key: Optionally, set the Nomic API key. Uses the `NOMIC_API_KEY`
                 environment variable by default.
             dimensionality: The embedding dimension, for use with Matryoshka-capable
                 models. Defaults to full-size.
-            inference_mode: How to generate embeddings. One of `remote`, `local`
-                (Embed4All), or `dynamic` (automatic). Defaults to `remote`.
+            inference_mode: How to generate embeddings. One of `'remote'`, `'local'`
+                (Embed4All), or `'dynamic'` (automatic).
             device: The device to use for local embeddings. Choices include
-                `cpu`, `gpu`, `nvidia`, `amd`, or a specific device name. See
-                the docstring for `GPT4All.__init__` for more info. Typically
-                defaults to CPU. Do not use on macOS.
+                `'cpu'`, `'gpu'`, `'nvidia'`, `'amd'`, or a specific device
+                name. See the docstring for `GPT4All.__init__` for more info.
+
+                Typically defaults to `'cpu'`.
+
+                !!! warning
+
+                    Do not use on macOS.
+            vision_model: The vision model to use for image embeddings.
+
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
         if _api_key:
@@ -86,15 +94,15 @@ class NomicEmbeddings(Embeddings):
         self.device = device
         self.vision_model = vision_model
 
-    def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
+    def embed(self, texts: list[str], *, task_type: str) -> list[list[float]]:
         """Embed texts.
 
         Args:
-            texts: list of texts to embed
-            task_type: the task type to use when embedding. One of `search_query`,
-                `search_document`, `classification`, `clustering`
-        """
+            texts: List of texts to embed
+            task_type: The task type to use when embedding. One of `'search_query'`,
+                `'search_document'`, `'classification'`, `'clustering'`
 
+        """
         output = embed.text(
             texts=texts,
             model=self.model,
@@ -105,29 +113,36 @@ class NomicEmbeddings(Embeddings):
         )
         return output["embeddings"]
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs.
 
         Args:
-            texts: list of texts to embed as documents
+            texts: List of texts to embed as documents
+
         """
         return self.embed(
             texts=texts,
             task_type="search_document",
         )
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text.
 
         Args:
-            text: query text
+            text: Query text
+
         """
         return self.embed(
             texts=[text],
             task_type="search_query",
         )[0]
 
-    def embed_image(self, uris: List[str]) -> List[List[float]]:
+    def embed_image(self, uris: list[str]) -> list[list[float]]:
+        """Embed images.
+
+        Args:
+            uris: List of image URIs to embed
+        """
         return embed.image(
             images=uris,
             model=self.vision_model,

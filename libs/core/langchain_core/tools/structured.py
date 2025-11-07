@@ -1,54 +1,59 @@
+"""Structured tool."""
+
 from __future__ import annotations
 
 import textwrap
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Literal,
-    Optional,
-    Union,
 )
 
-from pydantic import BaseModel, Field, SkipValidation
+from pydantic import Field, SkipValidation
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
+    ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import is_basemodel_subclass
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
-    func: Optional[Callable[..., Any]] = None
+    func: Callable[..., Any] | None = None
     """The function to run when the tool is called."""
-    coroutine: Optional[Callable[..., Awaitable[Any]]] = None
+    coroutine: Callable[..., Awaitable[Any]] | None = None
     """The asynchronous version of the function."""
 
     # --- Runnable ---
 
     # TODO: Is this needed?
+    @override
     async def ainvoke(
         self,
-        input: Union[str, dict, ToolCall],
-        config: Optional[RunnableConfig] = None,
+        input: str | dict | ToolCall,
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Any:
         if not self.coroutine:
@@ -59,19 +64,24 @@ class StructuredTool(BaseTool):
 
     # --- Tool ---
 
-    @property
-    def args(self) -> dict:
-        """The tool's input arguments."""
-        return self.args_schema.model_json_schema()["properties"]
-
     def _run(
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        run_manager: CallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -85,10 +95,20 @@ class StructuredTool(BaseTool):
         self,
         *args: Any,
         config: RunnableConfig,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        run_manager: AsyncCallbackManagerForToolRun | None = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -105,13 +125,13 @@ class StructuredTool(BaseTool):
     @classmethod
     def from_function(
         cls,
-        func: Optional[Callable] = None,
-        coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        return_direct: bool = False,
-        args_schema: Optional[type[BaseModel]] = None,
-        infer_schema: bool = True,
+        func: Callable | None = None,
+        coroutine: Callable[..., Awaitable[Any]] | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
+        args_schema: ArgsSchema | None = None,
+        infer_schema: bool = True,  # noqa: FBT001,FBT002
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
@@ -129,40 +149,39 @@ class StructuredTool(BaseTool):
             description: The description of the tool.
                 Defaults to the function docstring.
             return_direct: Whether to return the result directly or as a callback.
-                Defaults to False.
-            args_schema: The schema of the tool's input arguments. Defaults to None.
+            args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
-                Defaults to True.
-            response_format: The tool response format. If "content" then the output of
-                the tool is interpreted as the contents of a ToolMessage. If
-                "content_and_artifact" then the output is expected to be a two-tuple
-                corresponding to the (content, artifact) of a ToolMessage.
-                Defaults to "content".
-            parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
+            response_format: The tool response format.
+
+                If `"content"` then the output of the tool is interpreted as the
+                contents of a `ToolMessage`. If `"content_and_artifact"` then the output
+                is expected to be a two-tuple corresponding to the `(content, artifact)`
+                of a `ToolMessage`.
+            parse_docstring: If `infer_schema` and `parse_docstring`, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
-                Defaults to False.
-            error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
-                whether to raise ValueError on invalid Google Style docstrings.
-                Defaults to False.
-            kwargs: Additional arguments to pass to the tool
+            error_on_invalid_docstring: if `parse_docstring` is provided, configure
+                whether to raise `ValueError` on invalid Google Style docstrings.
+            **kwargs: Additional arguments to pass to the tool
 
         Returns:
             The tool.
 
         Raises:
             ValueError: If the function is not provided.
+            ValueError: If the function does not have a docstring and description
+                is not provided.
+            TypeError: If the `args_schema` is not a `BaseModel` or dict.
 
         Examples:
+            ```python
+            def add(a: int, b: int) -> int:
+                \"\"\"Add two numbers\"\"\"
+                return a + b
+            tool = StructuredTool.from_function(add)
+            tool.run(1, 2) # 3
 
-            .. code-block:: python
-
-                def add(a: int, b: int) -> int:
-                    \"\"\"Add two numbers\"\"\"
-                    return a + b
-                tool = StructuredTool.from_function(add)
-                tool.run(1, 2) # 3
+            ```
         """
-
         if func is not None:
             source_function = func
         elif coroutine is not None:
@@ -184,7 +203,23 @@ class StructuredTool(BaseTool):
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__ or None
+            if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
+                description_ = args_schema.__doc__
+                if (
+                    description_
+                    and "A base class for creating Pydantic models" in description_
+                ):
+                    description_ = ""
+                elif not description_:
+                    description_ = None
+            elif isinstance(args_schema, dict):
+                description_ = args_schema.get("description")
+            else:
+                msg = (
+                    "Invalid args_schema: expected BaseModel or dict, "
+                    f"got {args_schema}"
+                )
+                raise TypeError(msg)
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)
@@ -199,7 +234,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,  # type: ignore[arg-type]
+            args_schema=args_schema,
             description=description_,
             return_direct=return_direct,
             response_format=response_format,

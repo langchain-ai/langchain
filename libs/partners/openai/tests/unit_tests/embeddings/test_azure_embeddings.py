@@ -15,7 +15,7 @@ def test_initialize_azure_openai() -> None:
     assert embeddings.model == "text-embedding-large"
 
 
-def test_intialize_azure_openai_with_base_set() -> None:
+def test_initialize_azure_openai_with_base_set() -> None:
     with mock.patch.dict(os.environ, {"OPENAI_API_BASE": "https://api.openai.com"}):
         embeddings = AzureOpenAIEmbeddings(  # type: ignore[call-arg, call-arg]
             model="text-embedding-large",

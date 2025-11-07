@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -14,9 +14,10 @@ from langchain_core.structured_query import (
     StructuredQuery,
     Visitor,
 )
+from typing_extensions import override
 
-from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.retrievers import SelfQueryRetriever
+from langchain_classic.chains.query_constructor.schema import AttributeInfo
+from langchain_classic.retrievers import SelfQueryRetriever
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -34,24 +35,25 @@ class FakeTranslator(Visitor):
     )
     allowed_operators = (Operator.AND, Operator.OR, Operator.NOT)
 
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
+    def _format_func(self, func: Operator | Comparator) -> str:
         self._validate_func(func)
         return f"${func.value}"
 
-    def visit_operation(self, operation: Operation) -> Dict:
+    def visit_operation(self, operation: Operation) -> dict:
         args = [arg.accept(self) for arg in operation.arguments]
         return {self._format_func(operation.operator): args}
 
-    def visit_comparison(self, comparison: Comparison) -> Dict:
+    def visit_comparison(self, comparison: Comparison) -> dict:
         return {
             comparison.attribute: {
-                self._format_func(comparison.comparator): comparison.value
-            }
+                self._format_func(comparison.comparator): comparison.value,
+            },
         }
 
     def visit_structured_query(
-        self, structured_query: StructuredQuery
-    ) -> Tuple[str, dict]:
+        self,
+        structured_query: StructuredQuery,
+    ) -> tuple[str, dict]:
         if structured_query.filter is None:
             kwargs = {}
         else:
@@ -60,16 +62,20 @@ class FakeTranslator(Visitor):
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
+    @override
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
+    ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
             return []
         return [res]
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_llm() -> FakeLLM:
     return FakeLLM(
         queries={
@@ -85,7 +91,7 @@ def fake_llm() -> FakeLLM:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_vectorstore() -> InMemoryVectorstoreWithSearch:
     vectorstore = InMemoryVectorstoreWithSearch()
     vectorstore.add_documents(
@@ -102,9 +108,10 @@ def fake_vectorstore() -> InMemoryVectorstoreWithSearch:
     return vectorstore
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_self_query_retriever(
-    fake_llm: FakeLLM, fake_vectorstore: InMemoryVectorstoreWithSearch
+    fake_llm: FakeLLM,
+    fake_vectorstore: InMemoryVectorstoreWithSearch,
 ) -> SelfQueryRetriever:
     return SelfQueryRetriever.from_llm(
         llm=fake_llm,

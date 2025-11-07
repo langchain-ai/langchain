@@ -1,4 +1,4 @@
-from langchain import embeddings
+from langchain_classic import embeddings
 
 EXPECTED_ALL = [
     "OpenAIEmbeddings",
@@ -55,6 +55,7 @@ EXPECTED_ALL = [
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
     "BookendEmbeddings",
+    "init_embeddings",
 ]
 
 

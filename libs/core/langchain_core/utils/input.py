@@ -1,6 +1,6 @@
 """Handle chained inputs."""
 
-from typing import Optional, TextIO
+from typing import TextIO
 
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",
@@ -12,7 +12,7 @@ _TEXT_COLOR_MAPPING = {
 
 
 def get_color_mapping(
-    items: list[str], excluded_colors: Optional[list] = None
+    items: list[str], excluded_colors: list | None = None
 ) -> dict[str, str]:
     """Get mapping for items to a support color.
 
@@ -26,8 +26,10 @@ def get_color_mapping(
     colors = list(_TEXT_COLOR_MAPPING.keys())
     if excluded_colors is not None:
         colors = [c for c in colors if c not in excluded_colors]
-    color_mapping = {item: colors[i % len(colors)] for i, item in enumerate(items)}
-    return color_mapping
+    if not colors:
+        msg = "No colors available after applying exclusions."
+        raise ValueError(msg)
+    return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
 def get_colored_text(text: str, color: str) -> str:
@@ -57,7 +59,7 @@ def get_bolded_text(text: str) -> str:
 
 
 def print_text(
-    text: str, color: Optional[str] = None, end: str = "", file: Optional[TextIO] = None
+    text: str, color: str | None = None, end: str = "", file: TextIO | None = None
 ) -> None:
     """Print text with highlighting and no end characters.
 
@@ -66,9 +68,9 @@ def print_text(
 
     Args:
         text: The text to print.
-        color: The color to use. Defaults to None.
-        end: The end character to use. Defaults to "".
-        file: The file to write to. Defaults to None.
+        color: The color to use.
+        end: The end character to use.
+        file: The file to write to.
     """
     text_to_print = get_colored_text(text, color) if color else text
     print(text_to_print, end=end, file=file)

@@ -1,6 +1,6 @@
 """Module to test base parser implementations."""
 
-from typing import Optional as Optional
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
@@ -18,13 +18,14 @@ def test_base_generation_parser() -> None:
     class StrInvertCase(BaseGenerationOutputParser[str]):
         """An example parser that inverts the case of the characters in the message."""
 
+        @override
         def parse_result(
             self, result: list[Generation], *, partial: bool = False
         ) -> str:
             """Parse a list of model Generations into a specific format.
 
             Args:
-                result: A list of Generations to be parsed. The Generations are assumed
+                result: A list of `Generation` to be parsed. The Generations are assumed
                     to be different candidate outputs for a single model input.
                     Many parsers assume that only a single generation is passed it in.
                     We will assert for that
@@ -42,9 +43,7 @@ def test_base_generation_parser() -> None:
 
             content = generation.message.content
             assert isinstance(content, str)
-            return content.swapcase()  # type: ignore
-
-    StrInvertCase.model_rebuild()
+            return content.swapcase()
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()
@@ -61,13 +60,14 @@ def test_base_transform_output_parser() -> None:
             """Parse a single string into a specific format."""
             raise NotImplementedError
 
+        @override
         def parse_result(
             self, result: list[Generation], *, partial: bool = False
         ) -> str:
             """Parse a list of model Generations into a specific format.
 
             Args:
-                result: A list of Generations to be parsed. The Generations are assumed
+                result: A list of `Generation` to be parsed. The Generations are assumed
                     to be different candidate outputs for a single model input.
                     Many parsers assume that only a single generation is passed it in.
                     We will assert for that
@@ -84,7 +84,7 @@ def test_base_transform_output_parser() -> None:
                 raise OutputParserException(msg)
             content = generation.message.content
             assert isinstance(content, str)
-            return content.swapcase()  # type: ignore
+            return content.swapcase()
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hello world")]))
     chain = model | StrInvertCase()

@@ -1,7 +1,8 @@
-"""Test PydanticOutputParser"""
+"""Test PydanticOutputParser."""
 
+import sys
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 import pydantic
 import pytest
@@ -13,7 +14,7 @@ from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils.pydantic import TBaseModel
+from langchain_core.utils.pydantic import PydanticBaseModel, TypeBaseModel
 
 
 class ForecastV2(pydantic.BaseModel):
@@ -22,15 +23,23 @@ class ForecastV2(pydantic.BaseModel):
     forecast: str
 
 
-class ForecastV1(V1BaseModel):
-    temperature: int
-    f_or_c: Literal["F", "C"]
-    forecast: str
+if sys.version_info < (3, 14):
+
+    class ForecastV1(V1BaseModel):
+        temperature: int
+        f_or_c: Literal["F", "C"]
+        forecast: str
+
+    _FORECAST_MODELS_TYPES = type[ForecastV2] | type[ForecastV1]
+    _FORECAST_MODELS = [ForecastV2, ForecastV1]
+else:
+    _FORECAST_MODELS_TYPES = type[ForecastV2]
+    _FORECAST_MODELS = [ForecastV2]
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_pydantic_parser_chaining(
-    pydantic_object: TBaseModel,
+    pydantic_object: _FORECAST_MODELS_TYPES,
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -43,18 +52,18 @@ def test_pydantic_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
     chain = prompt | model | parser
 
     res = chain.invoke({})
-    assert type(res) is pydantic_object
+    assert isinstance(res, pydantic_object)
     assert res.f_or_c == "C"
     assert res.temperature == 20
     assert res.forecast == "Sunny"
 
 
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
-def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
+def test_pydantic_parser_validation(pydantic_object: TypeBaseModel) -> None:
     bad_prompt = PromptTemplate(
         template="""{{
         "temperature": "oof",
@@ -66,16 +75,16 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
 
 
 # JSON output parser tests
-@pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
 def test_json_parser_chaining(
-    pydantic_object: TBaseModel,
+    pydantic_object: TypeBaseModel,
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -88,7 +97,7 @@ def test_json_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore
+    parser = JsonOutputParser(pydantic_object=pydantic_object)
     chain = prompt | model | parser
 
     res = chain.invoke({})
@@ -107,9 +116,7 @@ class Actions(Enum):
 class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
-    additional_fields: Optional[str] = Field(
-        description="Additional fields", default=None
-    )
+    additional_fields: str | None = Field(description="Additional fields", default=None)
     for_new_lines: str = Field(description="To be used to test newlines")
 
 
@@ -141,27 +148,25 @@ DEF_EXPECTED_RESULT = TestModel(
 
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
-
     pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
     result = pydantic_parser.parse(DEF_RESULT)
-    print("parse_result:", result)  # noqa: T201
     assert result == DEF_EXPECTED_RESULT
     assert pydantic_parser.OutputType is TestModel
 
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
-
     pydantic_parser: PydanticOutputParser = PydanticOutputParser(
         pydantic_object=TestModel
     )
 
-    with pytest.raises(OutputParserException) as e:
+    with pytest.raises(
+        OutputParserException, match="Failed to parse TestModel from completion"
+    ):
         pydantic_parser.parse(DEF_RESULT_FAIL)
-        assert "Failed to parse TestModel from completion" in str(e)
 
 
 def test_pydantic_output_parser_type_inference() -> None:
@@ -173,7 +178,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)  # type: ignore
+    pydantic_parser = PydanticOutputParser[SampleModel](pydantic_object=SampleModel)
     schema = pydantic_parser.get_output_schema().model_json_schema()
 
     assert schema == {
@@ -187,22 +192,28 @@ def test_pydantic_output_parser_type_inference() -> None:
     }
 
 
+@pytest.mark.parametrize("pydantic_object", _FORECAST_MODELS)
+def test_format_instructions(pydantic_object: TypeBaseModel) -> None:
+    """Test format instructions."""
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
+    instructions = parser.get_format_instructions()
+    assert "temperature" in instructions
+
+
 def test_format_instructions_preserves_language() -> None:
     """Test format instructions does not attempt to encode into ascii."""
-    from pydantic import BaseModel, Field
-
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+        "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
     )
 
     class Foo(BaseModel):
         hello: str = Field(
             description=(
                 "你好, こんにちは, नमस्ते, Bonjour, Hola, "
-                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"
+                "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
             )
         )
 
-    parser = PydanticOutputParser(pydantic_object=Foo)  # type: ignore
+    parser = PydanticOutputParser[Foo](pydantic_object=Foo)
     assert description in parser.get_format_instructions()

@@ -1,13 +1,14 @@
-from typing import Any, List, Optional
+from typing import Any
 
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import override
 
-from langchain.runnables.openai_functions import OpenAIFunctionsRouter
+from langchain_classic.runnables.openai_functions import OpenAIFunctionsRouter
 
 
 class FakeChatOpenAI(BaseChatModel):
@@ -15,11 +16,12 @@ class FakeChatOpenAI(BaseChatModel):
     def _llm_type(self) -> str:
         return "fake-openai-chat-model"
 
+    @override
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(
@@ -31,21 +33,22 @@ class FakeChatOpenAI(BaseChatModel):
                             "function_call": {
                                 "name": "accept",
                                 "arguments": '{\n  "draft": "turtles"\n}',
-                            }
+                            },
                         },
-                    )
-                )
-            ]
+                    ),
+                ),
+            ],
         )
 
 
 def test_openai_functions_router(
-    snapshot: SnapshotAssertion, mocker: MockerFixture
+    snapshot: SnapshotAssertion,
+    mocker: MockerFixture,
 ) -> None:
     revise = mocker.Mock(
-        side_effect=lambda kw: f'Revised draft: no more {kw["notes"]}!'
+        side_effect=lambda kw: f"Revised draft: no more {kw['notes']}!",
     )
-    accept = mocker.Mock(side_effect=lambda kw: f'Accepted draft: {kw["draft"]}!')
+    accept = mocker.Mock(side_effect=lambda kw: f"Accepted draft: {kw['draft']}!")
 
     router = OpenAIFunctionsRouter(
         {

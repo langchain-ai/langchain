@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+from langchain_classic.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 
 
 @pytest.fixture
@@ -45,7 +45,8 @@ def test_json_distance_evaluator_evaluate_strings_simple_diff(
     prediction = '{"a":           1}'
     reference = '{"a": 2}'
     result = json_distance_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     # Only 1 character flipped
     pytest.approx(1 / 7, result["score"])
@@ -58,7 +59,8 @@ def test_json_distance_evaluator_evaluate_strings_complex_diff(
     prediction = '{"a":1, "b": {"c": 2, "d": 3}}'
     reference = '{"a": 1, "b": {"c": 2, "d": 4}}'
     result = json_distance_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     # Only 1 character flipped
     pytest.approx(1 / len(reference.replace(" ", "")), result["score"])
@@ -71,7 +73,8 @@ def test_json_distance_evaluator_evaluate_strings_list_diff(
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"a": 1, "b": 2}, {"a": 2, "b": 4}]'
     result = json_distance_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     # Again only 1 character flipped
     pytest.approx(1 / len(reference.replace(" ", "")), result["score"])
@@ -84,7 +87,8 @@ def test_json_distance_evaluator_evaluate_strings_list_same(
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"b": 2, "a": 1}, {"b": 3, "a": 2}]'
     result = json_distance_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] == 0
 
@@ -96,10 +100,12 @@ def test_json_distance_evaluator_evaluate_strings_list_diff_length(
     prediction = '[{"a": 1, "b": 2}, {"a": 2, "b": 3}]'
     reference = '[{"a": 1, "b": 2}]'
     result = json_distance_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     pytest.approx(
-        len('{"a":2,"b":3}') / len(reference.replace(" ", "")), result["score"]
+        len('{"a":2,"b":3}') / len(reference.replace(" ", "")),
+        result["score"],
     )
 
 

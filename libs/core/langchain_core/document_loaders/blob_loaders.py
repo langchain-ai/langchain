@@ -8,11 +8,13 @@ In addition, content loading code should provide a lazy loading interface by def
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 # Re-export Blob and PathLike for backwards compatibility
-from langchain_core.documents.base import Blob as Blob
-from langchain_core.documents.base import PathLike as PathLike
+from langchain_core.documents.base import Blob, PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class BlobLoader(ABC):
@@ -26,7 +28,7 @@ class BlobLoader(ABC):
     def yield_blobs(
         self,
     ) -> Iterable[Blob]:
-        """A lazy loader for raw data represented by LangChain's Blob object.
+        """A lazy loader for raw data represented by LangChain's `Blob` object.
 
         Returns:
             A generator over blobs

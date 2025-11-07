@@ -1,10 +1,11 @@
 import base64
 import json
-import typing
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+import re
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
@@ -18,7 +19,9 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import (
     convert_to_messages,
     convert_to_openai_messages,
+    count_tokens_approximately,
     filter_messages,
+    get_buffer_string,
     merge_message_runs,
     trim_messages,
 )
@@ -57,6 +60,24 @@ def test_merge_message_runs_str_without_separator(
     actual = merge_message_runs(messages, chunk_separator="")
     assert actual == expected
     assert messages == messages_model_copy
+
+
+def test_merge_message_runs_response_metadata() -> None:
+    messages = [
+        AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),
+        AIMessage("bar", id="2", response_metadata={"input_tokens": 2}),
+    ]
+    expected = [
+        AIMessage(
+            "foo\nbar",
+            id="1",
+            response_metadata={"input_tokens": 1},
+        )
+    ]
+    actual = merge_message_runs(messages)
+    assert actual == expected
+    # Check it's not mutated
+    assert messages[1].response_metadata == {"input_tokens": 2}
 
 
 def test_merge_message_runs_content() -> None:
@@ -143,6 +164,94 @@ def test_filter_message(filters: dict) -> None:
     assert expected == actual
     invoked = filter_messages(**filters).invoke(messages)
     assert invoked == actual
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            "bar-response",
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:5]
+    expected[3] = expected[3].model_copy(update={"tool_calls": [tool_calls[0]]})
+    actual = filter_messages(messages, exclude_tool_calls=["2"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_tool_calls_content_blocks() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+        {"name": "bar", "id": "2", "args": {}, "type": "tool_call"},
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage("foo-response", name="blah", id="2"),
+        HumanMessage("bar", name="blur", id="3"),
+        AIMessage(
+            [
+                {"text": "bar-response", "type": "text"},
+                {"name": "foo", "type": "tool_use", "id": "1"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+            tool_calls=tool_calls,
+            id="4",
+        ),
+        ToolMessage("baz", tool_call_id="1", id="5"),
+        ToolMessage("qux", tool_call_id="2", id="6"),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    expected = messages[:3]
+
+    # test excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert expected == actual
+
+    # test explicitly excluding all tool calls
+    actual = filter_messages(messages, exclude_tool_calls={"1", "2"})
+    assert expected == actual
+
+    # test excluding a specific tool call
+    expected = messages[:4] + messages[-1:]
+    expected[3] = expected[3].model_copy(
+        update={
+            "tool_calls": [tool_calls[1]],
+            "content": [
+                {"text": "bar-response", "type": "text"},
+                {"name": "bar", "type": "tool_use", "id": "2"},
+            ],
+        }
+    )
+    actual = filter_messages(messages, exclude_tool_calls=["1"])
+    assert expected == actual
+
+    # assert that we didn't mutate the original messages
     assert messages == messages_model_copy
 
 
@@ -314,7 +423,7 @@ def test_trim_messages_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="first",
         allow_partial=True,
     )
@@ -332,7 +441,7 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="last",
         allow_partial=True,
     )
@@ -406,7 +515,14 @@ def test_trim_messages_bound_model_token_counter() -> None:
 
 def test_trim_messages_bad_token_counter() -> None:
     trimmer = trim_messages(max_tokens=10, token_counter={})
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "'token_counter' expected to be a model that implements "
+            "'get_num_tokens_from_messages()' or a function. "
+            "Received object of type <class 'dict'>."
+        ),
+    ):
         trimmer.invoke([HumanMessage("foobar")])
 
 
@@ -434,15 +550,122 @@ def dummy_token_counter(messages: list[BaseMessage]) -> int:
     return count
 
 
+def test_trim_messages_partial_text_splitting() -> None:
+    messages = [HumanMessage(content="This is a long message that needs trimming")]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    def count_characters(msgs: list[BaseMessage]) -> int:
+        return sum(len(m.content) if isinstance(m.content, str) else 0 for m in msgs)
+
+    # Return individual characters to test text splitting
+    def char_splitter(text: str) -> list[str]:
+        return list(text)
+
+    result = trim_messages(
+        messages,
+        max_tokens=10,  # Only allow 10 characters
+        token_counter=count_characters,
+        strategy="first",
+        allow_partial=True,
+        text_splitter=char_splitter,
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "This is a "  # First 10 characters
+    assert messages == messages_copy
+
+
+def test_trim_messages_mixed_content_with_partial() -> None:
+    messages = [
+        AIMessage(
+            content=[
+                {"type": "text", "text": "First part of text."},
+                {"type": "text", "text": "Second part that should be trimmed."},
+            ]
+        )
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+
+    # Count total length of all text parts
+    def count_text_length(msgs: list[BaseMessage]) -> int:
+        total = 0
+        for msg in msgs:
+            if isinstance(msg.content, list):
+                for block in msg.content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        total += len(block["text"])
+            elif isinstance(msg.content, str):
+                total += len(msg.content)
+        return total
+
+    result = trim_messages(
+        messages,
+        max_tokens=20,  # Only allow first text block
+        token_counter=count_text_length,
+        strategy="first",
+        allow_partial=True,
+    )
+
+    assert len(result) == 1
+    assert len(result[0].content) == 1
+    assert result[0].content[0]["text"] == "First part of text."
+    assert messages == messages_copy
+
+
+def test_trim_messages_exact_token_boundary() -> None:
+    messages = [
+        SystemMessage(content="10 tokens exactly."),
+        HumanMessage(content="Another 10 tokens."),
+    ]
+
+    # First message only
+    result1 = trim_messages(
+        messages,
+        max_tokens=10,  # Exactly the size of first message
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result1) == 1
+    assert result1[0].content == "10 tokens exactly."
+
+    # Both messages exactly fit
+    result2 = trim_messages(
+        messages,
+        max_tokens=20,  # Exactly the size of both messages
+        token_counter=dummy_token_counter,
+        strategy="first",
+    )
+    assert len(result2) == 2
+    assert result2 == messages
+
+
+def test_trim_messages_start_on_with_allow_partial() -> None:
+    messages = [
+        HumanMessage(content="First human message"),
+        AIMessage(content="AI response"),
+        HumanMessage(content="Second human message"),
+    ]
+    messages_copy = [m.model_copy(deep=True) for m in messages]
+    result = trim_messages(
+        messages,
+        max_tokens=20,
+        token_counter=dummy_token_counter,
+        strategy="last",
+        allow_partial=True,
+        start_on="human",
+    )
+
+    assert len(result) == 1
+    assert result[0].content == "Second human message"
+    assert messages == messages_copy
+
+
 class FakeTokenCountingModel(FakeChatModel):
+    @override
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Optional[
-            Sequence[
-                Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
-            ]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
     ) -> int:
         return dummy_token_counter(messages)
 
@@ -451,6 +674,7 @@ def test_convert_to_messages() -> None:
     message_like: list = [
         # BaseMessage
         SystemMessage("1"),
+        SystemMessage("1.1", additional_kwargs={"__openai_role__": "developer"}),
         HumanMessage([{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"),
         AIMessage(
             [
@@ -485,6 +709,7 @@ def test_convert_to_messages() -> None:
         ToolMessage("5.1", tool_call_id="5.2", name="5.3"),
         # OpenAI dict
         {"role": "system", "content": "6"},
+        {"role": "developer", "content": "6.1"},
         {
             "role": "user",
             "content": [{"type": "image_url", "image_url": {"url": "7.1"}}],
@@ -508,6 +733,7 @@ def test_convert_to_messages() -> None:
         {"role": "tool", "content": "10.1", "tool_call_id": "10.2"},
         # Tuple/List
         ("system", "11.1"),
+        ("developer", "11.2"),
         ("human", [{"type": "image_url", "image_url": {"url": "12.1"}}]),
         (
             "ai",
@@ -533,6 +759,9 @@ def test_convert_to_messages() -> None:
     ]
     expected = [
         SystemMessage(content="1"),
+        SystemMessage(
+            content="1.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "2.1"}}], name="2.2"
         ),
@@ -568,6 +797,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="5.1", name="5.3", tool_call_id="5.2"),
         SystemMessage(content="6"),
+        SystemMessage(
+            content="6.1", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(
             content=[{"type": "image_url", "image_url": {"url": "7.1"}}], name="7.2"
         ),
@@ -585,6 +817,9 @@ def test_convert_to_messages() -> None:
         ),
         ToolMessage(content="10.1", tool_call_id="10.2"),
         SystemMessage(content="11.1"),
+        SystemMessage(
+            content="11.2", additional_kwargs={"__openai_role__": "developer"}
+        ),
         HumanMessage(content=[{"type": "image_url", "image_url": {"url": "12.1"}}]),
         AIMessage(
             content=[
@@ -623,7 +858,9 @@ def test_convert_to_messages_openai_refusal() -> None:
     assert actual == expected
 
     # Raises error if content is missing.
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Message dict must contain 'role' and 'content' keys"
+    ):
         convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
 
 
@@ -631,15 +868,32 @@ def create_image_data() -> str:
     return "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q=="  # noqa: E501
 
 
-def create_base64_image(format: str = "jpeg") -> str:
+def create_base64_image(image_format: str = "jpeg") -> str:
     data = create_image_data()
-    return f"data:image/{format};base64,{data}"  # noqa: E501
+    return f"data:image/{image_format};base64,{data}"
+
+
+def test_convert_to_openai_messages_string() -> None:
+    message = "Hello"
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "user", "content": "Hello"}
 
 
 def test_convert_to_openai_messages_single_message() -> None:
-    message = HumanMessage(content="Hello")
+    message: BaseMessage = HumanMessage(content="Hello")
     result = convert_to_openai_messages(message)
     assert result == {"role": "user", "content": "Hello"}
+
+    # Test IDs
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "user", "content": "Hello"}  # no ID
+
+    message = AIMessage(content="Hello", id="resp_123")
+    result = convert_to_openai_messages(message)
+    assert result == {"role": "assistant", "content": "Hello"}
+
+    result = convert_to_openai_messages(message, include_id=True)
+    assert result == {"role": "assistant", "content": "Hello", "id": "resp_123"}
 
 
 def test_convert_to_openai_messages_multiple_messages() -> None:
@@ -796,6 +1050,18 @@ def test_convert_to_openai_messages_anthropic() -> None:
     ]
     assert result == expected
 
+    # Test thinking blocks (pass through)
+    thinking_block = {
+        "signature": "abc123",
+        "thinking": "Thinking text.",
+        "type": "thinking",
+    }
+    text_block = {"text": "Response text.", "type": "text"}
+    messages = [AIMessage([thinking_block, text_block])]
+    result = convert_to_openai_messages(messages)
+    expected = [{"role": "assistant", "content": [thinking_block, text_block]}]
+    assert result == expected
+
 
 def test_convert_to_openai_messages_bedrock_converse_image() -> None:
     image_data = create_image_data()
@@ -864,6 +1130,33 @@ def test_convert_to_openai_messages_tool_use() -> None:
     assert result[0]["tool_calls"][0]["function"]["arguments"] == json.dumps({"a": "b"})
 
 
+def test_convert_to_openai_messages_tool_use_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "tool_use",
+                    "id": "123",
+                    "name": "create_customer",
+                    "input": {"customer_name": "你好啊集团"},
+                }
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["id"] == "123"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "create_customer"
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result[0]["tool_calls"][0]["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
 def test_convert_to_openai_messages_json() -> None:
     json_data = {"key": "value"}
     messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
@@ -919,3 +1212,373 @@ def test_convert_to_openai_messages_mixed_content_types() -> None:
     assert isinstance(result[0]["content"][0], dict)
     assert isinstance(result[0]["content"][1], dict)
     assert isinstance(result[0]["content"][2], dict)
+
+
+def test_convert_to_openai_messages_developer() -> None:
+    messages: list = [
+        SystemMessage("a", additional_kwargs={"__openai_role__": "developer"}),
+        {"role": "developer", "content": "a"},
+    ]
+    result = convert_to_openai_messages(messages)
+    assert result == [{"role": "developer", "content": "a"}] * 2
+
+
+def test_convert_to_openai_messages_multimodal() -> None:
+    """v0 and v1 content to OpenAI messages conversion."""
+    messages = [
+        HumanMessage(
+            content=[
+                # Prior v0 blocks
+                {"type": "text", "text": "Text message"},
+                {
+                    "type": "image",
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",
+                },
+                {
+                    # OpenAI Chat Completions file format
+                    "type": "file",
+                    "file": {
+                        "filename": "draconomicon.pdf",
+                        "file_data": "data:application/pdf;base64,<base64 string>",
+                    },
+                },
+                {
+                    "type": "file",
+                    "source_type": "id",
+                    "id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "source_type": "base64",
+                    "data": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": "<base64 string>",
+                        "format": "wav",
+                    },
+                },
+                # v1 Additions
+                {
+                    "type": "image",
+                    "source_type": "url",  # backward compatibility v0 block field
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "base64": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "base64": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",  # backward compatibility v0 block field
+                },
+                {
+                    "type": "file",
+                    "file_id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "base64": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result) == 1
+    message = result[0]
+    assert len(message["content"]) == 13
+
+    # Test auto-adding filename
+    messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "file",
+                    "base64": "<base64 string>",
+                    "mime_type": "application/pdf",
+                },
+            ]
+        )
+    ]
+    with pytest.warns(match="filename"):
+        result = convert_to_openai_messages(messages, text_format="block")
+    assert len(result) == 1
+    message = result[0]
+    assert len(message["content"]) == 1
+    block = message["content"][0]
+    assert block == {
+        # OpenAI Chat Completions file format
+        "type": "file",
+        "file": {
+            "file_data": "data:application/pdf;base64,<base64 string>",
+            "filename": "LC_AUTOGENERATED",
+        },
+    }
+
+
+def test_count_tokens_approximately_empty_messages() -> None:
+    # Test with empty message list
+    assert count_tokens_approximately([]) == 0
+
+    # Test with empty content
+    messages = [HumanMessage(content="")]
+    # 4 role chars -> 1 + 3 = 4 tokens
+    assert count_tokens_approximately(messages) == 4
+
+
+def test_count_tokens_approximately_with_names() -> None:
+    messages = [
+        # 5 chars + 4 role chars -> 3 + 3 = 6 tokens
+        # (with name: extra 4 name chars, so total = 4 + 3 = 7 tokens)
+        HumanMessage(content="Hello", name="user"),
+        # 8 chars + 9 role chars -> 5 + 3 = 8 tokens
+        # (with name: extra 9 name chars, so total = 7 + 3 = 10 tokens)
+        AIMessage(content="Hi there", name="assistant"),
+    ]
+    # With names included (default)
+    assert count_tokens_approximately(messages) == 17
+
+    # Without names
+    without_names = count_tokens_approximately(messages, count_name=False)
+    assert without_names == 14
+
+
+def test_count_tokens_approximately_openai_format() -> None:
+    # same as test_count_tokens_approximately_with_names, but in OpenAI format
+    messages = [
+        {"role": "user", "content": "Hello", "name": "user"},
+        {"role": "assistant", "content": "Hi there", "name": "assistant"},
+    ]
+    # With names included (default)
+    assert count_tokens_approximately(messages) == 17
+
+    # Without names
+    without_names = count_tokens_approximately(messages, count_name=False)
+    assert without_names == 14
+
+
+def test_count_tokens_approximately_string_content() -> None:
+    messages = [
+        # 5 chars + 4 role chars -> 3 + 3 = 6 tokens
+        HumanMessage(content="Hello"),
+        # 8 chars + 9 role chars -> 5 + 3 = 8 tokens
+        AIMessage(content="Hi there"),
+        # 12 chars + 4 role chars -> 4 + 3 = 7 tokens
+        HumanMessage(content="How are you?"),
+    ]
+    assert count_tokens_approximately(messages) == 21
+
+
+def test_count_tokens_approximately_list_content() -> None:
+    messages = [
+        # '[{"foo": "bar"}]' -> 16 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content=[{"foo": "bar"}]),
+        # '[{"test": 123}]' -> 15 chars + 9 role chars -> 6 + 3 = 9 tokens
+        AIMessage(content=[{"test": 123}]),
+    ]
+    assert count_tokens_approximately(messages) == 17
+
+
+def test_count_tokens_approximately_tool_calls() -> None:
+    tool_calls = [{"name": "test_tool", "args": {"foo": "bar"}, "id": "1"}]
+    messages = [
+        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        AIMessage(content="", tool_calls=tool_calls),
+        # 15 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content="Regular message"),
+    ]
+    assert count_tokens_approximately(messages) == 33
+    # AI message w/ both content and tool calls
+    # 94 chars + 9 role chars -> 26 + 3 = 29 tokens
+    messages = [
+        AIMessage(content="Regular message", tool_calls=tool_calls),
+    ]
+    assert count_tokens_approximately(messages) == 29
+
+
+def test_count_tokens_approximately_custom_token_length() -> None:
+    messages = [
+        # 11 chars + 4 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3
+        HumanMessage(content="Hello world"),
+        # 7 chars + 9 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3
+        AIMessage(content="Testing"),
+    ]
+    assert count_tokens_approximately(messages, chars_per_token=4) == 14
+    assert count_tokens_approximately(messages, chars_per_token=2) == 22
+
+
+def test_count_tokens_approximately_large_message_content() -> None:
+    # Test with large content to ensure no issues
+    large_text = "x" * 10000
+    messages = [HumanMessage(content=large_text)]
+    # 10,000 chars + 4 role chars -> 2501 + 3 = 2504 tokens
+    assert count_tokens_approximately(messages) == 2504
+
+
+def test_count_tokens_approximately_large_number_of_messages() -> None:
+    # Test with large content to ensure no issues
+    messages = [HumanMessage(content="x")] * 1_000
+    # 1 chars + 4 role chars -> 2 + 3 = 5 tokens
+    assert count_tokens_approximately(messages) == 5_000
+
+
+def test_count_tokens_approximately_mixed_content_types() -> None:
+    # Test with a variety of content types in the same message list
+    tool_calls = [{"name": "test_tool", "args": {"foo": "bar"}, "id": "1"}]
+    messages = [
+        # 13 chars + 6 role chars -> 5 + 3 = 8 tokens
+        SystemMessage(content="System prompt"),
+        # '[{"foo": "bar"}]' -> 16 chars + 4 role chars -> 5 + 3 = 8 tokens
+        HumanMessage(content=[{"foo": "bar"}]),
+        # tool calls json -> 79 chars + 9 role chars -> 22 + 3 = 25 tokens
+        AIMessage(content="", tool_calls=tool_calls),
+        # 13 chars + 4 role chars + 9 name chars + 1 tool call ID char ->
+        # 7 + 3 = 10 tokens
+        ToolMessage(content="Tool response", name="test_tool", tool_call_id="1"),
+    ]
+    token_count = count_tokens_approximately(messages)
+    assert token_count == 51
+
+    # Ensure that count is consistent if we do one message at a time
+    assert sum(count_tokens_approximately([m]) for m in messages) == token_count
+
+
+def test_get_buffer_string_with_structured_content() -> None:
+    """Test get_buffer_string with structured content in messages."""
+    messages = [
+        HumanMessage(content=[{"type": "text", "text": "Hello, world!"}]),
+        AIMessage(content=[{"type": "text", "text": "Hi there!"}]),
+        SystemMessage(content=[{"type": "text", "text": "System message"}]),
+    ]
+    expected = "Human: Hello, world!\nAI: Hi there!\nSystem: System message"
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_mixed_content() -> None:
+    """Test get_buffer_string with mixed content types in messages."""
+    messages = [
+        HumanMessage(content="Simple text"),
+        AIMessage(content=[{"type": "text", "text": "Structured text"}]),
+        SystemMessage(content=[{"type": "text", "text": "Another structured text"}]),
+    ]
+    expected = (
+        "Human: Simple text\nAI: Structured text\nSystem: Another structured text"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_function_call() -> None:
+    """Test get_buffer_string with function call in additional_kwargs."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(
+            content="Hi",
+            additional_kwargs={
+                "function_call": {
+                    "name": "test_function",
+                    "arguments": '{"arg": "value"}',
+                }
+            },
+        ),
+    ]
+    # TODO: consider changing this
+    expected = (
+        "Human: Hello\n"
+        "AI: Hi{'name': 'test_function', 'arguments': '{\"arg\": \"value\"}'}"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_empty_content() -> None:
+    """Test get_buffer_string with empty content in messages."""
+    messages = [
+        HumanMessage(content=[]),
+        AIMessage(content=""),
+        SystemMessage(content=[]),
+    ]
+    expected = "Human: \nAI: \nSystem: "
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_convert_to_openai_messages_reasoning_content() -> None:
+    """Test convert_to_openai_messages with reasoning content blocks."""
+    # Test reasoning block with empty summary
+    msg = AIMessage(content=[{"type": "reasoning", "summary": []}])
+    result = convert_to_openai_messages(msg, text_format="block")
+    expected = {"role": "assistant", "content": [{"type": "reasoning", "summary": []}]}
+    assert result == expected
+
+    # Test reasoning block with summary content
+    msg_with_summary = AIMessage(
+        content=[
+            {
+                "type": "reasoning",
+                "summary": [
+                    {"type": "text", "text": "First thought"},
+                    {"type": "text", "text": "Second thought"},
+                ],
+            }
+        ]
+    )
+    result_with_summary = convert_to_openai_messages(
+        msg_with_summary, text_format="block"
+    )
+    expected_with_summary = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "reasoning",
+                "summary": [
+                    {"type": "text", "text": "First thought"},
+                    {"type": "text", "text": "Second thought"},
+                ],
+            }
+        ],
+    }
+    assert result_with_summary == expected_with_summary
+
+    # Test mixed content with reasoning and text
+    mixed_msg = AIMessage(
+        content=[
+            {"type": "text", "text": "Regular response"},
+            {
+                "type": "reasoning",
+                "summary": [{"type": "text", "text": "My reasoning process"}],
+            },
+        ]
+    )
+    mixed_result = convert_to_openai_messages(mixed_msg, text_format="block")
+    expected_mixed = {
+        "role": "assistant",
+        "content": [
+            {"type": "text", "text": "Regular response"},
+            {
+                "type": "reasoning",
+                "summary": [{"type": "text", "text": "My reasoning process"}],
+            },
+        ],
+    }
+    assert mixed_result == expected_mixed

@@ -1,11 +1,11 @@
 from langchain_core.agents import AgentAction
 
-from langchain.agents.format_scratchpad.log import format_log_to_str
+from langchain_classic.agents.format_scratchpad.log import format_log_to_str
 
 
 def test_single_agent_action_observation() -> None:
     intermediate_steps = [
-        (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1")
+        (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1"),
     ]
     expected_result = "Log1\nObservation: Observation1\nThought: "
     assert format_log_to_str(intermediate_steps) == expected_result
@@ -25,7 +25,7 @@ Observation3\nThought: """
 
 def test_custom_prefixes() -> None:
     intermediate_steps = [
-        (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1")
+        (AgentAction(tool="Tool1", tool_input="input1", log="Log1"), "Observation1"),
     ]
     observation_prefix = "Custom Observation: "
     llm_prefix = "Custom Thought: "

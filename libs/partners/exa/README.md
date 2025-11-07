@@ -1,70 +1,22 @@
 # langchain-exa
 
-This package contains the LangChain integrations for Exa Cloud generative models.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-exa?label=%20)](https://pypi.org/project/langchain-exa/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-exa)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-exa)](https://pypistats.org/packages/langchain-exa)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
 
 ```bash
-pip install -U langchain-exa
+pip install langchain-exa
 ```
 
-## Exa Search Retriever
+## 🤔 What is this?
 
-You can retrieve search results as follows
+This package contains the LangChain integration with Exa.
 
-```python
-from langchain_exa import ExaSearchRetriever
+## 📖 Documentation
 
-exa_api_key = "YOUR API KEY"
-
-# Create a new instance of the ExaSearchRetriever
-exa = ExaSearchRetriever(exa_api_key=exa_api_key)
-
-# Search for a query and save the results
-results  = exa.invoke("What is the capital of France?")
-
-# Print the results
-print(results)
-```
-
-## Exa Search Results
-
-You can run the ExaSearchResults module as follows
-
-```python
-from langchain_exa import ExaSearchResults
-
-# Initialize the ExaSearchResults tool
-search_tool = ExaSearchResults(exa_api_key="YOUR API KEY")
-
-# Perform a search query
-search_results = search_tool._run(
-    query="When was the last time the New York Knicks won the NBA Championship?",
-    num_results=5,
-    text_contents_options=True,
-    highlights=True
-)
-
-print("Search Results:", search_results)
-```
-
-## Exa Find Similar Results
-
-You can run the ExaFindSimilarResults module as follows
-
-```python
-from langchain_exa import ExaFindSimilarResults
-
-# Initialize the ExaFindSimilarResults tool
-find_similar_tool = ExaFindSimilarResults(exa_api_key="YOUR API KEY")
-
-# Find similar results based on a URL
-similar_results = find_similar_tool._run(
-    url="http://espn.com",
-    num_results=5,
-    text_contents_options=True,
-    highlights=True
-)
-
-print("Similar Results:", similar_results)
-```
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/exa_search) for more details.

@@ -1,16 +1,17 @@
-"""**sys_info** prints information about the system and langchain packages
-for debugging purposes.
-"""
+"""Print information about the system and langchain packages for debugging purposes."""
 
+import pkgutil
+import platform
+import re
+import sys
 from collections.abc import Sequence
+from importlib import metadata, util
 
 
 def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     """Get any specified sub-dependencies."""
-    from importlib import metadata
-
     sub_deps = set()
-    _underscored_packages = {pkg.replace("-", "_") for pkg in packages}
+    underscored_packages = {pkg.replace("-", "_") for pkg in packages}
 
     for pkg in packages:
         try:
@@ -22,13 +23,12 @@ def _get_sub_deps(packages: Sequence[str]) -> list[str]:
             continue
 
         for req in required:
-            try:
-                cleaned_req = req.split(" ")[0]
-            except Exception:  # In case parsing of requirement spec fails
-                continue
-
-            if cleaned_req.replace("-", "_") not in _underscored_packages:
-                sub_deps.add(cleaned_req)
+            # Extract package name (e.g., "httpx<1,>=0.23.0" -> "httpx")
+            match = re.match(r"^([a-zA-Z0-9_.-]+)", req)
+            if match:
+                pkg_name = match.group(1)
+                if pkg_name.replace("-", "_") not in underscored_packages:
+                    sub_deps.add(pkg_name)
 
     return sorted(sub_deps, key=lambda x: x.lower())
 
@@ -39,15 +39,9 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     Args:
         additional_pkgs: Additional packages to include in the output.
     """
-    import pkgutil
-    import platform
-    import sys
-    from importlib import metadata, util
-
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
         "langserve",
-        "langgraph",
         "langsmith",
     ]
 
@@ -55,8 +49,17 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")
     ]
 
+    langgraph_pkgs = [
+        name for _, name, _ in pkgutil.iter_modules() if name.startswith("langgraph")
+    ]
+
     all_packages = sorted(
-        set(langchain_pkgs + other_langchain_packages + list(additional_pkgs))
+        set(
+            langchain_pkgs
+            + langgraph_pkgs
+            + other_langchain_packages
+            + list(additional_pkgs)
+        )
     )
 
     # Always surface these packages to the top
@@ -65,24 +68,24 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     for pkg in reversed(order_by):
         if pkg in all_packages:
             all_packages.remove(pkg)
-            all_packages = [pkg] + list(all_packages)
+            all_packages = [pkg, *list(all_packages)]
 
     system_info = {
         "OS": platform.system(),
         "OS Version": platform.version(),
         "Python Version": sys.version,
     }
-    print()  # noqa: T201
-    print("System Information")  # noqa: T201
-    print("------------------")  # noqa: T201
-    print("> OS: ", system_info["OS"])  # noqa: T201
-    print("> OS Version: ", system_info["OS Version"])  # noqa: T201
-    print("> Python Version: ", system_info["Python Version"])  # noqa: T201
+    print()
+    print("System Information")
+    print("------------------")
+    print("> OS: ", system_info["OS"])
+    print("> OS Version: ", system_info["OS Version"])
+    print("> Python Version: ", system_info["Python Version"])
 
     # Print out only langchain packages
-    print()  # noqa: T201
-    print("Package Information")  # noqa: T201
-    print("-------------------")  # noqa: T201
+    print()
+    print("Package Information")
+    print("-------------------")
 
     not_installed = []
 
@@ -103,30 +106,30 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
 
         # Print package with version
         if package_version is not None:
-            print(f"> {pkg}: {package_version}")  # noqa: T201
-        else:
-            print(f"> {pkg}: Installed. No version info available.")  # noqa: T201
+            print(f"> {pkg}: {package_version}")
 
     if not_installed:
-        print()  # noqa: T201
-        print("Optional packages not installed")  # noqa: T201
-        print("-------------------------------")  # noqa: T201
+        print()
+        print("Optional packages not installed")
+        print("-------------------------------")
         for pkg in not_installed:
-            print(f"> {pkg}")  # noqa: T201
+            print(f"> {pkg}")
 
     sub_dependencies = _get_sub_deps(all_packages)
 
     if sub_dependencies:
-        print()  # noqa: T201
-        print("Other Dependencies")  # noqa: T201
-        print("------------------")  # noqa: T201
+        print()
+        print("Other Dependencies")
+        print("------------------")
 
         for dep in sub_dependencies:
             try:
                 dep_version = metadata.version(dep)
-                print(f"> {dep}: {dep_version}")  # noqa: T201
             except Exception:
-                print(f"> {dep}: Installed. No version info available.")  # noqa: T201
+                dep_version = None
+
+            if dep_version is not None:
+                print(f"> {dep}: {dep_version}")
 
 
 if __name__ == "__main__":

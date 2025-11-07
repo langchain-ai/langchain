@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import uuid
-from typing import List, Union
 
 import pytest
 from langchain_core.documents import Document
@@ -71,9 +72,9 @@ def test_qdrant_add_texts_returns_all_ids(
     )
 
     ids = docsearch.add_texts(["foo", "bar", "baz"])
-    assert 3 == len(ids)
-    assert 3 == len(set(ids))
-    assert 3 == len(docsearch.get_by_ids(ids))
+    assert len(ids) == 3
+    assert len(set(ids)) == 3
+    assert len(docsearch.get_by_ids(ids)) == 3
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -83,7 +84,6 @@ def test_qdrant_add_texts_stores_duplicated_texts(
     vector_name: str,
 ) -> None:
     """Test end to end Qdrant.add_texts stores duplicated texts separately."""
-
     client = QdrantClient(location)
     collection_name = uuid.uuid4().hex
     vectors_config = {
@@ -99,8 +99,8 @@ def test_qdrant_add_texts_stores_duplicated_texts(
     )
     ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
 
-    assert 2 == len(set(ids))
-    assert 2 == client.count(collection_name).count
+    assert len(set(ids)) == 2
+    assert client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -118,7 +118,7 @@ def test_qdrant_add_texts_stores_ids(
     batch_size: int,
 ) -> None:
     """Test end to end Qdrant.add_texts stores provided ids."""
-    ids: List[Union[str, int]] = [
+    ids: list[str | int] = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
         432,
         432145435,
@@ -137,7 +137,7 @@ def test_qdrant_add_texts_stores_ids(
         batch_size=batch_size,
     )
 
-    assert 3 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 3
     stored_ids = [point.id for point in vec_store.client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)
-    assert 3 == len(vec_store.get_by_ids(ids))
+    assert len(vec_store.get_by_ids(ids)) == 3

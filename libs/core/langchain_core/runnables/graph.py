@@ -1,33 +1,39 @@
+"""Graph used in Runnables."""
+
 from __future__ import annotations
 
 import inspect
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
-    Optional,
     Protocol,
     TypedDict,
-    Union,
     overload,
 )
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
-
+from langchain_core.load.serializable import to_json_not_implemented
+from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from pydantic import BaseModel
+
     from langchain_core.runnables.base import Runnable as RunnableType
 
 
 class Stringifiable(Protocol):
-    def __str__(self) -> str: ...
+    """Protocol for objects that can be converted to a string."""
+
+    def __str__(self) -> str:
+        """Convert the object to a string."""
 
 
 class LabelsDict(TypedDict):
@@ -46,38 +52,33 @@ def is_uuid(value: str) -> bool:
         value: The string to check.
 
     Returns:
-        True if the string is a valid UUID, False otherwise.
+        `True` if the string is a valid UUID, `False` otherwise.
     """
     try:
         UUID(value)
-        return True
     except ValueError:
         return False
+    return True
 
 
 class Edge(NamedTuple):
-    """Edge in a graph.
-
-    Parameters:
-        source: The source node id.
-        target: The target node id.
-        data: Optional data associated with the edge. Defaults to None.
-        conditional: Whether the edge is conditional. Defaults to False.
-    """
+    """Edge in a graph."""
 
     source: str
+    """The source node id."""
     target: str
-    data: Optional[Stringifiable] = None
+    """The target node id."""
+    data: Stringifiable | None = None
+    """Optional data associated with the edge. """
     conditional: bool = False
+    """Whether the edge is conditional."""
 
-    def copy(
-        self, *, source: Optional[str] = None, target: Optional[str] = None
-    ) -> Edge:
+    def copy(self, *, source: str | None = None, target: str | None = None) -> Edge:
         """Return a copy of the edge with optional new source and target nodes.
 
         Args:
-            source: The new source node id. Defaults to None.
-            target: The new target node id. Defaults to None.
+            source: The new source node id.
+            target: The new target node id.
 
         Returns:
             A copy of the edge with the new source and target nodes.
@@ -91,26 +92,28 @@ class Edge(NamedTuple):
 
 
 class Node(NamedTuple):
-    """Node in a graph.
-
-    Parameters:
-        id: The unique identifier of the node.
-        name: The name of the node.
-        data: The data of the node.
-        metadata: Optional metadata for the node. Defaults to None.
-    """
+    """Node in a graph."""
 
     id: str
+    """The unique identifier of the node."""
     name: str
-    data: Union[type[BaseModel], RunnableType]
-    metadata: Optional[dict[str, Any]]
+    """The name of the node."""
+    data: type[BaseModel] | RunnableType | None
+    """The data of the node."""
+    metadata: dict[str, Any] | None
+    """Optional metadata for the node. """
 
-    def copy(self, *, id: Optional[str] = None, name: Optional[str] = None) -> Node:
+    def copy(
+        self,
+        *,
+        id: str | None = None,
+        name: str | None = None,
+    ) -> Node:
         """Return a copy of the node with optional new id and name.
 
         Args:
-            id: The new node id. Defaults to None.
-            name: The new node name. Defaults to None.
+            id: The new node id.
+            name: The new node name.
 
         Returns:
             A copy of the node with the new id and name.
@@ -124,20 +127,16 @@ class Node(NamedTuple):
 
 
 class Branch(NamedTuple):
-    """Branch in a graph.
-
-    Parameters:
-        condition: A callable that returns a string representation of the condition.
-        ends: Optional dictionary of end node ids for the branches. Defaults
-            to None.
-    """
+    """Branch in a graph."""
 
     condition: Callable[..., str]
-    ends: Optional[dict[str, str]]
+    """A callable that returns a string representation of the condition."""
+    ends: dict[str, str] | None
+    """Optional dictionary of end node IDs for the branches. """
 
 
 class CurveStyle(Enum):
-    """Enum for different curve styles supported by Mermaid"""
+    """Enum for different curve styles supported by Mermaid."""
 
     BASIS = "basis"
     BUMP_X = "bumpX"
@@ -157,10 +156,10 @@ class CurveStyle(Enum):
 class NodeStyles:
     """Schema for Hexadecimal color codes for different node types.
 
-    Parameters:
-        default: The default color code. Defaults to "fill:#f2f0ff,line-height:1.2".
-        first: The color code for the first node. Defaults to "fill-opacity:0".
-        last: The color code for the last node. Defaults to "fill:#bfb6fc".
+    Args:
+        default: The default color code.
+        first: The color code for the first node.
+        last: The color code for the last node.
     """
 
     default: str = "fill:#f2f0ff,line-height:1.2"
@@ -169,13 +168,18 @@ class NodeStyles:
 
 
 class MermaidDrawMethod(Enum):
-    """Enum for different draw methods supported by Mermaid"""
+    """Enum for different draw methods supported by Mermaid."""
 
-    PYPPETEER = "pyppeteer"  # Uses Pyppeteer to render the graph
-    API = "api"  # Uses Mermaid.INK API to render the graph
+    PYPPETEER = "pyppeteer"
+    """Uses Pyppeteer to render the graph"""
+    API = "api"
+    """Uses Mermaid.INK API to render the graph"""
 
 
-def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
+def node_data_str(
+    id: str,
+    data: type[BaseModel] | RunnableType | None,
+) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -185,35 +189,29 @@ def node_data_str(id: str, data: Union[type[BaseModel], RunnableType]) -> str:
     Returns:
         A string representation of the data.
     """
-    from langchain_core.runnables.base import Runnable
-
-    if not is_uuid(id):
+    if not is_uuid(id) or data is None:
         return id
-    elif isinstance(data, Runnable):
-        data_str = data.get_name()
-    else:
-        data_str = data.__name__
+    data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
     return data_str if not data_str.startswith("Runnable") else data_str[8:]
 
 
 def node_data_json(
     node: Node, *, with_schemas: bool = False
-) -> dict[str, Union[str, dict[str, Any]]]:
+) -> dict[str, str | dict[str, Any]]:
     """Convert the data of a node to a JSON-serializable format.
 
     Args:
-        node: The node to convert.
-        with_schemas: Whether to include the schema of the data if
-            it is a Pydantic model. Defaults to False.
+        node: The `Node` to convert.
+        with_schemas: Whether to include the schema of the data if it is a Pydantic
+            model.
 
     Returns:
         A dictionary with the type of the data and the data itself.
     """
-    from langchain_core.load.serializable import to_json_not_implemented
-    from langchain_core.runnables.base import Runnable, RunnableSerializable
-
-    if isinstance(node.data, RunnableSerializable):
-        json: dict[str, Any] = {
+    if node.data is None:
+        json: dict[str, Any] = {}
+    elif isinstance(node.data, RunnableSerializable):
+        json = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
@@ -256,7 +254,7 @@ def node_data_json(
 class Graph:
     """Graph of nodes and edges.
 
-    Parameters:
+    Args:
         nodes: Dictionary of nodes in the graph. Defaults to an empty dictionary.
         edges: List of edges in the graph. Defaults to an empty list.
     """
@@ -269,7 +267,7 @@ class Graph:
 
         Args:
             with_schemas: Whether to include the schemas of the nodes if they are
-                Pydantic models. Defaults to False.
+                Pydantic models.
 
         Returns:
             A dictionary with the nodes and edges of the graph.
@@ -285,7 +283,7 @@ class Graph:
                 "target": stable_node_ids[edge.target],
             }
             if edge.data is not None:
-                edge_dict["data"] = edge.data
+                edge_dict["data"] = edge.data  # type: ignore[assignment]
             if edge.conditional:
                 edge_dict["conditional"] = True
             edges.append(edge_dict)
@@ -302,26 +300,29 @@ class Graph:
         }
 
     def __bool__(self) -> bool:
+        """Return whether the graph has any nodes."""
         return bool(self.nodes)
 
     def next_id(self) -> str:
-        """Return a new unique node
-        identifier that can be used to add a node to the graph."""
+        """Return a new unique node identifier.
+
+        It that can be used to add a node to the graph.
+        """
         return uuid4().hex
 
     def add_node(
         self,
-        data: Union[type[BaseModel], RunnableType],
-        id: Optional[str] = None,
+        data: type[BaseModel] | RunnableType | None,
+        id: str | None = None,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Node:
         """Add a node to the graph and return it.
 
         Args:
             data: The data of the node.
-            id: The id of the node. Defaults to None.
-            metadata: Optional metadata for the node. Defaults to None.
+            id: The id of the node.
+            metadata: Optional metadata for the node.
 
         Returns:
             The node that was added to the graph.
@@ -332,8 +333,8 @@ class Graph:
         if id is not None and id in self.nodes:
             msg = f"Node with id {id} already exists"
             raise ValueError(msg)
-        id = id or self.next_id()
-        node = Node(id=id, data=data, metadata=metadata, name=node_data_str(id, data))
+        id_ = id or self.next_id()
+        node = Node(id=id_, data=data, metadata=metadata, name=node_data_str(id_, data))
         self.nodes[node.id] = node
         return node
 
@@ -345,25 +346,23 @@ class Graph:
         """
         self.nodes.pop(node.id)
         self.edges = [
-            edge
-            for edge in self.edges
-            if edge.source != node.id and edge.target != node.id
+            edge for edge in self.edges if node.id not in {edge.source, edge.target}
         ]
 
     def add_edge(
         self,
         source: Node,
         target: Node,
-        data: Optional[Stringifiable] = None,
-        conditional: bool = False,
+        data: Stringifiable | None = None,
+        conditional: bool = False,  # noqa: FBT001,FBT002
     ) -> Edge:
         """Add an edge to the graph and return it.
 
         Args:
             source: The source node of the edge.
             target: The target node of the edge.
-            data: Optional data associated with the edge. Defaults to None.
-            conditional: Whether the edge is conditional. Defaults to False.
+            data: Optional data associated with the edge.
+            conditional: Whether the edge is conditional.
 
         Returns:
             The edge that was added to the graph.
@@ -385,13 +384,14 @@ class Graph:
 
     def extend(
         self, graph: Graph, *, prefix: str = ""
-    ) -> tuple[Optional[Node], Optional[Node]]:
+    ) -> tuple[Node | None, Node | None]:
         """Add all nodes and edges from another graph.
+
         Note this doesn't check for duplicates, nor does it connect the graphs.
 
         Args:
             graph: The graph to add.
-            prefix: The prefix to add to the node ids. Defaults to "".
+            prefix: The prefix to add to the node ids.
 
         Returns:
             A tuple of the first and last nodes of the subgraph.
@@ -399,8 +399,8 @@ class Graph:
         if all(is_uuid(node.id) for node in graph.nodes.values()):
             prefix = ""
 
-        def prefixed(id: str) -> str:
-            return f"{prefix}:{id}" if prefix else id
+        def prefixed(id_: str) -> str:
+            return f"{prefix}:{id_}" if prefix else id_
 
         # prefix each node
         self.nodes.update(
@@ -421,8 +421,10 @@ class Graph:
         )
 
     def reid(self) -> Graph:
-        """Return a new graph with all nodes re-identified,
-        using their unique, readable names where possible."""
+        """Return a new graph with all nodes re-identified.
+
+        Uses their unique, readable names where possible.
+        """
         node_name_to_ids = defaultdict(list)
         for node in self.nodes.values():
             node_name_to_ids[node.name].append(node.id)
@@ -437,13 +439,12 @@ class Graph:
             label = unique_labels[node_id]
             if is_uuid(node_id):
                 return label
-            else:
-                return node_id
+            return node_id
 
         return Graph(
             nodes={
-                _get_node_id(id): node.copy(id=_get_node_id(id))
-                for id, node in self.nodes.items()
+                _get_node_id(id_): node.copy(id=_get_node_id(id_))
+                for id_, node in self.nodes.items()
             },
             edges=[
                 edge.copy(
@@ -454,35 +455,64 @@ class Graph:
             ],
         )
 
-    def first_node(self) -> Optional[Node]:
+    def first_node(self) -> Node | None:
         """Find the single node that is not a target of any edge.
-        If there is no such node, or there are multiple, return None.
-        When drawing the graph, this node would be the origin."""
+
+        If there is no such node, or there are multiple, return `None`.
+        When drawing the graph, this node would be the origin.
+
+        Returns:
+            The first node, or None if there is no such node or multiple
+            candidates.
+        """
         return _first_node(self)
 
-    def last_node(self) -> Optional[Node]:
+    def last_node(self) -> Node | None:
         """Find the single node that is not a source of any edge.
-        If there is no such node, or there are multiple, return None.
-        When drawing the graph, this node would be the destination."""
+
+        If there is no such node, or there are multiple, return `None`.
+        When drawing the graph, this node would be the destination.
+
+        Returns:
+            The last node, or None if there is no such node or multiple
+            candidates.
+        """
         return _last_node(self)
 
     def trim_first_node(self) -> None:
-        """Remove the first node if it exists and has a single outgoing edge,
-        i.e., if removing it would not leave the graph without a "first" node."""
+        """Remove the first node if it exists and has a single outgoing edge.
+
+        i.e., if removing it would not leave the graph without a "first" node.
+        """
         first_node = self.first_node()
-        if first_node and _first_node(self, exclude=[first_node.id]):
+        if (
+            first_node
+            and _first_node(self, exclude=[first_node.id])
+            and len({e for e in self.edges if e.source == first_node.id}) == 1
+        ):
             self.remove_node(first_node)
 
     def trim_last_node(self) -> None:
-        """Remove the last node if it exists and has a single incoming edge,
-        i.e., if removing it would not leave the graph without a "last" node."""
+        """Remove the last node if it exists and has a single incoming edge.
+
+        i.e., if removing it would not leave the graph without a "last" node.
+        """
         last_node = self.last_node()
-        if last_node and _last_node(self, exclude=[last_node.id]):
+        if (
+            last_node
+            and _last_node(self, exclude=[last_node.id])
+            and len({e for e in self.edges if e.target == last_node.id}) == 1
+        ):
             self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
-        """Draw the graph as an ASCII art string."""
-        from langchain_core.runnables.graph_ascii import draw_ascii
+        """Draw the graph as an ASCII art string.
+
+        Returns:
+            The ASCII art string.
+        """
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_ascii import draw_ascii  # noqa: PLC0415
 
         return draw_ascii(
             {node.id: node.name for node in self.nodes.values()},
@@ -497,36 +527,38 @@ class Graph:
     def draw_png(
         self,
         output_file_path: str,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
     ) -> None: ...
 
     @overload
     def draw_png(
         self,
         output_file_path: None,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
     ) -> bytes: ...
 
     def draw_png(
         self,
-        output_file_path: Optional[str] = None,
-        fontname: Optional[str] = None,
-        labels: Optional[LabelsDict] = None,
-    ) -> Union[bytes, None]:
+        output_file_path: str | None = None,
+        fontname: str | None = None,
+        labels: LabelsDict | None = None,
+    ) -> bytes | None:
         """Draw the graph as a PNG image.
 
         Args:
-            output_file_path: The path to save the image to. If None, the image
-                is not saved. Defaults to None.
-            fontname: The name of the font to use. Defaults to None.
-            labels: Optional labels for nodes and edges in the graph. Defaults to None.
+            output_file_path: The path to save the image to. If `None`, the image
+                is not saved.
+            fontname: The name of the font to use.
+            labels: Optional labels for nodes and edges in the graph. Defaults to
+                `None`.
 
         Returns:
             The PNG image as bytes if output_file_path is None, None otherwise.
         """
-        from langchain_core.runnables.graph_png import PngDrawer
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_png import PngDrawer  # noqa: PLC0415
 
         default_node_labels = {node.id: node.name for node in self.nodes.values()}
 
@@ -546,22 +578,39 @@ class Graph:
         *,
         with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: Optional[NodeStyles] = None,
+        node_colors: NodeStyles | None = None,
         wrap_label_n_words: int = 9,
+        frontmatter_config: dict[str, Any] | None = None,
     ) -> str:
         """Draw the graph as a Mermaid syntax string.
 
         Args:
-            with_styles: Whether to include styles in the syntax. Defaults to True.
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            with_styles: Whether to include styles in the syntax.
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
+            frontmatter_config: Mermaid frontmatter config.
+                Can be used to customize theme and styles. Will be converted to YAML and
+                added to the beginning of the mermaid graph.
 
+                See more here: https://mermaid.js.org/config/configuration.html.
+
+                Example config:
+
+                ```python
+                {
+                    "config": {
+                        "theme": "neutral",
+                        "look": "handDrawn",
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
+                    }
+                }
+                ```
         Returns:
             The Mermaid syntax string.
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import draw_mermaid  # noqa: PLC0415
 
         graph = self.reid()
         first_node = graph.first_node()
@@ -576,42 +625,71 @@ class Graph:
             curve_style=curve_style,
             node_styles=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            frontmatter_config=frontmatter_config,
         )
 
     def draw_mermaid_png(
         self,
         *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: Optional[NodeStyles] = None,
+        node_colors: NodeStyles | None = None,
         wrap_label_n_words: int = 9,
-        output_file_path: Optional[str] = None,
+        output_file_path: str | None = None,
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
         background_color: str = "white",
         padding: int = 10,
+        max_retries: int = 1,
+        retry_delay: float = 1.0,
+        frontmatter_config: dict[str, Any] | None = None,
+        base_url: str | None = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
         Args:
-            curve_style: The style of the edges. Defaults to CurveStyle.LINEAR.
-            node_colors: The colors of the nodes. Defaults to NodeStyles().
+            curve_style: The style of the edges.
+            node_colors: The colors of the nodes.
             wrap_label_n_words: The number of words to wrap the node labels at.
-                Defaults to 9.
-            output_file_path: The path to save the image to. If None, the image
-                is not saved. Defaults to None.
+            output_file_path: The path to save the image to. If `None`, the image
+                is not saved.
             draw_method: The method to use to draw the graph.
-                Defaults to MermaidDrawMethod.API.
-            background_color: The color of the background. Defaults to "white".
-            padding: The padding around the graph. Defaults to 10.
+            background_color: The color of the background.
+            padding: The padding around the graph.
+            max_retries: The maximum number of retries (`MermaidDrawMethod.API`).
+            retry_delay: The delay between retries (`MermaidDrawMethod.API`).
+            frontmatter_config: Mermaid frontmatter config.
+                Can be used to customize theme and styles. Will be converted to YAML and
+                added to the beginning of the mermaid graph.
+
+                See more here: https://mermaid.js.org/config/configuration.html.
+
+                Example config:
+
+                ```python
+                {
+                    "config": {
+                        "theme": "neutral",
+                        "look": "handDrawn",
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
+                    }
+                }
+                ```
+            base_url: The base URL of the Mermaid server for rendering via API.
+
 
         Returns:
             The PNG image as bytes.
+
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
+            draw_mermaid_png,
+        )
 
         mermaid_syntax = self.draw_mermaid(
             curve_style=curve_style,
             node_colors=node_colors,
             wrap_label_n_words=wrap_label_n_words,
+            frontmatter_config=frontmatter_config,
         )
         return draw_mermaid_png(
             mermaid_syntax=mermaid_syntax,
@@ -619,30 +697,43 @@ class Graph:
             draw_method=draw_method,
             background_color=background_color,
             padding=padding,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+            base_url=base_url,
         )
 
 
-def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+def _first_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a target of any edge.
-    Exclude nodes/sources with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
-    When drawing the graph, this node would be the origin."""
+
+    Exclude nodes/sources with IDs in the exclude list.
+
+    If there is no such node, or there are multiple, return `None`.
+
+    When drawing the graph, this node would be the origin.
+    """
     targets = {edge.target for edge in graph.edges if edge.source not in exclude}
-    found: list[Node] = []
-    for node in graph.nodes.values():
-        if node.id not in exclude and node.id not in targets:
-            found.append(node)
+    found: list[Node] = [
+        node
+        for node in graph.nodes.values()
+        if node.id not in exclude and node.id not in targets
+    ]
     return found[0] if len(found) == 1 else None
 
 
-def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Optional[Node]:
+def _last_node(graph: Graph, exclude: Sequence[str] = ()) -> Node | None:
     """Find the single node that is not a source of any edge.
-    Exclude nodes/targets with ids in the exclude list.
-    If there is no such node, or there are multiple, return None.
-    When drawing the graph, this node would be the destination."""
+
+    Exclude nodes/targets with IDs in the exclude list.
+
+    If there is no such node, or there are multiple, return `None`.
+
+    When drawing the graph, this node would be the destination.
+    """
     sources = {edge.source for edge in graph.edges if edge.target not in exclude}
-    found: list[Node] = []
-    for node in graph.nodes.values():
-        if node.id not in exclude and node.id not in sources:
-            found.append(node)
+    found: list[Node] = [
+        node
+        for node in graph.nodes.values()
+        if node.id not in exclude and node.id not in sources
+    ]
     return found[0] if len(found) == 1 else None

@@ -2,15 +2,18 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables.base import ConfigurableField
+from langchain_core.runnables import ConfigurableField
 
-from langchain.runnables.hub import HubRunnable
+from langchain_classic.runnables.hub import HubRunnable
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable(mock_pull: Mock) -> None:
     mock_pull.return_value = ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "b")]
+        [
+            ("system", "a"),
+            ("user", "b"),
+        ],
     )
 
     basic: HubRunnable = HubRunnable("efriis/my-prompt")
@@ -21,19 +24,25 @@ def test_hub_runnable(mock_pull: Mock) -> None:
 
 repo_dict = {
     "efriis/my-prompt-1": ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "1")]
+        [
+            ("system", "a"),
+            ("user", "1"),
+        ],
     ),
     "efriis/my-prompt-2": ChatPromptTemplate.from_messages(
-        [("system", "a"), ("user", "2")]
+        [
+            ("system", "a"),
+            ("user", "2"),
+        ],
     ),
 }
 
 
-def repo_lookup(owner_repo_commit: str, **kwargs: Any) -> ChatPromptTemplate:
+def repo_lookup(owner_repo_commit: str, **_: Any) -> ChatPromptTemplate:
     return repo_dict[owner_repo_commit]
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable_configurable_alternative(mock_pull: Mock) -> None:
     mock_pull.side_effect = repo_lookup
 
@@ -55,7 +64,7 @@ def test_hub_runnable_configurable_alternative(mock_pull: Mock) -> None:
     assert message_a2.content == "2"
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable_configurable_fields(mock_pull: Mock) -> None:
     mock_pull.side_effect = repo_lookup
 
@@ -68,6 +77,6 @@ def test_hub_runnable_configurable_fields(mock_pull: Mock) -> None:
     assert templated_1.messages[1].content == "1"
 
     templated_2 = obj_configurable.with_config(
-        configurable={"owner_repo_commit": "efriis/my-prompt-2"}
+        configurable={"owner_repo_commit": "efriis/my-prompt-2"},
     ).invoke({})
     assert templated_2.messages[1].content == "2"

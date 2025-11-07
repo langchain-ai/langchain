@@ -1,12 +1,12 @@
 import pytest
-from langchain_core.memory import BaseMemory
 
-from langchain.chains.conversation.memory import (
+from langchain_classic.base_memory import BaseMemory
+from langchain_classic.chains.conversation.memory import (
     ConversationBufferMemory,
     ConversationBufferWindowMemory,
     ConversationSummaryMemory,
 )
-from langchain.memory import ReadOnlySharedMemory, SimpleMemory
+from langchain_classic.memory import ReadOnlySharedMemory, SimpleMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -17,7 +17,7 @@ def test_simple_memory() -> None:
     output = memory.load_memory_variables({})
 
     assert output == {"baz": "foo"}
-    assert ["baz"] == memory.memory_variables
+    assert memory.memory_variables == ["baz"]
 
 
 @pytest.mark.parametrize(
@@ -33,5 +33,5 @@ def test_readonly_memory(memory: BaseMemory) -> None:
     memory.save_context({"input": "bar"}, {"output": "foo"})
 
     assert read_only_memory.load_memory_variables({}) == memory.load_memory_variables(
-        {}
+        {},
     )

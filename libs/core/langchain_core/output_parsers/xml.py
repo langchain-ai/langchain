@@ -1,15 +1,27 @@
+"""Output parser for XML format."""
+
 import contextlib
 import re
 import xml
-import xml.etree.ElementTree as ET  # noqa: N817
+import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 from xml.etree.ElementTree import TreeBuilder
+
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
+
+try:
+    from defusedxml import ElementTree  # type: ignore[import-untyped]
+    from defusedxml.ElementTree import XMLParser  # type: ignore[import-untyped]
+
+    _HAS_DEFUSEDXML = True
+except ImportError:
+    _HAS_DEFUSEDXML = False
 
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.
@@ -31,48 +43,46 @@ class _StreamingParser:
     """Streaming parser for XML.
 
     This implementation is pulled into a class to avoid implementation
-    drift between transform and atransform of the XMLOutputParser.
+    drift between transform and atransform of the `XMLOutputParser`.
     """
 
     def __init__(self, parser: Literal["defusedxml", "xml"]) -> None:
         """Initialize the streaming parser.
 
         Args:
-            parser: Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
-              See documentation in XMLOutputParser for more information.
+            parser: Parser to use for XML parsing. Can be either `'defusedxml'` or
+                `'xml'`. See documentation in `XMLOutputParser` for more information.
 
         Raises:
-            ImportError: If defusedxml is not installed and the defusedxml
-                parser is requested.
+            ImportError: If `defusedxml` is not installed and the `defusedxml` parser is
+                requested.
         """
         if parser == "defusedxml":
-            try:
-                import defusedxml  # type: ignore
-            except ImportError as e:
+            if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
                 )
-                raise ImportError(msg) from e
-            _parser = defusedxml.ElementTree.DefusedXMLParser(target=TreeBuilder())
+                raise ImportError(msg)
+            parser_ = XMLParser(target=TreeBuilder())
         else:
-            _parser = None
-        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=_parser)
+            parser_ = None
+        self.pull_parser = ET.XMLPullParser(["start", "end"], _parser=parser_)
         self.xml_start_re = re.compile(r"<[a-zA-Z:_]")
         self.current_path: list[str] = []
         self.current_path_has_children = False
         self.buffer = ""
         self.xml_started = False
 
-    def parse(self, chunk: Union[str, BaseMessage]) -> Iterator[AddableDict]:
+    def parse(self, chunk: str | BaseMessage) -> Iterator[AddableDict]:
         """Parse a chunk of text.
 
         Args:
-            chunk: A chunk of text to parse. This can be a string or a BaseMessage.
+            chunk: A chunk of text to parse. This can be a `str` or a `BaseMessage`.
 
         Yields:
-            AddableDict: A dictionary representing the parsed XML element.
+            A `dict` representing the parsed XML element.
 
         Raises:
             xml.etree.ElementTree.ParseError: If the XML is not well-formed.
@@ -99,10 +109,11 @@ class _StreamingParser:
         self.buffer = ""
         # yield all events
         try:
-            for event, elem in self.pull_parser.read_events():
+            events = self.pull_parser.read_events()
+            for event, elem in events:  # type: ignore[misc]
                 if event == "start":
                     # update current path
-                    self.current_path.append(elem.tag)
+                    self.current_path.append(elem.tag)  # type: ignore[union-attr]
                     self.current_path_has_children = False
                 elif event == "end":
                     # remove last element from current path
@@ -110,7 +121,7 @@ class _StreamingParser:
                     self.current_path.pop()
                     # yield element
                     if not self.current_path_has_children:
-                        yield nested_element(self.current_path, elem)
+                        yield nested_element(self.current_path, elem)  # type: ignore[arg-type]
                     # prevent yielding of parent element
                     if self.current_path:
                         self.current_path_has_children = True
@@ -129,9 +140,6 @@ class _StreamingParser:
         """Close the parser.
 
         This should be called after all chunks have been parsed.
-
-        Raises:
-            xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
         # Ignore ParseError. This will ignore any incomplete XML at the end of the input
         with contextlib.suppress(xml.etree.ElementTree.ParseError):
@@ -139,68 +147,84 @@ class _StreamingParser:
 
 
 class XMLOutputParser(BaseTransformOutputParser):
-    """Parse an output using xml format."""
+    """Parse an output using xml format.
 
-    tags: Optional[list[str]] = None
+    Returns a dictionary of tags.
+    """
+
+    tags: list[str] | None = None
+    """Tags to tell the LLM to expect in the XML output.
+
+    Note this may not be perfect depending on the LLM implementation.
+
+    For example, with `tags=["foo", "bar", "baz"]`:
+
+    1. A well-formatted XML instance:
+        `"<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"`
+
+    2. A badly-formatted XML instance (missing closing tag for 'bar'):
+        `"<foo>\n   <bar>\n   </foo>"`
+
+    3. A badly-formatted XML instance (unexpected 'tag' element):
+        `"<foo>\n   <tag>\n   </tag>\n</foo>"`
+    """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
     parser: Literal["defusedxml", "xml"] = "defusedxml"
-    """Parser to use for XML parsing. Can be either 'defusedxml' or 'xml'.
+    """Parser to use for XML parsing. Can be either `'defusedxml'` or `'xml'`.
 
-    * 'defusedxml' is the default parser and is used to prevent XML vulnerabilities
-       present in some distributions of Python's standard library xml.
-       `defusedxml` is a wrapper around the standard library parser that
-       sets up the parser with secure defaults.
-    * 'xml' is the standard library parser.
+    * `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
+        present in some distributions of Python's standard library xml.
+        `defusedxml` is a wrapper around the standard library parser that
+        sets up the parser with secure defaults.
+    * `'xml'` is the standard library parser.
 
-    Use `xml` only if you are sure that your distribution of the standard library
-    is not vulnerable to XML vulnerabilities.
+    Use `xml` only if you are sure that your distribution of the standard library is not
+    vulnerable to XML vulnerabilities.
 
     Please review the following resources for more information:
 
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
     * https://github.com/tiran/defusedxml
 
-    The standard library relies on libexpat for parsing XML:
-    https://github.com/libexpat/libexpat
+    The standard library relies on [`libexpat`](https://github.com/libexpat/libexpat)
+    for parsing XML.
     """
 
     def get_format_instructions(self) -> str:
         """Return the format instructions for the XML output."""
         return XML_FORMAT_INSTRUCTIONS.format(tags=self.tags)
 
-    def parse(self, text: str) -> dict[str, Union[str, list[Any]]]:
+    def parse(self, text: str) -> dict[str, str | list[Any]]:
         """Parse the output of an LLM call.
 
         Args:
             text: The output of an LLM call.
 
         Returns:
-            A dictionary representing the parsed XML.
+            A `dict` representing the parsed XML.
 
         Raises:
             OutputParserException: If the XML is not well-formed.
-            ImportError: If defusedxml is not installed and the defusedxml
-                parser is requested.
+            ImportError: If defus`edxml is not installed and the `defusedxml` parser is
+                requested.
         """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
-            try:
-                from defusedxml import ElementTree  # type: ignore
-            except ImportError as e:
+            if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
                 )
-                raise ImportError(msg) from e
-            _et = ElementTree  # Use the defusedxml parser
+                raise ImportError(msg)
+            et = ElementTree  # Use the defusedxml parser
         else:
-            _et = ET  # Use the standard library parser
+            et = ET  # Use the standard library parser
 
         match = re.search(r"```(xml)?(.*)```", text, re.DOTALL)
         if match is not None:
@@ -212,22 +236,22 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         text = text.strip()
         try:
-            root = _et.fromstring(text)
+            root = et.fromstring(text)
             return self._root_to_dict(root)
-        except _et.ParseError as e:
+        except et.ParseError as e:
             msg = f"Failed to parse XML format from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
-    def _transform(
-        self, input: Iterator[Union[str, BaseMessage]]
-    ) -> Iterator[AddableDict]:
+    @override
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         for chunk in input:
             yield from streaming_parser.parse(chunk)
         streaming_parser.close()
 
+    @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[AddableDict]:
         streaming_parser = _StreamingParser(self.parser)
         async for chunk in input:
@@ -235,7 +259,7 @@ class XMLOutputParser(BaseTransformOutputParser):
                 yield output
         streaming_parser.close()
 
-    def _root_to_dict(self, root: ET.Element) -> dict[str, Union[str, list[Any]]]:
+    def _root_to_dict(self, root: ET.Element) -> dict[str, str | list[Any]]:
         """Converts xml tree to python dictionary."""
         if root.text and bool(re.search(r"\S", root.text)):
             # If root text contains any non-whitespace character it
@@ -266,5 +290,4 @@ def nested_element(path: list[str], elem: ET.Element) -> Any:
     """
     if len(path) == 0:
         return AddableDict({elem.tag: elem.text})
-    else:
-        return AddableDict({path[0]: [nested_element(path[1:], elem)]})
+    return AddableDict({path[0]: [nested_element(path[1:], elem)]})

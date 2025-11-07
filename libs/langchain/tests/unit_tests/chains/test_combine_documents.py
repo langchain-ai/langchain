@@ -1,24 +1,25 @@
 """Test functionality related to combining documents."""
 
-from typing import Any, List
+import re
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate, aformat_document, format_document
 
-from langchain.chains.combine_documents.reduce import (
+from langchain_classic.chains.combine_documents.reduce import (
     collapse_docs,
     split_list_of_docs,
 )
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain_classic.chains.qa_with_sources import load_qa_with_sources_chain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def _fake_docs_len_func(docs: List[Document]) -> int:
+def _fake_docs_len_func(docs: list[Document]) -> int:
     return len(_fake_combine_docs_func(docs))
 
 
-def _fake_combine_docs_func(docs: List[Document], **kwargs: Any) -> str:
+def _fake_combine_docs_func(docs: list[Document], **_: Any) -> str:
     return "".join([d.page_content for d in docs])
 
 
@@ -30,7 +31,9 @@ def test_multiple_input_keys() -> None:
 def test__split_list_long_single_doc() -> None:
     """Test splitting of a long single doc."""
     docs = [Document(page_content="foo" * 100)]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="A single document was longer than the context length"
+    ):
         split_list_of_docs(docs, _fake_docs_len_func, 100)
 
 
@@ -123,7 +126,8 @@ async def test_format_doc_with_metadata() -> None:
     """Test format doc on a valid document."""
     doc = Document(page_content="foo", metadata={"bar": "baz"})
     prompt = PromptTemplate(
-        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+        input_variables=["page_content", "bar"],
+        template="{page_content}, {bar}",
     )
     expected_output = "foo, baz"
     output = format_document(doc, prompt)
@@ -136,9 +140,20 @@ async def test_format_doc_missing_metadata() -> None:
     """Test format doc on a document with missing metadata."""
     doc = Document(page_content="foo")
     prompt = PromptTemplate(
-        input_variables=["page_content", "bar"], template="{page_content}, {bar}"
+        input_variables=["page_content", "bar"],
+        template="{page_content}, {bar}",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Document prompt requires documents to have metadata variables: ['bar']."
+        ),
+    ):
         format_document(doc, prompt)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Document prompt requires documents to have metadata variables: ['bar']."
+        ),
+    ):
         await aformat_document(doc, prompt)

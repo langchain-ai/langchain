@@ -1,11 +1,11 @@
 import pytest
 
-from langchain.chains.qa_with_sources.base import QAWithSourcesChain
+from langchain_classic.chains.qa_with_sources.base import QAWithSourcesChain
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.mark.parametrize(
-    "text,answer,sources",
+    ("text", "answer", "sources"),
     [
         (
             "This Agreement is governed by English law.\nSOURCES: 28-pl",
@@ -84,7 +84,9 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
     ],
 )
 def test_spliting_answer_into_answer_and_sources(
-    text: str, answer: str, sources: str
+    text: str,
+    answer: str,
+    sources: str,
 ) -> None:
     qa_chain = QAWithSourcesChain.from_llm(FakeLLM())
     generated_answer, generated_sources = qa_chain._split_sources(text)

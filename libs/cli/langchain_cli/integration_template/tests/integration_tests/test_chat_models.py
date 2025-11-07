@@ -1,64 +1,21 @@
 """Test Chat__ModuleName__ chat model."""
 
+from typing import Type
+
 from __module_name__.chat_models import Chat__ModuleName__
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 
-def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = Chat__ModuleName__()
+class TestChatParrotLinkIntegration(ChatModelIntegrationTests):
+    @property
+    def chat_model_class(self) -> Type[Chat__ModuleName__]:
+        return Chat__ModuleName__
 
-    for token in llm.stream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
-    llm = Chat__ModuleName__()
-
-    async for token in llm.astream("I'm Pickle Rick"):
-        assert isinstance(token.content, str)
-
-
-async def test_abatch() -> None:
-    """Test streaming tokens from Chat__ModuleName__."""
-    llm = Chat__ModuleName__()
-
-    result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-async def test_abatch_tags() -> None:
-    """Test batch tokens from Chat__ModuleName__."""
-    llm = Chat__ModuleName__()
-
-    result = await llm.abatch(
-        ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
-    )
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-def test_batch() -> None:
-    """Test batch tokens from Chat__ModuleName__."""
-    llm = Chat__ModuleName__()
-
-    result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
-    for token in result:
-        assert isinstance(token.content, str)
-
-
-async def test_ainvoke() -> None:
-    """Test invoke tokens from Chat__ModuleName__."""
-    llm = Chat__ModuleName__()
-
-    result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result.content, str)
-
-
-def test_invoke() -> None:
-    """Test invoke tokens from Chat__ModuleName__."""
-    llm = Chat__ModuleName__()
-
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
-    assert isinstance(result.content, str)
+    @property
+    def chat_model_params(self) -> dict:
+        # These should be parameters used to initialize your integration for testing
+        return {
+            "model": "bird-brain-001",
+            "temperature": 0,
+            "parrot_buffer_length": 50,
+        }

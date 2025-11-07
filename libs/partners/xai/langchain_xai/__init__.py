@@ -1,4 +1,4 @@
-"""This package provides the xAI integration for LangChain."""
+"""LangChain integration with xAI."""
 
 from langchain_xai.chat_models import ChatXAI
 

@@ -1,3 +1,5 @@
+"""Chat loaders."""
+
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 

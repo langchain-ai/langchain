@@ -1,20 +1,19 @@
+"""Base class for prompt templates."""
+
 from __future__ import annotations
 
 import contextlib
 import json
 import typing
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import cached_property
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
-    Optional,
     TypeVar,
-    Union,
 )
 
 import yaml
@@ -41,30 +40,36 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: list[str]
     """A list of the names of the variables whose values are required as inputs to the
-    prompt."""
+    prompt.
+    """
     optional_variables: list[str] = Field(default=[])
-    """optional_variables: A list of the names of the variables for placeholder
-       or MessagePlaceholder that are optional. These variables are auto inferred
-       from the prompt and user need not provide them."""
+    """A list of the names of the variables for placeholder or `MessagePlaceholder` that
+    are optional.
+
+    These variables are auto inferred from the prompt and user need not provide them.
+    """
     input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
     """A dictionary of the types of the variables the prompt template expects.
-    If not provided, all variables are assumed to be strings."""
-    output_parser: Optional[BaseOutputParser] = None
+
+    If not provided, all variables are assumed to be strings.
+    """
+    output_parser: BaseOutputParser | None = None
     """How to parse the output of calling an LLM on this formatted prompt."""
     partial_variables: Mapping[str, Any] = Field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
 
-    Partial variables populate the template so that you don't need to
-    pass them in every time you call the prompt."""
-    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
+    Partial variables populate the template so that you don't need to pass them in every
+    time you call the prompt.
+    """
+    metadata: typing.Dict[str, Any] | None = None  # noqa: UP006
     """Metadata to be used for tracing."""
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
     """Tags to be used for tracing."""
 
     @model_validator(mode="after")
@@ -97,14 +102,16 @@ class BasePromptTemplate(
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Returns ["langchain", "schema", "prompt_template"]."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "schema", "prompt_template"]`
+        """
         return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable.
-        Returns True."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -119,18 +126,17 @@ class BasePromptTemplate(
     @override
     def OutputType(self) -> Any:
         """Return the output type of the prompt."""
-        return Union[StringPromptValue, ChatPromptValueConcrete]
+        return StringPromptValue | ChatPromptValueConcrete
 
-    def get_input_schema(
-        self, config: Optional[RunnableConfig] = None
-    ) -> type[BaseModel]:
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         """Get the input schema for the prompt.
 
         Args:
-            config: RunnableConfig, configuration for the prompt.
+            config: Configuration for the prompt.
 
         Returns:
-            Type[BaseModel]: The input schema for the prompt.
+            The input schema for the prompt.
         """
         # This is correct, but pydantic typings/mypy don't think so.
         required_input_variables = {
@@ -179,32 +185,33 @@ class BasePromptTemplate(
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return self.format_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
         self, inner_input: dict
     ) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return await self.aformat_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return await self.aformat_prompt(**inner_input_)
 
+    @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> PromptValue:
         """Invoke the prompt.
 
         Args:
-            input: Dict, input to the prompt.
-            config: RunnableConfig, configuration for the prompt.
+            input: Input to the prompt.
+            config: Configuration for the prompt.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         config = ensure_config(config)
         if self.metadata:
             config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
-            config["tags"] = config["tags"] + self.tags
+            config["tags"] += self.tags
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
@@ -213,17 +220,18 @@ class BasePromptTemplate(
             serialized=self._serialized,
         )
 
+    @override
     async def ainvoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
     ) -> PromptValue:
         """Async invoke the prompt.
 
         Args:
-            input: Dict, input to the prompt.
-            config: RunnableConfig, configuration for the prompt.
+            input: Input to the prompt.
+            config: Configuration for the prompt.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         config = ensure_config(config)
         if self.metadata:
@@ -240,34 +248,34 @@ class BasePromptTemplate(
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Prompt Value.
+        """Create `PromptValue`.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
-        """Async create Prompt Value.
+        """Async create `PromptValue`.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
-            PromptValue: The output of the prompt.
+            The output of the prompt.
         """
         return self.format_prompt(**kwargs)
 
-    def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
+    def partial(self, **kwargs: str | Callable[[], str]) -> BasePromptTemplate:
         """Return a partial of the prompt template.
 
         Args:
-            kwargs: Union[str, Callable[[], str], partial variables to set.
+            **kwargs: Partial variables to set.
 
         Returns:
-            BasePromptTemplate: A partial of the prompt template.
+            A partial of the prompt template.
         """
         prompt_dict = self.__dict__.copy()
         prompt_dict["input_variables"] = list(
@@ -288,32 +296,30 @@ class BasePromptTemplate(
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
+            ```python
             prompt.format(variable1="foo")
+            ```
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
         """Async format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
 
         Example:
-
-        .. code-block:: python
-
+            ```python
             await prompt.aformat(variable1="foo")
+            ```
         """
         return self.format(**kwargs)
 
@@ -326,20 +332,17 @@ class BasePromptTemplate(
         """Return dictionary representation of prompt.
 
         Args:
-            kwargs: Any additional arguments to pass to the dictionary.
+            **kwargs: Any additional arguments to pass to the dictionary.
 
         Returns:
-            Dict: Dictionary representation of the prompt.
-
-        Raises:
-            NotImplementedError: If the prompt type is not implemented.
+            Dictionary representation of the prompt.
         """
         prompt_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             prompt_dict["_type"] = self._prompt_type
         return prompt_dict
 
-    def save(self, file_path: Union[Path, str]) -> None:
+    def save(self, file_path: Path | str) -> None:
         """Save the prompt.
 
         Args:
@@ -351,9 +354,9 @@ class BasePromptTemplate(
             NotImplementedError: If the prompt type is not implemented.
 
         Example:
-        .. code-block:: python
-
+            ```python
             prompt.save(file_path="path/prompt.yaml")
+            ```
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -366,16 +369,16 @@ class BasePromptTemplate(
             raise NotImplementedError(msg)
 
         # Convert file to Path object.
-        save_path = Path(file_path) if isinstance(file_path, str) else file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -405,34 +408,34 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
 
     First, this pulls information from the document from two sources:
 
-    1. page_content:
-        This takes the information from the `document.page_content`
-        and assigns it to a variable named `page_content`.
-    2. metadata:
-        This takes information from `document.metadata` and assigns
-        it to variables of the same name.
+    1. `page_content`:
+        This takes the information from the `document.page_content` and assigns it to a
+        variable named `page_content`.
+    2. `metadata`:
+        This takes information from `document.metadata` and assigns it to variables of
+        the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: Document, the page_content and metadata will be used to create
+        doc: `Document`, the `page_content` and `metadata` will be used to create
             the final string.
-        prompt: BasePromptTemplate, will be used to format the page_content
-            and metadata into the final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content`
+            and `metadata` into the final string.
 
     Returns:
-        string of the document formatted.
+        String of the document formatted.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.documents import Document
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.documents import Document
-            from langchain_core.prompts import PromptTemplate
-
-            doc = Document(page_content="This is a joke", metadata={"page": "1"})
-            prompt = PromptTemplate.from_template("Page {page}: {page_content}")
-            format_document(doc, prompt)
-            >>> "Page 1: This is a joke"
+        doc = Document(page_content="This is a joke", metadata={"page": "1"})
+        prompt = PromptTemplate.from_template("Page {page}: {page_content}")
+        format_document(doc, prompt)
+        >>> "Page 1: This is a joke"
+        ```
     """
     return prompt.format(**_get_document_info(doc, prompt))
 
@@ -442,22 +445,22 @@ async def aformat_document(doc: Document, prompt: BasePromptTemplate[str]) -> st
 
     First, this pulls information from the document from two sources:
 
-    1. page_content:
-        This takes the information from the `document.page_content`
-        and assigns it to a variable named `page_content`.
-    2. metadata:
-        This takes information from `document.metadata` and assigns
-        it to variables of the same name.
+    1. `page_content`:
+        This takes the information from the `document.page_content` and assigns it to a
+        variable named `page_content`.
+    2. `metadata`:
+        This takes information from `document.metadata` and assigns it to variables of
+        the same name.
 
     Those variables are then passed into the `prompt` to produce a formatted string.
 
     Args:
-        doc: Document, the page_content and metadata will be used to create
+        doc: `Document`, the `page_content` and `metadata` will be used to create
             the final string.
-        prompt: BasePromptTemplate, will be used to format the page_content
-            and metadata into the final string.
+        prompt: `BasePromptTemplate`, will be used to format the `page_content`
+            and `metadata` into the final string.
 
     Returns:
-        string of the document formatted.
+        String of the document formatted.
     """
     return await prompt.aformat(**_get_document_info(doc, prompt))

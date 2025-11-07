@@ -7,27 +7,31 @@ the relevant methods.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterable, Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
 from langchain_core.vectorstores import VectorStore
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
 
 class CustomAddTextsVectorstore(VectorStore):
-    """A vectorstore that only implements add texts."""
+    """A VectorStore that only implements add texts."""
 
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[list[dict]] = None,
-        ids: Optional[list[str]] = None,
+        metadatas: list[dict] | None = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         if not isinstance(texts, list):
@@ -38,7 +42,7 @@ class CustomAddTextsVectorstore(VectorStore):
 
         metadatas_ = metadatas or [{} for _ in texts]
 
-        for text, metadata in zip(texts, metadatas_ or []):
+        for text, metadata in zip(texts, metadatas_ or [], strict=False):
             next_id = next(ids_iter, None)
             id_ = next_id or str(uuid.uuid4())
             self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
@@ -46,14 +50,15 @@ class CustomAddTextsVectorstore(VectorStore):
         return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
-        return [self.store[id] for id in ids if id in self.store]
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    @override
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> CustomAddTextsVectorstore:
         vectorstore = CustomAddTextsVectorstore()
@@ -67,16 +72,17 @@ class CustomAddTextsVectorstore(VectorStore):
 
 
 class CustomAddDocumentsVectorstore(VectorStore):
-    """A vectorstore that only implements add documents."""
+    """A VectorStore that only implements add documents."""
 
     def __init__(self) -> None:
         self.store: dict[str, Document] = {}
 
+    @override
     def add_documents(
         self,
         documents: list[Document],
         *,
-        ids: Optional[list[str]] = None,
+        ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         ids_ = []
@@ -90,14 +96,15 @@ class CustomAddDocumentsVectorstore(VectorStore):
         return ids_
 
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
-        return [self.store[id] for id in ids if id in self.store]
+        return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @classmethod
-    def from_texts(  # type: ignore
+    @override
+    def from_texts(
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[list[dict]] = None,
+        metadatas: list[dict] | None = None,
         **kwargs: Any,
     ) -> CustomAddDocumentsVectorstore:
         vectorstore = CustomAddDocumentsVectorstore()
@@ -114,10 +121,11 @@ class CustomAddDocumentsVectorstore(VectorStore):
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
 def test_default_add_documents(vs_class: type[VectorStore]) -> None:
-    """Test that we can implement the upsert method of the CustomVectorStore
+    """Test default implementation of add_documents.
+
+    Test that we can implement the upsert method of the CustomVectorStore
     class without violating the Liskov Substitution Principle.
     """
-
     store = vs_class()
 
     # Check upsert with id
@@ -241,7 +249,7 @@ def test_default_from_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # from_documents with ids in args
+    # from_documents with IDs in args
     store = vs_class.from_documents(
         [Document(page_content="hello", metadata={"foo": "bar"})], embeddings, ids=["1"]
     )
@@ -270,7 +278,7 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # from_documents with ids in args
+    # from_documents with IDs in args
     store = await vs_class.afrom_documents(
         [Document(page_content="hello", metadata={"foo": "bar"})], embeddings, ids=["1"]
     )
@@ -279,7 +287,7 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
         Document(id="1", page_content="hello", metadata={"foo": "bar"})
     ]
 
-    # Test afrom_documents with id specified in both document and ids
+    # Test afrom_documents with id specified in both document and IDs
     original_document = Document(id="7", page_content="baz")
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified

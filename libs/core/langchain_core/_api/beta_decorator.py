@@ -4,18 +4,18 @@ This module was loosely adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
-    We may change the API at any time with no warning.
+    This module is for internal use only. Do not use it in your own code. We may change
+    the API at any time with no warning.
 """
 
 import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Generator
-from typing import Any, Callable, TypeVar, Union, cast
+from collections.abc import Callable, Generator
+from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -27,7 +27,7 @@ class LangChainBetaWarning(DeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Union[Callable[..., Any], type])
+T = TypeVar("T", bound=Callable[..., Any] | type)
 
 
 def beta(
@@ -40,37 +40,37 @@ def beta(
     """Decorator to mark a function, a class, or a property as beta.
 
     When marking a classmethod, a staticmethod, or a property, the
-    ``@beta`` decorator should go *under* ``@classmethod`` and
-    ``@staticmethod`` (i.e., `beta` should directly decorate the
-    underlying callable), but *over* ``@property``.
+    `@beta` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `beta` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When marking a class ``C`` intended to be used as a base class in a
-    multiple inheritance hierarchy, ``C`` *must* define an ``__init__`` method
-    (if ``C`` instead inherited its ``__init__`` from its own base class, then
-    ``@beta`` would mess up ``__init__`` inheritance when installing its
-    own (annotation-emitting) ``C.__init__``).
+    When marking a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@beta` would mess up `__init__` inheritance when installing its
+    own (annotation-emitting) `C.__init__`).
 
-    Arguments:
-        message : str, optional
+    Args:
+        message:
             Override the default beta message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the beta object.
-        obj_type : str, optional
+        obj_type:
             The object type being beta.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
 
-    Examples
-    --------
+    Returns:
+        A decorator which can be used to mark functions or classes as beta.
 
-        .. code-block:: python
-
-            @beta
-            def the_function_to_annotate():
-                pass
+    ```python
+    @beta
+    def the_function_to_annotate():
+        pass
+    ```
     """
 
     def beta(
@@ -121,11 +121,11 @@ def beta(
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
-            wrapped = obj.__init__  # type: ignore
+            wrapped = obj.__init__  # type: ignore[misc]
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -144,50 +144,33 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast(T, obj)
+                return obj
 
         elif isinstance(obj, property):
-            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
             _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _BetaProperty(property):
-                """A beta property."""
+            def _fget(instance: Any) -> Any:
+                if instance is not None:
+                    emit_warning()
+                return obj.fget(instance)
 
-                def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-                    super().__init__(fget, fset, fdel, doc)
-                    self.__orig_fget = fget
-                    self.__orig_fset = fset
-                    self.__orig_fdel = fdel
+            def _fset(instance: Any, value: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fset(instance, value)
 
-                def __get__(self, instance, owner=None):
-                    if instance is not None or owner is not None:
-                        emit_warning()
-                    return self.fget(instance)
+            def _fdel(instance: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fdel(instance)
 
-                def __set__(self, instance, value):
-                    if instance is not None:
-                        emit_warning()
-                    return self.fset(instance, value)
-
-                def __delete__(self, instance):
-                    if instance is not None:
-                        emit_warning()
-                    return self.fdel(instance)
-
-                def __set_name__(self, owner, set_name):
-                    nonlocal _name
-                    if _name == "<lambda>":
-                        _name = set_name
-
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
-                return _BetaProperty(
-                    fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
-                )
+                return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
 
         else:
             _name = _name or obj.__qualname__
@@ -210,18 +193,16 @@ def beta(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return cast(T, wrapper)
+                return cast("T", wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n") or ""
         components = [message, addendum]
         details = " ".join([component.strip() for component in components if component])
-        new_doc = f".. beta::\n" f"   {details}\n\n" f"{old_doc}\n"
+        new_doc = f".. beta::\n   {details}\n\n{old_doc}\n"
 
         if inspect.iscoroutinefunction(obj):
-            finalized = finalize(awarning_emitting_wrapper, new_doc)
-        else:
-            finalized = finalize(warning_emitting_wrapper, new_doc)
-        return cast(T, finalized)
+            return finalize(awarning_emitting_wrapper, new_doc)
+        return finalize(warning_emitting_wrapper, new_doc)
 
     return beta
 
@@ -243,17 +224,17 @@ def warn_beta(
 ) -> None:
     """Display a standardized beta annotation.
 
-    Arguments:
-        message : str, optional
+    Args:
+        message:
             Override the default beta message. The
             %(name)s, %(obj_type)s, %(addendum)s
             format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the annotated object.
-        obj_type : str, optional
+        obj_type:
             The object type being annotated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
     """
     if not message:

@@ -2,22 +2,23 @@
 
 from typing import List
 
-from langchain_core.tools import BaseTool, BaseToolKit
+from langchain_core.tools import BaseTool, BaseToolkit
 
 
-class __ModuleName__Toolkit(BaseToolKit):
+class __ModuleName__Toolkit(BaseToolkit):
     # TODO: Replace all TODOs in docstring. See example docstring:
     # https://github.com/langchain-ai/langchain/blob/c123cb2b304f52ab65db4714eeec46af69a861ec/libs/community/langchain_community/agent_toolkits/sql/toolkit.py#L19
     """__ModuleName__ toolkit.
 
     # TODO: Replace with relevant packages, env vars, etc.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Populate with relevant params.
     Key init args:
@@ -28,44 +29,44 @@ class __ModuleName__Toolkit(BaseToolKit):
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from __package_name__ import __ModuleName__Toolkit
 
-            from __package_name__ import __ModuleName__Toolkit
-
-            toolkit = __ModuleName__Toolkit(
-                # ...
-            )
+        toolkit = __ModuleName__Toolkit(
+            # ...
+        )
+        ```
 
     Tools:
-        .. code-block:: python
+        ```python
+        toolkit.get_tools()
+        ```
 
-            toolkit.get_tools()
-
-        .. code-block:: none
-
-            # TODO: Example output.
+        ```txt
+        # TODO: Example output.
+        ```
 
     Use within an agent:
-        .. code-block:: python
+        ```python
+        from langgraph.prebuilt import create_react_agent
 
-            from langgraph.prebuilt import create_react_agent
+        agent_executor = create_react_agent(llm, tools)
 
-            agent_executor = create_react_agent(llm, tools)
+        example_query = "..."
 
-            example_query = "..."
+        events = agent_executor.stream(
+            {"messages": [("user", example_query)]},
+            stream_mode="values",
+        )
+        for event in events:
+            event["messages"][-1].pretty_print()
+        ```
 
-            events = agent_executor.stream(
-                {"messages": [("user", example_query)]},
-                stream_mode="values",
-            )
-            for event in events:
-                event["messages"][-1].pretty_print()
+        ```txt
+        # TODO: Example output.
+        ```
 
-        .. code-block:: none
-
-             # TODO: Example output.
-
-    """  # noqa: E501
+    """
 
     # TODO: This method must be implemented to list tools.
     def get_tools(self) -> List[BaseTool]:

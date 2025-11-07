@@ -1,7 +1,9 @@
+"""Utilities to render tools."""
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from inspect import signature
-from typing import Callable
 
 from langchain_core.tools.base import BaseTool
 
@@ -19,10 +21,10 @@ def render_text_description(tools: list[BaseTool]) -> str:
 
     Output will be in the format of:
 
-    .. code-block:: markdown
-
-        search: This tool is used for search
-        calculator: This tool is used for math
+    ```txt
+    search: This tool is used for search
+    calculator: This tool is used for math
+    ```
     """
     descriptions = []
     for tool in tools:
@@ -47,11 +49,11 @@ def render_text_description_and_args(tools: list[BaseTool]) -> str:
 
     Output will be in the format of:
 
-    .. code-block:: markdown
-
-        search: This tool is used for search, args: {"query": {"type": "string"}}
-        calculator: This tool is used for math, \
-args: {"expression": {"type": "string"}}
+    ```txt
+    search: This tool is used for search, args: {"query": {"type": "string"}}
+    calculator: This tool is used for math, \
+    args: {"expression": {"type": "string"}}
+    ```
     """
     tool_strings = []
     for tool in tools:

@@ -1,40 +1,87 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
+[project]
 name = "langchain-ollama"
-version = "0.2.1"
 description = "An integration package connecting Ollama and LangChain"
-authors = []
+license = { text = "MIT" }
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
+authors = []
+
+version = "1.0.0"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "ollama>=0.6.0,<1.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
+]
+
+[project.urls]
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/ollama"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_ollama/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-ollama%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.1,<9.0.0",
+    "pytest-asyncio>=0.26.0,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-watcher>=0.4.3,<1.0.0",
+    "syrupy>=4.9.1,<5.0.0",
+    "langchain-core",
+    "langchain-tests",
+]
+test_integration = []
+lint = ["ruff>=0.13.1,<0.14.0"]
+dev = ["langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "langchain-core"
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-ollama%3D%3D0%22&expanded=true"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-ollama = ">=0.3.0,<1"
-langchain-core = "^0.3.15"
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
 
 [tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-  "D",    # pydocstyle
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "FIX002",  # TODOs
+    "TD002",   # TODO authors
+    "TD003",   # TODO missing url
+    "TC002",   # Incorrect type-checking block
+    "TC003",   # Incorrect type-checking block
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "C901",    # Function too complex
+    "FBT001",  # Boolean function param
+    "ERA001",  # Commented-out code
 
+    # TODO
+    "ANN401",
 ]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"] # ignore docstring checks for tests
@@ -45,55 +92,18 @@ omit = ["tests/*"]
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
 markers = [
-  "compile: mark placeholder test used to compile integration tests without running them",
+    "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.3"
-pytest-asyncio = "^0.23.2"
-syrupy = "^4.0.2"
-pytest-socket = "^0.7.0"
-pytest-watcher = "^0.3.4"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.6"
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.8"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.7.1"
-
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-tests]
-path = "../../standard-tests"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "ARG001",  # Unused function arguments in tests (e.g. kwargs)
+    "PLR2004", # Magic value in comparisons
+    "PT011",   # `pytest.raises()` is too broad
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

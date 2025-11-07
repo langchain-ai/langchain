@@ -9,9 +9,7 @@ if __name__ == "__main__":
         try:
             SourceFileLoader("x", file).load_module()
         except Exception:
-            has_faillure = True
-            print(file)
+            has_failure = True
             traceback.print_exc()
-            print()
 
     sys.exit(1 if has_failure else 0)

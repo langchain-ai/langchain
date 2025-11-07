@@ -1,9 +1,11 @@
 """Test few shot prompt template."""
 
+import re
 from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -24,8 +26,7 @@ EXAMPLE_PROMPT = PromptTemplate(
 )
 
 
-@pytest.fixture()
-@pytest.mark.requires("jinja2")
+@pytest.fixture
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
 
@@ -74,7 +75,10 @@ def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     # Test when missing in suffix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=template,
@@ -91,7 +95,10 @@ def test_prompt_missing_input_variables() -> None:
 
     # Test when missing in prefix
     template = "This is a {foo} test."
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("check for mismatched or missing input parameters from []"),
+    ):
         FewShotPromptTemplate(
             input_variables=[],
             suffix="foo",
@@ -243,7 +250,7 @@ def test_prompt_jinja2_functionality(
     )
     output = prompt.format(foo="hello", bar="bye")
     expected_output = (
-        "Starting with hello\n\n" "happy: sad\n\n" "tall: short\n\n" "Ending with bye"
+        "Starting with hello\n\nhappy: sad\n\ntall: short\n\nEnding with bye"
     )
 
     assert output == expected_output
@@ -258,7 +265,7 @@ def test_prompt_jinja2_missing_input_variables(
     suffix = "Ending with {{ bar }}"
 
     # Test when missing in suffix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'bar'}"):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=suffix,
@@ -276,7 +283,7 @@ def test_prompt_jinja2_missing_input_variables(
     ).input_variables == ["bar"]
 
     # Test when missing in prefix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         FewShotPromptTemplate(
             input_variables=["bar"],
             suffix=suffix,
@@ -303,7 +310,7 @@ def test_prompt_jinja2_extra_input_variables(
     """Test error is raised when there are too many input variables."""
     prefix = "Starting with {{ foo }}"
     suffix = "Ending with {{ bar }}"
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables:"):
         FewShotPromptTemplate(
             input_variables=["bar", "foo", "extra", "thing"],
             suffix=suffix,
@@ -350,11 +357,11 @@ async def test_few_shot_chat_message_prompt_template() -> None:
 
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
 
     messages = final_prompt.format_messages(input="100 + 1")
@@ -376,6 +383,7 @@ class AsIsSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> Any:
         raise NotImplementedError
 
+    @override
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
@@ -424,11 +432,11 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == expected
@@ -474,6 +482,7 @@ class AsyncAsIsSelector(BaseExampleSelector):
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         raise NotImplementedError
 
+    @override
     async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return list(self.examples)
 
@@ -522,11 +531,11 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = await final_prompt.aformat_messages(input="100 + 1")
     assert messages == expected

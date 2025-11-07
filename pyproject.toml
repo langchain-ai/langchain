@@ -1,81 +1,16 @@
-[tool.poetry]
+[project]
+authors = []
+license = { text = "MIT" }
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = []
 name = "langchain-monorepo"
 version = "0.0.1"
-description = "LangChain mono-repo"
-authors = []
-license = "MIT"
+description = "LangChain monorepo"
 readme = "README.md"
+
+[project.urls]
 repository = "https://www.github.com/langchain-ai/langchain"
 
+[dependency-groups]
+dev = []
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5.0"
-
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "libs/core/", develop = true }
-langchain-text-splitters = { path = "libs/text-splitters", develop = true }
-langchain-community = { path = "libs/community/", develop = true }
-langchain = { path = "libs/langchain/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
-ipykernel = "^6.29.2"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.typing.dependencies]
-
-[tool.poetry.group.test.dependencies]
-langchain-experimental = { git = "https://github.com/langchain-ai/langchain-experimental.git", subdirectory = "libs/experimental" }
-langchain-anthropic = { path = "libs/partners/anthropic", develop = true }
-langchain-aws = { git = "https://github.com/langchain-ai/langchain-aws.git", subdirectory = "libs/aws" }
-langchain-chroma = { path = "libs/partners/chroma", develop = true }
-langchain-fireworks = { path = "libs/partners/fireworks", develop = true }
-langchain-google-vertexai = { git = "https://github.com/langchain-ai/langchain-google.git", subdirectory = "libs/vertexai" }
-langchain-groq = { path = "libs/partners/groq", develop = true }
-langchain-mistralai = { path = "libs/partners/mistralai", develop = true }
-langchain-together = { git = "https://github.com/langchain-ai/langchain-together.git", subdirectory = "libs/together" }
-langchain-unstructured = { git = "https://github.com/langchain-ai/langchain-unstructured.git", subdirectory = "libs/unstructured" }
-langgraph = { git = "https://github.com/langchain-ai/langgraph.git", subdirectory = "libs/langgraph" }
-jupyter = "^1.1.1"
-click = "^8.1.7"
-aiofiles = "^24.1.0"
-faiss-cpu = "^1.7.4"
-grandalf = "^0.8"
-lark = "^1.1.9"
-pandas = "^2"
-rank-bm25 = "^0.2.2"
-unstructured = { version = "^0.15.12", extras = ["md"], python = "<3.13" }
-wikipedia = "^1.4.0"
-pypdf = "^5.0.0"
-vcrpy = "^6.0.1"
-
-[tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
-# Ignore latin etc
-ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
-# whats is a typo but used frequently in queries so kept as is
-# aapply - async apply
-# unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann'
-
-[tool.ruff]
-extend-include = ["*.ipynb"]
-extend-exclude = [
-    "docs/docs/expression_language/why.ipynb", # TODO: look into why linter errors
-]
-
-[tool.ruff.lint.per-file-ignores]
-"**/{cookbook,docs}/*" = [
-    "E402", # allow imports to appear anywhere in docs
-    "F401", # allow "imported but unused" example code
-    "F811", # allow re-importing the same module, so that cells can stay independent
-    "F841", # allow assignments to variables that are never read -- it's example code
-]
-
-# These files were failing the listed rules at the time ruff was adopted for notebooks.
-# Don't require them to change at once, though we should look into them eventually.
-"cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
-"docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]

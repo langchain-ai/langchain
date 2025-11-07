@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
+from langchain_classic.evaluation.parsing.json_schema import JsonSchemaEvaluator
 
 
 @pytest.fixture
@@ -39,7 +39,8 @@ def test_json_schema_evaluator_valid_prediction(
         "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
     }
     result = json_schema_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] is True
 
@@ -54,7 +55,8 @@ def test_json_schema_evaluator_invalid_prediction(
         "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
     }
     result = json_schema_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] is False
     assert "reasoning" in result
@@ -71,7 +73,8 @@ def test_json_schema_evaluator_missing_property(
         "required": ["name", "age"],
     }
     result = json_schema_evaluator._evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] is False
     assert "reasoning" in result

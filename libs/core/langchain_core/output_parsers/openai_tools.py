@@ -1,7 +1,10 @@
+"""Parse tools for OpenAI tools output."""
+
 import copy
 import json
+import logging
 from json import JSONDecodeError
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from pydantic import SkipValidation, ValidationError
 
@@ -14,6 +17,8 @@ from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import TypeBaseModel
 
+logger = logging.getLogger(__name__)
+
 
 def parse_tool_call(
     raw_tool_call: dict[str, Any],
@@ -21,15 +26,14 @@ def parse_tool_call(
     partial: bool = False,
     strict: bool = False,
     return_id: bool = True,
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     """Parse a single tool call.
 
     Args:
         raw_tool_call: The raw tool call to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool call.
@@ -64,13 +68,13 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
-        parsed = create_tool_call(**parsed)  # type: ignore
+        parsed = create_tool_call(**parsed)  # type: ignore[assignment,arg-type]
     return parsed
 
 
 def make_invalid_tool_call(
     raw_tool_call: dict[str, Any],
-    error_msg: Optional[str],
+    error_msg: str | None,
 ) -> InvalidToolCall:
     """Create an InvalidToolCall from a raw tool call.
 
@@ -100,10 +104,9 @@ def parse_tool_calls(
 
     Args:
         raw_tool_calls: The raw tool calls to parse.
-        partial: Whether to parse partial JSON. Default is False.
+        partial: Whether to parse partial JSON.
         strict: Whether to allow non-JSON-compliant strings.
-            Default is False.
-        return_id: Whether to return the tool call id. Default is True.
+        return_id: Whether to return the tool call id.
 
     Returns:
         The parsed tool calls.
@@ -143,7 +146,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
     first_tool_only: bool = False
     """Whether to return only the first tool call.
 
-    If False, the result will be a list of tool calls, or an empty list
+    If `False`, the result will be a list of tool calls, or an empty list
     if no tool calls are found.
 
     If true, and multiple tool calls are found, only the first one will be returned,
@@ -157,10 +160,9 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
+                If `True`, the output will be a JSON object containing
                 all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed tool calls.
@@ -168,7 +170,6 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         generation = result[0]
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
@@ -222,32 +223,73 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
-                all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `True`, the output will be a JSON object containing
+                    all the keys that have been returned so far.
+                If `False`, the output will be the full JSON object.
+
+        Raises:
+            OutputParserException: If the generation is not a chat generation.
 
         Returns:
             The parsed tool calls.
         """
-        parsed_result = super().parse_result(result, partial=partial)
-
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
+        message = generation.message
+        if isinstance(message, AIMessage) and message.tool_calls:
+            parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
+            for tool_call in parsed_tool_calls:
+                if not self.return_id:
+                    _ = tool_call.pop("id")
+        else:
+            try:
+                # This exists purely for backward compatibility / cached messages
+                # All new messages should use `message.tool_calls`
+                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            except KeyError:
+                if self.first_tool_only:
+                    return None
+                return []
+            parsed_tool_calls = parse_tool_calls(
+                raw_tool_calls,
+                partial=partial,
+                strict=self.strict,
+                return_id=self.return_id,
+            )
+        # For backwards compatibility
+        for tc in parsed_tool_calls:
+            tc["type"] = tc.pop("name")
         if self.first_tool_only:
+            parsed_result = list(
+                filter(lambda x: x["type"] == self.key_name, parsed_tool_calls)
+            )
             single_result = (
-                parsed_result
-                if parsed_result and parsed_result["type"] == self.key_name
+                parsed_result[0]
+                if parsed_result and parsed_result[0]["type"] == self.key_name
                 else None
             )
             if self.return_id:
                 return single_result
-            elif single_result:
+            if single_result:
                 return single_result["args"]
-            else:
-                return None
-        parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
-        if not self.return_id:
-            parsed_result = [res["args"] for res in parsed_result]
-        return parsed_result
+            return None
+        return (
+            [res for res in parsed_tool_calls if res["type"] == self.key_name]
+            if self.return_id
+            else [
+                res["args"] for res in parsed_tool_calls if res["type"] == self.key_name
+            ]
+        )
+
+
+# Common cause of ValidationError is truncated output due to max_tokens.
+_MAX_TOKENS_ERROR = (
+    "Output parser received a `max_tokens` stop reason. "
+    "The output is likely incomplete—please increase `max_tokens` "
+    "or shorten your prompt."
+)
 
 
 class PydanticToolsParser(JsonOutputToolsParser):
@@ -264,16 +306,17 @@ class PydanticToolsParser(JsonOutputToolsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
-                If True, the output will be a JSON object containing
-                all the keys that have been returned so far.
-                If False, the output will be the full JSON object.
-                Default is False.
+                If `True`, the output will be a JSON object containing
+                    all the keys that have been returned so far.
+                If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed Pydantic objects.
 
         Raises:
-            OutputParserException: If the output is not valid JSON.
+            ValueError: If the tool call arguments are not a dict.
+            ValidationError: If the tool call arguments do not conform
+                to the Pydantic model.
         """
         json_results = super().parse_result(result, partial=partial)
         if not json_results:
@@ -283,20 +326,28 @@ class PydanticToolsParser(JsonOutputToolsParser):
         name_dict = {tool.__name__: tool for tool in self.tools}
         pydantic_objects = []
         for res in json_results:
-            try:
-                if not isinstance(res["args"], dict):
-                    msg = (
-                        f"Tool arguments must be specified as a dict, received: "
-                        f"{res['args']}"
-                    )
-                    raise ValueError(msg)
-                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
-            except (ValidationError, ValueError) as e:
+            if not isinstance(res["args"], dict):
                 if partial:
                     continue
-                else:
-                    raise e
+                msg = (
+                    f"Tool arguments must be specified as a dict, received: "
+                    f"{res['args']}"
+                )
+                raise ValueError(msg)
+            try:
+                pydantic_objects.append(name_dict[res["type"]](**res["args"]))
+            except (ValidationError, ValueError):
+                if partial:
+                    continue
+                has_max_tokens_stop_reason = any(
+                    generation.message.response_metadata.get("stop_reason")
+                    == "max_tokens"
+                    for generation in result
+                    if isinstance(generation, ChatGeneration)
+                )
+                if has_max_tokens_stop_reason:
+                    logger.exception(_MAX_TOKENS_ERROR)
+                raise
         if self.first_tool_only:
             return pydantic_objects[0] if pydantic_objects else None
-        else:
-            return pydantic_objects
+        return pydantic_objects

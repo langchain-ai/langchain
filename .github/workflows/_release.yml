@@ -1,5 +1,11 @@
-name: release
-run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
+# Builds and publishes LangChain packages to PyPI.
+#
+# Manually triggered, though can be used as a reusable workflow (workflow_call).
+#
+# Handles version bumping, building, and publishing to PyPI with authentication.
+
+name: "🚀 Package Release"
+run-name: "Release ${{ inputs.working-directory }} ${{ inputs.release-version }}"
 on:
   workflow_call:
     inputs:
@@ -12,42 +18,53 @@ on:
       working-directory:
         required: true
         type: string
-        default: 'libs/langchain'
+        description: "From which folder this pipeline executes"
+        default: "libs/langchain"
+      release-version:
+        required: true
+        type: string
+        default: "0.1.0"
+        description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
         type: boolean
         default: false
-        description: "Release from a non-master branch (danger!)"
+        description: "Release from a non-master branch (danger!) - Only use for hotfixes"
 
 env:
   PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
+
+permissions:
+  contents: write # Required for creating GitHub releases
 
 jobs:
+  # Build the distribution package and extract version info
+  # Runs in isolated environment with minimal permissions for security
   build:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     outputs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
       version: ${{ steps.check-version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: release
 
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
-      # The release stage has trusted publishing and GitHub repo contents write access,
-      # and we want to keep the scope of that access limited just to the release job.
+      # (Release stage has trusted publishing and GitHub repo contents write access,
+      #
       # Otherwise, a malicious `build` step (e.g. via a compromised dependency)
       # could get access to our GitHub or PyPI credentials.
       #
@@ -56,30 +73,39 @@ jobs:
       # > from the publish job.
       # https://github.com/pypa/gh-action-pypi-publish#non-goals
       - name: Build project for distribution
-        run: poetry build
+        run: uv build
         working-directory: ${{ inputs.working-directory }}
 
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Check Version
+      - name: Check version
         id: check-version
-        shell: bash
+        shell: python
         working-directory: ${{ inputs.working-directory }}
         run: |
-          echo pkg-name="$(poetry version | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
-          echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
+          import os
+          import tomllib
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+          pkg_name = data["project"]["name"]
+          version = data["project"]["version"]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"pkg-name={pkg_name}\n")
+              f.write(f"version={version}\n")
   release-notes:
     needs:
       - build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain
           path: langchain
@@ -87,7 +113,7 @@ jobs:
             ${{ inputs.working-directory }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
-      - name: Check Tags
+      - name: Check tags
         id: check-tags
         shell: bash
         working-directory: langchain/${{ inputs.working-directory }}
@@ -95,19 +121,36 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
+          # Handle regular versions and pre-release versions differently
+          if [[ "$VERSION" == *"-"* ]]; then
+            # This is a pre-release version (contains a hyphen)
+            # Extract the base version without the pre-release suffix
+            BASE_VERSION=${VERSION%%-*}
+            # Look for the latest release of the same base version
+            REGEX="^$PKG_NAME==$BASE_VERSION\$"
+            PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
 
-          # backup case if releasing e.g. 0.3.0, looks up last release
-          # note if last release (chronologically) was e.g. 0.1.47 it will get 
-          # that instead of the last 0.2 release
-          if [ -z "$PREV_TAG" ]; then
-            REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
-            echo $REGEX
-            PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            # If no exact base version match, look for the latest release of any kind
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
+            fi
+          else
+            # Regular version handling
+            PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
+
+            # backup case if releasing e.g. 0.3.0, looks up last release
+            # note if last release (chronologically) was e.g. 0.1.47 it will get
+            # that instead of the last 0.2 release
+            if [ -z "$PREV_TAG" ]; then
+              REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+              echo $REGEX
+              PREV_TAG=$(git tag --sort=-creatordate | (grep -P $REGEX || true) | head -1)
+            fi
           fi
 
-          # if PREV_TAG is empty, let it be empty
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or came out to 0.0.0, let it be empty
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             echo "No previous tag found - first release"
           else
             # confirm prev-tag actually exists in git repo with git tag
@@ -136,8 +179,8 @@ jobs:
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
         run: |
           PREAMBLE="Changes since $PREV_TAG"
-          # if PREV_TAG is empty, then we are releasing the first version
-          if [ -z "$PREV_TAG" ]; then
+          # if PREV_TAG is empty or 0.0.0, then we are releasing the first version
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$PKG_NAME==0.0.0" ]; then
             PREAMBLE="Initial release"
             PREV_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
@@ -153,13 +196,36 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
-    permissions: write-all
-    with:
-      working-directory: ${{ inputs.working-directory }}
-      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   pre-release-checks:
     needs:
@@ -167,8 +233,11 @@ jobs:
       - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -183,15 +252,18 @@ jobs:
       # - The package is published, and it breaks on the missing dependency when
       #   used in the real world.
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
 
-      - name: Import published package
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Import dist package
         shell: bash
         working-directory: ${{ inputs.working-directory }}
         env:
@@ -207,31 +279,21 @@ jobs:
         # - attempt install again after 5 seconds if it fails because there is
         #   sometimes a delay in availability on test pypi
         run: |
-          poetry run pip install \
-            --extra-index-url https://test.pypi.org/simple/ \
-            "$PKG_NAME==$VERSION" || \
-          ( \
-            sleep 15 && \
-            poetry run pip install \
-              --extra-index-url https://test.pypi.org/simple/ \
-              "$PKG_NAME==$VERSION" \
-          )
+          uv venv
+          VIRTUAL_ENV=.venv uv pip install dist/*.whl
 
           # Replace all dashes in the package name with underscores,
           # since that's how Python imports packages with dashes in the name.
-          if [ "$PKG_NAME" == "langchain-tests" ]; then
-            IMPORT_NAME="langchain_standard_tests"
-          else
-            IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g)"
-          fi
+          # also remove _official suffix
+          IMPORT_NAME="$(echo "$PKG_NAME" | sed s/-/_/g | sed s/_official//g)"
 
-          poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
+          uv run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
       - name: Import test dependencies
-        run: poetry install --with test
+        run: uv sync --group test
         working-directory: ${{ inputs.working-directory }}
 
-      # Overwrite the local version of the package with the test PyPI version.
+      # Overwrite the local version of the package with the built version
       - name: Import published package (again)
         working-directory: ${{ inputs.working-directory }}
         shell: bash
@@ -239,26 +301,27 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          poetry run pip install \
-            --extra-index-url https://test.pypi.org/simple/ \
-            "$PKG_NAME==$VERSION"
+          VIRTUAL_ENV=.venv uv pip install dist/*.whl
+
+      - name: Check for prerelease versions
+        # Block release if any dependencies allow prerelease versions
+        # (unless this is itself a prerelease version)
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          uv run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
 
       - name: Run unit tests
         run: make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Check for prerelease versions
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          poetry run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
-
       - name: Get minimum versions
+        # Find the minimum published versions that satisfies the given constraints
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         run: |
-          poetry run pip install packaging requests
-          python_version="$(poetry run python --version | awk '{print $2}')"
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release $python_version)"
+          VIRTUAL_ENV=.venv uv pip install packaging requests
+          python_version="$(uv run python --version | awk '{print $2}')"
+          min_versions="$(uv run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml release $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
@@ -267,15 +330,17 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
       - name: Import integration test dependencies
-        run: poetry install --with test,test_integration
+        run: uv sync --group test --group test_integration
         working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
+        # Uses the Makefile's `integration_tests` target for the specified package
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
@@ -300,8 +365,6 @@ jobs:
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
-          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
           ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
@@ -309,19 +372,112 @@ jobs:
           ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
-          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: make integration_tests
         working-directory: ${{ inputs.working-directory }}
 
-  publish:
+  # Test select published packages against new core
+  # Done when code changes are made to langchain-core
+  test-prior-published-packages-against-new-core:
+    # Installs the new core with old partners: Installs the new unreleased core
+    # alongside the previously published partner packages and runs integration tests
     needs:
       - build
       - release-notes
       - test-pypi-publish
       - pre-release-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        partner: [openai]
+      fail-fast: false # Continue testing other partners if one fails
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+      ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+      AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+      LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
+    steps:
+      - uses: actions/checkout@v5
+
+      # We implement this conditional as Github Actions does not have good support
+      # for conditionally needing steps. https://github.com/actions/runner/issues/491
+      # TODO: this seems to be resolved upstream, so we can probably remove this workaround
+      - name: Check if libs/core
+        run: |
+          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
+            echo "Not in libs/core. Exiting successfully."
+            exit 0
+          fi
+
+      - name: Set up Python + uv
+        if: startsWith(inputs.working-directory, 'libs/core')
+        uses: "./.github/actions/uv_setup"
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/download-artifact@v6
+        if: startsWith(inputs.working-directory, 'libs/core')
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Test against ${{ matrix.partner }}
+        if: startsWith(inputs.working-directory, 'libs/core')
+        run: |
+          # Identify latest tag, excluding pre-releases
+          LATEST_PACKAGE_TAG="$(
+            git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
+            | awk '{print $2}' \
+            | sed 's|refs/tags/||' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -Vr \
+            | head -n 1
+          )"
+          echo "Latest package tag: $LATEST_PACKAGE_TAG"
+
+          # Shallow-fetch just that single tag
+          git fetch --depth=1 origin tag "$LATEST_PACKAGE_TAG"
+
+          # Checkout the latest package files
+          rm -rf $GITHUB_WORKSPACE/libs/partners/${{ matrix.partner }}/*
+          rm -rf $GITHUB_WORKSPACE/libs/standard-tests/*
+          cd $GITHUB_WORKSPACE/libs/
+          git checkout "$LATEST_PACKAGE_TAG" -- standard-tests/
+          git checkout "$LATEST_PACKAGE_TAG" -- partners/${{ matrix.partner }}/
+          cd partners/${{ matrix.partner }}
+
+          # Print as a sanity check
+          echo "Version number from pyproject.toml: "
+          cat pyproject.toml | grep "version = "
+
+          # Run tests
+          uv sync --group test --group test_integration
+          uv pip install ../../core/dist/*.whl
+          make integration_tests
+
+  publish:
+    # Publishes the package to PyPI
+    needs:
+      - build
+      - release-notes
+      - test-pypi-publish
+      - pre-release-checks
+      - test-prior-published-packages-against-new-core
     runs-on: ubuntu-latest
     permissions:
       # This permission is used for trusted publishing:
@@ -336,17 +492,14 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: release
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -361,6 +514,7 @@ jobs:
           attestations: false
 
   mark-release:
+    # Marks the GitHub release with the new version tag
     needs:
       - build
       - release-notes
@@ -370,7 +524,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       # This permission is needed by `ncipollo/release-action` to
-      # create the GitHub release.
+      # create the GitHub release/tag
       contents: write
 
     defaults:
@@ -378,21 +532,18 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: Set up Python + uv
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: release
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v6
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-          
+
       - name: Create Tag
         uses: ncipollo/release-action@v1
         with:

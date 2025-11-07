@@ -1,0 +1,32 @@
+# serializer version: 1
+# name: TestOpenAIResponses.test_serdes[serialized]
+  dict({
+    'id': list([
+      'langchain',
+      'chat_models',
+      'openai',
+      'ChatOpenAI',
+    ]),
+    'kwargs': dict({
+      'max_retries': 2,
+      'max_tokens': 100,
+      'model_name': 'gpt-3.5-turbo',
+      'openai_api_key': dict({
+        'id': list([
+          'OPENAI_API_KEY',
+        ]),
+        'lc': 1,
+        'type': 'secret',
+      }),
+      'request_timeout': 60.0,
+      'stop': list([
+      ]),
+      'stream_usage': True,
+      'temperature': 0.0,
+      'use_responses_api': True,
+    }),
+    'lc': 1,
+    'name': 'ChatOpenAI',
+    'type': 'constructor',
+  })
+# ---

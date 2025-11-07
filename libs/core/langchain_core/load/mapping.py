@@ -1,4 +1,5 @@
-"""
+"""Serialization mapping.
+
 This file contains a mapping between the lc_namespace path for a given
 subclass that implements from Serializable to the namespace
 where that class is actually located.
@@ -412,11 +413,10 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "few_shot_with_templates",
         "FewShotPromptWithTemplates",
     ),
-    ("langchain", "prompts", "pipeline", "PipelinePromptTemplate"): (
+    ("langchain", "prompts", "pipeline"): (
         "langchain_core",
         "prompts",
         "pipeline",
-        "PipelinePromptTemplate",
     ),
     ("langchain", "prompts", "base", "StringPromptTemplate"): (
         "langchain_core",
@@ -528,6 +528,22 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "prompts",
         "structured",
         "StructuredPrompt",
+    ),
+    ("langchain_sambanova", "chat_models", "ChatSambaNovaCloud"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaNovaCloud",
+    ),
+    ("langchain_sambanova", "chat_models", "ChatSambaStudio"): (
+        "langchain_sambanova",
+        "chat_models",
+        "ChatSambaStudio",
+    ),
+    ("langchain_core", "prompts", "message", "_DictMessagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "dict",
+        "DictPromptTemplate",
     ),
 }
 
@@ -829,11 +845,10 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "few_shot_with_templates",
         "FewShotPromptWithTemplates",
     ),
-    ("langchain_core", "prompts", "pipeline", "PipelinePromptTemplate"): (
+    ("langchain_core", "prompts", "pipeline"): (
         "langchain_core",
         "prompts",
         "pipeline",
-        "PipelinePromptTemplate",
     ),
     ("langchain_core", "prompts", "string", "StringPromptTemplate"): (
         "langchain_core",

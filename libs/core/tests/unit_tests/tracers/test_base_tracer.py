@@ -40,7 +40,9 @@ class FakeTracer(BaseTracer):
 def _compare_run_with_error(run: Any, expected_run: Any) -> None:
     if run.child_runs:
         assert len(expected_run.child_runs) == len(run.child_runs)
-        for received, expected in zip(run.child_runs, expected_run.child_runs):
+        for received, expected in zip(
+            run.child_runs, expected_run.child_runs, strict=False
+        ):
             _compare_run_with_error(received, expected)
     received = run.dict(exclude={"child_runs"})
     received_err = received.pop("error")
@@ -599,8 +601,7 @@ def test_tracer_nested_runs_on_error() -> None:
 
 def _get_mock_client() -> Client:
     mock_session = MagicMock()
-    client = Client(session=mock_session, api_key="test")
-    return client
+    return Client(session=mock_session, api_key="test")
 
 
 def test_traceable_to_tracing() -> None:

@@ -2,8 +2,8 @@
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, Union
 
 import yaml
 
@@ -53,8 +53,7 @@ def _load_template(var_name: str, config: dict) -> dict:
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
         if template_path.suffix == ".txt":
-            with open(template_path) as f:
-                template = f.read()
+            template = template_path.read_text(encoding="utf-8")
         else:
             raise ValueError
         # Set the template variable to the extracted variable.
@@ -67,10 +66,11 @@ def _load_examples(config: dict) -> dict:
     if isinstance(config["examples"], list):
         pass
     elif isinstance(config["examples"], str):
-        with open(config["examples"]) as f:
-            if config["examples"].endswith(".json"):
+        path = Path(config["examples"])
+        with path.open(encoding="utf-8") as f:
+            if path.suffix == ".json":
                 examples = json.load(f)
-            elif config["examples"].endswith((".yaml", ".yml")):
+            elif path.suffix in {".yaml", ".yml"}:
                 examples = yaml.safe_load(f)
             else:
                 msg = "Invalid file format. Only json or yaml formats are supported."
@@ -78,21 +78,17 @@ def _load_examples(config: dict) -> dict:
         config["examples"] = examples
     else:
         msg = "Invalid examples format. Only list or string are supported."
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa:TRY004
     return config
 
 
 def _load_output_parser(config: dict) -> dict:
     """Load output parser."""
-    if "output_parser" in config and config["output_parser"]:
-        _config = config.pop("output_parser")
-        output_parser_type = _config.pop("_type")
-        if output_parser_type == "default":
-            output_parser = StrOutputParser(**_config)
-        else:
+    if _config := config.get("output_parser"):
+        if output_parser_type := _config.get("_type") != "default":
             msg = f"Unsupported output parser {output_parser_type}"
             raise ValueError(msg)
-        config["output_parser"] = output_parser
+        config["output_parser"] = StrOutputParser(**_config)
     return config
 
 
@@ -138,14 +134,12 @@ def _load_prompt(config: dict) -> PromptTemplate:
     return PromptTemplate(**config)
 
 
-def load_prompt(
-    path: Union[str, Path], encoding: Optional[str] = None
-) -> BasePromptTemplate:
+def load_prompt(path: str | Path, encoding: str | None = None) -> BasePromptTemplate:
     """Unified method for loading a prompt from LangChainHub or local fs.
 
     Args:
         path: Path to the prompt file.
-        encoding: Encoding of the file. Defaults to None.
+        encoding: Encoding of the file.
 
     Returns:
         A PromptTemplate object.
@@ -164,17 +158,17 @@ def load_prompt(
 
 
 def _load_prompt_from_file(
-    file: Union[str, Path], encoding: Optional[str] = None
+    file: str | Path, encoding: str | None = None
 ) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
-    file_path = Path(file) if isinstance(file, str) else file
+    file_path = Path(file)
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path, encoding=encoding) as f:
+        with file_path.open(encoding=encoding) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, encoding=encoding) as f:
+        with file_path.open(encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
         msg = f"Got unsupported file type {file_path.suffix}"
@@ -184,8 +178,7 @@ def _load_prompt_from_file(
 
 
 def _load_chat_prompt(config: dict) -> ChatPromptTemplate:
-    """Load chat prompt from config"""
-
+    """Load chat prompt from config."""
     messages = config.pop("messages")
     template = messages[0]["prompt"].pop("template") if messages else None
     config.pop("input_variables")

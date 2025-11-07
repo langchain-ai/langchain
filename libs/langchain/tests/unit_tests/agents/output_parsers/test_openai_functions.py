@@ -6,14 +6,14 @@ from langchain_core.agents import (
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, SystemMessage
 
-from langchain.agents.output_parsers.openai_functions import (
+from langchain_classic.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
 
 
 def test_not_an_ai() -> None:
     parser = OpenAIFunctionsAgentOutputParser()
-    err = f"Expected an AI message got {str(SystemMessage)}"
+    err = f"Expected an AI message got {SystemMessage!s}"
     with pytest.raises(TypeError, match=err):
         parser.invoke(SystemMessage(content="x"))
 
@@ -35,7 +35,7 @@ def test_func_call() -> None:
     msg = AIMessage(
         content="LLM thoughts.",
         additional_kwargs={
-            "function_call": {"name": "foo", "arguments": '{"param": 42}'}
+            "function_call": {"name": "foo", "arguments": '{"param": 42}'},
         },
     )
     result = parser.invoke(msg)
@@ -71,7 +71,7 @@ def test_func_call_oldstyle() -> None:
     msg = AIMessage(
         content="LLM thoughts.",
         additional_kwargs={
-            "function_call": {"name": "foo", "arguments": '{"__arg1": "42"}'}
+            "function_call": {"name": "foo", "arguments": '{"__arg1": "42"}'},
         },
     )
     result = parser.invoke(msg)

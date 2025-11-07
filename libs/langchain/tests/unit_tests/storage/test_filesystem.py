@@ -1,11 +1,11 @@
-import os
 import tempfile
-from typing import Generator
+from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from langchain_core.stores import InvalidKeyException
 
-from langchain.storage.file_system import LocalFileStore
+from langchain_classic.storage.file_system import LocalFileStore
 
 
 @pytest.fixture
@@ -30,7 +30,8 @@ def test_mset_and_mget(file_store: LocalFileStore) -> None:
 
 
 @pytest.mark.parametrize(
-    "chmod_dir_s, chmod_file_s", [("777", "666"), ("770", "660"), ("700", "600")]
+    ("chmod_dir_s", "chmod_file_s"),
+    [("777", "666"), ("770", "660"), ("700", "600")],
 )
 def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
     chmod_dir = int(chmod_dir_s, base=8)
@@ -40,9 +41,10 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         # Instantiate the LocalFileStore with a directory inside the temporary directory
         # as the root path
-        temp_dir = os.path.join(temp_dir, "store_dir")
         file_store = LocalFileStore(
-            temp_dir, chmod_dir=chmod_dir, chmod_file=chmod_file
+            Path(temp_dir) / "store_dir",
+            chmod_dir=chmod_dir,
+            chmod_file=chmod_file,
         )
 
         # Set values for keys
@@ -51,10 +53,10 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
 
         # verify the permissions are set correctly
         # (test only the standard user/group/other bits)
-        dir_path = str(file_store.root_path)
-        file_path = os.path.join(dir_path, "key1")
-        assert (os.stat(dir_path).st_mode & 0o777) == chmod_dir
-        assert (os.stat(file_path).st_mode & 0o777) == chmod_file
+        dir_path = file_store.root_path
+        file_path = file_store.root_path / "key1"
+        assert (dir_path.stat().st_mode & 0o777) == chmod_dir
+        assert (file_path.stat().st_mode & 0o777) == chmod_file
 
 
 def test_mget_update_atime() -> None:
@@ -62,23 +64,21 @@ def test_mget_update_atime() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         # Instantiate the LocalFileStore with a directory inside the temporary directory
         # as the root path
-        temp_dir = os.path.join(temp_dir, "store_dir")
-        file_store = LocalFileStore(temp_dir, update_atime=True)
+        file_store = LocalFileStore(Path(temp_dir) / "store_dir", update_atime=True)
 
         # Set values for keys
         key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
         file_store.mset(key_value_pairs)
 
         # Get original access time
-        dir_path = str(file_store.root_path)
-        file_path = os.path.join(dir_path, "key1")
-        atime1 = os.stat(file_path).st_atime
+        file_path = file_store.root_path / "key1"
+        atime1 = file_path.stat().st_atime
 
         # Get values for keys
         _ = file_store.mget(["key1", "key2"])
 
         # Make sure the filesystem access time has been updated
-        atime2 = os.stat(file_path).st_atime
+        atime2 = file_path.stat().st_atime
         assert atime2 != atime1
 
 
@@ -128,12 +128,15 @@ def test_yield_keys(file_store: LocalFileStore) -> None:
     keys = list(file_store.yield_keys())
 
     # Assert that the yielded keys match the expected keys
-    expected_keys = ["key1", os.path.join("subdir", "key2")]
+    expected_keys = ["key1", str(Path("subdir") / "key2")]
     assert keys == expected_keys
 
 
 def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
-    """Make sure we raise exception on keys that are not allowed; e.g., absolute path"""
+    """Test that forbidden keys raise exceptions.
+
+    Make sure we raise exception on keys that are not allowed; e.g., absolute path.
+    """
     with pytest.raises(InvalidKeyException):
         file_store.mset([("/etc", b"value1")])
     with pytest.raises(InvalidKeyException):

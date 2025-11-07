@@ -1,5 +1,4 @@
-import sys
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 
@@ -11,11 +10,8 @@ from langchain_core.runnables.utils import (
 )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 @pytest.mark.parametrize(
-    "func, expected_source",
+    ("func", "expected_source"),
     [
         (lambda x: x * 2, "lambda x: x * 2"),
         (lambda a, b: a + b, "lambda a, b: a + b"),
@@ -23,20 +19,20 @@ from langchain_core.runnables.utils import (
     ],
 )
 def test_get_lambda_source(func: Callable, expected_source: str) -> None:
-    """Test get_lambda_source function"""
+    """Test get_lambda_source function."""
     source = get_lambda_source(func)
     assert source == expected_source
 
 
 @pytest.mark.parametrize(
-    "text,prefix,expected_output",
+    ("text", "prefix", "expected_output"),
     [
         ("line 1\nline 2\nline 3", "1", "line 1\n line 2\n line 3"),
         ("line 1\nline 2\nline 3", "ax", "line 1\n  line 2\n  line 3"),
     ],
 )
 def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) -> None:
-    """Test indent_lines_after_first function"""
+    """Test indent_lines_after_first function."""
     indented_text = indent_lines_after_first(text, prefix)
     assert indented_text == expected_output
 
@@ -47,23 +43,23 @@ global_agent = RunnableLambda(lambda x: x * 3)
 def test_nonlocals() -> None:
     agent = RunnableLambda(lambda x: x * 2)
 
-    def my_func(input: str, agent: dict[str, str]) -> str:
-        return agent.get("agent_name", input)
+    def my_func(value: str, agent: dict[str, str]) -> str:
+        return agent.get("agent_name", value)
 
-    def my_func2(input: str) -> str:
-        return agent.get("agent_name", input)  # type: ignore[attr-defined]
+    def my_func2(value: str) -> str:
+        return agent.get("agent_name", value)  # type: ignore[attr-defined]
 
-    def my_func3(input: str) -> str:
-        return agent.invoke(input)
+    def my_func3(value: str) -> str:
+        return agent.invoke(value)
 
-    def my_func4(input: str) -> str:
-        return global_agent.invoke(input)
+    def my_func4(value: str) -> str:
+        return global_agent.invoke(value)
 
     def my_func5() -> tuple[Callable[[str], str], RunnableLambda]:
         global_agent = RunnableLambda(lambda x: x * 3)
 
-        def my_func6(input: str) -> str:
-            return global_agent.invoke(input)
+        def my_func6(value: str) -> str:
+            return global_agent.invoke(value)
 
         return my_func6, global_agent
 

@@ -1,19 +1,18 @@
 """Test the LangSmith evaluation helpers."""
 
 import uuid
-from datetime import datetime
-from typing import Any, Dict, Iterator, List, Optional, Union
+from collections.abc import Iterator
+from datetime import datetime, timezone
+from typing import Any
 from unittest import mock
 
 import pytest
 from freezegun import freeze_time
-from langchain_core.language_models import BaseLanguageModel
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
-from langchain.chains.base import Chain
-from langchain.chains.transform import TransformChain
-from langchain.smith.evaluation.runner_utils import (
+from langchain_classic.chains.transform import TransformChain
+from langchain_classic.smith.evaluation.runner_utils import (
     InputFormatError,
     _get_messages,
     _get_prompt,
@@ -26,7 +25,7 @@ from langchain.smith.evaluation.runner_utils import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
+_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 _TENANT_ID = "7a3d2b56-cd5b-44e5-846f-7eb6e8144ce4"
 _EXAMPLE_MESSAGE = {
     "data": {"content": "Foo", "example": False, "additional_kwargs": {}},
@@ -63,8 +62,7 @@ _INVALID_PROMPTS = (
     "inputs",
     _VALID_MESSAGES,
 )
-def test__get_messages_valid(inputs: Dict[str, Any]) -> None:
-    {"messages": []}
+def test__get_messages_valid(inputs: dict[str, Any]) -> None:
     _get_messages(inputs)
 
 
@@ -72,7 +70,7 @@ def test__get_messages_valid(inputs: Dict[str, Any]) -> None:
     "inputs",
     _VALID_PROMPTS,
 )
-def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
+def test__get_prompts_valid(inputs: dict[str, Any]) -> None:
     _get_prompt(inputs)
 
 
@@ -80,7 +78,7 @@ def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
     "inputs",
     _VALID_PROMPTS,
 )
-def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> None:
+def test__validate_example_inputs_for_language_model(inputs: dict[str, Any]) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
     _validate_example_inputs_for_language_model(mock_, None)
@@ -91,7 +89,7 @@ def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> 
     _INVALID_PROMPTS,
 )
 def test__validate_example_inputs_for_language_model_invalid(
-    inputs: Dict[str, Any],
+    inputs: dict[str, Any],
 ) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
@@ -155,7 +153,7 @@ def test__validate_example_inputs_for_chain_single_input_multi_expect() -> None:
 
 
 @pytest.mark.parametrize("inputs", _INVALID_PROMPTS)
-def test__get_prompts_invalid(inputs: Dict[str, Any]) -> None:
+def test__get_prompts_invalid(inputs: dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_prompt(inputs)
 
@@ -173,7 +171,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the right input" in inputs
         return {"output": "2"}
 
-    mock_chain = TransformChain(  # type: ignore[call-arg]
+    mock_chain = TransformChain(
         input_variables=["the right input"],
         output_variables=["output"],
         transform=run_val,
@@ -191,7 +189,9 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     )
     assert result == {"output": "2", "the right input": "1"}
     bad_result = _run_llm_or_chain(
-        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
     )
     assert "Error" in bad_result
 
@@ -223,25 +223,25 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         {},
     ],
 )
-def test__get_messages_invalid(inputs: Dict[str, Any]) -> None:
+def test__get_messages_invalid(inputs: dict[str, Any]) -> None:
     with pytest.raises(InputFormatError):
         _get_messages(inputs)
 
 
 @pytest.mark.parametrize("inputs", _VALID_PROMPTS + _VALID_MESSAGES)
-def test_run_llm_all_formats(inputs: Dict[str, Any]) -> None:
+def test_run_llm_all_formats(inputs: dict[str, Any]) -> None:
     llm = FakeLLM()
     _run_llm(llm, inputs, mock.MagicMock())
 
 
 @pytest.mark.parametrize("inputs", _VALID_MESSAGES + _VALID_PROMPTS)
-def test_run_chat_model_all_formats(inputs: Dict[str, Any]) -> None:
+def test_run_chat_model_all_formats(inputs: dict[str, Any]) -> None:
     llm = FakeChatModel()
     _run_llm(llm, inputs, mock.MagicMock())
 
 
 @freeze_time("2023-01-01")
-async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_arun_on_dataset() -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
         name="test",
@@ -296,32 +296,33 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     ]
 
-    def mock_read_dataset(*args: Any, **kwargs: Any) -> Dataset:
+    def mock_read_dataset(*_: Any, **__: Any) -> Dataset:
         return dataset
 
-    def mock_list_examples(*args: Any, **kwargs: Any) -> Iterator[Example]:
+    def mock_list_examples(*_: Any, **__: Any) -> Iterator[Example]:
         return iter(examples)
 
     async def mock_arun_chain(
         example: Example,
-        llm_or_chain: Union[BaseLanguageModel, Chain],
-        tags: Optional[List[str]] = None,
-        callbacks: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
+        *_: Any,
+        **__: Any,
+    ) -> dict[str, Any]:
         return {"result": f"Result for example {example.id}"}
 
-    def mock_create_project(*args: Any, **kwargs: Any) -> Any:
+    def mock_create_project(*_: Any, **__: Any) -> Any:
         proj = mock.MagicMock()
         proj.id = "123"
         return proj
 
-    with mock.patch.object(
-        Client, "read_dataset", new=mock_read_dataset
-    ), mock.patch.object(Client, "list_examples", new=mock_list_examples), mock.patch(
-        "langchain.smith.evaluation.runner_utils._arun_llm_or_chain",
-        new=mock_arun_chain,
-    ), mock.patch.object(Client, "create_project", new=mock_create_project):
+    with (
+        mock.patch.object(Client, "read_dataset", new=mock_read_dataset),
+        mock.patch.object(Client, "list_examples", new=mock_list_examples),
+        mock.patch(
+            "langchain_classic.smith.evaluation.runner_utils._arun_llm_or_chain",
+            new=mock_arun_chain,
+        ),
+        mock.patch.object(Client, "create_project", new=mock_create_project),
+    ):
         client = Client(api_url="http://localhost:1984", api_key="123")
         chain = mock.MagicMock()
         chain.input_keys = ["foothing"]
@@ -332,16 +333,16 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
             project_name="test_project",
             client=client,
         )
-        expected = {
+        expected: dict[str, Any] = {
             str(example.id): {
                 "output": {
-                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                    "result": f"Result for example {uuid.UUID(str(example.id))}",
                 },
-                "input": {"input": example.inputs["input"]},
+                "input": {"input": (example.inputs or {}).get("input")},
                 "reference": {
                     "output": example.outputs["output"]
                     if example.outputs is not None
-                    else None
+                    else None,
                 },
                 "feedback": [],
                 # No run since we mock the call to the llm above

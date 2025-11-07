@@ -1,44 +1,38 @@
 # langchain-ollama
 
-This package contains the LangChain integration with Ollama
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-ollama?label=%20)](https://pypi.org/project/langchain-ollama/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-ollama)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-ollama)](https://pypistats.org/packages/langchain-ollama)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
 
 ```bash
-pip install -U langchain-ollama
+pip install langchain-ollama
 ```
 
-You will also need to run the Ollama server locally. 
-You can download it [here](https://ollama.com/download).
+## 🤔 What is this?
 
-## Chat Models
+This package contains the LangChain integration with Ollama
 
-`ChatOllama` class exposes chat models from Ollama.
+## 📖 Documentation
 
-```python
-from langchain_ollama import ChatOllama
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/ollama) for more details.
 
-llm = ChatOllama(model="llama3-groq-tool-use")
-llm.invoke("Sing a ballad of LangChain.")
-```
+## Development
 
-## Embeddings
+### Running Tests
 
-`OllamaEmbeddings` class exposes embeddings from Ollama.
+To run integration tests (`make integration_tests`), you will need the following models installed in your Ollama server:
 
-```python
-from langchain_ollama import OllamaEmbeddings
+- `llama3.1`
+- `deepseek-r1:1.5b`
+- `gpt-oss:20b`
 
-embeddings = OllamaEmbeddings(model="llama3")
-embeddings.embed_query("What is the meaning of life?")
-```
+Install these models by running:
 
-## LLMs
-`OllamaLLM` class exposes LLMs from Ollama.
-
-```python
-from langchain_ollama import OllamaLLM
-
-llm = OllamaLLM(model="llama3")
-llm.invoke("The meaning of life is")
+```bash
+ollama pull <name-of-model>
 ```

@@ -15,7 +15,6 @@
       }),
       'max_retries': 2,
       'max_tokens': 100,
-      'n': 1,
       'openai_api_key': dict({
         'id': list([
           'AZURE_OPENAI_API_KEY',
@@ -28,6 +27,7 @@
       'request_timeout': 60.0,
       'stop': list([
       ]),
+      'stream_usage': True,
       'temperature': 0.0,
       'validate_base_url': True,
     }),

@@ -1,56 +1,22 @@
 # langchain-openai
 
-This package contains the LangChain integrations for OpenAI through their `openai` SDK.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-openai?label=%20)](https://pypi.org/project/langchain-openai/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-openai)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-openai)](https://pypistats.org/packages/langchain-openai)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation and Setup
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-- Install the LangChain partner package
+## Quick Install
+
 ```bash
 pip install langchain-openai
 ```
-- Get an OpenAI api key and set it as an environment variable (`OPENAI_API_KEY`)
 
+## 🤔 What is this?
 
-## LLM
+This package contains the LangChain integrations for OpenAI through their `openai` SDK.
 
-See a [usage example](http://python.langchain.com/docs/integrations/llms/openai).
+## 📖 Documentation
 
-```python
-from langchain_openai import OpenAI
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-```python
-from langchain_openai import AzureOpenAI
-```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](http://python.langchain.com/docs/integrations/llms/azure_openai)
-
-
-## Chat model
-
-See a [usage example](http://python.langchain.com/docs/integrations/chat/openai).
-
-```python
-from langchain_openai import ChatOpenAI
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-```python
-from langchain_openai import AzureChatOpenAI
-```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](http://python.langchain.com/docs/integrations/chat/azure_chat_openai)
-
-
-## Text Embedding Model
-
-See a [usage example](http://python.langchain.com/docs/integrations/text_embedding/openai)
-
-```python
-from langchain_openai import OpenAIEmbeddings
-```
-
-If you are using a model hosted on `Azure`, you should use different wrapper for that:
-```python
-from langchain_openai import AzureOpenAIEmbeddings
-```
-For a more detailed walkthrough of the `Azure` wrapper, see [here](https://python.langchain.com/docs/integrations/text_embedding/azureopenai)
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/openai) for more details.

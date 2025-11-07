@@ -1,8 +1,10 @@
 """Test AzureChatOpenAI wrapper."""
 
+from __future__ import annotations
+
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -13,6 +15,7 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from pydantic import BaseModel
 
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -88,7 +91,7 @@ def test_chat_openai_streaming() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Hello")
@@ -110,10 +113,10 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = _get_llm(max_tokens=2, temperature=0, callback_manager=callback_manager)
+    chat = _get_llm(max_tokens=2, temperature=0, callbacks=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that that is what is returned
+    # `Hello!` is two tokens, assert that is what is returned
     assert generation.generations[0][0].text == "Hello!"
 
 
@@ -142,7 +145,7 @@ async def test_async_chat_openai_streaming() -> None:
         max_tokens=10,
         streaming=True,
         temperature=0,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Hello")
@@ -161,7 +164,7 @@ async def test_async_chat_openai_streaming() -> None:
 @pytest.mark.scheduled
 def test_openai_streaming(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -173,7 +176,7 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
 async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     """Test streaming tokens from OpenAI."""
 
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
@@ -223,7 +226,7 @@ async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
 def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     """Test invoke tokens from AzureChatOpenAI."""
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
 
@@ -236,7 +239,7 @@ def test_json_mode(llm: AzureChatOpenAI) -> None:
     assert json.loads(response.content) == {"a": 1}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     for chunk in llm.stream(
         "Return this as json: {'a': 1}", response_format={"type": "json_object"}
     ):
@@ -254,7 +257,7 @@ async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
     assert json.loads(response.content) == {"a": 1}
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None
+    full: BaseMessageChunk | None = None
     async for chunk in llm.astream(
         "Return this as json: {'a': 1}", response_format={"type": "json_object"}
     ):
@@ -262,3 +265,37 @@ async def test_json_mode_async(llm: AzureChatOpenAI) -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, str)
     assert json.loads(full.content) == {"a": 1}
+
+
+class Foo(BaseModel):
+    response: str
+
+
+def test_stream_response_format(llm: AzureChatOpenAI) -> None:
+    full: BaseMessageChunk | None = None
+    chunks = []
+    for chunk in llm.stream("how are ya", response_format=Foo):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]
+
+
+async def test_astream_response_format(llm: AzureChatOpenAI) -> None:
+    full: BaseMessageChunk | None = None
+    chunks = []
+    async for chunk in llm.astream("how are ya", response_format=Foo):
+        chunks.append(chunk)
+        full = chunk if full is None else full + chunk
+    assert len(chunks) > 1
+    assert isinstance(full, AIMessageChunk)
+    parsed = full.additional_kwargs["parsed"]
+    assert isinstance(parsed, Foo)
+    assert isinstance(full.content, str)
+    parsed_content = json.loads(full.content)
+    assert parsed.response == parsed_content["response"]

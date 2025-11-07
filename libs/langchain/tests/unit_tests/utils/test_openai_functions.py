@@ -1,4 +1,4 @@
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from langchain_core.utils.function_calling import convert_to_openai_function
 from pydantic import BaseModel, Field
 
 
@@ -9,7 +9,7 @@ def test_convert_pydantic_to_openai_function() -> None:
         key: str = Field(..., description="API key")
         days: int = Field(default=0, description="Number of days to forecast")
 
-    actual = convert_pydantic_to_openai_function(Data)
+    actual = convert_to_openai_function(Data)
     expected = {
         "name": "Data",
         "description": "The data to return.",
@@ -41,7 +41,7 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
 
         data: Data
 
-    actual = convert_pydantic_to_openai_function(Model)
+    actual = convert_to_openai_function(Model)
     expected = {
         "name": "Model",
         "description": "The model to return.",
@@ -63,7 +63,7 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
                         },
                     },
                     "required": ["key"],
-                }
+                },
             },
             "required": ["data"],
         },

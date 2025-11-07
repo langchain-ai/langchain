@@ -1,12 +1,13 @@
+"""Base classes for output parsers that can handle streaming input."""
+
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
+
+from typing_extensions import override
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
@@ -19,13 +20,18 @@ from langchain_core.outputs import (
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_core.runnables import RunnableConfig
 
 
 class BaseTransformOutputParser(BaseOutputParser[T]):
     """Base class for an output parser that can handle streaming input."""
 
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[T]:
+    def _transform(
+        self,
+        input: Iterator[str | BaseMessage],
+    ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 yield self.parse_result([ChatGeneration(message=chunk)])
@@ -33,7 +39,8 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                 yield self.parse_result([Generation(text=chunk)])
 
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self,
+        input: AsyncIterator[str | BaseMessage],
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -45,10 +52,11 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
                     None, self.parse_result, [Generation(text=chunk)]
                 )
 
+    @override
     def transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
+        input: Iterator[str | BaseMessage],
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[T]:
         """Transform the input into the output format.
@@ -56,7 +64,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.
@@ -65,10 +73,11 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
             input, self._transform, config, run_type="parser"
         )
 
+    @override
     async def atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
+        input: AsyncIterator[str | BaseMessage],
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[T]:
         """Async transform the input into the output format.
@@ -76,7 +85,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.
@@ -95,9 +104,14 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
     parsed output, or just the current parsed output.
     """
 
-    def _diff(self, prev: Optional[T], next: T) -> T:
-        """Convert parsed outputs into a diff format. The semantics of this are
-        up to the output parser.
+    def _diff(
+        self,
+        prev: T | None,
+        next: T,  # noqa: A002
+    ) -> T:
+        """Convert parsed outputs into a diff format.
+
+        The semantics of this are up to the output parser.
 
         Args:
             prev: The previous parsed output.
@@ -108,16 +122,17 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
         """
         raise NotImplementedError
 
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+    @override
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[Any]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: GenerationChunk | ChatGenerationChunk | None = None
         for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
@@ -132,18 +147,19 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                     yield parsed
                 prev_parsed = parsed
 
+    @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[T]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: GenerationChunk | ChatGenerationChunk | None = None
         async for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)

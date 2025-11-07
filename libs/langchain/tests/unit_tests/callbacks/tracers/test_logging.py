@@ -4,11 +4,12 @@ import uuid
 
 import pytest
 
-from langchain.callbacks.tracers import LoggingCallbackHandler
+from langchain_classic.callbacks.tracers import LoggingCallbackHandler
 
 
 def test_logging(
-    caplog: pytest.LogCaptureFixture, capsys: pytest.CaptureFixture[str]
+    caplog: pytest.LogCaptureFixture,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     # Set up a Logger and a handler so we can check the Logger's handlers work too
     logger = logging.getLogger("test_logging")

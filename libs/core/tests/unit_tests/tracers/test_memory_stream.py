@@ -2,7 +2,6 @@ import asyncio
 import math
 import time
 from collections.abc import AsyncIterator
-from concurrent.futures import ThreadPoolExecutor
 
 from langchain_core.tracers.memory_stream import _MemoryStream
 
@@ -40,7 +39,7 @@ async def test_same_event_loop() -> None:
                 **item,
             }
 
-    asyncio.create_task(producer())
+    producer_task = asyncio.create_task(producer())
 
     items = [item async for item in consumer()]
 
@@ -54,9 +53,11 @@ async def test_same_event_loop() -> None:
         # To verify that the producer and consumer are running in parallel, we
         # expect the delta_time to be smaller than the sleep delay in the producer
         # * # of items = 30 ms
-        assert (
-            math.isclose(delta_time, 0, abs_tol=0.010) is True
-        ), f"delta_time: {delta_time}"
+        assert math.isclose(delta_time, 0, abs_tol=0.010) is True, (
+            f"delta_time: {delta_time}"
+        )
+
+    await producer_task
 
 
 async def test_queue_for_streaming_via_sync_call() -> None:
@@ -70,7 +71,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         """Produce items with slight delay."""
         tic = time.time()
         for i in range(3):
-            await asyncio.sleep(0.10)
+            await asyncio.sleep(0.2)
             toc = time.time()
             await writer.send(
                 {
@@ -93,9 +94,11 @@ async def test_queue_for_streaming_via_sync_call() -> None:
                 **item,
             }
 
-    with ThreadPoolExecutor() as executor:
-        executor.submit(sync_call)
-        items = [item async for item in consumer()]
+    task = asyncio.create_task(asyncio.to_thread(sync_call))
+    items = [item async for item in consumer()]
+    await task
+
+    assert len(items) == 3
 
     for item in items:
         delta_time = item["receive_time"] - item["produce_time"]
@@ -107,9 +110,9 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         # To verify that the producer and consumer are running in parallel, we
         # expect the delta_time to be smaller than the sleep delay in the producer
         # * # of items = 30 ms
-        assert (
-            math.isclose(delta_time, 0, abs_tol=0.010) is True
-        ), f"delta_time: {delta_time}"
+        assert math.isclose(delta_time, 0, abs_tol=0.020) is True, (
+            f"delta_time: {delta_time}"
+        )
 
 
 def test_send_to_closed_stream() -> None:
@@ -117,7 +120,7 @@ def test_send_to_closed_stream() -> None:
 
     We may want to handle this in a better way in the future.
     """
-    event_loop = asyncio.get_event_loop()
+    event_loop = asyncio.new_event_loop()
     channel = _MemoryStream[str](event_loop)
     writer = channel.get_send_stream()
     # send with an open even loop

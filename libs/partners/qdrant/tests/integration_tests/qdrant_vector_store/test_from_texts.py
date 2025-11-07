@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import uuid
-from typing import List, Union
 
 import pytest
 from langchain_core.documents import Document
@@ -30,7 +31,7 @@ def test_vectorstore_from_texts(location: str, retrieval_mode: RetrievalMode) ->
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -49,7 +50,7 @@ def test_qdrant_from_texts_stores_ids(
 ) -> None:
     """Test end to end Qdrant.from_texts stores provided ids."""
     collection_name = uuid.uuid4().hex
-    ids: List[Union[str, int]] = [
+    ids: list[str | int] = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
         786,
     ]
@@ -66,7 +67,7 @@ def test_qdrant_from_texts_stores_ids(
         sparse_vector_name=sparse_vector_name,
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 2
     stored_ids = [point.id for point in vec_store.client.retrieve(collection_name, ids)]
     assert set(ids) == set(stored_ids)
 
@@ -84,7 +85,6 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
     sparse_vector_name: str,
 ) -> None:
     """Test end to end Qdrant.from_texts stores named vectors if name is provided."""
-
     collection_name = uuid.uuid4().hex
     vec_store = QdrantVectorStore.from_texts(
         ["lorem", "ipsum", "dolor", "sit", "amet"],
@@ -97,15 +97,15 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
     )
 
-    assert 5 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 5
     if retrieval_mode in retrieval_modes(sparse=False):
         assert all(
-            (vector_name in point.vector or isinstance(point.vector, list))  # type: ignore
+            (vector_name in point.vector or isinstance(point.vector, list))  # type: ignore[operator]
             for point in vec_store.client.scroll(collection_name, with_vectors=True)[0]
         )
     if retrieval_mode in retrieval_modes(dense=False):
         assert all(
-            sparse_vector_name in point.vector  # type: ignore
+            sparse_vector_name in point.vector  # type: ignore[operator]
             for point in vec_store.client.scroll(collection_name, with_vectors=True)[0]
         )
 
@@ -122,7 +122,7 @@ def test_qdrant_from_texts_reuses_same_collection(
     vector_name: str,
     sparse_vector_name: str,
 ) -> None:
-    """Test if Qdrant.from_texts reuses the same collection"""
+    """Test if Qdrant.from_texts reuses the same collection."""
     collection_name = uuid.uuid4().hex
     embeddings = ConsistentFakeEmbeddings()
     sparse_embeddings = ConsistentFakeSparseEmbeddings()
@@ -149,7 +149,7 @@ def test_qdrant_from_texts_reuses_same_collection(
         sparse_embedding=sparse_embeddings,
     )
 
-    assert 7 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 7
 
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
@@ -160,7 +160,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     vector_name: str,
     retrieval_mode: RetrievalMode,
 ) -> None:
-    """Test if Qdrant.from_texts raises an exception if dimensionality does not match"""
+    """Test if Qdrant.from_texts raises an exception if dimensionality doesn't match."""
     collection_name = uuid.uuid4().hex
     QdrantVectorStore.from_texts(
         ["lorem", "ipsum", "dolor", "sit", "amet"],
@@ -190,7 +190,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize(
-    ["first_vector_name", "second_vector_name"],
+    ("first_vector_name", "second_vector_name"),
     [
         ("", "custom-vector"),
         ("custom-vector", ""),
@@ -204,7 +204,7 @@ def test_qdrant_from_texts_raises_error_on_different_vector_name(
     second_vector_name: str,
     retrieval_mode: RetrievalMode,
 ) -> None:
-    """Test if Qdrant.from_texts raises an exception if vector name does not match"""
+    """Test if Qdrant.from_texts raises an exception if vector name does not match."""
     collection_name = uuid.uuid4().hex
     QdrantVectorStore.from_texts(
         ["lorem", "ipsum", "dolor", "sit", "amet"],
@@ -237,7 +237,7 @@ def test_qdrant_from_texts_raises_error_on_different_vector_name(
 def test_qdrant_from_texts_raises_error_on_different_distance(
     location: str, vector_name: str, retrieval_mode: RetrievalMode
 ) -> None:
-    """Test if Qdrant.from_texts raises an exception if distance does not match"""
+    """Test if Qdrant.from_texts raises an exception if distance does not match."""
     collection_name = uuid.uuid4().hex
     QdrantVectorStore.from_texts(
         ["lorem", "ipsum", "dolor", "sit", "amet"],
@@ -302,7 +302,7 @@ def test_qdrant_from_texts_recreates_collection_on_force_recreate(
         force_recreate=True,
     )
 
-    assert 2 == vec_store.client.count(collection_name).count
+    assert vec_store.client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -380,6 +380,6 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload(
     )
 
     collection_info = vec_store.client.get_collection(collection_name)
-    assert collection_info.config.params.vectors[vector_name].on_disk is True  # type: ignore
+    assert collection_info.config.params.vectors[vector_name].on_disk is True  # type: ignore[index]
     assert collection_info.config.optimizer_config.memmap_threshold == 1000
     assert collection_info.config.params.on_disk_payload is True

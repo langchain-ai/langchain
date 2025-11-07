@@ -1,43 +1,22 @@
 # langchain-anthropic
 
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-anthropic?label=%20)](https://pypi.org/project/langchain-anthropic/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-anthropic)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-anthropic)](https://pypistats.org/packages/langchain-anthropic)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
+
+```bash
+pip install langchain-anthropic
+```
+
+## 🤔 What is this?
+
 This package contains the LangChain integration for Anthropic's generative models.
 
-## Installation
+## 📖 Documentation
 
-`pip install -U langchain-anthropic`
-
-## Chat Models
-
-Anthropic recommends using their chat models over text completions.
-
-You can see their recommended models [here](https://docs.anthropic.com/claude/docs/models-overview#model-recommendations).
-
-To use, you should have an Anthropic API key configured. Initialize the model as:
-
-```
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, HumanMessage
-
-model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0, max_tokens=1024)
-```
-
-### Define the input message
-
-`message = HumanMessage(content="What is the capital of France?")`
-
-### Generate a response using the model
-
-`response = model.invoke([message])`
-
-For a more detailed walkthrough see [here](https://python.langchain.com/docs/integrations/chat/anthropic).
-
-## LLMs (Legacy)
-
-You can use the Claude 2 models for text completions.
-
-```python
-from langchain_anthropic import AnthropicLLM
-
-model = AnthropicLLM(model="claude-2.1", temperature=0, max_tokens=1024)
-response = model.invoke("The best restaurant in San Francisco is: ")
-```
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/anthropic) for more details.

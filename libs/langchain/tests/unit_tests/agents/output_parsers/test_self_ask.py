@@ -1,6 +1,6 @@
 from langchain_core.agents import AgentAction, AgentFinish
 
-from langchain.agents.output_parsers.self_ask import SelfAskOutputParser
+from langchain_classic.agents.output_parsers.self_ask import SelfAskOutputParser
 
 
 def test_follow_up() -> None:
@@ -9,14 +9,18 @@ def test_follow_up() -> None:
     _input = "Follow up: what is two + 2"
     output = parser.invoke(_input)
     expected_output = AgentAction(
-        tool="Intermediate Answer", tool_input="what is two + 2", log=_input
+        tool="Intermediate Answer",
+        tool_input="what is two + 2",
+        log=_input,
     )
     assert output == expected_output
     # Test that also handles one word by default
     _input = "Followup: what is two + 2"
     output = parser.invoke(_input)
     expected_output = AgentAction(
-        tool="Intermediate Answer", tool_input="what is two + 2", log=_input
+        tool="Intermediate Answer",
+        tool_input="what is two + 2",
+        log=_input,
     )
     assert output == expected_output
 
@@ -27,7 +31,9 @@ def test_follow_up_custom() -> None:
     _input = "Now: what is two + 2"
     output = parser.invoke(_input)
     expected_output = AgentAction(
-        tool="Intermediate Answer", tool_input="what is two + 2", log=_input
+        tool="Intermediate Answer",
+        tool_input="what is two + 2",
+        log=_input,
     )
     assert output == expected_output
 

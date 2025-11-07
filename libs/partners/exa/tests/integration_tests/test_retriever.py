@@ -1,3 +1,5 @@
+"""Integration tests for `ExaSearchRetriever`."""
+
 from langchain_core.documents import (
     Document,  # type: ignore[import-not-found, import-not-found]
 )
@@ -6,6 +8,7 @@ from langchain_exa import ExaSearchRetriever
 
 
 def test_exa_retriever() -> None:
+    """Test basic functionality of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever()
     res = retriever.invoke("best time to visit japan")
     print(res)  # noqa: T201
@@ -15,6 +18,7 @@ def test_exa_retriever() -> None:
 
 
 def test_exa_retriever_highlights() -> None:
+    """Test highlights feature of the `ExaSearchRetriever`."""
     retriever = ExaSearchRetriever(highlights=True)
     res = retriever.invoke("best time to visit japan")
     print(res)  # noqa: T201
@@ -26,3 +30,20 @@ def test_exa_retriever_highlights() -> None:
     assert isinstance(highlight_scores, list)
     assert isinstance(highlights[0], str)
     assert isinstance(highlight_scores[0], float)
+
+
+def test_exa_retriever_advanced_features() -> None:
+    """Test advanced features of the `ExaSearchRetriever`."""
+    retriever = ExaSearchRetriever(
+        k=3, text_contents_options={"max_characters": 1000}, summary=True, type="auto"
+    )
+    res = retriever.invoke("best time to visit japan")
+    print(res)  # noqa: T201
+    assert len(res) == 3  # requested k=3
+    assert isinstance(res, list)
+    assert isinstance(res[0], Document)
+    # Verify summary is in metadata
+    assert "summary" in res[0].metadata
+    assert isinstance(res[0].metadata["summary"], str)
+    # Verify text was limited
+    assert len(res[0].page_content) <= 1000

@@ -1,11 +1,12 @@
 import tempfile
-from typing import Generator, cast
+from collections.abc import Generator
+from typing import cast
 
 import pytest
 from langchain_core.documents import Document
 
-from langchain.storage._lc_store import create_kv_docstore, create_lc_store
-from langchain.storage.file_system import LocalFileStore
+from langchain_classic.storage._lc_store import create_kv_docstore, create_lc_store
+from langchain_classic.storage.file_system import LocalFileStore
 
 
 @pytest.fixture
@@ -21,7 +22,7 @@ def test_create_lc_store(file_store: LocalFileStore) -> None:
     """Test that a docstore is created from a base store."""
     docstore = create_lc_store(file_store)
     docstore.mset([("key1", Document(page_content="hello", metadata={"key": "value"}))])
-    fetched_doc = cast(Document, docstore.mget(["key1"])[0])
+    fetched_doc = cast("Document", docstore.mget(["key1"])[0])
     assert fetched_doc.page_content == "hello"
     assert fetched_doc.metadata == {"key": "value"}
 

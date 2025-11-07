@@ -1,10 +1,8 @@
-# flake8: noqa E501
-
 """Test LLMSummarization functionality."""
 
 import pytest
 
-from langchain.chains.llm_summarization_checker.base import (
+from langchain_classic.chains.llm_summarization_checker.base import (
     ARE_ALL_TRUE_PROMPT,
     CHECK_ASSERTIONS_PROMPT,
     CREATE_ASSERTIONS_PROMPT,

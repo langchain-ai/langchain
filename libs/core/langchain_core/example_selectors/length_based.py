@@ -1,7 +1,7 @@
 """Select examples based on length."""
 
 import re
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
@@ -29,7 +29,7 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     max_length: int = 2048
     """Max length for the prompt, beyond which examples are cut."""
 
-    example_text_lengths: list[int] = Field(default_factory=list)  # :meta private:
+    example_text_lengths: list[int] = Field(default_factory=list)
     """Length of each example."""
 
     def add_example(self, example: dict[str, str]) -> None:
@@ -50,7 +50,6 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             example: A dictionary with keys as input variables
                 and values as their values.
         """
-
         self.add_example(example)
 
     @model_validator(mode="after")
@@ -80,9 +79,8 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             new_length = remaining_length - self.example_text_lengths[i]
             if new_length < 0:
                 break
-            else:
-                examples.append(self.examples[i])
-                remaining_length = new_length
+            examples.append(self.examples[i])
+            remaining_length = new_length
             i += 1
         return examples
 

@@ -1,0 +1,39 @@
+# Helper to set up Python and uv with caching
+
+name: uv-install
+description: Set up Python and uv with caching
+
+inputs:
+  python-version:
+    description: Python version, supporting MAJOR.MINOR only
+    required: true
+  enable-cache:
+    description: Enable caching for uv dependencies
+    required: false
+    default: "true"
+  cache-suffix:
+    description: Custom cache key suffix for cache invalidation
+    required: false
+    default: ""
+  working-directory:
+    description: Working directory for cache glob scoping
+    required: false
+    default: "**"
+
+env:
+  UV_VERSION: "0.5.25"
+
+runs:
+  using: composite
+  steps:
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: ${{ env.UV_VERSION }}
+        python-version: ${{ inputs.python-version }}
+        enable-cache: ${{ inputs.enable-cache }}
+        cache-dependency-glob: |
+          ${{ inputs.working-directory }}/pyproject.toml
+          ${{ inputs.working-directory }}/uv.lock
+          ${{ inputs.working-directory }}/requirements*.txt
+        cache-suffix: ${{ inputs.cache-suffix }}

@@ -7,8 +7,10 @@ via snapshot testing (e.g., see unit tests for runnables).
 
 import contextvars
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
+
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
@@ -41,10 +43,11 @@ async def test_inline_handlers_share_parent_context() -> None:
         called.
         """
 
-        def __init__(self, run_inline: bool) -> None:
+        def __init__(self, *, run_inline: bool) -> None:
             """Initialize the handler."""
             self.run_inline = run_inline
 
+        @override
         async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
             """Update the callstack with the name of the callback."""
             some_var.set("on_llm_start")
@@ -91,7 +94,7 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
             counter_var.reset(token)
 
     class StatefulAsyncCallbackHandler(AsyncCallbackHandler):
-        def __init__(self, name: str, run_inline: bool = True):
+        def __init__(self, name: str, *, run_inline: bool = True):
             self.name = name
             self.run_inline = run_inline
 
@@ -101,7 +104,7 @@ async def test_inline_handlers_share_parent_context_multiple() -> None:
             prompts: list[str],
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
+            parent_run_id: UUID | None = None,
             **kwargs: Any,
         ) -> None:
             if self.name == "StateModifier":

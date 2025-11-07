@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict
 
-from langchain_core.documents import Document
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
+    from langchain_core.documents import Document
     from langchain_core.embeddings import Embeddings
 
 
@@ -35,13 +35,13 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """VectorStore that contains information about examples."""
     k: int = 4
     """Number of examples to select."""
-    example_keys: Optional[list[str]] = None
+    example_keys: list[str] | None = None
     """Optional keys to filter examples to."""
-    input_keys: Optional[list[str]] = None
+    input_keys: list[str] | None = None
     """Optional keys to filter input to. If provided, the search is based on
     the input variables instead of all variables."""
-    vectorstore_kwargs: Optional[dict[str, Any]] = None
-    """Extra arguments passed to similarity_search function of the vectorstore."""
+    vectorstore_kwargs: dict[str, Any] | None = None
+    """Extra arguments passed to similarity_search function of the `VectorStore`."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -49,13 +49,10 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     )
 
     @staticmethod
-    def _example_to_text(
-        example: dict[str, str], input_keys: Optional[list[str]]
-    ) -> str:
+    def _example_to_text(example: dict[str, str], input_keys: list[str] | None) -> str:
         if input_keys:
             return " ".join(sorted_values({key: example[key] for key in input_keys}))
-        else:
-            return " ".join(sorted_values(example))
+        return " ".join(sorted_values(example))
 
     def _documents_to_examples(self, documents: list[Document]) -> list[dict]:
         # Get the examples from the metadata.
@@ -143,10 +140,10 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         *,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -157,12 +154,12 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -187,10 +184,10 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         *,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> SemanticSimilarityExampleSelector:
         """Async create k-shot example selector using example list and embeddings.
@@ -201,12 +198,12 @@ class SemanticSimilarityExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
+            k: Number of examples to select.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -274,10 +271,10 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         embeddings: Embeddings,
         vectorstore_cls: type[VectorStore],
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         fetch_k: int = 20,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
         """Create k-shot example selector using example list and embeddings.
@@ -288,14 +285,13 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
+            k: Number of examples to select.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
@@ -322,14 +318,13 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
         vectorstore_cls: type[VectorStore],
         *,
         k: int = 4,
-        input_keys: Optional[list[str]] = None,
+        input_keys: list[str] | None = None,
         fetch_k: int = 20,
-        example_keys: Optional[list[str]] = None,
-        vectorstore_kwargs: Optional[dict] = None,
+        example_keys: list[str] | None = None,
+        vectorstore_kwargs: dict | None = None,
         **vectorstore_cls_kwargs: Any,
     ) -> MaxMarginalRelevanceExampleSelector:
-        """Asynchronously create k-shot example selector using example list and
-        embeddings.
+        """Create k-shot example selector using example list and embeddings.
 
         Reshuffles examples dynamically based on Max Marginal Relevance.
 
@@ -337,14 +332,13 @@ class MaxMarginalRelevanceExampleSelector(_VectorStoreExampleSelector):
             examples: List of examples to use in the prompt.
             embeddings: An initialized embedding API interface, e.g. OpenAIEmbeddings().
             vectorstore_cls: A vector store DB interface class, e.g. FAISS.
-            k: Number of examples to select. Default is 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-                Default is 20.
+            k: Number of examples to select.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             input_keys: If provided, the search is based on the input variables
                 instead of all variables.
             example_keys: If provided, keys to filter examples to.
             vectorstore_kwargs: Extra arguments passed to similarity_search function
-                of the vectorstore.
+                of the `VectorStore`.
             vectorstore_cls_kwargs: optional kwargs containing url for vector store
 
         Returns:
