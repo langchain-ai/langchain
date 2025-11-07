@@ -26,7 +26,6 @@ from langchain_core.messages import (  # noqa: TC002
     AIMessage,
     AnyMessage,
     BaseMessage,
-    SystemMessage,
     ToolMessage,
 )
 from langgraph.channels.ephemeral_value import EphemeralValue
@@ -86,7 +85,7 @@ class ModelRequest:
     """Model request information for the agent."""
 
     model: BaseChatModel
-    system_prompt: str | SystemMessage | None
+    system_prompt: str | None
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
     tools: list[BaseTool | dict]
@@ -104,7 +103,7 @@ class ModelRequest:
         Args:
             **overrides: Keyword arguments for attributes to override. Supported keys:
                 - model: BaseChatModel instance
-                - system_prompt: Optional system prompt string or SystemMessage object
+                - system_prompt: Optional system prompt string
                 - messages: List of messages
                 - tool_choice: Tool choice configuration
                 - tools: List of available tools
@@ -1257,7 +1256,7 @@ def dynamic_prompt(
             request: ModelRequest,
             handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelCallResult:
-            prompt = cast("str | SystemMessage", func(request))
+            prompt = cast("str", func(request))
             request.system_prompt = prompt
             return handler(request)
 
@@ -1267,7 +1266,7 @@ def dynamic_prompt(
             handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
         ) -> ModelCallResult:
             # Delegate to sync function
-            prompt = cast("str | SystemMessage", func(request))
+            prompt = cast("str", func(request))
             request.system_prompt = prompt
             return await handler(request)
 
