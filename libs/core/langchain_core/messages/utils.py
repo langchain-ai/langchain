@@ -1022,14 +1022,16 @@ def convert_to_openai_messages(
     messages: MessageLikeRepresentation,
     *,
     text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
 ) -> dict: ...
 
 
 @overload
 def convert_to_openai_messages(
-    messages: Sequence[BMessageLikeRepresentation],
+    messages: Sequence[MessageLikeRepresentation],
     *,
     text_format: Literal["string", "block"] = "string",
+    include_id: bool = False,
 ) -> list[dict]: ...
 
 
