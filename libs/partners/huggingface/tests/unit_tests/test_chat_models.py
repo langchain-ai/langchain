@@ -228,3 +228,100 @@ def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
     assert getattr(chat_hugging_face, "max_tokens", None) == 512
     assert getattr(chat_hugging_face, "top_p", None) == 0.9
     assert getattr(chat_hugging_face, "streaming", None) is True
+
+
+def test_default_params_includes_inherited_values(chat_hugging_face: Any) -> None:
+    """Test that _default_params includes inherited max_tokens from max_new_tokens."""
+    params = chat_hugging_face._default_params
+    assert params["max_tokens"] == 512  # inherited from LLM's max_new_tokens
+    assert params["temperature"] == 0.7  # inherited from LLM's temperature
+    assert params["stream"] is True  # inherited from LLM's streaming
+
+
+def test_create_message_dicts_includes_inherited_params(chat_hugging_face: Any) -> None:
+    """Test that _create_message_dicts includes inherited parameters in API call."""
+    messages = [HumanMessage(content="test message")]
+    message_dicts, params = chat_hugging_face._create_message_dicts(messages, None)
+
+    # Verify inherited parameters are included
+    assert params["max_tokens"] == 512
+    assert params["temperature"] == 0.7
+    assert params["stream"] is True
+
+    # Verify message conversion
+    assert len(message_dicts) == 1
+    assert message_dicts[0]["role"] == "user"
+    assert message_dicts[0]["content"] == "test message"
+
+
+def test_model_kwargs_inheritance(mock_llm: Any) -> None:
+    """Test that model_kwargs are inherited when not explicitly set."""
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        chat = ChatHuggingFace(llm=mock_llm)
+        assert chat.model_kwargs == {"do_sample": True, "top_k": 50}
+
+
+def test_huggingface_endpoint_specific_inheritance(mock_llm: Any) -> None:
+    """Test HuggingFaceEndpoint specific parameter inheritance."""
+    with (
+        patch(
+            "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+        ),
+        patch(
+            "langchain_huggingface.chat_models.huggingface._is_huggingface_endpoint",
+            return_value=True,
+        ),
+    ):
+        chat = ChatHuggingFace(llm=mock_llm)
+        assert (
+            getattr(chat, "frequency_penalty", None) == 1.1
+        )  # from repetition_penalty
+
+
+def test_parameter_precedence_explicit_over_inherited(mock_llm: Any) -> None:
+    """Test that explicitly set parameters take precedence over inherited ones."""
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        # Explicitly set max_tokens to override inheritance
+        chat = ChatHuggingFace(llm=mock_llm, max_tokens=256, temperature=0.5)
+        assert chat.max_tokens == 256  # explicit value, not inherited 512
+        assert chat.temperature == 0.5  # explicit value, not inherited 0.7
+
+
+def test_inheritance_with_no_llm_properties(mock_llm: Any) -> None:
+    """Test inheritance when LLM doesn't have expected properties."""
+    # Remove some properties from mock
+    del mock_llm.temperature
+    del mock_llm.top_p
+
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        chat = ChatHuggingFace(llm=mock_llm)
+        # Should still inherit available properties
+        assert chat.max_tokens == 512  # max_new_tokens still available
+        # Missing properties should remain None/default
+        assert getattr(chat, "temperature", None) is None
+        assert getattr(chat, "top_p", None) is None
+
+
+def test_inheritance_with_empty_llm() -> None:
+    """Test that inheritance handles LLM with no relevant attributes gracefully."""
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        # Create a minimal mock LLM that passes validation but has no
+        # inheritance attributes
+        empty_llm = Mock(spec=HuggingFaceEndpoint)
+        empty_llm.repo_id = "test/model"
+        empty_llm.model = "test/model"
+        # Mock doesn't have the inheritance attributes by default
+
+        chat = ChatHuggingFace(llm=empty_llm)
+        # Properties should remain at their default values when LLM has no
+        # relevant attrs
+        assert chat.max_tokens is None
+        assert chat.temperature is None
