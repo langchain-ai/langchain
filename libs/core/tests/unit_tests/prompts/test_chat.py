@@ -1324,9 +1324,9 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
                                 "kwargs": {
                                     "input_variables": [],
                                     "template_format": "mustache",
-                                    "template": "Note: This may be just one example many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    "template": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
                                     "additional_content_fields": {
-                                        "text": "Note: This may be just one example many possible correct ways for the student to respond.\n",  # noqa: E501
+                                        "text": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
                                     },
                                 },
                             },
