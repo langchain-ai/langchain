@@ -1459,7 +1459,7 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
         ),
     }
     output_token_details: dict = {
-        "reasoning": (groq_token_usage.get("completion_tokens_details") or {}).get(
+        "reasoning": (groq_token_usage.get("output_tokens_details") or {}).get(
             "reasoning_tokens"
         ),
     }

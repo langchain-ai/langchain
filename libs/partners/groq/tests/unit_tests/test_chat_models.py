@@ -315,7 +315,7 @@ def test_create_usage_metadata_with_cached_tokens() -> None:
         "prompt_tokens": 2006,
         "completion_tokens": 300,
         "total_tokens": 2306,
-        "prompt_tokens_details": {"cached_tokens": 1920},
+        "input_tokens_details": {"cached_tokens": 1920},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -336,8 +336,8 @@ def test_create_usage_metadata_with_all_details() -> None:
         "prompt_tokens": 2006,
         "completion_tokens": 450,
         "total_tokens": 2456,
-        "prompt_tokens_details": {"cached_tokens": 1920},
-        "completion_tokens_details": {"reasoning_tokens": 200},
+        "input_tokens_details": {"cached_tokens": 1920},
+        "output_tokens_details": {"reasoning_tokens": 200},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -376,7 +376,7 @@ def test_create_usage_metadata_empty_details() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 50,
         "total_tokens": 150,
-        "prompt_tokens_details": {},
+        "input_tokens_details": {},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -394,7 +394,7 @@ def test_create_usage_metadata_zero_cached_tokens() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 50,
         "total_tokens": 150,
-        "prompt_tokens_details": {"cached_tokens": 0},
+        "input_tokens_details": {"cached_tokens": 0},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -411,7 +411,7 @@ def test_create_usage_metadata_with_reasoning_tokens() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 450,
         "total_tokens": 550,
-        "completion_tokens_details": {"reasoning_tokens": 200},
+        "output_tokens_details": {"reasoning_tokens": 200},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -432,8 +432,8 @@ def test_create_usage_metadata_with_cached_and_reasoning_tokens() -> None:
         "prompt_tokens": 2006,
         "completion_tokens": 450,
         "total_tokens": 2456,
-        "prompt_tokens_details": {"cached_tokens": 1920},
-        "completion_tokens_details": {"reasoning_tokens": 200},
+        "input_tokens_details": {"cached_tokens": 1920},
+        "output_tokens_details": {"reasoning_tokens": 200},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -458,7 +458,7 @@ def test_create_usage_metadata_zero_reasoning_tokens() -> None:
         "prompt_tokens": 100,
         "completion_tokens": 50,
         "total_tokens": 150,
-        "completion_tokens_details": {"reasoning_tokens": 0},
+        "output_tokens_details": {"reasoning_tokens": 0},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -470,12 +470,12 @@ def test_create_usage_metadata_zero_reasoning_tokens() -> None:
 
 
 def test_create_usage_metadata_empty_completion_details() -> None:
-    """Test that empty completion_tokens_details don't create output_token_details."""
+    """Test that empty output_tokens_details don't create output_token_details."""
     token_usage = {
         "prompt_tokens": 100,
         "completion_tokens": 50,
         "total_tokens": 150,
-        "completion_tokens_details": {},
+        "output_tokens_details": {},
     }
 
     result = _create_usage_metadata(token_usage)
@@ -509,7 +509,7 @@ def test_chat_result_with_usage_metadata() -> None:
             "prompt_tokens": 2006,
             "completion_tokens": 300,
             "total_tokens": 2306,
-            "prompt_tokens_details": {"cached_tokens": 1920},
+            "input_tokens_details": {"cached_tokens": 1920},
         },
     }
 
@@ -555,7 +555,7 @@ def test_chat_result_with_reasoning_tokens() -> None:
             "prompt_tokens": 100,
             "completion_tokens": 450,
             "total_tokens": 550,
-            "completion_tokens_details": {"reasoning_tokens": 200},
+            "output_tokens_details": {"reasoning_tokens": 200},
         },
     }
 
@@ -601,8 +601,8 @@ def test_chat_result_with_cached_and_reasoning_tokens() -> None:
             "prompt_tokens": 2006,
             "completion_tokens": 450,
             "total_tokens": 2456,
-            "prompt_tokens_details": {"cached_tokens": 1920},
-            "completion_tokens_details": {"reasoning_tokens": 200},
+            "input_tokens_details": {"cached_tokens": 1920},
+            "output_tokens_details": {"reasoning_tokens": 200},
         },
     }
 
@@ -689,7 +689,7 @@ def test_streaming_with_usage_metadata() -> None:
                 "prompt_tokens": 2006,
                 "completion_tokens": 300,
                 "total_tokens": 2306,
-                "prompt_tokens_details": {"cached_tokens": 1920},
+                "input_tokens_details": {"cached_tokens": 1920},
             }
         },
     }
@@ -733,7 +733,7 @@ def test_streaming_with_reasoning_tokens() -> None:
                 "prompt_tokens": 100,
                 "completion_tokens": 450,
                 "total_tokens": 550,
-                "completion_tokens_details": {"reasoning_tokens": 200},
+                "output_tokens_details": {"reasoning_tokens": 200},
             }
         },
     }
@@ -777,8 +777,8 @@ def test_streaming_with_cached_and_reasoning_tokens() -> None:
                 "prompt_tokens": 2006,
                 "completion_tokens": 450,
                 "total_tokens": 2456,
-                "prompt_tokens_details": {"cached_tokens": 1920},
-                "completion_tokens_details": {"reasoning_tokens": 200},
+                "input_tokens_details": {"cached_tokens": 1920},
+                "output_tokens_details": {"reasoning_tokens": 200},
             }
         },
     }
@@ -837,8 +837,8 @@ def test_combine_llm_outputs_with_token_details() -> None:
                 "prompt_tokens": 100,
                 "completion_tokens": 50,
                 "total_tokens": 150,
-                "prompt_tokens_details": {"cached_tokens": 80},
-                "completion_tokens_details": {"reasoning_tokens": 20},
+                "input_tokens_details": {"cached_tokens": 80},
+                "output_tokens_details": {"reasoning_tokens": 20},
             },
             "model_name": "test-model",
             "system_fingerprint": "fp_123",
@@ -848,8 +848,8 @@ def test_combine_llm_outputs_with_token_details() -> None:
                 "prompt_tokens": 200,
                 "completion_tokens": 100,
                 "total_tokens": 300,
-                "prompt_tokens_details": {"cached_tokens": 150},
-                "completion_tokens_details": {"reasoning_tokens": 40},
+                "input_tokens_details": {"cached_tokens": 150},
+                "output_tokens_details": {"reasoning_tokens": 40},
             },
             "model_name": "test-model",
             "system_fingerprint": "fp_123",
@@ -861,8 +861,8 @@ def test_combine_llm_outputs_with_token_details() -> None:
     assert result["token_usage"]["prompt_tokens"] == 300
     assert result["token_usage"]["completion_tokens"] == 150
     assert result["token_usage"]["total_tokens"] == 450
-    assert result["token_usage"]["prompt_tokens_details"]["cached_tokens"] == 230
-    assert result["token_usage"]["completion_tokens_details"]["reasoning_tokens"] == 60
+    assert result["token_usage"]["input_tokens_details"]["cached_tokens"] == 230
+    assert result["token_usage"]["output_tokens_details"]["reasoning_tokens"] == 60
     assert result["model_name"] == "test-model"
     assert result["system_fingerprint"] == "fp_123"
 
@@ -885,7 +885,7 @@ def test_combine_llm_outputs_with_missing_details() -> None:
                 "prompt_tokens": 200,
                 "completion_tokens": 100,
                 "total_tokens": 300,
-                "completion_tokens_details": {"reasoning_tokens": 40},
+                "output_tokens_details": {"reasoning_tokens": 40},
             },
             "model_name": "test-model",
         },
@@ -896,5 +896,5 @@ def test_combine_llm_outputs_with_missing_details() -> None:
     assert result["token_usage"]["prompt_tokens"] == 300
     assert result["token_usage"]["completion_tokens"] == 150
     assert result["token_usage"]["total_tokens"] == 450
-    assert result["token_usage"]["completion_tokens_details"]["reasoning_tokens"] == 40
-    assert "prompt_tokens_details" not in result["token_usage"]
+    assert result["token_usage"]["output_tokens_details"]["reasoning_tokens"] == 40
+    assert "input_tokens_details" not in result["token_usage"]
