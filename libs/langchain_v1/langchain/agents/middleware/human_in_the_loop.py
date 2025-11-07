@@ -195,6 +195,51 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 resolved_configs[tool_name] = tool_config
         self.interrupt_on = resolved_configs
         self.description_prefix = description_prefix
+        # Track edits to provide context after tool execution
+        self._pending_edit_contexts: dict[str, dict[str, Any]] = {}
+
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
+        """Inject context messages after tool execution for edited tool calls."""
+        if not self._pending_edit_contexts:
+            return None
+
+        messages = state["messages"]
+        if not messages:
+            return None
+
+        # Check recent messages for ToolMessages that correspond to edited tool calls
+        context_messages: list[HumanMessage] = []
+        completed_edits: list[str] = []
+
+        # Look through recent messages for ToolMessages
+        for msg in reversed(messages):
+            if isinstance(msg, ToolMessage):
+                tool_call_id = msg.tool_call_id
+                if tool_call_id in self._pending_edit_contexts:
+                    # Found a ToolMessage for an edited tool call
+                    edit_info = self._pending_edit_contexts[tool_call_id]
+                    context_msg = HumanMessage(
+                        content=(
+                            f"[System Reminder] The tool '{edit_info['name']}' was executed with "
+                            f"edited parameters: {json.dumps(edit_info['args'], indent=2)}. "
+                            f"When responding to the user, reference the edited parameters, "
+                            f"not the original request."
+                        ),
+                    )
+                    context_messages.append(context_msg)
+                    completed_edits.append(tool_call_id)
+            # Only check recent messages (stop at the last AIMessage with tool calls)
+            elif isinstance(msg, AIMessage) and msg.tool_calls:
+                break
+
+        # Clear completed edits from pending contexts
+        for tool_call_id in completed_edits:
+            del self._pending_edit_contexts[tool_call_id]
+
+        if context_messages:
+            return {"messages": context_messages}
+
+        return None
 
     def _create_action_and_config(
         self,
@@ -309,6 +354,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Process all tool calls that require interrupts
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage | HumanMessage] = []
+        # Track edits for post-execution context messages
+        edit_info: dict[str, dict[str, Any]] = {}
 
         # Create action requests and review configs for all tools that need approval
         action_requests: list[ActionRequest] = []
@@ -352,6 +399,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             revised_tool_call, tool_message = self._process_decision(decision, tool_call, config)
             if revised_tool_call:
                 revised_tool_calls.append(revised_tool_call)
+                # Track if this was an edit for post-execution context
+                if decision["type"] == "edit":
+                    tool_call_id = revised_tool_call["id"]
+                    if tool_call_id:  # Type guard for mypy
+                        edit_info[tool_call_id] = {
+                            "name": revised_tool_call["name"],
+                            "args": revised_tool_call["args"],
+                        }
             if tool_message:
                 artificial_tool_messages.append(tool_message)
 
@@ -375,5 +430,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             response_metadata=last_ai_msg.response_metadata,
             usage_metadata=last_ai_msg.usage_metadata,
         )
+
+        # Store edit info for use in before_model to inject post-execution context
+        if edit_info:
+            self._pending_edit_contexts.update(edit_info)
 
         return {"messages": [updated_ai_msg, *artificial_tool_messages]}
