@@ -1422,7 +1422,7 @@ def create_agent(  # noqa: PLR0915
         debug=debug,
         name=name,
         cache=cache,
-    )
+    ).with_config({"recursion_limit": 10_000})
 
 
 def _resolve_jump(
