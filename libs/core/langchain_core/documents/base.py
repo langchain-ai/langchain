@@ -114,11 +114,11 @@ class Blob(BaseMedia):
     data: bytes | str | None = None
     """Raw data associated with the `Blob`."""
     mimetype: str | None = None
-    """MimeType not to be confused with a file extension."""
+    """MIME type, not to be confused with a file extension."""
     encoding: str = "utf-8"
     """Encoding to use if decoding the bytes into a string.
 
-    Use `utf-8` as default encoding, if decoding to string.
+    Uses `utf-8` as default encoding if decoding to string.
     """
     path: PathLike | None = None
     """Location where the original content was found."""
@@ -134,7 +134,7 @@ class Blob(BaseMedia):
 
         If a path is associated with the `Blob`, it will default to the path location.
 
-        Unless explicitly set via a metadata field called `"source"`, in which
+        Unless explicitly set via a metadata field called `'source'`, in which
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
@@ -309,7 +309,7 @@ class Document(BaseMedia):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -322,10 +322,10 @@ class Document(BaseMedia):
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
-        """Override __str__ to restrict it to page_content and metadata.
+        """Override `__str__` to restrict it to page_content and metadata.
 
         Returns:
-            A string representation of the Document.
+            A string representation of the `Document`.
         """
         # The format matches pydantic format for __str__.
         #

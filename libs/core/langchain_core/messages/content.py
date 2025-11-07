@@ -867,7 +867,7 @@ def _get_data_content_block_types() -> tuple[str, ...]:
     Example: ("image", "video", "audio", "text-plain", "file")
 
     Note that old style multimodal blocks type literals with new style blocks.
-    Speficially, "image", "audio", and "file".
+    Specifically, "image", "audio", and "file".
 
     See the docstring of `_normalize_messages` in `language_models._utils` for details.
     """
@@ -906,7 +906,7 @@ def is_data_content_block(block: dict) -> bool:
 
         # 'text' is checked to support v0 PlainTextContentBlock types
         # We must guard against new style TextContentBlock which also has 'text' `type`
-        # by ensuring the presense of `source_type`
+        # by ensuring the presence of `source_type`
         if block["type"] == "text" and "source_type" not in block:  # noqa: SIM103  # This is more readable
             return False
 

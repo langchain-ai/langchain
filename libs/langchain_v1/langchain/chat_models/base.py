@@ -83,7 +83,7 @@ def init_chat_model(
         for supported model parameters to use as `**kwargs`.
 
     Args:
-        model: The name of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5'`.
+        model: The name or ID of the model, e.g. `'o3-mini'`, `'claude-sonnet-4-5-20250929'`.
 
             You can also specify model and model provider in a single argument using
             `'{model_provider}:{model}'` format, e.g. `'openai:o1'`.
@@ -193,7 +193,7 @@ def init_chat_model(
         from langchain.chat_models import init_chat_model
 
         o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5", temperature=0)
+        claude_sonnet = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=0)
         gemini_2-5_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
 
         o3_mini.invoke("what's your name")
@@ -216,7 +216,7 @@ def init_chat_model(
 
         configurable_model.invoke(
             "what's your name",
-            config={"configurable": {"model": "claude-sonnet-4-5"}},
+            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
         ```
 
@@ -241,7 +241,7 @@ def init_chat_model(
             "what's your name",
             config={
                 "configurable": {
-                    "foo_model": "anthropic:claude-sonnet-4-5",
+                    "foo_model": "anthropic:claude-sonnet-4-5-20250929",
                     "foo_temperature": 0.6,
                 }
             },
@@ -290,7 +290,7 @@ def init_chat_model(
 
         configurable_model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?",
-            config={"configurable": {"model": "claude-sonnet-4-5"}},
+            config={"configurable": {"model": "claude-sonnet-4-5-20250929"}},
         )
         # Use Sonnet 4.5
         ```
@@ -602,7 +602,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> _ConfigurableModel:
-        """Bind config to a Runnable, returning a new Runnable."""
+        """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}

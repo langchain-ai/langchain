@@ -88,6 +88,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         # For now, we test with filename in OpenAI-specific tests
         return False
 
+    @pytest.mark.flaky(retries=3, delay=1)
     def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs."""
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"

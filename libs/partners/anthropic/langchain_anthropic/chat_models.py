@@ -60,13 +60,15 @@ _message_type_lookups = {
 
 
 _MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
-    "claude-opus-4-1": 32000,
-    "claude-opus-4": 32000,
-    "claude-sonnet-4": 64000,
-    "claude-3-7-sonnet": 64000,
-    "claude-3-5-sonnet": 8192,
-    "claude-3-5-haiku": 8192,
-    "claude-3-haiku": 4096,
+    # Listed old to new
+    "claude-3-haiku": 4096,  # Claude Haiku 3
+    "claude-3-5-haiku": 8192,  # Claude Haiku 3.5
+    "claude-3-7-sonnet": 64000,  # Claude Sonnet 3.7
+    "claude-sonnet-4": 64000,  # Claude Sonnet 4
+    "claude-opus-4": 32000,  # Claude Opus 4
+    "claude-opus-4-1": 32000,  # Claude Opus 4.1
+    "claude-sonnet-4-5": 64000,  # Claude Sonnet 4.5
+    "claude-haiku-4-5": 64000,  # Claude Haiku 4.5
 }
 _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
@@ -89,8 +91,11 @@ class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
 
     name: str
+
     input_schema: dict[str, Any]
+
     description: NotRequired[str]
+
     cache_control: NotRequired[dict[str, str]]
 
 
@@ -579,7 +584,7 @@ class ChatAnthropic(BaseChatModel):
 
     Key init args — completion params:
         model:
-            Name of Anthropic model to use. e.g. `'claude-3-7-sonnet-20250219'`.
+            Name of Anthropic model to use. e.g. `'claude-sonnet-4-5-20250929'`.
         temperature:
             Sampling temperature. Ranges from `0.0` to `1.0`.
         max_tokens:
@@ -607,7 +612,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-3-7-sonnet-20250219",
+            model="claude-sonnet-4-5-20250929",
             temperature=0,
             max_tokens=1024,
             timeout=None,
@@ -655,7 +660,7 @@ class ChatAnthropic(BaseChatModel):
             content="J'aime la programmation.",
             response_metadata={
                 "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
-                "model": "claude-3-7-sonnet-20250219",
+                "model": "claude-sonnet-4-5-20250929",
                 "stop_reason": "end_turn",
                 "stop_sequence": None,
                 "usage": {"input_tokens": 25, "output_tokens": 11},
@@ -714,7 +719,7 @@ class ChatAnthropic(BaseChatModel):
             content="J'aime la programmation.",
             response_metadata={
                 "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
-                "model": "claude-3-7-sonnet-20250219",
+                "model": "claude-sonnet-4-5-20250929",
                 "stop_reason": "end_turn",
                 "stop_sequence": None,
                 "usage": {"input_tokens": 25, "output_tokens": 11},
@@ -820,7 +825,7 @@ class ChatAnthropic(BaseChatModel):
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        model = ChatAnthropic(model="claude-sonnet-4-5")
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
         message = HumanMessage(
             content=[
                 {
@@ -855,7 +860,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 betas=["files-api-2025-04-14"],
             )
             input_message = {
@@ -887,7 +892,7 @@ class ChatAnthropic(BaseChatModel):
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         data = b64encode(requests.get(url).content).decode()
 
-        model = ChatAnthropic(model="claude-sonnet-4-5")
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
         ai_msg = model.invoke(
             [
                 HumanMessage(
@@ -918,7 +923,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 betas=["files-api-2025-04-14"],
             )
             input_message = {
@@ -953,7 +958,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-3-7-sonnet-latest",
+            model="claude-sonnet-4-5-20250929",
             max_tokens=5000,
             thinking={"type": "enabled", "budget_tokens": 2000},
         )
@@ -988,7 +993,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        model = ChatAnthropic(model="claude-3-5-haiku-latest")
+        model = ChatAnthropic(model="claude-3-5-haiku-20241022")
 
         messages = [
             {
@@ -1089,7 +1094,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         from langchain_anthropic import ChatAnthropic
 
-        model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
         messages = [
             {
@@ -1139,7 +1144,7 @@ class ChatAnthropic(BaseChatModel):
 
             ```python
             model = ChatAnthropic(
-                model="claude-3-7-sonnet-20250219",
+                model="claude-sonnet-4-5-20250929",
             )
 
             messages = [
@@ -1192,7 +1197,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5-20250929",
             betas=["context-1m-2025-08-07"],  # Enable 1M context beta
         )
 
@@ -1229,7 +1234,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_core.tools import tool
 
         model = ChatAnthropic(
-            model="claude-3-7-sonnet-20250219",
+            model="claude-sonnet-4-5-20250929",
             temperature=0,
             model_kwargs={
                 "extra_headers": {
@@ -1268,7 +1273,7 @@ class ChatAnthropic(BaseChatModel):
         from langchain_anthropic import ChatAnthropic
 
         model = ChatAnthropic(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-5-20250929",
             betas=["context-management-2025-06-27"],
             context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
         )
@@ -1286,7 +1291,7 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model="claude-3-5-haiku-latest")
+            model = ChatAnthropic(model="claude-3-5-haiku-20241022")
 
             tool = {
                 "type": "web_search_20250305",
@@ -1304,7 +1309,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-3-5-haiku-latest",
+                model="claude-3-5-haiku-20241022",
                 betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
             )
 
@@ -1322,7 +1327,7 @@ class ChatAnthropic(BaseChatModel):
 
             ```python
             model = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 betas=["code-execution-2025-05-22"],
             )
 
@@ -1353,7 +1358,7 @@ class ChatAnthropic(BaseChatModel):
             ]
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-5-20250929",
                 betas=["mcp-client-2025-04-04"],
                 mcp_servers=mcp_servers,
             )
@@ -1369,7 +1374,7 @@ class ChatAnthropic(BaseChatModel):
             ```python
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
             tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
             model_with_tools = model.bind_tools([tool])
@@ -1396,7 +1401,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             model = ChatAnthropic(
-                model="claude-sonnet-4-5",
+                model="claude-sonnet-4-5-20250929",
                 betas=["context-management-2025-06-27"],
             )
             model_with_tools = model.bind_tools([{"type": "memory_20250818", "name": "memory"}])
@@ -1413,7 +1418,7 @@ class ChatAnthropic(BaseChatModel):
         ```python
         {
             "id": "msg_013xU6FHEGEq76aP4RgFerVT",
-            "model": "claude-3-7-sonnet-20250219",
+            "model": "claude-sonnet-4-5-20250929",
             "stop_reason": "end_turn",
             "stop_sequence": None,
             "usage": {"input_tokens": 25, "output_tokens": 11},
@@ -1927,7 +1932,7 @@ class ChatAnthropic(BaseChatModel):
             parallel_tool_calls: Set to `False` to disable parallel tool use.
                 Defaults to `None` (no specification, which allows parallel tool use).
 
-                !!! version-added "Added in version 0.3.2"
+                !!! version-added "Added in `langchain-anthropic` 0.3.2"
             kwargs: Any additional parameters are passed directly to `bind`.
 
         Example:
@@ -1948,7 +1953,7 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
             model_with_tools = model.bind_tools([GetWeather, GetPrice])
             model_with_tools.invoke(
                 "What is the weather like in San Francisco",
@@ -1958,7 +1963,7 @@ class ChatAnthropic(BaseChatModel):
             #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
             #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
             #     ],
-            #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-sonnet-4-5', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+            #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-sonnet-4-5-20250929', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
             #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
             # )
             ```
@@ -1982,7 +1987,7 @@ class ChatAnthropic(BaseChatModel):
                 product: str = Field(..., description="The product to look up.")
 
 
-            model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
             model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="any")
             model_with_tools.invoke(
                 "what is the weather like in San Francisco",
@@ -2008,7 +2013,7 @@ class ChatAnthropic(BaseChatModel):
             product: str = Field(..., description="The product to look up.")
 
 
-        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
         model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
         model_with_tools.invoke("What is the weather like in San Francisco")
         ```
@@ -2043,7 +2048,7 @@ class ChatAnthropic(BaseChatModel):
         # We need to pass in extra headers to enable use of the beta cache
         # control API.
         model = ChatAnthropic(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-5-20250929",
             temperature=0,
         )
         model_with_tools = model.bind_tools([GetWeather, cached_price_tool])
@@ -2068,7 +2073,7 @@ class ChatAnthropic(BaseChatModel):
             ],
             response_metadata={
                 "id": "msg_01Xg7Wr5inFWgBxE5jH9rpRo",
-                "model": "claude-sonnet-4-5",
+                "model": "claude-sonnet-4-5-20250929",
                 "stop_reason": "tool_use",
                 "stop_sequence": None,
                 "usage": {
@@ -2113,7 +2118,7 @@ class ChatAnthropic(BaseChatModel):
             ],
             response_metadata={
                 "id": "msg_016RfWHrRvW6DAGCdwB6Ac64",
-                "model": "claude-sonnet-4-5",
+                "model": "claude-sonnet-4-5-20250929",
                 "stop_reason": "tool_use",
                 "stop_sequence": None,
                 "usage": {
@@ -2187,11 +2192,11 @@ class ChatAnthropic(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an Anthropic tool schema,
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An Anthropic tool schema,
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -2202,11 +2207,15 @@ class ChatAnthropic(BaseChatModel):
                 more on how to properly specify types and descriptions of schema fields
                 when specifying a Pydantic or `TypedDict` class.
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -2240,7 +2249,7 @@ class ChatAnthropic(BaseChatModel):
             justification: str
 
 
-        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
         structured_model = model.with_structured_output(AnswerWithJustification)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2265,7 +2274,7 @@ class ChatAnthropic(BaseChatModel):
             justification: str
 
 
-        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
         structured_model = model.with_structured_output(AnswerWithJustification, include_raw=True)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2293,7 +2302,7 @@ class ChatAnthropic(BaseChatModel):
                 "required": ["answer", "justification"],
             },
         }
-        model = ChatAnthropic(model="claude-sonnet-4-5", temperature=0)
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
         structured_model = model.with_structured_output(schema)
 
         structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2406,7 +2415,7 @@ class ChatAnthropic(BaseChatModel):
         403
         ```
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-anthropic` 0.3.0"
             Uses Anthropic's [token counting API](https://docs.claude.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
         """  # noqa: D214,E501
