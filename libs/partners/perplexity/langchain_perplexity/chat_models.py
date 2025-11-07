@@ -33,7 +33,6 @@ from langchain_core.messages.ai import (
     UsageMetadata,
     subtract_usage,
 )
-from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
@@ -41,6 +40,11 @@ from langchain_core.utils.function_calling import convert_to_json_schema
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
+
+from langchain_perplexity.output_parsers import (
+    ReasoningJsonOutputParser,
+    ReasoningStructuredOutputParser,
+)
 
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[BaseModel]
 _DictOrPydantic: TypeAlias = dict | BaseModel
@@ -521,9 +525,9 @@ class ChatPerplexity(BaseChatModel):
                 },
             )
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                ReasoningStructuredOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
-                else JsonOutputParser()
+                else ReasoningJsonOutputParser()
             )
         else:
             raise ValueError(
