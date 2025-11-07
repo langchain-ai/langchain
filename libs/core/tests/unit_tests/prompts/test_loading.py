@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.loading import load_prompt
 from langchain_core.prompts.prompt import PromptTemplate
@@ -86,6 +87,16 @@ def test_saving_loading_round_trip(tmp_path: Path) -> None:
     few_shot_prompt.save(file_path=tmp_path / "few_shot.yaml")
     loaded_prompt = load_prompt(tmp_path / "few_shot.yaml")
     assert loaded_prompt == few_shot_prompt
+
+    chat_prompt = ChatPromptTemplate(
+        [
+            {"role": "system", "content": "{foo} foo"},
+            {"role": "user", "content": "{bar} bar"},
+        ]
+    )
+    chat_prompt.save(file_path=tmp_path / "chat_prompt.yaml")
+    loaded_prompt = load_prompt(tmp_path / "chat_prompt.yaml")
+    assert loaded_prompt == chat_prompt
 
 
 def test_loading_with_template_as_file() -> None:
