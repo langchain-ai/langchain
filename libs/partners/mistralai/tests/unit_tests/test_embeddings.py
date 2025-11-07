@@ -14,4 +14,4 @@ def test_mistral_init() -> None:
         MistralAIEmbeddings(model="mistral-embed", api_key="test"),  # type: ignore[arg-type]
     ]:
         assert model.model == "mistral-embed"
-        assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
+        assert cast("SecretStr", model.mistral_api_key).get_secret_value() == "test"

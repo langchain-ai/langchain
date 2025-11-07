@@ -1,68 +1,111 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+name = "langchain-tests"
+description = "Standard tests for LangChain implementations"
 license = { text = "MIT" }
-requires-python = ">=3.9"
+readme = "README.md"
+authors = []
+
+version = "1.0.1"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.63",
-    "pytest<9,>=7",
-    "pytest-asyncio<2,>=0.20",
-    "httpx<1,>=0.28.1",
-    "syrupy<5,>=4",
-    "pytest-socket<1,>=0.7.0",
+    "langchain-core>=1.0.3,<2.0.0",
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-asyncio>=0.20.0,<2.0.0",
+    "httpx>=0.28.1,<1.0.0",
+    "syrupy>=4.0.0,<5.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
-    "vcrpy>=7.0",
+    "vcrpy>=7.0.0,<8.0.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
-name = "langchain-tests"
-version = "0.3.20"
-description = "Standard tests for LangChain implementations"
-readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://docs.langchain.com/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-tests%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-
-lint = ["ruff<0.13,>=0.12.10"]
-typing = ["mypy<2,>=1.17.1", "langchain-core"]
+lint = ["ruff>=0.13.1,<0.14.0"]
+typing = [
+    "mypy>=1.18.1,<1.19.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
+    "langchain-core",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = false
 
 [[tool.mypy.overrides]]
-module = "yaml"
+module = ["vcr.*",]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "vcr.*"
-ignore_missing_imports = true
-
-
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["D", "E", "F", "I", "PGH", "T201", "UP",]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR2004", # Magic numbers
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "S101",    # Asserts allowed in tests
+    "S311",    # No need for strong crypto in tests
+    "SLF001",  # Tests may call private methods
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [ "D1",]
+"scripts/**" = [ "INP",]
 
 [tool.coverage.run]
 omit = ["tests/*"]

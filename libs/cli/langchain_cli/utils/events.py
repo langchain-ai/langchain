@@ -1,8 +1,10 @@
 """Events utilities."""
 
+from __future__ import annotations
+
 import http.client
 import json
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import typer
 
@@ -18,11 +20,18 @@ class EventDict(TypedDict):
     """
 
     event: str
-    properties: Optional[dict[str, Any]]
+    properties: dict[str, Any] | None
 
 
-def create_events(events: list[EventDict]) -> Optional[Any]:
-    """Create events."""
+def create_events(events: list[EventDict]) -> dict[str, Any] | None:
+    """Create events.
+
+    Args:
+        events: A list of event dictionaries.
+
+    Returns:
+        The response from the event tracking service, or None if there was an error.
+    """
     try:
         data = {
             "events": [
@@ -48,7 +57,8 @@ def create_events(events: list[EventDict]) -> Optional[Any]:
 
         res = conn.getresponse()
 
-        return json.loads(res.read())
+        response_data = json.loads(res.read())
+        return response_data if isinstance(response_data, dict) else None
     except (http.client.HTTPException, OSError, json.JSONDecodeError) as exc:
         typer.echo(f"Error sending events: {exc}")
         return None

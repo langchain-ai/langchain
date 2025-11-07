@@ -1,4 +1,4 @@
-from langchain.schema.runnable.fallbacks import __all__
+from langchain_classic.schema.runnable.fallbacks import __all__
 
 EXPECTED_ALL = ["RunnableWithFallbacks"]
 

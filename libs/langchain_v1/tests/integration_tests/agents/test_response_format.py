@@ -2,7 +2,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
-from langchain.agents import create_react_agent
+from langchain.agents import create_agent
 from langchain.agents.structured_output import ToolStrategy
 
 
@@ -24,9 +24,9 @@ def test_inference_to_native_output() -> None:
     from langchain_openai import ChatOpenAI
 
     model = ChatOpenAI(model="gpt-5")
-    agent = create_react_agent(
+    agent = create_agent(
         model,
-        prompt=(
+        system_prompt=(
             "You are a helpful weather assistant. Please call the get_weather tool, "
             "then use the WeatherReport tool to generate the final response."
         ),
@@ -54,9 +54,9 @@ def test_inference_to_tool_output() -> None:
     from langchain_openai import ChatOpenAI
 
     model = ChatOpenAI(model="gpt-4")
-    agent = create_react_agent(
+    agent = create_agent(
         model,
-        prompt=(
+        system_prompt=(
             "You are a helpful weather assistant. Please call the get_weather tool, "
             "then use the WeatherReport tool to generate the final response."
         ),

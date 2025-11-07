@@ -4,10 +4,10 @@ from unittest.mock import Mock, patch
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField
 
-from langchain.runnables.hub import HubRunnable
+from langchain_classic.runnables.hub import HubRunnable
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable(mock_pull: Mock) -> None:
     mock_pull.return_value = ChatPromptTemplate.from_messages(
         [
@@ -42,7 +42,7 @@ def repo_lookup(owner_repo_commit: str, **_: Any) -> ChatPromptTemplate:
     return repo_dict[owner_repo_commit]
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable_configurable_alternative(mock_pull: Mock) -> None:
     mock_pull.side_effect = repo_lookup
 
@@ -64,7 +64,7 @@ def test_hub_runnable_configurable_alternative(mock_pull: Mock) -> None:
     assert message_a2.content == "2"
 
 
-@patch("langchain.hub.pull")
+@patch("langchain_classic.hub.pull")
 def test_hub_runnable_configurable_fields(mock_pull: Mock) -> None:
     mock_pull.side_effect = repo_lookup
 

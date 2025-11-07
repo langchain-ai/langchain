@@ -5,8 +5,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
 )
 
 from typing_extensions import override
@@ -32,7 +30,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     def _transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],
+        input: Iterator[str | BaseMessage],
     ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -42,7 +40,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     async def _atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],
+        input: AsyncIterator[str | BaseMessage],
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -57,8 +55,8 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
     @override
     def transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
+        input: Iterator[str | BaseMessage],
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> Iterator[T]:
         """Transform the input into the output format.
@@ -66,7 +64,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.
@@ -78,8 +76,8 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
     @override
     async def atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],
-        config: Optional[RunnableConfig] = None,
+        input: AsyncIterator[str | BaseMessage],
+        config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[T]:
         """Async transform the input into the output format.
@@ -87,7 +85,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
         Args:
             input: The input to transform.
             config: The configuration to use for the transformation.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
 
         Yields:
             The transformed output.
@@ -108,7 +106,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
 
     def _diff(
         self,
-        prev: Optional[T],
+        prev: T | None,
         next: T,  # noqa: A002
     ) -> T:
         """Convert parsed outputs into a diff format.
@@ -125,11 +123,11 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
         raise NotImplementedError
 
     @override
-    def _transform(self, input: Iterator[Union[str, BaseMessage]]) -> Iterator[Any]:
+    def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[Any]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: GenerationChunk | ChatGenerationChunk | None = None
         for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
@@ -151,12 +149,12 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
 
     @override
     async def _atransform(
-        self, input: AsyncIterator[Union[str, BaseMessage]]
+        self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[T]:
         prev_parsed = None
-        acc_gen: Union[GenerationChunk, ChatGenerationChunk, None] = None
+        acc_gen: GenerationChunk | ChatGenerationChunk | None = None
         async for chunk in input:
-            chunk_gen: Union[GenerationChunk, ChatGenerationChunk]
+            chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):

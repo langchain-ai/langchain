@@ -5,7 +5,7 @@ channel. The writer and reader can be in the same event loop or in different eve
 loops. When they're in different event loops, they will also be in different
 threads.
 
-This is useful in situations when there's a mix of synchronous and asynchronous
+Useful in situations when there's a mix of synchronous and asynchronous
 used in the code.
 """
 
@@ -130,7 +130,7 @@ class _MemoryStream(Generic[T]):
         """Get a writer for the channel.
 
         Returns:
-            _SendStream: The writer for the channel.
+            The writer for the channel.
         """
         return _SendStream[T](
             reader_loop=self._loop, queue=self._queue, done=self._done
@@ -140,6 +140,6 @@ class _MemoryStream(Generic[T]):
         """Get a reader for the channel.
 
         Returns:
-            _ReceiveStream: The reader for the channel.
+            The reader for the channel.
         """
         return _ReceiveStream[T](queue=self._queue, done=self._done)

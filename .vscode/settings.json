@@ -1,17 +1,12 @@
 {
   "python.analysis.include": [
     "libs/**",
-    "docs/**",
-    "cookbook/**"
   ],
   "python.analysis.exclude": [
     "**/node_modules",
     "**/__pycache__",
     "**/.pytest_cache",
     "**/.*",
-    "_dist/**",
-    "docs/_build/**",
-    "docs/api_reference/_build/**"
   ],
   "python.analysis.autoImportCompletions": true,
   "python.analysis.typeCheckingMode": "basic",
@@ -41,8 +36,6 @@
     "**/.mypy_cache": true,
     "**/.ruff_cache": true,
     "_dist/**": true,
-    "docs/_build/**": true,
-    "docs/api_reference/_build/**": true,
     "**/node_modules": true,
     "**/.git": false
   },
@@ -50,8 +43,6 @@
     "**/__pycache__": true,
     "**/*.pyc": true,
     "_dist/**": true,
-    "docs/_build/**": true,
-    "docs/api_reference/_build/**": true,
     "**/node_modules": true,
     "**/.git": true,
     "uv.lock": true,
@@ -78,5 +69,10 @@
     "editor.insertSpaces": true
   },
   "python.terminal.activateEnvironment": false,
-  "python.defaultInterpreterPath": "./.venv/bin/python"
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".github/workflows/pr_lint.yml"
+    }
+  ]
 }

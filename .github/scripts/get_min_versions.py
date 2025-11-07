@@ -1,11 +1,12 @@
+"""Get minimum versions of dependencies from a pyproject.toml file."""
+
 import sys
 from collections import defaultdict
-from typing import Optional
 
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    # for python 3.10 and below, which doesnt have stdlib tomllib
+    # For Python 3.10 and below, which doesnt have stdlib tomllib
     import tomli as tomllib
 
 import re
@@ -34,14 +35,13 @@ SKIP_IF_PULL_REQUEST = [
 
 
 def get_pypi_versions(package_name: str) -> List[str]:
-    """
-    Fetch all available versions for a package from PyPI.
+    """Fetch all available versions for a package from PyPI.
 
     Args:
-        package_name (str): Name of the package
+        package_name: Name of the package
 
     Returns:
-        List[str]: List of all available versions
+        List of all available versions
 
     Raises:
         requests.exceptions.RequestException: If PyPI API request fails
@@ -53,25 +53,24 @@ def get_pypi_versions(package_name: str) -> List[str]:
     return list(response.json()["releases"].keys())
 
 
-def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
-    """
-    Find the minimum published version that satisfies the given constraints.
+def get_minimum_version(package_name: str, spec_string: str) -> str | None:
+    """Find the minimum published version that satisfies the given constraints.
 
     Args:
-        package_name (str): Name of the package
-        spec_string (str): Version specification string (e.g., ">=0.2.43,<0.4.0,!=0.3.0")
+        package_name: Name of the package
+        spec_string: Version specification string (e.g., ">=0.2.43,<0.4.0,!=0.3.0")
 
     Returns:
-        Optional[str]: Minimum compatible version or None if no compatible version found
+        Minimum compatible version or None if no compatible version found
     """
-    # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
+    # Rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
     spec_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", spec_string)
-    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1 (can be anywhere in constraint string)
+    # Rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1 (can be anywhere in constraint string)
     for y in range(1, 10):
         spec_string = re.sub(
             rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y + 1}", spec_string
         )
-    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
+    # Rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
     for x in range(1, 10):
         spec_string = re.sub(
             rf"\^{x}\.(\d+)\.(\d+)", rf">={x}.\1.\2,<{x + 1}", spec_string
@@ -114,7 +113,7 @@ def get_min_version_from_toml(
     versions_for: str,
     python_version: str,
     *,
-    include: Optional[list] = None,
+    include: list | None = None,
 ):
     # Parse the TOML file
     with open(toml_path, "rb") as file:
@@ -154,22 +153,25 @@ def get_min_version_from_toml(
 
 
 def check_python_version(version_string, constraint_string):
-    """
-    Check if the given Python version matches the given constraints.
+    """Check if the given Python version matches the given constraints.
 
-    :param version_string: A string representing the Python version (e.g. "3.8.5").
-    :param constraint_string: A string representing the package's Python version constraints (e.g. ">=3.6, <4.0").
-    :return: True if the version matches the constraints, False otherwise.
+    Args:
+        version_string: A string representing the Python version (e.g. "3.8.5").
+        constraint_string: A string representing the package's Python version
+            constraints (e.g. ">=3.6, <4.0").
+
+    Returns:
+        True if the version matches the constraints
     """
 
-    # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
+    # Rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
     constraint_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", constraint_string)
-    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
+    # Rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
     for y in range(1, 10):
         constraint_string = re.sub(
             rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y + 1}.0", constraint_string
         )
-    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
+    # Rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
     for x in range(1, 10):
         constraint_string = re.sub(
             rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x + 1}.0.0", constraint_string

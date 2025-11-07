@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Union
 
 import pytest
 from langchain_core.documents import Document
@@ -51,7 +50,7 @@ def test_qdrant_from_texts_stores_ids(
 ) -> None:
     """Test end to end Qdrant.from_texts stores provided ids."""
     collection_name = uuid.uuid4().hex
-    ids: list[Union[str, int]] = [
+    ids: list[str | int] = [
         "fa38d572-4c31-4579-aedc-1960d79df6df",
         786,
     ]
@@ -191,7 +190,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize(
-    ["first_vector_name", "second_vector_name"],
+    ("first_vector_name", "second_vector_name"),
     [
         ("", "custom-vector"),
         ("custom-vector", ""),
