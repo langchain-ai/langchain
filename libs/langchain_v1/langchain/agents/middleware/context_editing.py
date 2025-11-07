@@ -182,7 +182,7 @@ class ClearToolUsesEdit(ContextEdit):
 
 
 class ContextEditingMiddleware(AgentMiddleware):
-    """Middleware that automatically prunes tool results to manage context size.
+    """Automatically prunes tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count
     exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is
@@ -225,9 +225,11 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = []
+            if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
+                system_msg = [SystemMessage(content=request.system_prompt)]
+            elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
+                system_msg = [request.system_prompt]
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(
@@ -253,9 +255,12 @@ class ContextEditingMiddleware(AgentMiddleware):
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return count_tokens_approximately(messages)
         else:
-            system_msg = (
-                [SystemMessage(content=request.system_prompt)] if request.system_prompt else []
-            )
+            system_msg = []
+
+            if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
+                system_msg = [SystemMessage(content=request.system_prompt)]
+            elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
+                system_msg = [request.system_prompt]
 
             def count_tokens(messages: Sequence[BaseMessage]) -> int:
                 return request.model.get_num_tokens_from_messages(

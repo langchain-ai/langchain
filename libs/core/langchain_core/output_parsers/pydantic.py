@@ -86,7 +86,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
             The format instructions for the JSON output.
         """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = dict(self.pydantic_object.model_json_schema().items())
+        schema = dict(self._get_schema(self.pydantic_object).items())
 
         # Remove extraneous fields.
         reduced_schema = schema

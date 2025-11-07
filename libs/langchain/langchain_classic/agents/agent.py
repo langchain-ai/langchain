@@ -105,10 +105,7 @@ class BaseSingleActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -278,10 +275,7 @@ class BaseMultiActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -403,8 +397,8 @@ class RunnableAgent(BaseSingleActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -445,7 +439,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -481,7 +475,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
@@ -511,8 +505,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -557,7 +551,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -593,7 +587,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
@@ -819,10 +813,7 @@ class Agent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @model_validator(mode="after")
@@ -837,7 +828,7 @@ class Agent(BaseSingleActionAgent):
 
         Raises:
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
-             and prompt is not a FewShotPromptTemplate or a PromptTemplate.
+                and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
         prompt = self.llm_chain.prompt
         if "agent_scratchpad" not in prompt.input_variables:
@@ -1221,18 +1212,12 @@ class AgentExecutor(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return self._action_agent.input_keys
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
+        """Return the singular output key."""
         if self.return_intermediate_steps:
             return [*self._action_agent.return_values, "intermediate_steps"]
         return self._action_agent.return_values

@@ -86,7 +86,7 @@ AnyMessage = Annotated[
     | Annotated[ToolMessageChunk, Tag(tag="ToolMessageChunk")],
     Field(discriminator=Discriminator(_get_type)),
 ]
-""""A type representing any defined `Message` or `MessageChunk` type."""
+"""A type representing any defined `Message` or `MessageChunk` type."""
 
 
 def get_buffer_string(
@@ -328,12 +328,16 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """
     if isinstance(message, BaseMessage):
         message_ = message
-    elif isinstance(message, str):
-        message_ = _create_message_from_message_type("human", message)
-    elif isinstance(message, Sequence) and len(message) == 2:
-        # mypy doesn't realise this can't be a string given the previous branch
-        message_type_str, template = message  # type: ignore[misc]
-        message_ = _create_message_from_message_type(message_type_str, template)
+    elif isinstance(message, Sequence):
+        if isinstance(message, str):
+            message_ = _create_message_from_message_type("human", message)
+        else:
+            try:
+                message_type_str, template = message
+            except ValueError as e:
+                msg = "Message as a sequence must be (role string, template)"
+                raise NotImplementedError(msg) from e
+            message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -1025,18 +1029,18 @@ def convert_to_openai_messages(
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
-                - `'string'`:
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type `'text'`, these
-                    are joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type `'text'`, then
-                    all blocks are left as dicts.
-                - `'block'`:
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type `'text'`. If a message has
-                    content blocks these are left as is.
-        include_id: Whether to include message ids in the openai messages, if they
-                    are present in the source messages.
+            - `'string'`:
+                If a message has a string content, this is left as a string. If
+                a message has content blocks that are all of type `'text'`, these
+                are joined with a newline to make a single string. If a message has
+                content blocks and at least one isn't of type `'text'`, then
+                all blocks are left as dicts.
+            - `'block'`:
+                If a message has a string content, this is turned into a list
+                with a single content block of type `'text'`. If a message has
+                content blocks these are left as is.
+        include_id: Whether to include message IDs in the openai messages, if they
+            are present in the source messages.
 
     Raises:
         ValueError: if an unrecognized `text_format` is specified, or if a message
@@ -1097,7 +1101,7 @@ def convert_to_openai_messages(
         # ]
         ```
 
-    !!! version-added "Added in version 0.3.11"
+    !!! version-added "Added in `langchain-core` 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1697,7 +1701,7 @@ def count_tokens_approximately(
     Warning:
         This function does not currently support counting image tokens.
 
-    !!! version-added "Added in version 0.3.46"
+    !!! version-added "Added in `langchain-core` 0.3.46"
 
     """
     token_count = 0.0

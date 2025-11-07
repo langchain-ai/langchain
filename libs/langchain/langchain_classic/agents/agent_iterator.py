@@ -55,9 +55,9 @@ class AgentExecutorIterator:
         yield_actions: bool = False,
         config: RunnableConfig | None = None,
     ):
-        """Initialize the AgentExecutorIterator.
+        """Initialize the `AgentExecutorIterator`.
 
-        Initialize the AgentExecutorIterator with the given AgentExecutor,
+        Initialize the `AgentExecutorIterator` with the given `AgentExecutor`,
         inputs, and optional callbacks.
 
         Args:
@@ -94,7 +94,7 @@ class AgentExecutorIterator:
 
     @property
     def inputs(self) -> dict[str, str]:
-        """The inputs to the AgentExecutor."""
+        """The inputs to the `AgentExecutor`."""
         return self._inputs
 
     @inputs.setter
@@ -103,7 +103,7 @@ class AgentExecutorIterator:
 
     @property
     def agent_executor(self) -> AgentExecutor:
-        """The AgentExecutor to iterate over."""
+        """The `AgentExecutor` to iterate over."""
         return self._agent_executor
 
     @agent_executor.setter
@@ -174,7 +174,7 @@ class AgentExecutorIterator:
         return prepared_outputs
 
     def __iter__(self: AgentExecutorIterator) -> Iterator[AddableDict]:
-        """Create an async iterator for the AgentExecutor."""
+        """Create an async iterator for the `AgentExecutor`."""
         logger.debug("Initialising AgentExecutorIterator")
         self.reset()
         callback_manager = CallbackManager.configure(
@@ -239,7 +239,7 @@ class AgentExecutorIterator:
         yield self._stop(run_manager)
 
     async def __aiter__(self) -> AsyncIterator[AddableDict]:
-        """Create an async iterator for the AgentExecutor.
+        """Create an async iterator for the `AgentExecutor`.
 
         N.B. __aiter__ must be a normal method, so need to initialize async run manager
         on first __anext__ call where we can await it.

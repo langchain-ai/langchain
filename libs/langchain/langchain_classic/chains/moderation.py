@@ -30,14 +30,14 @@ class OpenAIModerationChain(Chain):
         ```
     """
 
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+    client: Any = None
+    async_client: Any = None
     model_name: str | None = None
     """Moderation model name to use."""
     error: bool = False
     """Whether or not to error if bad content was found."""
-    input_key: str = "input"  #: :meta private:
-    output_key: str = "output"  #: :meta private:
+    input_key: str = "input"
+    output_key: str = "output"
     openai_api_key: str | None = None
     openai_organization: str | None = None
     openai_pre_1_0: bool = Field(default=False)
@@ -84,18 +84,12 @@ class OpenAIModerationChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return [self.output_key]
 
     def _moderate(self, text: str, results: Any) -> str:

@@ -68,8 +68,8 @@ try:
     class APIChain(Chain):
         """Chain that makes API calls and summarizes the responses to answer a question.
 
-        *Security Note*: This API chain uses the requests toolkit
-            to make GET, POST, PATCH, PUT, and DELETE requests to an API.
+        **Security Note**: This API chain uses the requests toolkit
+            to make `GET`, `POST`, `PATCH`, `PUT`, and `DELETE` requests to an API.
 
             Exercise care in who is allowed to use this chain. If exposing
             to end users, consider that users will be able to make arbitrary
@@ -80,7 +80,8 @@ try:
             Control access to who can submit issue requests using this toolkit and
             what network access it has.
 
-            See https://python.langchain.com/docs/security for more information.
+            See https://docs.langchain.com/oss/python/security-policy for more
+            information.
 
         !!! note
             This class is deprecated. See below for a replacement implementation using
@@ -90,7 +91,7 @@ try:
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
         - Easier to modify or extend
-          (e.g., with additional tools, structured responses, etc.)
+            (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 
@@ -196,17 +197,22 @@ try:
         """
 
         api_request_chain: LLMChain
+
         api_answer_chain: LLMChain
+
         requests_wrapper: TextRequestsWrapper = Field(exclude=True)
+
         api_docs: str
-        question_key: str = "question"  #: :meta private:
-        output_key: str = "output"  #: :meta private:
+
+        question_key: str = "question"
+
+        output_key: str = "output"
+
         limit_to_domains: Sequence[str] | None = Field(default_factory=list)
         """Use to limit the domains that can be accessed by the API chain.
 
         * For example, to limit to just the domain `https://www.example.com`, set
             `limit_to_domains=["https://www.example.com"]`.
-
         * The default value is an empty tuple, which means that no domains are
             allowed by default. By design this will raise an error on instantiation.
         * Use a None if you want to allow all domains by default -- this is not
@@ -217,18 +223,12 @@ try:
 
         @property
         def input_keys(self) -> list[str]:
-            """Expect input key.
-
-            :meta private:
-            """
+            """Expect input key."""
             return [self.question_key]
 
         @property
         def output_keys(self) -> list[str]:
-            """Expect output key.
-
-            :meta private:
-            """
+            """Expect output key."""
             return [self.output_key]
 
         @model_validator(mode="after")

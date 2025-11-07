@@ -131,14 +131,19 @@ class BaseLanguageModel(
 
     Caching is not currently supported for streaming methods of models.
     """
+
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
+
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
+
     tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+
     metadata: dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+
     custom_get_token_ids: Callable[[str], list[int]] | None = Field(
         default=None, exclude=True
     )
@@ -195,15 +200,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
@@ -232,15 +244,22 @@ class BaseLanguageModel(
             type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of `PromptValue` objects. A `PromptValue` is an object that
-                can be converted to match the format of any language model (string for
-                pure text generation models and `BaseMessage` objects for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generation` objects for
@@ -262,13 +281,13 @@ class BaseLanguageModel(
         return self.lc_attributes
 
     def get_token_ids(self, text: str) -> list[int]:
-        """Return the ordered ids of the tokens in a text.
+        """Return the ordered IDs of the tokens in a text.
 
         Args:
             text: The string input to tokenize.
 
         Returns:
-            A list of ids corresponding to the tokens in the text, in order they occur
+            A list of IDs corresponding to the tokens in the text, in order they occur
                 in the text.
         """
         if self.custom_get_token_ids is not None:
