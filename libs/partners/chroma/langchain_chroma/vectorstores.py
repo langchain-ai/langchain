@@ -73,15 +73,6 @@ def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarra
     ]
 
 
-def safe_results_to_docs_and_scores(results: Any) -> list[Document]:
-    """Convert results to documents and scores, filtering out None page_content."""
-    return [
-        Document(page_content=result[0], metadata=result[1] or {}, id=result[2])
-        for result in results
-        if result[0] is not None
-    ]
-
-
 Matrix = list[list[float]], list[np.ndarray] | np.ndarray
 
 
