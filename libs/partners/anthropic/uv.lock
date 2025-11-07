@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -477,7 +477,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -489,6 +489,7 @@ dependencies = [
 requires-dist = [
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
+    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
@@ -498,6 +499,7 @@ requires-dist = [
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
+    { name = "langchain-model-profiles", marker = "extra == 'model-profiles'" },
     { name = "langchain-ollama", marker = "extra == 'ollama'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../openai" },
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
@@ -506,7 +508,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.0.2,<1.1.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["model-profiles", "community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
 
 [package.metadata.requires-dev]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -539,7 +541,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -622,7 +624,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.3"
+version = "1.0.4"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -682,7 +684,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
