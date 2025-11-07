@@ -158,7 +158,111 @@ class InterruptOnConfig(TypedDict):
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
-    """Human in the loop middleware."""
+    """Human in the loop middleware.
+
+    This middleware allows human review and editing of tool calls before execution.
+
+    Design Note - Message Ordering for OpenAI Compatibility:
+        When a user edits a tool call, the edit notification is embedded in the
+        AIMessage.content rather than created as a separate message. This design
+        choice ensures compatibility with OpenAI's strict message ordering rule:
+        AIMessage with tool_calls must be immediately followed by ToolMessage.
+
+        The embedded notifications use clear visual separators (e.g., "=" lines)
+        and explicit language ("SYSTEM NOTIFICATION - NOT AI RESPONSE") to minimize
+        semantic confusion and help the model distinguish between its own output
+        and framework-generated metadata.
+
+        For optimal results, provide appropriate system prompts to guide the model's
+        behavior. Use `get_recommended_system_prompt()` to generate recommended
+        prompts for your LLM provider.
+
+    Example:
+            ```python
+            system_prompt = HumanInTheLoopMiddleware.get_recommended_system_prompt("openai")
+            agent = create_agent(
+                model="gpt-4",
+                tools=[...],
+                middleware=[HumanInTheLoopMiddleware(...)],
+                system_prompt=system_prompt,
+            )
+            ```
+
+    Future Enhancement:
+        A provider-specific message adapter could generate optimal message formats
+        for each LLM provider (embedded for OpenAI, separate messages for others).
+        This would provide the best of both worlds: API compatibility and semantic
+        clarity.
+    """
+
+    @staticmethod
+    def get_recommended_system_prompt(provider: str = "openai") -> str:
+        """Get recommended system prompt for HITL middleware.
+
+        This helper generates system prompts that help models correctly interpret
+        embedded edit notifications and avoid semantic confusion.
+
+        Args:
+            provider: The LLM provider ("openai", "anthropic", "groq", "google", etc.)
+
+        Returns:
+            Recommended system prompt to guide model behavior with HITL middleware.
+
+        Example:
+            ```python
+            system_prompt = HumanInTheLoopMiddleware.get_recommended_system_prompt("openai")
+            agent = create_agent(
+                model="gpt-4",
+                tools=[...],
+                middleware=[HumanInTheLoopMiddleware(...)],
+                system_prompt=system_prompt,
+            )
+            ```
+        """
+        base_prompt = """You are a helpful assistant.
+
+CRITICAL INSTRUCTIONS FOR SYSTEM NOTIFICATIONS:
+1. You may see [SYSTEM NOTIFICATION] sections in messages.
+2. These are NOT your words - they are framework-generated metadata.
+3. DO NOT reference system notifications as if you said them.
+4. Examples of INCORRECT responses:
+   ❌ "As I mentioned earlier, the user edited..."
+   ❌ "According to the system notification..."
+   ❌ "I noted that the parameters were modified..."
+5. Examples of CORRECT responses:
+   ✅ "The task has been completed successfully."
+   ✅ "The file has been written to /path/to/file."
+6. Focus on tool execution results, not on system metadata."""
+
+        provider_specific = {
+            "openai": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Report the result directly to the user.""",
+            "anthropic": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Provide a clear summary of the result.""",
+            "groq": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Do NOT attempt to re-execute with different parameters.
+- Report only the actual execution result.""",
+            "google": """
+
+TOOL EXECUTION RULES:
+- When you see a ToolMessage, the tool has ALREADY been executed.
+- Do NOT execute the same tool again.
+- Summarize the result for the user.""",
+        }
+
+        return base_prompt + provider_specific.get(provider.lower(), provider_specific["openai"])
 
     def __init__(
         self,
@@ -286,6 +390,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
     ) -> str | list[str | dict[Any, Any]]:
         """Build updated AIMessage content with embedded edit information.
 
+        For OpenAI API compatibility, edit notifications are embedded in
+        AIMessage.content rather than separate messages. This ensures the
+        message ordering rule (AIMessage with tool_calls must be immediately
+        followed by ToolMessage) is respected.
+
+        The notifications use clear visual separators and explicit language
+        to minimize semantic confusion.
+
         Args:
             original_content: The original AIMessage content
             edit_info: Dictionary mapping tool_call_id to edit information
@@ -296,14 +408,25 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if not edit_info:
             return original_content
 
-        # Build edit context message to append to AI's content
+        # Build edit context messages with clear visual separation
+        separator = "=" * 60
         edit_notices = []
+
         for info in edit_info.values():
             args_json = json.dumps(info["args"], indent=2)
-            edit_notices.append(
-                f"[System Note] The user edited the proposed tool call '{info['name']}'. "
-                f"The tool will execute with these modified arguments: {args_json}"
-            )
+            notice = f"""{separator}
+[SYSTEM NOTIFICATION - NOT AI RESPONSE]
+This is framework-generated metadata. Do not attribute to AI.
+
+User edited the tool call: '{info["name"]}'
+Modified parameters:
+{args_json}
+
+⚠️  IMPORTANT: Do not reference this notification in your response.
+    Report only the tool execution results to the user.
+{separator}"""
+            edit_notices.append(notice)
+
         edit_context = "\n\n".join(edit_notices)
 
         # For now, only handle string content. If content is a list, return as-is
