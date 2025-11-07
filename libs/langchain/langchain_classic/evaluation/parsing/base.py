@@ -71,10 +71,11 @@ class JsonValidityEvaluator(StringEvaluator):
             **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: A dictionary containing the evaluation score. The score is 1 if
-            the prediction is valid JSON, and 0 otherwise.
+            `dict` containing the evaluation score. The score is `1` if
+                the prediction is valid JSON, and `0` otherwise.
+
                 If the prediction is not valid JSON, the dictionary also contains
-                a "reasoning" field with the error message.
+                a `reasoning` field with the error message.
 
         """
         try:
@@ -168,7 +169,7 @@ class JsonEqualityEvaluator(StringEvaluator):
             **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            A dictionary containing the evaluation score.
+            `dict` containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
         label = self._parse_json(cast("str", reference))

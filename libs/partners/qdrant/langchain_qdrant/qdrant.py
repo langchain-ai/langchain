@@ -10,13 +10,10 @@ from typing import (
     Any,
 )
 
-import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
-
-from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Sequence
@@ -47,17 +44,17 @@ class QdrantVectorStore(VectorStore):
         ```
 
     Key init args — indexing params:
-        collection_name: str
+        collection_name:
             Name of the collection.
-        embedding: Embeddings
+        embedding:
             Embedding function to use.
-        sparse_embedding: SparseEmbeddings
+        sparse_embedding:
             Optional sparse embedding function to use.
 
     Key init args — client params:
-        client: QdrantClient
+        client:
             Qdrant client to use.
-        retrieval_mode: RetrievalMode
+        retrieval_mode:
             Retrieval mode to use.
 
     Instantiate:
@@ -376,6 +373,7 @@ class QdrantVectorStore(VectorStore):
         """Construct an instance of `QdrantVectorStore` from a list of texts.
 
         This is a user-friendly interface that:
+
         1. Creates embeddings, one for each text
         2. Creates a Qdrant collection if it doesn't exist.
         3. Adds the text embeddings to the Qdrant database
@@ -502,10 +500,10 @@ class QdrantVectorStore(VectorStore):
         batch_size: int = 64,
         **kwargs: Any,
     ) -> list[str | int]:
-        """Add texts with embeddings to the vectorstore.
+        """Add texts with embeddings to the `VectorStore`.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
+            List of ids from adding the texts into the `VectorStore`.
 
         """
         added_ids = []
@@ -534,7 +532,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to query.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score(
@@ -658,7 +656,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query and distance for each.
+            List of `Document` objects most similar to the query and distance for each.
 
         """
         qdrant_filter = filter
@@ -712,7 +710,7 @@ class QdrantVectorStore(VectorStore):
         """Return docs most similar to embedding vector.
 
         Returns:
-            List of Documents most similar to the query.
+            List of `Document` objects most similar to the query.
 
         """
         results = self.similarity_search_with_score_by_vector(
@@ -745,7 +743,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         self._validate_collection_for_dense(
@@ -788,7 +786,7 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance.
+            List of `Document` objects selected by maximal marginal relevance.
 
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
@@ -822,16 +820,18 @@ class QdrantVectorStore(VectorStore):
         among selected documents.
 
         Returns:
-            List of Documents selected by maximal marginal relevance and distance for
-            each.
-
+            List of `Document` objects selected by maximal marginal relevance and
+                distance for each.
         """
         results = self.client.query_points(
             collection_name=self.collection_name,
-            query=embedding,
+            query=models.NearestQuery(
+                nearest=embedding,
+                mmr=models.Mmr(diversity=lambda_mult, candidates_limit=fetch_k),
+            ),
             query_filter=filter,
             search_params=search_params,
-            limit=fetch_k,
+            limit=k,
             with_payload=True,
             with_vectors=True,
             score_threshold=score_threshold,
@@ -840,26 +840,17 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         ).points
 
-        embeddings = [
-            result.vector
-            if isinstance(result.vector, list)
-            else result.vector.get(self.vector_name)  # type: ignore[union-attr]
-            for result in results
-        ]
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding), embeddings, k=k, lambda_mult=lambda_mult
-        )
         return [
             (
                 self._document_from_point(
-                    results[i],
+                    result,
                     self.collection_name,
                     self.content_payload_key,
                     self.metadata_payload_key,
                 ),
-                results[i].score,
+                result.score,
             )
-            for i in mmr_selected
+            for result in results
         ]
 
     def delete(  # type: ignore[override]
@@ -874,7 +865,7 @@ class QdrantVectorStore(VectorStore):
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise.
+            True if deletion is successful, `False` otherwise.
 
         """
         result = self.client.delete(

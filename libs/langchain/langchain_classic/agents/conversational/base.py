@@ -87,15 +87,13 @@ class ConversationalAgent(Agent):
         Args:
             tools: List of tools the agent will have access to, used to format the
                 prompt.
-            prefix: String to put before the list of tools. Defaults to PREFIX.
-            suffix: String to put after the list of tools. Defaults to SUFFIX.
-            format_instructions: Instructions on how to use the tools. Defaults to
-                FORMAT_INSTRUCTIONS
-            ai_prefix: String to use before AI output. Defaults to "AI".
+            prefix: String to put before the list of tools.
+            suffix: String to put after the list of tools.
+            format_instructions: Instructions on how to use the tools.
+            ai_prefix: String to use before AI output.
             human_prefix: String to use before human output.
-                Defaults to "Human".
             input_variables: List of input variables the final prompt will expect.
-                Defaults to ["input", "chat_history", "agent_scratchpad"].
+                Defaults to `["input", "chat_history", "agent_scratchpad"]`.
 
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
@@ -139,16 +137,14 @@ class ConversationalAgent(Agent):
         Args:
             llm: The language model to use.
             tools: A list of tools to use.
-            callback_manager: The callback manager to use. Default is None.
-            output_parser: The output parser to use. Default is None.
-            prefix: The prefix to use in the prompt. Default is PREFIX.
-            suffix: The suffix to use in the prompt. Default is SUFFIX.
+            callback_manager: The callback manager to use.
+            output_parser: The output parser to use.
+            prefix: The prefix to use in the prompt.
+            suffix: The suffix to use in the prompt.
             format_instructions: The format instructions to use.
-                Default is FORMAT_INSTRUCTIONS.
-            ai_prefix: The prefix to use before AI output. Default is "AI".
+            ai_prefix: The prefix to use before AI output.
             human_prefix: The prefix to use before human output.
-                Default is "Human".
-            input_variables: The input variables to use. Default is None.
+            input_variables: The input variables to use.
             **kwargs: Any additional keyword arguments to pass to the agent.
 
         Returns:

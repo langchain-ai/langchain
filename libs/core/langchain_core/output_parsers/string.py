@@ -6,20 +6,20 @@ from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
 class StrOutputParser(BaseTransformOutputParser[str]):
-    """OutputParser that parses LLMResult into the top likely string."""
+    """OutputParser that parses `LLMResult` into the top likely string."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """StrOutputParser is serializable.
+        """`StrOutputParser` is serializable.
 
         Returns:
-            True
+            `True`
         """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "output_parser"]`

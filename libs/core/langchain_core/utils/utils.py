@@ -123,8 +123,8 @@ def guard_import(
 
     Args:
         module_name: The name of the module to import.
-        pip_name: The name of the module to install with pip. Defaults to `None`.
-        package: The package to import the module from. Defaults to `None`.
+        pip_name: The name of the module to install with pip.
+        package: The package to import the module from.
 
     Returns:
         The imported module.
@@ -155,11 +155,11 @@ def check_package_version(
 
     Args:
         package: The name of the package.
-        lt_version: The version must be less than this. Defaults to `None`.
-        lte_version: The version must be less than or equal to this. Defaults to `None`.
-        gt_version: The version must be greater than this. Defaults to `None`.
+        lt_version: The version must be less than this.
+        lte_version: The version must be less than or equal to this.
+        gt_version: The version must be greater than this.
         gte_version: The version must be greater than or equal to this.
-            Defaults to `None`.
+
 
     Raises:
         ValueError: If the package version does not meet the requirements.
@@ -218,7 +218,7 @@ def _build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
-    """Build "model_kwargs" param from Pydantic constructor values.
+    """Build `model_kwargs` param from Pydantic constructor values.
 
     Args:
         values: All init args passed in by user.
@@ -228,8 +228,8 @@ def _build_model_kwargs(
         Extra kwargs.
 
     Raises:
-        ValueError: If a field is specified in both values and extra_kwargs.
-        ValueError: If a field is specified in model_kwargs.
+        ValueError: If a field is specified in both `values` and `extra_kwargs`.
+        ValueError: If a field is specified in `model_kwargs`.
     """
     extra_kwargs = values.get("model_kwargs", {})
     for field_name in list(values):
@@ -267,6 +267,10 @@ def build_extra_kwargs(
 ) -> dict[str, Any]:
     """Build extra kwargs from values and extra_kwargs.
 
+    !!! danger "DON'T USE"
+        Kept for backwards-compatibility but should never have been public. Use the
+        internal `_build_model_kwargs` function instead.
+
     Args:
         extra_kwargs: Extra kwargs passed in by user.
         values: Values passed in by user.
@@ -276,9 +280,10 @@ def build_extra_kwargs(
         Extra kwargs.
 
     Raises:
-        ValueError: If a field is specified in both values and extra_kwargs.
-        ValueError: If a field is specified in model_kwargs.
+        ValueError: If a field is specified in both `values` and `extra_kwargs`.
+        ValueError: If a field is specified in `model_kwargs`.
     """
+    # DON'T USE! Kept for backwards-compatibility but should never have been public.
     for field_name in list(values):
         if field_name in extra_kwargs:
             msg = f"Found {field_name} supplied twice."
@@ -292,6 +297,7 @@ def build_extra_kwargs(
             )
             extra_kwargs[field_name] = values.pop(field_name)
 
+    # DON'T USE! Kept for backwards-compatibility but should never have been public.
     invalid_model_kwargs = all_required_field_names.intersection(extra_kwargs.keys())
     if invalid_model_kwargs:
         msg = (
@@ -300,6 +306,7 @@ def build_extra_kwargs(
         )
         raise ValueError(msg)
 
+    # DON'T USE! Kept for backwards-compatibility but should never have been public.
     return extra_kwargs
 
 

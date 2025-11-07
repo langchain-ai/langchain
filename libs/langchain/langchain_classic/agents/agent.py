@@ -105,10 +105,7 @@ class BaseSingleActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -124,7 +121,7 @@ class BaseSingleActionAgent(BaseModel):
                 along with observations.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not supported.
@@ -155,7 +152,7 @@ class BaseSingleActionAgent(BaseModel):
             kwargs: Additional arguments.
 
         Returns:
-            BaseSingleActionAgent: Agent object.
+            Agent object.
         """
         raise NotImplementedError
 
@@ -169,7 +166,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return dictionary representation of agent.
 
         Returns:
-            Dict: Dictionary representation of agent.
+            Dictionary representation of agent.
         """
         _dict = super().model_dump()
         try:
@@ -233,7 +230,7 @@ class BaseMultiActionAgent(BaseModel):
         """Get allowed tools.
 
         Returns:
-            list[str] | None: Allowed tools.
+            Allowed tools.
         """
         return None
 
@@ -278,10 +275,7 @@ class BaseMultiActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -297,7 +291,7 @@ class BaseMultiActionAgent(BaseModel):
                 along with observations.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not supported.
@@ -329,7 +323,7 @@ class BaseMultiActionAgent(BaseModel):
 
         Raises:
             NotImplementedError: If agent does not support saving.
-            ValueError: If file_path is not json or yaml.
+            ValueError: If `file_path` is not json or yaml.
 
         Example:
         ```python
@@ -388,8 +382,7 @@ class MultiActionAgentOutputParser(
             text: Text to parse.
 
         Returns:
-            Union[List[AgentAction], AgentFinish]:
-                List of agent actions or agent finish.
+            List of agent actions or agent finish.
         """
 
 
@@ -404,8 +397,8 @@ class RunnableAgent(BaseSingleActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -446,7 +439,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -482,7 +475,7 @@ class RunnableAgent(BaseSingleActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
@@ -512,8 +505,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Whether to stream from the runnable or not.
 
     If `True` then underlying LLM is invoked in a streaming fashion to make it possible
-        to get access to the individual LLM tokens when using stream_log with the Agent
-        Executor. If `False` then LLM is invoked in a non-streaming fashion and
+        to get access to the individual LLM tokens when using stream_log with the
+        `AgentExecutor`. If `False` then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -558,7 +551,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
@@ -594,7 +587,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Use streaming to make sure that the underlying LLM is invoked in a
             # streaming
             # fashion to make it possible to get access to the individual LLM tokens
-            # when using stream_log with the Agent Executor.
+            # when using stream_log with the AgentExecutor.
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
@@ -812,7 +805,7 @@ class Agent(BaseSingleActionAgent):
             **kwargs: User inputs.
 
         Returns:
-            Dict[str, Any]: Full inputs for the LLMChain.
+            Full inputs for the LLMChain.
         """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
@@ -820,10 +813,7 @@ class Agent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @model_validator(mode="after")
@@ -834,11 +824,11 @@ class Agent(BaseSingleActionAgent):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
-             and prompt is not a FewShotPromptTemplate or a PromptTemplate.
+                and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
         prompt = self.llm_chain.prompt
         if "agent_scratchpad" not in prompt.input_variables:
@@ -875,7 +865,7 @@ class Agent(BaseSingleActionAgent):
             tools: Tools to use.
 
         Returns:
-            BasePromptTemplate: Prompt template.
+            Prompt template.
         """
 
     @classmethod
@@ -910,7 +900,7 @@ class Agent(BaseSingleActionAgent):
             kwargs: Additional arguments.
 
         Returns:
-            Agent: Agent object.
+            Agent object.
         """
         cls._validate_tools(tools)
         llm_chain = LLMChain(
@@ -942,7 +932,7 @@ class Agent(BaseSingleActionAgent):
             **kwargs: User inputs.
 
         Returns:
-            AgentFinish: Agent finish object.
+            Agent finish object.
 
         Raises:
             ValueError: If `early_stopping_method` is not in ['force', 'generate'].
@@ -1054,9 +1044,9 @@ class AgentExecutor(Chain):
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
     If a string, the string itself will be sent to the LLM as an observation.
-    If a callable function, the function will be called with the exception
-     as an argument, and the result of that function will be passed to the agent
-      as an observation.
+    If a callable function, the function will be called with the exception as an
+    argument, and the result of that function will be passed to the agent as an
+    observation.
     """
     trim_intermediate_steps: (
         int | Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]]
@@ -1082,7 +1072,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Returns:
-            AgentExecutor: Agent executor object.
+            Agent executor object.
         """
         return cls(
             agent=agent,
@@ -1099,7 +1089,7 @@ class AgentExecutor(Chain):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
 
         Raises:
             ValueError: If allowed tools are different than provided tools.
@@ -1126,7 +1116,7 @@ class AgentExecutor(Chain):
             values: Values to validate.
 
         Returns:
-            Dict: Validated values.
+            Validated values.
         """
         agent = values.get("agent")
         if agent and isinstance(agent, Runnable):
@@ -1209,7 +1199,7 @@ class AgentExecutor(Chain):
             async_: Whether to run async. (Ignored)
 
         Returns:
-            AgentExecutorIterator: Agent executor iterator object.
+            Agent executor iterator object.
         """
         return AgentExecutorIterator(
             self,
@@ -1221,18 +1211,12 @@ class AgentExecutor(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return self._action_agent.input_keys
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
+        """Return the singular output key."""
         if self.return_intermediate_steps:
             return [*self._action_agent.return_values, "intermediate_steps"]
         return self._action_agent.return_values
@@ -1244,7 +1228,7 @@ class AgentExecutor(Chain):
             name: Name of tool.
 
         Returns:
-            BaseTool: Tool object.
+            Tool object.
         """
         return {tool.name: tool for tool in self.tools}[name]
 
@@ -1759,7 +1743,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Yields:
-            AddableDict: Addable dictionary.
+            Addable dictionary.
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
@@ -1790,7 +1774,7 @@ class AgentExecutor(Chain):
             kwargs: Additional arguments.
 
         Yields:
-            AddableDict: Addable dictionary.
+            Addable dictionary.
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(

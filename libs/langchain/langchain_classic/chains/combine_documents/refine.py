@@ -46,7 +46,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         ```python
         from langchain_classic.chains import RefineDocumentsChain, LLMChain
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         # This controls how each document will be formatted. Specifically,
         # it will be passed to `format_document` - see that function for more
@@ -55,11 +55,11 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             input_variables=["page_content"], template="{page_content}"
         )
         document_variable_name = "context"
-        llm = OpenAI()
+        model = OpenAI()
         # The prompt here should take as an input variable the
         # `document_variable_name`
         prompt = PromptTemplate.from_template("Summarize this content: {context}")
-        initial_llm_chain = LLMChain(llm=llm, prompt=prompt)
+        initial_llm_chain = LLMChain(llm=model, prompt=prompt)
         initial_response_name = "prev_response"
         # The prompt here should take as an input variable the
         # `document_variable_name` as well as `initial_response_name`
@@ -67,7 +67,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             "Here's your first summary: {prev_response}. "
             "Now add to it based on the following context: {context}"
         )
-        refine_llm_chain = LLMChain(llm=llm, prompt=prompt_refine)
+        refine_llm_chain = LLMChain(llm=model, prompt=prompt_refine)
         chain = RefineDocumentsChain(
             initial_llm_chain=initial_llm_chain,
             refine_llm_chain=refine_llm_chain,
@@ -96,10 +96,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
             _output_keys = [*_output_keys, "intermediate_steps"]

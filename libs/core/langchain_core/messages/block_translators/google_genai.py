@@ -105,7 +105,7 @@ def _convert_to_v1_from_genai_input(
     Called when message isn't an `AIMessage` or `model_provider` isn't set on
     `response_metadata`.
 
-    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
+    During the `content_blocks` parsing process, we wrap blocks not recognized as a v1
     block as a `'non_standard'` block with the original block stored in the `value`
     field. This function attempts to unpack those blocks and convert any blocks that
     might be GenAI format to v1 ContentBlocks.
@@ -282,7 +282,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     standard content blocks for returning.
 
     Args:
-        message: The AIMessage or AIMessageChunk to convert.
+        message: The `AIMessage` or `AIMessageChunk` to convert.
 
     Returns:
         List of standard content blocks derived from the message content.
@@ -368,7 +368,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     else:
                         # Assume it's raw base64 without data URI
                         try:
-                            # Validate base64 and decode for mime type detection
+                            # Validate base64 and decode for MIME type detection
                             decoded_bytes = base64.b64decode(url, validate=True)
 
                             image_url_b64_block = {
@@ -379,7 +379,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                             try:
                                 import filetype  # type: ignore[import-not-found] # noqa: PLC0415
 
-                                # Guess mime type based on file bytes
+                                # Guess MIME type based on file bytes
                                 mime_type = None
                                 kind = filetype.guess(decoded_bytes)
                                 if kind:
@@ -453,10 +453,13 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "status": status,  # type: ignore[typeddict-item]
                     "output": item.get("code_execution_result", ""),
                 }
+                server_tool_result_block["extras"] = {"block_type": item_type}
                 # Preserve original outcome in extras
                 if outcome is not None:
-                    server_tool_result_block["extras"] = {"outcome": outcome}
+                    server_tool_result_block["extras"]["outcome"] = outcome
                 converted_blocks.append(server_tool_result_block)
+            elif item_type == "text":
+                converted_blocks.append(cast("types.TextContentBlock", item))
             else:
                 # Unknown type, preserve as non-standard
                 converted_blocks.append({"type": "non_standard", "value": item})

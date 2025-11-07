@@ -20,28 +20,28 @@ def create_history_aware_retriever(
 
     Args:
         llm: Language model to use for generating a search term given chat history
-        retriever: RetrieverLike object that takes a string as input and outputs
-            a list of Documents.
+        retriever: `RetrieverLike` object that takes a string as input and outputs
+            a list of `Document` objects.
         prompt: The prompt used to generate the search query for the retriever.
 
     Returns:
         An LCEL Runnable. The runnable input must take in `input`, and if there
         is chat history should take it in the form of `chat_history`.
-        The Runnable output is a list of Documents
+        The `Runnable` output is a list of `Document` objects
 
     Example:
         ```python
         # pip install -U langchain langchain-community
 
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.chains import create_history_aware_retriever
         from langchain_classic import hub
 
         rephrase_prompt = hub.pull("langchain-ai/chat-langchain-rephrase")
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
         retriever = ...
         chat_retriever_chain = create_history_aware_retriever(
-            llm, retriever, rephrase_prompt
+            model, retriever, rephrase_prompt
         )
 
         chain.invoke({"input": "...", "chat_history": })

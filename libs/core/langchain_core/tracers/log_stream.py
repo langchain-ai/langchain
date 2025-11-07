@@ -96,10 +96,10 @@ class RunLogPatch:
     """Patch to the run log."""
 
     ops: list[dict[str, Any]]
-    """List of jsonpatch operations, which describe how to create the run state
+    """List of JSONPatch operations, which describe how to create the run state
     from an empty dict. This is the minimal representation of the log, designed to
     be serialized as JSON and sent over the wire to reconstruct the log on the other
-    side. Reconstruction of the state can be done with any jsonpatch-compliant library,
+    side. Reconstruction of the state can be done with any JSONPatch-compliant library,
     see https://jsonpatch.com for more information."""
 
     def __init__(self, *ops: dict[str, Any]) -> None:
@@ -190,7 +190,7 @@ class RunLog(RunLogPatch):
             other: The other `RunLog` to compare to.
 
         Returns:
-            True if the `RunLog`s are equal, False otherwise.
+            `True` if the `RunLog`s are equal, `False` otherwise.
         """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
@@ -264,7 +264,10 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         memory_stream = _MemoryStream[RunLogPatch](loop)
         self.lock = threading.Lock()
         self.send_stream = memory_stream.get_send_stream()
@@ -288,7 +291,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             *ops: The operations to send to the stream.
 
         Returns:
-            True if the patch was sent successfully, False if the stream is closed.
+            `True` if the patch was sent successfully, False if the stream is closed.
         """
         # We will likely want to wrap this in try / except at some point
         # to handle exceptions that might arise at run time.
@@ -368,7 +371,7 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             run: The Run to check.
 
         Returns:
-            True if the run should be included, False otherwise.
+            `True` if the run should be included, `False` otherwise.
         """
         if run.id == self.root_id:
             return False

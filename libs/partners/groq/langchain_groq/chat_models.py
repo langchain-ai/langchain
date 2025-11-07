@@ -57,6 +57,7 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq.version import __version__
 
 
@@ -79,13 +80,13 @@ class ChatGroq(BaseChatModel):
         ```
 
     Key init args — completion params:
-        model: str
+        model:
             Name of Groq model to use, e.g. `llama-3.1-8b-instant`.
-        temperature: float
+        temperature:
             Sampling temperature. Ranges from `0.0` to `1.0`.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
-        reasoning_format: Literal["parsed", "raw", "hidden] | None
+        reasoning_format:
             The format for reasoning output. Groq will default to `raw` if left
             undefined.
 
@@ -95,26 +96,26 @@ class ChatGroq(BaseChatModel):
             - `'raw'`: Includes reasoning within think tags (e.g.
                 `<think>{reasoning_content}</think>`).
             - `'hidden'`: Returns only the final answer content. Note: this only
-                supresses reasoning content in the response; the model will still perform
+                suppresses reasoning content in the response; the model will still perform
                 reasoning unless overridden in `reasoning_effort`.
 
             See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
             for more details and a list of supported models.
-        model_kwargs: Dict[str, Any]
+        model_kwargs:
             Holds any model parameters valid for create call not
             explicitly specified.
 
     Key init args — client params:
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int
+        max_retries:
             Max number of retries.
-        api_key: str | None
+        api_key:
             Groq API key. If not passed in will be read from env var `GROQ_API_KEY`.
-        base_url: str | None
+        base_url:
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
-        custom_get_token_ids: Callable[[str], list[int]] | None
+        custom_get_token_ids:
             Optional encoder to use for counting tokens.
 
     See full list of supported init args and their descriptions in the params
@@ -124,7 +125,7 @@ class ChatGroq(BaseChatModel):
         ```python
         from langchain_groq import ChatGroq
 
-        llm = ChatGroq(
+        model = ChatGroq(
             model="llama-3.1-8b-instant",
             temperature=0.0,
             max_retries=2,
@@ -138,7 +139,7 @@ class ChatGroq(BaseChatModel):
             ("system", "You are a helpful translator. Translate the user sentence to French."),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
         ```python
         AIMessage(content='The English sentence "I love programming" can
@@ -155,7 +156,7 @@ class ChatGroq(BaseChatModel):
     Stream:
         ```python
         # Streaming `text` for each content chunk received
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -173,7 +174,7 @@ class ChatGroq(BaseChatModel):
 
         ```python
         # Reconstructing a full response
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -195,7 +196,7 @@ class ChatGroq(BaseChatModel):
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
         ```
 
         ```python
@@ -228,7 +229,7 @@ class ChatGroq(BaseChatModel):
             location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-        model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
         ai_msg = model_with_tools.invoke("What is the population of NY?")
         ai_msg.tool_calls
         ```
@@ -260,7 +261,7 @@ class ChatGroq(BaseChatModel):
             rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
 
-        structured_model = llm.with_structured_output(Joke)
+        structured_model = model.with_structured_output(Joke)
         structured_model.invoke("Tell me a joke about cats")
         ```
 
@@ -276,7 +277,7 @@ class ChatGroq(BaseChatModel):
 
     Response metadata:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
@@ -299,14 +300,19 @@ class ChatGroq(BaseChatModel):
         ```
     """  # noqa: E501
 
-    client: Any = Field(default=None, exclude=True)  #: :meta private:
-    async_client: Any = Field(default=None, exclude=True)  #: :meta private:
+    client: Any = Field(default=None, exclude=True)
+
+    async_client: Any = Field(default=None, exclude=True)
+
     model_name: str = Field(alias="model")
     """Model name to use."""
+
     temperature: float = 0.7
     """What sampling temperature to use."""
+
     stop: list[str] | str | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+
     reasoning_format: Literal["parsed", "raw", "hidden"] | None = Field(default=None)
     """The format for reasoning output. Groq will default to raw if left undefined.
 
@@ -315,13 +321,14 @@ class ChatGroq(BaseChatModel):
         `additional_kwargs.reasoning_content` field of the response.
     - `'raw'`: Includes reasoning within think tags (e.g.
         `<think>{reasoning_content}</think>`).
-    - `'hidden'`: Returns only the final answer content. Note: this only supresses
+    - `'hidden'`: Returns only the final answer content. Note: this only suppresses
         reasoning content in the response; the model will still perform reasoning unless
         overridden in `reasoning_effort`.
 
     See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
     for more details and a list of supported models.
     """
+
     reasoning_effort: str | None = Field(default=None)
     """The level of effort the model will put into reasoning. Groq will default to
     enabling reasoning if left undefined.
@@ -330,32 +337,44 @@ class ChatGroq(BaseChatModel):
     for more details and a list of options and models that support setting a reasoning
     effort.
     """
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
+
     groq_api_key: SecretStr | None = Field(
         alias="api_key", default_factory=secret_from_env("GROQ_API_KEY", default=None)
     )
     """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
+
     groq_api_base: str | None = Field(
         alias="base_url", default_factory=from_env("GROQ_API_BASE", default=None)
     )
     """Base URL path for API requests. Leave blank if not using a proxy or service
-        emulator."""
+    emulator.
+    """
+
     # to support explicit proxy for Groq
     groq_proxy: str | None = Field(default_factory=from_env("GROQ_PROXY", default=None))
+
     request_timeout: float | tuple[float, float] | Any | None = Field(
         default=None, alias="timeout"
     )
     """Timeout for requests to Groq completion API. Can be float, `httpx.Timeout` or
-        None."""
+    `None`.
+    """
+
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+
     streaming: bool = False
     """Whether to stream the results or not."""
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+
     max_tokens: int | None = None
     """Maximum number of tokens to generate."""
+
     service_tier: Literal["on_demand", "flex", "auto"] = Field(default="on_demand")
     """Optional parameter that you can include to specify the service tier you'd like to
     use for requests.
@@ -370,12 +389,16 @@ class ChatGroq(BaseChatModel):
     See the [Groq documentation](https://console.groq.com/docs/flex-processing) for more
     details and a list of service tiers and descriptions.
     """
+
     default_headers: Mapping[str, str] | None = None
+
     default_query: Mapping[str, object] | None = None
+
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Any | None = None
     """Optional `httpx.Client`."""
+
     http_async_client: Any | None = None
     """Optional `httpx.AsyncClient`. Only used for async invocations. Must specify
         `http_client` as well if you'd like a custom client for sync invocations."""
@@ -825,22 +848,21 @@ class ChatGroq(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class (supported added in 0.1.9),
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
 
-                !!! warning "Behavior changed in 0.1.9"
-                    Added support for TypedDict class.
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
-                !!! warning "Behavior changed in 0.3.8"
+                !!! warning "Behavior changed in `langchain-groq` 0.3.8"
                     Added support for Groq's dedicated structured output feature via
                     `method="json_schema"`.
 
@@ -877,199 +899,210 @@ class ChatGroq(BaseChatModel):
                     `'json_mode'` does not support streaming responses stop sequences.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs:
-                Any additional parameters to pass to the
-                `langchain.runnable.Runnable` constructor.
+                Any additional parameters to pass to the `langchain.runnable.Runnable`
+                constructor.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if `include_raw` is False then Runnable outputs a dict.
-
-            If `include_raw` is True, then Runnable outputs a dict with keys:
-
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
 
-            ```python
-            from typing import Optional
+        ```python
+        from typing import Optional
 
-            from langchain_groq import ChatGroq
-            from pydantic import BaseModel, Field
-
-
-            class AnswerWithJustification(BaseModel):
-                '''An answer to the user question along with justification for the answer.'''
-
-                answer: str
-                # If we provide default values and/or descriptions for fields, these will be passed
-                # to the model. This is an important part of improving a model's ability to
-                # correctly return structured outputs.
-                justification: str | None = Field(default=None, description="A justification for the answer.")
+        from langchain_groq import ChatGroq
+        from pydantic import BaseModel, Field
 
 
-            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            answer: str
+            # If we provide default values and/or descriptions for fields, these will be passed
+            # to the model. This is an important part of improving a model's ability to
+            # correctly return structured outputs.
+            justification: str | None = Field(default=None, description="A justification for the answer.")
 
-            # -> AnswerWithJustification(
-            #     answer='They weigh the same',
-            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-            # )
-            ```
+
+        model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification)
+
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+        # -> AnswerWithJustification(
+        #     answer='They weigh the same',
+        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+        # )
+        ```
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
-            ```python
-            from langchain_groq import ChatGroq
-            from pydantic import BaseModel
+
+        ```python
+        from langchain_groq import ChatGroq
+        from pydantic import BaseModel
 
 
-            class AnswerWithJustification(BaseModel):
-                '''An answer to the user question along with justification for the answer.'''
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-                answer: str
-                justification: str
+            answer: str
+            justification: str
 
 
-            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-            structured_llm = llm.with_structured_output(
-                AnswerWithJustification,
-                include_raw=True,
-            )
+        model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+        structured_model = model.with_structured_output(
+            AnswerWithJustification,
+            include_raw=True,
+        )
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-            # -> {
-            #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-            #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-            #     'parsing_error': None
-            # }
-            ```
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+        # -> {
+        #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+        #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+        #     'parsing_error': None
+        # }
+        ```
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
-            ```python
-            from typing_extensions import Annotated, TypedDict
 
-            from langchain_groq import ChatGroq
+        ```python
+        from typing_extensions import Annotated, TypedDict
 
-
-            class AnswerWithJustification(TypedDict):
-                '''An answer to the user question along with justification for the answer.'''
-
-                answer: str
-                justification: Annotated[str | None, None, "A justification for the answer."]
+        from langchain_groq import ChatGroq
 
 
-            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+        class AnswerWithJustification(TypedDict):
+            '''An answer to the user question along with justification for the answer.'''
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            answer: str
+            justification: Annotated[str | None, None, "A justification for the answer."]
+
+
+        model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification)
+
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+        # -> {
+        #     'answer': 'They weigh the same',
+        #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+        # }
+        ```
+
+        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+
+        ```python
+        from langchain_groq import ChatGroq
+
+        oai_schema = {
+            'name': 'AnswerWithJustification',
+            'description': 'An answer to the user question along with justification for the answer.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'answer': {'type': 'string'},
+                    'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                },
+                'required': ['answer']
+            }
+
+            model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+            structured_model = model.with_structured_output(oai_schema)
+
+            structured_model.invoke(
+                "What weighs more a pound of bricks or a pound of feathers"
+            )
             # -> {
             #     'answer': 'They weigh the same',
             #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
             # }
-            ```
-
-        Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
-            ```python
-            from langchain_groq import ChatGroq
-
-            oai_schema = {
-                'name': 'AnswerWithJustification',
-                'description': 'An answer to the user question along with justification for the answer.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'answer': {'type': 'string'},
-                        'justification': {'description': 'A justification for the answer.', 'type': 'string'}
-                    },
-                    'required': ['answer']
-                }
-
-                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-                structured_llm = llm.with_structured_output(oai_schema)
-
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
-            ```
+        ```
 
         Example: schema=Pydantic class, method="json_schema", include_raw=False:
-            ```python
-            from typing import Optional
 
-            from langchain_groq import ChatGroq
-            from pydantic import BaseModel, Field
+        ```python
+        from typing import Optional
 
-
-            class AnswerWithJustification(BaseModel):
-                '''An answer to the user question along with justification for the answer.'''
-
-                answer: str
-                # If we provide default values and/or descriptions for fields, these will be passed
-                # to the model. This is an important part of improving a model's ability to
-                # correctly return structured outputs.
-                justification: str | None = Field(default=None, description="A justification for the answer.")
+        from langchain_groq import ChatGroq
+        from pydantic import BaseModel, Field
 
 
-            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-            structured_llm = llm.with_structured_output(
-                AnswerWithJustification,
-                method="json_schema",
-            )
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            answer: str
+            # If we provide default values and/or descriptions for fields, these will be passed
+            # to the model. This is an important part of improving a model's ability to
+            # correctly return structured outputs.
+            justification: str | None = Field(default=None, description="A justification for the answer.")
 
-            # -> AnswerWithJustification(
-            #     answer='They weigh the same',
-            #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-            # )
-            ```
+
+        model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+        structured_model = model.with_structured_output(
+            AnswerWithJustification,
+            method="json_schema",
+        )
+
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+        # -> AnswerWithJustification(
+        #     answer='They weigh the same',
+        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+        # )
+        ```
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
-            ```python
-            from langchain_groq import ChatGroq
-            from pydantic import BaseModel
+
+        ```python
+        from langchain_groq import ChatGroq
+        from pydantic import BaseModel
 
 
-            class AnswerWithJustification(BaseModel):
-                answer: str
-                justification: str
+        class AnswerWithJustification(BaseModel):
+            answer: str
+            justification: str
 
 
-            llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
-            structured_llm = llm.with_structured_output(
-                AnswerWithJustification, method="json_mode", include_raw=True
-            )
+        model = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+        structured_model = model.with_structured_output(
+            AnswerWithJustification, method="json_mode", include_raw=True
+        )
 
-            structured_llm.invoke(
-                "Answer the following question. "
-                "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                "What's heavier a pound of bricks or a pound of feathers?"
-            )
-            # -> {
-            #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-            #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-            #     'parsing_error': None
-            # }
-            ```
+        structured_model.invoke(
+            "Answer the following question. "
+            "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+            "What's heavier a pound of bricks or a pound of feathers?"
+        )
+        # -> {
+        #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+        #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+        #     'parsing_error': None
+        # }
+        ```
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
@@ -1187,6 +1220,17 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
+        # Translate v1 content
+        if message.response_metadata.get("output_version") == "v1":
+            new_content, new_additional_kwargs = _convert_from_v1_to_groq(
+                message.content_blocks, message.response_metadata.get("model_provider")
+            )
+            message = message.model_copy(
+                update={
+                    "content": new_content,
+                    "additional_kwargs": new_additional_kwargs,
+                }
+            )
         message_dict = {"role": "assistant", "content": message.content}
 
         # If content is a list of content blocks, filter out tool_call blocks
@@ -1268,6 +1312,22 @@ def _convert_chunk_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         if reasoning := _dict.get("reasoning"):
             additional_kwargs["reasoning_content"] = reasoning
+        if executed_tools := _dict.get("executed_tools"):
+            additional_kwargs["executed_tools"] = []
+            for executed_tool in executed_tools:
+                if executed_tool.get("output"):
+                    # Tool output duplicates query and other server tool call data
+                    additional_kwargs["executed_tools"].append(
+                        {
+                            k: executed_tool[k]
+                            for k in ("index", "output")
+                            if k in executed_tool
+                        }
+                    )
+                else:
+                    additional_kwargs["executed_tools"].append(
+                        {k: executed_tool[k] for k in executed_tool if k != "output"}
+                    )
         if usage := (chunk.get("x_groq") or {}).get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -1282,6 +1342,7 @@ def _convert_chunk_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
+            response_metadata={"model_provider": "groq"},
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -1313,6 +1374,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: dict = {}
         if reasoning := _dict.get("reasoning"):
             additional_kwargs["reasoning_content"] = reasoning
+        if executed_tools := _dict.get("executed_tools"):
+            additional_kwargs["executed_tools"] = executed_tools
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -1332,6 +1395,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
+            response_metadata={"model_provider": "groq"},
         )
     if role == "system":
         return SystemMessage(content=_dict.get("content", ""))

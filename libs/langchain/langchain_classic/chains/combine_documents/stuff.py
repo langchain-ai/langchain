@@ -35,10 +35,10 @@ def create_stuff_documents_chain(
 
     Args:
         llm: Language model.
-        prompt: Prompt template. Must contain input variable "context" (override by
+        prompt: Prompt template. Must contain input variable `"context"` (override by
             setting document_variable), which will be used for passing in the formatted
             documents.
-        output_parser: Output parser. Defaults to StrOutputParser.
+        output_parser: Output parser. Defaults to `StrOutputParser`.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
             documents. "page_content" will automatically retrieve the
@@ -47,18 +47,18 @@ def create_stuff_documents_chain(
             a prompt that only contains `Document.page_content`.
         document_separator: String separator to use between formatted document strings.
         document_variable_name: Variable name to use for the formatted documents in the
-            prompt. Defaults to "context".
+            prompt. Defaults to `"context"`.
 
     Returns:
-        An LCEL Runnable. The input is a dictionary that must have a "context" key that
-        maps to a List[Document], and any other input variables expected in the prompt.
-        The Runnable return type depends on output_parser used.
+        An LCEL Runnable. The input is a dictionary that must have a `"context"` key
+        that maps to a `list[Document]`, and any other input variables expected in the
+        prompt. The `Runnable` return type depends on `output_parser` used.
 
     Example:
         ```python
-        # pip install -U langchain langchain-community
+        # pip install -U langchain langchain-openai
 
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_core.documents import Document
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_classic.chains.combine_documents import (
@@ -68,8 +68,8 @@ def create_stuff_documents_chain(
         prompt = ChatPromptTemplate.from_messages(
             [("system", "What are everyone's favorite colors:\n\n{context}")]
         )
-        llm = ChatOpenAI(model="gpt-3.5-turbo")
-        chain = create_stuff_documents_chain(llm, prompt)
+        model = ChatOpenAI(model="gpt-3.5-turbo")
+        chain = create_stuff_documents_chain(model, prompt)
 
         docs = [
             Document(page_content="Jesse loves red but not yellow"),
@@ -123,7 +123,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         ```python
         from langchain_classic.chains import StuffDocumentsChain, LLMChain
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         # This controls how each document will be formatted. Specifically,
         # it will be passed to `format_document` - see that function for more
@@ -132,11 +132,11 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             input_variables=["page_content"], template="{page_content}"
         )
         document_variable_name = "context"
-        llm = OpenAI()
+        model = OpenAI()
         # The prompt here should take as an input variable the
         # `document_variable_name`
         prompt = PromptTemplate.from_template("Summarize this content: {context}")
-        llm_chain = LLMChain(llm=llm, prompt=prompt)
+        llm_chain = LLMChain(llm=model, prompt=prompt)
         chain = StuffDocumentsChain(
             llm_chain=llm_chain,
             document_prompt=document_prompt,

@@ -231,15 +231,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """
 
     client: Any = Field(default_factory=_get_openai_client)
-    """OpenAI or AzureOpenAI client."""
+    """`OpenAI` or `AzureOpenAI` client."""
     async_client: Any = None
-    """OpenAI or AzureOpenAI async client."""
+    """`OpenAI` or `AzureOpenAI` async client."""
     assistant_id: str
     """OpenAI assistant id."""
     check_every_ms: float = 1_000.0
     """Frequency with which to check run progress in ms."""
     as_agent: bool = False
-    """Use as a LangChain agent, compatible with the AgentExecutor."""
+    """Use as a LangChain agent, compatible with the `AgentExecutor`."""
 
     @model_validator(mode="after")
     def _validate_async_client(self) -> Self:
@@ -314,7 +314,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_metadata: Metadata to associate with new run.
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
-            config: Runnable config. Defaults to `None`.
+            config: Runnable config.
             **kwargs: Additional arguments.
 
         Returns:
@@ -446,7 +446,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 max_completion_tokens: Allow setting max_completion_tokens for this run.
                 max_prompt_tokens: Allow setting max_prompt_tokens for this run.
                 run_metadata: Metadata to associate with new run.
-            config: Runnable config. Defaults to `None`.
+            config: Runnable config.
             kwargs: Additional arguments.
 
         Returns:

@@ -34,7 +34,7 @@ from pydantic import BaseModel
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>. "
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
@@ -53,12 +53,12 @@ from pydantic import BaseModel
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -127,9 +127,9 @@ def create_openai_fn_runnable(
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
 
-        llm = ChatOpenAI(model="gpt-4", temperature=0)
-        structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
-        structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
+        model = ChatOpenAI(model="gpt-4", temperature=0)
+        structured_model = create_openai_fn_runnable([RecordPerson, RecordDog], model)
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken)
         # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
 
         ```
@@ -153,7 +153,7 @@ def create_openai_fn_runnable(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>."
+        "<https://docs.langchain.com/oss/python/langchain/models#structured-outputs>."
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
         "<https://python.langchain.com/docs/use_cases/extraction/>. "
@@ -172,12 +172,12 @@ def create_openai_fn_runnable(
                 punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
-            # Please reference to to the documentation of structured_output
+            # Please reference to the documentation of structured_output
             # to see an up to date list of which models support
             # with_structured_output.
-            model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-            structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats.
+            model = ChatAnthropic(model="claude-opus-4-1-20250805", temperature=0)
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -250,21 +250,21 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are an extraction algorithm. Please extract every possible instance"),
                 ('human', '{input}')
             ]
         )
-        structured_llm = create_structured_output_runnable(
+        structured_model = create_structured_output_runnable(
             RecordDog,
-            llm,
+            model,
             mode="openai-tools",
             enforce_function_usage=True,
             return_single=True
         )
-        structured_llm.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+        structured_model.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
         # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
         ```
 
@@ -303,15 +303,15 @@ def create_structured_output_runnable(
         }
 
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-        structured_llm = create_structured_output_runnable(
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(
             dog_schema,
-            llm,
+            model,
             mode="openai-tools",
             enforce_function_usage=True,
             return_single=True
         )
-        structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken")
         # -> {'name': 'Harry', 'color': 'brown', 'fav_food': 'chicken'}
         ```
 
@@ -330,9 +330,9 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-        structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
-        structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
+        structured_model.invoke("Harry was a chubby brown beagle who loved chicken")
         # -> Dog(name="Harry", color="brown", fav_food="chicken")
         ```
 
@@ -352,13 +352,13 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-        structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-functions")
         system = '''Extract information about any dogs mentioned in the user input.'''
         prompt = ChatPromptTemplate.from_messages(
             [("system", system), ("human", "{input}"),]
         )
-        chain = prompt | structured_llm
+        chain = prompt | structured_model
         chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
         # -> Dog(name="Harry", color="brown", fav_food="chicken")
         ```
@@ -379,8 +379,8 @@ def create_structured_output_runnable(
             color: str = Field(..., description="The dog's color")
             fav_food: str | None = Field(None, description="The dog's favorite food")
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-        structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        structured_model = create_structured_output_runnable(Dog, model, mode="openai-json")
         system = '''You are a world class assistant for extracting information in structured JSON formats. \
 
         Extract a valid JSON blob from the user input that matches the following JSON Schema:
@@ -389,7 +389,7 @@ def create_structured_output_runnable(
         prompt = ChatPromptTemplate.from_messages(
             [("system", system), ("human", "{input}"),]
         )
-        chain = prompt | structured_llm
+        chain = prompt | structured_model
         chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
 
         ```

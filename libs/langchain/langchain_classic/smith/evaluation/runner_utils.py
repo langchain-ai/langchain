@@ -153,7 +153,7 @@ class EvalError(dict):
     """Your architecture raised an error."""
 
     def __init__(self, Error: BaseException, **kwargs: Any) -> None:  # noqa: N803
-        """Initialize the EvalError with an error and additional attributes.
+        """Initialize the `EvalError` with an error and additional attributes.
 
         Args:
             Error: The error that occurred.
@@ -162,7 +162,7 @@ class EvalError(dict):
         super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute from the EvalError.
+        """Get an attribute from the `EvalError`.
 
         Args:
             name: The name of the attribute to get.
@@ -982,8 +982,7 @@ def _run_llm_or_chain(
         input_mapper: Optional function to map the input to the expected format.
 
     Returns:
-        Union[List[dict], List[str], List[LLMResult], List[ChatResult]]:
-          The outputs of the model or chain.
+        The outputs of the model or chain.
     """
     chain_or_llm = (
         "LLM" if isinstance(llm_or_chain_factory, BaseLanguageModel) else "Chain"
@@ -1372,7 +1371,7 @@ async def arun_on_dataset(
         dataset_version: Optional version of the dataset.
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to `{dataset_name}-{chain class name}-{datetime}`.
         project_metadata: Optional metadata to add to the project.
             Useful for storing information the test variant.
             (prompt version, model version, etc.)
@@ -1384,7 +1383,7 @@ async def arun_on_dataset(
         **kwargs: Should not be used, but is provided for backwards compatibility.
 
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        `dict` containing the run's project name and the resulting model outputs.
 
     Examples:
     ```python
@@ -1396,9 +1395,9 @@ async def arun_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain
@@ -1424,9 +1423,8 @@ async def arun_on_dataset(
         evaluation=evaluation_config,
     )
     ```
-    You can also create custom evaluators by subclassing the
-    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-    or LangSmith's `RunEvaluator` classes.
+    You can also create custom evaluators by subclassing the `StringEvaluator or
+    LangSmith's `RunEvaluator` classes.
 
     ```python
     from typing import Optional
@@ -1547,7 +1545,7 @@ def run_on_dataset(
         dataset_version: Optional version of the dataset.
         concurrency_level: The number of async tasks to run concurrently.
         project_name: Name of the project to store the traces in.
-            Defaults to {dataset_name}-{chain class name}-{datetime}.
+            Defaults to `{dataset_name}-{chain class name}-{datetime}`.
         project_metadata: Optional metadata to add to the project.
             Useful for storing information the test variant.
             (prompt version, model version, etc.)
@@ -1559,7 +1557,7 @@ def run_on_dataset(
         **kwargs: Should not be used, but is provided for backwards compatibility.
 
     Returns:
-        A dictionary containing the run's project name and the resulting model outputs.
+        `dict` containing the run's project name and the resulting model outputs.
 
     Examples:
     ```python
@@ -1571,9 +1569,9 @@ def run_on_dataset(
     # Chains may have memory. Passing in a constructor function lets the
     # evaluation framework avoid cross-contamination between runs.
     def construct_chain():
-        llm = ChatOpenAI(temperature=0)
+        model = ChatOpenAI(temperature=0)
         chain = LLMChain.from_string(
-            llm,
+            model,
             "What's the answer to {your_input_key}"
         )
         return chain
@@ -1600,9 +1598,8 @@ def run_on_dataset(
     )
     ```
 
-    You can also create custom evaluators by subclassing the
-    `StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-    or LangSmith's `RunEvaluator` classes.
+    You can also create custom evaluators by subclassing the `StringEvaluator` or
+    LangSmith's `RunEvaluator` classes.
 
     ```python
     from typing import Optional

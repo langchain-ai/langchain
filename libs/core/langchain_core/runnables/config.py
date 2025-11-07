@@ -75,26 +75,26 @@ class RunnableConfig(TypedDict, total=False):
     max_concurrency: int | None
     """
     Maximum number of parallel calls to make. If not provided, defaults to
-    ThreadPoolExecutor's default.
+    `ThreadPoolExecutor`'s default.
     """
 
     recursion_limit: int
     """
-    Maximum number of times a call can recurse. If not provided, defaults to 25.
+    Maximum number of times a call can recurse. If not provided, defaults to `25`.
     """
 
     configurable: dict[str, Any]
     """
-    Runtime values for attributes previously made configurable on this Runnable,
-    or sub-Runnables, through .configurable_fields() or .configurable_alternatives().
-    Check .output_schema() for a description of the attributes that have been made
+    Runtime values for attributes previously made configurable on this `Runnable`,
+    or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+    Check `output_schema` for a description of the attributes that have been made
     configurable.
     """
 
     run_id: uuid.UUID | None
     """
     Unique identifier for the tracer run for this call. If not provided, a new UUID
-        will be generated.
+    will be generated.
     """
 
 
@@ -193,7 +193,7 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
     Args:
-        config: The config to ensure. Defaults to `None`.
+        config: The config to ensure.
 
     Returns:
         The ensured config.
@@ -412,7 +412,7 @@ def call_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -446,7 +446,7 @@ def acall_func_with_variable_args(
         func: The function to call.
         input: The input to the function.
         config: The config to pass to the function.
-        run_manager: The run manager to pass to the function. Defaults to `None`.
+        run_manager: The run manager to pass to the function.
         **kwargs: The keyword arguments to pass to the function.
 
     Returns:
@@ -527,16 +527,15 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         self,
         fn: Callable[..., T],
         *iterables: Iterable[Any],
-        timeout: float | None = None,
-        chunksize: int = 1,
+        **kwargs: Any,
     ) -> Iterator[T]:
         """Map a function to multiple iterables.
 
         Args:
             fn: The function to map.
             *iterables: The iterables to map over.
-            timeout: The timeout for the map. Defaults to `None`.
-            chunksize: The chunksize for the map. Defaults to 1.
+            timeout: The timeout for the map.
+            chunksize: The chunksize for the map.
 
         Returns:
             The iterator for the mapped function.
@@ -549,8 +548,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         return super().map(
             _wrapped_fn,
             *iterables,
-            timeout=timeout,
-            chunksize=chunksize,
+            **kwargs,
         )
 
 

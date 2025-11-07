@@ -49,30 +49,30 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
     Key init args — completion params:
-        azure_deployment: str
+        azure_deployment:
             Name of Azure OpenAI deployment to use.
-        temperature: float
+        temperature:
             Sampling temperature.
-        max_tokens: int | None
+        max_tokens:
             Max number of tokens to generate.
-        logprobs: bool | None
+        logprobs:
             Whether to return logprobs.
 
     Key init args — client params:
-        api_version: str
+        api_version:
             Azure OpenAI REST API version to use (distinct from the version of the
             underlying model). [See more on the different versions.](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning)
-        timeout: Union[float, Tuple[float, float], Any, None]
+        timeout:
             Timeout for requests.
-        max_retries: int | None
+        max_retries:
             Max number of retries.
-        organization: str | None
+        organization:
             OpenAI organization ID. If not passed in will be read from env
             var `OPENAI_ORG_ID`.
-        model: str | None
+        model:
             The name of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g. `'gpt-4'`, `'gpt-35-turbo'`, etc.
-        model_version: str | None
+        model_version:
             The version of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g., `'0125'`, `'0125-preview'`, etc.
 
@@ -82,7 +82,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```python
         from langchain_openai import AzureChatOpenAI
 
-        llm = AzureChatOpenAI(
+        model = AzureChatOpenAI(
             azure_deployment="your-deployment",
             api_version="2024-05-01-preview",
             temperature=0,
@@ -127,7 +127,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             ),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         ```python
@@ -172,7 +172,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Stream:
         ```python
-        for chunk in llm.stream(messages):
+        for chunk in model.stream(messages):
             print(chunk.text, end="")
         ```
 
@@ -200,7 +200,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -221,13 +221,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Async:
         ```python
-        await llm.ainvoke(messages)
+        await model.ainvoke(messages)
 
         # stream:
-        # async for chunk in (await llm.astream(messages))
+        # async for chunk in (await model.astream(messages))
 
         # batch:
-        # await llm.abatch([messages])
+        # await model.abatch([messages])
         ```
 
     Tool calling:
@@ -251,8 +251,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
 
-        llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-        ai_msg = llm_with_tools.invoke(
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke(
             "Which city is hotter today and which is bigger: LA or NY?"
         )
         ai_msg.tool_calls
@@ -300,8 +300,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
 
-        structured_llm = llm.with_structured_output(Joke)
-        structured_llm.invoke("Tell me a joke about cats")
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
         ```
 
         ```python
@@ -316,8 +316,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     JSON mode:
         ```python
-        json_llm = llm.bind(response_format={"type": "json_object"})
-        ai_msg = json_llm.invoke(
+        json_model = model.bind(response_format={"type": "json_object"})
+        ai_msg = json_model.invoke(
             "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
         )
         ai_msg.content
@@ -344,7 +344,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 },
             ]
         )
-        ai_msg = llm.invoke([message])
+        ai_msg = model.invoke([message])
         ai_msg.content
         ```
 
@@ -354,7 +354,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Token usage:
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.usage_metadata
         ```
 
@@ -363,8 +363,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ```
     Logprobs:
         ```python
-        logprobs_llm = llm.bind(logprobs=True)
-        ai_msg = logprobs_llm.invoke(messages)
+        logprobs_model = model.bind(logprobs=True)
+        ai_msg = logprobs_model.invoke(messages)
         ai_msg.response_metadata["logprobs"]
         ```
 
@@ -422,7 +422,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Response metadata
         ```python
-        ai_msg = llm.invoke(messages)
+        ai_msg = model.invoke(messages)
         ai_msg.response_metadata
         ```
 
@@ -572,7 +572,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "azure_openai"]`
+        """
         return ["langchain", "chat_models", "azure_openai"]
 
     @property
@@ -833,17 +837,19 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class,
-                - an OpenAI function/tool schema.
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - A Pydantic class,
+                - Or an OpenAI function/tool schema.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -863,12 +869,18 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 support which methods [here](https://platform.openai.com/docs/guides/structured-outputs/function-calling-vs-response-format).
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             strict:
 
                 - True:
@@ -911,16 +923,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
                         \"\"\"Get weather at a location.\"\"\"
                         pass
 
-                    llm = init_chat_model("openai:gpt-4o-mini")
+                    model = init_chat_model("openai:gpt-4o-mini")
 
-                    structured_llm = llm.with_structured_output(
+                    structured_model = model.with_structured_output(
                         ResponseSchema,
                         tools=[get_weather],
                         strict=True,
                         include_raw=True,
                     )
 
-                    structured_llm.invoke("What's the weather in Boston?")
+                    structured_model.invoke("What's the weather in Boston?")
                     ```
 
                     ```python
@@ -934,31 +946,26 @@ class AzureChatOpenAI(BaseChatOpenAI):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs
-            an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
-            - `'raw'`: BaseMessage
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        !!! warning "Behavior changed in 0.1.20"
-            Added support for TypedDict class `schema`.
-
-        !!! warning "Behavior changed in 0.1.21"
-            Support for `strict` argument added.
-            Support for `method="json_schema"` added.
-
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.0"
             `method` default changed from "function_calling" to "json_schema".
 
-        !!! warning "Behavior changed in 0.3.12"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.12"
             Support for `tools` added.
 
-        !!! warning "Behavior changed in 0.3.21"
+        !!! warning "Behavior changed in `langchain-openai` 0.3.21"
             Pass `kwargs` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
@@ -986,10 +993,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -1017,12 +1026,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 )
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="function_calling"
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
 
@@ -1046,12 +1057,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 justification: str
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -1078,10 +1091,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 ]
 
 
-            llm = AzureChatOpenAI(azure_deployment="...", model="gpt-4o", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = AzureChatOpenAI(
+                azure_deployment="...", model="gpt-4o", temperature=0
+            )
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "What weighs more a pound of bricks or a pound of feathers"
             )
             # -> {
@@ -1107,14 +1122,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'required': ['answer']
                 }
 
-                llm = AzureChatOpenAI(
+                model = AzureChatOpenAI(
                     azure_deployment="...",
                     model="gpt-4o",
                     temperature=0,
                 )
-                structured_llm = llm.with_structured_output(oai_schema)
+                structured_model = model.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
+                structured_model.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
                 )
                 # -> {
@@ -1135,16 +1150,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 justification: str
 
 
-            llm = AzureChatOpenAI(
+            model = AzureChatOpenAI(
                 azure_deployment="...",
                 model="gpt-4o",
                 temperature=0,
             )
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"
@@ -1159,11 +1174,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             ```python
-            structured_llm = llm.with_structured_output(
+            structured_model = model.with_structured_output(
                 method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"

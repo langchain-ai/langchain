@@ -294,7 +294,7 @@ class ChatOllama(BaseChatModel):
         ```python
         from langchain_ollama import ChatOllama
 
-        llm = ChatOllama(
+        model = ChatOllama(
             model="gpt-oss:20b",
             validate_model_on_init=True,
             temperature=0.8,
@@ -309,7 +309,7 @@ class ChatOllama(BaseChatModel):
             ("system", "You are a helpful translator. Translate the user sentence to French."),
             ("human", "I love programming."),
         ]
-        llm.invoke(messages)
+        model.invoke(messages)
         ```
 
         ```python
@@ -318,7 +318,7 @@ class ChatOllama(BaseChatModel):
 
     Stream:
         ```python
-        for chunk in llm.stream("Return the words Hello World!"):
+        for chunk in model.stream("Return the words Hello World!"):
             print(chunk.text, end="")
         ```
 
@@ -331,7 +331,7 @@ class ChatOllama(BaseChatModel):
         ```
 
         ```python
-        stream = llm.stream(messages)
+        stream = model.stream(messages)
         full = next(stream)
         for chunk in stream:
             full += chunk
@@ -359,7 +359,7 @@ class ChatOllama(BaseChatModel):
 
     Async:
         ```python
-        await llm.ainvoke("Hello how are you!")
+        await model.ainvoke("Hello how are you!")
         ```
 
         ```python
@@ -383,7 +383,7 @@ class ChatOllama(BaseChatModel):
         ```
 
         ```python
-        async for chunk in llm.astream("Say hello world!"):
+        async for chunk in model.astream("Say hello world!"):
             print(chunk.content)
         ```
 
@@ -396,7 +396,7 @@ class ChatOllama(BaseChatModel):
 
         ```python
         messages = [("human", "Say hello world!"), ("human", "Say goodbye world!")]
-        await llm.abatch(messages)
+        await model.abatch(messages)
         ```
 
         ```python
@@ -440,8 +440,8 @@ class ChatOllama(BaseChatModel):
 
     JSON mode:
         ```python
-        json_llm = ChatOllama(format="json")
-        llm.invoke(
+        json_model = ChatOllama(format="json")
+        json_model.invoke(
             "Return a query for the weather in a random location and time of day with two keys: location and time_of_day. "
             "Respond using JSON only."
         ).content
@@ -495,18 +495,18 @@ class ChatOllama(BaseChatModel):
         ```python
         from langchain_ollama import ChatOllama
 
-        llm = ChatOllama(
+        model = ChatOllama(
             model="deepseek-r1:8b",
             validate_model_on_init=True,
             reasoning=True,
         )
 
-        llm.invoke("how many r in the word strawberry?")
+        model.invoke("how many r in the word strawberry?")
 
         # or, on an invocation basis:
 
-        llm.invoke("how many r in the word strawberry?", reasoning=True)
-        # or llm.stream("how many r in the word strawberry?", reasoning=True)
+        model.invoke("how many r in the word strawberry?", reasoning=True)
+        # or model.stream("how many r in the word strawberry?", reasoning=True)
 
         # If not provided, the invocation will default to the ChatOllama reasoning
         # param provided (None by default).
@@ -543,7 +543,7 @@ class ChatOllama(BaseChatModel):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in Ollama locally on initialization.
 
-    !!! version-added "Added in version 0.3.4"
+    !!! version-added "Added in `langchain-ollama` 0.3.4"
     """
 
     mirostat: int | None = None
@@ -1258,17 +1258,19 @@ class ChatOllama(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - a Pydantic class,
-                - a JSON schema
-                - a `TypedDict` class
-                - an OpenAI function/tool schema.
+                - An OpenAI function/tool schema.
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or `TypedDict` class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
 
             method: The method for steering model generation, one of:
 
@@ -1282,30 +1284,39 @@ class ChatOllama(BaseChatModel):
                     desired schema into the model call.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys `'raw'`, `'parsed'`, and `'parsing_error'`.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If `include_raw` is False and `schema` is a Pydantic class, Runnable outputs an instance of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is False then Runnable outputs a dict.
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            If `include_raw` is True, then Runnable outputs a dict with keys:
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
-            - `'raw'`: `BaseMessage`
-            - `'parsed'`: None if there was a parsing error, otherwise the type depends on the `schema` as described above.
-            - `'parsing_error'`: BaseException | None
-
-        !!! warning "Behavior changed in 0.2.2"
+        !!! warning "Behavior changed in `langchain-ollama` 0.2.2"
             Added support for structured output API via `format` parameter.
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-ollama` 0.3.0"
             Updated default `method` to `'json_schema'`.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"
@@ -1327,10 +1338,10 @@ class ChatOllama(BaseChatModel):
                 )
 
 
-            llm = ChatOllama(model="llama3.1", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatOllama(model="llama3.1", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
 
             # -> AnswerWithJustification(
             #     answer='They weigh the same',
@@ -1352,13 +1363,13 @@ class ChatOllama(BaseChatModel):
                 justification: str
 
 
-            llm = ChatOllama(model="llama3.1", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOllama(model="llama3.1", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification,
                 include_raw=True,
             )
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
             # -> {
             #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
             #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1385,13 +1396,13 @@ class ChatOllama(BaseChatModel):
                 )
 
 
-            llm = ChatOllama(model="llama3.1", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOllama(model="llama3.1", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification,
                 method="function_calling",
             )
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
 
             # -> AnswerWithJustification(
             #     answer='They weigh the same',
@@ -1414,10 +1425,10 @@ class ChatOllama(BaseChatModel):
                 justification: Annotated[str | None, None, "A justification for the answer."]
 
 
-            llm = ChatOllama(model="llama3.1", temperature=0)
-            structured_llm = llm.with_structured_output(AnswerWithJustification)
+            model = ChatOllama(model="llama3.1", temperature=0)
+            structured_model = model.with_structured_output(AnswerWithJustification)
 
-            structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+            structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
             # -> {
             #     'answer': 'They weigh the same',
             #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -1441,10 +1452,10 @@ class ChatOllama(BaseChatModel):
                     'required': ['answer']
                 }
 
-                llm = ChatOllama(model="llama3.1", temperature=0)
-                structured_llm = llm.with_structured_output(oai_schema)
+                model = ChatOllama(model="llama3.1", temperature=0)
+                structured_model = model.with_structured_output(oai_schema)
 
-                structured_llm.invoke(
+                structured_model.invoke(
                     "What weighs more a pound of bricks or a pound of feathers"
                 )
                 # -> {
@@ -1465,12 +1476,12 @@ class ChatOllama(BaseChatModel):
                 justification: str
 
 
-            llm = ChatOllama(model="llama3.1", temperature=0)
-            structured_llm = llm.with_structured_output(
+            model = ChatOllama(model="llama3.1", temperature=0)
+            structured_model = model.with_structured_output(
                 AnswerWithJustification, method="json_mode", include_raw=True
             )
 
-            structured_llm.invoke(
+            structured_model.invoke(
                 "Answer the following question. "
                 "Make sure to return a JSON blob with keys 'answer' and 'justification'.\\n\\n"
                 "What's heavier a pound of bricks or a pound of feathers?"

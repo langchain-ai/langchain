@@ -84,9 +84,9 @@ class LLMMathChain(Chain):
                     )
                 )
 
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
             tools = [calculator]
-            llm_with_tools = llm.bind_tools(tools, tool_choice="any")
+            model_with_tools = model.bind_tools(tools, tool_choice="any")
 
             class ChainState(TypedDict):
                 \"\"\"LangGraph state.\"\"\"
@@ -95,11 +95,11 @@ class LLMMathChain(Chain):
 
             async def acall_chain(state: ChainState, config: RunnableConfig):
                 last_message = state["messages"][-1]
-                response = await llm_with_tools.ainvoke(state["messages"], config)
+                response = await model_with_tools.ainvoke(state["messages"], config)
                 return {"messages": [response]}
 
             async def acall_model(state: ChainState, config: RunnableConfig):
-                response = await llm.ainvoke(state["messages"], config)
+                response = await model.ainvoke(state["messages"], config)
                 return {"messages": [response]}
 
             graph_builder = StateGraph(ChainState)
@@ -145,7 +145,7 @@ class LLMMathChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import LLMMathChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         llm_math = LLMMathChain.from_llm(OpenAI())
         ```
@@ -156,8 +156,8 @@ class LLMMathChain(Chain):
     """[Deprecated] LLM wrapper to use."""
     prompt: BasePromptTemplate = PROMPT
     """[Deprecated] Prompt to use to translate to python if necessary."""
-    input_key: str = "question"  #: :meta private:
-    output_key: str = "answer"  #: :meta private:
+    input_key: str = "question"
+    output_key: str = "answer"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -189,18 +189,12 @@ class LLMMathChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect output key.
-
-        :meta private:
-        """
+        """Expect output key."""
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:

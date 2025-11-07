@@ -92,11 +92,15 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of a `ChatModel`.
+    Messages are the inputs and outputs of a chat model.
+
+    Examples include [`HumanMessage`][langchain.messages.HumanMessage],
+    [`AIMessage`][langchain.messages.AIMessage], and
+    [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
     content: str | list[str | dict]
-    """The string contents of the message."""
+    """The contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
@@ -159,12 +163,12 @@ class BaseMessage(Serializable):
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize `BaseMessage`.
+        """Initialize a `BaseMessage`.
 
         Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
             content_blocks: Typed standard content.
             **kwargs: Additional arguments to pass to the parent class.
         """
@@ -184,7 +188,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
             `["langchain", "schema", "messages"]`
@@ -195,7 +199,7 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        !!! version-added "Added in version 1.0.0"
+        !!! version-added "Added in `langchain-core` 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
@@ -262,7 +266,7 @@ class BaseMessage(Serializable):
         Can be used as both property (`message.text`) and method (`message.text()`).
 
         !!! deprecated
-            As of langchain-core 1.0.0, calling `.text()` as a method is deprecated.
+            As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
             Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
@@ -307,7 +311,7 @@ class BaseMessage(Serializable):
 
         Args:
             html: Whether to format the message as HTML. If `True`, the message will be
-                formatted with HTML tags. Default is False.
+                formatted with HTML tags.
 
         Returns:
             A pretty representation of the message.
@@ -464,7 +468,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title. Default is False.
+        bold: Whether to bold the title.
 
     Returns:
         The title representation.

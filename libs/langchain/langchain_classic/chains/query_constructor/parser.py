@@ -112,7 +112,7 @@ class QueryTransformer(Transformer):
             args: The arguments passed to the function.
 
         Returns:
-            FilterDirective: The filter directive.
+            The filter directive.
 
         Raises:
             ValueError: If the function is a comparator and the first arg is not in the

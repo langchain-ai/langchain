@@ -12,12 +12,12 @@ chain against specified criteria.
 Examples:
 --------
 Using a predefined criterion:
->>> from langchain_community.llms import OpenAI
+>>> from langchain_openai import OpenAI
 >>> from langchain_classic.evaluation.criteria import CriteriaEvalChain
 
->>> llm = OpenAI()
+>>> model = OpenAI()
 >>> criteria = "conciseness"
->>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+>>> chain = CriteriaEvalChain.from_llm(llm=model, criteria=criteria)
 >>> chain.evaluate_strings(
         prediction="The answer is 42.",
         reference="42",
@@ -26,10 +26,10 @@ Using a predefined criterion:
 
 Using a custom criterion:
 
->>> from langchain_community.llms import OpenAI
+>>> from langchain_openai import OpenAI
 >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
 
->>> llm = OpenAI()
+>>> model = OpenAI()
 >>> criteria = {
        "hallucination": (
             "Does this submission contain information"
@@ -37,7 +37,7 @@ Using a custom criterion:
         ),
     }
 >>> chain = LabeledCriteriaEvalChain.from_llm(
-        llm=llm,
+        llm=model,
         criteria=criteria,
         )
 >>> chain.evaluate_strings(

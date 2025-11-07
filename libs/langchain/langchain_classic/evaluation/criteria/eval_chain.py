@@ -190,9 +190,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     --------
     >>> from langchain_anthropic import ChatAnthropic
     >>> from langchain_classic.evaluation.criteria import CriteriaEvalChain
-    >>> llm = ChatAnthropic(temperature=0)
+    >>> model = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
-    >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+    >>> evaluator = CriteriaEvalChain.from_llm(llm=model, criteria=criteria)
     >>> evaluator.evaluate_strings(
     ...     prediction="Imagine an ice cream flavor for the color aquamarine",
     ...     input="Tell me an idea",
@@ -205,10 +205,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     >>> from langchain_openai import ChatOpenAI
     >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
-    >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> model = ChatOpenAI(model="gpt-4", temperature=0)
     >>> criteria = "correctness"
     >>> evaluator = LabeledCriteriaEvalChain.from_llm(
-    ...     llm=llm,
+    ...     llm=model,
     ...     criteria=criteria,
     ... )
     >>> evaluator.evaluate_strings(
@@ -228,7 +228,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """The parser to use to map the output to a structured result."""
     criterion_name: str
     """The name of the criterion being evaluated."""
-    output_key: str = "results"  #: :meta private:
+    output_key: str = "results"
 
     @classmethod
     @override
@@ -347,7 +347,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         --------
         >>> from langchain_openai import OpenAI
         >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
-        >>> llm = OpenAI()
+        >>> model = OpenAI()
         >>> criteria = {
                 "hallucination": (
                     "Does this submission contain information"
@@ -355,7 +355,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                 ),
             }
         >>> chain = LabeledCriteriaEvalChain.from_llm(
-                llm=llm,
+                llm=model,
                 criteria=criteria,
             )
         """
@@ -433,9 +433,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         Examples:
             >>> from langchain_openai import OpenAI
             >>> from langchain_classic.evaluation.criteria import CriteriaEvalChain
-            >>> llm = OpenAI()
+            >>> model = OpenAI()
             >>> criteria = "conciseness"
-            >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+            >>> chain = CriteriaEvalChain.from_llm(llm=model, criteria=criteria)
             >>> chain.evaluate_strings(
                     prediction="The answer is 42.",
                     reference="42",
@@ -485,9 +485,9 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         Examples:
             >>> from langchain_openai import OpenAI
             >>> from langchain_classic.evaluation.criteria import CriteriaEvalChain
-            >>> llm = OpenAI()
+            >>> model = OpenAI()
             >>> criteria = "conciseness"
-            >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+            >>> chain = CriteriaEvalChain.from_llm(llm=model, criteria=criteria)
             >>> await chain.aevaluate_strings(
                     prediction="The answer is 42.",
                     reference="42",
@@ -569,7 +569,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         --------
         >>> from langchain_openai import OpenAI
         >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
-        >>> llm = OpenAI()
+        >>> model = OpenAI()
         >>> criteria = {
                 "hallucination": (
                     "Does this submission contain information"
@@ -577,7 +577,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
                 ),
             }
         >>> chain = LabeledCriteriaEvalChain.from_llm(
-                llm=llm,
+                llm=model,
                 criteria=criteria,
             )
         """

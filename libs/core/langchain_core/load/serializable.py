@@ -25,9 +25,9 @@ class BaseSerialized(TypedDict):
     id: list[str]
     """The unique identifier of the object."""
     name: NotRequired[str]
-    """The name of the object. Optional."""
+    """The name of the object."""
     graph: NotRequired[dict[str, Any]]
-    """The graph of the object. Optional."""
+    """The graph of the object."""
 
 
 class SerializedConstructor(BaseSerialized):
@@ -52,7 +52,7 @@ class SerializedNotImplemented(BaseSerialized):
     type: Literal["not_implemented"]
     """The type of the object. Must be `'not_implemented'`."""
     repr: str | None
-    """The representation of the object. Optional."""
+    """The representation of the object."""
 
 
 def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
@@ -61,7 +61,7 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     Args:
         value: The value.
         key: The key.
-        model: The pydantic model.
+        model: The Pydantic model.
 
     Returns:
         Whether the value is different from the default.
@@ -93,18 +93,21 @@ class Serializable(BaseModel, ABC):
     It relies on the following methods and properties:
 
     - `is_lc_serializable`: Is this class serializable?
-        By design, even if a class inherits from Serializable, it is not serializable by
-        default. This is to prevent accidental serialization of objects that should not
-        be serialized.
-    - `get_lc_namespace`: Get the namespace of the langchain object.
+        By design, even if a class inherits from `Serializable`, it is not serializable
+        by default. This is to prevent accidental serialization of objects that should
+        not be serialized.
+    - `get_lc_namespace`: Get the namespace of the LangChain object.
+
         During deserialization, this namespace is used to identify
         the correct class to instantiate.
+
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
-        During deserialization an additional mapping is handle
-        classes that have moved or been renamed across package versions.
+        During deserialization an additional mapping is handle classes that have moved
+        or been renamed across package versions.
+
     - `lc_secrets`: A map of constructor argument names to secret ids.
     - `lc_attributes`: List of additional attribute names that should be included
-      as part of the serialized representation.
+        as part of the serialized representation.
     """
 
     # Remove default BaseModel init docstring.
@@ -116,24 +119,24 @@ class Serializable(BaseModel, ABC):
     def is_lc_serializable(cls) -> bool:
         """Is this class serializable?
 
-        By design, even if a class inherits from Serializable, it is not serializable by
-        default. This is to prevent accidental serialization of objects that should not
-        be serialized.
+        By design, even if a class inherits from `Serializable`, it is not serializable
+        by default. This is to prevent accidental serialization of objects that should
+        not be serialized.
 
         Returns:
-            Whether the class is serializable. Default is False.
+            Whether the class is serializable. Default is `False`.
         """
         return False
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        namespace is `["langchain", "llms", "openai"]`
 
         Returns:
-            The namespace as a list of strings.
+            The namespace.
         """
         return cls.__module__.split(".")
 
@@ -141,8 +144,7 @@ class Serializable(BaseModel, ABC):
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example,
-            {"openai_api_key": "OPENAI_API_KEY"}
+        For example, `{"openai_api_key": "OPENAI_API_KEY"}`
         """
         return {}
 
@@ -151,6 +153,7 @@ class Serializable(BaseModel, ABC):
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.
+
         Default is an empty dictionary.
         """
         return {}
@@ -194,7 +197,7 @@ class Serializable(BaseModel, ABC):
             ValueError: If the class has deprecated attributes.
 
         Returns:
-            A json serializable object or a SerializedNotImplemented object.
+            A JSON serializable object or a `SerializedNotImplemented` object.
         """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
@@ -269,7 +272,7 @@ class Serializable(BaseModel, ABC):
         """Serialize a "not implemented" object.
 
         Returns:
-            SerializedNotImplemented.
+            `SerializedNotImplemented`.
         """
         return to_json_not_implemented(self)
 
@@ -284,8 +287,8 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
 
     Returns:
         Whether the field is useful. If the field is required, it is useful.
-        If the field is not required, it is useful if the value is not None.
-        If the field is not required and the value is None, it is useful if the
+        If the field is not required, it is useful if the value is not `None`.
+        If the field is not required and the value is `None`, it is useful if the
         default value is different from the value.
     """
     field = type(inst).model_fields.get(key)
@@ -344,10 +347,10 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     """Serialize a "not implemented" object.
 
     Args:
-        obj: object to serialize.
+        obj: Object to serialize.
 
     Returns:
-        SerializedNotImplemented
+        `SerializedNotImplemented`
     """
     id_: list[str] = []
     try:

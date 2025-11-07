@@ -3,8 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-core"
+description = "Building applications with LLMs through composability"
 license = {text = "MIT"}
+readme = "README.md"
+authors = []
+
+version = "1.0.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.3.45,<1.0.0",
@@ -15,18 +20,15 @@ dependencies = [
     "packaging>=23.2.0,<26.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
-name = "langchain-core"
-version = "1.0.0a8"
-description = "Building applications with LLMs through composability"
-readme = "README.md"
 
 [project.urls]
-homepage = "https://docs.langchain.com/"
-repository = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
-changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
-twitter = "https://x.com/LangChainAI"
-slack = "https://www.langchain.com/join-community"
-reddit = "https://www.reddit.com/r/LangChain/"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://reference.langchain.com/python/langchain_core/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/core"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-core%3D%3D1%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 lint = ["ruff>=0.13.1,<0.14.0"]
@@ -34,6 +36,7 @@ typing = [
     "mypy>=1.18.1,<1.19.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "types-requests>=2.28.11.5,<3.0.0.0",
+    "langchain-model-profiles",
     "langchain-text-splitters",
 ]
 dev = [
@@ -55,6 +58,7 @@ test = [
     "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
+    "langchain-model-profiles",
     "langchain-tests",
     "pytest-benchmark",
     "pytest-codspeed",
@@ -62,6 +66,7 @@ test = [
 test_integration = []
 
 [tool.uv.sources]
+langchain-model-profiles = { path = "../model-profiles" }
 langchain-tests = { path = "../standard-tests" }
 langchain-text-splitters = { path = "../text-splitters" }
 
@@ -100,7 +105,6 @@ ignore = [
     "ANN401",  # No Any types
     "BLE",     # Blind exceptions
     "ERA",     # No commented-out code
-    "PLR2004", # Comparison to magic number
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
@@ -121,7 +125,7 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
 "langchain_core/utils/mustache.py" = [ "PLW0603",]
 "langchain_core/sys_info.py" = [ "T201",]
 "tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "S", "SLF",]
+"tests/**" = [ "D1", "PLR2004", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
 
 [tool.coverage.run]
@@ -129,8 +133,10 @@ omit = [ "tests/*",]
 
 [tool.pytest.ini_options]
 addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5"
-markers = [ "requires: mark tests as requiring a specific library", "compile: mark placeholder test used to compile integration tests without running them", ]
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 asyncio_mode = "auto"
-filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
-
+filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]

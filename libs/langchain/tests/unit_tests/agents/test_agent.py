@@ -450,7 +450,7 @@ def test_agent_invalid_tool() -> None:
 
 
 async def test_runnable_agent() -> None:
-    """Simple test to verify that an agent built with LCEL works."""
+    """Simple test to verify that an agent built via composition works."""
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces

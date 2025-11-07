@@ -2370,7 +2370,7 @@ def test_haskell_code_splitter() -> None:
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
-    """Fixture to create an HTMLHeaderTextSplitter instance with given headers.
+    """Fixture to create an `HTMLHeaderTextSplitter` instance with given headers.
 
     This factory allows dynamic creation of splitters with different headers.
     """
@@ -2580,12 +2580,12 @@ def test_html_header_text_splitter(
     """Test the HTML header text splitter.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory function to create
-            the HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_input (str): The HTML input string to be split.
-        expected_documents (List[Document]): List of expected Document objects.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory : Factory function to create the HTML
+            header splitter.
+        headers_to_split_on: List of headers to split on.
+        html_input: The HTML input string to be split.
+        expected_documents: List of expected Document objects.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata
@@ -2736,12 +2736,12 @@ def test_additional_html_header_text_splitter(
     """Test the HTML header text splitter.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory function to create
-            the HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_content (str): HTML content to be split.
-        expected_output (List[Document]): Expected list of Document objects.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory: Factory function to create the HTML
+            header splitter.
+        headers_to_split_on: List of headers to split on.
+        html_content: HTML content to be split.
+        expected_output: Expected list of `Document` objects.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata
@@ -2808,13 +2808,12 @@ def test_html_no_headers_with_multiple_splitters(
     """Test HTML content splitting without headers using multiple splitters.
 
     Args:
-        html_header_splitter_splitter_factory (Any): Factory to create the
-            HTML header splitter.
-        headers_to_split_on (List[Tuple[str, str]]): List of headers to split on.
-        html_content (str): HTML content to be split.
-        expected_output (List[Document]): Expected list of Document objects
-            after splitting.
-        test_case (str): Description of the test case.
+        html_header_splitter_splitter_factory: Factory to create the HTML header
+            splitter.
+        headers_to_split_on: List of headers to split on.
+        html_content: HTML content to be split.
+        expected_output: Expected list of `Document` objects after splitting.
+        test_case: Description of the test case.
 
     Raises:
         AssertionError: If the number of documents or their content/metadata

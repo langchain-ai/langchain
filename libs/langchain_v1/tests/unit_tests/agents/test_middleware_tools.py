@@ -1,15 +1,15 @@
 """Test Middleware handling of tools in agents."""
 
-import pytest
 from collections.abc import Callable
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+import pytest
+
 from langchain.agents.factory import create_agent
-from langchain.tools import ToolNode
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langgraph.prebuilt.tool_node import ToolNode
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
-from langgraph.runtime import Runtime
 
 
 def test_model_request_tools_are_base_tools() -> None:
@@ -105,7 +105,6 @@ def test_middleware_can_modify_tools() -> None:
 
 def test_unknown_tool_raises_error() -> None:
     """Test that using an unknown tool in ModelRequest raises a clear error."""
-    from langchain_core.tools import BaseTool
 
     @tool
     def known_tool(input: str) -> str:

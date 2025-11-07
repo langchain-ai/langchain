@@ -53,16 +53,15 @@ def create_sql_query_chain(
 
         Control access to who can submit requests to this chain.
 
-        See https://python.langchain.com/docs/security for more information.
+        See https://docs.langchain.com/oss/python/security-policy for more information.
 
     Args:
         llm: The language model to use.
         db: The SQLDatabase to generate the query for.
         prompt: The prompt to use. If none is provided, will choose one
-            based on dialect. Defaults to `None`. See Prompt section below for more.
-        k: The number of results per select statement to return. Defaults to 5.
+            based on dialect.  See Prompt section below for more.
+        k: The number of results per select statement to return.
         get_col_comments: Whether to retrieve column comments along with table info.
-            Defaults to `False`.
 
     Returns:
         A chain that takes in a question and generates a SQL query that answers
@@ -76,8 +75,8 @@ def create_sql_query_chain(
         from langchain_community.utilities import SQLDatabase
 
         db = SQLDatabase.from_uri("sqlite:///Chinook.db")
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        chain = create_sql_query_chain(llm, db)
+        model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+        chain = create_sql_query_chain(model, db)
         response = chain.invoke({"question": "How many employees are there"})
         ```
 

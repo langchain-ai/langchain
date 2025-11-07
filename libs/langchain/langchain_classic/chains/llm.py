@@ -55,8 +55,8 @@ class LLMChain(Chain):
 
         prompt_template = "Tell me a {adjective} joke"
         prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
-        llm = OpenAI()
-        chain = prompt | llm | StrOutputParser()
+        model = OpenAI()
+        chain = prompt | model | StrOutputParser()
 
         chain.invoke("your adjective here")
         ```
@@ -64,12 +64,12 @@ class LLMChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import LLMChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_core.prompts import PromptTemplate
 
         prompt_template = "Tell me a {adjective} joke"
         prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
-        llm = LLMChain(llm=OpenAI(), prompt=prompt)
+        model = LLMChain(llm=OpenAI(), prompt=prompt)
         ```
     """
 
@@ -82,14 +82,14 @@ class LLMChain(Chain):
     """Prompt object to use."""
     llm: Runnable[LanguageModelInput, str] | Runnable[LanguageModelInput, BaseMessage]
     """Language model to call."""
-    output_key: str = "text"  #: :meta private:
+    output_key: str = "text"
     output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
     Defaults to one that takes the most likely string but does not change it
     otherwise."""
     return_final_only: bool = True
-    """Whether to return only the final parsed result. Defaults to `True`.
-    If false, will return a bunch of extra information about the generation."""
+    """Whether to return only the final parsed result.
+    If `False`, will return a bunch of extra information about the generation."""
     llm_kwargs: dict = Field(default_factory=dict)
 
     model_config = ConfigDict(
@@ -99,18 +99,12 @@ class LLMChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the prompt expects."""
         return self.prompt.input_variables
 
     @property
     def output_keys(self) -> list[str]:
-        """Will always return text key.
-
-        :meta private:
-        """
+        """Will always return text key."""
         if self.return_final_only:
             return [self.output_key]
         return [self.output_key, "full_generation"]

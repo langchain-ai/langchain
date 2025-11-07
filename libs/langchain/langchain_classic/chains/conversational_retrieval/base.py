@@ -122,10 +122,7 @@ class BaseConversationalRetrievalChain(Chain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the output keys.
-
-        :meta private:
-        """
+        """Return the output keys."""
         _output_keys = [self.output_key]
         if self.return_source_documents:
             _output_keys = [*_output_keys, "source_documents"]
@@ -283,7 +280,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
     retriever = ...  # Your retriever
 
-    llm = ChatOpenAI()
+    model = ChatOpenAI()
 
     # Contextualize question
     contextualize_q_system_prompt = (
@@ -301,7 +298,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         ]
     )
     history_aware_retriever = create_history_aware_retriever(
-        llm, retriever, contextualize_q_prompt
+        model, retriever, contextualize_q_prompt
     )
 
     # Answer question
@@ -324,7 +321,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     # Below we use create_stuff_documents_chain to feed all retrieved context
     # into the LLM. Note that we can also use StuffDocumentsChain and other
     # instances of BaseCombineDocumentsChain.
-    question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+    question_answer_chain = create_stuff_documents_chain(model, qa_prompt)
     rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
     # Usage:
@@ -337,17 +334,17 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
     The algorithm for this chain consists of three parts:
 
     1. Use the chat history and the new question to create a "standalone question".
-    This is done so that this question can be passed into the retrieval step to fetch
-    relevant documents. If only the new question was passed in, then relevant context
-    may be lacking. If the whole conversation was passed into retrieval, there may
-    be unnecessary information there that would distract from retrieval.
+        This is done so that this question can be passed into the retrieval step to
+        fetch relevant documents. If only the new question was passed in, then relevant
+        context may be lacking. If the whole conversation was passed into retrieval,
+        there may be unnecessary information there that would distract from retrieval.
 
     2. This new question is passed to the retriever and relevant documents are
-    returned.
+        returned.
 
     3. The retrieved documents are passed to an LLM along with either the new question
-    (default behavior) or the original question and chat history to generate a final
-    response.
+        (default behavior) or the original question and chat history to generate a final
+        response.
 
     Example:
         ```python
@@ -357,7 +354,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             ConversationalRetrievalChain,
         )
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         combine_docs_chain = StuffDocumentsChain(...)
         vectorstore = ...
@@ -371,8 +368,8 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             "Follow up question: {question}"
         )
         prompt = PromptTemplate.from_template(template)
-        llm = OpenAI()
-        question_generator_chain = LLMChain(llm=llm, prompt=prompt)
+        model = OpenAI()
+        question_generator_chain = LLMChain(llm=model, prompt=prompt)
         chain = ConversationalRetrievalChain(
             combine_docs_chain=combine_docs_chain,
             retriever=retriever,

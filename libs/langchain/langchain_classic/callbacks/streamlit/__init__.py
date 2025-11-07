@@ -31,16 +31,15 @@ def StreamlitCallbackHandler(  # noqa: N802
     max_thought_containers
         The max number of completed LLM thought containers to show at once. When this
         threshold is reached, a new thought will cause the oldest thoughts to be
-        collapsed into a "History" expander. Defaults to 4.
+        collapsed into a "History" expander.
     expand_new_thoughts
         Each LLM "thought" gets its own `st.expander`. This param controls whether that
-        expander is expanded by default. Defaults to `True`.
+        expander is expanded by default.
     collapse_completed_thoughts
         If `True`, LLM thought expanders will be collapsed when completed.
-        Defaults to `True`.
     thought_labeler
         An optional custom LLMThoughtLabeler instance. If unspecified, the handler
-        will use the default thought labeling logic. Defaults to `None`.
+        will use the default thought labeling logic.
 
     Returns:
     -------

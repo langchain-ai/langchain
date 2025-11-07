@@ -26,6 +26,9 @@ def get_color_mapping(
     colors = list(_TEXT_COLOR_MAPPING.keys())
     if excluded_colors is not None:
         colors = [c for c in colors if c not in excluded_colors]
+    if not colors:
+        msg = "No colors available after applying exclusions."
+        raise ValueError(msg)
     return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
@@ -65,9 +68,9 @@ def print_text(
 
     Args:
         text: The text to print.
-        color: The color to use. Defaults to `None`.
-        end: The end character to use. Defaults to "".
-        file: The file to write to. Defaults to `None`.
+        color: The color to use.
+        end: The end character to use.
+        file: The file to write to.
     """
     text_to_print = get_colored_text(text, color) if color else text
     print(text_to_print, end=end, file=file)

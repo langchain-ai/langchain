@@ -49,7 +49,7 @@ class MultiPromptChain(MultiRouteChain):
         from langgraph.graph import END, START, StateGraph
         from typing_extensions import TypedDict
 
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        model = ChatOpenAI(model="gpt-4o-mini")
 
         # Define the prompts we will route to
         prompt_1 = ChatPromptTemplate.from_messages(
@@ -68,8 +68,8 @@ class MultiPromptChain(MultiRouteChain):
         # Construct the chains we will route to. These format the input query
         # into the respective prompt, run it through a chat model, and cast
         # the result to a string.
-        chain_1 = prompt_1 | llm | StrOutputParser()
-        chain_2 = prompt_2 | llm | StrOutputParser()
+        chain_1 = prompt_1 | model | StrOutputParser()
+        chain_2 = prompt_2 | model | StrOutputParser()
 
 
         # Next: define the chain that selects which branch to route to.
@@ -92,7 +92,7 @@ class MultiPromptChain(MultiRouteChain):
             destination: Literal["animal", "vegetable"]
 
 
-        route_chain = route_prompt | llm.with_structured_output(RouteQuery)
+        route_chain = route_prompt | model.with_structured_output(RouteQuery)
 
 
         # For LangGraph, we will define the state of the graph to hold the query,

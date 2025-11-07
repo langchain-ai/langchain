@@ -45,7 +45,7 @@ class PngDrawer:
                     }
                 }
                 The keys are the original labels, and the values are the new labels.
-                Defaults to `None`.
+
         """
         self.fontname = fontname or "arial"
         self.labels = labels or LabelsDict(nodes={}, edges={})
@@ -104,8 +104,8 @@ class PngDrawer:
             viz: The graphviz object.
             source: The source node.
             target: The target node.
-            label: The label for the edge. Defaults to `None`.
-            conditional: Whether the edge is conditional. Defaults to `False`.
+            label: The label for the edge.
+            conditional: Whether the edge is conditional.
         """
         viz.add_edge(
             source,

@@ -21,8 +21,8 @@ class ModelLaboratory:
         Args:
             chains: A sequence of chains to experiment with.
                 Each chain must have exactly one input and one output variable.
-            names (list[str] | None): Optional list of names corresponding to each
-                chain. If provided, its length must match the number of chains.
+            names: Optional list of names corresponding to each chain.
+                If provided, its length must match the number of chains.
 
 
         Raises:
@@ -72,7 +72,7 @@ class ModelLaboratory:
                 If provided, the prompt must contain exactly one input variable.
 
         Returns:
-            ModelLaboratory: An instance of `ModelLaboratory` initialized with LLMs.
+            An instance of `ModelLaboratory` initialized with LLMs.
         """
         if prompt is None:
             prompt = PromptTemplate(input_variables=["_input"], template="{_input}")

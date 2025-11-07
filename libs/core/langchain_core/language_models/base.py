@@ -96,9 +96,16 @@ def _get_token_ids_default_method(text: str) -> list[int]:
 
 
 LanguageModelInput = PromptValue | str | Sequence[MessageLikeRepresentation]
+"""Input to a language model."""
+
 LanguageModelOutput = BaseMessage | str
+"""Output from a language model."""
+
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
+"""Input/output interface for a language model."""
+
 LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
+"""Type variable for the output of a language model."""
 
 
 def _get_verbosity() -> bool:
@@ -123,16 +130,20 @@ class BaseLanguageModel(
     * If instance of `BaseCache`, will use the provided cache.
 
     Caching is not currently supported for streaming methods of models.
-
     """
+
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
+
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to add to the run trace."""
+
     tags: list[str] | None = Field(default=None, exclude=True)
     """Tags to add to the run trace."""
+
     metadata: dict[str, Any] | None = Field(default=None, exclude=True)
     """Metadata to add to the run trace."""
+
     custom_get_token_ids: Callable[[str], list[int]] | None = Field(
         default=None, exclude=True
     )
@@ -146,7 +157,7 @@ class BaseLanguageModel(
     def set_verbose(cls, verbose: bool | None) -> bool:  # noqa: FBT001
         """If verbose is `None`, set it.
 
-        This allows users to pass in None as verbose to access the global setting.
+        This allows users to pass in `None` as verbose to access the global setting.
 
         Args:
             verbose: The verbosity setting to use.
@@ -186,22 +197,29 @@ class BaseLanguageModel(
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of PromptValues. A PromptValue is an object that can be
-                converted to match the format of any language model (string for pure
-                text generation models and BaseMessages for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-            prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generation` objects for
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -223,22 +241,29 @@ class BaseLanguageModel(
         1. Take advantage of batched calls,
         2. Need more output from the model than just the top generated value,
         3. Are building chains that are agnostic to the underlying language model
-           type (e.g., pure text completion models vs chat models).
+            type (e.g., pure text completion models vs chat models).
 
         Args:
-            prompts: List of PromptValues. A PromptValue is an object that can be
-                converted to match the format of any language model (string for pure
-                text generation models and BaseMessages for chat models).
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            prompts: List of `PromptValue` objects.
+
+                A `PromptValue` is an object that can be converted to match the format
+                of any language model (string for pure text generation models and
+                `BaseMessage` objects for chat models).
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
-            An `LLMResult`, which contains a list of candidate Generations for each
-            input prompt and additional model provider-specific output.
+            An `LLMResult`, which contains a list of candidate `Generation` objects for
+                each input prompt and additional model provider-specific output.
 
         """
 
@@ -256,15 +281,14 @@ class BaseLanguageModel(
         return self.lc_attributes
 
     def get_token_ids(self, text: str) -> list[int]:
-        """Return the ordered ids of the tokens in a text.
+        """Return the ordered IDs of the tokens in a text.
 
         Args:
             text: The string input to tokenize.
 
         Returns:
-            A list of ids corresponding to the tokens in the text, in order they occur
-            in the text.
-
+            A list of IDs corresponding to the tokens in the text, in order they occur
+                in the text.
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)

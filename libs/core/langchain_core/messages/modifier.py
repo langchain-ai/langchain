@@ -9,7 +9,7 @@ class RemoveMessage(BaseMessage):
     """Message responsible for deleting other messages."""
 
     type: Literal["remove"] = "remove"
-    """The type of the message (used for serialization). Defaults to "remove"."""
+    """The type of the message (used for serialization)."""
 
     def __init__(
         self,

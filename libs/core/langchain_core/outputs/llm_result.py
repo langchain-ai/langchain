@@ -97,7 +97,7 @@ class LLMResult(BaseModel):
             other: Another `LLMResult` object to compare against.
 
         Returns:
-            True if the generations and `llm_output` are equal, False otherwise.
+            `True` if the generations and `llm_output` are equal, `False` otherwise.
         """
         if not isinstance(other, LLMResult):
             return NotImplemented

@@ -92,7 +92,7 @@ def _is_annotated_type(typ: type[Any]) -> bool:
         typ: The type to check.
 
     Returns:
-        True if the type is an Annotated type, False otherwise.
+        `True` if the type is an Annotated type, `False` otherwise.
     """
     return get_origin(typ) is typing.Annotated
 
@@ -226,7 +226,7 @@ def _is_pydantic_annotation(annotation: Any, pydantic_version: str = "v2") -> bo
         pydantic_version: The Pydantic version to check against ("v1" or "v2").
 
     Returns:
-        True if the annotation is a Pydantic model, False otherwise.
+        `True` if the annotation is a Pydantic model, `False` otherwise.
     """
     base_model_class = BaseModelV1 if pydantic_version == "v1" else BaseModel
     try:
@@ -245,7 +245,7 @@ def _function_annotations_are_pydantic_v1(
         func: The function being checked.
 
     Returns:
-        True if all Pydantic annotations are from V1, False otherwise.
+        True if all Pydantic annotations are from V1, `False` otherwise.
 
     Raises:
         NotImplementedError: If the function contains mixed V1 and V2 annotations.
@@ -285,18 +285,17 @@ def create_schema_from_function(
     error_on_invalid_docstring: bool = False,
     include_injected: bool = True,
 ) -> type[BaseModel]:
-    """Create a pydantic schema from a function's signature.
+    """Create a Pydantic schema from a function's signature.
 
     Args:
-        model_name: Name to assign to the generated pydantic schema.
+        model_name: Name to assign to the generated Pydantic schema.
         func: Function to generate the schema from.
         filter_args: Optional list of arguments to exclude from the schema.
-            Defaults to FILTERED_ARGS.
+            Defaults to `FILTERED_ARGS`.
         parse_docstring: Whether to parse the function's docstring for descriptions
-            for each argument. Defaults to `False`.
+            for each argument.
         error_on_invalid_docstring: if `parse_docstring` is provided, configure
-            whether to raise ValueError on invalid Google Style docstrings.
-            Defaults to `False`.
+            whether to raise `ValueError` on invalid Google Style docstrings.
         include_injected: Whether to include injected arguments in the schema.
             Defaults to `True`, since we want to include them in the schema
             when *validating* tool inputs.
@@ -312,7 +311,7 @@ def create_schema_from_function(
         # https://docs.pydantic.dev/latest/usage/validation_decorator/
         with warnings.catch_warnings():
             # We are using deprecated functionality here.
-            # This code should be re-written to simply construct a pydantic model
+            # This code should be re-written to simply construct a Pydantic model
             # using inspect.signature and create_model.
             warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
             validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore[operator]
@@ -392,6 +391,7 @@ class BaseTool(RunnableSerializable[str | dict | ToolCall, Any]):
     """Base class for all LangChain tools.
 
     This abstract class defines the interface that all LangChain tools must implement.
+
     Tools are components that can be called by agents to perform specific actions.
     """
 
@@ -402,7 +402,7 @@ class BaseTool(RunnableSerializable[str | dict | ToolCall, Any]):
             **kwargs: Additional keyword arguments passed to the parent class.
 
         Raises:
-            SchemaAnnotationError: If args_schema has incorrect type annotation.
+            SchemaAnnotationError: If `args_schema` has incorrect type annotation.
         """
         super().__init_subclass__(**kwargs)
 
@@ -443,15 +443,15 @@ class ChildTool(BaseTool):
 
     Args schema should be either:
 
-    - A subclass of pydantic.BaseModel.
-    - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
-    - a JSON schema dict
+    - A subclass of `pydantic.BaseModel`.
+    - A subclass of `pydantic.v1.BaseModel` if accessing v1 namespace in pydantic 2
+    - A JSON schema dict
     """
     return_direct: bool = False
     """Whether to return the tool's output directly.
 
-    Setting this to True means
-    that after the tool is called, the AgentExecutor will stop looping.
+    Setting this to `True` means that after the tool is called, the `AgentExecutor` will
+    stop looping.
     """
     verbose: bool = False
     """Whether to log the tool's progress."""
@@ -460,32 +460,38 @@ class ChildTool(BaseTool):
     """Callbacks to be called during tool execution."""
 
     tags: list[str] | None = None
-    """Optional list of tags associated with the tool. Defaults to `None`.
+    """Optional list of tags associated with the tool.
+
     These tags will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a tool with its use case.
+
+    You can use these to, e.g., identify a specific instance of a tool with its use
+    case.
     """
     metadata: dict[str, Any] | None = None
-    """Optional metadata associated with the tool. Defaults to `None`.
+    """Optional metadata associated with the tool.
+
     This metadata will be associated with each call to this tool,
     and passed as arguments to the handlers defined in `callbacks`.
-    You can use these to eg identify a specific instance of a tool with its use case.
+
+    You can use these to, e.g., identify a specific instance of a tool with its use
+    case.
     """
 
     handle_tool_error: bool | str | Callable[[ToolException], str] | None = False
-    """Handle the content of the ToolException thrown."""
+    """Handle the content of the `ToolException` thrown."""
 
     handle_validation_error: (
         bool | str | Callable[[ValidationError | ValidationErrorV1], str] | None
     ) = False
-    """Handle the content of the ValidationError thrown."""
+    """Handle the content of the `ValidationError` thrown."""
 
     response_format: Literal["content", "content_and_artifact"] = "content"
-    """The tool response format. Defaults to 'content'.
+    """The tool response format.
 
-    If "content" then the output of the tool is interpreted as the contents of a
-    ToolMessage. If "content_and_artifact" then the output is expected to be a
-    two-tuple corresponding to the (content, artifact) of a ToolMessage.
+    If `'content'` then the output of the tool is interpreted as the contents of a
+    `ToolMessage`. If `'content_and_artifact'` then the output is expected to be a
+    two-tuple corresponding to the `(content, artifact)` of a `ToolMessage`.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -493,7 +499,7 @@ class ChildTool(BaseTool):
 
         Raises:
             TypeError: If `args_schema` is not a subclass of pydantic `BaseModel` or
-                dict.
+                `dict`.
         """
         if (
             "args_schema" in kwargs
@@ -517,7 +523,7 @@ class ChildTool(BaseTool):
         """Check if the tool accepts only a single input argument.
 
         Returns:
-            True if the tool has only one input argument, False otherwise.
+            `True` if the tool has only one input argument, `False` otherwise.
         """
         keys = {k for k in self.args if k != "kwargs"}
         return len(keys) == 1
@@ -527,7 +533,7 @@ class ChildTool(BaseTool):
         """Get the tool's input arguments schema.
 
         Returns:
-            Dictionary containing the tool's argument properties.
+            `dict` containing the tool's argument properties.
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
@@ -616,10 +622,10 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema `args_schema`.
-            ValueError: If InjectedToolCallId is required but `tool_call_id` is not
+            ValueError: If `string` input is provided with JSON schema `args_schema`.
+            ValueError: If `InjectedToolCallId` is required but `tool_call_id` is not
                 provided.
-            TypeError: If args_schema is not a Pydantic `BaseModel` or dict.
+            TypeError: If `args_schema` is not a Pydantic `BaseModel` or dict.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -708,6 +714,35 @@ class ChildTool(BaseTool):
             kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
+    def _filter_injected_args(self, tool_input: dict) -> dict:
+        """Filter out injected tool arguments from the input dictionary.
+
+        Injected arguments are those annotated with `InjectedToolArg` or its
+        subclasses, or arguments in `FILTERED_ARGS` like `run_manager` and callbacks.
+
+        Args:
+            tool_input: The tool input dictionary to filter.
+
+        Returns:
+            A filtered dictionary with injected arguments removed.
+        """
+        # Start with filtered args from the constant
+        filtered_keys = set[str](FILTERED_ARGS)
+
+        # If we have an args_schema, use it to identify injected args
+        if self.args_schema is not None:
+            try:
+                annotations = get_all_basemodel_annotations(self.args_schema)
+                for field_name, field_type in annotations.items():
+                    if _is_injected_arg_type(field_type):
+                        filtered_keys.add(field_name)
+            except Exception:  # noqa: S110
+                # If we can't get annotations, just use FILTERED_ARGS
+                pass
+
+        # Filter out the injected keys from tool_input
+        return {k: v for k, v in tool_input.items() if k not in filtered_keys}
+
     def _to_args_and_kwargs(
         self, tool_input: str | dict, tool_call_id: str | None
     ) -> tuple[tuple, dict]:
@@ -718,7 +753,7 @@ class ChildTool(BaseTool):
             tool_call_id: The ID of the tool call, if available.
 
         Returns:
-            A tuple of (positional_args, keyword_args) for the tool.
+            A tuple of `(positional_args, keyword_args)` for the tool.
 
         Raises:
             TypeError: If the tool input type is invalid.
@@ -767,16 +802,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks (event handler)
 
         Returns:
@@ -795,17 +830,29 @@ class ChildTool(BaseTool):
             self.metadata,
         )
 
+        # Filter out injected arguments from callback inputs
+        filtered_tool_input = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
+        # Use filtered inputs for the input_str parameter as well
+        tool_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
+        )
+
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            tool_input if isinstance(tool_input, str) else str(tool_input),
+            tool_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
-            # Inputs by definition should always be dicts.
-            # For now, it's unclear whether this assumption is ever violated,
-            # but if it is we will send a `None` value to the callback instead
-            # TODO: will need to address issue via a patch.
-            inputs=tool_input if isinstance(tool_input, dict) else None,
+            inputs=filtered_tool_input,
             **kwargs,
         )
 
@@ -825,16 +872,19 @@ class ChildTool(BaseTool):
                     tool_kwargs |= {config_param: config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    msg = (
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
-                    )
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead, generated response is of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
                     error_to_raise = ValueError(msg)
                 else:
-                    content, artifact = response
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
             else:
                 content = response
         except (ValidationError, ValidationErrorV1) as e:
@@ -879,16 +929,16 @@ class ChildTool(BaseTool):
 
         Args:
             tool_input: The input to the tool.
-            verbose: Whether to log the tool's progress. Defaults to `None`.
-            start_color: The color to use when starting the tool. Defaults to 'green'.
-            color: The color to use when ending the tool. Defaults to 'green'.
-            callbacks: Callbacks to be called during tool execution. Defaults to `None`.
-            tags: Optional list of tags associated with the tool. Defaults to `None`.
-            metadata: Optional metadata associated with the tool. Defaults to `None`.
-            run_name: The name of the run. Defaults to `None`.
-            run_id: The id of the run. Defaults to `None`.
-            config: The configuration for the tool. Defaults to `None`.
-            tool_call_id: The id of the tool call. Defaults to `None`.
+            verbose: Whether to log the tool's progress.
+            start_color: The color to use when starting the tool.
+            color: The color to use when ending the tool.
+            callbacks: Callbacks to be called during tool execution.
+            tags: Optional list of tags associated with the tool.
+            metadata: Optional metadata associated with the tool.
+            run_name: The name of the run.
+            run_id: The id of the run.
+            config: The configuration for the tool.
+            tool_call_id: The id of the tool call.
             **kwargs: Keyword arguments to be passed to tool callbacks
 
         Returns:
@@ -906,17 +956,30 @@ class ChildTool(BaseTool):
             metadata,
             self.metadata,
         )
+
+        # Filter out injected arguments from callback inputs
+        filtered_tool_input = (
+            self._filter_injected_args(tool_input)
+            if isinstance(tool_input, dict)
+            else None
+        )
+
+        # Use filtered inputs for the input_str parameter as well
+        tool_input_str = (
+            tool_input
+            if isinstance(tool_input, str)
+            else str(
+                filtered_tool_input if filtered_tool_input is not None else tool_input
+            )
+        )
+
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
-            tool_input if isinstance(tool_input, str) else str(tool_input),
+            tool_input_str,
             color=start_color,
             name=run_name,
             run_id=run_id,
-            # Inputs by definition should always be dicts.
-            # For now, it's unclear whether this assumption is ever violated,
-            # but if it is we will send a `None` value to the callback instead
-            # TODO: will need to address issue via a patch.
-            inputs=tool_input if isinstance(tool_input, dict) else None,
+            inputs=filtered_tool_input,
             **kwargs,
         )
         content = None
@@ -938,16 +1001,19 @@ class ChildTool(BaseTool):
                 coro = self._arun(*tool_args, **tool_kwargs)
                 response = await coro_with_context(coro, context)
             if self.response_format == "content_and_artifact":
-                if not isinstance(response, tuple) or len(response) != 2:
-                    msg = (
-                        "Since response_format='content_and_artifact' "
-                        "a two-tuple of the message content and raw tool output is "
-                        f"expected. Instead generated response of type: "
-                        f"{type(response)}."
-                    )
+                msg = (
+                    "Since response_format='content_and_artifact' "
+                    "a two-tuple of the message content and raw tool output is "
+                    f"expected. Instead, generated response is of type: "
+                    f"{type(response)}."
+                )
+                if not isinstance(response, tuple):
                     error_to_raise = ValueError(msg)
                 else:
-                    content, artifact = response
+                    try:
+                        content, artifact = response
+                    except ValueError:
+                        error_to_raise = ValueError(msg)
             else:
                 content = response
         except ValidationError as e:
@@ -981,7 +1047,7 @@ def _is_tool_call(x: Any) -> bool:
         x: The input to check.
 
     Returns:
-        True if the input is a tool call, False otherwise.
+        `True` if the input is a tool call, `False` otherwise.
     """
     return isinstance(x, dict) and x.get("type") == "tool_call"
 
@@ -995,7 +1061,7 @@ def _handle_validation_error(
 
     Args:
         e: The validation error that occurred.
-        flag: How to handle the error (bool, string, or callable).
+        flag: How to handle the error (`bool`, `str`, or `Callable`).
 
     Returns:
         The error message to return.
@@ -1027,7 +1093,7 @@ def _handle_tool_error(
 
     Args:
         e: The tool exception that occurred.
-        flag: How to handle the error (bool, string, or callable).
+        flag: How to handle the error (`bool`, `str`, or `Callable`).
 
     Returns:
         The error message to return.
@@ -1058,12 +1124,12 @@ def _prep_run_args(
     """Prepare arguments for tool execution.
 
     Args:
-        value: The input value (string, dict, or ToolCall).
+        value: The input value (`str`, `dict`, or `ToolCall`).
         config: The runnable configuration.
         **kwargs: Additional keyword arguments.
 
     Returns:
-        A tuple of (tool_input, run_kwargs).
+        A tuple of `(tool_input, run_kwargs)`.
     """
     config = ensure_config(config)
     if _is_tool_call(value):
@@ -1094,7 +1160,7 @@ def _format_output(
     name: str,
     status: str,
 ) -> ToolOutputMixin | Any:
-    """Format tool output as a ToolMessage if appropriate.
+    """Format tool output as a `ToolMessage` if appropriate.
 
     Args:
         content: The main content of the tool output.
@@ -1104,7 +1170,7 @@ def _format_output(
         status: The execution status.
 
     Returns:
-        The formatted output, either as a ToolMessage or the original content.
+        The formatted output, either as a `ToolMessage` or the original content.
     """
     if isinstance(content, ToolOutputMixin) or tool_call_id is None:
         return content
@@ -1128,7 +1194,7 @@ def _is_message_content_type(obj: Any) -> bool:
         obj: The object to check.
 
     Returns:
-        True if the object is valid message content, False otherwise.
+        `True` if the object is valid message content, `False` otherwise.
     """
     return isinstance(obj, str) or (
         isinstance(obj, list) and all(_is_message_content_block(e) for e in obj)
@@ -1144,7 +1210,7 @@ def _is_message_content_block(obj: Any) -> bool:
         obj: The object to check.
 
     Returns:
-        True if the object is a valid content block, False otherwise.
+        `True` if the object is a valid content block, `False` otherwise.
     """
     if isinstance(obj, str):
         return True
@@ -1175,7 +1241,7 @@ def _get_type_hints(func: Callable) -> dict[str, type] | None:
         func: The function to get type hints from.
 
     Returns:
-        Dictionary of type hints, or None if extraction fails.
+        `dict` of type hints, or `None` if extraction fails.
     """
     if isinstance(func, functools.partial):
         func = func.func
@@ -1186,13 +1252,13 @@ def _get_type_hints(func: Callable) -> dict[str, type] | None:
 
 
 def _get_runnable_config_param(func: Callable) -> str | None:
-    """Find the parameter name for RunnableConfig in a function.
+    """Find the parameter name for `RunnableConfig` in a function.
 
     Args:
         func: The function to check.
 
     Returns:
-        The parameter name for RunnableConfig, or None if not found.
+        The parameter name for `RunnableConfig`, or `None` if not found.
     """
     type_hints = _get_type_hints(func)
     if not type_hints:
@@ -1208,6 +1274,28 @@ class InjectedToolArg:
 
     Tool arguments annotated with this class are not included in the tool
     schema sent to language models and are instead injected during execution.
+    """
+
+
+class _DirectlyInjectedToolArg:
+    """Annotation for tool arguments that are injected at runtime.
+
+    Injected via direct type annotation, rather than annotated metadata.
+
+    For example, `ToolRuntime` is a directly injected argument.
+
+    Note the direct annotation rather than the verbose alternative:
+    `Annotated[ToolRuntime, InjectedRuntime]`
+
+    ```python
+    from langchain_core.tools import tool, ToolRuntime
+
+
+    @tool
+    def foo(x: int, runtime: ToolRuntime) -> str:
+        # use runtime.state, runtime.context, runtime.store, etc.
+        ...
+    ```
     """
 
 
@@ -1238,6 +1326,24 @@ class InjectedToolCallId(InjectedToolArg):
     """
 
 
+def _is_directly_injected_arg_type(type_: Any) -> bool:
+    """Check if a type annotation indicates a directly injected argument.
+
+    This is currently only used for `ToolRuntime`.
+    Checks if either the annotation itself is a subclass of `_DirectlyInjectedToolArg`
+    or the origin of the annotation is a subclass of `_DirectlyInjectedToolArg`.
+
+    Ex: `ToolRuntime` or `ToolRuntime[ContextT, StateT]` would both return `True`.
+    """
+    return (
+        isinstance(type_, type) and issubclass(type_, _DirectlyInjectedToolArg)
+    ) or (
+        (origin := get_origin(type_)) is not None
+        and isinstance(origin, type)
+        and issubclass(origin, _DirectlyInjectedToolArg)
+    )
+
+
 def _is_injected_arg_type(
     type_: type | TypeVar, injected_type: type[InjectedToolArg] | None = None
 ) -> bool:
@@ -1248,9 +1354,17 @@ def _is_injected_arg_type(
         injected_type: The specific injected type to check for.
 
     Returns:
-        True if the type is an injected argument, False otherwise.
+        `True` if the type is an injected argument, `False` otherwise.
     """
-    injected_type = injected_type or InjectedToolArg
+    if injected_type is None:
+        # if no injected type is specified,
+        # check if the type is a directly injected argument
+        if _is_directly_injected_arg_type(type_):
+            return True
+        injected_type = InjectedToolArg
+
+    # if the type is an Annotated type, check if annotated metadata
+    # is an intance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
@@ -1261,14 +1375,14 @@ def _is_injected_arg_type(
 def get_all_basemodel_annotations(
     cls: TypeBaseModel | Any, *, default_to_bound: bool = True
 ) -> dict[str, type | TypeVar]:
-    """Get all annotations from a Pydantic BaseModel and its parents.
+    """Get all annotations from a Pydantic `BaseModel` and its parents.
 
     Args:
-        cls: The Pydantic BaseModel class.
-        default_to_bound: Whether to default to the bound of a TypeVar if it exists.
+        cls: The Pydantic `BaseModel` class.
+        default_to_bound: Whether to default to the bound of a `TypeVar` if it exists.
 
     Returns:
-        A dictionary of field names to their type annotations.
+        `dict` of field names to their type annotations.
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
@@ -1334,15 +1448,15 @@ def _replace_type_vars(
     *,
     default_to_bound: bool = True,
 ) -> type | TypeVar:
-    """Replace TypeVars in a type annotation with concrete types.
+    """Replace `TypeVar`s in a type annotation with concrete types.
 
     Args:
         type_: The type annotation to process.
-        generic_map: Mapping of TypeVars to concrete types.
-        default_to_bound: Whether to use TypeVar bounds as defaults.
+        generic_map: Mapping of `TypeVar`s to concrete types.
+        default_to_bound: Whether to use `TypeVar` bounds as defaults.
 
     Returns:
-        The type with TypeVars replaced.
+        The type with `TypeVar`s replaced.
     """
     generic_map = generic_map or {}
     if isinstance(type_, TypeVar):

@@ -226,7 +226,7 @@ def dereference_refs(
         ... }
         >>> result = dereference_refs(schema)  # Won't cause infinite recursion
 
-    Note:
+    !!! note
         - Circular references are handled gracefully by breaking cycles
         - Mixed $ref objects (with both $ref and other properties) are supported
         - Additional properties in mixed $refs override resolved properties

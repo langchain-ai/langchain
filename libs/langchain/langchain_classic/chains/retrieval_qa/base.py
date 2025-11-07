@@ -42,8 +42,8 @@ class BaseRetrievalQA(Chain):
 
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine the documents."""
-    input_key: str = "query"  #: :meta private:
-    output_key: str = "result"  #: :meta private:
+    input_key: str = "query"
+    output_key: str = "result"
     return_source_documents: bool = False
     """Return the source documents or not."""
 
@@ -55,18 +55,12 @@ class BaseRetrievalQA(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Input keys.
-
-        :meta private:
-        """
+        """Input keys."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Output keys.
-
-        :meta private:
-        """
+        """Output keys."""
         _output_keys = [self.output_key]
         if self.return_source_documents:
             _output_keys = [*_output_keys, "source_documents"]
@@ -237,7 +231,7 @@ class RetrievalQA(BaseRetrievalQA):
 
 
         retriever = ...  # Your retriever
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
 
         system_prompt = (
             "Use the given context to answer the question. "
@@ -251,7 +245,7 @@ class RetrievalQA(BaseRetrievalQA):
                 ("human", "{input}"),
             ]
         )
-        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        question_answer_chain = create_stuff_documents_chain(model, prompt)
         chain = create_retrieval_chain(retriever, question_answer_chain)
 
         chain.invoke({"input": query})
@@ -259,7 +253,7 @@ class RetrievalQA(BaseRetrievalQA):
 
     Example:
         ```python
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.chains import RetrievalQA
         from langchain_community.vectorstores import FAISS
         from langchain_core.vectorstores import VectorStoreRetriever

@@ -48,7 +48,7 @@ class LLMRouterChain(RouterChain):
         from langchain_core.runnables import RunnableLambda, RunnablePassthrough
         from langchain_openai import ChatOpenAI
 
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        model = ChatOpenAI(model="gpt-4o-mini")
 
         prompt_1 = ChatPromptTemplate.from_messages(
             [
@@ -63,8 +63,8 @@ class LLMRouterChain(RouterChain):
             ]
         )
 
-        chain_1 = prompt_1 | llm | StrOutputParser()
-        chain_2 = prompt_2 | llm | StrOutputParser()
+        chain_1 = prompt_1 | model | StrOutputParser()
+        chain_2 = prompt_2 | model | StrOutputParser()
 
         route_system = "Route the user's query to either the animal "
         "or vegetable expert."
@@ -83,7 +83,7 @@ class LLMRouterChain(RouterChain):
 
         route_chain = (
             route_prompt
-            | llm.with_structured_output(RouteQuery)
+            | model.with_structured_output(RouteQuery)
             | itemgetter("destination")
         )
 
@@ -118,10 +118,7 @@ class LLMRouterChain(RouterChain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the LLM chain prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the LLM chain prompt expects."""
         return self.llm_chain.input_keys
 
     def _validate_outputs(self, outputs: dict[str, Any]) -> None:

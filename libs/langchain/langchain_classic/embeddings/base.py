@@ -137,20 +137,34 @@ def init_embeddings(
         installed.
 
     Args:
-        model: Name of the model to use. Can be either:
-            - A model string like "openai:text-embedding-3-small"
-            - Just the model name if provider is specified
-        provider: Optional explicit provider name. If not specified,
-            will attempt to parse from the model string. Supported providers
-            and their required packages:
+        model: Name of the model to use.
 
-            {_get_provider_list()}
+            Can be either:
+
+            - A model string like `"openai:text-embedding-3-small"`
+            - Just the model name if the provider is specified separately or can be
+                inferred.
+
+            See supported providers under the `provider` arg description.
+        provider: Optional explicit provider name. If not specified, will attempt to
+            parse from the model string in the `model` arg.
+
+            Supported providers:
+
+            - `openai`                  -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
+            - `bedrock`                 -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)
+            - `cohere`                  -> [`langchain-cohere`](https://docs.langchain.com/oss/python/integrations/providers/cohere)
+            - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
+            - `huggingface`             -> [`langchain-huggingface`](https://docs.langchain.com/oss/python/integrations/providers/huggingface)
+            - `mistraiai`               -> [`langchain-mistralai`](https://docs.langchain.com/oss/python/integrations/providers/mistralai)
+            - `ollama`                  -> [`langchain-ollama`](https://docs.langchain.com/oss/python/integrations/providers/ollama)
 
         **kwargs: Additional model-specific parameters passed to the embedding model.
             These vary by provider, see the provider-specific documentation for details.
 
     Returns:
-        An Embeddings instance that can generate embeddings for text.
+        An `Embeddings` instance that can generate embeddings for text.
 
     Raises:
         ValueError: If the model provider is not supported or cannot be determined
@@ -171,7 +185,7 @@ def init_embeddings(
         model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
         ```
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain` 0.3.9"
 
     """
     if not model:

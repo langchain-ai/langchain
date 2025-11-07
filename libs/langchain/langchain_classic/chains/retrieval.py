@@ -36,9 +36,9 @@ def create_retrieval_chain(
 
     Example:
         ```python
-        # pip install -U langchain langchain-community
+        # pip install -U langchain langchain-openai
 
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.chains.combine_documents import (
             create_stuff_documents_chain,
         )
@@ -46,9 +46,11 @@ def create_retrieval_chain(
         from langchain_classic import hub
 
         retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-        llm = ChatOpenAI()
+        model = ChatOpenAI()
         retriever = ...
-        combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
+        combine_docs_chain = create_stuff_documents_chain(
+            model, retrieval_qa_chat_prompt
+        )
         retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
         retrieval_chain.invoke({"input": "..."})

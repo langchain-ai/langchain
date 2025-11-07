@@ -1,11 +1,11 @@
 """Chain that carries on a conversation and calls an LLM."""
 
 from langchain_core._api import deprecated
-from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_classic.base_memory import BaseMemory
 from langchain_classic.chains.conversation.prompt import PROMPT
 from langchain_classic.chains.llm import LLMChain
 from langchain_classic.memory.buffer import ConversationBufferMemory
@@ -47,9 +47,9 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-        chain = RunnableWithMessageHistory(llm, get_session_history)
+        chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(
             "Hi I'm Bob.",
             config={"configurable": {"session_id": "1"}},
@@ -85,9 +85,9 @@ class ConversationChain(LLMChain):
             return store[session_id]
 
 
-        llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
+        model = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
-        chain = RunnableWithMessageHistory(llm, get_session_history)
+        chain = RunnableWithMessageHistory(model, get_session_history)
         chain.invoke(
             "Hi I'm Bob.",
             config={"configurable": {"session_id": "1"}},
@@ -97,7 +97,7 @@ class ConversationChain(LLMChain):
     Example:
         ```python
         from langchain_classic.chains import ConversationChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         conversation = ConversationChain(llm=OpenAI())
         ```
@@ -108,8 +108,8 @@ class ConversationChain(LLMChain):
     prompt: BasePromptTemplate = PROMPT
     """Default conversation prompt to use."""
 
-    input_key: str = "input"  #: :meta private:
-    output_key: str = "response"  #: :meta private:
+    input_key: str = "input"
+    output_key: str = "response"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

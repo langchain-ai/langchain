@@ -345,7 +345,6 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 Defaults to `False`, which aggregates lines into larger chunks.
             strip_headers (bool):
                 Whether to exclude headers from the resulting chunks.
-                Defaults to `True`.
         """
         self.chunks: list[Document] = []
         self.current_chunk = Document(page_content="")
@@ -367,10 +366,10 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         horizontal rules.
 
         Args:
-            text (str): The input text to be split into chunks.
+            text: The input text to be split into chunks.
 
         Returns:
-            List[Document]: A list of `Document` objects representing the structured
+            A list of `Document` objects representing the structured
             chunks of the input text. If `return_each_line` is enabled, each line
             is returned as a separate `Document`.
         """

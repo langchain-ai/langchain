@@ -13,7 +13,7 @@ def env_var_is_set(env_var: str) -> bool:
         env_var: The name of the environment variable.
 
     Returns:
-        True if the environment variable is set, False otherwise.
+        `True` if the environment variable is set, `False` otherwise.
     """
     return env_var in os.environ and os.environ[env_var] not in {
         "",
@@ -38,7 +38,7 @@ def get_from_dict_or_env(
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
-            or the environment. Defaults to `None`.
+            or the environment.
 
     Returns:
         The dict value or the environment variable value.
@@ -64,7 +64,7 @@ def get_from_env(key: str, env_key: str, default: str | None = None) -> str:
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
-            or the environment. Defaults to `None`.
+            or the environment.
 
     Returns:
         The value of the key.

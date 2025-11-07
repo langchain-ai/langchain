@@ -10,7 +10,7 @@ from langgraph.types import Command
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain.tools.tool_node import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest
 from tests.unit_tests.agents.test_middleware_agent import FakeToolCallingModel
 
 
@@ -368,15 +368,15 @@ def test_middleware_access_to_state() -> None:
         {"configurable": {"thread_id": "test"}},
     )
 
-    # Middleware should have seen state (state is passed to on_tool_call)
+    # Middleware should have seen state (state is passed to wrap_tool)
     assert len(state_seen) >= 1
 
 
-def test_middleware_without_on_tool_call() -> None:
-    """Test that middleware without on_tool_call hook works normally."""
+def test_middleware_without_wrap_tool() -> None:
+    """Test that middleware without wrap_tool hook works normally."""
 
     class NoOpMiddleware(AgentMiddleware):
-        """Middleware without on_tool_call."""
+        """Middleware without wrap_tool."""
 
         def before_model(self, state, runtime):
             """Just a dummy hook."""

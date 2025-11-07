@@ -182,7 +182,7 @@ def parse_dependencies(
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return list(
-        map(  # type: ignore[call-overload]
+        map(  # type: ignore[call-overload, unused-ignore]
             parse_dependency_string,
             inner_deps,
             inner_repos,

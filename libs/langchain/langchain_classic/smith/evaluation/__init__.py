@@ -4,7 +4,7 @@ This module provides utilities for evaluating Chains and other language model
 applications using LangChain evaluators and LangSmith.
 
 For more information on the LangSmith API, see the
-[LangSmith API documentation](https://docs.smith.langchain.com/docs/).
+[LangSmith API documentation](https://docs.langchain.com/langsmith/home).
 
 **Example**
 
@@ -16,8 +16,8 @@ from langchain_classic.smith import EvaluatorType, RunEvalConfig, run_on_dataset
 
 
 def construct_chain():
-    llm = ChatOpenAI(temperature=0)
-    chain = LLMChain.from_string(llm, "What's the answer to {your_input_key}")
+    model = ChatOpenAI(temperature=0)
+    chain = LLMChain.from_string(model, "What's the answer to {your_input_key}")
     return chain
 
 
