@@ -3707,6 +3707,12 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             == "object"
             for s in self.steps__.values()
         ):
+            for step in self.steps__.values():
+                fields = step.get_input_schema(config).model_fields
+                root_field = fields.get("root")
+                if root_field is not None and root_field.annotation != Any:
+                    return super().get_input_schema(config)
+
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),
