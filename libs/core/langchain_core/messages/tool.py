@@ -1,7 +1,7 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Literal, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
@@ -16,9 +16,9 @@ from langchain_core.utils._merge import merge_dicts, merge_obj
 class ToolOutputMixin:
     """Mixin for objects that tools can return directly.
 
-    If a custom BaseTool is invoked with a ``ToolCall`` and the output of custom code is
-    not an instance of ``ToolOutputMixin``, the output will automatically be coerced to
-    a string and wrapped in a ``ToolMessage``.
+    If a custom BaseTool is invoked with a `ToolCall` and the output of custom code is
+    not an instance of `ToolOutputMixin`, the output will automatically be coerced to
+    a string and wrapped in a `ToolMessage`.
 
     """
 
@@ -26,42 +26,39 @@ class ToolOutputMixin:
 class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
-    ``ToolMessage``s contain the result of a tool invocation. Typically, the result
-    is encoded inside the ``content`` field.
+    `ToolMessage` objects contain the result of a tool invocation. Typically, the result
+    is encoded inside the `content` field.
 
-    Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
+    Example: A `ToolMessage` representing a result of `42` from a tool call with id
 
-        .. code-block:: python
+    ```python
+    from langchain_core.messages import ToolMessage
 
-            from langchain_core.messages import ToolMessage
+    ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+    ```
 
-            ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
+    Example: A `ToolMessage` where only part of the tool output is sent to the model
+    and the full output is passed in to artifact.
 
+    ```python
+    from langchain_core.messages import ToolMessage
 
-    Example: A ``ToolMessage`` where only part of the tool output is sent to the model
-        and the full output is passed in to artifact.
+    tool_output = {
+        "stdout": "From the graph we can see that the correlation between "
+        "x and y is ...",
+        "stderr": None,
+        "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+    }
 
-        !!! version-added "Added in version 0.2.17"
+    ToolMessage(
+        content=tool_output["stdout"],
+        artifact=tool_output,
+        tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
+    )
+    ```
 
-        .. code-block:: python
-
-            from langchain_core.messages import ToolMessage
-
-            tool_output = {
-                "stdout": "From the graph we can see that the correlation between "
-                "x and y is ...",
-                "stderr": None,
-                "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
-            }
-
-            ToolMessage(
-                content=tool_output["stdout"],
-                artifact=tool_output,
-                tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
-            )
-
-    The ``tool_call_id`` field is used to associate the tool call request with the
-    tool call response. This is useful in situations where a chat model is able
+    The `tool_call_id` field is used to associate the tool call request with the
+    tool call response. Useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
     """
@@ -70,11 +67,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
-    """The type of the message (used for serialization).
-
-    Defaults to ``'tool'``.
-
-    """
+    """The type of the message (used for serialization)."""
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
@@ -83,21 +76,15 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
 
-    !!! version-added "Added in version 0.2.17"
-
     """
 
     status: Literal["success", "error"] = "success"
-    """Status of the tool invocation.
-
-    !!! version-added "Added in version 0.2.24"
-
-    """
+    """Status of the tool invocation."""
 
     additional_kwargs: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
     response_metadata: dict = Field(default_factory=dict, repr=False)
-    """Currently inherited from BaseMessage, but not used."""
+    """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
     @classmethod
@@ -147,36 +134,36 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``ToolMessage``.
+        """Initialize a `ToolMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
             content_blocks: Typed standard content.
             **kwargs: Additional fields.
         """
         if content_blocks is not None:
             super().__init__(
-                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                content=cast("str | list[str | dict]", content_blocks),
                 **kwargs,
             )
         else:
@@ -216,16 +203,15 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
 
 
 class ToolCall(TypedDict):
-    """Represents a request to call a tool.
+    """Represents an AI's request to call a tool.
 
     Example:
+        ```python
+        {"name": "foo", "args": {"a": 1}, "id": "123"}
+        ```
 
-        .. code-block:: python
-
-            {"name": "foo", "args": {"a": 1}, "id": "123"}
-
-        This represents a request to call the tool named ``'foo'`` with arguments
-        ``{"a": 1}`` and an identifier of ``'123'``.
+        This represents a request to call the tool named `'foo'` with arguments
+        `{"a": 1}` and an identifier of `'123'`.
 
     """
 
@@ -233,7 +219,7 @@ class ToolCall(TypedDict):
     """The name of the tool to be called."""
     args: dict[str, Any]
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
@@ -247,7 +233,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],
+    id: str | None,
 ) -> ToolCall:
     """Create a tool call.
 
@@ -263,43 +249,41 @@ def tool_call(
 
 
 class ToolCallChunk(TypedDict):
-    """A chunk of a tool call (e.g., as part of a stream).
+    """A chunk of a tool call (yielded when streaming).
 
-    When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
+    When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
     all string attributes are concatenated. Chunks are only merged if their
-    values of ``index`` are equal and not None.
+    values of `index` are equal and not None.
 
     Example:
+    ```python
+    left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+    right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
-    .. code-block:: python
-
-        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
-
-        (
-            AIMessageChunk(content="", tool_call_chunks=left_chunks)
-            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
-
+    (
+        AIMessageChunk(content="", tool_call_chunks=left_chunks)
+        + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+    ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+    ```
     """
 
-    name: Optional[str]
+    name: str | None
     """The name of the tool to be called."""
-    args: Optional[str]
+    args: str | None
     """The arguments to the tool call."""
-    id: Optional[str]
+    id: str | None
     """An identifier associated with the tool call."""
-    index: Optional[int]
+    index: int | None
     """The index of the tool call in a sequence."""
     type: NotRequired[Literal["tool_call_chunk"]]
 
 
 def tool_call_chunk(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    index: Optional[int] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    index: int | None = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
 
@@ -319,10 +303,10 @@ def tool_call_chunk(
 
 def invalid_tool_call(
     *,
-    name: Optional[str] = None,
-    args: Optional[str] = None,
-    id: Optional[str] = None,
-    error: Optional[str] = None,
+    name: str | None = None,
+    args: str | None = None,
+    id: str | None = None,
+    error: str | None = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
 

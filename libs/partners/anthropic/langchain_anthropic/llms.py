@@ -1,11 +1,11 @@
-"""Anthropic LLM wrapper. Chat models are in chat_models.py."""
+"""Anthropic LLM wrapper. Chat models are in `chat_models.py`."""
 
 from __future__ import annotations
 
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Callable, Optional
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping
+from typing import Any
 
 import anthropic
 from langchain_core.callbacks import (
@@ -23,33 +23,35 @@ from typing_extensions import Self
 
 
 class _AnthropicCommon(BaseLanguageModel):
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
-    model: str = Field(default="claude-3-5-sonnet-latest", alias="model_name")
+    client: Any = None
+
+    async_client: Any = None
+
+    model: str = Field(default="claude-sonnet-4-5", alias="model_name")
     """Model name to use."""
 
     max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    top_k: Optional[int] = None
+    top_k: int | None = None
     """Number of most likely tokens to consider at each step."""
 
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
     streaming: bool = False
     """Whether to stream the results."""
 
-    default_request_timeout: Optional[float] = None
+    default_request_timeout: float | None = None
     """Timeout for requests to Anthropic Completion API. Default is 600 seconds."""
 
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = Field(
+    anthropic_api_url: str | None = Field(
         alias="base_url",
         default_factory=from_env(
             "ANTHROPIC_API_URL",
@@ -59,7 +61,7 @@ class _AnthropicCommon(BaseLanguageModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value from
-    ``ANTHROPIC_API_URL``. If not set, the default value ``https://api.anthropic.com``
+    `ANTHROPIC_API_URL`. If not set, the default value `https://api.anthropic.com`
     will be used.
     """
 
@@ -67,11 +69,14 @@ class _AnthropicCommon(BaseLanguageModel):
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
-    HUMAN_PROMPT: Optional[str] = None
-    AI_PROMPT: Optional[str] = None
-    count_tokens: Optional[Callable[[str], int]] = None
+    HUMAN_PROMPT: str | None = None
+
+    AI_PROMPT: str | None = None
+
+    count_tokens: Callable[[str], int] | None = None
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
@@ -120,25 +125,24 @@ class _AnthropicCommon(BaseLanguageModel):
         """Get the identifying parameters."""
         return {**self._default_params}
 
-    def _get_anthropic_stop(self, stop: Optional[list[str]] = None) -> list[str]:
+    def _get_anthropic_stop(self, stop: list[str] | None = None) -> list[str]:
         if stop is None:
             stop = []
         return stop
 
 
 class AnthropicLLM(LLM, _AnthropicCommon):
-    """Anthropic large language model.
+    """Anthropic text completion large language model (legacy LLM).
 
-    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
+    To use, you should have the environment variable `ANTHROPIC_API_KEY`
     set with your API key, or pass it as a named parameter to the constructor.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import AnthropicLLM
 
-            from langchain_anthropic import AnthropicLLM
-
-            model = AnthropicLLM()
-
+        model = AnthropicLLM(model="claude-sonnet-4-5")
+        ```
     """
 
     model_config = ConfigDict(
@@ -190,7 +194,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
@@ -245,8 +249,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         r"""Call out to Anthropic's completion endpoint.
@@ -261,12 +265,11 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             The string generated by the model.
 
         Example:
-            .. code-block:: python
-
-                prompt = "What are the biggest risks facing humanity?"
-                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model.invoke(prompt)
-
+            ```python
+            prompt = "What are the biggest risks facing humanity?"
+            prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+            response = model.invoke(prompt)
+            ```
         """
         if self.streaming:
             completion = ""
@@ -293,14 +296,14 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return response.content[0].text
 
     def convert_prompt(self, prompt: PromptValue) -> str:
-        """Convert a ``PromptValue`` to a string."""
+        """Convert a `PromptValue` to a string."""
         return prompt.to_string()
 
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         """Call out to Anthropic's completion endpoint asynchronously."""
@@ -331,8 +334,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         r"""Call Anthropic completion_stream and return the resulting generator.
@@ -347,15 +350,13 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             A generator representing the stream of tokens from Anthropic.
 
         Example:
-
-            .. code-block:: python
-
-                prompt = "Write a poem about a stream."
-                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                generator = anthropic.stream(prompt)
-                for token in generator:
-                    yield token
-
+            ```python
+            prompt = "Write a poem about a stream."
+            prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+            generator = anthropic.stream(prompt)
+            for token in generator:
+                yield token
+            ```
         """
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
@@ -378,8 +379,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         r"""Call Anthropic completion_stream and return the resulting generator.
@@ -394,14 +395,13 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             A generator representing the stream of tokens from Anthropic.
 
         Example:
-            .. code-block:: python
-
-                prompt = "Write a poem about a stream."
-                prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                generator = anthropic.stream(prompt)
-                for token in generator:
-                    yield token
-
+            ```python
+            prompt = "Write a poem about a stream."
+            prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
+            generator = anthropic.stream(prompt)
+            for token in generator:
+                yield token
+            ```
         """
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}

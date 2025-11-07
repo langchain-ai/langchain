@@ -1,4 +1,4 @@
-"""Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request."""
+"""Consolidated tests for middleware decorators: before_model, after_model, and wrap_model_call."""
 
 import pytest
 from typing import Any
@@ -16,10 +16,12 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     before_model,
     after_model,
-    modify_model_request,
+    dynamic_prompt,
+    wrap_model_call,
+    wrap_tool_call,
     hook_config,
 )
-from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
+from langchain.agents.factory import create_agent, _get_can_jump_to
 from .model import FakeToolCallingModel
 
 
@@ -83,21 +85,19 @@ def test_after_model_decorator() -> None:
     assert result == {"jump_to": "model"}
 
 
-def test_modify_model_request_decorator() -> None:
-    """Test modify_model_request decorator with all configuration options."""
+def test_on_model_call_decorator() -> None:
+    """Test wrap_model_call decorator with all configuration options."""
 
-    @modify_model_request(state_schema=CustomState, tools=[test_tool], name="CustomModifyRequest")
-    def custom_modify_request(
-        request: ModelRequest, state: CustomState, runtime: Runtime
-    ) -> ModelRequest:
+    @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="CustomOnModelCall")
+    def custom_on_model_call(request, handler):
         request.system_prompt = "Modified"
-        return request
+        return handler(request)
 
     # Verify all options were applied
-    assert isinstance(custom_modify_request, AgentMiddleware)
-    assert custom_modify_request.state_schema == CustomState
-    assert custom_modify_request.tools == [test_tool]
-    assert custom_modify_request.__class__.__name__ == "CustomModifyRequest"
+    assert isinstance(custom_on_model_call, AgentMiddleware)
+    assert custom_on_model_call.state_schema == CustomState
+    assert custom_on_model_call.tools == [test_tool]
+    assert custom_on_model_call.__class__.__name__ == "CustomOnModelCall"
 
     # Verify it works
     original_request = ModelRequest(
@@ -107,15 +107,19 @@ def test_modify_model_request_decorator() -> None:
         tool_choice=None,
         tools=[],
         response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=None,
     )
-    result = custom_modify_request.modify_model_request(
-        original_request, {"messages": [HumanMessage("Hello")]}, None
-    )
-    assert result.system_prompt == "Modified"
+
+    def mock_handler(req):
+        return AIMessage(content=f"Handled with prompt: {req.system_prompt}")
+
+    result = custom_on_model_call.wrap_model_call(original_request, mock_handler)
+    assert result.content == "Handled with prompt: Modified"
 
 
 def test_all_decorators_integration() -> None:
-    """Test all three decorators working together in an agent."""
+    """Test all decorators working together in an agent."""
     call_order = []
 
     @before_model
@@ -123,10 +127,10 @@ def test_all_decorators_integration() -> None:
         call_order.append("before")
         return None
 
-    @modify_model_request
-    def track_modify(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
-        call_order.append("modify")
-        return request
+    @wrap_model_call
+    def track_on_call(request, handler):
+        call_order.append("on_call")
+        return handler(request)
 
     @after_model
     def track_after(state: AgentState, runtime: Runtime) -> None:
@@ -134,12 +138,12 @@ def test_all_decorators_integration() -> None:
         return None
 
     agent = create_agent(
-        model=FakeToolCallingModel(), middleware=[track_before, track_modify, track_after]
+        model=FakeToolCallingModel(), middleware=[track_before, track_on_call, track_after]
     )
-    agent = agent.compile()
+    # Agent is already compiled
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
-    assert call_order == ["before", "modify", "after"]
+    assert call_order == ["before", "on_call", "after"]
 
 
 def test_decorators_use_function_names_as_default() -> None:
@@ -149,9 +153,9 @@ def test_decorators_use_function_names_as_default() -> None:
     def my_before_hook(state: AgentState, runtime: Runtime) -> None:
         return None
 
-    @modify_model_request
-    def my_modify_hook(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
-        return request
+    @wrap_model_call
+    def my_on_call_hook(request, handler):
+        return handler(request)
 
     @after_model
     def my_after_hook(state: AgentState, runtime: Runtime) -> None:
@@ -159,7 +163,7 @@ def test_decorators_use_function_names_as_default() -> None:
 
     # Verify that function names are used as middleware class names
     assert my_before_hook.__class__.__name__ == "my_before_hook"
-    assert my_modify_hook.__class__.__name__ == "my_modify_hook"
+    assert my_on_call_hook.__class__.__name__ == "my_on_call_hook"
     assert my_after_hook.__class__.__name__ == "my_after_hook"
 
 
@@ -225,7 +229,7 @@ def test_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = agent.invoke({"messages": [HumanMessage("exit")]})
@@ -268,20 +272,18 @@ def test_async_after_model_decorator() -> None:
     assert async_after_model.__class__.__name__ == "AsyncAfterModel"
 
 
-def test_async_modify_model_request_decorator() -> None:
-    """Test modify_model_request decorator with async function."""
+def test_async_on_model_call_decorator() -> None:
+    """Test wrap_model_call decorator with async function."""
 
-    @modify_model_request(state_schema=CustomState, tools=[test_tool], name="AsyncModifyRequest")
-    async def async_modify_request(
-        request: ModelRequest, state: CustomState, runtime: Runtime
-    ) -> ModelRequest:
+    @wrap_model_call(state_schema=CustomState, tools=[test_tool], name="AsyncOnModelCall")
+    async def async_on_model_call(request, handler):
         request.system_prompt = "Modified async"
-        return request
+        return await handler(request)
 
-    assert isinstance(async_modify_request, AgentMiddleware)
-    assert async_modify_request.state_schema == CustomState
-    assert async_modify_request.tools == [test_tool]
-    assert async_modify_request.__class__.__name__ == "AsyncModifyRequest"
+    assert isinstance(async_on_model_call, AgentMiddleware)
+    assert async_on_model_call.state_schema == CustomState
+    assert async_on_model_call.tools == [test_tool]
+    assert async_on_model_call.__class__.__name__ == "AsyncOnModelCall"
 
 
 def test_mixed_sync_async_decorators() -> None:
@@ -295,21 +297,19 @@ def test_mixed_sync_async_decorators() -> None:
     async def async_before(state: AgentState, runtime: Runtime) -> None:
         return None
 
-    @modify_model_request(name="MixedModifyRequest")
-    def sync_modify(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
-        return request
+    @wrap_model_call(name="MixedOnModelCall")
+    def sync_on_call(request, handler):
+        return handler(request)
 
-    @modify_model_request(name="MixedModifyRequest")
-    async def async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
-        return request
+    @wrap_model_call(name="MixedOnModelCall")
+    async def async_on_call(request, handler):
+        return await handler(request)
 
     # Both should create valid middleware instances
     assert isinstance(sync_before, AgentMiddleware)
     assert isinstance(async_before, AgentMiddleware)
-    assert isinstance(sync_modify, AgentMiddleware)
-    assert isinstance(async_modify, AgentMiddleware)
+    assert isinstance(sync_on_call, AgentMiddleware)
+    assert isinstance(async_on_call, AgentMiddleware)
 
 
 @pytest.mark.asyncio
@@ -322,12 +322,10 @@ async def test_async_decorators_integration() -> None:
         call_order.append("async_before")
         return None
 
-    @modify_model_request
-    async def track_async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
-        call_order.append("async_modify")
-        return request
+    @wrap_model_call
+    async def track_async_on_call(request, handler):
+        call_order.append("async_on_call")
+        return await handler(request)
 
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
@@ -336,12 +334,12 @@ async def test_async_decorators_integration() -> None:
 
     agent = create_agent(
         model=FakeToolCallingModel(),
-        middleware=[track_async_before, track_async_modify, track_async_after],
+        middleware=[track_async_before, track_async_on_call, track_async_after],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
 
-    assert call_order == ["async_before", "async_modify", "async_after"]
+    assert call_order == ["async_before", "async_on_call", "async_after"]
 
 
 @pytest.mark.asyncio
@@ -359,19 +357,15 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         call_order.append("async_before")
         return None
 
-    @modify_model_request
-    def track_sync_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
-        call_order.append("sync_modify")
-        return request
+    @wrap_model_call
+    async def track_async_on_call(request, handler):
+        call_order.append("async_on_call")
+        return await handler(request)
 
-    @modify_model_request
-    async def track_async_modify(
-        request: ModelRequest, state: AgentState, runtime: Runtime
-    ) -> ModelRequest:
-        call_order.append("async_modify")
-        return request
+    @wrap_tool_call
+    async def track_sync_on_tool_call(request, handler):
+        call_order.append("async_on_tool_call")
+        return await handler(request)
 
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
@@ -388,20 +382,22 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         middleware=[
             track_sync_before,
             track_async_before,
-            track_sync_modify,
-            track_async_modify,
+            track_async_on_call,
+            track_sync_on_tool_call,
             track_async_after,
             track_sync_after,
         ],
     )
-    agent = agent.compile()
+    # Agent is already compiled
     await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+
+    # In async mode, we can automatically delegate to sync middleware for nodes
+    # (although we cannot delegate to sync middleware for model call or tool call)
 
     assert call_order == [
         "sync_before",
         "async_before",
-        "sync_modify",
-        "async_modify",
+        "async_on_call",
         "sync_after",
         "async_after",
     ]
@@ -455,7 +451,7 @@ async def test_async_can_jump_to_integration() -> None:
         return None
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[async_early_exit])
-    agent = agent.compile()
+    # Agent is already compiled
 
     # Test with early exit
     result = await agent.ainvoke({"messages": [HumanMessage("exit")]})
@@ -526,7 +522,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_before_with_jump]
     )
 
-    assert agent_async_before.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_before.get_graph().draw_mermaid() == snapshot
 
     # Test 2: Async after_model with can_jump_to
     @after_model(can_jump_to=["model", "end"])
@@ -539,7 +535,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         model=FakeToolCallingModel(), middleware=[async_after_with_jump]
     )
 
-    assert agent_async_after.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_async_after.get_graph().draw_mermaid() == snapshot
 
     # Test 3: Multiple async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -555,7 +551,7 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[async_before_early_exit, async_after_retry],
     )
 
-    assert agent_multiple_async.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_multiple_async.get_graph().draw_mermaid() == snapshot
 
     # Test 4: Mixed sync and async middleware with can_jump_to
     @before_model(can_jump_to=["end"])
@@ -571,4 +567,200 @@ def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAsse
         middleware=[sync_before_with_jump, async_after_with_jumps],
     )
 
-    assert agent_mixed.compile().get_graph().draw_mermaid() == snapshot
+    assert agent_mixed.get_graph().draw_mermaid() == snapshot
+
+
+def test_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with basic usage."""
+
+    @dynamic_prompt
+    def my_prompt(request: ModelRequest) -> str:
+        return "Dynamic test prompt"
+
+    assert isinstance(my_prompt, AgentMiddleware)
+    assert my_prompt.state_schema == AgentState
+    assert my_prompt.tools == []
+    assert my_prompt.__class__.__name__ == "my_prompt"
+
+    # Verify it modifies the request correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello")]},
+        runtime=None,
+    )
+
+    def mock_handler(req):
+        return AIMessage(content=req.system_prompt)
+
+    result = my_prompt.wrap_model_call(original_request, mock_handler)
+    assert result.content == "Dynamic test prompt"
+
+
+def test_dynamic_prompt_uses_state() -> None:
+    """Test that dynamic_prompt can use state information."""
+
+    @dynamic_prompt
+    def custom_prompt(request: ModelRequest) -> str:
+        msg_count = len(request.state["messages"])
+        return f"Prompt with {msg_count} messages"
+
+    # Verify it uses state correctly
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state={"messages": [HumanMessage("Hello"), HumanMessage("World")]},
+        runtime=None,
+    )
+
+    def mock_handler(req):
+        return AIMessage(content=req.system_prompt)
+
+    result = custom_prompt.wrap_model_call(original_request, mock_handler)
+    assert result.content == "Prompt with 2 messages"
+
+
+def test_dynamic_prompt_integration() -> None:
+    """Test dynamic_prompt decorator in a full agent."""
+
+    prompt_calls = 0
+
+    @dynamic_prompt
+    def context_aware_prompt(request: ModelRequest) -> str:
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"you are a helpful assistant."
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[context_aware_prompt])
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "you are a helpful assistant.-Hello"
+
+
+async def test_async_dynamic_prompt_decorator() -> None:
+    """Test dynamic_prompt decorator with async function."""
+
+    @dynamic_prompt
+    async def async_prompt(request: ModelRequest) -> str:
+        return "Async dynamic prompt"
+
+    assert isinstance(async_prompt, AgentMiddleware)
+    assert async_prompt.state_schema == AgentState
+    assert async_prompt.tools == []
+    assert async_prompt.__class__.__name__ == "async_prompt"
+
+
+async def test_async_dynamic_prompt_integration() -> None:
+    """Test async dynamic_prompt decorator in a full agent."""
+
+    prompt_calls = 0
+
+    @dynamic_prompt
+    async def async_context_prompt(request: ModelRequest) -> str:
+        nonlocal prompt_calls
+        prompt_calls += 1
+        return f"Async assistant."
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_context_prompt])
+    # Agent is already compiled
+
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+    assert prompt_calls == 1
+    assert result["messages"][-1].content == "Async assistant.-Hello"
+
+
+def test_dynamic_prompt_overwrites_system_prompt() -> None:
+    """Test that dynamic_prompt overwrites the original system_prompt."""
+
+    @dynamic_prompt
+    def override_prompt(request: ModelRequest) -> str:
+        return "Overridden prompt."
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        system_prompt="Original static prompt",
+        middleware=[override_prompt],
+    )
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["messages"][-1].content == "Overridden prompt.-Hello"
+
+
+def test_dynamic_prompt_multiple_in_sequence() -> None:
+    """Test multiple dynamic_prompt decorators in sequence (last wins)."""
+
+    @dynamic_prompt
+    def first_prompt(request: ModelRequest) -> str:
+        return "First prompt."
+
+    @dynamic_prompt
+    def second_prompt(request: ModelRequest) -> str:
+        return "Second prompt."
+
+    # When used together, the last middleware in the list should win
+    # since they're both wrap_model_call hooks composed in sequence
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[first_prompt, second_prompt])
+    # Agent is already compiled
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["messages"][-1].content == "Second prompt.-Hello"
+
+
+def test_async_dynamic_prompt_skipped_on_sync_invoke() -> None:
+    """Test that async dynamic_prompt raises NotImplementedError when invoked via sync path (.invoke).
+
+    When an async-only middleware is defined, it cannot be called from the sync path.
+    The framework will raise NotImplementedError when trying to invoke the sync method.
+    """
+    calls = []
+
+    @dynamic_prompt
+    async def async_only_prompt(request: ModelRequest) -> str:
+        calls.append("async_prompt")
+        return "Async prompt"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_only_prompt])
+
+    # Async-only middleware raises NotImplementedError in sync path
+    with pytest.raises(NotImplementedError):
+        agent.invoke({"messages": [HumanMessage("Hello")]})
+
+    # The async prompt was not called
+    assert calls == []
+
+
+async def test_sync_dynamic_prompt_on_async_invoke() -> None:
+    """Test that sync dynamic_prompt works when invoked via async path (.ainvoke).
+
+    When a sync middleware is defined with @dynamic_prompt, it automatically creates
+    both sync and async implementations. The async implementation delegates to the
+    sync function, allowing the middleware to work in both sync and async contexts.
+    """
+    calls = []
+
+    @dynamic_prompt
+    def sync_prompt(request: ModelRequest) -> str:
+        calls.append("sync_prompt")
+        return "Sync prompt"
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[sync_prompt])
+
+    # Sync dynamic_prompt now works in async path via delegation
+    result = await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+
+    # The sync prompt function was called via async delegation
+    assert calls == ["sync_prompt"]
+    # The model executed with the custom prompt
+    assert result["messages"][-1].content == "Sync prompt-Hello"

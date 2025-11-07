@@ -1,9 +1,8 @@
 import re
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import pytest
-from packaging import version
 from pydantic import BaseModel, RootModel
 from typing_extensions import override
 
@@ -25,7 +24,6 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _schema
 
 
@@ -39,7 +37,7 @@ def test_interfaces() -> None:
 
 def _get_get_session_history(
     *,
-    store: Optional[dict[str, Any]] = None,
+    store: dict[str, Any] | None = None,
 ) -> Callable[..., InMemoryChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -262,8 +260,8 @@ class LengthChatModel(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
@@ -432,7 +430,7 @@ async def test_output_dict_async() -> None:
 
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
-        input: Union[str, BaseMessage, Sequence[BaseMessage]]
+        input: str | BaseMessage | Sequence[BaseMessage]
 
     runnable = RunnableLambda(
         lambda params: {
@@ -497,8 +495,6 @@ def test_get_output_schema() -> None:
         "title": "RunnableWithChatHistoryOutput",
         "type": "object",
     }
-    if version.parse("2.11") <= PYDANTIC_VERSION:
-        expected_schema["additionalProperties"] = True
     assert _schema(output_type) == expected_schema
 
 
@@ -781,15 +777,15 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
-        on_end: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
-        on_error: Optional[
-            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
-        ] = None,
+        on_start: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
+        on_end: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
+        on_error: Callable[[Run], None]
+        | Callable[[Run, RunnableConfig], None]
+        | None = None,
     ) -> Runnable[Input, Output]:
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = RootListenersTracer(
@@ -811,9 +807,9 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
     def with_alisteners(
         self,
         *,
-        on_start: Optional[AsyncListener] = None,
-        on_end: Optional[AsyncListener] = None,
-        on_error: Optional[AsyncListener] = None,
+        on_start: AsyncListener | None = None,
+        on_end: AsyncListener | None = None,
+        on_error: AsyncListener | None = None,
     ) -> Runnable[Input, Output]:
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = AsyncRootListenersTracer(

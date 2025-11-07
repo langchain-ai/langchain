@@ -9,7 +9,7 @@ from langchain_core.outputs import LLMResult
 from langchain_anthropic import AnthropicLLM
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL = "claude-3-7-sonnet-latest"
+MODEL = "claude-sonnet-4-5-20250929"
 
 
 @pytest.mark.requires("anthropic")
@@ -49,7 +49,7 @@ def test_anthropic_streaming_callback() -> None:
     llm = AnthropicLLM(
         model=MODEL,  # type: ignore[call-arg]
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
@@ -70,7 +70,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     llm = AnthropicLLM(
         model=MODEL,  # type: ignore[call-arg]
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
         verbose=True,
     )
     result = await llm.agenerate(["How many toes do dogs have?"])

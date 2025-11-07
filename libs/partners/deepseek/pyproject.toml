@@ -1,24 +1,29 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-deepseek"
+description = "An integration package connecting DeepSeek and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
-    "langchain-openai>=1.0.0a3,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
+    "langchain-openai>=1.0.0,<2.0.0",
 ]
-name = "langchain-deepseek"
-version = "1.0.0a1"
-description = "An integration package connecting DeepSeek and LangChain"
-readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/deepseek"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-deepseek%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/deepseek"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_deepseek/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/deepseek"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-deepseek%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
@@ -49,52 +54,16 @@ docstring-code-format = true
 docstring-code-line-length = 100
 
 [tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "ASYNC",  # flake8-async
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D",      # pydocstyle
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "SIM",    # flake8-simplify
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TID",    # flake8-tidy-imports
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
+select = [ "ALL" ]
 ignore = [
     "COM812",  # Conflicts with formatter
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
-    "D102",    # Missing docstring in public method
-    "D103",    # Missing docstring in public function
-    "D104",    # Missing docstring in public package
-    "D105",    # Missing docstring in magic method
-    "D107",    # Missing docstring in __init__
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "PLR0913", # Too many arguments
+
+    # TODO
+    "ANN401",
+    "TC002",
+    "TC003",
+    "ANN401",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -117,4 +86,10 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "S101",   # Tests need assertions
     "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access
+
+    # TODO
+    "ARG002", # Unused method argument:
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]

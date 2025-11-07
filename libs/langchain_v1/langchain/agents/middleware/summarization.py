@@ -60,7 +60,7 @@ _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 
 class SummarizationMiddleware(AgentMiddleware):
-    """Middleware that summarizes conversation history when token limits are approached.
+    """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
@@ -81,7 +81,7 @@ class SummarizationMiddleware(AgentMiddleware):
         Args:
             model: The language model to use for generating summaries.
             max_tokens_before_summary: Token threshold to trigger summarization.
-                If None, summarization is disabled.
+                If `None`, summarization is disabled.
             messages_to_keep: Number of recent messages to preserve after summarization.
             token_counter: Function to count tokens in messages.
             summary_prompt: Prompt template for generating summaries.

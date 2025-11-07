@@ -1,26 +1,34 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-text-splitters"
+description = "LangChain text splitting utilities"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
 ]
-name = "langchain-text-splitters"
-version = "1.0.0a1"
-description = "LangChain text splitting utilities"
-readme = "README.md"
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/"
+Documentation = "https://docs.langchain.com/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-text-splitters%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
-lint = ["ruff>=0.13.1,<0.14.0", "langchain-core"]
+lint = [
+    "ruff>=0.13.1,<0.14.0",
+    "langchain-core"
+]
 typing = [
     "mypy>=1.18.1,<1.19.0",
     "lxml-stubs>=0.5.1,<1.0.0",
@@ -28,7 +36,10 @@ typing = [
     "tiktoken>=0.8.0,<1.0.0",
     "beautifulsoup4>=4.13.5,<5.0.0",
 ]
-dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "langchain-core"
+]
 test = [
     "pytest>=8.0.0,<9.0.0",
     "freezegun>=1.2.2,<2.0.0",
@@ -40,11 +51,11 @@ test = [
     "langchain-core",
 ]
 test_integration = [
-    "spacy>=3.8.7,<4.0.0",
+    "spacy>=3.8.7,<4.0.0; python_version < \"3.14\"",
     "thinc>=8.3.6,<9.0.0",
     "nltk>=3.9.1,<4.0.0",
     "transformers>=4.51.3,<5.0.0",
-    "sentence-transformers>=3.0.1,<4.0.0",
+    "sentence-transformers>=3.0.1,<4.0.0; python_version < \"3.14\"",
     "scipy>=1.7.0,<2.0.0; python_version >= \"3.12\" and python_version < \"3.13\"",
     "scipy>=1.14.1,<2.0.0; python_version >= \"3.13\"",
     "tiktoken>=0.8.0,<1.0.0",
@@ -71,20 +82,14 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
-    "ANN401",  # Dynamically typed expressions (typing.Any)
     "C90",     # McCabe complexity
-    "C901",    # Complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "PLR2004", # Magic value used in comparison
-    "PLR0915", # Too many statements
-    "PLR0911", # Too many return statements
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments in function definition
+    "PLR09",   # Too many something (arg, statements, etc)
     "RUF012",  # Doesn't play well with Pydantic
-    "S112",    # Rarely useful
     "TC001",   # Doesn't play well with Pydantic
     "TC002",   # Doesn't play well with Pydantic
     "TC003",   # Doesn't play well with Pydantic
@@ -100,7 +105,6 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -5,8 +5,9 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import sys
 import textwrap
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextvars import Context
 from functools import lru_cache
 from inspect import signature
@@ -14,13 +15,10 @@ from itertools import groupby
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     NamedTuple,
-    Optional,
     Protocol,
     TypeGuard,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import override
@@ -58,7 +56,7 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
         return await coro
 
 
-async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> list:
+async def gather_with_concurrency(n: int | None, *coros: Coroutine) -> list:
     """Gather coroutines with a limit on the number of concurrent coroutines.
 
     Args:
@@ -83,7 +81,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a run_manager argument, False otherwise.
+        `True` if the callable accepts a run_manager argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("run_manager") is not None
@@ -98,7 +96,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a config argument, False otherwise.
+        `True` if the callable accepts a config argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("config") is not None
@@ -113,7 +111,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         callable: The callable to check.
 
     Returns:
-        bool: True if the callable accepts a context argument, False otherwise.
+        `True` if the callable accepts a context argument, `False` otherwise.
     """
     try:
         return signature(callable).parameters.get("context") is not None
@@ -121,15 +119,13 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         return False
 
 
-@lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
+    """Check if asyncio.create_task accepts a `context` arg.
 
     Returns:
-        bool: True if ``asyncio.create_task`` accepts a context argument, False
-            otherwise.
+        True if `asyncio.create_task` accepts a context argument, `False` otherwise.
     """
-    return accepts_context(asyncio.create_task)
+    return sys.version_info >= (3, 11)
 
 
 def coro_with_context(
@@ -140,7 +136,7 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task. Defaults to False.
+        create_task: Whether to create a task.
 
     Returns:
         The coroutine with the context.
@@ -344,7 +340,7 @@ class GetLambdaSource(ast.NodeVisitor):
 
     def __init__(self) -> None:
         """Initialize the visitor."""
-        self.source: Optional[str] = None
+        self.source: str | None = None
         self.count = 0
 
     @override
@@ -359,15 +355,14 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
+def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
         func: The function to check.
 
     Returns:
-        Optional[list[str]]: The keys of the first argument if it is a dict,
-            None otherwise.
+        The keys of the first argument if it is a dict, None otherwise.
     """
     try:
         code = inspect.getsource(func)
@@ -379,14 +374,14 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
         return None
 
 
-def get_lambda_source(func: Callable) -> Optional[str]:
+def get_lambda_source(func: Callable) -> str | None:
     """Get the source code of a lambda function.
 
     Args:
         func: a Callable that can be a lambda function.
 
     Returns:
-        str: the source code of the lambda function.
+        the source code of the lambda function.
     """
     try:
         name = func.__name__ if func.__name__ != "<lambda>" else None
@@ -410,7 +405,7 @@ def get_function_nonlocals(func: Callable) -> list[Any]:
         func: The function to check.
 
     Returns:
-        list[Any]: The nonlocal variables accessed by the function.
+        The nonlocal variables accessed by the function.
     """
     try:
         code = inspect.getsource(func)
@@ -453,7 +448,7 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
         prefix: Used to determine the number of spaces to indent.
 
     Returns:
-        str: The indented text.
+        The indented text.
     """
     n_spaces = len(prefix)
     spaces = " " * n_spaces
@@ -521,31 +516,31 @@ class SupportsAdd(Protocol[_T_contra, _T_co]):
 Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
 
 
-def add(addables: Iterable[Addable]) -> Optional[Addable]:
+def add(addables: Iterable[Addable]) -> Addable | None:
     """Add a sequence of addable objects together.
 
     Args:
         addables: The addable objects to add.
 
     Returns:
-        Optional[Addable]: The result of adding the addable objects.
+        The result of adding the addable objects.
     """
-    final: Optional[Addable] = None
+    final: Addable | None = None
     for chunk in addables:
         final = chunk if final is None else final + chunk
     return final
 
 
-async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
+async def aadd(addables: AsyncIterable[Addable]) -> Addable | None:
     """Asynchronously add a sequence of addable objects together.
 
     Args:
         addables: The addable objects to add.
 
     Returns:
-        Optional[Addable]: The result of adding the addable objects.
+        The result of adding the addable objects.
     """
-    final: Optional[Addable] = None
+    final: Addable | None = None
     async for chunk in addables:
         final = chunk if final is None else final + chunk
     return final
@@ -556,14 +551,14 @@ class ConfigurableField(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
-    name: Optional[str] = None
-    """The name of the field. Defaults to None."""
-    description: Optional[str] = None
-    """The description of the field. Defaults to None."""
-    annotation: Optional[Any] = None
-    """The annotation of the field. Defaults to None."""
+    name: str | None = None
+    """The name of the field. """
+    description: str | None = None
+    """The description of the field. """
+    annotation: Any | None = None
+    """The annotation of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -579,12 +574,12 @@ class ConfigurableFieldSingleOption(NamedTuple):
     """The options for the field."""
     default: str
     """The default value for the field."""
-    name: Optional[str] = None
-    """The name of the field. Defaults to None."""
-    description: Optional[str] = None
-    """The description of the field. Defaults to None."""
+    name: str | None = None
+    """The name of the field. """
+    description: str | None = None
+    """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
@@ -600,21 +595,21 @@ class ConfigurableFieldMultiOption(NamedTuple):
     """The options for the field."""
     default: Sequence[str]
     """The default values for the field."""
-    name: Optional[str] = None
-    """The name of the field. Defaults to None."""
-    description: Optional[str] = None
-    """The description of the field. Defaults to None."""
+    name: str | None = None
+    """The name of the field. """
+    description: str | None = None
+    """The description of the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
+    """Whether the field is shared."""
 
     @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
 
-AnyConfigurableField = Union[
-    ConfigurableField, ConfigurableFieldSingleOption, ConfigurableFieldMultiOption
-]
+AnyConfigurableField = (
+    ConfigurableField | ConfigurableFieldSingleOption | ConfigurableFieldMultiOption
+)
 
 
 class ConfigurableFieldSpec(NamedTuple):
@@ -624,16 +619,16 @@ class ConfigurableFieldSpec(NamedTuple):
     """The unique identifier of the field."""
     annotation: Any
     """The annotation of the field."""
-    name: Optional[str] = None
-    """The name of the field. Defaults to None."""
-    description: Optional[str] = None
-    """The description of the field. Defaults to None."""
+    name: str | None = None
+    """The name of the field. """
+    description: str | None = None
+    """The description of the field. """
     default: Any = None
-    """The default value for the field. Defaults to None."""
+    """The default value for the field. """
     is_shared: bool = False
-    """Whether the field is shared. Defaults to False."""
-    dependencies: Optional[list[str]] = None
-    """The dependencies of the field. Defaults to None."""
+    """Whether the field is shared."""
+    dependencies: list[str] | None = None
+    """The dependencies of the field. """
 
 
 def get_unique_config_specs(
@@ -645,7 +640,7 @@ def get_unique_config_specs(
         specs: The config specs.
 
     Returns:
-        list[ConfigurableFieldSpec]: The unique config specs.
+        The unique config specs.
 
     Raises:
         ValueError: If the runnable sequence contains conflicting config specs.
@@ -672,12 +667,12 @@ class _RootEventFilter:
     def __init__(
         self,
         *,
-        include_names: Optional[Sequence[str]] = None,
-        include_types: Optional[Sequence[str]] = None,
-        include_tags: Optional[Sequence[str]] = None,
-        exclude_names: Optional[Sequence[str]] = None,
-        exclude_types: Optional[Sequence[str]] = None,
-        exclude_tags: Optional[Sequence[str]] = None,
+        include_names: Sequence[str] | None = None,
+        include_types: Sequence[str] | None = None,
+        include_tags: Sequence[str] | None = None,
+        exclude_names: Sequence[str] | None = None,
+        exclude_types: Sequence[str] | None = None,
+        exclude_tags: Sequence[str] | None = None,
     ) -> None:
         """Utility to filter the root event in the astream_events implementation.
 
@@ -732,8 +727,7 @@ def is_async_generator(
         func: The function to check.
 
     Returns:
-        TypeGuard[Callable[..., AsyncIterator]: True if the function is
-            an async generator, False otherwise.
+        `True` if the function is an async generator, `False` otherwise.
     """
     return inspect.isasyncgenfunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
@@ -750,8 +744,7 @@ def is_async_callable(
         func: The function to check.
 
     Returns:
-        TypeGuard[Callable[..., Awaitable]: True if the function is async,
-            False otherwise.
+        `True` if the function is async, `False` otherwise.
     """
     return asyncio.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Optional
+from typing import Annotated
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -40,7 +40,7 @@ def test_init_model_not_found(mock_list: MagicMock) -> None:
 
 @patch("langchain_ollama.chat_models.Client.list")
 def test_init_connection_error(mock_list: MagicMock) -> None:
-    """Test that a ValidationError is raised on connect failure during init."""
+    """Test that a `ValidationError` is raised on connect failure during init."""
     mock_list.side_effect = ConnectError("Test connection error")
 
     with pytest.raises(ValidationError) as excinfo:
@@ -120,11 +120,11 @@ def test_structured_output_deeply_nested(model: str) -> None:
     class Person(BaseModel):
         """Information about a person."""
 
-        name: Optional[str] = Field(default=None, description="The name of the person")
-        hair_color: Optional[str] = Field(
+        name: str | None = Field(default=None, description="The name of the person")
+        hair_color: str | None = Field(
             default=None, description="The color of the person's hair if known"
         )
-        height_in_meters: Optional[str] = Field(
+        height_in_meters: str | None = Field(
             default=None, description="Height measured in meters"
         )
 
@@ -243,7 +243,7 @@ async def test_tool_astreaming(model: str) -> None:
     ("model", "output_version"),
     [(REASONING_MODEL_NAME, None), (REASONING_MODEL_NAME, "v1")],
 )
-def test_agent_loop(model: str, output_version: Optional[str]) -> None:
+def test_agent_loop(model: str, output_version: str | None) -> None:
     """Test agent loop with tool calling and message passing."""
 
     @tool

@@ -22,7 +22,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o-mini", "output_version": "responses/v1"}
+        return {"model": "gpt-4o-mini", "use_responses_api": True}
 
     @property
     def supports_image_tool_message(self) -> bool:
@@ -40,7 +40,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
 
         {readme}
         """
-        llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
+        llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
         _invoke(llm, input_, stream)
         # invoke twice so first invocation is cached
         return _invoke(llm, input_, stream)
@@ -49,11 +49,12 @@ class TestOpenAIResponses(TestOpenAIStandard):
         llm = ChatOpenAI(
             model="o4-mini",
             reasoning={"effort": "medium", "summary": "auto"},
-            output_version="responses/v1",
+            use_responses_api=True,
         )
         input_ = "What was the 3rd highest building in 2000?"
         return _invoke(llm, input_, stream)
 
+    @pytest.mark.flaky(retries=3, delay=1)
     def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs."""
         super().test_openai_pdf_inputs(model)
@@ -84,7 +85,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         return False
 
     def test_openai_pdf_tool_messages(self, model: BaseChatModel) -> None:
-        """Test that the model can process PDF inputs in ToolMessages."""
+        """Test that the model can process PDF inputs in `ToolMessage` objects."""
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
         pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, TextIO, cast
 
 from typing_extensions import Self, override
 
@@ -27,44 +27,44 @@ class FileCallbackHandler(BaseCallbackHandler):
     Examples:
         Using as a context manager (recommended):
 
-        .. code-block:: python
-
-            with FileCallbackHandler("output.txt") as handler:
-                # Use handler with your chain/agent
-                chain.invoke(inputs, config={"callbacks": [handler]})
+        ```python
+        with FileCallbackHandler("output.txt") as handler:
+            # Use handler with your chain/agent
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        ```
 
         Direct instantiation (deprecated):
 
-        .. code-block:: python
-
-            handler = FileCallbackHandler("output.txt")
-            # File remains open until handler is garbage collected
-            try:
-                chain.invoke(inputs, config={"callbacks": [handler]})
-            finally:
-                handler.close()  # Explicit cleanup recommended
+        ```python
+        handler = FileCallbackHandler("output.txt")
+        # File remains open until handler is garbage collected
+        try:
+            chain.invoke(inputs, config={"callbacks": [handler]})
+        finally:
+            handler.close()  # Explicit cleanup recommended
+        ```
 
     Args:
         filename: The file path to write to.
-        mode: The file open mode. Defaults to ``'a'`` (append).
-        color: Default color for text output. Defaults to ``None``.
+        mode: The file open mode. Defaults to `'a'` (append).
+        color: Default color for text output.
 
     !!! note
         When not used as a context manager, a deprecation warning will be issued
-        on first use. The file will be opened immediately in ``__init__`` and closed
-        in ``__del__`` or when ``close()`` is called explicitly.
+        on first use. The file will be opened immediately in `__init__` and closed
+        in `__del__` or when `close()` is called explicitly.
 
     """
 
     def __init__(
-        self, filename: str, mode: str = "a", color: Optional[str] = None
+        self, filename: str, mode: str = "a", color: str | None = None
     ) -> None:
         """Initialize the file callback handler.
 
         Args:
             filename: Path to the output file.
-            mode: File open mode (e.g., ``'w'``, ``'a'``, ``'x'``). Defaults to ``'a'``.
-            color: Default text color for output. Defaults to ``None``.
+            mode: File open mode (e.g., `'w'`, `'a'`, `'x'`). Defaults to `'a'`.
+            color: Default text color for output.
 
         """
         self.filename = filename
@@ -84,7 +84,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             The FileCallbackHandler instance.
 
         !!! note
-            The file is already opened in ``__init__``, so this just marks that
+            The file is already opened in `__init__`, so this just marks that
             the handler is being used as a context manager.
 
         """
@@ -124,16 +124,16 @@ class FileCallbackHandler(BaseCallbackHandler):
     def _write(
         self,
         text: str,
-        color: Optional[str] = None,
+        color: str | None = None,
         end: str = "",
     ) -> None:
         """Write text to the file with deprecation warning if needed.
 
         Args:
             text: The text to write to the file.
-            color: Optional color for the text. Defaults to ``self.color``.
-            end: String appended after the text. Defaults to ``""``.
-            file: Optional file to write to. Defaults to ``self.file``.
+            color: Optional color for the text. Defaults to `self.color`.
+            end: String appended after the text.
+            file: Optional file to write to. Defaults to `self.file`.
 
         Raises:
             RuntimeError: If the file is closed or not available.
@@ -167,7 +167,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             serialized: The serialized chain information.
             inputs: The inputs to the chain.
-            **kwargs: Additional keyword arguments that may contain ``'name'``.
+            **kwargs: Additional keyword arguments that may contain `'name'`.
 
         """
         name = (
@@ -190,14 +190,14 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_action(
-        self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
+        self, action: AgentAction, color: str | None = None, **kwargs: Any
     ) -> Any:
         """Handle agent action by writing the action log.
 
         Args:
             action: The agent action containing the log to write.
-            color: Color override for this specific output. If ``None``, uses
-                ``self.color``.
+            color: Color override for this specific output. If `None`, uses
+                `self.color`.
             **kwargs: Additional keyword arguments.
 
         """
@@ -207,17 +207,17 @@ class FileCallbackHandler(BaseCallbackHandler):
     def on_tool_end(
         self,
         output: str,
-        color: Optional[str] = None,
-        observation_prefix: Optional[str] = None,
-        llm_prefix: Optional[str] = None,
+        color: str | None = None,
+        observation_prefix: str | None = None,
+        llm_prefix: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Handle tool end by writing the output with optional prefixes.
 
         Args:
             output: The tool output to write.
-            color: Color override for this specific output. If ``None``, uses
-                ``self.color``.
+            color: Color override for this specific output. If `None`, uses
+                `self.color`.
             observation_prefix: Optional prefix to write before the output.
             llm_prefix: Optional prefix to write after the output.
             **kwargs: Additional keyword arguments.
@@ -231,15 +231,15 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_text(
-        self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
+        self, text: str, color: str | None = None, end: str = "", **kwargs: Any
     ) -> None:
         """Handle text output.
 
         Args:
             text: The text to write.
-            color: Color override for this specific output. If ``None``, uses
-                ``self.color``.
-            end: String appended after the text. Defaults to ``""``.
+            color: Color override for this specific output. If `None`, uses
+                `self.color`.
+            end: String appended after the text.
             **kwargs: Additional keyword arguments.
 
         """
@@ -247,14 +247,14 @@ class FileCallbackHandler(BaseCallbackHandler):
 
     @override
     def on_agent_finish(
-        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+        self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         """Handle agent finish by writing the finish log.
 
         Args:
             finish: The agent finish object containing the log to write.
-            color: Color override for this specific output. If ``None``, uses
-                ``self.color``.
+            color: Color override for this specific output. If `None`, uses
+                `self.color`.
             **kwargs: Additional keyword arguments.
 
         """

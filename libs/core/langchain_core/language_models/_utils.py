@@ -3,10 +3,8 @@ from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Literal,
-    Optional,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 if TYPE_CHECKING:
@@ -17,11 +15,11 @@ from langchain_core.messages.content import (
 
 
 def is_openai_data_block(
-    block: dict, filter_: Union[Literal["image", "audio", "file"], None] = None
+    block: dict, filter_: Literal["image", "audio", "file"] | None = None
 ) -> bool:
     """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
-    Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``)
+    Supports both data and ID-style blocks (e.g. `'file_data'` and `'file_id'`)
 
     If additional keys are present, they are ignored / will not affect outcome as long
     as the required keys are present and valid.
@@ -32,12 +30,12 @@ def is_openai_data_block(
             - "image": Only match image_url blocks
             - "audio": Only match input_audio blocks
             - "file": Only match file blocks
-            If None, match any valid OpenAI data block type. Note that this means that
+            If `None`, match any valid OpenAI data block type. Note that this means that
             if the block has a valid OpenAI data type but the filter_ is set to a
             different type, this function will return False.
 
     Returns:
-        True if the block is a valid OpenAI data block and matches the filter_
+        `True` if the block is a valid OpenAI data block and matches the filter_
         (if provided).
 
     """
@@ -88,24 +86,23 @@ class ParsedDataUri(TypedDict):
     mime_type: str
 
 
-def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
+def _parse_data_uri(uri: str) -> ParsedDataUri | None:
     """Parse a data URI into its components.
 
-    If parsing fails, return None. If either MIME type or data is missing, return None.
+    If parsing fails, return `None`. If either MIME type or data is missing, return
+    `None`.
 
     Example:
+        ```python
+        data_uri = "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+        parsed = _parse_data_uri(data_uri)
 
-        .. code-block:: python
-
-            data_uri = "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
-            parsed = _parse_data_uri(data_uri)
-
-            assert parsed == {
-                "source_type": "base64",
-                "mime_type": "image/jpeg",
-                "data": "/9j/4AAQSkZJRg...",
-            }
-
+        assert parsed == {
+            "source_type": "base64",
+            "mime_type": "image/jpeg",
+            "data": "/9j/4AAQSkZJRg...",
+        }
+        ```
     """
     regex = r"^data:(?P<mime_type>[^;]+);base64,(?P<data>.+)$"
     match = re.match(regex, uri)
@@ -135,14 +132,14 @@ def _normalize_messages(
     - LangChain v1 standard content blocks
 
     This function extends support to:
-    - `Audio <https://platform.openai.com/docs/api-reference/chat/create>`__ and
-        `file <https://platform.openai.com/docs/api-reference/files>`__ data in OpenAI
+    - `[Audio](https://platform.openai.com/docs/api-reference/chat/create) and
+        `[file](https://platform.openai.com/docs/api-reference/files) data in OpenAI
         Chat Completions format
         - Images are technically supported but we expect chat models to handle them
             directly; this may change in the future
     - LangChain v0 standard content blocks for backward compatibility
 
-    !!! warning "Behavior changed in 1.0.0"
+    !!! warning "Behavior changed in `langchain-core` 1.0.0"
         In previous versions, this function returned messages in LangChain v0 format.
         Now, it returns messages in LangChain v1 format, which upgraded chat models now
         expect to receive when passing back in message history. For backward
@@ -150,50 +147,50 @@ def _normalize_messages(
 
     ??? note "v0 Content Block Schemas"
 
-        ``URLContentBlock``:
+        `URLContentBlock`:
 
-        .. codeblock::
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['image', 'audio', 'file'],
+            source_type: Literal['url'],
+            url: str,
+        }
+        ```
 
-            {
-                mime_type: NotRequired[str]
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['url'],
-                url: str,
-            }
+        `Base64ContentBlock`:
 
-        ``Base64ContentBlock``:
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['image', 'audio', 'file'],
+            source_type: Literal['base64'],
+            data: str,
+        }
+        ```
 
-        .. codeblock::
-
-            {
-                mime_type: NotRequired[str]
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['base64'],
-                data: str,
-            }
-
-        ``IDContentBlock``:
+        `IDContentBlock`:
 
         (In practice, this was never used)
 
-        .. codeblock::
+        ```python
+        {
+            type: Literal["image", "audio", "file"],
+            source_type: Literal["id"],
+            id: str,
+        }
+        ```
 
-            {
-                type: Literal['image', 'audio', 'file'],
-                source_type: Literal['id'],
-                id: str,
-            }
+        `PlainTextContentBlock`:
 
-        ``PlainTextContentBlock``:
-
-        .. codeblock::
-
-            {
-                mime_type: NotRequired[str]
-                type: Literal['file'],
-                source_type: Literal['text'],
-                url: str,
-            }
+        ```python
+        {
+            mime_type: NotRequired[str]
+            type: Literal['file'],
+            source_type: Literal['text'],
+            url: str,
+        }
+        ```
 
     If a v1 message is passed in, it will be returned as-is, meaning it is safe to
     always pass in v1 messages to this function for assurance.
@@ -224,7 +221,7 @@ def _normalize_messages(
         "type": Literal['file'],
         "file": Union[
             {
-                "filename": Optional[str] = "$FILENAME",
+                "filename": str | None = "$FILENAME",
                 "file_data": str = "$BASE64_ENCODED_FILE",
             },
             {
@@ -304,7 +301,7 @@ def _ensure_message_copy(message: T, formatted_message: T) -> T:
 
 
 def _update_content_block(
-    formatted_message: "BaseMessage", idx: int, new_block: Union[ContentBlock, dict]
+    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict
 ) -> None:
     """Update a content block at the given index, handling type issues."""
     # Type ignore needed because:

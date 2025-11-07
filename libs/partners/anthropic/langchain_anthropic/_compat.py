@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.messages import content as types
 
@@ -22,8 +22,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
             if "title" in annotation:
                 out["title"] = annotation["title"]
             out["type"] = "web_search_result_location"
-            if "url" in annotation:
-                out["url"] = annotation["url"]
+            out["url"] = annotation.get("url")
 
             for key, value in annotation.get("extras", {}).items():
                 if key not in out:
@@ -97,7 +96,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
 def _convert_from_v1_to_anthropic(
     content: list[types.ContentBlock],
     tool_calls: list[types.ToolCall],
-    model_provider: Optional[str],
+    model_provider: str | None,
 ) -> list[dict[str, Any]]:
     new_content: list = []
     for block in content:

@@ -30,6 +30,7 @@ LANGCHAIN_DIRS = [
     "libs/text-splitters",
     "libs/langchain",
     "libs/langchain_v1",
+    "libs/model-profiles",
 ]
 
 # When set to True, we are ignoring core dependents
@@ -130,29 +131,20 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
         return _get_pydantic_test_configs(dir_)
 
     if job == "codspeed":
-        py_versions = ["3.12"]  # 3.13 is not yet supported
+        py_versions = ["3.13"]
     elif dir_ == "libs/core":
-        py_versions = ["3.10", "3.11", "3.12", "3.13"]
+        py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     # custom logic for specific directories
-
-    elif dir_ == "libs/langchain" and job == "extended-tests":
+    elif dir_ in {"libs/partners/chroma"}:
         py_versions = ["3.10", "3.13"]
-    elif dir_ == "libs/langchain_v1":
-        py_versions = ["3.10", "3.13"]
-    elif dir_ in {"libs/cli"}:
-        py_versions = ["3.10", "3.13"]
-
-    elif dir_ == ".":
-        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
-        py_versions = ["3.10", "3.12"]
     else:
-        py_versions = ["3.10", "3.13"]
+        py_versions = ["3.10", "3.14"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
 
 def _get_pydantic_test_configs(
-    dir_: str, *, python_version: str = "3.11"
+    dir_: str, *, python_version: str = "3.12"
 ) -> List[Dict[str, str]]:
     with open("./libs/core/uv.lock", "rb") as f:
         core_uv_lock_data = tomllib.load(f)
@@ -257,7 +249,15 @@ if __name__ == "__main__":
                 ".github/scripts/check_diff.py",
             )
         ):
-            # add all LANGCHAIN_DIRS for infra changes
+            # Infrastructure changes (workflows, actions, CI scripts) trigger tests on
+            # all core packages as a safety measure. This ensures that changes to CI/CD
+            # infrastructure don't inadvertently break package testing, even if the change
+            # appears unrelated (e.g., documentation build workflows). This is intentionally
+            # conservative to catch unexpected side effects from workflow modifications.
+            #
+            # Example: A PR modifying .github/workflows/api_doc_build.yml will trigger
+            # lint/test jobs for libs/core, libs/text-splitters, libs/langchain, and
+            # libs/langchain_v1, even though the workflow may only affect documentation.
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
         if file.startswith("libs/core"):
@@ -280,8 +280,6 @@ if __name__ == "__main__":
             # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/standard-tests")
-            dirs_to_run["lint"].add("libs/cli")
-            dirs_to_run["test"].add("libs/cli")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
@@ -300,7 +298,9 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
-                dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
+                # Skip codspeed for partners without benchmarks or in IGNORED_PARTNERS
+                if partner_dir not in IGNORED_PARTNERS:
+                    dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
             # Check if this is a root-level file in libs/ (e.g., libs/README.md)

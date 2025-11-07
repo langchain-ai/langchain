@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from pydantic import ConfigDict, Field
 from typing_extensions import Self
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def _extract_reasoning_from_additional_kwargs(
     message: BaseMessage,
-) -> Optional[types.ReasoningContentBlock]:
+) -> types.ReasoningContentBlock | None:
     """Extract `reasoning_content` from `additional_kwargs`.
 
     Handles reasoning content stored in various formats:
@@ -48,13 +48,13 @@ class TextAccessor(str):
 
     Exists to maintain backward compatibility while transitioning from method-based to
     property-based text access in message objects. In LangChain <v1.0, message text was
-    accessed via ``.text()`` method calls. In v1.0=<, the preferred pattern is property
-    access via ``.text``.
+    accessed via `.text()` method calls. In v1.0=<, the preferred pattern is property
+    access via `.text`.
 
-    Rather than breaking existing code immediately, ``TextAccessor`` allows both
+    Rather than breaking existing code immediately, `TextAccessor` allows both
     patterns:
-    - Modern property access: ``message.text`` (returns string directly)
-    - Legacy method access: ``message.text()`` (callable, emits deprecation warning)
+    - Modern property access: `message.text` (returns string directly)
+    - Legacy method access: `message.text()` (callable, emits deprecation warning)
 
     """
 
@@ -67,12 +67,12 @@ class TextAccessor(str):
     def __call__(self) -> str:
         """Enable method-style text access for backward compatibility.
 
-        This method exists solely to support legacy code that calls ``.text()``
-        as a method. New code should use property access (``.text``) instead.
+        This method exists solely to support legacy code that calls `.text()`
+        as a method. New code should use property access (`.text`) instead.
 
         !!! deprecated
-            As of `langchain-core` 1.0.0, calling ``.text()`` as a method is deprecated.
-            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
+            As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
+            Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -92,11 +92,15 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of a ``ChatModel``.
+    Messages are the inputs and outputs of a chat model.
+
+    Examples include [`HumanMessage`][langchain.messages.HumanMessage],
+    [`AIMessage`][langchain.messages.AIMessage], and
+    [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
-    content: Union[str, list[Union[str, dict]]]
-    """The string contents of the message."""
+    content: str | list[str | dict]
+    """The contents of the message."""
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
@@ -117,7 +121,7 @@ class BaseMessage(Serializable):
 
     """
 
-    name: Optional[str] = None
+    name: str | None = None
     """An optional name for the message.
 
     This can be used to provide a human-readable name for the message.
@@ -127,7 +131,7 @@ class BaseMessage(Serializable):
 
     """
 
-    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
+    id: str | None = Field(default=None, coerce_numbers_to_str=True)
     """An optional unique identifier for the message.
 
     This should ideally be provided by the provider/model which created the message.
@@ -141,32 +145,32 @@ class BaseMessage(Serializable):
     @overload
     def __init__(
         self,
-        content: Union[str, list[Union[str, dict]]],
+        content: str | list[str | dict],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
+        content: str | list[str | dict] | None = None,
+        content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize ``BaseMessage``.
+        """Initialize a `BaseMessage`.
 
-        Specify ``content`` as positional arg or ``content_blocks`` for typing.
+        Specify `content` as positional arg or `content_blocks` for typing.
 
         Args:
-            content: The string contents of the message.
+            content: The contents of the message.
             content_blocks: Typed standard content.
-            kwargs: Additional arguments to pass to the parent class.
+            **kwargs: Additional arguments to pass to the parent class.
         """
         if content_blocks is not None:
             super().__init__(content=content_blocks, **kwargs)
@@ -175,7 +179,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """``BaseMessage`` is serializable.
+        """`BaseMessage` is serializable.
 
         Returns:
             True
@@ -184,10 +188,10 @@ class BaseMessage(Serializable):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "schema", "messages"]``
+            `["langchain", "schema", "messages"]`
         """
         return ["langchain", "schema", "messages"]
 
@@ -195,7 +199,7 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        !!! version-added "Added in version 1.0.0"
+        !!! version-added "Added in `langchain-core` 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
@@ -259,11 +263,11 @@ class BaseMessage(Serializable):
     def text(self) -> TextAccessor:
         """Get the text content of the message as a string.
 
-        Can be used as both property (``message.text``) and method (``message.text()``).
+        Can be used as both property (`message.text`) and method (`message.text()`).
 
         !!! deprecated
-            As of langchain-core 1.0.0, calling ``.text()`` as a method is deprecated.
-            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
+            As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
+            Use `.text` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
@@ -306,8 +310,8 @@ class BaseMessage(Serializable):
         """Get a pretty representation of the message.
 
         Args:
-            html: Whether to format the message as HTML. If True, the message will be
-                formatted with HTML tags. Default is False.
+            html: Whether to format the message as HTML. If `True`, the message will be
+                formatted with HTML tags.
 
         Returns:
             A pretty representation of the message.
@@ -325,20 +329,20 @@ class BaseMessage(Serializable):
 
 
 def merge_content(
-    first_content: Union[str, list[Union[str, dict]]],
-    *contents: Union[str, list[Union[str, dict]]],
-) -> Union[str, list[Union[str, dict]]]:
+    first_content: str | list[str | dict],
+    *contents: str | list[str | dict],
+) -> str | list[str | dict]:
     """Merge multiple message contents.
 
     Args:
-        first_content: The first ``content``. Can be a string or a list.
-        contents: The other ``content``s. Can be a string or a list.
+        first_content: The first `content`. Can be a string or a list.
+        contents: The other `content`s. Can be a string or a list.
 
     Returns:
         The merged content.
 
     """
-    merged: Union[str, list[Union[str, dict]]]
+    merged: str | list[str | dict]
     merged = "" if first_content is None else first_content
 
     for content in contents:
@@ -388,9 +392,9 @@ class BaseMessageChunk(BaseMessage):
 
         For example,
 
-        ``AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")``
+        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
 
-        will give ``AIMessageChunk(content="Hello World")``
+        will give `AIMessageChunk(content="Hello World")`
 
         """
         if isinstance(other, BaseMessageChunk):
@@ -439,8 +443,8 @@ def message_to_dict(message: BaseMessage) -> dict:
         message: Message to convert.
 
     Returns:
-        Message as a dict. The dict will have a ``type`` key with the message type
-        and a ``data`` key with the message data as a dict.
+        Message as a dict. The dict will have a `type` key with the message type
+        and a `data` key with the message data as a dict.
 
     """
     return {"type": message.type, "data": message.model_dump()}
@@ -450,7 +454,7 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:
-        messages: Sequence of messages (as ``BaseMessage``s) to convert.
+        messages: Sequence of messages (as `BaseMessage`s) to convert.
 
     Returns:
         List of messages as dicts.
@@ -464,7 +468,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title. Default is False.
+        bold: Whether to bold the title.
 
     Returns:
         The title representation.

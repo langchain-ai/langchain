@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from typing_extensions import override
@@ -111,8 +111,8 @@ async def test_error_callback() -> None:
         def _call(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> str:
             raise FailingLLMError
@@ -142,8 +142,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             generations = [Generation(text="hello")]
@@ -168,8 +168,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call."""
@@ -179,8 +179,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
         def _stream(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> Iterator[GenerationChunk]:
             """Stream the output of the model."""
@@ -206,8 +206,8 @@ async def test_astream_implementation_uses_astream() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             """Top Level call."""
@@ -217,8 +217,8 @@ async def test_astream_implementation_uses_astream() -> None:
         async def _astream(
             self,
             prompt: str,
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: AsyncCallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> AsyncIterator[GenerationChunk]:
             """Stream the output of the model."""
@@ -244,8 +244,8 @@ def test_get_ls_params() -> None:
         def _generate(
             self,
             prompts: list[str],
-            stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
             **kwargs: Any,
         ) -> LLMResult:
             raise NotImplementedError

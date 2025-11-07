@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.evaluation.string_distance import (
+from langchain_classic.evaluation.string_distance import (
     PairwiseStringDistanceEvalChain,
     StringDistance,
     StringDistanceEvalChain,

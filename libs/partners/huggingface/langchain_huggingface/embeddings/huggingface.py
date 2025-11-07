@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel, ConfigDict, Field
@@ -12,35 +12,34 @@ from langchain_huggingface.utils.import_utils import (
     is_optimum_intel_version,
 )
 
-DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
-
 _MIN_OPTIMUM_VERSION = "1.22"
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
-    To use, you should have the ``sentence_transformers`` python package installed.
+    To use, you should have the `sentence_transformers` python package installed.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEmbeddings
 
-            from langchain_huggingface import HuggingFaceEmbeddings
-
-            model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {"device": "cpu"}
-            encode_kwargs = {"normalize_embeddings": False}
-            hf = HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs,
-            )
-
+        model_name = "sentence-transformers/all-mpnet-base-v2"
+        model_kwargs = {"device": "cpu"}
+        encode_kwargs = {"normalize_embeddings": False}
+        hf = HuggingFaceEmbeddings(
+            model_name=model_name,
+            model_kwargs=model_kwargs,
+            encode_kwargs=encode_kwargs,
+        )
+        ```
     """
 
-    model_name: str = Field(default=DEFAULT_MODEL_NAME, alias="model")
+    model_name: str = Field(
+        default="sentence-transformers/all-mpnet-base-v2", alias="model"
+    )
     """Model name to use."""
-    cache_folder: Optional[str] = None
+    cache_folder: str | None = None
     """Path to store models.
     Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)

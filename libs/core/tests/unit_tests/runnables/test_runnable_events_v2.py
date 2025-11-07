@@ -4,13 +4,11 @@ import asyncio
 import inspect
 import sys
 import uuid
-from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
 from functools import partial
 from itertools import cycle
 from typing import (
     Any,
-    Callable,
-    Optional,
     cast,
 )
 
@@ -58,7 +56,7 @@ from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
-    """Removes the run ids from events."""
+    """Removes the run IDs from events."""
     for event in events:
         assert "run_id" in event, f"Event {event} does not have a run_id."
         assert "parent_ids" in event, f"Event {event} does not have parent_ids."
@@ -362,7 +360,7 @@ async def test_event_stream_with_triple_lambda() -> None:
 
 
 async def test_event_stream_exception() -> None:
-    def step(name: str, err: Optional[str], val: str) -> str:
+    def step(name: str, err: str | None, val: str) -> str:
         if err:
             raise ValueError(err)
         return val + name[-1]
@@ -2135,7 +2133,7 @@ class StreamingRunnable(Runnable[Input, Output]):
 
     @override
     def invoke(
-        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self, input: Input, config: RunnableConfig | None = None, **kwargs: Any
     ) -> Output:
         """Invoke the runnable."""
         msg = "Server side error"
@@ -2145,8 +2143,8 @@ class StreamingRunnable(Runnable[Input, Output]):
     def stream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> Iterator[Output]:
         raise NotImplementedError
 
@@ -2154,8 +2152,8 @@ class StreamingRunnable(Runnable[Input, Output]):
     async def astream(
         self,
         input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Optional[Any],
+        config: RunnableConfig | None = None,
+        **kwargs: Any | None,
     ) -> AsyncIterator[Output]:
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)

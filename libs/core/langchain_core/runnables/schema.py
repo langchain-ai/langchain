@@ -1,8 +1,8 @@
-"""Module contains typedefs that are used with Runnables."""
+"""Module contains typedefs that are used with `Runnable` objects."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -14,43 +14,43 @@ class EventData(TypedDict, total=False):
     """Data associated with a streaming event."""
 
     input: Any
-    """The input passed to the Runnable that generated the event.
+    """The input passed to the `Runnable` that generated the event.
 
-    Inputs will sometimes be available at the *START* of the Runnable, and
-    sometimes at the *END* of the Runnable.
+    Inputs will sometimes be available at the *START* of the `Runnable`, and
+    sometimes at the *END* of the `Runnable`.
 
-    If a Runnable is able to stream its inputs, then its input by definition
-    won't be known until the *END* of the Runnable when it has finished streaming
+    If a `Runnable` is able to stream its inputs, then its input by definition
+    won't be known until the *END* of the `Runnable` when it has finished streaming
     its inputs.
     """
     error: NotRequired[BaseException]
-    """The error that occurred during the execution of the Runnable.
+    """The error that occurred during the execution of the `Runnable`.
 
-    This field is only available if the Runnable raised an exception.
+    This field is only available if the `Runnable` raised an exception.
 
-    !!! version-added "Added in version 1.0.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
     """
     output: Any
-    """The output of the Runnable that generated the event.
+    """The output of the `Runnable` that generated the event.
 
-    Outputs will only be available at the *END* of the Runnable.
+    Outputs will only be available at the *END* of the `Runnable`.
 
-    For most Runnables, this field can be inferred from the `chunk` field,
-    though there might be some exceptions for special cased Runnables (e.g., like
+    For most `Runnable` objects, this field can be inferred from the `chunk` field,
+    though there might be some exceptions for special a cased `Runnable` (e.g., like
     chat models), which may return more information.
     """
     chunk: Any
     """A streaming chunk from the output that generated the event.
 
     chunks support addition in general, and adding them up should result
-    in the output of the Runnable that generated the event.
+    in the output of the `Runnable` that generated the event.
     """
 
 
 class BaseStreamEvent(TypedDict):
     """Streaming event.
 
-    Schema of a streaming event which is produced from the astream_events method.
+    Schema of a streaming event which is produced from the `astream_events` method.
 
     Example:
         ```python
@@ -65,7 +65,7 @@ class BaseStreamEvent(TypedDict):
 
         events = [event async for event in chain.astream_events("hello")]
 
-        # will produce the following events
+        # Will produce the following events
         # (where some fields have been omitted for brevity):
         [
             {
@@ -94,45 +94,45 @@ class BaseStreamEvent(TypedDict):
     """
 
     event: str
-    """Event names are of the format: on_[runnable_type]_(start|stream|end).
+    """Event names are of the format: `on_[runnable_type]_(start|stream|end)`.
 
     Runnable types are one of:
 
     - **llm** - used by non chat models
     - **chat_model** - used by chat models
-    - **prompt** --  e.g., ChatPromptTemplate
-    - **tool** -- from tools defined via @tool decorator or inheriting
-        from Tool/BaseTool
-    - **chain** - most Runnables are of this type
+    - **prompt** --  e.g., `ChatPromptTemplate`
+    - **tool** -- from tools defined via `@tool` decorator or inheriting
+        from `Tool`/`BaseTool`
+    - **chain** - most `Runnable` objects are of this type
 
     Further, the events are categorized as one of:
 
-    - **start** - when the Runnable starts
-    - **stream** - when the Runnable is streaming
-    - **end* - when the Runnable ends
+    - **start** - when the `Runnable` starts
+    - **stream** - when the `Runnable` is streaming
+    - **end* - when the `Runnable` ends
 
     start, stream and end are associated with slightly different `data` payload.
 
     Please see the documentation for `EventData` for more details.
     """
     run_id: str
-    """An randomly generated ID to keep track of the execution of the given Runnable.
+    """An randomly generated ID to keep track of the execution of the given `Runnable`.
 
-    Each child Runnable that gets invoked as part of the execution of a parent Runnable
-    is assigned its own unique ID.
+    Each child `Runnable` that gets invoked as part of the execution of a parent
+    `Runnable` is assigned its own unique ID.
     """
     tags: NotRequired[list[str]]
-    """Tags associated with the Runnable that generated this event.
+    """Tags associated with the `Runnable` that generated this event.
 
-    Tags are always inherited from parent Runnables.
+    Tags are always inherited from parent `Runnable` objects.
 
-    Tags can either be bound to a Runnable using `.with_config({"tags":  ["hello"]})`
+    Tags can either be bound to a `Runnable` using `.with_config({"tags":  ["hello"]})`
     or passed at run time using `.astream_events(..., {"tags": ["hello"]})`.
     """
     metadata: NotRequired[dict[str, Any]]
-    """Metadata associated with the Runnable that generated this event.
+    """Metadata associated with the `Runnable` that generated this event.
 
-    Metadata can either be bound to a Runnable using
+    Metadata can either be bound to a `Runnable` using
 
         `.with_config({"metadata": { "foo": "bar" }})`
 
@@ -146,8 +146,8 @@ class BaseStreamEvent(TypedDict):
 
     Root Events will have an empty list.
 
-    For example, if a Runnable A calls Runnable B, then the event generated by Runnable
-    B will have Runnable A's ID in the parent_ids field.
+    For example, if a `Runnable` A calls `Runnable` B, then the event generated by
+    `Runnable` B will have `Runnable` A's ID in the `parent_ids` field.
 
     The order of the parent IDs is from the root parent to the immediate parent.
 
@@ -164,14 +164,11 @@ class StandardStreamEvent(BaseStreamEvent):
     The contents of the event data depend on the event type.
     """
     name: str
-    """The name of the Runnable that generated the event."""
+    """The name of the `Runnable` that generated the event."""
 
 
 class CustomStreamEvent(BaseStreamEvent):
-    """Custom stream event created by the user.
-
-    !!! version-added "Added in version 0.2.15"
-    """
+    """Custom stream event created by the user."""
 
     # Overwrite the event field to be more specific.
     event: Literal["on_custom_event"]  # type: ignore[misc]
@@ -182,4 +179,4 @@ class CustomStreamEvent(BaseStreamEvent):
     """The data associated with the event. Free form and can be anything."""
 
 
-StreamEvent = Union[StandardStreamEvent, CustomStreamEvent]
+StreamEvent = StandardStreamEvent | CustomStreamEvent
