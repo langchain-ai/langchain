@@ -1305,7 +1305,7 @@ def test_docstring_parsing() -> None:
     assert args_schema2["description"] == "The foo. Additional description here."
     assert args_schema2["properties"] == expected["properties"]
 
-    # Multi-line wth Returns block
+    # Multi-line with Returns block
     def foo3(bar: str, baz: int) -> str:
         """The foo.
 

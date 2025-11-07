@@ -3,17 +3,18 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-ollama"
+description = "An integration package connecting Ollama and LangChain"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "ollama>=0.6.0,<1.0.0",
     "langchain-core>=1.0.0,<2.0.0",
 ]
-name = "langchain-ollama"
-version = "1.0.0"
-description = "An integration package connecting Ollama and LangChain"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/oss/python/integrations/providers/ollama"

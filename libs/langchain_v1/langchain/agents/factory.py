@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Annotated, Any, cast, get_args, get_origin, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -15,7 +23,7 @@ from langgraph.prebuilt.tool_node import ToolCallWithContext, ToolNode
 from langgraph.runtime import Runtime  # noqa: TC002
 from langgraph.types import Command, Send
 from langgraph.typing import ContextT  # noqa: TC002
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -24,6 +32,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     OmitFromSchema,
+    ResponseT,
+    StateT_co,
     _InputAgentState,
     _OutputAgentState,
 )
@@ -52,8 +62,6 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest, ToolCallWrapper
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
-
-ResponseT = TypeVar("ResponseT")
 
 
 def _normalize_to_model_response(result: ModelResponse | AIMessage) -> ModelResponse:
@@ -508,8 +516,8 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | None = None,
     *,
-    system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
+    system_prompt: str | SystemMessage | None = None,
+    middleware: Sequence[AgentMiddleware[StateT_co, ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     state_schema: type[AgentState[ResponseT]] | None = None,
     context_schema: type[ContextT] | None = None,
@@ -540,11 +548,9 @@ def create_agent(  # noqa: PLR0915
 
             If `None` or an empty list, the agent will consist of a model node without a
             tool calling loop.
-        system_prompt: An optional system prompt for the LLM.
+        system_prompt: An optional system prompt for the LLM or
+        can already be a [`SystemMessage`][langchain.messages.SystemMessage] object.
 
-            Prompts are converted to a
-            [`SystemMessage`][langchain.messages.SystemMessage] and added to the
-            beginning of the message list.
         middleware: A sequence of middleware instances to apply to the agent.
 
             Middleware can intercept and modify agent behavior at various stages. See
@@ -785,7 +791,7 @@ def create_agent(  # noqa: PLR0915
         async_handlers = [m.awrap_model_call for m in middleware_w_awrap_model_call]
         awrap_model_call_handler = _chain_async_model_call_handlers(async_handlers)
 
-    state_schemas = {m.state_schema for m in middleware}
+    state_schemas: set[type] = {m.state_schema for m in middleware}
     # Use provided state_schema if available, otherwise use base AgentState
     base_state = state_schema if state_schema is not None else AgentState
     state_schemas.add(base_state)
@@ -1032,8 +1038,10 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
+            messages = [SystemMessage(content=request.system_prompt), *messages]
+        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
+            messages = [request.system_prompt, *messages]
 
         output = model_.invoke(messages)
 
@@ -1085,8 +1093,10 @@ def create_agent(  # noqa: PLR0915
         # Get the bound model (with auto-detection if needed)
         model_, effective_response_format = _get_bound_model(request)
         messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
+        if request.system_prompt and not isinstance(request.system_prompt, SystemMessage):
+            messages = [SystemMessage(content=request.system_prompt), *messages]
+        elif request.system_prompt and isinstance(request.system_prompt, SystemMessage):
+            messages = [request.system_prompt, *messages]
 
         output = await model_.ainvoke(messages)
 
@@ -1260,11 +1270,14 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(
-                tool_node=tool_node,
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_tools_to_model_edge(
+                    tool_node=tool_node,
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             tools_to_model_destinations,
         )
@@ -1281,19 +1294,25 @@ def create_agent(  # noqa: PLR0915
 
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_tools_edge(
-                model_destination=loop_entry_node,
-                structured_output_tools=structured_output_tools,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_tools_edge(
+                    model_destination=loop_entry_node,
+                    structured_output_tools=structured_output_tools,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             model_to_tools_destinations,
         )
     elif len(structured_output_tools) > 0:
         graph.add_conditional_edges(
             loop_exit_node,
-            _make_model_to_model_edge(
-                model_destination=loop_entry_node,
-                end_destination=exit_node,
+            RunnableCallable(
+                _make_model_to_model_edge(
+                    model_destination=loop_entry_node,
+                    end_destination=exit_node,
+                ),
+                trace=False,
             ),
             [loop_entry_node, exit_node],
         )
@@ -1403,7 +1422,7 @@ def create_agent(  # noqa: PLR0915
         debug=debug,
         name=name,
         cache=cache,
-    )
+    ).with_config({"recursion_limit": 10_000})
 
 
 def _resolve_jump(
@@ -1594,7 +1613,7 @@ def _add_middleware_edge(
         if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
-        graph.add_conditional_edges(name, jump_edge, destinations)
+        graph.add_conditional_edges(name, RunnableCallable(jump_edge, trace=False), destinations)
 
     else:
         graph.add_edge(name, default_destination)

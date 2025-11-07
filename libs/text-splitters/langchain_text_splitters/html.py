@@ -529,7 +529,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     Markdown format. Note that some chunks may exceed the maximum size to maintain
     semantic integrity.
 
-    !!! version-added "Added in version 0.3.5"
+    !!! version-added "Added in `langchain-text-splitters` 0.3.5"
 
     Example:
         ```python
