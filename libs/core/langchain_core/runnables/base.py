@@ -432,7 +432,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_input_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_input_schema(config).model_json_schema()
@@ -510,7 +510,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_output_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_output_schema(config).model_json_schema()
@@ -574,7 +574,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A JSON schema that represents the config of the `Runnable`.
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.config_schema(include=include).model_json_schema()
@@ -826,10 +826,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -846,10 +848,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -876,8 +880,9 @@ class Runnable(ABC, Generic[Input, Output]):
             config: A config to use when invoking the `Runnable`. The config supports
                 standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work
-                to do in parallel, and other keys. Please refer to the
-                `RunnableConfig` for more details.
+                to do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -940,10 +945,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -1006,10 +1013,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -1069,10 +1078,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -1750,46 +1761,52 @@ class Runnable(ABC, Generic[Input, Output]):
             import time
             import asyncio
 
+
             def format_t(timestamp: float) -> str:
                 return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
 
             async def test_runnable(time_to_sleep: int):
                 print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
                 await asyncio.sleep(time_to_sleep)
                 print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
 
+
             async def fn_start(run_obj: Runnable):
                 print(f"on start callback starts at {format_t(time.time())}")
                 await asyncio.sleep(3)
                 print(f"on start callback ends at {format_t(time.time())}")
+
 
             async def fn_end(run_obj: Runnable):
                 print(f"on end callback starts at {format_t(time.time())}")
                 await asyncio.sleep(2)
                 print(f"on end callback ends at {format_t(time.time())}")
 
+
             runnable = RunnableLambda(test_runnable).with_alisteners(
-                on_start=fn_start,
-                on_end=fn_end
+                on_start=fn_start, on_end=fn_end
             )
+
+
             async def concurrent_runs():
                 await asyncio.gather(runnable.ainvoke(2), runnable.ainvoke(3))
 
-            asyncio.run(concurrent_runs())
-            Result:
-            on start callback starts at 2025-03-01T07:05:22.875378+00:00
-            on start callback starts at 2025-03-01T07:05:22.875495+00:00
-            on start callback ends at 2025-03-01T07:05:25.878862+00:00
-            on start callback ends at 2025-03-01T07:05:25.878947+00:00
-            Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
-            Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
-            Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
-            on end callback starts at 2025-03-01T07:05:27.882360+00:00
-            Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
-            on end callback starts at 2025-03-01T07:05:28.882428+00:00
-            on end callback ends at 2025-03-01T07:05:29.883893+00:00
-            on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
+            asyncio.run(concurrent_runs())
+            # Result:
+            # on start callback starts at 2025-03-01T07:05:22.875378+00:00
+            # on start callback starts at 2025-03-01T07:05:22.875495+00:00
+            # on start callback ends at 2025-03-01T07:05:25.878862+00:00
+            # on start callback ends at 2025-03-01T07:05:25.878947+00:00
+            # Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
+            # Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
+            # Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
+            # on end callback starts at 2025-03-01T07:05:27.882360+00:00
+            # Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
+            # on end callback starts at 2025-03-01T07:05:28.882428+00:00
+            # on end callback ends at 2025-03-01T07:05:29.883893+00:00
+            # on end callback ends at 2025-03-01T07:05:30.884831+00:00
             ```
         """
         return RunnableBinding(
@@ -1851,7 +1868,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 `exp_base`, and `jitter` (all `float` values).
 
         Returns:
-            A new Runnable that retries the original Runnable on exceptions.
+            A new `Runnable` that retries the original `Runnable` on exceptions.
 
         Example:
             ```python
@@ -1935,7 +1952,9 @@ class Runnable(ABC, Generic[Input, Output]):
             exceptions_to_handle: A tuple of exception types to handle.
             exception_key: If `string` is specified then handled exceptions will be
                 passed to fallbacks as part of the input under the specified key.
+
                 If `None`, exceptions will not be passed to fallbacks.
+
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
@@ -1971,7 +1990,9 @@ class Runnable(ABC, Generic[Input, Output]):
             exceptions_to_handle: A tuple of exception types to handle.
             exception_key: If `string` is specified then handled exceptions will be
                 passed to fallbacks as part of the input under the specified key.
+
                 If `None`, exceptions will not be passed to fallbacks.
+
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
@@ -2437,10 +2458,14 @@ class Runnable(ABC, Generic[Input, Output]):
 
         `as_tool` will instantiate a `BaseTool` with a name, description, and
         `args_schema` from a `Runnable`. Where possible, schemas are inferred
-        from `runnable.get_input_schema`. Alternatively (e.g., if the
-        `Runnable` takes a dict as input and the specific dict keys are not typed),
-        the schema can be specified directly with `args_schema`. You can also
-        pass `arg_types` to just specify the required arguments and their types.
+        from `runnable.get_input_schema`.
+
+        Alternatively (e.g., if the `Runnable` takes a dict as input and the specific
+        `dict` keys are not typed), the schema can be specified directly with
+        `args_schema`.
+
+        You can also pass `arg_types` to just specify the required arguments and their
+        types.
 
         Args:
             args_schema: The schema for the tool.
@@ -2509,7 +2534,7 @@ class Runnable(ABC, Generic[Input, Output]):
         as_tool.invoke({"a": 3, "b": [1, 2]})
         ```
 
-        String input:
+        `str` input:
 
         ```python
         from langchain_core.runnables import RunnableLambda
@@ -3682,6 +3707,12 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             == "object"
             for s in self.steps__.values()
         ):
+            for step in self.steps__.values():
+                fields = step.get_input_schema(config).model_fields
+                root_field = fields.get("root")
+                if root_field is not None and root_field.annotation != Any:
+                    return super().get_input_schema(config)
+
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),

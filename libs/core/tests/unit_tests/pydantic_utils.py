@@ -105,7 +105,7 @@ def _remove_additionalproperties(schema: dict) -> dict[str, Any]:
     generating JSON schemas for dict properties with `Any` or `object` values.
 
     Pydantic 2.12 and later versions include `"additionalProperties": True` when
-    generating JSON schemas for TypedDict.
+    generating JSON schemas for `TypedDict`.
     """
     if isinstance(schema, dict):
         if (

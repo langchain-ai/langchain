@@ -122,10 +122,7 @@ class BaseConversationalRetrievalChain(Chain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the output keys.
-
-        :meta private:
-        """
+        """Return the output keys."""
         _output_keys = [self.output_key]
         if self.return_source_documents:
             _output_keys = [*_output_keys, "source_documents"]

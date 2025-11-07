@@ -105,10 +105,7 @@ class BaseSingleActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -278,10 +275,7 @@ class BaseMultiActionAgent(BaseModel):
     @property
     @abstractmethod
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
 
     def return_stopped_response(
         self,
@@ -819,10 +813,7 @@ class Agent(BaseSingleActionAgent):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
     @model_validator(mode="after")
@@ -837,7 +828,7 @@ class Agent(BaseSingleActionAgent):
 
         Raises:
             ValueError: If `agent_scratchpad` is not in prompt.input_variables
-             and prompt is not a FewShotPromptTemplate or a PromptTemplate.
+                and prompt is not a FewShotPromptTemplate or a PromptTemplate.
         """
         prompt = self.llm_chain.prompt
         if "agent_scratchpad" not in prompt.input_variables:
@@ -1220,18 +1211,12 @@ class AgentExecutor(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the input keys.
-
-        :meta private:
-        """
+        """Return the input keys."""
         return self._action_agent.input_keys
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
+        """Return the singular output key."""
         if self.return_intermediate_steps:
             return [*self._action_agent.return_values, "intermediate_steps"]
         return self._action_agent.return_values
