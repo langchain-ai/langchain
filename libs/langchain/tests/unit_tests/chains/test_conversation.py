@@ -1,19 +1,19 @@
 """Test conversation chain and memory."""
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
-from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
 from typing_extensions import override
 
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory.buffer import ConversationBufferMemory
-from langchain.memory.buffer_window import ConversationBufferWindowMemory
-from langchain.memory.summary import ConversationSummaryMemory
+from langchain_classic.base_memory import BaseMemory
+from langchain_classic.chains.conversation.base import ConversationChain
+from langchain_classic.memory.buffer import ConversationBufferMemory
+from langchain_classic.memory.buffer_window import ConversationBufferWindowMemory
+from langchain_classic.memory.summary import ConversationSummaryMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
@@ -31,8 +31,8 @@ class DummyLLM(LLM):
     def _call(
         self,
         prompt: str,
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         self.last_prompt = prompt
@@ -80,7 +80,7 @@ def test_conversation_chain_errors_bad_prompt() -> None:
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=[], template="nothing here")
     with pytest.raises(
-        ValueError, match="Value error, Got unexpected prompt input variables."
+        ValueError, match="Value error, Got unexpected prompt input variables"
     ):
         ConversationChain(llm=llm, prompt=prompt)
 

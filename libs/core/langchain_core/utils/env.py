@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Optional, Union
+from typing import Any
 
 
 def env_var_is_set(env_var: str) -> bool:
     """Check if an environment variable is set.
 
     Args:
-        env_var (str): The name of the environment variable.
+        env_var: The name of the environment variable.
 
     Returns:
-        bool: True if the environment variable is set, False otherwise.
+        `True` if the environment variable is set, `False` otherwise.
     """
     return env_var in os.environ and os.environ[env_var] not in {
         "",
@@ -25,9 +25,9 @@ def env_var_is_set(env_var: str) -> bool:
 
 def get_from_dict_or_env(
     data: dict[str, Any],
-    key: Union[str, list[str]],
+    key: str | list[str],
     env_key: str,
-    default: Optional[str] = None,
+    default: str | None = None,
 ) -> str:
     """Get a value from a dictionary or an environment variable.
 
@@ -38,7 +38,10 @@ def get_from_dict_or_env(
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
-            or the environment. Defaults to None.
+            or the environment.
+
+    Returns:
+        The dict value or the environment variable value.
     """
     if isinstance(key, (list, tuple)):
         for k in key:
@@ -53,7 +56,7 @@ def get_from_dict_or_env(
     return get_from_env(key_for_err, env_key, default=default)
 
 
-def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
+def get_from_env(key: str, env_key: str, default: str | None = None) -> str:
     """Get a value from a dictionary or an environment variable.
 
     Args:
@@ -61,10 +64,10 @@ def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
         env_key: The environment variable to look up if the key is not
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
-            or the environment. Defaults to None.
+            or the environment.
 
     Returns:
-        str: The value of the key.
+        The value of the key.
 
     Raises:
         ValueError: If the key is not in the dictionary and no default value is

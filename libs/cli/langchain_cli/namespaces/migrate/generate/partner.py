@@ -24,11 +24,10 @@ def get_migrations_for_partner_package(pkg_name: str) -> list[tuple[str, str]]:
     This code works
 
     Args:
-        pkg_name (str): The name of the partner package.
+        pkg_name: The name of the partner package.
 
     Returns:
         List of 2-tuples containing old and new import paths.
-
     """
     package = importlib.import_module(pkg_name)
     classes_ = find_subclasses_in_module(

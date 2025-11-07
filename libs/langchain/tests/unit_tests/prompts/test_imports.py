@@ -1,4 +1,4 @@
-from langchain import prompts
+from langchain_classic import prompts
 
 EXPECTED_ALL = [
     "AIMessagePromptTemplate",
@@ -13,7 +13,6 @@ EXPECTED_ALL = [
     "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
     "NGramOverlapExampleSelector",
-    "PipelinePromptTemplate",
     "Prompt",
     "PromptTemplate",
     "SemanticSimilarityExampleSelector",

@@ -1,8 +1,10 @@
+"""JSON text splitter."""
+
 from __future__ import annotations
 
 import copy
 import json
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.documents import Document
 
@@ -14,15 +16,16 @@ class RecursiveJsonSplitter:
     JSON-formatted strings based on configurable maximum and minimum chunk sizes.
     It supports nested JSON structures, optionally converts lists into dictionaries
     for better chunking, and allows the creation of document objects for further use.
-
-    Attributes:
-        max_chunk_size (int): The maximum size for each chunk. Defaults to 2000.
-        min_chunk_size (int): The minimum size for each chunk, derived from
-            `max_chunk_size` if not explicitly provided.
     """
 
+    max_chunk_size: int = 2000
+    """The maximum size for each chunk."""
+    min_chunk_size: int = 1800
+    """The minimum size for each chunk, derived from `max_chunk_size` if not
+    explicitly provided."""
+
     def __init__(
-        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
+        self, max_chunk_size: int = 2000, min_chunk_size: int | None = None
     ) -> None:
         """Initialize the chunk size configuration for text processing.
 
@@ -31,14 +34,9 @@ class RecursiveJsonSplitter:
         `max_chunk_size` if not explicitly provided.
 
         Args:
-            max_chunk_size (int): The maximum size for a chunk. Defaults to 2000.
-            min_chunk_size (Optional[int]): The minimum size for a chunk. If None,
+            max_chunk_size: The maximum size for a chunk.
+            min_chunk_size: The minimum size for a chunk. If `None`,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
-
-        Attributes:
-            max_chunk_size (int): The configured maximum size for each chunk.
-            min_chunk_size (int): The configured minimum size for each chunk, derived
-                from `max_chunk_size` if not explicitly provided.
         """
         super().__init__()
         self.max_chunk_size = max_chunk_size
@@ -54,13 +52,20 @@ class RecursiveJsonSplitter:
         return len(json.dumps(data))
 
     @staticmethod
-    def _set_nested_dict(d: dict[str, Any], path: list[str], value: Any) -> None:
+    def _set_nested_dict(
+        d: dict[str, Any],
+        path: list[str],
+        value: Any,  # noqa: ANN401
+    ) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def _list_to_dict_preprocessing(self, data: Any) -> Any:
+    def _list_to_dict_preprocessing(
+        self,
+        data: Any,  # noqa: ANN401
+    ) -> Any:  # noqa: ANN401
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
@@ -75,9 +80,9 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: dict[str, Any],
-        current_path: Optional[list[str]] = None,
-        chunks: Optional[list[dict[str, Any]]] = None,
+        data: Any,  # noqa: ANN401
+        current_path: list[str] | None = None,
+        chunks: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         """Split json into maximum size dictionaries while preserving structure."""
         current_path = current_path or []
@@ -137,16 +142,16 @@ class RecursiveJsonSplitter:
         texts: list[dict[str, Any]],
         convert_lists: bool = False,  # noqa: FBT001,FBT002
         ensure_ascii: bool = True,  # noqa: FBT001,FBT002
-        metadatas: Optional[list[dict[Any, Any]]] = None,
+        metadatas: list[dict[Any, Any]] | None = None,
     ) -> list[Document]:
-        """Create documents from a list of json objects (Dict)."""
-        _metadatas = metadatas or [{}] * len(texts)
+        """Create a list of `Document` objects from a list of json objects (`dict`)."""
+        metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
             for chunk in self.split_text(
                 json_data=text, convert_lists=convert_lists, ensure_ascii=ensure_ascii
             ):
-                metadata = copy.deepcopy(_metadatas[i])
+                metadata = copy.deepcopy(metadatas_[i])
                 new_doc = Document(page_content=chunk, metadata=metadata)
                 documents.append(new_doc)
         return documents

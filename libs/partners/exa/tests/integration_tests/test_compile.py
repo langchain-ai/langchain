@@ -1,3 +1,5 @@
+"""Test that the integration tests compile."""
+
 import pytest  # type: ignore[import-not-found, import-not-found]
 
 

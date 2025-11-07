@@ -1,4 +1,4 @@
-from langchain.callbacks.manager import __all__
+from langchain_classic.callbacks.manager import __all__
 
 EXPECTED_ALL = [
     "BaseRunManager",
@@ -18,7 +18,6 @@ EXPECTED_ALL = [
     "CallbackManagerForChainGroup",
     "AsyncCallbackManager",
     "AsyncCallbackManagerForChainGroup",
-    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "atrace_as_chain_group",

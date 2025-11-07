@@ -1,12 +1,16 @@
 import os
 import re
+import sys
+from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
-from typing import Any, Callable, Optional, Union
+from typing import Any
 from unittest.mock import patch
 
 import pytest
-from pydantic import SecretStr
+from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel as PydanticV1BaseModel
+from pydantic.v1 import Field as PydanticV1Field
 
 from langchain_core import utils
 from langchain_core.outputs import GenerationChunk
@@ -32,9 +36,9 @@ from langchain_core.utils.utils import secret_from_env
 )
 def test_check_package_version(
     package: str,
-    check_kwargs: dict[str, Optional[str]],
+    check_kwargs: dict[str, str | None],
     actual_version: str,
-    expected: Optional[tuple[type[Exception], str]],
+    expected: tuple[type[Exception], str] | None,
 ) -> None:
     with patch("langchain_core.utils.utils.version", return_value=actual_version):
         if expected is None:
@@ -96,7 +100,7 @@ def test_check_package_version(
                 TypeError,
                 match=(
                     "Additional kwargs key a already exists in left dict and value "
-                    "has unsupported type .+tuple.+."
+                    r"has unsupported type .+tuple.+."
                 ),
             ),
         ),
@@ -114,7 +118,7 @@ def test_check_package_version(
     ],
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+    left: dict, right: dict, expected: dict | AbstractContextManager
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -136,13 +140,13 @@ def test_merge_dicts(
         (
             {"type": "foo"},
             {"type": "bar"},
-            pytest.raises(ValueError, match="Unable to merge."),
+            pytest.raises(ValueError, match="Unable to merge"),
         ),
     ],
 )
 @pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
-    left: dict, right: dict, expected: Union[dict, AbstractContextManager]
+    left: dict, right: dict, expected: dict | AbstractContextManager
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -166,7 +170,7 @@ def test_merge_dicts_0_3(
     ],
 )
 def test_guard_import(
-    module_name: str, pip_name: Optional[str], package: Optional[str], expected: Any
+    module_name: str, pip_name: str | None, package: str | None, expected: Any
 ) -> None:
     if package is None and pip_name is None:
         ret = guard_import(module_name)
@@ -199,8 +203,8 @@ def test_guard_import(
 )
 def test_guard_import_failure(
     module_name: str,
-    pip_name: Optional[str],
-    package: Optional[str],
+    pip_name: str | None,
+    package: str | None,
     expected_pip_name: str,
 ) -> None:
     with pytest.raises(
@@ -211,14 +215,15 @@ def test_guard_import_failure(
         guard_import(module_name, pip_name=pip_name, package=package)
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
 def test_get_pydantic_field_names_v1_in_2() -> None:
-    from pydantic.v1 import BaseModel as PydanticV1BaseModel
-    from pydantic.v1 import Field
-
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str
         field2: int
-        alias_field: int = Field(alias="aliased_field")
+        alias_field: int = PydanticV1Field(alias="aliased_field")
 
     result = get_pydantic_field_names(PydanticV1Model)
     expected = {"field1", "field2", "aliased_field", "alias_field"}
@@ -226,8 +231,6 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
 
 
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field
-
     class PydanticModel(BaseModel):
         field1: str
         field2: int
@@ -276,7 +279,7 @@ def test_secret_from_env_with_env_variable(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("TEST_KEY", "secret_value")
 
     # Get the function
-    get_secret: Callable[[], Optional[SecretStr]] = secret_from_env("TEST_KEY")
+    get_secret: Callable[[], SecretStr | None] = secret_from_env("TEST_KEY")
 
     # Assert that it returns the correct value
     assert get_secret() == SecretStr("secret_value")
@@ -300,7 +303,7 @@ def test_secret_from_env_with_none_default(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.delenv("TEST_KEY", raising=False)
 
     # Get the function with a default value of None
-    get_secret: Callable[[], Optional[SecretStr]] = secret_from_env(
+    get_secret: Callable[[], SecretStr | None] = secret_from_env(
         "TEST_KEY", default=None
     )
 
@@ -341,13 +344,11 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from pydantic import BaseModel, Field
-
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
 
     # Pass the secret as a parameter
-    foo = Foo(secret="super_secret")  # type: ignore[arg-type]
+    foo = Foo(secret="super_secret")
     assert foo.secret.get_secret_value() == "super_secret"
 
     # Set the environment variable
@@ -355,22 +356,22 @@ def test_using_secret_from_env_as_default_factory(
     assert Foo().secret.get_secret_value() == "secret_value"
 
     class Bar(BaseModel):
-        secret: Optional[SecretStr] = Field(
+        secret: SecretStr | None = Field(
             default_factory=secret_from_env("TEST_KEY_2", default=None)
         )
 
     assert Bar().secret is None
 
     class Buzz(BaseModel):
-        secret: Optional[SecretStr] = Field(
+        secret: SecretStr | None = Field(
             default_factory=secret_from_env("TEST_KEY_2", default="hello")
         )
 
-    # We know it will be SecretStr rather than Optional[SecretStr]
+    # We know it will be SecretStr rather than SecretStr | None
     assert Buzz().secret.get_secret_value() == "hello"  # type: ignore[union-attr]
 
     class OhMy(BaseModel):
-        secret: Optional[SecretStr] = Field(
+        secret: SecretStr | None = Field(
             default_factory=secret_from_env("FOOFOOFOOBAR")
         )
 

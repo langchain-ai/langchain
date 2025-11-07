@@ -14,7 +14,7 @@ from langchain_core.utils.iter import batch_iterate
 def test_batch_iterate(
     input_size: int,
     input_iterable: list[str],
-    expected_output: list[str],
+    expected_output: list[list[str]],
 ) -> None:
     """Test batching function."""
     assert list(batch_iterate(input_size, input_iterable)) == expected_output

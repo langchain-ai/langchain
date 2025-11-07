@@ -1,4 +1,4 @@
-from langchain import tools
+from langchain_classic import tools
 
 EXPECTED_ALL = [
     "AINAppOps",

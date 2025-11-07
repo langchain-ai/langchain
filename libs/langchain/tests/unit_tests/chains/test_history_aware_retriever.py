@@ -2,7 +2,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import FakeListLLM
 from langchain_core.prompts import PromptTemplate
 
-from langchain.chains import create_history_aware_retriever
+from langchain_classic.chains import create_history_aware_retriever
 from tests.unit_tests.retrievers.parrot_retriever import FakeParrotRetriever
 
 
