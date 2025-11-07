@@ -334,10 +334,20 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Returns:
             Human-readable representation.
         """
-        # TODO: Handle partials
         title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
         title = get_msg_title_repr(title, bold=html)
-        return f"{title}\n\n{self.prompt.pretty_repr(html=html)}"
+        parts: list[str] = [title]
+        # Show partials if underlying prompt carries them
+        partials = getattr(self.prompt, "partial_variables", None)
+        if partials:
+            keys = list(partials.keys())
+            if html:
+                colored = [get_colored_text(k, "yellow") for k in keys]
+                parts.append(f"Partials: {', '.join(colored)}")
+            else:
+                parts.append(f"Partials: {', '.join(keys)}")
+        parts.append(self.prompt.pretty_repr(html=html))
+        return "\n\n".join(parts)
 
 
 class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
@@ -641,12 +651,25 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             Human-readable representation.
         """
-        # TODO: Handle partials
         title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
         title = get_msg_title_repr(title, bold=html)
+        parts: list[str] = [title]
         prompts = self.prompt if isinstance(self.prompt, list) else [self.prompt]
+        # Collect partials from any StringPromptTemplate elements
+        keys: list[str] = []
+        for p in prompts:
+            pv = getattr(p, "partial_variables", None)
+            if pv:
+                keys.extend([k for k in pv if k not in keys])
+        if keys:
+            if html:
+                colored = [get_colored_text(k, "yellow") for k in keys]
+                parts.append(f"Partials: {', '.join(colored)}")
+            else:
+                parts.append(f"Partials: {', '.join(keys)}")
         prompt_reprs = "\n\n".join(prompt.pretty_repr(html=html) for prompt in prompts)
-        return f"{title}\n\n{prompt_reprs}"
+        parts.append(prompt_reprs)
+        return "\n\n".join(parts)
 
 
 class HumanMessagePromptTemplate(_StringImageMessagePromptTemplate):
@@ -1299,8 +1322,21 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             Human-readable representation.
         """
-        # TODO: handle partials
-        return "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
+        title = get_msg_title_repr("Chat Prompt", bold=html)
+
+        parts: list[str] = [title]
+
+        if getattr(self, "partial_variables", None):
+            keys = list(self.partial_variables.keys())  # type: ignore[union-attr]
+            if html:
+                colored = [get_colored_text(k, "yellow") for k in keys]
+                parts.append(f"Partials: {', '.join(colored)}")
+            else:
+                parts.append(f"Partials: {', '.join(keys)}")
+
+        body = "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
+        parts.append(body)
+        return "\n\n".join(p for p in parts if p)
 
 
 def _create_template_from_message_type(
