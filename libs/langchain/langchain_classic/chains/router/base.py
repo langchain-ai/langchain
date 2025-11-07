@@ -82,18 +82,12 @@ class MultiRouteChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the router chain prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the router chain prompt expects."""
         return self.router_chain.input_keys
 
     @property
     def output_keys(self) -> list[str]:
-        """Will always return text key.
-
-        :meta private:
-        """
+        """Will always return text key."""
         return []
 
     def _call(

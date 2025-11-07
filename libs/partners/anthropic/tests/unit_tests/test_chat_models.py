@@ -29,19 +29,21 @@ from langchain_anthropic.chat_models import (
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
+MODEL_NAME = "claude-sonnet-4-5-20250929"
+
 
 def test_initialization() -> None:
     """Test chat model initialization."""
     for model in [
-        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
+        ChatAnthropic(model_name=MODEL_NAME, api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
         ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
-            model="claude-instant-1.2",
+            model=MODEL_NAME,
             anthropic_api_key="xyz",
             default_request_timeout=2,
             base_url="https://api.anthropic.com",
         ),
     ]:
-        assert model.model == "claude-instant-1.2"
+        assert model.model == MODEL_NAME
         assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
@@ -49,23 +51,23 @@ def test_initialization() -> None:
 
 @pytest.mark.parametrize("async_api", [True, False])
 def test_streaming_attribute_should_stream(async_api: bool) -> None:  # noqa: FBT001
-    llm = ChatAnthropic(model="foo", streaming=True)
+    llm = ChatAnthropic(model=MODEL_NAME, streaming=True)
     assert llm._should_stream(async_api=async_api)
 
 
 def test_anthropic_client_caching() -> None:
     """Test that the OpenAI client is cached."""
-    llm1 = ChatAnthropic(model="claude-3-5-sonnet-latest")
-    llm2 = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm1 = ChatAnthropic(model=MODEL_NAME)
+    llm2 = ChatAnthropic(model=MODEL_NAME)
     assert llm1._client._client is llm2._client._client
 
-    llm3 = ChatAnthropic(model="claude-3-5-sonnet-latest", base_url="foo")
+    llm3 = ChatAnthropic(model=MODEL_NAME, base_url="foo")
     assert llm1._client._client is not llm3._client._client
 
-    llm4 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=None)
+    llm4 = ChatAnthropic(model=MODEL_NAME, timeout=None)
     assert llm1._client._client is llm4._client._client
 
-    llm5 = ChatAnthropic(model="claude-3-5-sonnet-latest", timeout=3)
+    llm5 = ChatAnthropic(model=MODEL_NAME, timeout=3)
     assert llm1._client._client is not llm5._client._client
 
 
@@ -74,9 +76,7 @@ def test_anthropic_proxy_support() -> None:
     proxy_url = "http://proxy.example.com:8080"
 
     # Test sync client with proxy
-    llm_sync = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
-    )
+    llm_sync = ChatAnthropic(model=MODEL_NAME, anthropic_proxy=proxy_url)
     sync_client = llm_sync._client
     assert sync_client is not None
 
@@ -85,10 +85,8 @@ def test_anthropic_proxy_support() -> None:
     assert async_client is not None
 
     # Test that clients with different proxy settings are not cached together
-    llm_no_proxy = ChatAnthropic(model="claude-3-5-sonnet-latest")
-    llm_with_proxy = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
-    )
+    llm_no_proxy = ChatAnthropic(model=MODEL_NAME)
+    llm_with_proxy = ChatAnthropic(model=MODEL_NAME, anthropic_proxy=proxy_url)
 
     # Different proxy settings should result in different cached clients
     assert llm_no_proxy._client._client is not llm_with_proxy._client._client
@@ -100,7 +98,7 @@ def test_anthropic_proxy_from_environment() -> None:
 
     # Test with environment variable set
     with patch.dict(os.environ, {"ANTHROPIC_PROXY": proxy_url}):
-        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        llm = ChatAnthropic(model=MODEL_NAME)
         assert llm.anthropic_proxy == proxy_url
 
         # Should be able to create clients successfully
@@ -112,82 +110,76 @@ def test_anthropic_proxy_from_environment() -> None:
     # Test that explicit parameter overrides environment variable
     with patch.dict(os.environ, {"ANTHROPIC_PROXY": "http://env-proxy.com"}):
         explicit_proxy = "http://explicit-proxy.com"
-        llm = ChatAnthropic(
-            model="claude-3-5-sonnet-latest", anthropic_proxy=explicit_proxy
-        )
+        llm = ChatAnthropic(model=MODEL_NAME, anthropic_proxy=explicit_proxy)
         assert llm.anthropic_proxy == explicit_proxy
 
 
 def test_set_default_max_tokens() -> None:
     """Test the set_default_max_tokens function."""
+    # Test claude-sonnet-4-5 models
+    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
     # Test claude-opus-4 models
     llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
     assert llm.max_tokens == 32000
 
     # Test claude-sonnet-4 models
-    llm = ChatAnthropic(model="claude-sonnet-4-latest", anthropic_api_key="test")
+    llm = ChatAnthropic(model="claude-sonnet-4-20250514", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
     # Test claude-3-7-sonnet models
-    llm = ChatAnthropic(model="claude-3-7-sonnet-latest", anthropic_api_key="test")
+    llm = ChatAnthropic(model="claude-3-7-sonnet-20250219", anthropic_api_key="test")
     assert llm.max_tokens == 64000
 
-    # Test claude-3-5-sonnet models
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", anthropic_api_key="test")
-    assert llm.max_tokens == 8192
-
     # Test claude-3-5-haiku models
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest", anthropic_api_key="test")
+    llm = ChatAnthropic(model="claude-3-5-haiku-20241022", anthropic_api_key="test")
     assert llm.max_tokens == 8192
 
     # Test claude-3-haiku models (should default to 4096)
-    llm = ChatAnthropic(model="claude-3-haiku-latest", anthropic_api_key="test")
+    llm = ChatAnthropic(model="claude-3-haiku-20240307", anthropic_api_key="test")
     assert llm.max_tokens == 4096
 
     # Test that existing max_tokens values are preserved
-    llm = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test"
-    )
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=2048, anthropic_api_key="test")
     assert llm.max_tokens == 2048
 
     # Test that explicitly set max_tokens values are preserved
-    llm = ChatAnthropic(
-        model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test"
-    )
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=4096, anthropic_api_key="test")
     assert llm.max_tokens == 4096
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
-    llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
-    assert llm.model == "foo"
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    assert llm.model == MODEL_NAME
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_param() -> None:
-    llm = ChatAnthropic(model="foo")  # type: ignore[call-arg]
-    assert llm.model == "foo"
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.model == MODEL_NAME
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_kwargs() -> None:
-    llm = ChatAnthropic(model_name="foo", model_kwargs={"foo": "bar"})  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME, model_kwargs={"foo": "bar"})  # type: ignore[call-arg, call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_fields_in_model_kwargs() -> None:
     """Test that for backwards compatibility fields can be passed in as model_kwargs."""
-    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
-    llm = ChatAnthropic(model="foo", model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, model_kwargs={"max_tokens": 5})  # type: ignore[call-arg]
     assert llm.max_tokens == 5
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = ChatAnthropic(model="foo", foo="bar")  # type: ignore[call-arg, call-arg]
+        llm = ChatAnthropic(model=MODEL_NAME, foo="bar")  # type: ignore[call-arg, call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -196,7 +188,7 @@ def test_anthropic_initialization() -> None:
     """Test anthropic initialization."""
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
-    ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
 
 
 def test__format_output() -> None:
@@ -220,7 +212,7 @@ def test__format_output() -> None:
         },
         response_metadata={"model_provider": "anthropic"},
     )
-    llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert actual.generations[0].message == expected
 
@@ -252,7 +244,7 @@ def test__format_output_cached() -> None:
         response_metadata={"model_provider": "anthropic"},
     )
 
-    llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert actual.generations[0].message == expected
 
@@ -1222,7 +1214,7 @@ def test__format_messages_with_multiple_system() -> None:
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
+        model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
     )
     assert isinstance(chat_model.anthropic_api_key, SecretStr)
@@ -1235,7 +1227,7 @@ def test_anthropic_api_key_masked_when_passed_from_env(
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
     chat_model = ChatAnthropic(  # type: ignore[call-arg]
-        model="claude-3-opus-20240229",
+        model=MODEL_NAME,
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
@@ -1248,7 +1240,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
+        model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
@@ -1260,7 +1252,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
 def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
+        model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
     )
     assert (
@@ -1277,7 +1269,7 @@ class GetWeather(BaseModel):
 
 def test_anthropic_bind_tools_tool_choice() -> None:
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
+        model=MODEL_NAME,
         anthropic_api_key="secret-api-key",
     )
     chat_model_with_tools = chat_model.bind_tools(
@@ -1307,7 +1299,7 @@ def test_anthropic_bind_tools_tool_choice() -> None:
 
 
 def test_optional_description() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm = ChatAnthropic(model=MODEL_NAME)
 
     class SampleModel(BaseModel):
         sample_field: str
@@ -1317,7 +1309,7 @@ def test_optional_description() -> None:
 
 def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     """Test that get_num_tokens_from_messages passes kwargs to the model."""
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm = ChatAnthropic(model=MODEL_NAME)
 
     with patch.object(anthropic, "Client") as _client:
         llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
@@ -1325,7 +1317,7 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     assert _client.return_value.messages.count_tokens.call_args.kwargs["foo"] == "bar"
 
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5",
+        model=MODEL_NAME,
         betas=["context-management-2025-06-27"],
         context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
@@ -1405,7 +1397,7 @@ def test_mcp_tracing() -> None:
     ]
 
     llm = ChatAnthropic(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5-20250929",
         betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
     )
@@ -1440,7 +1432,7 @@ def test_mcp_tracing() -> None:
 
 
 def test_cache_control_kwarg() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm = ChatAnthropic(model=MODEL_NAME)
 
     messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
     payload = llm._get_request_payload(messages)
@@ -1488,7 +1480,7 @@ def test_cache_control_kwarg() -> None:
 
 def test_context_management_in_payload() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        model=MODEL_NAME,  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
         context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
@@ -1503,19 +1495,19 @@ def test_context_management_in_payload() -> None:
 
 
 def test_anthropic_model_params() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+    llm = ChatAnthropic(model=MODEL_NAME)
 
     ls_params = llm._get_ls_params()
     assert ls_params == {
         "ls_provider": "anthropic",
         "ls_model_type": "chat",
-        "ls_model_name": "claude-3-5-haiku-latest",
-        "ls_max_tokens": 8192,
+        "ls_model_name": MODEL_NAME,
+        "ls_max_tokens": 64000,
         "ls_temperature": None,
     }
 
-    ls_params = llm._get_ls_params(model="claude-opus-4-1")
-    assert ls_params.get("ls_model_name") == "claude-opus-4-1"
+    ls_params = llm._get_ls_params(model=MODEL_NAME)
+    assert ls_params.get("ls_model_name") == MODEL_NAME
 
 
 def test_streaming_cache_token_reporting() -> None:
@@ -1528,7 +1520,7 @@ def test_streaming_cache_token_reporting() -> None:
 
     # Create a mock message_start event
     mock_message = MagicMock()
-    mock_message.model = "claude-3-sonnet-20240229"
+    mock_message.model = MODEL_NAME
     mock_message.usage.input_tokens = 100
     mock_message.usage.output_tokens = 0
     mock_message.usage.cache_read_input_tokens = 25

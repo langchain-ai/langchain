@@ -28,7 +28,7 @@ class EventData(TypedDict, total=False):
 
     This field is only available if the `Runnable` raised an exception.
 
-    !!! version-added "Added in version 1.0.0"
+    !!! version-added "Added in `langchain-core` 1.0.0"
     """
     output: Any
     """The output of the `Runnable` that generated the event.

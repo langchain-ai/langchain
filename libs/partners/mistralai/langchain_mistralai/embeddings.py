@@ -124,20 +124,27 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
     # is run.
-    client: httpx.Client = Field(default=None)  # type: ignore[assignment] # :meta private:
+    client: httpx.Client = Field(default=None)  # type: ignore[assignment]
 
-    async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # :meta private:
+    async_client: httpx.AsyncClient = Field(  # type: ignore[assignment]
         default=None
     )
+
     mistral_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env("MISTRAL_API_KEY", default=""),
     )
+
     endpoint: str = "https://api.mistral.ai/v1/"
+
     max_retries: int | None = 5
+
     timeout: int = 120
+
     wait_time: int | None = 30
+
     max_concurrent_requests: int = 64
+
     tokenizer: Tokenizer = Field(default=None)
 
     model: str = "mistral-embed"

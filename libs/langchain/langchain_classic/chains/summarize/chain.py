@@ -103,7 +103,7 @@ def _load_map_reduce_chain(
 
     Args:
         llm: Language Model to use for map and reduce steps.
-        map_prompt: Prompt used to summarize each documnet in the map step.
+        map_prompt: Prompt used to summarize each document in the map step.
         combine_prompt: Prompt used to combine summaries in the reduce step.
         combine_document_variable_name: Variable name in the `combine_prompt` where
             the mapped summaries are inserted.
@@ -115,7 +115,7 @@ def _load_map_reduce_chain(
             which uses the same model as the map step.
         collapse_llm: Optional separate LLM for the collapse step.
             which uses the same model as the map step.
-        verbose: Whether to log progess and intermediate steps.
+        verbose: Whether to log progress and intermediate steps.
         token_max: Token threshold that triggers the collapse step during reduction.
         callbacks: Optional callbacks for logging and tracing.
         collapse_max_retries: Maximum retries for the collapse step if it fails.

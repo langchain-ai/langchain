@@ -48,7 +48,7 @@ def _check_numpy() -> bool:
 
 
 def _embedding_factory() -> Embeddings:
-    """Create an Embeddings object.
+    """Create an `Embeddings` object.
 
     Returns:
         The created `Embeddings` object.

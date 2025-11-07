@@ -33,7 +33,7 @@ def test_all_imports() -> None:
     ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
-        ("claude-3-opus-20240229", "anthropic"),
+        ("claude-opus-4-1", "anthropic"),
         ("accounts/fireworks/models/mixtral-8x7b-instruct", "fireworks"),
         ("mixtral-8x7b-32768", "groq"),
     ],
@@ -241,17 +241,17 @@ def test_configurable_with_default() -> None:
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
+        configurable={"bar_model": "claude-sonnet-4-5-20250929"},
     )
 
-    assert model_with_config.model == "claude-3-7-sonnet-20250219"  # type: ignore[attr-defined]
+    assert model_with_config.model == "claude-sonnet-4-5-20250929"  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "model": "claude-3-7-sonnet-20250219",
+            "model": "claude-sonnet-4-5-20250929",
             "mcp_servers": None,
             "max_tokens": 64000,
             "temperature": None,

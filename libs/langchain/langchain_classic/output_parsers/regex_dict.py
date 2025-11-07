@@ -8,7 +8,7 @@ from langchain_core.output_parsers import BaseOutputParser
 class RegexDictParser(BaseOutputParser[dict[str, str]]):
     """Parse the output of an LLM call into a Dictionary using a regex."""
 
-    regex_pattern: str = r"{}:\s?([^.'\n']*)\.?"  # : :meta private:
+    regex_pattern: str = r"{}:\s?([^.'\n']*)\.?"
     """The regex pattern to use to parse the output."""
     output_key_to_format: dict[str, str]
     """The keys to use for the output."""

@@ -644,7 +644,7 @@ class AudioContentBlock(TypedDict):
 
 
 class PlainTextContentBlock(TypedDict):
-    """Plaintext data (e.g., from a document).
+    """Plaintext data (e.g., from a `.txt` or `.md` document).
 
     !!! note
         A `PlainTextContentBlock` existed in `langchain-core<1.0.0`. Although the
@@ -767,7 +767,7 @@ class FileContentBlock(TypedDict):
 
 
 class NonStandardContentBlock(TypedDict):
-    """Provider-specific data.
+    """Provider-specific content data.
 
     This block contains data for which there is not yet a standard type.
 
@@ -802,7 +802,7 @@ class NonStandardContentBlock(TypedDict):
     """
 
     value: dict[str, Any]
-    """Provider-specific data."""
+    """Provider-specific content data."""
 
     index: NotRequired[int | str]
     """Index of block in aggregate response. Used during streaming."""
@@ -867,7 +867,7 @@ def _get_data_content_block_types() -> tuple[str, ...]:
     Example: ("image", "video", "audio", "text-plain", "file")
 
     Note that old style multimodal blocks type literals with new style blocks.
-    Speficially, "image", "audio", and "file".
+    Specifically, "image", "audio", and "file".
 
     See the docstring of `_normalize_messages` in `language_models._utils` for details.
     """
@@ -906,7 +906,7 @@ def is_data_content_block(block: dict) -> bool:
 
         # 'text' is checked to support v0 PlainTextContentBlock types
         # We must guard against new style TextContentBlock which also has 'text' `type`
-        # by ensuring the presense of `source_type`
+        # by ensuring the presence of `source_type`
         if block["type"] == "text" and "source_type" not in block:  # noqa: SIM103  # This is more readable
             return False
 
@@ -1399,7 +1399,7 @@ def create_non_standard_block(
     """Create a `NonStandardContentBlock`.
 
     Args:
-        value: Provider-specific data.
+        value: Provider-specific content data.
         id: Content block identifier. Generated automatically if not provided.
         index: Index of block in aggregate response. Used during streaming.
 

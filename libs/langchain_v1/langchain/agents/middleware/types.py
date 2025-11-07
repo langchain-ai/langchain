@@ -19,14 +19,18 @@ from typing import (
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
-    from langchain.tools.tool_node import ToolCallRequest
-
 # Needed as top level import for Pydantic schema generation on AgentState
 from typing import TypeAlias
 
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, ToolMessage  # noqa: TC002
+from langchain_core.messages import (  # noqa: TC002
+    AIMessage,
+    AnyMessage,
+    BaseMessage,
+    ToolMessage,
+)
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
+from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.types import Command  # noqa: TC002
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
@@ -45,6 +49,10 @@ __all__ = [
     "ModelRequest",
     "ModelResponse",
     "OmitFromSchema",
+    "ResponseT",
+    "StateT_co",
+    "ToolCallRequest",
+    "ToolCallWrapper",
     "after_agent",
     "after_model",
     "before_agent",
@@ -185,6 +193,7 @@ class _OutputAgentState(TypedDict, Generic[ResponseT]):  # noqa: PYI049
 
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
+StateT_co = TypeVar("StateT_co", bound=AgentState, default=AgentState, covariant=True)
 StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 

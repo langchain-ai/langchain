@@ -151,11 +151,13 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback.
             args_schema: The schema of the tool's input arguments.
             infer_schema: Whether to infer the schema from the function's signature.
-            response_format: The tool response format. If `"content"` then the output of
-                the tool is interpreted as the contents of a `ToolMessage`. If
-                `"content_and_artifact"` then the output is expected to be a two-tuple
-                corresponding to the `(content, artifact)` of a `ToolMessage`.
-            parse_docstring: if `infer_schema` and `parse_docstring`, will attempt
+            response_format: The tool response format.
+
+                If `"content"` then the output of the tool is interpreted as the
+                contents of a `ToolMessage`. If `"content_and_artifact"` then the output
+                is expected to be a two-tuple corresponding to the `(content, artifact)`
+                of a `ToolMessage`.
+            parse_docstring: If `infer_schema` and `parse_docstring`, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
             error_on_invalid_docstring: if `parse_docstring` is provided, configure
                 whether to raise `ValueError` on invalid Google Style docstrings.

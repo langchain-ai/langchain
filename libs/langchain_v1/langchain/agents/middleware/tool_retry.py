@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 
     from langgraph.types import Command
 
+    from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
-    from langchain.tools.tool_node import ToolCallRequest
 
 
 class ToolRetryMiddleware(AgentMiddleware):

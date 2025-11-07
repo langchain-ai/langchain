@@ -30,7 +30,7 @@ class ConversationBufferMemory(BaseChatMemory):
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
 
     @property
     def buffer(self) -> Any:
@@ -73,10 +73,7 @@ class ConversationBufferMemory(BaseChatMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return [self.memory_key]
 
     @override
@@ -118,7 +115,7 @@ class ConversationStringBufferMemory(BaseMemory):
     buffer: str = ""
     output_key: str | None = None
     input_key: str | None = None
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
 
     @pre_init
     def validate_chains(cls, values: dict) -> dict:
@@ -130,10 +127,7 @@ class ConversationStringBufferMemory(BaseMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return [self.memory_key]
 
     @override

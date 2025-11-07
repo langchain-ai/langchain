@@ -1,4 +1,4 @@
-"""Embeddings.
+"""Embeddings models.
 
 !!! warning "Reference docs"
     This page contains **reference documentation** for Embeddings. See

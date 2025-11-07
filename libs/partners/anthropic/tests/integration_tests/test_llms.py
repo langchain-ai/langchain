@@ -9,7 +9,7 @@ from langchain_core.outputs import LLMResult
 from langchain_anthropic import AnthropicLLM
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL = "claude-3-7-sonnet-latest"
+MODEL = "claude-sonnet-4-5-20250929"
 
 
 @pytest.mark.requires("anthropic")

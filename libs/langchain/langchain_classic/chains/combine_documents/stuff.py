@@ -56,9 +56,9 @@ def create_stuff_documents_chain(
 
     Example:
         ```python
-        # pip install -U langchain langchain-community
+        # pip install -U langchain langchain-openai
 
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_core.documents import Document
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_classic.chains.combine_documents import (
@@ -123,7 +123,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         ```python
         from langchain_classic.chains import StuffDocumentsChain, LLMChain
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         # This controls how each document will be formatted. Specifically,
         # it will be passed to `format_document` - see that function for more

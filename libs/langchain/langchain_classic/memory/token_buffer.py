@@ -50,10 +50,7 @@ class ConversationTokenBufferMemory(BaseChatMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return [self.memory_key]
 
     @override

@@ -54,6 +54,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         input_ = "What was the 3rd highest building in 2000?"
         return _invoke(llm, input_, stream)
 
+    @pytest.mark.flaky(retries=3, delay=1)
     def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process PDF inputs."""
         super().test_openai_pdf_inputs(model)

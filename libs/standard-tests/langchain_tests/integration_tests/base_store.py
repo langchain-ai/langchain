@@ -1,6 +1,7 @@
-"""Standard tests for the BaseStore abstraction.
+"""Standard tests for the `BaseStore` abstraction.
 
-We don't recommend implementing externally managed BaseStore abstractions at this time.
+We don't recommend implementing externally managed `BaseStore` abstractions at this
+time.
 """
 
 from abc import abstractmethod
@@ -16,9 +17,9 @@ V = TypeVar("V")
 
 
 class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
-    """Test suite for checking the key-value API of a BaseStore.
+    """Test suite for checking the key-value API of a `BaseStore`.
 
-    This test suite verifies the basic key-value API of a BaseStore.
+    This test suite verifies the basic key-value API of a `BaseStore`.
 
     The test suite is designed for synchronous key-value stores.
 
@@ -162,9 +163,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
 
 
 class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
-    """Test suite for checking the key-value API of a BaseStore.
+    """Test suite for checking the key-value API of a `BaseStore`.
 
-    This test suite verifies the basic key-value API of a BaseStore.
+    This test suite verifies the basic key-value API of a `BaseStore`.
 
     The test suite is designed for synchronous key-value stores.
 

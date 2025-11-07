@@ -1,4 +1,4 @@
-"""Message types.
+"""Message and message content types.
 
 Includes message types for different roles (e.g., human, AI, system), as well as types
 for message content blocks (e.g., text, image, audio) and tool calls.

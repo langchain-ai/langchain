@@ -496,10 +496,7 @@ class ConversationEntityMemory(BaseChatMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return ["entities", self.chat_history_key]
 
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:

@@ -26,7 +26,7 @@ def create_importer(
     imports to new imports.
 
     The function will raise deprecation warning on loops using
-    deprecated_lookups or fallback_module.
+    `deprecated_lookups` or `fallback_module`.
 
     Module lookups will import without deprecation warnings (used to speed
     up imports from large namespaces like llms or chat models).
@@ -37,18 +37,20 @@ def create_importer(
     loss of type information, IDE support for going to definition etc).
 
     Args:
-        package: current package. Use __package__
-        module_lookup: maps name of object to the module where it is defined.
+        package: Current package. Use `__package__`
+        module_lookup: Maps name of object to the module where it is defined.
             e.g.,
+            ```json
             {
                 "MyDocumentLoader": (
                     "langchain_community.document_loaders.my_document_loader"
                 )
             }
-        deprecated_lookups: same as module look up, but will raise
+            ```
+        deprecated_lookups: Same as module look up, but will raise
             deprecation warnings.
-        fallback_module: module to import from if the object is not found in
-            module_lookup or if module_lookup is not provided.
+        fallback_module: Module to import from if the object is not found in
+            `module_lookup` or if `module_lookup` is not provided.
 
     Returns:
         A function that imports objects from the specified modules.
@@ -56,7 +58,7 @@ def create_importer(
     all_module_lookup = {**(deprecated_lookups or {}), **(module_lookup or {})}
 
     def import_by_name(name: str) -> Any:
-        """Import stores from langchain_community."""
+        """Import stores from `langchain_community`."""
         # If not in interactive env, raise warning.
         if all_module_lookup and name in all_module_lookup:
             new_module = all_module_lookup[name]

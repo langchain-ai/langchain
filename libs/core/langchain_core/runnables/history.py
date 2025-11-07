@@ -36,23 +36,23 @@ GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
-    """Runnable that manages chat message history for another Runnable.
+    """`Runnable` that manages chat message history for another `Runnable`.
 
     A chat message history is a sequence of messages that represent a conversation.
 
-    RunnableWithMessageHistory wraps another Runnable and manages the chat message
+    `RunnableWithMessageHistory` wraps another `Runnable` and manages the chat message
     history for it; it is responsible for reading and updating the chat message
     history.
 
-    The formats supported for the inputs and outputs of the wrapped Runnable
+    The formats supported for the inputs and outputs of the wrapped `Runnable`
     are described below.
 
-    RunnableWithMessageHistory must always be called with a config that contains
+    `RunnableWithMessageHistory` must always be called with a config that contains
     the appropriate parameters for the chat message history factory.
 
-    By default, the Runnable is expected to take a single configuration parameter
+    By default, the `Runnable` is expected to take a single configuration parameter
     called `session_id` which is a string. This parameter is used to create a new
-    or look up an existing chat message history that matches the given session_id.
+    or look up an existing chat message history that matches the given `session_id`.
 
     In this case, the invocation would look like this:
 
@@ -117,12 +117,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
         ```
 
-    Example where the wrapped Runnable takes a dictionary input:
+    Example where the wrapped `Runnable` takes a dictionary input:
 
         ```python
         from typing import Optional
 
-        from langchain_community.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
         from langchain_core.runnables.history import RunnableWithMessageHistory
 
@@ -166,7 +166,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         print(store)  # noqa: T201
         ```
 
-    Example where the session factory takes two keys, user_id and conversation id):
+    Example where the session factory takes two keys (`user_id` and `conversation_id`):
 
         ```python
         store = {}
@@ -223,21 +223,28 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     """
 
     get_session_history: GetSessionHistoryCallable
-    """Function that returns a new BaseChatMessageHistory.
+    """Function that returns a new `BaseChatMessageHistory`.
+
     This function should either take a single positional argument `session_id` of type
-    string and return a corresponding chat message history instance"""
+    string and return a corresponding chat message history instance
+    """
     input_messages_key: str | None = None
-    """Must be specified if the base runnable accepts a dict as input.
-    The key in the input dict that contains the messages."""
+    """Must be specified if the base `Runnable` accepts a `dict` as input.
+    The key in the input `dict` that contains the messages.
+    """
     output_messages_key: str | None = None
-    """Must be specified if the base Runnable returns a dict as output.
-    The key in the output dict that contains the messages."""
+    """Must be specified if the base `Runnable` returns a `dict` as output.
+    The key in the output `dict` that contains the messages.
+    """
     history_messages_key: str | None = None
-    """Must be specified if the base runnable accepts a dict as input and expects a
-    separate key for historical messages."""
+    """Must be specified if the base `Runnable` accepts a `dict` as input and expects a
+    separate key for historical messages.
+    """
     history_factory_config: Sequence[ConfigurableFieldSpec]
     """Configure fields that should be passed to the chat history factory.
-    See `ConfigurableFieldSpec` for more details."""
+
+    See `ConfigurableFieldSpec` for more details.
+    """
 
     def __init__(
         self,
@@ -254,15 +261,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         history_factory_config: Sequence[ConfigurableFieldSpec] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize RunnableWithMessageHistory.
+        """Initialize `RunnableWithMessageHistory`.
 
         Args:
-            runnable: The base Runnable to be wrapped.
+            runnable: The base `Runnable` to be wrapped.
+
                 Must take as input one of:
 
                 1. A list of `BaseMessage`
-                2. A dict with one key for all messages
-                3. A dict with one key for the current input string/message(s) and
+                2. A `dict` with one key for all messages
+                3. A `dict` with one key for the current input string/message(s) and
                     a separate key for historical messages. If the input key points
                     to a string, it will be treated as a `HumanMessage` in history.
 
@@ -270,13 +278,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
                 1. A string which can be treated as an `AIMessage`
                 2. A `BaseMessage` or sequence of `BaseMessage`
-                3. A dict with a key for a `BaseMessage` or sequence of
+                3. A `dict` with a key for a `BaseMessage` or sequence of
                     `BaseMessage`
 
-            get_session_history: Function that returns a new BaseChatMessageHistory.
+            get_session_history: Function that returns a new `BaseChatMessageHistory`.
+
                 This function should either take a single positional argument
                 `session_id` of type string and return a corresponding
                 chat message history instance.
+
                 ```python
                 def get_session_history(
                     session_id: str, *, user_id: str | None = None
@@ -295,16 +305,17 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 ) -> BaseChatMessageHistory: ...
                 ```
 
-            input_messages_key: Must be specified if the base runnable accepts a dict
+            input_messages_key: Must be specified if the base runnable accepts a `dict`
                 as input.
-            output_messages_key: Must be specified if the base runnable returns a dict
+            output_messages_key: Must be specified if the base runnable returns a `dict`
                 as output.
-            history_messages_key: Must be specified if the base runnable accepts a dict
-                as input and expects a separate key for historical messages.
+            history_messages_key: Must be specified if the base runnable accepts a
+                `dict` as input and expects a separate key for historical messages.
             history_factory_config: Configure fields that should be passed to the
                 chat history factory. See `ConfigurableFieldSpec` for more details.
-                Specifying these allows you to pass multiple config keys
-                into the get_session_history factory.
+
+                Specifying these allows you to pass multiple config keys into the
+                `get_session_history` factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 `RunnableBindingBase` init.
 
@@ -364,7 +375,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     @property
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        """Get the configuration specs for the RunnableWithMessageHistory."""
+        """Get the configuration specs for the `RunnableWithMessageHistory`."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
         )
@@ -606,6 +617,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
 
 def _get_parameter_names(callable_: GetSessionHistoryCallable) -> list[str]:
-    """Get the parameter names of the callable."""
+    """Get the parameter names of the `Callable`."""
     sig = inspect.signature(callable_)
     return list(sig.parameters.keys())

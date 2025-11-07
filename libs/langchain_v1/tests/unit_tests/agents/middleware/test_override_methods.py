@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import BaseTool
 
 from langchain.agents.middleware.types import ModelRequest
-from langchain.tools.tool_node import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest
 
 
 class TestModelRequestOverride:

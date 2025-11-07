@@ -33,7 +33,7 @@ def test_hashing() -> None:
     # hash should be deterministic
     assert hashed_document.id == "fd1dc827-051b-537d-a1fe-1fa043e8b276"
 
-    # Verify that hashing with sha1 is determinstic
+    # Verify that hashing with sha1 is deterministic
     another_hashed_document = _get_document_with_hash(document, key_encoder="sha1")
     assert another_hashed_document.id == hashed_document.id
 

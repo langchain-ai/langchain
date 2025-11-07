@@ -182,7 +182,7 @@ class ClearToolUsesEdit(ContextEdit):
 
 
 class ContextEditingMiddleware(AgentMiddleware):
-    """Middleware that automatically prunes tool results to manage context size.
+    """Automatically prunes tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count
     exceeds configured thresholds. Currently the `ClearToolUsesEdit` strategy is

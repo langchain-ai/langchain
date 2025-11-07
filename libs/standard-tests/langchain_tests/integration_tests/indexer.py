@@ -1,8 +1,8 @@
 """Test suite to check index implementations.
 
-Standard tests for the DocumentIndex abstraction
+Standard tests for the `DocumentIndex` abstraction
 
-We don't recommend implementing externally managed DocumentIndex abstractions at this
+We don't recommend implementing externally managed `DocumentIndex` abstractions at this
 time.
 """
 
@@ -19,8 +19,8 @@ from langchain_core.indexing.base import DocumentIndex
 class DocumentIndexerTestSuite(ABC):
     """Test suite for checking the read-write of a document index.
 
-    Implementers should subclass this test suite and provide a fixture
-    that returns an empty index for each test.
+    Implementers should subclass this test suite and provide a fixture that returns an
+    empty index for each test.
     """
 
     @abstractmethod
@@ -172,7 +172,7 @@ class DocumentIndexerTestSuite(ABC):
         ]
 
     def test_delete_no_args(self, index: DocumentIndex) -> None:
-        """Test delete with no args raises ValueError."""
+        """Test delete with no args raises `ValueError`."""
         with pytest.raises(ValueError):  # noqa: PT011
             index.delete()
 
@@ -364,7 +364,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         ]
 
     async def test_delete_no_args(self, index: DocumentIndex) -> None:
-        """Test delete with no args raises ValueError."""
+        """Test delete with no args raises `ValueError`."""
         with pytest.raises(ValueError):  # noqa: PT011
             await index.adelete()
 

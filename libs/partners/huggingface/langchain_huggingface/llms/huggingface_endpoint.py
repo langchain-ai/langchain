@@ -81,58 +81,82 @@ class HuggingFaceEndpoint(LLM):
     endpoint_url: str | None = None
     """Endpoint URL to use. If repo_id is not specified then this needs to given or
     should be pass as env variable in `HF_INFERENCE_ENDPOINT`"""
+
     repo_id: str | None = None
     """Repo to use. If endpoint_url is not specified then this needs to given"""
+
     provider: str | None = None
     """Name of the provider to use for inference with the model specified in `repo_id`.
         e.g. "cerebras". if not specified, Defaults to "auto" i.e. the first of the
         providers available for the model, sorted by the user's order in https://hf.co/settings/inference-providers.
         available providers can be found in the [huggingface_hub documentation](https://huggingface.co/docs/huggingface_hub/guides/inference#supported-providers-and-tasks)."""
+
     huggingfacehub_api_token: str | None = Field(
         default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
     )
+
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
+
     top_k: int | None = None
     """The number of highest probability vocabulary tokens to keep for
     top-k-filtering."""
+
     top_p: float | None = 0.95
     """If set to < 1, only the smallest set of most probable tokens with probabilities
     that add up to `top_p` or higher are kept for generation."""
+
     typical_p: float | None = 0.95
     """Typical Decoding mass. See [Typical Decoding for Natural Language
     Generation](https://arxiv.org/abs/2202.00666) for more information."""
+
     temperature: float | None = 0.8
     """The value used to module the logits distribution."""
+
     repetition_penalty: float | None = None
     """The parameter for repetition penalty. 1.0 means no penalty.
     See [this paper](https://arxiv.org/pdf/1909.05858.pdf) for more details."""
+
     return_full_text: bool = False
     """Whether to prepend the prompt to the generated text"""
+
     truncate: int | None = None
     """Truncate inputs tokens to the given size"""
+
     stop_sequences: list[str] = Field(default_factory=list)
     """Stop generating tokens if a member of `stop_sequences` is generated"""
+
     seed: int | None = None
     """Random sampling seed"""
+
     inference_server_url: str = ""
     """text-generation-inference instance base url"""
+
     timeout: int = 120
     """Timeout in seconds"""
+
     streaming: bool = False
     """Whether to generate a stream of tokens asynchronously"""
+
     do_sample: bool = False
     """Activate logits sampling"""
+
     watermark: bool = False
     """Watermarking with [A Watermark for Large Language Models]
     (https://arxiv.org/abs/2301.10226)"""
+
     server_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any text-generation-inference server parameters not explicitly specified"""
+
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `call` not explicitly specified"""
+
     model: str
-    client: Any = None  #: :meta private:
-    async_client: Any = None  #: :meta private:
+
+    client: Any = None
+
+    async_client: Any = None
+
     task: str | None = None
     """Task to call the model with. Should be a task that returns `generated_text`."""
 

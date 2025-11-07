@@ -19,6 +19,7 @@ from langchain.agents.middleware.types import (
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OmitFromInput,
 )
 from langchain.tools import InjectedToolCallId
 
@@ -36,7 +37,7 @@ class Todo(TypedDict):
 class PlanningState(AgentState):
     """State schema for the todo middleware."""
 
-    todos: NotRequired[list[Todo]]
+    todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
 
 

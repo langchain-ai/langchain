@@ -40,7 +40,7 @@ def create_openai_tools_agent(
     Example:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import (
             AgentExecutor,
             create_openai_tools_agent,

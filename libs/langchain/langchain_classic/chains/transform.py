@@ -43,26 +43,17 @@ class TransformChain(Chain):
     @staticmethod
     @functools.lru_cache
     def _log_once(msg: str) -> None:
-        """Log a message once.
-
-        :meta private:
-        """
+        """Log a message once."""
         logger.warning(msg)
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input keys.
-
-        :meta private:
-        """
+        """Expect input keys."""
         return self.input_variables
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output keys.
-
-        :meta private:
-        """
+        """Return output keys."""
         return self.output_variables
 
     @override

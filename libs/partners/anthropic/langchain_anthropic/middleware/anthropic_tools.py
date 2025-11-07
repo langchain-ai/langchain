@@ -25,7 +25,7 @@ from typing_extensions import NotRequired, TypedDict
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
 
-    from langchain.tools.tool_node import ToolCallRequest
+    from langchain.agents.middleware.types import ToolCallRequest
 
 # Tool type constants
 TEXT_EDITOR_TOOL_TYPE = "text_editor_20250728"

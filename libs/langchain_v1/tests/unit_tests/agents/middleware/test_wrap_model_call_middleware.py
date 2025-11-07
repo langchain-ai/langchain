@@ -380,7 +380,6 @@ class TestStateAndRuntime:
                 # Access state from request
                 state_values.append(
                     {
-                        "thread_model_call_count": request.state.get("thread_model_call_count", 0),
                         "messages_count": len(request.state.get("messages", [])),
                     }
                 )

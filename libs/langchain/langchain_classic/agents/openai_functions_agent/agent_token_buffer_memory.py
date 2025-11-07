@@ -49,10 +49,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Always return list of memory variables.
-
-        :meta private:
-        """
+        """Always return list of memory variables."""
         return [self.memory_key]
 
     @override
