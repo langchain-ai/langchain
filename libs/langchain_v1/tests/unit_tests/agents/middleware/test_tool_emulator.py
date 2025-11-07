@@ -370,7 +370,7 @@ class TestLLMToolEmulatorModelConfiguration:
         # Just test that initialization works - don't require anthropic package
         try:
             emulator = LLMToolEmulator(
-                tools=["get_weather"], model="anthropic:claude-3-5-sonnet-latest"
+                tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
             )
             assert emulator.model is not None
             assert "get_weather" in emulator.tools_to_emulate

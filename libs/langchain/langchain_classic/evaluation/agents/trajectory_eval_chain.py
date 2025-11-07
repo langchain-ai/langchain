@@ -104,7 +104,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     Example:
     ```python
     from langchain_classic.agents import AgentType, initialize_agent
-    from langchain_community.chat_models import ChatOpenAI
+    from langchain_openai import ChatOpenAI
     from langchain_classic.evaluation import TrajectoryEvalChain
     from langchain_classic.tools import tool
 
@@ -148,7 +148,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         default_factory=TrajectoryOutputParser,
     )
     """The output parser used to parse the output."""
-    return_reasoning: bool = False  # :meta private:
+    return_reasoning: bool = False
     """DEPRECATED. Reasoning always returned."""
 
     model_config = ConfigDict(

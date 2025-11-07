@@ -1217,3 +1217,20 @@ def test_get_ls_params() -> None:
 
     ls_params = llm._get_ls_params(stop=["stop"])
     assert ls_params["ls_stop"] == ["stop"]
+
+
+def test_model_profiles() -> None:
+    model = GenericFakeChatModel(messages=iter([]))
+    profile = model.profile
+    assert profile == {}
+
+    class MyModel(GenericFakeChatModel):
+        model: str = "gpt-5"
+
+        @property
+        def _llm_type(self) -> str:
+            return "openai-chat"
+
+    model = MyModel(messages=iter([]))
+    profile = model.profile
+    assert profile

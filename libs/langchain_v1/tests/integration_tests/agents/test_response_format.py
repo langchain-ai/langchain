@@ -26,7 +26,7 @@ def test_inference_to_native_output() -> None:
     model = ChatOpenAI(model="gpt-5")
     agent = create_agent(
         model,
-        prompt=(
+        system_prompt=(
             "You are a helpful weather assistant. Please call the get_weather tool, "
             "then use the WeatherReport tool to generate the final response."
         ),
@@ -56,7 +56,7 @@ def test_inference_to_tool_output() -> None:
     model = ChatOpenAI(model="gpt-4")
     agent = create_agent(
         model,
-        prompt=(
+        system_prompt=(
             "You are a helpful weather assistant. Please call the get_weather tool, "
             "then use the WeatherReport tool to generate the final response."
         ),

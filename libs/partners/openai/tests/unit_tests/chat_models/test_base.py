@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from functools import partial
 from types import TracebackType
 from typing import Any, Literal, cast
@@ -1199,14 +1200,18 @@ def test__get_request_payload() -> None:
 
 
 def test_init_o1() -> None:
-    with pytest.warns(None) as record:  # type: ignore[call-overload]
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")  # Treat warnings as errors
         ChatOpenAI(model="o1", reasoning_effort="medium")
+
     assert len(record) == 0
 
 
 def test_init_minimal_reasoning_effort() -> None:
-    with pytest.warns(None) as record:  # type: ignore[call-overload]
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("error")
         ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
+
     assert len(record) == 0
 
 

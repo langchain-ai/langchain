@@ -50,65 +50,65 @@ class LangSmithRetrieverParams(TypedDict, total=False):
 
 
 class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
-    """Abstract base class for a Document retrieval system.
+    """Abstract base class for a document retrieval system.
 
     A retrieval system is defined as something that can take string queries and return
-    the most 'relevant' Documents from some source.
+    the most 'relevant' documents from some source.
 
     Usage:
 
-    A retriever follows the standard Runnable interface, and should be used
-    via the standard Runnable methods of `invoke`, `ainvoke`, `batch`, `abatch`.
+    A retriever follows the standard `Runnable` interface, and should be used via the
+    standard `Runnable` methods of `invoke`, `ainvoke`, `batch`, `abatch`.
 
     Implementation:
 
-    When implementing a custom retriever, the class should implement
-    the `_get_relevant_documents` method to define the logic for retrieving documents.
+    When implementing a custom retriever, the class should implement the
+    `_get_relevant_documents` method to define the logic for retrieving documents.
 
     Optionally, an async native implementations can be provided by overriding the
     `_aget_relevant_documents` method.
 
-    Example: A retriever that returns the first 5 documents from a list of documents
+    !!! example "Retriever that returns the first 5 documents from a list of documents"
 
-    ```python
-    from langchain_core.documents import Document
-    from langchain_core.retrievers import BaseRetriever
+        ```python
+        from langchain_core.documents import Document
+        from langchain_core.retrievers import BaseRetriever
 
-    class SimpleRetriever(BaseRetriever):
-        docs: list[Document]
-        k: int = 5
+        class SimpleRetriever(BaseRetriever):
+            docs: list[Document]
+            k: int = 5
 
-        def _get_relevant_documents(self, query: str) -> list[Document]:
-            \"\"\"Return the first k documents from the list of documents\"\"\"
-            return self.docs[:self.k]
+            def _get_relevant_documents(self, query: str) -> list[Document]:
+                \"\"\"Return the first k documents from the list of documents\"\"\"
+                return self.docs[:self.k]
 
-        async def _aget_relevant_documents(self, query: str) -> list[Document]:
-            \"\"\"(Optional) async native implementation.\"\"\"
-            return self.docs[:self.k]
-    ```
+            async def _aget_relevant_documents(self, query: str) -> list[Document]:
+                \"\"\"(Optional) async native implementation.\"\"\"
+                return self.docs[:self.k]
+        ```
 
-    Example: A simple retriever based on a scikit-learn vectorizer
+    !!! example "Simple retriever based on a scikit-learn vectorizer"
 
-    ```python
-    from sklearn.metrics.pairwise import cosine_similarity
+        ```python
+        from sklearn.metrics.pairwise import cosine_similarity
 
 
-    class TFIDFRetriever(BaseRetriever, BaseModel):
-        vectorizer: Any
-        docs: list[Document]
-        tfidf_array: Any
-        k: int = 4
+        class TFIDFRetriever(BaseRetriever, BaseModel):
+            vectorizer: Any
+            docs: list[Document]
+            tfidf_array: Any
+            k: int = 4
 
-        class Config:
-            arbitrary_types_allowed = True
+            class Config:
+                arbitrary_types_allowed = True
 
-        def _get_relevant_documents(self, query: str) -> list[Document]:
-            # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
-            query_vec = self.vectorizer.transform([query])
-            # Op -- (n_docs,1) -- Cosine Sim with each doc
-            results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
-            return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
-    ```
+            def _get_relevant_documents(self, query: str) -> list[Document]:
+                # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
+                query_vec = self.vectorizer.transform([query])
+                # Op -- (n_docs,1) -- Cosine Sim with each doc
+                results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
+                return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
+        ```
     """
 
     model_config = ConfigDict(
@@ -119,15 +119,19 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     _expects_other_args: bool = False
     tags: list[str] | None = None
     """Optional list of tags associated with the retriever.
+
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
+
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
     metadata: dict[str, Any] | None = None
     """Optional metadata associated with the retriever.
+
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
+
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """

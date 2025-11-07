@@ -116,7 +116,7 @@ def create_self_ask_with_search_agent(
     Examples:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
         from langchain_classic.agents import (
             AgentExecutor,
             create_self_ask_with_search_agent,

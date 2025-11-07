@@ -1,0 +1,6 @@
+[profile]
+image_url_inputs = true
+pdf_inputs = true
+image_tool_message = true
+tool_choice = true
+structured_output = true

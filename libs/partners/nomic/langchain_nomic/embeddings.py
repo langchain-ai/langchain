@@ -11,7 +11,7 @@ from nomic import embed
 
 
 class NomicEmbeddings(Embeddings):
-    """NomicEmbeddings embedding model.
+    """`NomicEmbeddings` embedding model.
 
     Example:
         ```python
@@ -66,8 +66,8 @@ class NomicEmbeddings(Embeddings):
         """Initialize `NomicEmbeddings` model.
 
         Args:
-            model: model name
-            nomic_api_key: optionally, set the Nomic API key. Uses the `NOMIC_API_KEY`
+            model: Model name
+            nomic_api_key: Optionally, set the Nomic API key. Uses the `NOMIC_API_KEY`
                 environment variable by default.
             dimensionality: The embedding dimension, for use with Matryoshka-capable
                 models. Defaults to full-size.
@@ -76,7 +76,12 @@ class NomicEmbeddings(Embeddings):
             device: The device to use for local embeddings. Choices include
                 `'cpu'`, `'gpu'`, `'nvidia'`, `'amd'`, or a specific device
                 name. See the docstring for `GPT4All.__init__` for more info.
-                Typically defaults to `'cpu'`. Do not use on macOS.
+
+                Typically defaults to `'cpu'`.
+
+                !!! warning
+
+                    Do not use on macOS.
             vision_model: The vision model to use for image embeddings.
 
         """
@@ -93,8 +98,8 @@ class NomicEmbeddings(Embeddings):
         """Embed texts.
 
         Args:
-            texts: list of texts to embed
-            task_type: the task type to use when embedding. One of `'search_query'`,
+            texts: List of texts to embed
+            task_type: The task type to use when embedding. One of `'search_query'`,
                 `'search_document'`, `'classification'`, `'clustering'`
 
         """
@@ -112,7 +117,7 @@ class NomicEmbeddings(Embeddings):
         """Embed search docs.
 
         Args:
-            texts: list of texts to embed as documents
+            texts: List of texts to embed as documents
 
         """
         return self.embed(
@@ -124,7 +129,7 @@ class NomicEmbeddings(Embeddings):
         """Embed query text.
 
         Args:
-            text: query text
+            text: Query text
 
         """
         return self.embed(
@@ -136,7 +141,7 @@ class NomicEmbeddings(Embeddings):
         """Embed images.
 
         Args:
-            uris: list of image URIs to embed
+            uris: List of image URIs to embed
         """
         return embed.image(
             images=uris,

@@ -38,7 +38,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         ```python
         from langchain_classic.chains import MapRerankDocumentsChain, LLMChain
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.output_parsers.regex import RegexParser
 
         document_variable_name = "context"
@@ -108,10 +108,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
             _output_keys = [*_output_keys, "intermediate_steps"]

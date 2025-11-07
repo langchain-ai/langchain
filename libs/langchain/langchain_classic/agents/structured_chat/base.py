@@ -195,7 +195,7 @@ def create_structured_chat_agent(
     Examples:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_classic.agents import (
             AgentExecutor,
             create_structured_chat_agent,

@@ -1,4 +1,4 @@
-"""Fake chat model for testing purposes."""
+"""Fake chat models for testing purposes."""
 
 import asyncio
 import re

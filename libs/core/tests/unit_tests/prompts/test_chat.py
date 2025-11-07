@@ -1193,3 +1193,350 @@ def test_dict_message_prompt_template_errors_on_jinja2() -> None:
         _ = ChatPromptTemplate.from_messages(
             [("human", [prompt])], template_format="jinja2"
         )
+
+
+def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
+    manifest = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain_core", "prompts", "chat", "ChatPromptTemplate"],
+        "kwargs": {
+            "messages": [
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": [
+                        "langchain_core",
+                        "prompts",
+                        "chat",
+                        "SystemMessagePromptTemplate",
+                    ],
+                    "kwargs": {
+                        "prompt": {
+                            "lc": 1,
+                            "type": "constructor",
+                            "id": [
+                                "langchain_core",
+                                "prompts",
+                                "prompt",
+                                "PromptTemplate",
+                            ],
+                            "kwargs": {
+                                "input_variables": [],
+                                "template_format": "mustache",
+                                "template": "Always echo back whatever I send you.",
+                            },
+                        },
+                    },
+                },
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": [
+                        "langchain_core",
+                        "prompts",
+                        "chat",
+                        "HumanMessagePromptTemplate",
+                    ],
+                    "kwargs": {
+                        "prompt": [
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the teacher's prompt:",
+                                    "additional_content_fields": {
+                                        "text": "Here is the teacher's prompt:",
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["promptDescription"],
+                                    "template_format": "mustache",
+                                    "template": '"{{promptDescription}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{promptDescription}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Here is the expected answer or success criteria given by the teacher:",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["expectedResponse"],
+                                    "template_format": "mustache",
+                                    "template": '"{{expectedResponse}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{expectedResponse}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Note: This may be just one example of many possible correct ways for the student to respond.\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "For your evaluation of the student's response:\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "For your evaluation of the student's response:\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "Here is a transcript of the student's explanation:",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["responseTranscript"],
+                                    "template_format": "mustache",
+                                    "template": '"{{responseTranscript}}"\n',
+                                    "additional_content_fields": {
+                                        "text": '"{{responseTranscript}}"\n',
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}} For this task, the student's reading pronunciation and fluency were important. Here is analysis of the student's oral response: \"{{readingFluencyAnalysis}}\" {{/readingFluencyAnalysis}}",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}}Root analysis of the student's response (step 3) in this oral analysis rather than inconsistencies in the transcript.{{/readingFluencyAnalysis}}",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["readingFluencyAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#readingFluencyAnalysis}}Remember this is a student, so we care about general fluency - not voice acting. {{/readingFluencyAnalysis}}\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": ["multipleChoiceAnalysis"],
+                                    "template_format": "mustache",
+                                    "template": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                    "additional_content_fields": {
+                                        "text": "{{#multipleChoiceAnalysis}}Here is an analysis of the student's multiple choice response: {{multipleChoiceAnalysis}}{{/multipleChoiceAnalysis}}\n",  # noqa: E501
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "prompt",
+                                    "PromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "input_variables": [],
+                                    "template_format": "mustache",
+                                    "template": "Here is the student's whiteboard:\n",
+                                    "additional_content_fields": {
+                                        "text": "Here is the student's whiteboard:\n",
+                                    },
+                                },
+                            },
+                            {
+                                "lc": 1,
+                                "type": "constructor",
+                                "id": [
+                                    "langchain_core",
+                                    "prompts",
+                                    "image",
+                                    "ImagePromptTemplate",
+                                ],
+                                "kwargs": {
+                                    "template": {
+                                        "url": "{{whiteboard}}",
+                                    },
+                                    "input_variables": ["whiteboard"],
+                                    "template_format": "mustache",
+                                    "additional_content_fields": {
+                                        "image_url": {
+                                            "url": "{{whiteboard}}",
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                        "additional_options": {},
+                    },
+                },
+            ],
+            "input_variables": [
+                "promptDescription",
+                "expectedResponse",
+                "responseTranscript",
+                "readingFluencyAnalysis",
+                "readingFluencyAnalysis",
+                "readingFluencyAnalysis",
+                "multipleChoiceAnalysis",
+                "whiteboard",
+            ],
+            "template_format": "mustache",
+            "metadata": {
+                "lc_hub_owner": "jacob",
+                "lc_hub_repo": "mustache-conditionals",
+                "lc_hub_commit_hash": "836ad82d512409ea6024fb760b76a27ba58fc68b1179656c0ba2789778686d46",  # noqa: E501
+            },
+        },
+    }
+
+    # Load the ChatPromptTemplate from the manifest
+    template = load(manifest)
+
+    # Format with conditional data - rules is empty, so mustache conditionals
+    # should not render
+    result = template.invoke(
+        {
+            "promptDescription": "What is the capital of the USA?",
+            "expectedResponse": "Washington, D.C.",
+            "responseTranscript": "Washington, D.C.",
+            "readingFluencyAnalysis": None,
+            "multipleChoiceAnalysis": "testing2",
+            "whiteboard": "https://foo.com/bar.png",
+        }
+    )
+    content = result.messages[1].content
+    assert isinstance(content, list)
+    assert not [
+        block for block in content if block["type"] == "text" and block["text"] == ""
+    ]

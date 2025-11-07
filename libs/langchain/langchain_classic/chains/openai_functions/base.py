@@ -85,7 +85,7 @@ def create_openai_fn_chain(
         from typing import Optional
 
         from langchain_classic.chains.openai_functions import create_openai_fn_chain
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_core.prompts import ChatPromptTemplate
 
         from pydantic import BaseModel, Field
@@ -179,7 +179,7 @@ def create_structured_output_chain(
         from typing import Optional
 
         from langchain_classic.chains.openai_functions import create_structured_output_chain
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
         from langchain_core.prompts import ChatPromptTemplate
 
         from pydantic import BaseModel, Field

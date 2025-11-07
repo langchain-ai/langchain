@@ -71,15 +71,19 @@ class HuggingFacePipeline(BaseLLM):
         ```
     """
 
-    pipeline: Any = None  #: :meta private:
+    pipeline: Any = None
+
     model_id: str | None = None
     """The model name. If not set explicitly by the user,
     it will be inferred from the provided pipeline (if available).
     If neither is provided, the DEFAULT_MODEL_ID will be used."""
+
     model_kwargs: dict | None = None
     """Keyword arguments passed to the model."""
+
     pipeline_kwargs: dict | None = None
     """Keyword arguments passed to the pipeline."""
+
     batch_size: int = DEFAULT_BATCH_SIZE
     """Batch size to use when passing multiple documents to generate."""
 

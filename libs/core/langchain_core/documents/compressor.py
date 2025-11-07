@@ -21,14 +21,14 @@ class BaseDocumentCompressor(BaseModel, ABC):
 
     This abstraction is primarily used for post-processing of retrieved documents.
 
-    Documents matching a given query are first retrieved.
+    `Document` objects matching a given query are first retrieved.
 
     Then the list of documents can be further processed.
 
     For example, one could re-rank the retrieved documents using an LLM.
 
     !!! note
-        Users should favor using a RunnableLambda instead of sub-classing from this
+        Users should favor using a `RunnableLambda` instead of sub-classing from this
         interface.
 
     """
@@ -43,9 +43,9 @@ class BaseDocumentCompressor(BaseModel, ABC):
         """Compress retrieved documents given the query context.
 
         Args:
-            documents: The retrieved documents.
+            documents: The retrieved `Document` objects.
             query: The query context.
-            callbacks: Optional callbacks to run during compression.
+            callbacks: Optional `Callbacks` to run during compression.
 
         Returns:
             The compressed documents.
@@ -61,9 +61,9 @@ class BaseDocumentCompressor(BaseModel, ABC):
         """Async compress retrieved documents given the query context.
 
         Args:
-            documents: The retrieved documents.
+            documents: The retrieved `Document` objects.
             query: The query context.
-            callbacks: Optional callbacks to run during compression.
+            callbacks: Optional `Callbacks` to run during compression.
 
         Returns:
             The compressed documents.

@@ -46,7 +46,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         ```python
         from langchain_classic.chains import RefineDocumentsChain, LLMChain
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         # This controls how each document will be formatted. Specifically,
         # it will be passed to `format_document` - see that function for more
@@ -96,10 +96,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         _output_keys = super().output_keys
         if self.return_intermediate_steps:
             _output_keys = [*_output_keys, "intermediate_steps"]

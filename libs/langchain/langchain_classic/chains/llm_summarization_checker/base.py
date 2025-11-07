@@ -80,7 +80,7 @@ class LLMSummarizationCheckerChain(Chain):
 
     Example:
         ```python
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.chains import LLMSummarizationCheckerChain
 
         model = OpenAI(temperature=0.0)
@@ -101,8 +101,8 @@ class LLMSummarizationCheckerChain(Chain):
     are_all_true_prompt: PromptTemplate = ARE_ALL_TRUE_PROMPT
     """[Deprecated]"""
 
-    input_key: str = "query"  #: :meta private:
-    output_key: str = "result"  #: :meta private:
+    input_key: str = "query"
+    output_key: str = "result"
     max_checks: int = 2
     """Maximum number of times to check the assertions. Default to double-checking."""
 
@@ -134,18 +134,12 @@ class LLMSummarizationCheckerChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return the singular input key.
-
-        :meta private:
-        """
+        """Return the singular input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return the singular output key.
-
-        :meta private:
-        """
+        """Return the singular output key."""
         return [self.output_key]
 
     def _call(

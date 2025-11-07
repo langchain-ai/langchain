@@ -499,6 +499,9 @@ class ChatHuggingFace(BaseChatModel):
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
+    stream_usage: bool | None = None
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata."""
     n: int | None = None
     """Number of chat completions to generate for each prompt."""
     top_p: float | None = None
@@ -510,7 +513,56 @@ class ChatHuggingFace(BaseChatModel):
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+
+        # Inherit properties from the LLM if they weren't explicitly set
+        self._inherit_llm_properties()
+
         self._resolve_model_id()
+
+    def _inherit_llm_properties(self) -> None:
+        """Inherit properties from the wrapped LLM instance if not explicitly set."""
+        if not hasattr(self, "llm") or self.llm is None:
+            return
+
+        # Map of ChatHuggingFace properties to LLM properties
+        property_mappings = {
+            "temperature": "temperature",
+            "max_tokens": "max_new_tokens",  # Different naming convention
+            "top_p": "top_p",
+            "seed": "seed",
+            "streaming": "streaming",
+            "stop": "stop_sequences",
+        }
+
+        # Inherit properties from LLM and not explicitly set here
+        for chat_prop, llm_prop in property_mappings.items():
+            if hasattr(self.llm, llm_prop):
+                llm_value = getattr(self.llm, llm_prop)
+                chat_value = getattr(self, chat_prop, None)
+                if not chat_value and llm_value:
+                    setattr(self, chat_prop, llm_value)
+
+        # Handle special cases for HuggingFaceEndpoint
+        if _is_huggingface_endpoint(self.llm):
+            # Inherit additional HuggingFaceEndpoint specific properties
+            endpoint_mappings = {
+                "frequency_penalty": "repetition_penalty",
+            }
+
+            for chat_prop, llm_prop in endpoint_mappings.items():
+                if hasattr(self.llm, llm_prop):
+                    llm_value = getattr(self.llm, llm_prop)
+                    chat_value = getattr(self, chat_prop, None)
+                    if chat_value is None and llm_value is not None:
+                        setattr(self, chat_prop, llm_value)
+
+        # Inherit model_kwargs if not explicitly set
+        if (
+            not self.model_kwargs
+            and hasattr(self.llm, "model_kwargs")
+            and isinstance(self.llm.model_kwargs, dict)
+        ):
+            self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:
@@ -634,14 +686,40 @@ class ChatHuggingFace(BaseChatModel):
         )
         return self._to_chat_result(llm_result)
 
+    def _should_stream_usage(
+        self, *, stream_usage: bool | None = None, **kwargs: Any
+    ) -> bool | None:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of precedence
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
     def _stream(
         self,
         messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if _is_huggingface_endpoint(self.llm):
+            stream_usage = self._should_stream_usage(
+                stream_usage=stream_usage, **kwargs
+            )
+            if stream_usage:
+                kwargs["stream_options"] = {"include_usage": stream_usage}
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {**params, **kwargs, "stream": True}
 
@@ -650,7 +728,20 @@ class ChatHuggingFace(BaseChatModel):
                 messages=message_dicts, **params
             ):
                 if len(chunk["choices"]) == 0:
+                    if usage := chunk.get("usage"):
+                        usage_msg = AIMessageChunk(
+                            content="",
+                            additional_kwargs={},
+                            response_metadata={},
+                            usage_metadata={
+                                "input_tokens": usage.get("prompt_tokens", 0),
+                                "output_tokens": usage.get("completion_tokens", 0),
+                                "total_tokens": usage.get("total_tokens", 0),
+                            },
+                        )
+                        yield ChatGenerationChunk(message=usage_msg)
                     continue
+
                 choice = chunk["choices"][0]
                 message_chunk = _convert_chunk_to_message_chunk(
                     chunk, default_chunk_class
@@ -688,8 +779,13 @@ class ChatHuggingFace(BaseChatModel):
         messages: list[BaseMessage],
         stop: list[str] | None = None,
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        stream_usage = self._should_stream_usage(stream_usage=stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -699,7 +795,20 @@ class ChatHuggingFace(BaseChatModel):
             messages=message_dicts, **params
         ):
             if len(chunk["choices"]) == 0:
+                if usage := chunk.get("usage"):
+                    usage_msg = AIMessageChunk(
+                        content="",
+                        additional_kwargs={},
+                        response_metadata={},
+                        usage_metadata={
+                            "input_tokens": usage.get("prompt_tokens", 0),
+                            "output_tokens": usage.get("completion_tokens", 0),
+                            "total_tokens": usage.get("total_tokens", 0),
+                        },
+                    )
+                    yield ChatGenerationChunk(message=usage_msg)
                 continue
+
             choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
@@ -880,9 +989,9 @@ class ChatHuggingFace(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class
 
                 Pydantic class is currently supported.
 
@@ -893,11 +1002,15 @@ class ChatHuggingFace(BaseChatModel):
                 - `'json_mode'`: uses JSON mode.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.

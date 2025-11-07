@@ -97,7 +97,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
     """
 
     buffer: str = ""
-    memory_key: str = "history"  #: :meta private:
+    memory_key: str = "history"
 
     @classmethod
     def from_messages(
@@ -129,10 +129,7 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
 
     @property
     def memory_variables(self) -> list[str]:
-        """Will always return list of memory variables.
-
-        :meta private:
-        """
+        """Will always return list of memory variables."""
         return [self.memory_key]
 
     @override

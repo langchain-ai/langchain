@@ -48,10 +48,10 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     combine_documents_chain: BaseCombineDocumentsChain
     """Chain to use to combine documents."""
-    question_key: str = "question"  #: :meta private:
-    input_docs_key: str = "docs"  #: :meta private:
-    answer_key: str = "answer"  #: :meta private:
-    sources_answer_key: str = "sources"  #: :meta private:
+    question_key: str = "question"
+    input_docs_key: str = "docs"
+    answer_key: str = "answer"
+    sources_answer_key: str = "sources"
     return_source_documents: bool = False
     """Return the source documents."""
 
@@ -109,18 +109,12 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.question_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         _output_keys = [self.answer_key, self.sources_answer_key]
         if self.return_source_documents:
             _output_keys = [*_output_keys, "source_documents"]
@@ -233,14 +227,11 @@ class BaseQAWithSourcesChain(Chain, ABC):
 class QAWithSourcesChain(BaseQAWithSourcesChain):
     """Question answering with sources over documents."""
 
-    input_docs_key: str = "docs"  #: :meta private:
+    input_docs_key: str = "docs"
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_docs_key, self.question_key]
 
     @override

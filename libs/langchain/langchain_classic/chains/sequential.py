@@ -18,7 +18,7 @@ class SequentialChain(Chain):
 
     chains: list[Chain]
     input_variables: list[str]
-    output_variables: list[str]  #: :meta private:
+    output_variables: list[str]
     return_all: bool = False
 
     model_config = ConfigDict(
@@ -28,18 +28,12 @@ class SequentialChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Return expected input keys to the chain.
-
-        :meta private:
-        """
+        """Return expected input keys to the chain."""
         return self.input_variables
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return self.output_variables
 
     @model_validator(mode="before")
@@ -131,8 +125,8 @@ class SimpleSequentialChain(Chain):
 
     chains: list[Chain]
     strip_outputs: bool = False
-    input_key: str = "input"  #: :meta private:
-    output_key: str = "output"  #: :meta private:
+    input_key: str = "input"
+    output_key: str = "output"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -141,18 +135,12 @@ class SimpleSequentialChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Return output key.
-
-        :meta private:
-        """
+        """Return output key."""
         return [self.output_key]
 
     @model_validator(mode="after")

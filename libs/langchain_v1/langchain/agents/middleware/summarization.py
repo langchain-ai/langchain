@@ -60,7 +60,7 @@ _SEARCH_RANGE_FOR_TOOL_PAIRS = 5
 
 
 class SummarizationMiddleware(AgentMiddleware):
-    """Middleware that summarizes conversation history when token limits are approached.
+    """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining

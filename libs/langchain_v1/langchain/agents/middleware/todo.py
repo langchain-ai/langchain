@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.types import Command
 from typing_extensions import NotRequired, TypedDict
@@ -19,6 +19,7 @@ from langchain.agents.middleware.types import (
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OmitFromInput,
 )
 from langchain.tools import InjectedToolCallId
 
@@ -36,7 +37,7 @@ class Todo(TypedDict):
 class PlanningState(AgentState):
     """State schema for the todo middleware."""
 
-    todos: NotRequired[list[Todo]]
+    todos: Annotated[NotRequired[list[Todo]], OmitFromInput]
     """List of todo items for tracking task progress."""
 
 
@@ -198,11 +199,22 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], ModelResponse],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt."""
-        request.system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
-        )
+        if request.system_prompt is None:
+            request.system_prompt = self.system_prompt
+        elif isinstance(request.system_prompt, str):
+            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, str
+        ):
+            request.system_prompt = SystemMessage(
+                content=request.system_prompt.content + self.system_prompt
+            )
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, list
+        ):
+            request.system_prompt = SystemMessage(
+                content=[*request.system_prompt.content, self.system_prompt]
+            )
         return handler(request)
 
     async def awrap_model_call(
@@ -211,9 +223,20 @@ class TodoListMiddleware(AgentMiddleware):
         handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
     ) -> ModelCallResult:
         """Update the system prompt to include the todo system prompt (async version)."""
-        request.system_prompt = (
-            request.system_prompt + "\n\n" + self.system_prompt
-            if request.system_prompt
-            else self.system_prompt
-        )
+        if request.system_prompt is None:
+            request.system_prompt = self.system_prompt
+        elif isinstance(request.system_prompt, str):
+            request.system_prompt = request.system_prompt + "\n\n" + self.system_prompt
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, str
+        ):
+            request.system_prompt = SystemMessage(
+                content=request.system_prompt.content + self.system_prompt
+            )
+        elif isinstance(request.system_prompt, SystemMessage) and isinstance(
+            request.system_prompt.content, list
+        ):
+            request.system_prompt = SystemMessage(
+                content=[*request.system_prompt.content, self.system_prompt]
+            )
         return await handler(request)

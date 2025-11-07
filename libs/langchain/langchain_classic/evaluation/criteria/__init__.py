@@ -12,7 +12,7 @@ chain against specified criteria.
 Examples:
 --------
 Using a predefined criterion:
->>> from langchain_community.llms import OpenAI
+>>> from langchain_openai import OpenAI
 >>> from langchain_classic.evaluation.criteria import CriteriaEvalChain
 
 >>> model = OpenAI()
@@ -26,7 +26,7 @@ Using a predefined criterion:
 
 Using a custom criterion:
 
->>> from langchain_community.llms import OpenAI
+>>> from langchain_openai import OpenAI
 >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
 
 >>> model = OpenAI()

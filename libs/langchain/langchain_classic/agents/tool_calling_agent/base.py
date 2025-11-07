@@ -55,7 +55,7 @@ def create_tool_calling_agent(
                 ("placeholder", "{agent_scratchpad}"),
             ]
         )
-        model = ChatAnthropic(model="claude-3-opus-20240229")
+        model = ChatAnthropic(model="claude-opus-4-1-20250805")
 
         @tool
         def magic_function(input: int) -> int:

@@ -59,7 +59,7 @@ def create_react_agent(
     Examples:
         ```python
         from langchain_classic import hub
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
         from langchain_classic.agents import AgentExecutor, create_react_agent
 
         prompt = hub.pull("hwchase17/react")

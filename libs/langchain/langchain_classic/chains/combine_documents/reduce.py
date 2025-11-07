@@ -33,17 +33,18 @@ def split_list_of_docs(
     token_max: int,
     **kwargs: Any,
 ) -> list[list[Document]]:
-    """Split Documents into subsets that each meet a cumulative length constraint.
+    """Split `Document` objects to subsets that each meet a cumulative len. constraint.
 
     Args:
-        docs: The full list of Documents.
-        length_func: Function for computing the cumulative length of a set of Documents.
-        token_max: The maximum cumulative length of any subset of Documents.
+        docs: The full list of `Document` objects.
+        length_func: Function for computing the cumulative length of a set of `Document`
+            objects.
+        token_max: The maximum cumulative length of any subset of `Document` objects.
         **kwargs: Arbitrary additional keyword params to pass to each call of the
-            length_func.
+            `length_func`.
 
     Returns:
-        A List[List[Document]].
+        A `list[list[Document]]`.
     """
     new_result_doc_list = []
     _sub_result_docs = []
@@ -71,18 +72,18 @@ def collapse_docs(
     """Execute a collapse function on a set of documents and merge their metadatas.
 
     Args:
-        docs: A list of Documents to combine.
-        combine_document_func: A function that takes in a list of Documents and
+        docs: A list of `Document` objects to combine.
+        combine_document_func: A function that takes in a list of `Document` objects and
             optionally addition keyword parameters and combines them into a single
             string.
         **kwargs: Arbitrary additional keyword params to pass to the
-            combine_document_func.
+            `combine_document_func`.
 
     Returns:
-        A single Document with the output of combine_document_func for the page content
-            and the combined metadata's of all the input documents. All metadata values
-            are strings, and where there are overlapping keys across documents the
-            values are joined by ", ".
+        A single `Document` with the output of `combine_document_func` for the page
+            content and the combined metadata's of all the input documents. All metadata
+            values are strings, and where there are overlapping keys across documents
+            the values are joined by `', '`.
     """
     result = combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
@@ -103,18 +104,18 @@ async def acollapse_docs(
     """Execute a collapse function on a set of documents and merge their metadatas.
 
     Args:
-        docs: A list of Documents to combine.
-        combine_document_func: A function that takes in a list of Documents and
+        docs: A list of `Document` objects to combine.
+        combine_document_func: A function that takes in a list of `Document` objects and
             optionally addition keyword parameters and combines them into a single
             string.
         **kwargs: Arbitrary additional keyword params to pass to the
-            combine_document_func.
+            `combine_document_func`.
 
     Returns:
-        A single Document with the output of combine_document_func for the page content
-            and the combined metadata's of all the input documents. All metadata values
-            are strings, and where there are overlapping keys across documents the
-            values are joined by ", ".
+        A single `Document` with the output of `combine_document_func` for the page
+            content and the combined metadata's of all the input documents. All metadata
+            values are strings, and where there are overlapping keys across documents
+            the values are joined by `', '`.
     """
     result = await combine_document_func(docs, **kwargs)
     combined_metadata = {k: str(v) for k, v in docs[0].metadata.items()}
@@ -141,11 +142,11 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     This involves
 
-    - combine_documents_chain
-
-    - collapse_documents_chain
+    - `combine_documents_chain`
+    - `collapse_documents_chain`
 
     `combine_documents_chain` is ALWAYS provided. This is final chain that is called.
+
     We pass all previous results to this chain, and the output of this chain is
     returned as a final result.
 
@@ -162,7 +163,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             ReduceDocumentsChain,
         )
         from langchain_core.prompts import PromptTemplate
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         # This controls how each document will be formatted. Specifically,
         # it will be passed to `format_document` - see that function for more
@@ -203,19 +204,28 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
     combine_documents_chain: BaseCombineDocumentsChain
     """Final chain to call to combine documents.
-    This is typically a StuffDocumentsChain."""
+
+    This is typically a `StuffDocumentsChain`.
+    """
     collapse_documents_chain: BaseCombineDocumentsChain | None = None
     """Chain to use to collapse documents if needed until they can all fit.
-    If `None`, will use the combine_documents_chain.
-    This is typically a StuffDocumentsChain."""
+    If `None`, will use the `combine_documents_chain`.
+
+    This is typically a `StuffDocumentsChain`.
+    """
     token_max: int = 3000
-    """The maximum number of tokens to group documents into. For example, if
-    set to 3000 then documents will be grouped into chunks of no greater than
-    3000 tokens before trying to combine them into a smaller chunk."""
+    """The maximum number of tokens to group documents into.
+
+    For example, if set to 3000 then documents will be grouped into chunks of no greater
+    than 3000 tokens before trying to combine them into a smaller chunk.
+    """
     collapse_max_retries: int | None = None
-    """The maximum number of retries to collapse documents to fit token_max.
-    If `None`, it will keep trying to collapse documents to fit token_max.
-    Otherwise, after it reaches the max number, it will throw an error"""
+    """The maximum number of retries to collapse documents to fit `token_max`.
+
+    If `None`, it will keep trying to collapse documents to fit `token_max`.
+
+    Otherwise, after it reaches the max number, it will throw an error.
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -248,7 +258,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         Returns:
             The first element returned is the single string output. The second
-            element returned is a dictionary of other keys to return.
+                element returned is a dictionary of other keys to return.
         """
         result_docs, _ = self._collapse(
             docs,
@@ -282,7 +292,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         Returns:
             The first element returned is the single string output. The second
-            element returned is a dictionary of other keys to return.
+                element returned is a dictionary of other keys to return.
         """
         result_docs, _ = await self._acollapse(
             docs,

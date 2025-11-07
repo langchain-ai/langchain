@@ -65,7 +65,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
             If this test fails, check that:
 
             1. The model will generate a list of lists of floats when calling
-                `.embed_documents` on a list of strings.
+                `embed_documents` on a list of strings.
             2. The length of each list is the same.
         """
         documents = ["foo", "bar", "baz"]
@@ -84,7 +84,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
 
             If this test fails, check that:
 
-            1. The model will generate a list of floats when calling `.aembed_query`
+            1. The model will generate a list of floats when calling `aembed_query`
                 on a string.
             2. The length of the list is consistent across different inputs.
         """
@@ -106,7 +106,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
             If this test fails, check that:
 
             1. The model will generate a list of lists of floats when calling
-                `.aembed_documents` on a list of strings.
+                `aembed_documents` on a list of strings.
             2. The length of each list is the same.
         """
         documents = ["foo", "bar", "baz"]

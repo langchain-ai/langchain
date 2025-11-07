@@ -193,7 +193,10 @@ def test_chroma_with_metadatas_with_vectors() -> None:
     vec_1 = embeddings.embed_query(texts[0])
     output = docsearch.similarity_search_with_vectors("foo", k=1)
     docsearch.delete_collection()
-    assert output[0][0] == Document(page_content="foo", metadata={"page": "0"})
+    doc = output[0][0]
+    assert doc.page_content == "foo"
+    assert doc.metadata == {"page": "0"}
+    assert doc.id is not None
     assert (output[0][1] == vec_1).all()
 
 
@@ -825,3 +828,44 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 1
     # Clean up
     vectorstore.delete_collection()
+
+
+def test_chroma_handles_none_page_content() -> None:
+    """Test that Chroma gracefully handles None page_content values."""
+    from langchain_chroma.vectorstores import _results_to_docs_and_scores
+
+    mock_results = {
+        "documents": [["valid content", None, "another valid content"]],
+        "metadatas": [[{"key": "value1"}, {"key": "value2"}, {"key": "value3"}]],
+        "ids": [["id1", "id2", "id3"]],
+        "distances": [[0.1, 0.2, 0.3]],
+    }
+
+    docs_and_scores = _results_to_docs_and_scores(mock_results)
+
+    assert len(docs_and_scores) == 2
+    assert docs_and_scores[0][0].page_content == "valid content"
+    assert docs_and_scores[1][0].page_content == "another valid content"
+    assert docs_and_scores[0][0].id == "id1"
+    assert docs_and_scores[1][0].id == "id3"
+
+
+def test_chroma_handles_none_page_content_with_vectors() -> None:
+    """Test that Chroma gracefully handles None page_content values with vectors."""
+    from langchain_chroma.vectorstores import _results_to_docs_and_vectors
+
+    mock_results = {
+        "documents": [["valid content", None, "another valid content"]],
+        "metadatas": [[{"key": "value1"}, {"key": "value2"}, {"key": "value3"}]],
+        "ids": [["id1", "id2", "id3"]],
+        "embeddings": [[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]],
+    }
+    docs_and_vectors = _results_to_docs_and_vectors(mock_results)
+
+    assert len(docs_and_vectors) == 2
+    assert docs_and_vectors[0][0].page_content == "valid content"
+    assert docs_and_vectors[1][0].page_content == "another valid content"
+    assert docs_and_vectors[0][0].id == "id1"
+    assert docs_and_vectors[1][0].id == "id3"
+    assert docs_and_vectors[0][1] == [0.1, 0.2]
+    assert docs_and_vectors[1][1] == [0.5, 0.6]

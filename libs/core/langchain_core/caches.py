@@ -2,8 +2,8 @@
 
 Distinct from provider-based [prompt caching](https://docs.langchain.com/oss/python/langchain/models#prompt-caching).
 
-!!! warning
-    This is a beta feature! Please be wary of deploying experimental code to production
+!!! warning "Beta feature"
+    This is a beta feature. Please be wary of deploying experimental code to production
     unless you've taken appropriate precautions.
 
 A cache is useful for two reasons:
@@ -49,17 +49,18 @@ class BaseCache(ABC):
         """Look up based on `prompt` and `llm_string`.
 
         A cache implementation is expected to generate a key from the 2-tuple
-        of prompt and llm_string (e.g., by concatenating them with a delimiter).
+        of `prompt` and `llm_string` (e.g., by concatenating them with a delimiter).
 
         Args:
             prompt: A string representation of the prompt.
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
+
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
-                These invocation parameters are serialized into a string
-                representation.
+
+                These invocation parameters are serialized into a string representation.
 
         Returns:
             On a cache miss, return `None`. On a cache hit, return the cached value.
@@ -78,8 +79,10 @@ class BaseCache(ABC):
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
+
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
+
                 These invocation parameters are serialized into a string
                 representation.
             return_val: The value to be cached. The value is a list of `Generation`
@@ -94,15 +97,17 @@ class BaseCache(ABC):
         """Async look up based on `prompt` and `llm_string`.
 
         A cache implementation is expected to generate a key from the 2-tuple
-        of prompt and llm_string (e.g., by concatenating them with a delimiter).
+        of `prompt` and `llm_string` (e.g., by concatenating them with a delimiter).
 
         Args:
             prompt: A string representation of the prompt.
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
+
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
+
                 These invocation parameters are serialized into a string
                 representation.
 
@@ -125,8 +130,10 @@ class BaseCache(ABC):
                 In the case of a chat model, the prompt is a non-trivial
                 serialization of the prompt into the language model.
             llm_string: A string representation of the LLM configuration.
+
                 This is used to capture the invocation parameters of the LLM
                 (e.g., model name, temperature, stop tokens, max tokens, etc.).
+
                 These invocation parameters are serialized into a string
                 representation.
             return_val: The value to be cached. The value is a list of `Generation`

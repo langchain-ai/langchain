@@ -228,7 +228,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     """The parser to use to map the output to a structured result."""
     criterion_name: str
     """The name of the criterion being evaluated."""
-    output_key: str = "results"  #: :meta private:
+    output_key: str = "results"
 
     @classmethod
     @override

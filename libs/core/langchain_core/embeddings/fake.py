@@ -18,7 +18,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
 
     This embedding model creates embeddings by sampling from a normal distribution.
 
-    !!! warning
+    !!! danger "Toy model"
         Do not use this outside of testing, as it is not a real embedding model.
 
     Instantiate:
@@ -73,7 +73,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     This embedding model creates embeddings by sampling from a normal distribution
     with a seed based on the hash of the text.
 
-    !!! warning
+    !!! danger "Toy model"
         Do not use this outside of testing, as it is not a real embedding model.
 
     Instantiate:

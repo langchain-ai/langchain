@@ -9,7 +9,7 @@ pytest.importorskip(
     "anthropic", reason="Anthropic SDK is required for Claude middleware tests"
 )
 
-from langchain.tools.tool_node import ToolCallRequest
+from langchain.agents.middleware.types import ToolCallRequest
 from langchain_core.messages import ToolMessage
 
 from langchain_anthropic.middleware.bash import ClaudeBashToolMiddleware

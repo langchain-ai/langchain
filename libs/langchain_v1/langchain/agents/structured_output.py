@@ -34,17 +34,21 @@ SchemaKind = Literal["pydantic", "dataclass", "typeddict", "json_schema"]
 class StructuredOutputError(Exception):
     """Base class for structured output errors."""
 
+    ai_message: AIMessage
+
 
 class MultipleStructuredOutputsError(StructuredOutputError):
     """Raised when model returns multiple structured output tool calls when only one is expected."""
 
-    def __init__(self, tool_names: list[str]) -> None:
+    def __init__(self, tool_names: list[str], ai_message: AIMessage) -> None:
         """Initialize `MultipleStructuredOutputsError`.
 
         Args:
             tool_names: The names of the tools called for structured output.
+            ai_message: The AI message that contained the invalid multiple tool calls.
         """
         self.tool_names = tool_names
+        self.ai_message = ai_message
 
         super().__init__(
             "Model incorrectly returned multiple structured responses "
@@ -55,15 +59,17 @@ class MultipleStructuredOutputsError(StructuredOutputError):
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
-    def __init__(self, tool_name: str, source: Exception) -> None:
+    def __init__(self, tool_name: str, source: Exception, ai_message: AIMessage) -> None:
         """Initialize `StructuredOutputValidationError`.
 
         Args:
             tool_name: The name of the tool that failed.
             source: The exception that occurred.
+            ai_message: The AI message that contained the invalid structured output.
         """
         self.tool_name = tool_name
         self.source = source
+        self.ai_message = ai_message
         super().__init__(f"Failed to parse structured output for tool '{tool_name}': {source}.")
 
 
