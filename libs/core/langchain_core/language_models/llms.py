@@ -651,9 +651,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: The prompts to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
 
         Returns:
@@ -671,9 +674,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: The prompts to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
 
         Returns:
@@ -705,11 +711,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Yields:
             Generation chunks.
@@ -731,11 +740,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Yields:
             Generation chunks.
@@ -846,10 +858,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: List of string prompts.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
             metadata: List of metadata dictionaries to associate with each prompt. If
@@ -859,8 +875,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             run_id: List of run IDs to associate with each prompt. If provided, the
                 length of the list must match the length of the prompts list.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Raises:
             ValueError: If prompts is not a list.
@@ -1116,10 +1133,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             prompts: List of string prompts.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: List of tags to associate with each prompt. If provided, the length
                 of the list must match the length of the prompts list.
             metadata: List of metadata dictionaries to associate with each prompt. If
@@ -1129,8 +1150,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             run_id: List of run IDs to associate with each prompt. If provided, the
                 length of the list must match the length of the prompts list.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Raises:
             ValueError: If the length of `callbacks`, `tags`, `metadata`, or
@@ -1410,12 +1432,16 @@ class LLM(BaseLLM):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             The model output as a string. SHOULD NOT include the prompt.
@@ -1436,12 +1462,16 @@ class LLM(BaseLLM):
 
         Args:
             prompt: The prompt to generate from.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of the stop substrings.
-                If stop tokens are not supported consider raising NotImplementedError.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+
+                If stop tokens are not supported consider raising `NotImplementedError`.
             run_manager: Callback manager for the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             The model output as a string. SHOULD NOT include the prompt.

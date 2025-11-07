@@ -543,7 +543,7 @@ class ChatOllama(BaseChatModel):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in Ollama locally on initialization.
 
-    !!! version-added "Added in version 0.3.4"
+    !!! version-added "Added in `langchain-ollama` 0.3.4"
     """
 
     mirostat: int | None = None
@@ -1258,10 +1258,10 @@ class ChatOllama(BaseChatModel):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema.
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema.
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1284,11 +1284,15 @@ class ChatOllama(BaseChatModel):
                     desired schema into the model call.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1309,10 +1313,10 @@ class ChatOllama(BaseChatModel):
                     depends on the `schema` as described above.
                 - `'parsing_error'`: `BaseException | None`
 
-        !!! warning "Behavior changed in 0.2.2"
+        !!! warning "Behavior changed in `langchain-ollama` 0.2.2"
             Added support for structured output API via `format` parameter.
 
-        !!! warning "Behavior changed in 0.3.0"
+        !!! warning "Behavior changed in `langchain-ollama` 0.3.0"
             Updated default `method` to `'json_schema'`.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"

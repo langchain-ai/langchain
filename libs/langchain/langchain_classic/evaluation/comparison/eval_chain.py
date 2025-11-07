@@ -188,7 +188,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
 
     """
 
-    output_key: str = "results"  #: :meta private:
+    output_key: str = "results"
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser,
     )

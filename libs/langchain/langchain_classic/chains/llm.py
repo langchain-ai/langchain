@@ -82,7 +82,7 @@ class LLMChain(Chain):
     """Prompt object to use."""
     llm: Runnable[LanguageModelInput, str] | Runnable[LanguageModelInput, BaseMessage]
     """Language model to call."""
-    output_key: str = "text"  #: :meta private:
+    output_key: str = "text"
     output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
     Defaults to one that takes the most likely string but does not change it
@@ -99,18 +99,12 @@ class LLMChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the prompt expects."""
         return self.prompt.input_variables
 
     @property
     def output_keys(self) -> list[str]:
-        """Will always return text key.
-
-        :meta private:
-        """
+        """Will always return text key."""
         if self.return_final_only:
             return [self.output_key]
         return [self.output_key, "full_generation"]

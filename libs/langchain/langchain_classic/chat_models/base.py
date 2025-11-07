@@ -316,10 +316,10 @@ def init_chat_model(
         # Use Sonnet 4.5
         ```
 
-    !!! warning "Behavior changed in 0.2.8"
+    !!! warning "Behavior changed in `langchain` 0.2.8"
         Support for `configurable_fields` and `config_prefix` added.
 
-    !!! warning "Behavior changed in 0.2.12"
+    !!! warning "Behavior changed in `langchain` 0.2.12"
         Support for Ollama via langchain-ollama package added
         (`langchain_ollama.ChatOllama`). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -328,10 +328,10 @@ def init_chat_model(
         Support for AWS Bedrock models via the Converse API added
         (`model_provider="bedrock_converse"`).
 
-    !!! warning "Behavior changed in 0.3.5"
+    !!! warning "Behavior changed in `langchain` 0.3.5"
         Out of beta.
 
-    !!! warning "Behavior changed in 0.3.19"
+    !!! warning "Behavior changed in `langchain` 0.3.19"
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
@@ -654,7 +654,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         config: RunnableConfig | None = None,
         **kwargs: Any,
     ) -> _ConfigurableModel:
-        """Bind config to a Runnable, returning a new Runnable."""
+        """Bind config to a `Runnable`, returning a new `Runnable`."""
         config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
