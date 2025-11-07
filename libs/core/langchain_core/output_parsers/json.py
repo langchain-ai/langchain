@@ -31,11 +31,14 @@ TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     """Parse the output of an LLM call to a JSON object.
 
+    Probably the most reliable output parser for getting structured data that does *not*
+    use function calling.
+
     When used in streaming mode, it will yield partial JSON objects containing
     all the keys that have been returned so far.
 
-    In streaming, if `diff` is set to `True`, yields JSONPatch operations
-    describing the difference between the previous and the current object.
+    In streaming, if `diff` is set to `True`, yields JSONPatch operations describing the
+    difference between the previous and the current object.
     """
 
     pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]

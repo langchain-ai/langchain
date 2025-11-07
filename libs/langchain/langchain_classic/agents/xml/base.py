@@ -146,7 +146,7 @@ def create_xml_agent(
     Example:
         ```python
         from langchain_classic import hub
-        from langchain_community.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
         from langchain_classic.agents import AgentExecutor, create_xml_agent
 
         prompt = hub.pull("hwchase17/xml-agent-convo")

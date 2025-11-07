@@ -50,7 +50,7 @@ class InputTokenDetails(TypedDict, total=False):
 
     May also hold extra provider-specific keys.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-core` 0.3.9"
 
     """
 
@@ -85,7 +85,7 @@ class OutputTokenDetails(TypedDict, total=False):
 
     May also hold extra provider-specific keys.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-core` 0.3.9"
 
     """
 
@@ -123,7 +123,7 @@ class UsageMetadata(TypedDict):
         }
         ```
 
-    !!! warning "Behavior changed in 0.3.9"
+    !!! warning "Behavior changed in `langchain-core` 0.3.9"
         Added `input_token_details` and `output_token_details`.
 
     !!! note "LangSmith SDK"
@@ -655,13 +655,13 @@ def add_ai_message_chunks(
             chunk_id = id_
             break
     else:
-        # second pass: prefer lc_run-* ids over lc_* ids
+        # second pass: prefer lc_run-* IDs over lc_* IDs
         for id_ in candidates:
             if id_ and id_.startswith(LC_ID_PREFIX):
                 chunk_id = id_
                 break
         else:
-            # third pass: take any remaining id (auto-generated lc_* ids)
+            # third pass: take any remaining ID (auto-generated lc_* IDs)
             for id_ in candidates:
                 if id_:
                     chunk_id = id_

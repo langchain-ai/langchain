@@ -40,7 +40,7 @@ def test_init_model_not_found(mock_list: MagicMock) -> None:
 
 @patch("langchain_ollama.chat_models.Client.list")
 def test_init_connection_error(mock_list: MagicMock) -> None:
-    """Test that a ValidationError is raised on connect failure during init."""
+    """Test that a `ValidationError` is raised on connect failure during init."""
     mock_list.side_effect = ConnectError("Test connection error")
 
     with pytest.raises(ValidationError) as excinfo:
