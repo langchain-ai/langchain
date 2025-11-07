@@ -330,6 +330,26 @@ def test_create_usage_metadata_responses_api_format() -> None:
     assert "output_token_details" not in result
 
 
+def test_create_usage_metadata_chat_completions_with_details() -> None:
+    """Test usage metadata with hypothetical Chat Completions API format."""
+    token_usage = {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150,
+        "prompt_tokens_details": {"cached_tokens": 80},
+        "completion_tokens_details": {"reasoning_tokens": 25},
+    }
+
+    result = _create_usage_metadata(token_usage)
+
+    assert isinstance(result, dict)
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert result.get("input_token_details", {}).get("cache_read") == 80
+    assert result.get("output_token_details", {}).get("reasoning") == 25
+
+
 def test_create_usage_metadata_with_cached_tokens() -> None:
     """Test usage metadata with prompt caching."""
     token_usage = {
