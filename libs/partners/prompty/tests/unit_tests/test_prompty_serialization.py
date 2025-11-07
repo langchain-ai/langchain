@@ -1,8 +1,10 @@
 import json
 import os
 
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain.tools import tool
+from langchain_classic.agents.format_scratchpad import (
+    format_to_openai_function_messages,
+)
+from langchain_classic.tools import tool
 from langchain_core.language_models import FakeListLLM
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.utils.function_calling import convert_to_openai_function
@@ -48,25 +50,25 @@ def test_prompty_basic_chain() -> None:
     user_message = msgs[1]
 
     # Check the types of the messages
-    assert (
-        system_message["type"] == "system"
-    ), "The first message should be of type 'system'."
-    assert (
-        user_message["type"] == "human"
-    ), "The second message should be of type 'human'."
+    assert system_message["type"] == "system", (
+        "The first message should be of type 'system'."
+    )
+    assert user_message["type"] == "human", (
+        "The second message should be of type 'human'."
+    )
 
     # Test for existence of fakeFirstName and fakeLastName in the system message
-    assert (
-        "fakeFirstName" in system_message["content"]
-    ), "The string 'fakeFirstName' should be in the system message content."
-    assert (
-        "fakeLastName" in system_message["content"]
-    ), "The string 'fakeLastName' should be in the system message content."
+    assert "fakeFirstName" in system_message["content"], (
+        "The string 'fakeFirstName' should be in the system message content."
+    )
+    assert "fakeLastName" in system_message["content"], (
+        "The string 'fakeLastName' should be in the system message content."
+    )
 
     # Test for existence of fakeQuestion in the user message
-    assert (
-        "fakeQuestion" in user_message["content"]
-    ), "The string 'fakeQuestion' should be in the user message content."
+    assert "fakeQuestion" in user_message["content"], (
+        "The string 'fakeQuestion' should be in the user message content."
+    )
 
 
 def test_prompty_used_in_agent() -> None:
@@ -104,13 +106,15 @@ def test_prompty_used_in_agent() -> None:
         | FakeOutputParser()
     )
 
-    from langchain.agents import AgentExecutor
+    from langchain_classic.agents import AgentExecutor
 
     class AgentInput(BaseModel):
         input: str
         chat_history: list[tuple[str, str]] = Field(
             ...,
-            extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
+            json_schema_extra={
+                "widget": {"type": "chat", "input": "input", "output": "output"}
+            },
         )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(

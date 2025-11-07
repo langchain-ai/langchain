@@ -1,3 +1,5 @@
+"""Check that all imports in a list of files succeed."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

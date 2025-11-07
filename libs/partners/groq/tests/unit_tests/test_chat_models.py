@@ -54,7 +54,9 @@ def test__convert_dict_to_message_human() -> None:
 def test__convert_dict_to_message_ai() -> None:
     message = {"role": "assistant", "content": "foo"}
     result = _convert_dict_to_message(message)
-    expected_output = AIMessage(content="foo")
+    expected_output = AIMessage(
+        content="foo", response_metadata={"model_provider": "groq"}
+    )
     assert result == expected_output
 
 
@@ -80,6 +82,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             )
         ],
+        response_metadata={"model_provider": "groq"},
     )
     assert result == expected_output
 
@@ -112,7 +115,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 name="GenerateUsername",
                 args="oops",
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
-                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://python.langchain.com/docs/troubleshooting/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
+                error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langchain/errors/OUTPUT_PARSING_FAILURE ",  # noqa: E501
                 type="invalid_tool_call",
             ),
         ],
@@ -124,6 +127,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 type="tool_call",
             ),
         ],
+        response_metadata={"model_provider": "groq"},
     )
     assert result == expected_output
 

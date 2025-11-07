@@ -1,9 +1,12 @@
+"""Integration tests for Exa find similar tool."""
+
 from langchain_exa import (
     ExaFindSimilarResults,  # type: ignore[import-not-found, import-not-found]
 )
 
 
 def test_similarity_tool() -> None:
+    """Test that the Exa find similar tool works."""
     tool = ExaFindSimilarResults()
     res = tool.invoke(
         {

@@ -11,7 +11,7 @@ from langchain_core.structured_query import (
     Operator,
 )
 
-from langchain.chains.query_constructor.parser import get_parser
+from langchain_classic.chains.query_constructor.parser import get_parser
 
 DEFAULT_PARSER = get_parser()
 
@@ -71,13 +71,13 @@ def test_parse_nested_operation() -> None:
 
 def test_parse_disallowed_comparator() -> None:
     parser = get_parser(allowed_comparators=[Comparator.EQ])
-    with pytest.raises(ValueError, match="Received disallowed comparator gt."):
+    with pytest.raises(ValueError, match="Received disallowed comparator gt"):
         parser.parse('gt("a", 2)')
 
 
 def test_parse_disallowed_operator() -> None:
     parser = get_parser(allowed_operators=[Operator.AND])
-    with pytest.raises(ValueError, match="Received disallowed operator not."):
+    with pytest.raises(ValueError, match="Received disallowed operator not"):
         parser.parse('not(gt("a", 2))')
 
 
@@ -143,27 +143,10 @@ def test_parse_date_value(x: str) -> None:
             '"2021-12-31T23:59:59Z"',
             {"datetime": "2021-12-31T23:59:59Z", "type": "datetime"},
         ),
-        (
-            '"invalid-datetime"',
-            None,  # Expecting failure or handling of invalid input
-        ),
     ],
 )
-def test_parse_datetime_value(x: str, expected: dict) -> None:
+def test_parse_datetime_value(x: str, expected: dict[str, str] | None) -> None:
     """Test parsing of datetime values with ISO 8601 format."""
-    try:
-        parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
-        actual = parsed.value
-        assert actual == expected, f"Expected {expected}, got {actual}"
-    except ValueError as e:
-        # Handling the case where parsing should fail
-        if expected is None:
-            assert True  # Correctly raised an error for invalid input
-        else:
-            pytest.fail(f"Unexpected error {e} for input {x}")
-    except Exception as e:
-        # If any other unexpected exception type is raised
-        if expected is None:
-            assert True  # Correctly identified that input was invalid
-        else:
-            pytest.fail(f"Unhandled exception {e} for input {x}")
+    parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
+    actual = parsed.value
+    assert actual == expected, f"Expected {expected}, got {actual}"

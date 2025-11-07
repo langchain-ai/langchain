@@ -1,4 +1,4 @@
-"""Internal utilities for the in memory implementation of VectorStore.
+"""Internal utilities for the in memory implementation of `VectorStore`.
 
 These are part of a private API, and users should not use them directly
 as they can change without notice.
@@ -8,12 +8,24 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+try:
     import numpy as np
 
-    Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
+
+try:
+    import simsimd as simd  # type: ignore[import-not-found]
+
+    _HAS_SIMSIMD = True
+except ImportError:
+    _HAS_SIMSIMD = False
+
+if TYPE_CHECKING:
+    Matrix = list[list[float]] | list[np.ndarray] | np.ndarray
 
 logger = logging.getLogger(__name__)
 
@@ -33,14 +45,12 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         ValueError: If the number of columns in X and Y are not the same.
         ImportError: If numpy is not installed.
     """
-    try:
-        import numpy as np
-    except ImportError as e:
+    if not _HAS_NUMPY:
         msg = (
             "cosine_similarity requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     if len(x) == 0 or len(y) == 0:
         return np.array([[]])
@@ -70,9 +80,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
             f"and Y has shape {y.shape}."
         )
         raise ValueError(msg)
-    try:
-        import simsimd as simd  # type: ignore[import-not-found]
-    except ImportError:
+    if not _HAS_SIMSIMD:
         logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
             "to use simsimd please install with `pip install simsimd`."
@@ -104,8 +112,8 @@ def maximal_marginal_relevance(
     Args:
         query_embedding: The query embedding.
         embedding_list: A list of embeddings.
-        lambda_mult: The lambda parameter for MMR. Default is 0.5.
-        k: The number of embeddings to return. Default is 4.
+        lambda_mult: The lambda parameter for MMR.
+        k: The number of embeddings to return.
 
     Returns:
         A list of indices of the embeddings to return.
@@ -113,14 +121,12 @@ def maximal_marginal_relevance(
     Raises:
         ImportError: If numpy is not installed.
     """
-    try:
-        import numpy as np
-    except ImportError as e:
+    if not _HAS_NUMPY:
         msg = (
             "maximal_marginal_relevance requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     if min(k, len(embedding_list)) <= 0:
         return []

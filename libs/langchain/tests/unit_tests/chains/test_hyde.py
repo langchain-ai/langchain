@@ -1,6 +1,6 @@
 """Test HyDE."""
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from langchain_core.callbacks.manager import (
@@ -12,8 +12,8 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from typing_extensions import override
 
-from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
-from langchain.chains.hyde.prompts import PROMPT_MAP
+from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder
+from langchain_classic.chains.hyde.prompts import PROMPT_MAP
 
 
 class FakeEmbeddings(Embeddings):
@@ -22,12 +22,12 @@ class FakeEmbeddings(Embeddings):
     @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Return random floats."""
-        return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
+        return [list(np.random.default_rng().uniform(0, 1, 10)) for _ in range(10)]
 
     @override
     def embed_query(self, text: str) -> list[float]:
         """Return random floats."""
-        return list(np.random.uniform(0, 1, 10))
+        return list(np.random.default_rng().uniform(0, 1, 10))
 
 
 class FakeLLM(BaseLLM):
@@ -39,8 +39,8 @@ class FakeLLM(BaseLLM):
     def _generate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
@@ -49,8 +49,8 @@ class FakeLLM(BaseLLM):
     async def _agenerate(
         self,
         prompts: list[str],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])

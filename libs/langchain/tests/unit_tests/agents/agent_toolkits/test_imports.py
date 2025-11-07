@@ -1,4 +1,4 @@
-from langchain.agents import agent_toolkits
+from langchain_classic.agents import agent_toolkits
 
 EXPECTED_ALL = [
     "AINetworkToolkit",

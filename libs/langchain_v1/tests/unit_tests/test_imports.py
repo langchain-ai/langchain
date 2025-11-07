@@ -13,9 +13,7 @@ def test_import_all() -> None:
         library_code = PKG_ROOT / "langchain"
         for path in library_code.rglob("*.py"):
             # Calculate the relative path to the module
-            module_name = (
-                path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
-            )
+            module_name = path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
             if module_name.endswith("__init__"):
                 # Without init
                 module_name = module_name.rsplit(".", 1)[0]
@@ -39,9 +37,7 @@ def test_import_all_using_dir() -> None:
     library_code = PKG_ROOT / "langchain"
     for path in library_code.rglob("*.py"):
         # Calculate the relative path to the module
-        module_name = (
-            path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
-        )
+        module_name = path.relative_to(PKG_ROOT).with_suffix("").as_posix().replace("/", ".")
         if module_name.endswith("__init__"):
             # Without init
             module_name = module_name.rsplit(".", 1)[0]

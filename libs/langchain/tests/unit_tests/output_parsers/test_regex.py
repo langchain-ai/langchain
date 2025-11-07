@@ -1,4 +1,4 @@
-from langchain.output_parsers.regex import RegexParser
+from langchain_classic.output_parsers.regex import RegexParser
 
 # NOTE: The almost same constant variables in ./test_combining_parser.py
 DEF_EXPECTED_RESULT = {
