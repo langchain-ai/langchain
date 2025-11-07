@@ -163,7 +163,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         output_parser (BaseOutputParser): The output parser for the chain.
 
     Example:
-        >>> from langchain_community.chat_models import ChatOpenAI
+        >>> from langchain_openai import ChatOpenAI
         >>> from langchain_classic.evaluation.comparison import PairwiseStringEvalChain
         >>> model = ChatOpenAI(
         ...     temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42}
@@ -188,7 +188,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
 
     """
 
-    output_key: str = "results"  #: :meta private:
+    output_key: str = "results"
     output_parser: BaseOutputParser = Field(
         default_factory=PairwiseStringResultOutputParser,
     )

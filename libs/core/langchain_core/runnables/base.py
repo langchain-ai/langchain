@@ -118,6 +118,8 @@ if TYPE_CHECKING:
 
 Other = TypeVar("Other")
 
+_RUNNABLE_GENERIC_NUM_ARGS = 2  # Input and Output
+
 
 class Runnable(ABC, Generic[Input, Output]):
     """A unit of work that can be invoked, batched, streamed, transformed and composed.
@@ -147,11 +149,11 @@ class Runnable(ABC, Generic[Input, Output]):
     the `input_schema` property, the `output_schema` property and `config_schema`
     method.
 
-    LCEL and Composition
-    ====================
+    Composition
+    ===========
 
-    The LangChain Expression Language (LCEL) is a declarative way to compose
-    `Runnable` objectsinto chains.
+    Runnable objects can be composed together to create chains in a declarative way.
+
     Any chain constructed this way will automatically have sync, async, batch, and
     streaming support.
 
@@ -235,21 +237,21 @@ class Runnable(ABC, Generic[Input, Output]):
 
     You can set the global debug flag to True to enable debug output for all chains:
 
-        ```python
-        from langchain_core.globals import set_debug
+    ```python
+    from langchain_core.globals import set_debug
 
-        set_debug(True)
-        ```
+    set_debug(True)
+    ```
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
 
-        ```python
-        from langchain_core.tracers import ConsoleCallbackHandler
+    ```python
+    from langchain_core.tracers import ConsoleCallbackHandler
 
-        chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
-        ```
+    chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
+    ```
 
-    For a UI (and much more) checkout [LangSmith](https://docs.smith.langchain.com/).
+    For a UI (and much more) checkout [LangSmith](https://docs.langchain.com/langsmith/home).
 
     """
 
@@ -309,7 +311,10 @@ class Runnable(ABC, Generic[Input, Output]):
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) == 2:
+                if (
+                    "args" in metadata
+                    and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                ):
                     return metadata["args"][0]
 
         # If we didn't find a Pydantic model in the parent classes,
@@ -317,7 +322,7 @@ class Runnable(ABC, Generic[Input, Output]):
         # Runnables that are not pydantic models.
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
-            if type_args and len(type_args) == 2:
+            if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
                 return type_args[0]
 
         msg = (
@@ -340,12 +345,15 @@ class Runnable(ABC, Generic[Input, Output]):
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) == 2:
+                if (
+                    "args" in metadata
+                    and len(metadata["args"]) == _RUNNABLE_GENERIC_NUM_ARGS
+                ):
                     return metadata["args"][1]
 
         for cls in self.__class__.__orig_bases__:  # type: ignore[attr-defined]
             type_args = get_args(cls)
-            if type_args and len(type_args) == 2:
+            if type_args and len(type_args) == _RUNNABLE_GENERIC_NUM_ARGS:
                 return type_args[1]
 
         msg = (
@@ -424,7 +432,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_input_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_input_schema(config).model_json_schema()
@@ -502,7 +510,7 @@ class Runnable(ABC, Generic[Input, Output]):
             print(runnable.get_output_jsonschema())
             ```
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.get_output_schema(config).model_json_schema()
@@ -566,7 +574,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A JSON schema that represents the config of the `Runnable`.
 
-        !!! version-added "Added in version 0.3.0"
+        !!! version-added "Added in `langchain-core` 0.3.0"
 
         """
         return self.config_schema(include=include).model_json_schema()
@@ -766,7 +774,7 @@ class Runnable(ABC, Generic[Input, Output]):
         """Assigns new fields to the `dict` output of this `Runnable`.
 
         ```python
-        from langchain_community.llms.fake import FakeStreamingListLLM
+        from langchain_core.language_models.fake import FakeStreamingListLLM
         from langchain_core.output_parsers import StrOutputParser
         from langchain_core.prompts import SystemMessagePromptTemplate
         from langchain_core.runnables import Runnable
@@ -818,10 +826,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -838,10 +848,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             input: The input to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
 
         Returns:
             The output of the `Runnable`.
@@ -868,8 +880,9 @@ class Runnable(ABC, Generic[Input, Output]):
             config: A config to use when invoking the `Runnable`. The config supports
                 standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work
-                to do in parallel, and other keys. Please refer to the
-                `RunnableConfig` for more details.
+                to do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -932,10 +945,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -998,10 +1013,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -1061,10 +1078,12 @@ class Runnable(ABC, Generic[Input, Output]):
         Args:
             inputs: A list of inputs to the `Runnable`.
             config: A config to use when invoking the `Runnable`.
+
                 The config supports standard keys like `'tags'`, `'metadata'` for
                 tracing purposes, `'max_concurrency'` for controlling how much work to
-                do in parallel, and other keys. Please refer to the `RunnableConfig`
-                for more details.
+                do in parallel, and other keys.
+
+                Please refer to `RunnableConfig` for more details.
             return_exceptions: Whether to return exceptions instead of raising them.
             **kwargs: Additional keyword arguments to pass to the `Runnable`.
 
@@ -1742,46 +1761,52 @@ class Runnable(ABC, Generic[Input, Output]):
             import time
             import asyncio
 
+
             def format_t(timestamp: float) -> str:
                 return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()
+
 
             async def test_runnable(time_to_sleep: int):
                 print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
                 await asyncio.sleep(time_to_sleep)
                 print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
 
+
             async def fn_start(run_obj: Runnable):
                 print(f"on start callback starts at {format_t(time.time())}")
                 await asyncio.sleep(3)
                 print(f"on start callback ends at {format_t(time.time())}")
+
 
             async def fn_end(run_obj: Runnable):
                 print(f"on end callback starts at {format_t(time.time())}")
                 await asyncio.sleep(2)
                 print(f"on end callback ends at {format_t(time.time())}")
 
+
             runnable = RunnableLambda(test_runnable).with_alisteners(
-                on_start=fn_start,
-                on_end=fn_end
+                on_start=fn_start, on_end=fn_end
             )
+
+
             async def concurrent_runs():
                 await asyncio.gather(runnable.ainvoke(2), runnable.ainvoke(3))
 
-            asyncio.run(concurrent_runs())
-            Result:
-            on start callback starts at 2025-03-01T07:05:22.875378+00:00
-            on start callback starts at 2025-03-01T07:05:22.875495+00:00
-            on start callback ends at 2025-03-01T07:05:25.878862+00:00
-            on start callback ends at 2025-03-01T07:05:25.878947+00:00
-            Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
-            Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
-            Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
-            on end callback starts at 2025-03-01T07:05:27.882360+00:00
-            Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
-            on end callback starts at 2025-03-01T07:05:28.882428+00:00
-            on end callback ends at 2025-03-01T07:05:29.883893+00:00
-            on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
+            asyncio.run(concurrent_runs())
+            # Result:
+            # on start callback starts at 2025-03-01T07:05:22.875378+00:00
+            # on start callback starts at 2025-03-01T07:05:22.875495+00:00
+            # on start callback ends at 2025-03-01T07:05:25.878862+00:00
+            # on start callback ends at 2025-03-01T07:05:25.878947+00:00
+            # Runnable[2s]: starts at 2025-03-01T07:05:25.879392+00:00
+            # Runnable[3s]: starts at 2025-03-01T07:05:25.879804+00:00
+            # Runnable[2s]: ends at 2025-03-01T07:05:27.881998+00:00
+            # on end callback starts at 2025-03-01T07:05:27.882360+00:00
+            # Runnable[3s]: ends at 2025-03-01T07:05:28.881737+00:00
+            # on end callback starts at 2025-03-01T07:05:28.882428+00:00
+            # on end callback ends at 2025-03-01T07:05:29.883893+00:00
+            # on end callback ends at 2025-03-01T07:05:30.884831+00:00
             ```
         """
         return RunnableBinding(
@@ -1843,7 +1868,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 `exp_base`, and `jitter` (all `float` values).
 
         Returns:
-            A new Runnable that retries the original Runnable on exceptions.
+            A new `Runnable` that retries the original `Runnable` on exceptions.
 
         Example:
             ```python
@@ -1927,7 +1952,9 @@ class Runnable(ABC, Generic[Input, Output]):
             exceptions_to_handle: A tuple of exception types to handle.
             exception_key: If `string` is specified then handled exceptions will be
                 passed to fallbacks as part of the input under the specified key.
+
                 If `None`, exceptions will not be passed to fallbacks.
+
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
@@ -1963,7 +1990,9 @@ class Runnable(ABC, Generic[Input, Output]):
             exceptions_to_handle: A tuple of exception types to handle.
             exception_key: If `string` is specified then handled exceptions will be
                 passed to fallbacks as part of the input under the specified key.
+
                 If `None`, exceptions will not be passed to fallbacks.
+
                 If used, the base `Runnable` and its fallbacks must accept a
                 dictionary as input.
 
@@ -2429,10 +2458,14 @@ class Runnable(ABC, Generic[Input, Output]):
 
         `as_tool` will instantiate a `BaseTool` with a name, description, and
         `args_schema` from a `Runnable`. Where possible, schemas are inferred
-        from `runnable.get_input_schema`. Alternatively (e.g., if the
-        `Runnable` takes a dict as input and the specific dict keys are not typed),
-        the schema can be specified directly with `args_schema`. You can also
-        pass `arg_types` to just specify the required arguments and their types.
+        from `runnable.get_input_schema`.
+
+        Alternatively (e.g., if the `Runnable` takes a dict as input and the specific
+        `dict` keys are not typed), the schema can be specified directly with
+        `args_schema`.
+
+        You can also pass `arg_types` to just specify the required arguments and their
+        types.
 
         Args:
             args_schema: The schema for the tool.
@@ -2501,7 +2534,7 @@ class Runnable(ABC, Generic[Input, Output]):
         as_tool.invoke({"a": 3, "b": [1, 2]})
         ```
 
-        String input:
+        `str` input:
 
         ```python
         from langchain_core.runnables import RunnableLambda
@@ -2637,7 +2670,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_openai import ChatOpenAI
 
         model = ChatAnthropic(
-            model_name="claude-3-7-sonnet-20250219"
+            model_name="claude-sonnet-4-5-20250929"
         ).configurable_alternatives(
             ConfigurableField(id="llm"),
             default_key="anthropic",
@@ -2750,6 +2783,9 @@ def _seq_output_schema(
     return last.get_output_schema(config)
 
 
+_RUNNABLE_SEQUENCE_MIN_STEPS = 2
+
+
 class RunnableSequence(RunnableSerializable[Input, Output]):
     """Sequence of `Runnable` objects, where the output of one is the input of the next.
 
@@ -2859,7 +2895,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             name: The name of the `Runnable`.
             first: The first `Runnable` in the sequence.
             middle: The middle `Runnable` objects in the sequence.
-            last: The last Runnable in the sequence.
+            last: The last `Runnable` in the sequence.
 
         Raises:
             ValueError: If the sequence has less than 2 steps.
@@ -2872,8 +2908,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 steps_flat.extend(step.steps)
             else:
                 steps_flat.append(coerce_to_runnable(step))
-        if len(steps_flat) < 2:
-            msg = f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
+        if len(steps_flat) < _RUNNABLE_SEQUENCE_MIN_STEPS:
+            msg = (
+                f"RunnableSequence must have at least {_RUNNABLE_SEQUENCE_MIN_STEPS} "
+                f"steps, got {len(steps_flat)}"
+            )
             raise ValueError(msg)
         super().__init__(
             first=steps_flat[0],
@@ -2904,7 +2943,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -3500,7 +3539,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
 
     Returns a mapping of their outputs.
 
-    `RunnableParallel` is one of the two main composition primitives for the LCEL,
+    `RunnableParallel` is one of the two main composition primitives,
     alongside `RunnableSequence`. It invokes `Runnable`s concurrently, providing the
     same input to each.
 
@@ -3610,7 +3649,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -3668,6 +3707,12 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
             == "object"
             for s in self.steps__.values()
         ):
+            for step in self.steps__.values():
+                fields = step.get_input_schema(config).model_fields
+                root_field = fields.get("root")
+                if root_field is not None and root_field.annotation != Any:
+                    return super().get_input_schema(config)
+
             # This is correct, but pydantic typings/mypy don't think so.
             return create_model_v2(
                 self.get_name("Input"),
@@ -4477,7 +4522,7 @@ class RunnableLambda(Runnable[Input, Output]):
             # on itemgetter objects, so we have to parse the repr
             items = str(func).replace("operator.itemgetter(", "")[:-1].split(", ")
             if all(
-                item[0] == "'" and item[-1] == "'" and len(item) > 2 for item in items
+                item[0] == "'" and item[-1] == "'" and item != "''" for item in items
             ):
                 fields = {item[1:-1]: (Any, ...) for item in items}
                 # It's a dict, lol
@@ -5139,7 +5184,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5322,7 +5367,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
 
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[no-redef]
-    """`Runnable` that delegates calls to another `Runnable` with a set of kwargs.
+    """`Runnable` that delegates calls to another `Runnable` with a set of `**kwargs`.
 
     Use only if creating a new `RunnableBinding` subclass with different `__init__`
     args.
@@ -5462,7 +5507,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -5752,7 +5797,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
         ```python
         # Create a Runnable binding that invokes the chat model with the
         # additional kwarg `stop=['-']` when running it.
-        from langchain_community.chat_models import ChatOpenAI
+        from langchain_openai import ChatOpenAI
 
         model = ChatOpenAI()
         model.invoke('Say "Parrot-MAGIC"', stop=["-"])  # Should return `Parrot`

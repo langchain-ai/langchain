@@ -19,7 +19,7 @@ This is a testing library for LangChain integrations. It contains the base class
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_tests/).
 
 ## 📕 Releases & Versioning
 

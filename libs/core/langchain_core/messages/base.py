@@ -93,6 +93,10 @@ class BaseMessage(Serializable):
     """Base abstract message class.
 
     Messages are the inputs and outputs of a chat model.
+
+    Examples include [`HumanMessage`][langchain.messages.HumanMessage],
+    [`AIMessage`][langchain.messages.AIMessage], and
+    [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
     content: str | list[str | dict]
@@ -195,7 +199,7 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        !!! version-added "Added in version 1.0.0"
+        !!! version-added "Added in `langchain-core` 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages

@@ -19,7 +19,7 @@ LangChain Text Splitters contains utilities for splitting into chunks a wide var
 
 ## 📖 Documentation
 
-For full documentation, see the [API reference](https://reference.langchain.com/python/langchain).
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_text_splitters/).
 
 ## 📕 Releases & Versioning
 

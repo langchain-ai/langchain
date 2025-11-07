@@ -960,7 +960,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.1"
+version = "1.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "jsonpatch" },
@@ -985,6 +985,7 @@ test = [
     { name = "blockbuster" },
     { name = "freezegun" },
     { name = "grandalf" },
+    { name = "langchain-model-profiles" },
     { name = "langchain-tests" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1000,6 +1001,7 @@ test = [
     { name = "syrupy" },
 ]
 typing = [
+    { name = "langchain-model-profiles" },
     { name = "langchain-text-splitters" },
     { name = "mypy" },
     { name = "types-pyyaml" },
@@ -1029,6 +1031,7 @@ test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
+    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-tests", directory = "../standard-tests" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
@@ -1045,6 +1048,7 @@ test = [
 ]
 test-integration = []
 typing = [
+    { name = "langchain-model-profiles", directory = "../model-profiles" },
     { name = "langchain-text-splitters", directory = "../text-splitters" },
     { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
@@ -1052,8 +1056,48 @@ typing = [
 ]
 
 [[package]]
+name = "langchain-model-profiles"
+version = "0.0.3"
+source = { directory = "../model-profiles" }
+dependencies = [
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0,<3.0.0" },
+    { name = "typing-extensions", specifier = ">=4.7.0,<5.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "httpx", specifier = ">=0.23.0,<1" }]
+lint = [
+    { name = "langchain", editable = "../langchain_v1" },
+    { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
+]
+test = [
+    { name = "langchain", extras = ["openai"], editable = "../langchain_v1" },
+    { name = "langchain-core", editable = "." },
+    { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.2,<2.0.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0,<8.0.0" },
+    { name = "pytest-mock" },
+    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
+    { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "toml", specifier = ">=0.10.2,<1.0.0" },
+]
+test-integration = [{ name = "langchain-core", editable = "." }]
+typing = [
+    { name = "mypy", specifier = ">=1.18.1,<1.19.0" },
+    { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
+]
+
+[[package]]
 name = "langchain-tests"
-version = "1.0.0"
+version = "1.0.1"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
