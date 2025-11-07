@@ -1,4 +1,4 @@
-"""Utility functions for working with Run objects and tracers."""
+"""Utility functions for working with `Run` objects and tracers."""
 
 from __future__ import annotations
 
