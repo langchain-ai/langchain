@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from langchain_core.tracers.stdout import ConsoleCallbackHandler
     from langchain_core.tracers.utils import (
         count_tool_calls_in_run,
-        get_tool_call_count_from_run,
         store_tool_call_count_in_run,
     )
 
@@ -31,7 +30,6 @@ __all__ = (
     "RunLog",
     "RunLogPatch",
     "count_tool_calls_in_run",
-    "get_tool_call_count_from_run",
     "store_tool_call_count_in_run",
 )
 
@@ -45,7 +43,6 @@ _dynamic_imports = {
     "Run": "schemas",
     "ConsoleCallbackHandler": "stdout",
     "count_tool_calls_in_run": "utils",
-    "get_tool_call_count_from_run": "utils",
     "store_tool_call_count_in_run": "utils",
 }
 

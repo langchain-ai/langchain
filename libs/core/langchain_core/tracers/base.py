@@ -37,19 +37,6 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
 
-    def _store_tool_call_metadata(self, run: Run) -> None:
-        """Store tool call count in run metadata automatically."""
-        try:
-            # Avoid circular imports
-            from langchain_core.tracers.utils import (  # noqa: PLC0415
-                store_tool_call_count_in_run,
-            )
-
-            store_tool_call_count_in_run(run)
-        except Exception:  # noqa: S110
-            # Avoid breaking existing functionality
-            pass
-
     def _start_trace(self, run: Run) -> None:
         """Start a trace for a run."""
         super()._start_trace(run)
@@ -57,8 +44,6 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
 
     def _end_trace(self, run: Run) -> None:
         """End a trace for a run."""
-        self._store_tool_call_metadata(run)
-
         if not run.parent_run_id:
             self._persist_run(run)
         self.run_map.pop(str(run.id))
@@ -549,19 +534,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     async def _persist_run(self, run: Run) -> None:
         """Persist a run."""
 
-    async def _store_tool_call_metadata(self, run: Run) -> None:
-        """Store tool call count in run metadata."""
-        try:
-            # Avoid circular imports
-            from langchain_core.tracers.utils import (  # noqa: PLC0415
-                store_tool_call_count_in_run,
-            )
-
-            store_tool_call_count_in_run(run)
-        except Exception:  # noqa: S110
-            # Avoid breaking existing functionality
-            pass
-
     @override
     async def _start_trace(self, run: Run) -> None:
         """Start a trace for a run.
@@ -579,8 +551,6 @@ class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
         Ending a trace will run concurrently with each _on_[run_type]_end method.
         No _on_[run_type]_end callback should depend on operations in _end_trace.
         """
-        await self._store_tool_call_metadata(run)
-
         if not run.parent_run_id:
             await self._persist_run(run)
         self.run_map.pop(str(run.id))

@@ -9,7 +9,6 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.messages.tool import ToolCall
 from langchain_core.tracers.utils import (
     count_tool_calls_in_run,
-    get_tool_call_count_from_run,
     store_tool_call_count_in_run,
 )
 
@@ -148,29 +147,6 @@ def test_store_tool_call_count_in_run_no_extra() -> None:
 
     assert count == 1
     assert run.extra["tool_call_count"] == 1
-
-
-def test_get_tool_call_count_from_run() -> None:
-    """Test retrieving tool call count from run metadata."""
-    run = create_mock_run(extra={"tool_call_count": 5})
-
-    count = get_tool_call_count_from_run(run)
-    assert count == 5
-
-
-def test_get_tool_call_count_from_run_not_stored() -> None:
-    """Test retrieving when count is not stored."""
-    run = create_mock_run()
-
-    count = get_tool_call_count_from_run(run)
-    assert count is None
-
-    # Test retrieving when run.extra is None.
-    run = create_mock_run()
-    run.extra = None
-
-    count = get_tool_call_count_from_run(run)
-    assert count is None
 
 
 def test_count_tool_calls_handles_none_inputs() -> None:
