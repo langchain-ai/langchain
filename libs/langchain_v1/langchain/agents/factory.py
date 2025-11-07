@@ -1013,7 +1013,9 @@ def create_agent(  # noqa: PLR0915
                     raise ValueError(msg)
 
             # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+             # Use "required" instead of "any" for better compatibility with models like Bedrock
+            # that don't support "any" but do support "required"
+            tool_choice = "required" if structured_output_tools else request.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings
