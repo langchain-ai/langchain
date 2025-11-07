@@ -2,7 +2,7 @@ import os
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from langchain import hub
+from langchain_classic import hub
 
 
 def test_hub_pull_public_prompt() -> None:

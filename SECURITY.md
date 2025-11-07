@@ -35,7 +35,7 @@ open source projects at [huntr](https://huntr.com/bounties/disclose/?target=http
 Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
-2) The [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure) monorepo structure.
+2) The [langchain-ai/langchain](https://docs.langchain.com/oss/python/contributing/code#repository-structure) monorepo structure.
 3) The [Best Practices](#best-practices) above to understand what we consider to be a security vulnerability vs. developer responsibility.
 
 ### In-Scope Targets
@@ -55,10 +55,10 @@ All out of scope targets defined by huntr as well as:
 * **langchain-experimental**: This repository is for experimental code and is not
   eligible for bug bounties (see [package warning](https://pypi.org/project/langchain-experimental/)), bug reports to it will be marked as interesting or waste of
   time and published with no bounty attached.
-* **tools**: Tools in either langchain or langchain-community are not eligible for bug
+* **tools**: Tools in either `langchain` or `langchain-community` are not eligible for bug
   bounties. This includes the following directories
-  * libs/langchain/langchain/tools
-  * libs/community/langchain_community/tools
+  * `libs/langchain/langchain/tools`
+  * `libs/community/langchain_community/tools`
   * Please review the [Best Practices](#best-practices)
     for more details, but generally tools interact with the real world. Developers are
     expected to understand the security implications of their code and are responsible
