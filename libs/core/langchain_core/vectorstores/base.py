@@ -237,8 +237,9 @@ class VectorStore(ABC):
         Args:
             documents: Documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
-                if kwargs contains IDs and documents contain ids,
-                the IDs in the kwargs will receive precedence.
+
+                If kwargs contains IDs and documents contain ids, the IDs in the kwargs
+                will receive precedence.
 
         Returns:
             List of IDs of the added texts.
@@ -421,7 +422,7 @@ class VectorStore(ABC):
             **kwargs: Arguments to pass to the search method.
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         raise NotImplementedError
 
@@ -435,7 +436,7 @@ class VectorStore(ABC):
             **kwargs: Arguments to pass to the search method.
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
@@ -465,7 +466,7 @@ class VectorStore(ABC):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
@@ -492,7 +493,7 @@ class VectorStore(ABC):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
@@ -516,7 +517,7 @@ class VectorStore(ABC):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
@@ -565,7 +566,7 @@ class VectorStore(ABC):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
@@ -667,7 +668,7 @@ class VectorStore(ABC):
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with 0 corresponding
+                of diversity among the results with `0` corresponding
                 to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
@@ -694,7 +695,7 @@ class VectorStore(ABC):
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with 0 corresponding
+                of diversity among the results with `0` corresponding
                 to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
@@ -732,7 +733,7 @@ class VectorStore(ABC):
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with 0 corresponding
+                of diversity among the results with `0` corresponding
                 to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
@@ -759,7 +760,7 @@ class VectorStore(ABC):
             k: Number of `Document` objects to return.
             fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
             lambda_mult: Number between `0` and `1` that determines the degree
-                of diversity among the results with 0 corresponding
+                of diversity among the results with `0` corresponding
                 to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 

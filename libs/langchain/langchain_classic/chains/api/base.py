@@ -197,11 +197,17 @@ try:
         """
 
         api_request_chain: LLMChain
+
         api_answer_chain: LLMChain
+
         requests_wrapper: TextRequestsWrapper = Field(exclude=True)
+
         api_docs: str
-        question_key: str = "question"  #: :meta private:
-        output_key: str = "output"  #: :meta private:
+
+        question_key: str = "question"
+
+        output_key: str = "output"
+
         limit_to_domains: Sequence[str] | None = Field(default_factory=list)
         """Use to limit the domains that can be accessed by the API chain.
 
@@ -217,18 +223,12 @@ try:
 
         @property
         def input_keys(self) -> list[str]:
-            """Expect input key.
-
-            :meta private:
-            """
+            """Expect input key."""
             return [self.question_key]
 
         @property
         def output_keys(self) -> list[str]:
-            """Expect output key.
-
-            :meta private:
-            """
+            """Expect output key."""
             return [self.output_key]
 
         @model_validator(mode="after")

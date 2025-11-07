@@ -35,20 +35,20 @@ if TYPE_CHECKING:
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """Runnable that can fallback to other Runnables if it fails.
+    """`Runnable` that can fallback to other `Runnable`s if it fails.
 
     External APIs (e.g., APIs for a language model) may at times experience
     degraded performance or even downtime.
 
-    In these cases, it can be useful to have a fallback Runnable that can be
-    used in place of the original Runnable (e.g., fallback to another LLM provider).
+    In these cases, it can be useful to have a fallback `Runnable` that can be
+    used in place of the original `Runnable` (e.g., fallback to another LLM provider).
 
-    Fallbacks can be defined at the level of a single Runnable, or at the level
-    of a chain of Runnables. Fallbacks are tried in order until one succeeds or
+    Fallbacks can be defined at the level of a single `Runnable`, or at the level
+    of a chain of `Runnable`s. Fallbacks are tried in order until one succeeds or
     all fail.
 
     While you can instantiate a `RunnableWithFallbacks` directly, it is usually
-    more convenient to use the `with_fallbacks` method on a Runnable.
+    more convenient to use the `with_fallbacks` method on a `Runnable`.
 
     Example:
         ```python
@@ -87,7 +87,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
 
     runnable: Runnable[Input, Output]
-    """The Runnable to run first."""
+    """The `Runnable` to run first."""
     fallbacks: Sequence[Runnable[Input, Output]]
     """A sequence of fallbacks to try."""
     exceptions_to_handle: tuple[type[BaseException], ...] = (Exception,)
@@ -97,9 +97,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """
     exception_key: str | None = None
     """If `string` is specified then handled exceptions will be passed to fallbacks as
-        part of the input under the specified key. If `None`, exceptions
-        will not be passed to fallbacks. If used, the base Runnable and its fallbacks
-        must accept a dictionary as input."""
+    part of the input under the specified key.
+
+    If `None`, exceptions will not be passed to fallbacks.
+
+    If used, the base `Runnable` and its fallbacks must accept a dictionary as input.
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -137,7 +140,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
@@ -152,10 +155,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
-        """Iterator over the Runnable and its fallbacks.
+        """Iterator over the `Runnable` and its fallbacks.
 
         Yields:
-            The Runnable then its fallbacks.
+            The `Runnable` then its fallbacks.
         """
         yield self.runnable
         yield from self.fallbacks
@@ -589,14 +592,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute from the wrapped Runnable and its fallbacks.
+        """Get an attribute from the wrapped `Runnable` and its fallbacks.
 
         Returns:
-            If the attribute is anything other than a method that outputs a Runnable,
-            returns getattr(self.runnable, name). If the attribute is a method that
-            does return a new Runnable (e.g. model.bind_tools([...]) outputs a new
-            RunnableBinding) then self.runnable and each of the runnables in
-            self.fallbacks is replaced with getattr(x, name).
+            If the attribute is anything other than a method that outputs a `Runnable`,
+            returns `getattr(self.runnable, name)`. If the attribute is a method that
+            does return a new `Runnable` (e.g. `model.bind_tools([...])` outputs a new
+            `RunnableBinding`) then `self.runnable` and each of the runnables in
+            `self.fallbacks` is replaced with `getattr(x, name)`.
 
         Example:
             ```python
@@ -618,7 +621,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
                 fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
             )
-
             ```
         """  # noqa: E501
         attr = getattr(self.runnable, name)

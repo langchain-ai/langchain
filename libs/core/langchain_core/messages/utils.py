@@ -328,12 +328,16 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """
     if isinstance(message, BaseMessage):
         message_ = message
-    elif isinstance(message, str):
-        message_ = _create_message_from_message_type("human", message)
-    elif isinstance(message, Sequence) and len(message) == 2:
-        # mypy doesn't realise this can't be a string given the previous branch
-        message_type_str, template = message  # type: ignore[misc]
-        message_ = _create_message_from_message_type(message_type_str, template)
+    elif isinstance(message, Sequence):
+        if isinstance(message, str):
+            message_ = _create_message_from_message_type("human", message)
+        else:
+            try:
+                message_type_str, template = message
+            except ValueError as e:
+                msg = "Message as a sequence must be (role string, template)"
+                raise NotImplementedError(msg) from e
+            message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -1097,7 +1101,7 @@ def convert_to_openai_messages(
         # ]
         ```
 
-    !!! version-added "Added in version 0.3.11"
+    !!! version-added "Added in `langchain-core` 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1697,7 +1701,7 @@ def count_tokens_approximately(
     Warning:
         This function does not currently support counting image tokens.
 
-    !!! version-added "Added in version 0.3.46"
+    !!! version-added "Added in `langchain-core` 0.3.46"
 
     """
     token_count = 0.0

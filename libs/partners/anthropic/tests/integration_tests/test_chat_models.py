@@ -1078,14 +1078,14 @@ def test_image_tool_calling() -> None:
             "text": "what's your favorite color in this image",
         },
     ]
-    image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+    image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
     image_data = b64encode(httpx.get(image_url).content).decode("utf-8")
     human_content.append(
         {
             "type": "image",
             "source": {
                 "type": "base64",
-                "media_type": "image/jpeg",
+                "media_type": "image/png",
                 "data": image_data,
             },
         },
@@ -1098,7 +1098,7 @@ def test_image_tool_calling() -> None:
                 {"type": "text", "text": "Hmm let me think about that"},
                 {
                     "type": "tool_use",
-                    "input": {"fav_color": "green"},
+                    "input": {"fav_color": "purple"},
                     "id": "foo",
                     "name": "color_picker",
                 },
@@ -1112,7 +1112,7 @@ def test_image_tool_calling() -> None:
                     "content": [
                         {
                             "type": "text",
-                            "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                            "text": "purple is a great pick! that's my sister's favorite color",  # noqa: E501
                         },
                     ],
                     "is_error": False,
@@ -1122,7 +1122,7 @@ def test_image_tool_calling() -> None:
         ),
     ]
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    llm.bind_tools([color_picker]).invoke(messages)
+    _ = llm.bind_tools([color_picker]).invoke(messages)
 
 
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
@@ -1700,6 +1700,7 @@ def test_files_api_pdf(block_format: str) -> None:
     _ = llm.invoke([input_message])
 
 
+@pytest.mark.vcr
 def test_search_result_tool_message() -> None:
     """Test that we can pass a search result tool message to the model."""
     llm = ChatAnthropic(
