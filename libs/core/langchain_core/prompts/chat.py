@@ -587,9 +587,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         for prompt in self.prompt:
             inputs = {var: kwargs[var] for var in prompt.input_variables}
             if isinstance(prompt, StringPromptTemplate):
-                formatted: str | ImageURL | dict[str, Any] = prompt.format(
-                    **inputs
-                )
+                formatted: str | ImageURL | dict[str, Any] = prompt.format(**inputs)
                 if formatted:
                     content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
