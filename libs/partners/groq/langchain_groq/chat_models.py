@@ -96,7 +96,7 @@ class ChatGroq(BaseChatModel):
             - `'raw'`: Includes reasoning within think tags (e.g.
                 `<think>{reasoning_content}</think>`).
             - `'hidden'`: Returns only the final answer content. Note: this only
-                supresses reasoning content in the response; the model will still perform
+                suppresses reasoning content in the response; the model will still perform
                 reasoning unless overridden in `reasoning_effort`.
 
             See the [Groq documentation](https://console.groq.com/docs/reasoning#reasoning)
@@ -321,7 +321,7 @@ class ChatGroq(BaseChatModel):
         `additional_kwargs.reasoning_content` field of the response.
     - `'raw'`: Includes reasoning within think tags (e.g.
         `<think>{reasoning_content}</think>`).
-    - `'hidden'`: Returns only the final answer content. Note: this only supresses
+    - `'hidden'`: Returns only the final answer content. Note: this only suppresses
         reasoning content in the response; the model will still perform reasoning unless
         overridden in `reasoning_effort`.
 
