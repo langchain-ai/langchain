@@ -1,4 +1,7 @@
-name: test
+# Runs unit tests with both current and minimum supported dependency versions
+# to ensure compatibility across the supported range.
+
+name: "🧪 Unit Testing"
 
 on:
   workflow_call:
@@ -20,31 +23,36 @@ env:
   UV_NO_SYNC: "true"
 
 jobs:
+  # Main test job - runs unit tests with current deps, then retests with minimum versions
   build:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: "make test #${{ inputs.python-version }}"
+    name: "Python ${{ inputs.python-version }}"
     steps:
-      - uses: actions/checkout@v4
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: "🐍 Set up Python ${{ inputs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
         id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Install dependencies
+          cache-suffix: test-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: "📦 Install Test Dependencies"
         shell: bash
         run: uv sync --group test --dev
 
-      - name: Run core tests
+      - name: "🧪 Run Core Unit Tests"
         shell: bash
         run: |
           make test
 
-      - name: Get minimum versions
+      - name: "🔍 Calculate Minimum Dependency Versions"
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         shell: bash
@@ -55,7 +63,7 @@ jobs:
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
-      - name: Run unit tests with minimum dependency versions
+      - name: "🧪 Run Tests with Minimum Dependencies"
         if: ${{ steps.min-version.outputs.min-versions != '' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
@@ -64,7 +72,7 @@ jobs:
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Ensure the tests did not create any additional files
+      - name: "🧹 Verify Clean Working Directory"
         shell: bash
         run: |
           set -eu
@@ -75,4 +83,3 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
-          

@@ -12,18 +12,16 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
 
 
-Scopes: TypeAlias = list[Union[Literal[False, 0], Mapping[str, Any]]]
+Scopes: TypeAlias = list[Literal[False, 0] | Mapping[str, Any]]
 
 
 # Globals
@@ -48,7 +46,7 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        tuple[str, str]: The literal and the template.
+        The literal and the template.
     """
     global _CURRENT_LINE
 
@@ -78,11 +76,11 @@ def l_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
-        padding = literal.split("\n")[-1]
+        padding = literal.rsplit("\n", maxsplit=1)[-1]
 
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
@@ -104,7 +102,7 @@ def r_sa_check(
         is_standalone: Whether the tag is standalone.
 
     Returns:
-        bool: Whether the tag could be a standalone.
+        Whether the tag could be a standalone.
     """
     # Check right side if we might be a standalone
     if is_standalone and tag_type not in {"variable", "no escape"}:
@@ -126,7 +124,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        tuple[tuple[str, str], str]: The tag and the template.
+        The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.
@@ -149,6 +147,11 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     except ValueError as e:
         msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
+
+    # Check for empty tags
+    if not tag.strip():
+        msg = f"empty tag at line {_CURRENT_LINE}"
+        raise ChevronError(msg)
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -209,17 +212,22 @@ def tokenize(
         def_rdel: The default right delimiter
             ("}}" by default, as in spec compliant mustache)
 
-    Returns:
-        A generator of mustache tags in the form of a tuple (tag_type, tag_key)
-            Where tag_type is one of:
-             * literal
-             * section
-             * inverted section
-             * end
-             * partial
-             * no escape
-            And tag_key is either the key or in the case of a literal tag,
-            the literal itself.
+    Yields:
+        Mustache tags in the form of a tuple (tag_type, tag_key)
+        where tag_type is one of:
+
+        * literal
+        * section
+        * inverted section
+        * end
+        * partial
+        * no escape
+
+        and tag_key is either the key or in the case of a literal tag,
+        the literal itself.
+
+    Raises:
+        ChevronError: If there is a syntax error in the template.
     """
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1
@@ -321,7 +329,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """HTML escape all of these " & < >."""
+    """Return the HTML-escaped string with these characters escaped: `" & < >`."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",
@@ -344,7 +352,7 @@ def _get_key(
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Get a key from the current scope."""
+    """Return a key from the current scope."""
     # If the key is a dot
     if key == ".":
         # Then just return the current scope
@@ -402,7 +410,11 @@ def _get_key(
 
 
 def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
-    """Load a partial."""
+    """Load a partial.
+
+    Returns:
+        The partial.
+    """
     try:
         # Maybe the partial is in the dictionary
         return partials_dict[name]
@@ -419,13 +431,13 @@ EMPTY_DICT: MappingProxyType[str, str] = MappingProxyType({})
 
 
 def render(
-    template: Union[str, list[tuple[str, str]]] = "",
+    template: str | list[tuple[str, str]] = "",
     data: Mapping[str, Any] = EMPTY_DICT,
     partials_dict: Mapping[str, str] = EMPTY_DICT,
     padding: str = "",
     def_ldel: str = "{{",
     def_rdel: str = "}}",
-    scopes: Optional[Scopes] = None,
+    scopes: Scopes | None = None,
     warn: bool = False,  # noqa: FBT001,FBT002
     keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:

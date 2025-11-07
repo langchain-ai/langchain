@@ -5,7 +5,9 @@ from __future__ import annotations
 import abc
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
+
+from typing_extensions import override
 
 from langchain_core._api import beta
 from langchain_core.retrievers import BaseRetriever
@@ -23,7 +25,7 @@ class RecordManager(ABC):
     The record manager abstraction is used by the langchain indexing API.
 
     The record manager keeps track of which documents have been
-    written into a vectorstore and when they were written.
+    written into a `VectorStore` and when they were written.
 
     The indexing API computes hashes for each document and stores the hash
     together with the write time and the source id in the record manager.
@@ -35,7 +37,7 @@ class RecordManager(ABC):
     already been indexed, and to only index new documents.
 
     The main benefit of this abstraction is that it works across many vectorstores.
-    To be supported, a vectorstore needs to only support the ability to add and
+    To be supported, a `VectorStore` needs to only support the ability to add and
     delete documents by ID. Using the record manager, the indexing API will
     be able to delete outdated documents and avoid redundant indexing of documents
     that have already been indexed.
@@ -43,13 +45,13 @@ class RecordManager(ABC):
     The main constraints of this abstraction are:
 
     1. It relies on the time-stamps to determine which documents have been
-       indexed and which have not. This means that the time-stamps must be
-       monotonically increasing. The timestamp should be the timestamp
-       as measured by the server to minimize issues.
+        indexed and which have not. This means that the time-stamps must be
+        monotonically increasing. The timestamp should be the timestamp
+        as measured by the server to minimize issues.
     2. The record manager is currently implemented separately from the
-       vectorstore, which means that the overall system becomes distributed
-       and may create issues with consistency. For example, writing to
-       record manager succeeds, but corresponding writing to vectorstore fails.
+        vectorstore, which means that the overall system becomes distributed
+        and may create issues with consistency. For example, writing to
+        record manager succeeds, but corresponding writing to `VectorStore` fails.
     """
 
     def __init__(
@@ -59,7 +61,7 @@ class RecordManager(ABC):
         """Initialize the record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         self.namespace = namespace
 
@@ -98,8 +100,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
@@ -126,8 +128,8 @@ class RecordManager(ABC):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Asynchronously upsert records into the database.
 
@@ -175,10 +177,10 @@ class RecordManager(ABC):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
@@ -196,10 +198,10 @@ class RecordManager(ABC):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Asynchronously list records in the database based on the provided filters.
 
@@ -231,7 +233,7 @@ class RecordManager(ABC):
 
 
 class _Record(TypedDict):
-    group_id: Optional[str]
+    group_id: str | None
     updated_at: float
 
 
@@ -242,7 +244,7 @@ class InMemoryRecordManager(RecordManager):
         """Initialize the in-memory record manager.
 
         Args:
-            namespace (str): The namespace for the record manager.
+            namespace: The namespace for the record manager.
         """
         super().__init__(namespace)
         # Each key points to a dictionary
@@ -254,32 +256,32 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
+        """In-memory schema creation is simply ensuring the structure is initialized."""
 
+    @override
     def get_time(self) -> float:
-        """Get the current server time as a high resolution timestamp!"""
         return time.time()
 
+    @override
     async def aget_time(self) -> float:
-        """Async get the current server time as a high resolution timestamp!"""
         return self.get_time()
 
     def update(
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Upsert records into the database.
 
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
@@ -305,28 +307,23 @@ class InMemoryRecordManager(RecordManager):
         self,
         keys: Sequence[str],
         *,
-        group_ids: Optional[Sequence[Optional[str]]] = None,
-        time_at_least: Optional[float] = None,
+        group_ids: Sequence[str | None] | None = None,
+        time_at_least: float | None = None,
     ) -> None:
         """Async upsert records into the database.
 
         Args:
             keys: A list of record keys to upsert.
             group_ids: A list of group IDs corresponding to the keys.
-                Defaults to None.
+
             time_at_least: Optional timestamp. Implementation can use this
                 to optionally verify that the timestamp IS at least this time
-                in the system that stores. Defaults to None.
+                in the system that stores.
                 E.g., use to validate that the time in the postgres database
                 is equal to or larger than the given timestamp, if not
                 raise an error.
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
-
-        Raises:
-            ValueError: If the length of keys doesn't match the length of group
-                ids.
-            ValueError: If time_at_least is in the future.
         """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 
@@ -355,22 +352,22 @@ class InMemoryRecordManager(RecordManager):
     def list_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """List records in the database based on the provided filters.
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -391,22 +388,22 @@ class InMemoryRecordManager(RecordManager):
     async def alist_keys(
         self,
         *,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        group_ids: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
+        before: float | None = None,
+        after: float | None = None,
+        group_ids: Sequence[str] | None = None,
+        limit: int | None = None,
     ) -> list[str]:
         """Async list records in the database based on the provided filters.
 
         Args:
             before: Filter to list records updated before this time.
-                Defaults to None.
+
             after: Filter to list records updated after this time.
-                Defaults to None.
+
             group_ids: Filter to list records with specific group IDs.
-                Defaults to None.
+
             limit: optional limit on the number of records to return.
-                Defaults to None.
+
 
         Returns:
             A list of keys for the matching records.
@@ -463,7 +460,7 @@ class UpsertResponse(TypedDict):
 class DeleteResponse(TypedDict, total=False):
     """A generic response for delete operation.
 
-    The fields in this response are optional and whether the vectorstore
+    The fields in this response are optional and whether the `VectorStore`
     returns them or not is up to the implementation.
     """
 
@@ -488,8 +485,8 @@ class DeleteResponse(TypedDict, total=False):
     failed: Sequence[str]
     """The IDs that failed to be deleted.
 
-    Please note that deleting an ID that
-    does not exist is **NOT** considered a failure.
+    !!! warning
+        Deleting an ID that does not exist is **NOT** considered a failure.
     """
 
     num_failed: int
@@ -511,8 +508,6 @@ class DocumentIndex(BaseRetriever):
     1. Storing document in the index.
     2. Fetching document by ID.
     3. Searching for document using a query.
-
-    .. versionadded:: 0.2.29
     """
 
     @abc.abstractmethod
@@ -523,40 +518,40 @@ class DocumentIndex(BaseRetriever):
         if it is provided. If the ID is not provided, the upsert method is free
         to generate an ID for the content.
 
-        When an ID is specified and the content already exists in the vectorstore,
+        When an ID is specified and the content already exists in the `VectorStore`,
         the upsert method should update the content with the new data. If the content
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
+            A response object that contains the list of IDs that were
+            successfully added or updated in the `VectorStore` and the list of IDs that
             failed to be added or updated.
         """
 
     async def aupsert(
         self, items: Sequence[Document], /, **kwargs: Any
     ) -> UpsertResponse:
-        """Add or update documents in the vectorstore. Async version of upsert.
+        """Add or update documents in the `VectorStore`. Async version of `upsert`.
 
         The upsert functionality should utilize the ID field of the item
         if it is provided. If the ID is not provided, the upsert method is free
         to generate an ID for the item.
 
-        When an ID is specified and the item already exists in the vectorstore,
+        When an ID is specified and the item already exists in the `VectorStore`,
         the upsert method should update the item with the new data. If the item
-        does not exist, the upsert method should add the item to the vectorstore.
+        does not exist, the upsert method should add the item to the `VectorStore`.
 
         Args:
-            items: Sequence of documents to add to the vectorstore.
+            items: Sequence of documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            UpsertResponse: A response object that contains the list of IDs that were
-            successfully added or updated in the vectorstore and the list of IDs that
+            A response object that contains the list of IDs that were
+            successfully added or updated in the `VectorStore` and the list of IDs that
             failed to be added or updated.
         """
         return await run_in_executor(
@@ -567,36 +562,36 @@ class DocumentIndex(BaseRetriever):
         )
 
     @abc.abstractmethod
-    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
+    def delete(self, ids: list[str] | None = None, **kwargs: Any) -> DeleteResponse:
         """Delete by IDs or other criteria.
 
         Calling delete without any input parameters should raise a ValueError!
 
         Args:
-            ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            ids: List of IDs to delete.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index,
                 or else issue a non-blocking delete etc.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
 
     async def adelete(
-        self, ids: Optional[list[str]] = None, **kwargs: Any
+        self, ids: list[str] | None = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete by IDs or other criteria. Async variant.
 
         Calling adelete without any input parameters should raise a ValueError!
 
         Args:
-            ids: List of ids to delete.
-            kwargs: Additional keyword arguments. This is up to the implementation.
+            ids: List of IDs to delete.
+            **kwargs: Additional keyword arguments. This is up to the implementation.
                 For example, can include an option to delete the entire index.
 
         Returns:
-            DeleteResponse: A response object that contains the list of IDs that were
+            A response object that contains the list of IDs that were
             successfully deleted and the list of IDs that failed to be deleted.
         """
         return await run_in_executor(
@@ -627,10 +622,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
 
     async def aget(
@@ -653,10 +648,10 @@ class DocumentIndex(BaseRetriever):
 
         Args:
             ids: List of IDs to get.
-            kwargs: Additional keyword arguments. These are up to the implementation.
+            **kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            list[Document]: List of documents that were found.
+            List of documents that were found.
         """
         return await run_in_executor(
             None,

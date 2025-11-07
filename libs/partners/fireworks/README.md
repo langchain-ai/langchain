@@ -1,80 +1,22 @@
-# LangChain-Fireworks
+# langchain-fireworks
 
-This is the partner package for tying Fireworks.ai and LangChain. Fireworks really strive to provide good support for LangChain use cases, so if you run into any issues please let us know. You can reach out to us [in our Discord channel](https://discord.com/channels/1137072072808472616/)
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-fireworks?label=%20)](https://pypi.org/project/langchain-fireworks/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-fireworks)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-fireworks)](https://pypistats.org/packages/langchain-fireworks)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
-## Installation
-
-To use the `langchain-fireworks` package, follow these installation steps:
+## Quick Install
 
 ```bash
 pip install langchain-fireworks
 ```
 
+## 🤔 What is this?
 
+This is the partner package for tying Fireworks.ai and LangChain. Fireworks really strive to provide good support for LangChain use cases, so if you run into any issues please let us know. You can reach out to us [in our Discord channel](https://discord.com/channels/1137072072808472616/)
 
-## Basic usage
+## 📖 Documentation
 
-### Setting up
-
-1. Sign in to [Fireworks AI](http://fireworks.ai/) to obtain an API Key to access the models, and make sure it is set as the `FIREWORKS_API_KEY` environment variable.
-
-    Once you've signed in and obtained an API key, follow these steps to set the `FIREWORKS_API_KEY` environment variable:
-    - **Linux/macOS:** Open your terminal and execute the following command:
-    ```bash
-    export FIREWORKS_API_KEY='your_api_key'
-    ```
-    **Note:** To make this environment variable persistent across terminal sessions, add the above line to your `~/.bashrc`, `~/.bash_profile`, or `~/.zshrc` file.
-
-    - **Windows:** For Command Prompt, use:
-    ```cmd
-    set FIREWORKS_API_KEY=your_api_key
-    ```
-
-2. Set up your model using a model id. If the model is not set, the default model is `fireworks-llama-v2-7b-chat`. See the full, most up-to-date model list on [fireworks.ai](https://fireworks.ai/models).
-
-```python
-import getpass
-import os
-
-# Initialize a Fireworks model
-llm = Fireworks(
-    model="accounts/fireworks/models/llama-v3p1-8b-instruct",
-    base_url="https://api.fireworks.ai/inference/v1/completions",
-)
-```
-
-
-### Calling the Model Directly
-
-You can call the model directly with string prompts to get completions.
-
-```python
-# Single prompt
-output = llm.invoke("Who's the best quarterback in the NFL?")
-print(output)
-```
-
-```python
-# Calling multiple prompts
-output = llm.generate(
-    [
-        "Who's the best cricket player in 2016?",
-        "Who's the best basketball player in the league?",
-    ]
-)
-print(output.generations)
-```
-
-
-
-
-
-## Advanced usage
-### Tool use: LangChain Agent + Fireworks function calling model
-Please checkout how to teach Fireworks function calling model to use a calculator [here](https://github.com/fw-ai/cookbook/blob/main/learn/function-calling/notebooks_langchain/fireworks_langchain_tool_usage.ipynb). 
-
-Fireworks focus on delivering the best experience for fast model inference as well as tool use. You can check out [our blog](https://fireworks.ai/blog/firefunction-v1-gpt-4-level-function-calling) for more details on how it fares compares to GPT-4, the punchline is that it is on par with GPT-4 in terms just function calling use cases, but it is way faster and much cheaper.
-
-### RAG: LangChain agent + Fireworks function calling model + MongoDB + Nomic AI embeddings
-Please check out the [cookbook here](https://github.com/fw-ai/cookbook/blob/main/integrations/MongoDB/project_rag_with_mongodb/mongodb_agent.ipynb) for an end to end flow
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/fireworks) for more details.

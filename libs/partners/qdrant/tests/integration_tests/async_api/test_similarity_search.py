@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 import numpy as np
 import pytest  # type: ignore[import-not-found]
@@ -21,7 +21,7 @@ async def test_qdrant_similarity_search(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -48,7 +48,7 @@ async def test_qdrant_similarity_search_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -76,7 +76,7 @@ async def test_qdrant_similarity_search_with_score_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -102,7 +102,7 @@ async def test_qdrant_similarity_search_with_score_by_vector(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters(
-    batch_size: int, vector_name: Optional[str], qdrant_location: str
+    batch_size: int, vector_name: str | None, qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -136,7 +136,7 @@ async def test_qdrant_similarity_search_filters(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -164,7 +164,7 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -187,13 +187,13 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
         "foo", k=3, **kwargs
     )
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -222,13 +222,13 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
         "foo", k=3, **kwargs
     )
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters_with_qdrant_filters(
-    vector_name: Optional[str],
+    vector_name: str | None,
     qdrant_location: str,
 ) -> None:
     """Test end to end construction and search."""
@@ -301,5 +301,5 @@ async def test_qdrant_similarity_search_with_relevance_scores(
     output = await docsearch.asimilarity_search_with_relevance_scores("foo", k=3)
 
     assert all(
-        (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
+        (score <= 1 or np.isclose(score, 1)) and score >= 0 for _, score in output
     )

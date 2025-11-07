@@ -1,6 +1,6 @@
 """Test agent trajectory evaluation chain."""
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.agents import AgentAction
@@ -9,8 +9,9 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
+from typing_extensions import override
 
-from langchain.evaluation.agents.trajectory_eval_chain import (
+from langchain_classic.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
     TrajectoryEvalChain,
     TrajectoryOutputParser,
@@ -40,14 +41,15 @@ def foo(bar: str) -> str:
 
 class _FakeTrajectoryChatModel(FakeChatModel):
     queries: dict = Field(default_factory=dict)
-    sequential_responses: Optional[bool] = False
+    sequential_responses: bool | None = False
     response_index: int = 0
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> str:
         if self.sequential_responses:

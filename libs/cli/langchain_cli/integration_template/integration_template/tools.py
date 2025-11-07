@@ -1,6 +1,6 @@
 """__ModuleName__ tools."""
 
-from typing import Optional, Type
+from typing import Type
 
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
@@ -27,40 +27,42 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
 
     Setup:
         # TODO: Replace with relevant packages, env vars.
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     Instantiation:
-        .. code-block:: python
-
-            tool = __ModuleName__Tool(
-                # TODO: init params
-            )
+        ```python
+        tool = __ModuleName__Tool(
+            # TODO: init params
+        )
+        ```
 
     Invocation with args:
-        .. code-block:: python
+        ```python
+        # TODO: invoke args
+        tool.invoke({...})
+        ```
 
-            # TODO: invoke args
-            tool.invoke({...})
-
-        .. code-block:: python
-
-            # TODO: output of invocation
+        ```python
+        # TODO: output of invocation
+        ```
 
     Invocation with ToolCall:
 
-        .. code-block:: python
+        ```python
+        # TODO: invoke args
+        tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call"})
+        ```
 
-            # TODO: invoke args
-            tool.invoke({"args": {...}, "id": "1", "name": tool.name, "type": "tool_call"})
+        ```python
+        # TODO: output of invocation
 
-        .. code-block:: python
-
-            # TODO: output of invocation
+        ```
     """  # noqa: E501
 
     # TODO: Set tool name and description
@@ -72,12 +74,12 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
     """The schema that is passed to the model when performing tool calling."""
 
     # TODO: Add any other init params for the tool.
-    # param1: Optional[str]
+    # param1: str | None
     # """param1 determines foobar"""
 
     # TODO: Replaced (a, b) with real tool arguments.
     def _run(
-        self, a: int, b: int, *, run_manager: Optional[CallbackManagerForToolRun] = None
+        self, a: int, b: int, *, run_manager: CallbackManagerForToolRun | None = None
     ) -> str:
         return str(a + b + 80)
 
@@ -88,6 +90,6 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
     #     a: int,
     #     b: int,
     #     *,
-    #     run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    #     run_manager: AsyncCallbackManagerForToolRun | None = None,
     # ) -> str:
     #     ...

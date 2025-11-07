@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from langsmith import Client
+from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
 from tenacity import (
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 _LOGGED = set()
-_EXECUTOR: Optional[ThreadPoolExecutor] = None
+_EXECUTOR: ThreadPoolExecutor | None = None
 
 
 def log_error_once(method: str, exception: Exception) -> None:
@@ -53,7 +53,11 @@ def wait_for_all_tracers() -> None:
 
 
 def get_client() -> Client:
-    """Get the client."""
+    """Get the client.
+
+    Returns:
+        The LangSmith client.
+    """
     return rt.get_cached_client()
 
 
@@ -72,10 +76,10 @@ class LangChainTracer(BaseTracer):
 
     def __init__(
         self,
-        example_id: Optional[Union[UUID, str]] = None,
-        project_name: Optional[str] = None,
-        client: Optional[Client] = None,
-        tags: Optional[list[str]] = None,
+        example_id: UUID | str | None = None,
+        project_name: str | None = None,
+        client: Client | None = None,
+        tags: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -85,7 +89,7 @@ class LangChainTracer(BaseTracer):
             project_name: The project name. Defaults to the tracer project.
             client: The client. Defaults to the global client.
             tags: The tags. Defaults to an empty list.
-            kwargs: Additional keyword arguments.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -94,7 +98,7 @@ class LangChainTracer(BaseTracer):
         self.project_name = project_name or ls_utils.get_tracer_project()
         self.client = client or get_client()
         self.tags = tags or []
-        self.latest_run: Optional[Run] = None
+        self.latest_run: Run | None = None
         self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
@@ -109,6 +113,8 @@ class LangChainTracer(BaseTracer):
         super()._start_trace(run)
         if run.ls_client is None:
             run.ls_client = self.client
+        if get_tracing_context().get("enabled") is False:
+            run.extra["__disabled"] = True
 
     def on_chat_model_start(
         self,
@@ -116,10 +122,10 @@ class LangChainTracer(BaseTracer):
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        tags: Optional[list[str]] = None,
-        parent_run_id: Optional[UUID] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        name: Optional[str] = None,
+        tags: list[str] | None = None,
+        parent_run_id: UUID | None = None,
+        metadata: dict[str, Any] | None = None,
+        name: str | None = None,
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run.
@@ -128,14 +134,14 @@ class LangChainTracer(BaseTracer):
             serialized: The serialized model.
             messages: The messages.
             run_id: The run ID.
-            tags: The tags. Defaults to None.
-            parent_run_id: The parent run ID. Defaults to None.
-            metadata: The metadata. Defaults to None.
-            name: The name. Defaults to None.
-            kwargs: Additional keyword arguments.
+            tags: The tags.
+            parent_run_id: The parent run ID.
+            metadata: The metadata.
+            name: The name.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            Run: The run.
+            The run.
         """
         start_time = datetime.now(timezone.utc)
         if metadata:
@@ -169,7 +175,7 @@ class LangChainTracer(BaseTracer):
         """Get the LangSmith root run URL.
 
         Returns:
-            str: The LangSmith root run URL.
+            The LangSmith root run URL.
 
         Raises:
             ValueError: If no traced run is found.
@@ -201,6 +207,8 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
             run.extra["runtime"] = get_runtime_environment()
             run.tags = self._get_tags(run)
@@ -214,6 +222,8 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
             run.patch(exclude_inputs=run.extra.get("inputs_is_truthy", False))
         except Exception as e:
@@ -232,10 +242,9 @@ class LangChainTracer(BaseTracer):
         self,
         token: str,
         run_id: UUID,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        parent_run_id: Optional[UUID] = None,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        parent_run_id: UUID | None = None,
     ) -> Run:
-        """Append token event to LLM run and return the run."""
         run_id_str = str(run_id)
         if run_id_str not in self.run_has_token_event_map:
             self.run_has_token_event_map[run_id_str] = True

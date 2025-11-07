@@ -5,11 +5,11 @@ import importlib
 import pytest
 from langchain_core.embeddings import Embeddings
 
-from langchain.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
+from langchain_classic.embeddings.base import _SUPPORTED_PROVIDERS, init_embeddings
 
 
 @pytest.mark.parametrize(
-    "provider, model",
+    ("provider", "model"),
     [
         ("openai", "text-embedding-3-large"),
         ("google_vertexai", "text-embedding-gecko@003"),

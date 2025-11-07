@@ -1,10 +1,11 @@
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManagerForChainRun
+from typing_extensions import override
 
-from langchain.callbacks import StdOutCallbackHandler
-from langchain.chains.base import Chain
+from langchain_classic.callbacks import StdOutCallbackHandler
+from langchain_classic.chains.base import Chain
 
 
 class FakeChain(Chain):
@@ -24,10 +25,11 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         return {"bar": "bar"}
 

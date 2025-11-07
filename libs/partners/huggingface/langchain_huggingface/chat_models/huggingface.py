@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -88,7 +88,7 @@ def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 
@@ -316,153 +316,160 @@ class ChatHuggingFace(BaseChatModel):
     the HuggingFace Hub.
 
     Setup:
-        Install ``langchain-huggingface`` and ensure your Hugging Face token
+        Install `langchain-huggingface` and ensure your Hugging Face token
         is saved.
 
-        .. code-block:: bash
+        ```bash
+        pip install langchain-huggingface
+        ```
 
-            pip install langchain-huggingface
+        ```python
+        from huggingface_hub import login
 
-        .. code-block:: python
-
-            from huggingface_hub import login
-            login() # You will be prompted for your HF key, which will then be saved locally
+        login()  # You will be prompted for your HF key, which will then be saved locally
+        ```
 
     Key init args — completion params:
-        llm: `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, `HuggingFaceHub`, or
-            'HuggingFacePipeline' LLM to be used.
+        llm:
+            LLM to be used.
 
     Key init args — client params:
-        custom_get_token_ids: Optional[Callable[[str], list[int]]]
+        custom_get_token_ids:
             Optional encoder to use for counting tokens.
-        metadata: Optional[dict[str, Any]]
+        metadata:
             Metadata to add to the run trace.
-        tags: Optional[list[str]]
+        tags:
             Tags to add to the run trace.
-        tokenizer: Any
-        verbose: bool
+        verbose:
             Whether to print out response text.
 
     See full list of supported init args and their descriptions in the params
     section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_huggingface import HuggingFaceEndpoint,
+        ChatHuggingFace
 
-            from langchain_huggingface import HuggingFaceEndpoint,
-            ChatHuggingFace
+        model = HuggingFaceEndpoint(
+            repo_id="microsoft/Phi-3-mini-4k-instruct",
+            task="text-generation",
+            max_new_tokens=512,
+            do_sample=False,
+            repetition_penalty=1.03,
+        )
 
-            llm = HuggingFaceEndpoint(
-                repo_id="microsoft/Phi-3-mini-4k-instruct",
-                task="text-generation",
-                max_new_tokens=512,
-                do_sample=False,
-                repetition_penalty=1.03,
-            )
-
-            chat = ChatHuggingFace(llm=llm, verbose=True)
+        chat = ChatHuggingFace(llm=model, verbose=True)
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        messages = [
+            ("system", "You are a helpful translator. Translate the user
+            sentence to French."),
+            ("human", "I love programming."),
+        ]
 
-            messages = [
-                ("system", "You are a helpful translator. Translate the user
-                sentence to French."),
-                ("human", "I love programming."),
-            ]
+        chat(...).invoke(messages)
+        ```
 
-            chat(...).invoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(content='Je ai une passion pour le programme.\n\nIn
-            French, we use "ai" for masculine subjects and "a" for feminine
-            subjects. Since "programming" is gender-neutral in English, we
-            will go with the masculine "programme".\n\nConfirmation: "J\'aime
-            le programme." is more commonly used. The sentence above is
-            technically accurate, but less commonly used in spoken French as
-            "ai" is used less frequently in everyday speech.',
-            response_metadata={'token_usage': ChatCompletionOutputUsage
-            (completion_tokens=100, prompt_tokens=55, total_tokens=155),
-            'model': '', 'finish_reason': 'length'},
-            id='run-874c24b7-0272-4c99-b259-5d6d7facbc56-0')
+        ```python
+        AIMessage(content='Je ai une passion pour le programme.\n\nIn
+        French, we use "ai" for masculine subjects and "a" for feminine
+        subjects. Since "programming" is gender-neutral in English, we
+        will go with the masculine "programme".\n\nConfirmation: "J\'aime
+        le programme." is more commonly used. The sentence above is
+        technically accurate, but less commonly used in spoken French as
+        "ai" is used less frequently in everyday speech.',
+        response_metadata={'token_usage': ChatCompletionOutputUsage
+        (completion_tokens=100, prompt_tokens=55, total_tokens=155),
+        'model': '', 'finish_reason': 'length'},
+        id='run-874c24b7-0272-4c99-b259-5d6d7facbc56-0')
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in chat.stream(messages):
+            print(chunk)
+        ```
 
-            for chunk in chat.stream(messages):
-                print(chunk)
-
-        .. code-block:: python
-
-            content='Je ai une passion pour le programme.\n\nIn French, we use
-            "ai" for masculine subjects and "a" for feminine subjects.
-            Since "programming" is gender-neutral in English,
-            we will go with the masculine "programme".\n\nConfirmation:
-            "J\'aime le programme." is more commonly used. The sentence
-            above is technically accurate, but less commonly used in spoken
-            French as "ai" is used less frequently in everyday speech.'
-            response_metadata={'token_usage': ChatCompletionOutputUsage
-            (completion_tokens=100, prompt_tokens=55, total_tokens=155),
-            'model': '', 'finish_reason': 'length'}
-            id='run-7d7b1967-9612-4f9a-911a-b2b5ca85046a-0'
+        ```python
+        content='Je ai une passion pour le programme.\n\nIn French, we use
+        "ai" for masculine subjects and "a" for feminine subjects.
+        Since "programming" is gender-neutral in English,
+        we will go with the masculine "programme".\n\nConfirmation:
+        "J\'aime le programme." is more commonly used. The sentence
+        above is technically accurate, but less commonly used in spoken
+        French as "ai" is used less frequently in everyday speech.'
+        response_metadata={'token_usage': ChatCompletionOutputUsage
+        (completion_tokens=100, prompt_tokens=55, total_tokens=155),
+        'model': '', 'finish_reason': 'length'}
+        id='run-7d7b1967-9612-4f9a-911a-b2b5ca85046a-0'
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await chat.ainvoke(messages)
+        ```
 
-            await chat.ainvoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(content='Je déaime le programming.\n\nLittérale : Je
-            (j\'aime) déaime (le) programming.\n\nNote: "Programming" in
-            French is "programmation". But here, I used "programming" instead
-            of "programmation" because the user said "I love programming"
-            instead of "I love programming (in French)", which would be
-            "J\'aime la programmation". By translating the sentence
-            literally, I preserved the original meaning of the user\'s
-            sentence.', id='run-fd850318-e299-4735-b4c6-3496dc930b1d-0')
+        ```python
+        AIMessage(content='Je déaime le programming.\n\nLittérale : Je
+        (j\'aime) déaime (le) programming.\n\nNote: "Programming" in
+        French is "programmation". But here, I used "programming" instead
+        of "programmation" because the user said "I love programming"
+        instead of "I love programming (in French)", which would be
+        "J\'aime la programmation". By translating the sentence
+        literally, I preserved the original meaning of the user\'s
+        sentence.', id='run-fd850318-e299-4735-b4c6-3496dc930b1d-0')
+        ```
 
     Tool calling:
-        .. code-block:: python
+        ```python
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
+            location: str = Field(..., description="The city and state,
+            e.g. San Francisco, CA")
 
-                location: str = Field(..., description="The city and state,
-                e.g. San Francisco, CA")
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
+            location: str = Field(..., description="The city and state,
+            e.g. San Francisco, CA")
 
-                location: str = Field(..., description="The city and state,
-                e.g. San Francisco, CA")
+        chat_with_tools = chat.bind_tools([GetWeather, GetPopulation])
+        ai_msg = chat_with_tools.invoke("Which city is hotter today and
+        which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
 
-            chat_with_tools = chat.bind_tools([GetWeather, GetPopulation])
-            ai_msg = chat_with_tools.invoke("Which city is hotter today and
-            which is bigger: LA or NY?")
-            ai_msg.tool_calls
-
-        .. code-block:: python
-
-            [{'name': 'GetPopulation',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': '0'}]
+        ```python
+        [
+            {
+                "name": "GetPopulation",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "0",
+            }
+        ]
+        ```
 
     Response metadata
-        .. code-block:: python
+        ```python
+        ai_msg = chat.invoke(messages)
+        ai_msg.response_metadata
+        ```
 
-            ai_msg = chat.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-            {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
-            prompt_tokens=8, total_tokens=108),
-             'model': '',
-             'finish_reason': 'length'}
-
+        ```python
+        {
+            "token_usage": ChatCompletionOutputUsage(
+                completion_tokens=100, prompt_tokens=8, total_tokens=108
+            ),
+            "model": "",
+            "finish_reason": "length",
+        }
+        ```
     """  # noqa: E501
 
     llm: Any
@@ -470,40 +477,92 @@ class ChatHuggingFace(BaseChatModel):
         HuggingFaceHub, or HuggingFacePipeline."""
     tokenizer: Any = None
     """Tokenizer for the model. Only used for HuggingFacePipeline."""
-    model_id: Optional[str] = None
+    model_id: str | None = None
     """Model ID for the model. Only used for HuggingFaceEndpoint."""
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """What sampling temperature to use."""
-    stop: Optional[Union[str, list[str]]] = Field(default=None, alias="stop_sequences")
+    stop: str | list[str] | None = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    presence_penalty: Optional[float] = None
+    presence_penalty: float | None = None
     """Penalizes repeated tokens."""
-    frequency_penalty: Optional[float] = None
+    frequency_penalty: float | None = None
     """Penalizes repeated tokens according to frequency."""
-    seed: Optional[int] = None
+    seed: int | None = None
     """Seed for generation"""
-    logprobs: Optional[bool] = None
+    logprobs: bool | None = None
     """Whether to return logprobs."""
-    top_logprobs: Optional[int] = None
+    top_logprobs: int | None = None
     """Number of most likely tokens to return at each token position, each with
      an associated log probability. `logprobs` must be set to true
      if this parameter is used."""
-    logit_bias: Optional[dict[int, int]] = None
+    logit_bias: dict[int, int] | None = None
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    n: Optional[int] = None
+    stream_usage: bool | None = None
+    """Whether to include usage metadata in streaming output. If True, an additional
+    message chunk will be generated during the stream including usage metadata."""
+    n: int | None = None
     """Number of chat completions to generate for each prompt."""
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
     """Maximum number of tokens to generate."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
+
+        # Inherit properties from the LLM if they weren't explicitly set
+        self._inherit_llm_properties()
+
         self._resolve_model_id()
+
+    def _inherit_llm_properties(self) -> None:
+        """Inherit properties from the wrapped LLM instance if not explicitly set."""
+        if not hasattr(self, "llm") or self.llm is None:
+            return
+
+        # Map of ChatHuggingFace properties to LLM properties
+        property_mappings = {
+            "temperature": "temperature",
+            "max_tokens": "max_new_tokens",  # Different naming convention
+            "top_p": "top_p",
+            "seed": "seed",
+            "streaming": "streaming",
+            "stop": "stop_sequences",
+        }
+
+        # Inherit properties from LLM and not explicitly set here
+        for chat_prop, llm_prop in property_mappings.items():
+            if hasattr(self.llm, llm_prop):
+                llm_value = getattr(self.llm, llm_prop)
+                chat_value = getattr(self, chat_prop, None)
+                if not chat_value and llm_value:
+                    setattr(self, chat_prop, llm_value)
+
+        # Handle special cases for HuggingFaceEndpoint
+        if _is_huggingface_endpoint(self.llm):
+            # Inherit additional HuggingFaceEndpoint specific properties
+            endpoint_mappings = {
+                "frequency_penalty": "repetition_penalty",
+            }
+
+            for chat_prop, llm_prop in endpoint_mappings.items():
+                if hasattr(self.llm, llm_prop):
+                    llm_value = getattr(self.llm, llm_prop)
+                    chat_value = getattr(self, chat_prop, None)
+                    if chat_value is None and llm_value is not None:
+                        setattr(self, chat_prop, llm_value)
+
+        # Inherit model_kwargs if not explicitly set
+        if (
+            not self.model_kwargs
+            and hasattr(self.llm, "model_kwargs")
+            and isinstance(self.llm.model_kwargs, dict)
+        ):
+            self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:
@@ -550,9 +609,9 @@ class ChatHuggingFace(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,  # noqa: FBT001
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -591,9 +650,9 @@ class ChatHuggingFace(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,  # noqa: FBT001
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        stream: bool | None = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         if _is_huggingface_textgen_inference(self.llm):
@@ -627,14 +686,40 @@ class ChatHuggingFace(BaseChatModel):
         )
         return self._to_chat_result(llm_result)
 
+    def _should_stream_usage(
+        self, *, stream_usage: bool | None = None, **kwargs: Any
+    ) -> bool | None:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of precedence
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if _is_huggingface_endpoint(self.llm):
+            stream_usage = self._should_stream_usage(
+                stream_usage=stream_usage, **kwargs
+            )
+            if stream_usage:
+                kwargs["stream_options"] = {"include_usage": stream_usage}
             message_dicts, params = self._create_message_dicts(messages, stop)
             params = {**params, **kwargs, "stream": True}
 
@@ -643,7 +728,20 @@ class ChatHuggingFace(BaseChatModel):
                 messages=message_dicts, **params
             ):
                 if len(chunk["choices"]) == 0:
+                    if usage := chunk.get("usage"):
+                        usage_msg = AIMessageChunk(
+                            content="",
+                            additional_kwargs={},
+                            response_metadata={},
+                            usage_metadata={
+                                "input_tokens": usage.get("prompt_tokens", 0),
+                                "output_tokens": usage.get("completion_tokens", 0),
+                                "total_tokens": usage.get("total_tokens", 0),
+                            },
+                        )
+                        yield ChatGenerationChunk(message=usage_msg)
                     continue
+
                 choice = chunk["choices"][0]
                 message_chunk = _convert_chunk_to_message_chunk(
                     chunk, default_chunk_class
@@ -679,10 +777,15 @@ class ChatHuggingFace(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        *,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        stream_usage = self._should_stream_usage(stream_usage=stream_usage, **kwargs)
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -692,7 +795,20 @@ class ChatHuggingFace(BaseChatModel):
             messages=message_dicts, **params
         ):
             if len(chunk["choices"]) == 0:
+                if usage := chunk.get("usage"):
+                    usage_msg = AIMessageChunk(
+                        content="",
+                        additional_kwargs={},
+                        response_metadata={},
+                        usage_metadata={
+                            "input_tokens": usage.get("prompt_tokens", 0),
+                            "output_tokens": usage.get("completion_tokens", 0),
+                            "total_tokens": usage.get("total_tokens", 0),
+                        },
+                    )
+                    yield ChatGenerationChunk(message=usage_msg)
                 continue
+
             choice = chunk["choices"][0]
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
@@ -771,7 +887,7 @@ class ChatHuggingFace(BaseChatModel):
             self.model_id = self.llm.repo_id
             return
         if _is_huggingface_textgen_inference(self.llm):
-            endpoint_url: Optional[str] = self.llm.inference_server_url
+            endpoint_url: str | None = self.llm.inference_server_url
         if _is_huggingface_pipeline(self.llm):
             from transformers import AutoTokenizer  # type: ignore[import]
 
@@ -801,13 +917,11 @@ class ChatHuggingFace(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required"], bool]  # noqa: PYI051
-        ] = None,
+        tool_choice: dict | str | bool | None = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
@@ -815,14 +929,14 @@ class ChatHuggingFace(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                `'auto'` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -862,58 +976,64 @@ class ChatHuggingFace(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[dict, type[BaseModel]]] = None,
+        schema: dict | type[BaseModel] | None = None,
         *,
         method: Literal[
             "function_calling", "json_mode", "json_schema"
         ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a typedDict class (support added in 0.1.7),
+            schema: The output schema. Can be passed in as:
+
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class
 
                 Pydantic class is currently supported.
 
             method: The method for steering model generation, one of:
 
-                - "function_calling": uses tool-calling features.
-                - "json_schema": uses dedicated structured output features.
-                - "json_mode": uses JSON mode.
+                - `'function_calling'`: uses tool-calling features.
+                - `'json_schema'`: uses dedicated structured output features.
+                - `'json_mode'`: uses JSON mode.
 
             include_raw:
-                If False then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
 
             kwargs:
                 Additional parameters to pass to the underlying LLM's
-                :meth:`langchain_core.language_models.chat.BaseChatModel.bind`
+                `langchain_core.language_models.chat.BaseChatModel.bind`
                 method, such as `response_format` or `ls_structured_output_format`.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
-
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
-
-        """  # noqa: E501
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
+        """
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
@@ -939,7 +1059,7 @@ class ChatHuggingFace(BaseChatModel):
             if is_pydantic_schema:
                 msg = "Pydantic schema is not supported for function calling"
                 raise NotImplementedError(msg)
-            output_parser: Union[JsonOutputKeyToolsParser, JsonOutputParser] = (
+            output_parser: JsonOutputKeyToolsParser | JsonOutputParser = (
                 JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
             )
         elif method == "json_schema":
@@ -957,9 +1077,7 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, JsonOutputParser
-            ] = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()  # type: ignore[arg-type]
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
@@ -968,9 +1086,7 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser: Union[  # type: ignore[no-redef]
-                JsonOutputKeyToolsParser, JsonOutputParser
-            ] = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = JsonOutputParser()  # type: ignore[arg-type]
         else:
             msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
@@ -990,7 +1106,7 @@ class ChatHuggingFace(BaseChatModel):
         return llm | output_parser
 
     def _create_message_dicts(
-        self, messages: list[BaseMessage], stop: Optional[list[str]]
+        self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = self._default_params
         if stop is not None:

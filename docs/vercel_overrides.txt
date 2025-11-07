@@ -1,6 +1,0 @@
-httpx
-grpcio
-aiohttp<3.11
-protobuf<3.21
-tenacity
-urllib3

@@ -4,28 +4,26 @@ This module was adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
-    We may change the API at any time with no warning.
+    This module is for internal use only. Do not use it in your own code. We may change
+    the API at any time with no warning.
 """
 
 import contextlib
 import functools
 import inspect
 import warnings
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from typing import (
     Any,
-    Callable,
+    ParamSpec,
     TypeVar,
-    Union,
     cast,
 )
 
 from pydantic.fields import FieldInfo
 from pydantic.v1.fields import FieldInfo as FieldInfoV1
-from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -42,7 +40,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 
 
 # Last Any should be FieldInfoV1 but this leads to circular imports
-T = TypeVar("T", bound=Union[type, Callable[..., Any], Any])
+T = TypeVar("T", bound=type | Callable[..., Any] | Any)
 
 
 def _validate_deprecation_params(
@@ -84,58 +82,59 @@ def deprecated(
     """Decorator to mark a function, a class, or a property as deprecated.
 
     When deprecating a classmethod, a staticmethod, or a property, the
-    ``@deprecated`` decorator should go *under* ``@classmethod`` and
-    ``@staticmethod`` (i.e., `deprecated` should directly decorate the
-    underlying callable), but *over* ``@property``.
+    `@deprecated` decorator should go *under* `@classmethod` and
+    `@staticmethod` (i.e., `deprecated` should directly decorate the
+    underlying callable), but *over* `@property`.
 
-    When deprecating a class ``C`` intended to be used as a base class in a
-    multiple inheritance hierarchy, ``C`` *must* define an ``__init__`` method
-    (if ``C`` instead inherited its ``__init__`` from its own base class, then
-    ``@deprecated`` would mess up ``__init__`` inheritance when installing its
-    own (deprecation-emitting) ``C.__init__``).
+    When deprecating a class `C` intended to be used as a base class in a
+    multiple inheritance hierarchy, `C` *must* define an `__init__` method
+    (if `C` instead inherited its `__init__` from its own base class, then
+    `@deprecated` would mess up `__init__` inheritance when installing its
+    own (deprecation-emitting) `C.__init__`).
 
     Parameters are the same as for `warn_deprecated`, except that *obj_type*
     defaults to 'class' if decorating a class, 'attribute' if decorating a
     property, and 'function' otherwise.
 
     Args:
-        since : str
+        since:
             The release at which this API became deprecated.
-        message : str, optional
+        message:
             Override the default deprecation message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the deprecated object.
-        alternative : str, optional
+        alternative:
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
-        alternative_import: str, optional
+        alternative_import:
             An alternative import that the user may use instead.
-        pending : bool, optional
-            If True, uses a PendingDeprecationWarning instead of a
+        pending:
+            If `True`, uses a `PendingDeprecationWarning` instead of a
             DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
+        obj_type:
             The object type being deprecated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
-        removal : str, optional
+        removal:
             The expected removal version. With the default (an empty
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
-        package: str, optional
+        package:
             The package of the deprecated object.
 
-    Examples:
+    Returns:
+        A decorator to mark a function or class as deprecated.
 
-        .. code-block:: python
-
-            @deprecated('1.4.0')
-            def the_function_to_deprecate():
-                pass
+    ```python
+    @deprecated("1.4.0")
+    def the_function_to_deprecate():
+        pass
+    ```
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -224,7 +223,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -272,7 +271,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast("Union[type, Callable]", obj.fget).__qualname__
+            _name = _name or cast("type | Callable", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -280,19 +279,17 @@ def deprecated(
 
                 def __init__(
                     self,
-                    fget: Union[Callable[[Any], Any], None] = None,
-                    fset: Union[Callable[[Any, Any], None], None] = None,
-                    fdel: Union[Callable[[Any], None], None] = None,
-                    doc: Union[str, None] = None,
+                    fget: Callable[[Any], Any] | None = None,
+                    fset: Callable[[Any, Any], None] | None = None,
+                    fdel: Callable[[Any], None] | None = None,
+                    doc: str | None = None,
                 ) -> None:
                     super().__init__(fget, fset, fdel, doc)
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
 
-                def __get__(
-                    self, instance: Any, owner: Union[type, None] = None
-                ) -> Any:
+                def __get__(self, instance: Any, owner: type | None = None) -> Any:
                     if instance is not None or owner is not None:
                         emit_warning()
                     if self.fget is None:
@@ -311,7 +308,7 @@ def deprecated(
                     if self.fdel is not None:
                         self.fdel(instance)
 
-                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
+                def __set_name__(self, owner: type | None, set_name: str) -> None:
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
@@ -326,7 +323,7 @@ def deprecated(
                 )
 
         else:
-            _name = _name or cast("Union[type, Callable]", obj).__qualname__
+            _name = _name or cast("type | Callable", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -357,25 +354,22 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
-        ):
-            _alternative = f":meth:`~{_alternative}`"
-        elif _alternative:
-            _alternative = f":class:`~{_alternative}`"
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
+        ) or _alternative:
+            _alternative = f"`{_alternative}`"
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
-        ):
-            _alternative_import = f":meth:`~{_alternative_import}`"
-        elif _alternative_import:
-            _alternative_import = f":class:`~{_alternative_import}`"
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
+        ) or _alternative_import:
+            _alternative_import = f"`{_alternative_import}`"
 
         components = [
             _message,
             f"Use {_alternative} instead." if _alternative else "",
-            f"Use ``{_alternative_import}`` instead." if _alternative_import else "",
+            f"Use `{_alternative_import}` instead." if _alternative_import else "",
             _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
@@ -390,7 +384,7 @@ def deprecated(
         else:
             removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since} {details} {removal_str}
+!!! deprecated "{since} {details} {removal_str}"
 
 {old_doc}\
 """
@@ -426,35 +420,35 @@ def warn_deprecated(
 ) -> None:
     """Display a standardized deprecation.
 
-    Arguments:
-        since : str
+    Args:
+        since:
             The release at which this API became deprecated.
-        message : str, optional
+        message:
             Override the default deprecation message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the deprecated object.
-        alternative : str, optional
+        alternative:
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
-        alternative_import: str, optional
+        alternative_import:
             An alternative import that the user may use instead.
-        pending : bool, optional
-            If True, uses a PendingDeprecationWarning instead of a
+        pending:
+            If `True`, uses a `PendingDeprecationWarning` instead of a
             DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
+        obj_type:
             The object type being deprecated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
-        removal : str, optional
+        removal:
             The expected removal version. With the default (an empty
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
-        package: str, optional
+        package:
             The package of the deprecated object.
     """
     if not pending:
@@ -470,7 +464,7 @@ def warn_deprecated(
     if not message:
         message = ""
         package_ = (
-            package or name.split(".")[0].replace("_", "-")
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -489,7 +483,7 @@ def warn_deprecated(
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
             if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
@@ -539,16 +533,24 @@ def rename_parameter(
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Decorator indicating that parameter *old* of *func* is renamed to *new*.
 
-    The actual implementation of *func* should use *new*, not *old*.  If *old*
-    is passed to *func*, a DeprecationWarning is emitted, and its value is
-    used, even if *new* is also passed by keyword.
+    The actual implementation of *func* should use *new*, not *old*. If *old* is passed
+    to *func*, a DeprecationWarning is emitted, and its value is used, even if *new* is
+    also passed by keyword.
+
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
 
     Example:
-
-        .. code-block:: python
-
-            @_api.rename_parameter("3.1", "bad_name", "good_name")
-            def func(good_name): ...
+        ```python
+        @_api.rename_parameter("3.1", "bad_name", "good_name")
+        def func(good_name): ...
+        ```
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

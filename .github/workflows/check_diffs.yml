@@ -1,4 +1,18 @@
-name: CI
+# Primary CI workflow.
+#
+# Only runs against packages that have changed files.
+#
+# Runs:
+# - Linting (_lint.yml)
+# - Unit Tests (_test.yml)
+# - Pydantic compatibility tests (_test_pydantic.yml)
+# - Integration test compilation checks (_compile_integration_test.yml)
+# - Extended test suites that require additional dependencies
+# - Codspeed benchmarks (if not labeled 'codspeed-ignore')
+#
+# Reports status to GitHub checks and PR status.
+
+name: "🔧 CI"
 
 on:
   push:
@@ -6,12 +20,13 @@ on:
   pull_request:
   merge_group:
 
+# Optimizes CI performance by canceling redundant workflow runs
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
 #
 # There's no point in testing an outdated version of the code. GitHub only allows
-# a limited number of job runners to be active at the same time, so it's better to cancel
-# pointless jobs early so that more useful jobs can run sooner.
+# a limited number of job runners to be active at the same time, so it's better to
+# cancel pointless jobs early so that more useful jobs can run sooner.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -24,16 +39,24 @@ env:
   UV_NO_SYNC: "true"
 
 jobs:
+  # This job analyzes which files changed and creates a dynamic test matrix
+  # to only run tests/lints for the affected packages, improving CI efficiency
   build:
+    name: "Detect Changes & Set Matrix"
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: "📋 Checkout Code"
+        uses: actions/checkout@v5
+      - name: "🐍 Setup Python 3.11"
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
-      - id: files
+          python-version: "3.11"
+      - name: "📂 Get Changed Files"
+        id: files
         uses: Ana06/get-changed-files@v2.3.0
-      - id: set-matrix
+      - name: "🔍 Analyze Changed Files & Generate Build Matrix"
+        id: set-matrix
         run: |
           python -m pip install packaging requests
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
@@ -43,11 +66,11 @@ jobs:
       extended-tests: ${{ steps.set-matrix.outputs.extended-tests }}
       compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
-      test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
+  # Run linting only on packages that have changed files
   lint:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
+    needs: [build]
     if: ${{ needs.build.outputs.lint != '[]' }}
     strategy:
       matrix:
@@ -59,9 +82,9 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  # Run unit tests only on packages that have changed files
   test:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
+    needs: [build]
     if: ${{ needs.build.outputs.test != '[]' }}
     strategy:
       matrix:
@@ -73,9 +96,9 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  # Test compatibility with different Pydantic versions for affected packages
   test-pydantic:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
+    needs: [build]
     if: ${{ needs.build.outputs.test-pydantic != '[]' }}
     strategy:
       matrix:
@@ -87,21 +110,10 @@ jobs:
       pydantic-version: ${{ matrix.job-configs.pydantic-version }}
     secrets: inherit
 
-  test-doc-imports:
-    needs: [ build ]
-    if: ${{ needs.build.outputs.test-doc-imports != '[]' }}
-    strategy:
-      matrix:
-        job-configs: ${{ fromJson(needs.build.outputs.test-doc-imports) }}
-      fail-fast: false
-    uses: ./.github/workflows/_test_doc_imports.yml
-    secrets: inherit
-    with:
-      python-version: ${{ matrix.job-configs.python-version }}
-
+  # Verify integration tests compile without actually running them (faster feedback)
   compile-integration-tests:
-    name: cd ${{ matrix.job-configs.working-directory }}
-    needs: [ build ]
+    name: "Compile Integration Tests"
+    needs: [build]
     if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
     strategy:
       matrix:
@@ -113,9 +125,10 @@ jobs:
       python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  # Run extended test suites that require additional dependencies
   extended-tests:
-    name: "cd ${{ matrix.job-configs.working-directory }} / make extended_tests #${{ matrix.job-configs.python-version }}"
-    needs: [ build ]
+    name: "Extended Tests"
+    needs: [build]
     if: ${{ needs.build.outputs.extended-tests != '[]' }}
     strategy:
       matrix:
@@ -128,14 +141,16 @@ jobs:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ matrix.job-configs.python-version }} + uv
+      - name: "🐍 Set up Python ${{ matrix.job-configs.python-version }} + UV"
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.job-configs.python-version }}
+          cache-suffix: extended-tests-${{ matrix.job-configs.working-directory }}
+          working-directory: ${{ matrix.job-configs.working-directory }}
 
-      - name: Install dependencies and run extended tests
+      - name: "📦 Install Dependencies & Run Extended Tests"
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with uv..."
@@ -144,7 +159,7 @@ jobs:
           VIRTUAL_ENV=.venv uv pip install -r extended_testing_deps.txt
           VIRTUAL_ENV=.venv make extended_tests
 
-      - name: Ensure the tests did not create any additional files
+      - name: "🧹 Verify Clean Working Directory"
         shell: bash
         run: |
           set -eu
@@ -156,9 +171,80 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
 
+  # Run codspeed benchmarks only on packages that have changed files
+  codspeed:
+    name: "⚡ CodSpeed Benchmarks"
+    needs: [build]
+    if: ${{ needs.build.outputs.codspeed != '[]' && !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: "📦 Install UV Package Manager"
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: "📦 Install Test Dependencies"
+        run: uv sync --group test
+        working-directory: ${{ matrix.job-configs.working-directory }}
+
+      - name: "⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}"
+        uses: CodSpeedHQ/action@v4
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd ${{ matrix.job-configs.working-directory }}
+            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
+          mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'instrumentation' }}
+
+  # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
-    name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]
+    name: "✅ CI Success"
+    needs:
+      [
+        build,
+        lint,
+        test,
+        compile-integration-tests,
+        extended-tests,
+        test-pydantic,
+        codspeed,
+      ]
     if: |
       always()
     runs-on: ubuntu-latest
@@ -167,7 +253,7 @@ jobs:
       RESULTS_JSON: ${{ toJSON(needs.*.result) }}
       EXIT_CODE: ${{!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && '0' || '1'}}
     steps:
-      - name: "CI Success"
+      - name: "🎉 All Checks Passed"
         run: |
           echo $JOBS_JSON
           echo $RESULTS_JSON

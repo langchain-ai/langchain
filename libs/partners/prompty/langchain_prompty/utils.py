@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from .core import (
     Frontmatter,
@@ -19,7 +19,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
     Args:
         prompt_path: The path to the prompty file.
-        configuration: The configuration to use. Defaults to "default".
+        configuration: The configuration to use. Defaults to `'default'`.
 
     Returns:
         The Prompty object.
@@ -126,7 +126,7 @@ def prepare(
 
     Args:
         prompt: The Prompty object.
-        inputs: The inputs to the prompty. Defaults to {}.
+        inputs: The inputs to the prompty. Defaults to `{}`.
 
     Returns:
         The prepared inputs.
@@ -166,7 +166,7 @@ def prepare(
 
 def run(
     prompt: Prompty,
-    content: Union[dict, list, str],
+    content: dict | list | str,
     configuration: dict[str, Any] = {},
     parameters: dict[str, Any] = {},
     raw: bool = False,
@@ -176,9 +176,9 @@ def run(
     Args:
         prompt: The Prompty object.
         content: The content to run the prompty on.
-        configuration: The configuration to use. Defaults to {}.
-        parameters: The parameters to use. Defaults to {}.
-        raw: Whether to return the raw output. Defaults to False.
+        configuration: The configuration to use. Defaults to `{}`.
+        parameters: The parameters to use. Defaults to `{}`.
+        raw: Whether to return the raw output. Defaults to `False`.
 
     Returns:
         The result of running the prompty.
@@ -218,26 +218,26 @@ def run(
 
 
 def execute(
-    prompt: Union[str, Prompty],
+    prompt: str | Prompty,
     configuration: dict[str, Any] = {},
     parameters: dict[str, Any] = {},
     inputs: dict[str, Any] = {},
     raw: bool = False,
     connection: str = "default",
 ) -> Any:
-    """Execute a prompty.
+    """Execute a `Prompty`.
 
     Args:
         prompt: The prompt to execute.
-            Can be a path to a prompty file or a Prompty object.
-        configuration: The configuration to use. Defaults to {}.
-        parameters: The parameters to use. Defaults to {}.
-        inputs: The inputs to the prompty. Defaults to {}.
-        raw: Whether to return the raw output. Defaults to False.
-        connection: The connection to use. Defaults to "default".
+            Can be a path to a prompty file or a `Prompty` object.
+        configuration: The configuration to use.
+        parameters: The parameters to use.
+        inputs: The inputs to the `Prompty`.
+        raw: Whether to return the raw output.
+        connection: The connection to use.
 
     Returns:
-        The result of executing the prompty.
+        The result of executing the `Prompty`.
     """
 
     if isinstance(prompt, str):

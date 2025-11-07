@@ -4,10 +4,12 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
+import uvicorn
 
+from langchain_cli.utils.github import list_packages
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -32,7 +34,7 @@ def new(
     package_name_split = computed_name.split("/")
     package_name = (
         package_name_split[-2]
-        if len(package_name_split) > 1 and package_name_split[-1] == ""
+        if len(package_name_split) > 1 and not package_name_split[-1]
         else package_name_split[-1]
     )
     module_name = re.sub(
@@ -79,22 +81,22 @@ def new(
 
     # poetry install
     if with_poetry:
-        subprocess.run(["poetry", "install"], cwd=destination_dir)  # noqa: S607
+        subprocess.run(["poetry", "install"], cwd=destination_dir, check=True)  # noqa: S607
 
 
 @package_cli.command()
 def serve(
     *,
     port: Annotated[
-        Optional[int],
+        int | None,
         typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The host to run the server on"),
     ] = None,
     configurable: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--configurable/--no-configurable",
             help="Whether to include a configurable route",
@@ -128,8 +130,6 @@ def serve(
         )
     )
 
-    import uvicorn
-
     uvicorn.run(
         script,
         factory=True,
@@ -140,10 +140,8 @@ def serve(
 
 
 @package_cli.command()
-def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:  # noqa: A001
+def list(contains: Annotated[str | None, typer.Argument()] = None) -> None:  # noqa: A001
     """List all or search for available templates."""
-    from langchain_cli.utils.github import list_packages
-
     packages = list_packages(contains=contains)
     for package in packages:
         typer.echo(package)

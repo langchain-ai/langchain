@@ -1,6 +1,6 @@
 """Test memory functionality."""
 
-from langchain.memory.summary_buffer import ConversationSummaryBufferMemory
+from langchain_classic.memory.summary_buffer import ConversationSummaryBufferMemory
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

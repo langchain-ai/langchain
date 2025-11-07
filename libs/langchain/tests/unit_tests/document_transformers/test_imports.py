@@ -1,4 +1,4 @@
-from langchain import document_transformers
+from langchain_classic import document_transformers
 
 EXPECTED_ALL = [
     "BeautifulSoupTransformer",

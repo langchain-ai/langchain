@@ -14,54 +14,56 @@ class __ModuleName__Loader(BaseLoader):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install `__package_name__` and set environment variable
+        `__MODULE_NAME___API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U __package_name__
-            export __MODULE_NAME___API_KEY="your-api-key"
+        ```bash
+        pip install -U __package_name__
+        export __MODULE_NAME___API_KEY="your-api-key"
+        ```
 
     # TODO: Replace with relevant init params.
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_community.document_loaders import __ModuleName__Loader
 
-            from langchain_community.document_loaders import __ModuleName__Loader
-
-            loader = __ModuleName__Loader(
-                # required params = ...
-                # other params = ...
-            )
+        loader = __ModuleName__Loader(
+            # required params = ...
+            # other params = ...
+        )
+        ```
 
     Lazy load:
-        .. code-block:: python
+        ```python
+        docs = []
+        docs_lazy = loader.lazy_load()
 
-            docs = []
-            docs_lazy = loader.lazy_load()
+        # async variant:
+        # docs_lazy = await loader.alazy_load()
 
-            # async variant:
-            # docs_lazy = await loader.alazy_load()
+        for doc in docs_lazy:
+            docs.append(doc)
+        print(docs[0].page_content[:100])
+        print(docs[0].metadata)
+        ```
 
-            for doc in docs_lazy:
-                docs.append(doc)
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            TODO: Example output
+        ```python
+        TODO: Example output
+        ```
 
     # TODO: Delete if async load is not implemented
     Async load:
-        .. code-block:: python
+        ```python
+        docs = await loader.aload()
+        print(docs[0].page_content[:100])
+        print(docs[0].metadata)
+        ```
 
-            docs = await loader.aload()
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
+        ```python
+        TODO: Example output
 
-        .. code-block:: python
-
-            TODO: Example output
-    """  # noqa: E501
+        ```
+    """
 
     # TODO: This method must be implemented to load documents.
     # Do not implement load(), a default implementation is already available.

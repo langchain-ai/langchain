@@ -40,7 +40,9 @@ class FakeTracer(BaseTracer):
 def _compare_run_with_error(run: Any, expected_run: Any) -> None:
     if run.child_runs:
         assert len(expected_run.child_runs) == len(run.child_runs)
-        for received, expected in zip(run.child_runs, expected_run.child_runs):
+        for received, expected in zip(
+            run.child_runs, expected_run.child_runs, strict=False
+        ):
             _compare_run_with_error(received, expected)
     received = run.dict(exclude={"child_runs"})
     received_err = received.pop("error")
