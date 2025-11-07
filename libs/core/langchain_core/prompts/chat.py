@@ -1327,7 +1327,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         parts: list[str] = [title]
 
         if getattr(self, "partial_variables", None):
-            keys = list(self.partial_variables.keys())  # type: ignore[union-attr]
+            keys = list(self.partial_variables.keys())
             if html:
                 colored = [get_colored_text(k, "yellow") for k in keys]
                 parts.append(f"Partials: {', '.join(colored)}")
