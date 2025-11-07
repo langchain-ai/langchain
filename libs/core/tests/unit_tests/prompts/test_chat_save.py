@@ -37,5 +37,6 @@ def test_chat_prompt_template_save_roundtrip(
     assert isinstance(data["messages"], list)
     assert len(data["messages"]) == 1
     first = data["messages"][0]
-    # Accept various serializer shapes; only assert that an entry exists and is structured
+    # Accept various serializer shapes; only assert that an entry exists
+    # and is structured
     assert isinstance(first, (dict, list))
