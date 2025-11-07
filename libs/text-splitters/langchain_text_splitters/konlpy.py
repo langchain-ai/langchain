@@ -1,8 +1,17 @@
+"""Konlpy text splitter."""
+
 from __future__ import annotations
 
 from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
+
+try:
+    import konlpy
+
+    _HAS_KONLPY = True
+except ImportError:
+    _HAS_KONLPY = False
 
 
 class KonlpyTextSplitter(TextSplitter):
@@ -19,9 +28,7 @@ class KonlpyTextSplitter(TextSplitter):
         """Initialize the Konlpy text splitter."""
         super().__init__(**kwargs)
         self._separator = separator
-        try:
-            import konlpy
-        except ImportError:
+        if not _HAS_KONLPY:
             msg = """
                 Konlpy is not installed, please install it with
                 `pip install konlpy`

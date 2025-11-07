@@ -7,12 +7,14 @@ import warnings
 
 import pytest
 from langchain_core.embeddings import Embeddings
+from typing_extensions import override
 
-from langchain.embeddings import CacheBackedEmbeddings
-from langchain.storage.in_memory import InMemoryStore
+from langchain_classic.embeddings import CacheBackedEmbeddings
+from langchain_classic.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         # Simulate embedding documents
         embeddings: list[list[float]] = []
@@ -23,6 +25,7 @@ class MockEmbeddings(Embeddings):
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]

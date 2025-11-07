@@ -16,7 +16,6 @@ EXPECTED_ALL = [
     "print_text",
     "raise_for_status_with_text",
     "xor_args",
-    "try_load_from_hub",
     "image",
     "build_extra_kwargs",
     "get_from_dict_or_env",
@@ -27,6 +26,7 @@ EXPECTED_ALL = [
     "pre_init",
     "from_env",
     "secret_from_env",
+    "sanitize_for_postgres",
 ]
 
 

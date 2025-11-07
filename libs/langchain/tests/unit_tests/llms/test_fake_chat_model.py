@@ -1,12 +1,13 @@
 """Tests for verifying that testing utility code works as expected."""
 
 from itertools import cycle
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from typing_extensions import override
 
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
@@ -48,14 +49,14 @@ async def test_generic_fake_chat_model_stream() -> None:
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
     chunks = list(model.stream("meow"))
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
     # Test streaming of additional kwargs.
@@ -66,6 +67,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     assert chunks == [
         _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
         _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
+        _AnyIdAIMessageChunk(content="", chunk_position="last"),
     ]
 
     message = AIMessage(
@@ -107,6 +109,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
         ),
+        _AnyIdAIMessageChunk(content="", chunk_position="last"),
     ]
 
     accumulate_chunks = None
@@ -126,6 +129,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 'destination_path": "bar"\n}',
             },
         },
+        chunk_position="last",
     )
 
 
@@ -140,7 +144,7 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     assert final.state["streamed_output"] == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
 
@@ -157,23 +161,24 @@ async def test_callback_handlers() -> None:
             messages: list[list[BaseMessage]],
             *,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[list[str]] = None,
-            metadata: Optional[dict[str, Any]] = None,
+            parent_run_id: UUID | None = None,
+            tags: list[str] | None = None,
+            metadata: dict[str, Any] | None = None,
             **kwargs: Any,
         ) -> Any:
             # Do nothing
             # Required to implement since this is an abstract method
             pass
 
+        @override
         async def on_llm_new_token(
             self,
             token: str,
             *,
-            chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
+            chunk: GenerationChunk | ChatGenerationChunk | None = None,
             run_id: UUID,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[list[str]] = None,
+            parent_run_id: UUID | None = None,
+            tags: list[str] | None = None,
             **kwargs: Any,
         ) -> None:
             self.store.append(token)
@@ -196,6 +201,6 @@ async def test_callback_handlers() -> None:
     assert results == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
     assert tokens == ["hello", " ", "goodbye"]

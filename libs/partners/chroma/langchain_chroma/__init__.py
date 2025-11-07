@@ -1,7 +1,4 @@
-"""This is the langchain_chroma package.
-
-It contains the Chroma class for handling various tasks.
-"""
+"""LangChain integration for Chroma vector database."""
 
 from langchain_chroma.vectorstores import Chroma
 

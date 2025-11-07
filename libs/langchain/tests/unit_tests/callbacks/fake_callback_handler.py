@@ -1,12 +1,13 @@
 """A fake callback handler for testing purposes."""
 
 from itertools import chain
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel
+from typing_extensions import override
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -23,7 +24,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_chat_model_: bool = False
 
     # to allow for similar callback handlers that are not technically equal
-    fake_id: Union[str, None] = None
+    fake_id: str | None = None
 
     # add finer-grained counters for easier debugging of failing tests
     chain_starts: int = 0
@@ -135,6 +136,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         """Whether to ignore retriever callbacks."""
         return self.ignore_retriever_
 
+    @override
     def on_llm_start(
         self,
         *args: Any,
@@ -142,6 +144,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_start_common()
 
+    @override
     def on_llm_new_token(
         self,
         *args: Any,
@@ -149,6 +152,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_new_token_common()
 
+    @override
     def on_llm_end(
         self,
         *args: Any,
@@ -156,6 +160,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_end_common()
 
+    @override
     def on_llm_error(
         self,
         *args: Any,
@@ -163,6 +168,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_error_common()
 
+    @override
     def on_retry(
         self,
         *args: Any,
@@ -170,6 +176,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retry_common()
 
+    @override
     def on_chain_start(
         self,
         *args: Any,
@@ -177,6 +184,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_start_common()
 
+    @override
     def on_chain_end(
         self,
         *args: Any,
@@ -184,6 +192,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_end_common()
 
+    @override
     def on_chain_error(
         self,
         *args: Any,
@@ -191,6 +200,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_error_common()
 
+    @override
     def on_tool_start(
         self,
         *args: Any,
@@ -198,6 +208,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_start_common()
 
+    @override
     def on_tool_end(
         self,
         *args: Any,
@@ -205,6 +216,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_end_common()
 
+    @override
     def on_tool_error(
         self,
         *args: Any,
@@ -212,6 +224,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_error_common()
 
+    @override
     def on_agent_action(
         self,
         *args: Any,
@@ -219,6 +232,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_agent_action_common()
 
+    @override
     def on_agent_finish(
         self,
         *args: Any,
@@ -226,6 +240,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_agent_finish_common()
 
+    @override
     def on_text(
         self,
         *args: Any,
@@ -233,6 +248,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_text_common()
 
+    @override
     def on_retriever_start(
         self,
         *args: Any,
@@ -240,6 +256,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_start_common()
 
+    @override
     def on_retriever_end(
         self,
         *args: Any,
@@ -247,6 +264,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_end_common()
 
+    @override
     def on_retriever_error(
         self,
         *args: Any,
@@ -259,13 +277,14 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
 
 
 class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
+    @override
     def on_chat_model_start(
         self,
         serialized: dict[str, Any],
         messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
+        parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> Any:
         assert all(isinstance(m, BaseMessage) for m in chain(*messages))
@@ -290,6 +309,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
 
+    @override
     async def on_retry(
         self,
         *args: Any,
@@ -297,6 +317,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> Any:
         self.on_retry_common()
 
+    @override
     async def on_llm_start(
         self,
         *args: Any,
@@ -304,6 +325,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_start_common()
 
+    @override
     async def on_llm_new_token(
         self,
         *args: Any,
@@ -311,6 +333,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_new_token_common()
 
+    @override
     async def on_llm_end(
         self,
         *args: Any,
@@ -318,6 +341,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_end_common()
 
+    @override
     async def on_llm_error(
         self,
         *args: Any,
@@ -325,6 +349,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_error_common()
 
+    @override
     async def on_chain_start(
         self,
         *args: Any,
@@ -332,6 +357,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_start_common()
 
+    @override
     async def on_chain_end(
         self,
         *args: Any,
@@ -339,6 +365,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_end_common()
 
+    @override
     async def on_chain_error(
         self,
         *args: Any,
@@ -346,6 +373,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_error_common()
 
+    @override
     async def on_tool_start(
         self,
         *args: Any,
@@ -353,6 +381,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_start_common()
 
+    @override
     async def on_tool_end(
         self,
         *args: Any,
@@ -360,6 +389,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_end_common()
 
+    @override
     async def on_tool_error(
         self,
         *args: Any,
@@ -367,6 +397,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_error_common()
 
+    @override
     async def on_agent_action(
         self,
         *args: Any,
@@ -374,6 +405,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_agent_action_common()
 
+    @override
     async def on_agent_finish(
         self,
         *args: Any,
@@ -381,6 +413,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_agent_finish_common()
 
+    @override
     async def on_text(
         self,
         *args: Any,

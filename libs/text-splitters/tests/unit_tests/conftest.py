@@ -4,10 +4,9 @@ from collections.abc import Sequence
 from importlib import util
 
 import pytest
-from pytest import Config, Function, Parser
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
@@ -21,7 +20,9 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
@@ -31,11 +32,10 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
 
     The `requires` marker syntax is:
 
-    .. code-block:: python
-
-        @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
+    ```python
+    @pytest.mark.requires("package1", "package2")
+    def test_something(): ...
+    ```
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -63,7 +63,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 if pkg not in required_pkgs_info:
                     try:
                         installed = util.find_spec(pkg) is not None
-                    except Exception:
+                    except (ImportError, ValueError):
                         installed = False
                     required_pkgs_info[pkg] = installed
 

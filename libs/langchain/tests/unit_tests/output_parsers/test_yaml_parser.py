@@ -1,13 +1,12 @@
-"""Test yamlOutputParser"""
+"""Test yamlOutputParser."""
 
 from enum import Enum
-from typing import Optional
 
 import pytest
 from langchain_core.exceptions import OutputParserException
 from pydantic import BaseModel, Field
 
-from langchain.output_parsers.yaml import YamlOutputParser
+from langchain_classic.output_parsers.yaml import YamlOutputParser
 
 
 class Actions(Enum):
@@ -20,7 +19,7 @@ class Actions(Enum):
 class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
-    additional_fields: Optional[str] = Field(
+    additional_fields: str | None = Field(
         description="Additional fields",
         default=None,
     )
@@ -70,7 +69,6 @@ DEF_EXPECTED_RESULT = TestModel(
 @pytest.mark.parametrize("result", [DEF_RESULT, DEF_RESULT_NO_BACKTICKS])
 def test_yaml_output_parser(result: str) -> None:
     """Test yamlOutputParser."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )
@@ -82,22 +80,17 @@ def test_yaml_output_parser(result: str) -> None:
 
 def test_yaml_output_parser_fail() -> None:
     """Test YamlOutputParser where completion result fails schema validation."""
-
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
         pydantic_object=TestModel,
     )
 
-    try:
+    with pytest.raises(OutputParserException) as exc_info:
         yaml_parser.parse(DEF_RESULT_FAIL)
-    except OutputParserException as e:
-        print("parse_result:", e)  # noqa: T201
-        assert "Failed to parse TestModel from completion" in str(e)
-    else:
-        msg = "Expected OutputParserException"
-        raise AssertionError(msg)
+
+    assert "Failed to parse TestModel from completion" in str(exc_info.value)
 
 
 def test_yaml_output_parser_output_type() -> None:
     """Test YamlOutputParser OutputType."""
-    yaml_parser = YamlOutputParser(pydantic_object=TestModel)
+    yaml_parser = YamlOutputParser[TestModel](pydantic_object=TestModel)
     assert yaml_parser.OutputType is TestModel

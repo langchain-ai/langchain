@@ -1,17 +1,18 @@
 """Test pipeline functionality."""
 
-from typing import Optional
+import re
 
 import pytest
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from typing_extensions import override
 
-from langchain.chains.base import Chain
-from langchain.chains.sequential import SequentialChain, SimpleSequentialChain
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.simple import SimpleMemory
+from langchain_classic.chains.base import Chain
+from langchain_classic.chains.sequential import SequentialChain, SimpleSequentialChain
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.memory.simple import SimpleMemory
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -31,10 +32,11 @@ class FakeChain(Chain):
         """Input keys this chain returns."""
         return self.output_variables
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[CallbackManagerForChainRun] = None,
+        run_manager: CallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
@@ -42,10 +44,11 @@ class FakeChain(Chain):
             outputs[var] = f"{' '.join(variables)}foo"
         return outputs
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, str],
-        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        run_manager: AsyncCallbackManagerForChainRun | None = None,
     ) -> dict[str, str]:
         outputs = {}
         for var in self.output_variables:
@@ -94,7 +97,12 @@ def test_sequential_usage_memory() -> None:
     memory = SimpleMemory(memories={"zab": "rab", "foo": "rab"})
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Value error, The input key(s) foo are found in the Memory keys"
+        ),
+    ):
         SequentialChain(  # type: ignore[call-arg]
             memory=memory,
             chains=[chain_1, chain_2],
@@ -136,7 +144,10 @@ def test_sequential_missing_inputs() -> None:
     """Test error is raised when input variables are missing."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "test"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Value error, Missing required input keys: {'test'}"),
+    ):
         # Also needs "test" as an input
         SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
 
@@ -145,7 +156,12 @@ def test_sequential_bad_outputs() -> None:
     """Test error is raised when bad outputs are specified."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Value error, Expected output variables that were not found: {'test'}."
+        ),
+    ):
         # "test" is not present as an output variable.
         SequentialChain(
             chains=[chain_1, chain_2],
@@ -172,7 +188,9 @@ def test_sequential_overlapping_inputs() -> None:
     """Test error is raised when input variables are overlapping."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "test"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Value error, Chain returned keys that already exist"
+    ):
         # "test" is specified as an input, but also is an output of one step
         SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])  # type: ignore[call-arg]
 
@@ -187,8 +205,10 @@ def test_simple_sequential_functionality() -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize("isAsync", [False, True])
-async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) -> None:
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_simple_sequential_functionality_with_callbacks(
+    *, is_async: bool
+) -> None:
     """Test simple sequential functionality."""
     handler_1 = FakeCallbackHandler()
     handler_2 = FakeCallbackHandler()
@@ -209,7 +229,7 @@ async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) 
         callbacks=[handler_3],
     )
     chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
-    if isAsync:
+    if is_async:
         output = await chain.ainvoke({"input": "123"})
     else:
         output = chain({"input": "123"})
@@ -226,7 +246,10 @@ def test_multi_input_errors() -> None:
     """Test simple sequential errors if multiple input variables are expected."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Value error, Chains used in SimplePipeline should all have one input",
+    ):
         SimpleSequentialChain(chains=[chain_1, chain_2])
 
 
@@ -234,5 +257,8 @@ def test_multi_output_errors() -> None:
     """Test simple sequential errors if multiple output variables are expected."""
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar", "grok"])
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Value error, Chains used in SimplePipeline should all have one output",
+    ):
         SimpleSequentialChain(chains=[chain_1, chain_2])

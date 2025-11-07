@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import os
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any
 
 import anthropic
 
@@ -48,8 +48,9 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
 @lru_cache
 def _get_default_httpx_client(
     *,
-    base_url: Optional[str],
+    base_url: str | None,
     timeout: Any = _NOT_GIVEN,
+    anthropic_proxy: str | None = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -58,14 +59,17 @@ def _get_default_httpx_client(
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
+    if anthropic_proxy is not None:
+        kwargs["proxy"] = anthropic_proxy
     return _SyncHttpxClientWrapper(**kwargs)
 
 
 @lru_cache
 def _get_default_async_httpx_client(
     *,
-    base_url: Optional[str],
+    base_url: str | None,
     timeout: Any = _NOT_GIVEN,
+    anthropic_proxy: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -74,4 +78,6 @@ def _get_default_async_httpx_client(
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
+    if anthropic_proxy is not None:
+        kwargs["proxy"] = anthropic_proxy
     return _AsyncHttpxClientWrapper(**kwargs)

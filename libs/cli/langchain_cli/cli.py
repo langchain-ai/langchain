@@ -1,4 +1,8 @@
-from typing import Annotated, Optional
+"""LangChain CLI."""
+
+from __future__ import annotations
+
+from typing import Annotated
 
 import typer
 
@@ -34,20 +38,21 @@ app.command(
 )
 
 
-def version_callback(show_version: bool) -> None:  # noqa: FBT001
+def _version_callback(*, show_version: bool) -> None:
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
         raise typer.Exit
 
 
 @app.callback()
-def main(
-    version: bool = typer.Option(  # noqa: FBT001
+def _main(
+    *,
+    version: bool = typer.Option(
         False,  # noqa: FBT003
         "--version",
         "-v",
         help="Print the current CLI version.",
-        callback=version_callback,
+        callback=_version_callback,
         is_eager=True,
     ),
 ) -> None:
@@ -58,21 +63,20 @@ def main(
 def serve(
     *,
     port: Annotated[
-        Optional[int],
+        int | None,
         typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The host to run the server on"),
     ] = None,
 ) -> None:
     """Start the LangServe app, whether it's a template or an app."""
-    # see if is a template
     try:
         project_dir = get_package_root()
         pyproject = project_dir / "pyproject.toml"
         get_langserve_export(pyproject)
-    except KeyError:
+    except (KeyError, FileNotFoundError):
         # not a template
         app_namespace.serve(port=port, host=host)
     else:

@@ -3,10 +3,10 @@
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeListLLM
 
-from langchain.chains.conversational_retrieval.base import (
+from langchain_classic.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
 )
-from langchain.memory.buffer import ConversationBufferMemory
+from langchain_classic.memory.buffer import ConversationBufferMemory
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 
 
@@ -15,7 +15,7 @@ async def test_simplea() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
-    memory = ConversationBufferMemory(  # type: ignore[call-arg]
+    memory = ConversationBufferMemory(
         k=1,
         output_key="answer",
         memory_key="chat_history",
@@ -42,7 +42,7 @@ async def test_fixed_message_response_when_docs_founda() -> None:
     retriever = SequentialRetriever(
         sequential_responses=[[Document(page_content=answer)]],
     )
-    memory = ConversationBufferMemory(  # type: ignore[call-arg]
+    memory = ConversationBufferMemory(
         k=1,
         output_key="answer",
         memory_key="chat_history",
@@ -67,7 +67,7 @@ def test_fixed_message_response_when_no_docs_found() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
-    memory = ConversationBufferMemory(  # type: ignore[call-arg]
+    memory = ConversationBufferMemory(
         k=1,
         output_key="answer",
         memory_key="chat_history",
@@ -94,7 +94,7 @@ def test_fixed_message_response_when_docs_found() -> None:
     retriever = SequentialRetriever(
         sequential_responses=[[Document(page_content=answer)]],
     )
-    memory = ConversationBufferMemory(  # type: ignore[call-arg]
+    memory = ConversationBufferMemory(
         k=1,
         output_key="answer",
         memory_key="chat_history",

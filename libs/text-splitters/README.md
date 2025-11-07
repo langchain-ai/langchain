@@ -1,7 +1,11 @@
 # 🦜✂️ LangChain Text Splitters
 
-[![Downloads](https://static.pepy.tech/badge/langchain_text_splitters/month)](https://pepy.tech/project/langchain_text_splitters)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-text-splitters?label=%20)](https://pypi.org/project/langchain-text-splitters/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-text-splitters)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-text-splitters)](https://pypistats.org/packages/langchain-text-splitters)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
+
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
 ## Quick Install
 
@@ -9,30 +13,24 @@
 pip install langchain-text-splitters
 ```
 
-## What is it?
+## 🤔 What is this?
 
 LangChain Text Splitters contains utilities for splitting into chunks a wide variety of text documents.
 
-For full documentation see the [API reference](https://python.langchain.com/api_reference/text_splitters/index.html)
-and the [Text Splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/) module in the main docs.
+## 📖 Documentation
+
+For full documentation, see the [API reference](https://reference.langchain.com/python/langchain_text_splitters/).
 
 ## 📕 Releases & Versioning
 
-`langchain-text-splitters` is currently on version `0.0.x`.
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning](https://docs.langchain.com/oss/python/versioning) policies.
 
-Minor version increases will occur for:
+We encourage pinning your version to a specific version in order to avoid breaking your CI when we publish new tests. We recommend upgrading to the latest version periodically to make sure you have the latest tests.
 
-- Breaking changes for any public interfaces NOT marked `beta`
-
-Patch version increases will occur for:
-
-- Bug fixes
-- New features
-- Any changes to private interfaces
-- Any changes to `beta` features
+Not pinning your version will ensure you always have the latest tests, but it may also break your CI if we introduce tests that your integration doesn't pass.
 
 ## 💁 Contributing
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see the [Contributing Guide](https://python.langchain.com/docs/contributing/).
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).

@@ -1,4 +1,4 @@
-"""**Utility functions** for LangChain.
+"""Utility functions for LangChain.
 
 These functions do not depend on any other LangChain module.
 """
@@ -21,9 +21,13 @@ if TYPE_CHECKING:
         print_text,
     )
     from langchain_core.utils.iter import batch_iterate
-    from langchain_core.utils.loading import try_load_from_hub
     from langchain_core.utils.pydantic import pre_init
-    from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
+    from langchain_core.utils.strings import (
+        comma_list,
+        sanitize_for_postgres,
+        stringify_dict,
+        stringify_value,
+    )
     from langchain_core.utils.utils import (
         build_extra_kwargs,
         check_package_version,
@@ -59,10 +63,10 @@ __all__ = (
     "pre_init",
     "print_text",
     "raise_for_status_with_text",
+    "sanitize_for_postgres",
     "secret_from_env",
     "stringify_dict",
     "stringify_value",
-    "try_load_from_hub",
     "xor_args",
 )
 
@@ -78,9 +82,9 @@ _dynamic_imports = {
     "get_colored_text": "input",
     "print_text": "input",
     "batch_iterate": "iter",
-    "try_load_from_hub": "loading",
     "pre_init": "pydantic",
     "comma_list": "strings",
+    "sanitize_for_postgres": "strings",
     "stringify_dict": "strings",
     "stringify_value": "strings",
     "build_extra_kwargs": "utils",

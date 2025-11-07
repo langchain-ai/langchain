@@ -1,0 +1,118 @@
+name: "✨ Feature Request"
+description: Request a new feature or enhancement for LangChain. For questions, please use the LangChain forum.
+labels: ["feature request"]
+type: feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to request a new feature.
+
+        Use this to request NEW FEATURES or ENHANCEMENTS in LangChain. For bug reports, please use the bug report template. For usage questions and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
+
+        Relevant links to check before filing a feature request to see if your request has already been made or
+        if there's another way to achieve what you want:
+
+        * [LangChain Forum](https://forum.langchain.com/),
+        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
+        * [API Reference](https://reference.langchain.com/python/),
+        * [LangChain ChatBot](https://chat.langchain.com/)
+        * [GitHub search](https://github.com/langchain-ai/langchain),
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checked other resources
+      description: Please confirm and check all the following options.
+      options:
+        - label: This is a feature request, not a bug report or usage question.
+          required: true
+        - label: I added a clear and descriptive title that summarizes the feature request.
+          required: true
+        - label: I used the GitHub search to find a similar feature request and didn't find it.
+          required: true
+        - label: I checked the LangChain documentation and API reference to see if this feature already exists.
+          required: true
+        - label: This is not related to the langchain-community package.
+          required: true
+  - type: textarea
+    id: feature-description
+    validations:
+      required: true
+    attributes:
+      label: Feature Description
+      description: |
+        Please provide a clear and concise description of the feature you would like to see added to LangChain.
+
+        What specific functionality are you requesting? Be as detailed as possible.
+      placeholder: |
+        I would like LangChain to support...
+
+        This feature would allow users to...
+  - type: textarea
+    id: use-case
+    validations:
+      required: true
+    attributes:
+      label: Use Case
+      description: |
+        Describe the specific use case or problem this feature would solve.
+
+        Why do you need this feature? What problem does it solve for you or other users?
+      placeholder: |
+        I'm trying to build an application that...
+
+        Currently, I have to work around this by...
+
+        This feature would help me/users to...
+  - type: textarea
+    id: proposed-solution
+    validations:
+      required: false
+    attributes:
+      label: Proposed Solution
+      description: |
+        If you have ideas about how this feature could be implemented, please describe them here.
+
+        This is optional but can be helpful for maintainers to understand your vision.
+      placeholder: |
+        I think this could be implemented by...
+
+        The API could look like...
+
+        ```python
+        # Example of how the feature might work
+        ```
+  - type: textarea
+    id: alternatives
+    validations:
+      required: false
+    attributes:
+      label: Alternatives Considered
+      description: |
+        Have you considered any alternative solutions or workarounds?
+
+        What other approaches have you tried or considered?
+      placeholder: |
+        I've tried using...
+
+        Alternative approaches I considered:
+        1. ...
+        2. ...
+
+        But these don't work because...
+  - type: textarea
+    id: additional-context
+    validations:
+      required: false
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context, screenshots, examples, or references that would help explain your feature request.
+      placeholder: |
+        Related issues: #...
+
+        Similar features in other libraries:
+        - ...
+
+        Additional context or examples:
+        - ...
