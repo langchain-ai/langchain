@@ -1428,7 +1428,7 @@ def _create_usage_metadata(groq_token_usage: dict) -> UsageMetadata:
     output_tokens = groq_token_usage.get("completion_tokens") or 0
     total_tokens = groq_token_usage.get("total_tokens") or input_tokens + output_tokens
     input_token_details: dict = {
-        "cache_read": (groq_token_usage.get("prompt_tokens_details") or {}).get(
+        "cache_read": (groq_token_usage.get("input_tokens_details") or {}).get(
             "cached_tokens"
         ),
     }
