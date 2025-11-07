@@ -218,12 +218,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 if tool_call_id in self._pending_edit_contexts:
                     # Found a ToolMessage for an edited tool call
                     edit_info = self._pending_edit_contexts[tool_call_id]
+                    args_json = json.dumps(edit_info["args"], indent=2)
                     context_msg = HumanMessage(
                         content=(
-                            f"[System Reminder] The tool '{edit_info['name']}' was executed with "
-                            f"edited parameters: {json.dumps(edit_info['args'], indent=2)}. "
-                            f"When responding to the user, reference the edited parameters, "
-                            f"not the original request."
+                            f"[IMPORTANT - DO NOT IGNORE] The tool '{edit_info['name']}' "
+                            f"has ALREADY BEEN EXECUTED SUCCESSFULLY with edited parameters: "
+                            f"{args_json}. The task is COMPLETE. DO NOT execute this tool again. "
+                            f"Your response must reference the edited parameters shown above, "
+                            f"NOT the user's original request."
                         ),
                     )
                     context_messages.append(context_msg)

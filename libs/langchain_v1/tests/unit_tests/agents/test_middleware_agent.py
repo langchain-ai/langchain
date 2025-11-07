@@ -1171,7 +1171,7 @@ def test_human_in_the_loop_middleware_edit_actually_executes_with_edited_args(
     # Check for context messages (HumanMessage)
     # We expect TWO context messages for edit decisions:
     # 1. Pre-execution: "[System Note] The user edited the proposed tool call..."
-    # 2. Post-execution: "[System Reminder] The tool was executed with edited parameters..."
+    # 2. Post-execution: "[IMPORTANT - DO NOT IGNORE] The tool ... has ALREADY BEEN EXECUTED SUCCESSFULLY..."
     context_messages = [m for m in human_messages if "edited" in m.content.lower()]
     assert len(context_messages) == 2, (
         f"Should have exactly two edit context messages (pre and post execution), "
@@ -1180,6 +1180,9 @@ def test_human_in_the_loop_middleware_edit_actually_executes_with_edited_args(
     # Both should mention the edited email address
     for msg in context_messages:
         assert "alice@test.com" in msg.content
+    # Post-execution message should have strong language
+    post_exec_messages = [m for m in context_messages if "ALREADY BEEN EXECUTED" in m.content]
+    assert len(post_exec_messages) == 1, "Should have one strong post-execution reminder"
 
     # Check for execution result (ToolMessage)
     exec_messages = [m for m in tool_messages if "Email sent" in m.content]
