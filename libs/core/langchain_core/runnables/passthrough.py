@@ -673,8 +673,14 @@ class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
 
     `RunnablePick` class represents a `Runnable` that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
-    from the input dictionary. It returns a new dictionary containing only
-    the selected keys.
+    from the input dictionary.
+
+    !!! note "Return Type Behavior"
+        The return type depends on the `keys` parameter:
+
+        - When `keys` is a `str`: Returns the single value associated with that key
+        - When `keys` is a `list`: Returns a dictionary containing only the selected
+            keys
 
     Example:
         ```python
@@ -687,11 +693,15 @@ class RunnablePick(RunnableSerializable[dict[str, Any], Any]):
             "country": "USA",
         }
 
-        runnable = RunnablePick(keys=["name", "age"])
+        # Single key - returns the value directly
+        runnable_single = RunnablePick(keys="name")
+        result_single = runnable_single.invoke(input_data)
+        print(result_single)  # Output: "John"
 
-        output_data = runnable.invoke(input_data)
-
-        print(output_data)  # Output: {'name': 'John', 'age': 30}
+        # Multiple keys - returns a dictionary
+        runnable_multiple = RunnablePick(keys=["name", "age"])
+        result_multiple = runnable_multiple.invoke(input_data)
+        print(result_multiple)  # Output: {'name': 'John', 'age': 30}
         ```
     """
 
