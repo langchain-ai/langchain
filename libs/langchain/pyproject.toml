@@ -3,8 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = []
+name = "langchain-classic"
+description = "Building applications with LLMs through composability"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.0"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.0,<2.0.0",
@@ -16,10 +21,6 @@ dependencies = [
     "PyYAML>=5.3.0,<7.0.0",
     "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
 ]
-name = "langchain-classic"
-version = "1.0.0"
-description = "Building applications with LLMs through composability"
-readme = "README.md"
 
 [project.optional-dependencies]
 #community = ["langchain-community"]

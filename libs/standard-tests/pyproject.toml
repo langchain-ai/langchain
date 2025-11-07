@@ -3,8 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+name = "langchain-tests"
+description = "Standard tests for LangChain implementations"
 license = { text = "MIT" }
+readme = "README.md"
+authors = []
+
+version = "1.0.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.0.3,<2.0.0",
@@ -20,10 +25,6 @@ dependencies = [
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
-name = "langchain-tests"
-version = "1.0.1"
-description = "Standard tests for LangChain implementations"
-readme = "README.md"
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"

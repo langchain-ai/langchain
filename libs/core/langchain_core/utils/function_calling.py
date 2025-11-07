@@ -351,7 +351,7 @@ def convert_to_openai_function(
     Raises:
         ValueError: If function is not in a supported format.
 
-    !!! warning "Behavior changed in 0.3.16"
+    !!! warning "Behavior changed in `langchain-core` 0.3.16"
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -412,7 +412,7 @@ def convert_to_openai_function(
     if strict is not None:
         if "strict" in oai_function and oai_function["strict"] != strict:
             msg = (
-                f"Tool/function already has a 'strict' key wth value "
+                f"Tool/function already has a 'strict' key with value "
                 f"{oai_function['strict']} which is different from the explicit "
                 f"`strict` arg received {strict=}."
             )
@@ -475,16 +475,16 @@ def convert_to_openai_tool(
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
 
-    !!! warning "Behavior changed in 0.3.16"
+    !!! warning "Behavior changed in `langchain-core` 0.3.16"
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
-    !!! warning "Behavior changed in 0.3.44"
+    !!! warning "Behavior changed in `langchain-core` 0.3.44"
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
-    !!! warning "Behavior changed in 0.3.63"
+    !!! warning "Behavior changed in `langchain-core` 0.3.63"
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
