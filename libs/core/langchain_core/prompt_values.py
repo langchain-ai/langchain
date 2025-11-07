@@ -30,14 +30,12 @@ class PromptValue(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return True as this class is serializable."""
+        """Return `True` as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
-
-        This is used to determine the namespace of the object when serializing.
 
         Returns:
             `["langchain", "schema", "prompt"]`
@@ -50,7 +48,7 @@ class PromptValue(Serializable, ABC):
 
     @abstractmethod
     def to_messages(self) -> list[BaseMessage]:
-        """Return prompt as a list of Messages."""
+        """Return prompt as a list of messages."""
 
 
 class StringPromptValue(PromptValue):
@@ -63,8 +61,6 @@ class StringPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
-
-        This is used to determine the namespace of the object when serializing.
 
         Returns:
             `["langchain", "prompts", "base"]`
@@ -100,8 +96,6 @@ class ChatPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
-
-        This is used to determine the namespace of the object when serializing.
 
         Returns:
             `["langchain", "prompts", "chat"]`

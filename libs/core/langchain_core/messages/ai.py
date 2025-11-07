@@ -50,7 +50,7 @@ class InputTokenDetails(TypedDict, total=False):
 
     May also hold extra provider-specific keys.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-core` 0.3.9"
 
     """
 
@@ -85,7 +85,7 @@ class OutputTokenDetails(TypedDict, total=False):
 
     May also hold extra provider-specific keys.
 
-    !!! version-added "Added in version 0.3.9"
+    !!! version-added "Added in `langchain-core` 0.3.9"
 
     """
 
@@ -123,7 +123,7 @@ class UsageMetadata(TypedDict):
         }
         ```
 
-    !!! warning "Behavior changed in 0.3.9"
+    !!! warning "Behavior changed in `langchain-core` 0.3.9"
         Added `input_token_details` and `output_token_details`.
 
     !!! note "LangSmith SDK"

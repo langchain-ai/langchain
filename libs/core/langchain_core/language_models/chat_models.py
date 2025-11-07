@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
+from langchain_core._api.beta_decorator import beta
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -74,6 +75,8 @@ from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
+
+    from langchain_model_profiles import ModelProfile  # type: ignore[import-untyped]
 
     from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -329,7 +332,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     [`langchain-openai`](https://pypi.org/project/langchain-openai)) can also use this
     field to roll out new content formats in a backward-compatible way.
 
-    !!! version-added "Added in version 1.0"
+    !!! version-added "Added in `langchain-core` 1.0"
 
     """
 
@@ -842,16 +845,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -960,16 +968,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         Args:
             messages: List of list of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: `Callbacks` to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
+            stop: Stop words to use when generating.
+
+                Model output is cut off at the first occurrence of any of these
+                substrings.
+            callbacks: `Callbacks` to pass through.
+
+                Used for executing additional functionality, such as logging or
+                streaming, throughout generation.
             tags: The tags to apply.
             metadata: The metadata to apply.
             run_name: The name of the run.
             run_id: The ID of the run.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
+            **kwargs: Arbitrary additional keyword arguments.
+
+                These are usually passed to the model provider API call.
 
         Returns:
             An `LLMResult`, which contains a list of candidate `Generations` for each
@@ -1502,10 +1515,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a `TypedDict` class,
-                - or a Pydantic class.
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
                 If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
@@ -1517,11 +1530,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 when specifying a Pydantic or `TypedDict` class.
 
             include_raw:
-                If `False` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If `True`
-                then both the raw model response (a `BaseMessage`) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
@@ -1626,8 +1643,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # }
         ```
 
-        !!! warning "Behavior changed in 0.2.26"
-            Added support for TypedDict class.
+        !!! warning "Behavior changed in `langchain-core` 0.2.26"
+            Added support for `TypedDict` class.
 
         """  # noqa: E501
         _ = kwargs.pop("method", None)
@@ -1667,6 +1684,40 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
+
+    @property
+    @beta()
+    def profile(self) -> ModelProfile:
+        """Return profiling information for the model.
+
+        This property relies on the `langchain-model-profiles` package to retrieve chat
+        model capabilities, such as context window sizes and supported features.
+
+        Raises:
+            ImportError: If `langchain-model-profiles` is not installed.
+
+        Returns:
+            A `ModelProfile` object containing profiling information for the model.
+        """
+        try:
+            from langchain_model_profiles import get_model_profile  # noqa: PLC0415
+        except ImportError as err:
+            informative_error_message = (
+                "To access model profiling information, please install the "
+                "`langchain-model-profiles` package: "
+                "`pip install langchain-model-profiles`."
+            )
+            raise ImportError(informative_error_message) from err
+
+        provider_id = self._llm_type
+        model_name = (
+            # Model name is not standardized across integrations. New integrations
+            # should prefer `model`.
+            getattr(self, "model", None)
+            or getattr(self, "model_name", None)
+            or getattr(self, "model_id", "")
+        )
+        return get_model_profile(provider_id, model_name) or {}
 
 
 class SimpleChatModel(BaseChatModel):
@@ -1726,9 +1777,12 @@ def _gen_info_and_msg_metadata(
     }
 
 
+_MAX_CLEANUP_DEPTH = 100
+
+
 def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
-    if depth > 100:  # Don't cooperate for pathological cases
+    if depth > _MAX_CLEANUP_DEPTH:  # Don't cooperate for pathological cases
         return
 
     if not isinstance(serialized, dict):

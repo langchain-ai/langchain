@@ -1,0 +1,6 @@
+[profile]
+image_url_inputs = false
+pdf_inputs = false
+pdf_tool_message = false
+image_tool_message = false
+structured_output = false
