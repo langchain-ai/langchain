@@ -174,16 +174,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
     """DeepSeek API base URL"""
-    strict: bool | None = Field(
-        default=None,
-        description=(
-            "Whether to enable strict mode for function calling. "
-            "When enabled, uses the Beta API endpoint and ensures "
-            "outputs strictly comply with the defined JSON schema."
-        ),
-    )
 
     model_config = ConfigDict(populate_by_name=True)
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -206,22 +199,16 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        # Use Beta API if strict mode is enabled
-        api_base = self.api_base
-        if self.strict and self.api_base == DEFAULT_API_BASE:
-            api_base = "https://api.deepseek.com/beta"
-
-        if api_base == DEFAULT_API_BASE and not (
+        if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
             msg = "If using default api base, DEEPSEEK_API_KEY must be set."
             raise ValueError(msg)
-
         client_params: dict = {
             k: v
             for k, v in {
                 "api_key": self.api_key.get_secret_value() if self.api_key else None,
-                "base_url": api_base,
+                "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
                 "default_headers": self.default_headers,
@@ -242,59 +229,6 @@ class ChatDeepSeek(BaseChatOpenAI):
             )
             self.async_client = self.root_async_client.chat.completions
         return self
-
-    def bind_tools(
-        self,
-        tools: list,
-        *,
-        tool_choice: str | dict | None = None,
-        strict: bool | None = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tools to the model with optional strict mode.
-
-        Args:
-            tools: A list of tool definitions or Pydantic models.
-            tool_choice: Which tool the model should use.
-            strict: Whether to enable strict mode for these tools.
-                If not provided, uses the instance's strict setting.
-            **kwargs: Additional arguments to pass to the parent method.
-
-        Returns:
-            A Runnable that will call the model with the bound tools.
-        """
-        # Use instance strict setting if not explicitly provided
-        use_strict = strict if strict is not None else self.strict
-
-        # If strict mode is enabled, add strict: true to each tool
-        if use_strict:
-            formatted_tools = []
-            for tool in tools:
-                # Convert to OpenAI format
-                from langchain_core.utils.function_calling import convert_to_openai_tool
-
-                if not isinstance(tool, dict):
-                    tool_dict = convert_to_openai_tool(tool)
-                else:
-                    tool_dict = tool.copy()
-
-                # Add strict: true to the function definition
-                if "function" in tool_dict:
-                    tool_dict["function"]["strict"] = True
-
-                formatted_tools.append(tool_dict)
-
-            tools = formatted_tools
-
-        # Add strict to kwargs if it's being used
-        if use_strict is not None:
-            kwargs["strict"] = use_strict
-
-        return super().bind_tools(
-            tools,
-            tool_choice=tool_choice,
-            **kwargs,
-        )
 
     def _get_request_payload(
         self,
