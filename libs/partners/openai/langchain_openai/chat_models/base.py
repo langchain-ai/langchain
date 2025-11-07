@@ -4351,7 +4351,7 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
-    elif chunk.type == "response.completed":
+    elif chunk.type in ("response.completed", "response.incomplete"):
         msg = cast(
             AIMessage,
             (
@@ -4368,24 +4368,6 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
-        chunk_position = "last"
-    elif chunk.type == "response.incomplete":
-        # Handle incomplete response events (e.g., when max_output_tokens is reached)
-        # Extract incomplete_details and status from the response
-        if chunk.response.incomplete_details:
-            incomplete_details = chunk.response.incomplete_details
-            if hasattr(incomplete_details, "model_dump"):
-                response_metadata["incomplete_details"] = incomplete_details.model_dump(
-                    exclude_none=True, mode="json"
-                )
-            else:
-                response_metadata["incomplete_details"] = incomplete_details
-        if chunk.response.status:
-            response_metadata["status"] = chunk.response.status
-        # Also preserve the response ID if available
-        if chunk.response.id:
-            id = chunk.response.id
-            response_metadata["id"] = chunk.response.id
         chunk_position = "last"
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
