@@ -20,6 +20,8 @@ from langchain_core.runnables.config import (
     ensure_config,
     merge_configs,
     run_in_executor,
+    set_config_context,
+    var_child_runnable_config,
 )
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
@@ -161,3 +163,46 @@ async def test_run_in_executor() -> None:
 
     with pytest.raises(RuntimeError):
         await run_in_executor(None, raises_stop_iter)
+
+
+def test_set_config_context_reuse_prevention() -> None:
+    """Test that `set_config_context` prevents reuse with clear error messages."""
+    config: RunnableConfig = {"tags": ["test"]}
+    ctx_manager = set_config_context(config)
+
+    # First enter should work fine
+    with ctx_manager as ctx1:
+        assert ctx1 is not None
+
+        # Second enter on the same context manager should raise RuntimeError
+        with pytest.raises(RuntimeError, match="Context manager cannot be reused"):  # noqa: SIM117
+            with ctx_manager:
+                pass
+
+    # After exiting, it should still be unusable
+    with pytest.raises(RuntimeError, match="Context manager cannot be reused"):  # noqa: SIM117
+        with ctx_manager:
+            pass
+
+
+def test_set_config_context_normal_usage() -> None:
+    """Test that `set_config_context` works normally for single use cases."""
+    config: RunnableConfig = {"tags": ["test"], "metadata": {"key": "value"}}
+
+    # Normal usage should work fine
+    with set_config_context(config) as ctx:
+        assert ctx is not None
+        # Verify the config is actually set in the context
+        config_in_ctx = ctx.run(var_child_runnable_config.get)
+        assert config_in_ctx == config
+
+    # After exiting, the context should be reset
+    current_config = var_child_runnable_config.get()
+    assert current_config is None
+
+    # Creating a new context manager should work fine
+    new_ctx_manager = set_config_context(config)
+    with new_ctx_manager as ctx2:
+        assert ctx2 is not None
+        config_in_ctx2 = ctx2.run(var_child_runnable_config.get)
+        assert config_in_ctx2 == config

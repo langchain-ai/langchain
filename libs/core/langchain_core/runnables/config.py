@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import types
 import uuid
 import warnings
 from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
@@ -160,33 +161,78 @@ def _set_config_context(
     return config_token, current_context
 
 
-@contextmanager
-def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]:
+class ConfigContextManager:
+    """Context manager for setting Runnable config that prevents reuse."""
+
+    def __init__(self, config: RunnableConfig) -> None:
+        """Initialize the context manager with a config.
+
+        Args:
+            config: The config to set.
+        """
+        self._config = config
+        self._entered = False
+        self._exited = False
+        self._ctx: Context | None = None
+        self._config_token: Token[RunnableConfig | None] | None = None
+
+    def __enter__(self) -> Context:
+        """Enter the context manager.
+
+        Returns:
+            The config context.
+
+        Raises:
+            RuntimeError: If the context manager has already been used.
+        """
+        if self._entered or self._exited:
+            msg = "Context manager cannot be reused"
+            raise RuntimeError(msg)
+
+        self._entered = True
+        self._ctx = copy_context()
+        self._config_token, _ = self._ctx.run(_set_config_context, self._config)
+        return self._ctx
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
+    ) -> None:
+        """Exit the context manager.
+
+        Args:
+            exc_type: Exception type.
+            exc_val: Exception value.
+            exc_tb: Exception traceback.
+        """
+        if self._ctx is not None and self._config_token is not None:
+            self._ctx.run(var_child_runnable_config.reset, self._config_token)
+            self._ctx.run(
+                _set_tracing_context,
+                {
+                    "parent": None,
+                    "project_name": None,
+                    "tags": None,
+                    "metadata": None,
+                    "enabled": None,
+                    "client": None,
+                },
+            )
+        self._exited = True
+
+
+def set_config_context(config: RunnableConfig) -> ConfigContextManager:
     """Set the child Runnable config + tracing context.
 
     Args:
         config: The config to set.
 
-    Yields:
-        The config context.
+    Returns:
+        A context manager for the config context.
     """
-    ctx = copy_context()
-    config_token, _ = ctx.run(_set_config_context, config)
-    try:
-        yield ctx
-    finally:
-        ctx.run(var_child_runnable_config.reset, config_token)
-        ctx.run(
-            _set_tracing_context,
-            {
-                "parent": None,
-                "project_name": None,
-                "tags": None,
-                "metadata": None,
-                "enabled": None,
-                "client": None,
-            },
-        )
+    return ConfigContextManager(config)
 
 
 def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
