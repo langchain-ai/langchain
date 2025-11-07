@@ -1,3 +1,5 @@
+"""Script to check for import errors in specified Python files."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

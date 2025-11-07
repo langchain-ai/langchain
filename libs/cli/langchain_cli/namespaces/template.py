@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 import uvicorn
@@ -34,7 +34,7 @@ def new(
     package_name_split = computed_name.split("/")
     package_name = (
         package_name_split[-2]
-        if len(package_name_split) > 1 and package_name_split[-1] == ""
+        if len(package_name_split) > 1 and not package_name_split[-1]
         else package_name_split[-1]
     )
     module_name = re.sub(
@@ -88,15 +88,15 @@ def new(
 def serve(
     *,
     port: Annotated[
-        Optional[int],
+        int | None,
         typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(help="The host to run the server on"),
     ] = None,
     configurable: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--configurable/--no-configurable",
             help="Whether to include a configurable route",
@@ -140,7 +140,7 @@ def serve(
 
 
 @package_cli.command()
-def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:  # noqa: A001
+def list(contains: Annotated[str | None, typer.Argument()] = None) -> None:  # noqa: A001
     """List all or search for available templates."""
     packages = list_packages(contains=contains)
     for package in packages:

@@ -3,7 +3,6 @@
 import logging
 import re
 from collections.abc import Sequence
-from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ DEFAULT_LINK_REGEX = (
 
 
 def find_all_links(
-    raw_html: str, *, pattern: Union[str, re.Pattern, None] = None
+    raw_html: str, *, pattern: str | re.Pattern | None = None
 ) -> list[str]:
     """Extract all links from a raw HTML string.
 
@@ -44,7 +43,7 @@ def find_all_links(
         pattern: Regex to use for extracting links from raw HTML.
 
     Returns:
-        list[str]: all links
+        all links
     """
     pattern = pattern or DEFAULT_LINK_REGEX
     return list(set(re.findall(pattern, raw_html)))
@@ -54,8 +53,8 @@ def extract_sub_links(
     raw_html: str,
     url: str,
     *,
-    base_url: Optional[str] = None,
-    pattern: Union[str, re.Pattern, None] = None,
+    base_url: str | None = None,
+    pattern: str | re.Pattern | None = None,
     prevent_outside: bool = True,
     exclude_prefixes: Sequence[str] = (),
     continue_on_failure: bool = False,
@@ -67,14 +66,14 @@ def extract_sub_links(
         url: the url of the HTML.
         base_url: the base URL to check for outside links against.
         pattern: Regex to use for extracting links from raw HTML.
-        prevent_outside: If True, ignore external links which are not children
+        prevent_outside: If `True`, ignore external links which are not children
             of the base URL.
         exclude_prefixes: Exclude any URLs that start with one of these prefixes.
-        continue_on_failure: If True, continue if parsing a specific link raises an
+        continue_on_failure: If `True`, continue if parsing a specific link raises an
             exception. Otherwise, raise the exception.
 
     Returns:
-        list[str]: sub links.
+        sub links.
     """
     base_url_to_use = base_url if base_url is not None else url
     parsed_base_url = urlparse(base_url_to_use)

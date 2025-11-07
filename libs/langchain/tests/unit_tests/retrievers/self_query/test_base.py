@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from langchain_core.callbacks.manager import (
@@ -16,8 +16,8 @@ from langchain_core.structured_query import (
 )
 from typing_extensions import override
 
-from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain.retrievers import SelfQueryRetriever
+from langchain_classic.chains.query_constructor.schema import AttributeInfo
+from langchain_classic.retrievers import SelfQueryRetriever
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
@@ -35,7 +35,7 @@ class FakeTranslator(Visitor):
     )
     allowed_operators = (Operator.AND, Operator.OR, Operator.NOT)
 
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
+    def _format_func(self, func: Operator | Comparator) -> str:
         self._validate_func(func)
         return f"${func.value}"
 

@@ -1,4 +1,4 @@
-from langchain import utilities
+from langchain_classic import utilities
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",

@@ -14,7 +14,6 @@ EXPECTED_ALL = [
     "aformat_document",
     "HumanMessagePromptTemplate",
     "MessagesPlaceholder",
-    "PipelinePromptTemplate",
     "PromptTemplate",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",

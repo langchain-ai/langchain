@@ -9,9 +9,9 @@ from blockbuster import blockbuster_ctx
 
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain") as bb:
+    with blockbuster_ctx("langchain_classic") as bb:
         bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain/__init__.py",
+            "langchain_classic/__init__.py",
             "<module>",
         )
 
@@ -73,12 +73,10 @@ def pytest_collection_modifyitems(
 
     The `requires` marker syntax is:
 
-    .. code-block:: python
-
-        @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
-
+    ```python
+    @pytest.mark.requires("package1", "package2")
+    def test_something(): ...
+    ```
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -110,11 +108,7 @@ def pytest_collection_modifyitems(
                 # If we haven't yet checked whether the pkg is installed
                 # let's check it and store the result.
                 if pkg not in required_pkgs_info:
-                    try:
-                        installed = util.find_spec(pkg) is not None
-                    except Exception:
-                        installed = False
-                    required_pkgs_info[pkg] = installed
+                    required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
                 if not required_pkgs_info[pkg]:
                     if only_extended:
