@@ -22,7 +22,7 @@ def _get_default_text_splitter() -> TextSplitter:
 
 
 class VectorStoreIndexWrapper(BaseModel):
-    """Wrapper around a vectorstore for easy access."""
+    """Wrapper around a `VectorStore` for easy access."""
 
     vectorstore: VectorStore
 
@@ -38,11 +38,11 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
-        """Query the vectorstore using the provided LLM.
+        """Query the `VectorStore` using the provided LLM.
 
         Args:
             question: The question or prompt to query.
-            llm: The language model to use. Must not be None.
+            llm: The language model to use. Must not be `None`.
             retriever_kwargs: Optional keyword arguments for the retriever.
             **kwargs: Additional keyword arguments forwarded to the chain.
 
@@ -73,11 +73,11 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> str:
-        """Asynchronously query the vectorstore using the provided LLM.
+        """Asynchronously query the `VectorStore` using the provided LLM.
 
         Args:
             question: The question or prompt to query.
-            llm: The language model to use. Must not be None.
+            llm: The language model to use. Must not be `None`.
             retriever_kwargs: Optional keyword arguments for the retriever.
             **kwargs: Additional keyword arguments forwarded to the chain.
 
@@ -108,11 +108,11 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict:
-        """Query the vectorstore and retrieve the answer along with sources.
+        """Query the `VectorStore` and retrieve the answer along with sources.
 
         Args:
             question: The question or prompt to query.
-            llm: The language model to use. Must not be None.
+            llm: The language model to use. Must not be `None`.
             retriever_kwargs: Optional keyword arguments for the retriever.
             **kwargs: Additional keyword arguments forwarded to the chain.
 
@@ -143,11 +143,11 @@ class VectorStoreIndexWrapper(BaseModel):
         retriever_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously query the vectorstore and retrieve the answer and sources.
+        """Asynchronously query the `VectorStore` and retrieve the answer and sources.
 
         Args:
             question: The question or prompt to query.
-            llm: The language model to use. Must not be None.
+            llm: The language model to use. Must not be `None`.
             retriever_kwargs: Optional keyword arguments for the retriever.
             **kwargs: Additional keyword arguments forwarded to the chain.
 
@@ -173,7 +173,7 @@ class VectorStoreIndexWrapper(BaseModel):
 
 
 def _get_in_memory_vectorstore() -> type[VectorStore]:
-    """Get the InMemoryVectorStore."""
+    """Get the `InMemoryVectorStore`."""
     import warnings
 
     try:
@@ -184,7 +184,7 @@ def _get_in_memory_vectorstore() -> type[VectorStore]:
     warnings.warn(
         "Using InMemoryVectorStore as the default vectorstore."
         "This memory store won't persist data. You should explicitly"
-        "specify a vectorstore when using VectorstoreIndexCreator",
+        "specify a VectorStore when using VectorstoreIndexCreator",
         stacklevel=3,
     )
     return InMemoryVectorStore
@@ -206,7 +206,7 @@ class VectorstoreIndexCreator(BaseModel):
     )
 
     def from_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from a list of loaders.
+        """Create a `VectorStore` index from a list of loaders.
 
         Args:
             loaders: A list of `BaseLoader` instances to load documents.
@@ -220,7 +220,7 @@ class VectorstoreIndexCreator(BaseModel):
         return self.from_documents(docs)
 
     async def afrom_loaders(self, loaders: list[BaseLoader]) -> VectorStoreIndexWrapper:
-        """Asynchronously create a vectorstore index from a list of loaders.
+        """Asynchronously create a `VectorStore` index from a list of loaders.
 
         Args:
             loaders: A list of `BaseLoader` instances to load documents.
@@ -234,7 +234,7 @@ class VectorstoreIndexCreator(BaseModel):
         return await self.afrom_documents(docs)
 
     def from_documents(self, documents: list[Document]) -> VectorStoreIndexWrapper:
-        """Create a vectorstore index from a list of documents.
+        """Create a `VectorStore` index from a list of documents.
 
         Args:
             documents: A list of `Document` objects.
@@ -254,7 +254,7 @@ class VectorstoreIndexCreator(BaseModel):
         self,
         documents: list[Document],
     ) -> VectorStoreIndexWrapper:
-        """Asynchronously create a vectorstore index from a list of documents.
+        """Asynchronously create a `VectorStore` index from a list of documents.
 
         Args:
             documents: A list of `Document` objects.

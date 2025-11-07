@@ -351,7 +351,7 @@ def convert_to_openai_function(
     Raises:
         ValueError: If function is not in a supported format.
 
-    !!! warning "Behavior changed in 0.3.16"
+    !!! warning "Behavior changed in `langchain-core` 0.3.16"
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
@@ -425,6 +425,14 @@ def convert_to_openai_function(
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
+            # All fields must be `required`
+            parameters = oai_function.get("parameters")
+            if isinstance(parameters, dict):
+                fields = parameters.get("properties")
+                if isinstance(fields, dict) and fields:
+                    parameters = dict(parameters)
+                    parameters["required"] = list(fields.keys())
+                    oai_function["parameters"] = parameters
     return oai_function
 
 
@@ -467,16 +475,16 @@ def convert_to_openai_tool(
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
 
-    !!! warning "Behavior changed in 0.3.16"
+    !!! warning "Behavior changed in `langchain-core` 0.3.16"
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
 
-    !!! warning "Behavior changed in 0.3.44"
+    !!! warning "Behavior changed in `langchain-core` 0.3.44"
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with `"type"` in `"file_search"`, `"function"`,
         `"computer_use_preview"`, `"web_search_preview"`.
 
-    !!! warning "Behavior changed in 0.3.63"
+    !!! warning "Behavior changed in `langchain-core` 0.3.63"
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
@@ -645,6 +653,9 @@ def tool_example_to_messages(
     return messages
 
 
+_MIN_DOCSTRING_BLOCKS = 2
+
+
 def _parse_google_docstring(
     docstring: str | None,
     args: list[str],
@@ -663,7 +674,7 @@ def _parse_google_docstring(
                 arg for arg in args if arg not in {"run_manager", "callbacks", "return"}
             }
             if filtered_annotations and (
-                len(docstring_blocks) < 2
+                len(docstring_blocks) < _MIN_DOCSTRING_BLOCKS
                 or not any(block.startswith("Args:") for block in docstring_blocks[1:])
             ):
                 msg = "Found invalid Google-Style docstring."

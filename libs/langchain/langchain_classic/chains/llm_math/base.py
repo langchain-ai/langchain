@@ -145,7 +145,7 @@ class LLMMathChain(Chain):
     Example:
         ```python
         from langchain_classic.chains import LLMMathChain
-        from langchain_community.llms import OpenAI
+        from langchain_openai import OpenAI
 
         llm_math = LLMMathChain.from_llm(OpenAI())
         ```
@@ -156,8 +156,8 @@ class LLMMathChain(Chain):
     """[Deprecated] LLM wrapper to use."""
     prompt: BasePromptTemplate = PROMPT
     """[Deprecated] Prompt to use to translate to python if necessary."""
-    input_key: str = "question"  #: :meta private:
-    output_key: str = "answer"  #: :meta private:
+    input_key: str = "question"
+    output_key: str = "answer"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -189,18 +189,12 @@ class LLMMathChain(Chain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Expect input key.
-
-        :meta private:
-        """
+        """Expect input key."""
         return [self.input_key]
 
     @property
     def output_keys(self) -> list[str]:
-        """Expect output key.
-
-        :meta private:
-        """
+        """Expect output key."""
         return [self.output_key]
 
     def _evaluate_expression(self, expression: str) -> str:

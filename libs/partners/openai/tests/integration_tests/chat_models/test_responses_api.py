@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI, custom_tool
+from langchain_openai.chat_models.base import _convert_to_openai_response_format
 
 MODEL_NAME = "gpt-4o-mini"
 
@@ -55,6 +56,26 @@ def _check_response(response: BaseMessage | None) -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["service_tier"]  # type: ignore[typeddict-item]
+
+
+@pytest.mark.vcr
+def test_incomplete_response() -> None:
+    model = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, max_completion_tokens=16
+    )
+    response = model.invoke("Tell me a 100 word story about a bear.")
+    assert response.response_metadata["incomplete_details"]
+    assert response.response_metadata["incomplete_details"]["reason"]
+    assert response.response_metadata["status"] == "incomplete"
+
+    full: AIMessageChunk | None = None
+    for chunk in model.stream("Tell me a 100 word story about a bear."):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["incomplete_details"]
+    assert full.response_metadata["incomplete_details"]["reason"]
+    assert full.response_metadata["status"] == "incomplete"
 
 
 @pytest.mark.default_cassette("test_web_search.yaml.gz")
@@ -247,24 +268,30 @@ def test_parsed_dict_schema(schema: Any) -> None:
 def test_parsed_strict() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
 
-    class InvalidJoke(TypedDict):
+    class Joke(TypedDict):
         setup: Annotated[str, ..., "The setup of the joke"]
         punchline: Annotated[str, None, "The punchline of the joke"]
 
+    schema = _convert_to_openai_response_format(Joke)
+    invalid_schema = cast(dict, _convert_to_openai_response_format(Joke, strict=True))
+    invalid_schema["json_schema"]["schema"]["required"] = ["setup"]  # make invalid
+
     # Test not strict
-    response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
+    response = llm.invoke("Tell me a joke", response_format=schema)
     parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
 
     # Test strict
     with pytest.raises(openai.BadRequestError):
         llm.invoke(
-            "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+            "Tell me a joke about cats.", response_format=invalid_schema, strict=True
         )
     with pytest.raises(openai.BadRequestError):
         next(
             llm.stream(
-                "Tell me a joke about cats.", response_format=InvalidJoke, strict=True
+                "Tell me a joke about cats.",
+                response_format=invalid_schema,
+                strict=True,
             )
         )
 

@@ -125,9 +125,11 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
         for dep in sub_dependencies:
             try:
                 dep_version = metadata.version(dep)
-                print(f"> {dep}: {dep_version}")
             except Exception:
-                print(f"> {dep}: Installed. No version info available.")
+                dep_version = None
+
+            if dep_version is not None:
+                print(f"> {dep}: {dep_version}")
 
 
 if __name__ == "__main__":

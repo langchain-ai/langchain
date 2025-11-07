@@ -58,16 +58,16 @@ class VectorStore(ABC):
             texts: Iterable of strings to add to the `VectorStore`.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of IDs associated with the texts.
-            **kwargs: vectorstore specific parameters.
+            **kwargs: `VectorStore` specific parameters.
                 One of the kwargs should be `ids` which is a list of ids
                 associated with the texts.
 
         Returns:
-            List of ids from adding the texts into the `VectorStore`.
+            List of IDs from adding the texts into the `VectorStore`.
 
         Raises:
             ValueError: If the number of metadatas does not match the number of texts.
-            ValueError: If the number of ids does not match the number of texts.
+            ValueError: If the number of IDs does not match the number of texts.
         """
         if type(self).add_documents != VectorStore.add_documents:
             # This condition is triggered if the subclass has provided
@@ -109,11 +109,12 @@ class VectorStore(ABC):
         """Delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If `None`, delete all.
+            ids: List of IDs to delete. If `None`, delete all.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise, None if not implemented.
+            `True` if deletion is successful, `False` otherwise, `None` if not
+                implemented.
         """
         msg = "delete method must be implemented by subclass."
         raise NotImplementedError(msg)
@@ -135,10 +136,10 @@ class VectorStore(ABC):
         some IDs.
 
         Args:
-            ids: List of ids to retrieve.
+            ids: List of IDs to retrieve.
 
         Returns:
-            List of Documents.
+            List of `Document` objects.
         """
         msg = f"{self.__class__.__name__} does not yet support get_by_ids."
         raise NotImplementedError(msg)
@@ -161,10 +162,10 @@ class VectorStore(ABC):
         some IDs.
 
         Args:
-            ids: List of ids to retrieve.
+            ids: List of IDs to retrieve.
 
         Returns:
-            List of Documents.
+            List of `Document` objects.
         """
         return await run_in_executor(None, self.get_by_ids, ids)
 
@@ -172,11 +173,12 @@ class VectorStore(ABC):
         """Async delete by vector ID or other criteria.
 
         Args:
-            ids: List of ids to delete. If `None`, delete all.
+            ids: List of IDs to delete. If `None`, delete all.
             **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
-            True if deletion is successful, False otherwise, None if not implemented.
+            `True` if deletion is successful, `False` otherwise, `None` if not
+                implemented.
         """
         return await run_in_executor(None, self.delete, ids, **kwargs)
 
@@ -194,14 +196,14 @@ class VectorStore(ABC):
             texts: Iterable of strings to add to the `VectorStore`.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list
-            **kwargs: vectorstore specific parameters.
+            **kwargs: `VectorStore` specific parameters.
 
         Returns:
-            List of ids from adding the texts into the `VectorStore`.
+            List of IDs from adding the texts into the `VectorStore`.
 
         Raises:
             ValueError: If the number of metadatas does not match the number of texts.
-            ValueError: If the number of ids does not match the number of texts.
+            ValueError: If the number of IDs does not match the number of texts.
         """
         if ids is not None:
             # For backward compatibility
@@ -230,13 +232,14 @@ class VectorStore(ABC):
         return await run_in_executor(None, self.add_texts, texts, metadatas, **kwargs)
 
     def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
-        """Add or update documents in the vectorstore.
+        """Add or update documents in the `VectorStore`.
 
         Args:
             documents: Documents to add to the `VectorStore`.
             **kwargs: Additional keyword arguments.
-                if kwargs contains ids and documents contain ids,
-                the ids in the kwargs will receive precedence.
+
+                If kwargs contains IDs and documents contain ids, the IDs in the kwargs
+                will receive precedence.
 
         Returns:
             List of IDs of the added texts.
@@ -291,17 +294,17 @@ class VectorStore(ABC):
         """Return docs most similar to query using a specified search type.
 
         Args:
-            query: Input text
-            search_type: Type of search to perform. Can be "similarity",
-                "mmr", or "similarity_score_threshold".
+            query: Input text.
+            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
+                `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of `Document` objects most similar to the query.
 
         Raises:
-            ValueError: If search_type is not one of "similarity",
-                "mmr", or "similarity_score_threshold".
+            ValueError: If `search_type` is not one of `'similarity'`,
+                `'mmr'`, or `'similarity_score_threshold'`.
         """
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
@@ -326,16 +329,16 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            search_type: Type of search to perform. Can be "similarity",
-                "mmr", or "similarity_score_threshold".
+            search_type: Type of search to perform. Can be `'similarity'`, `'mmr'`, or
+                `'similarity_score_threshold'`.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
             List of `Document` objects most similar to the query.
 
         Raises:
-            ValueError: If search_type is not one of "similarity",
-                "mmr", or "similarity_score_threshold".
+            ValueError: If `search_type` is not one of `'similarity'`,
+                `'mmr'`, or `'similarity_score_threshold'`.
         """
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
@@ -360,7 +363,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -419,7 +422,7 @@ class VectorStore(ABC):
             **kwargs: Arguments to pass to the search method.
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         raise NotImplementedError
 
@@ -433,7 +436,7 @@ class VectorStore(ABC):
             **kwargs: Arguments to pass to the search method.
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         # This is a temporary workaround to make the similarity search
         # asynchronous. The proper solution is to make the similarity search
@@ -457,13 +460,13 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: kwargs to be passed to similarity search. Should include
                 `score_threshold`, An optional floating point value between `0` to `1`
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = self.similarity_search_with_score(query, k, **kwargs)
@@ -484,13 +487,13 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: kwargs to be passed to similarity search. Should include
                 `score_threshold`, An optional floating point value between `0` to `1`
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         relevance_score_fn = self._select_relevance_score_fn()
         docs_and_scores = await self.asimilarity_search_with_score(query, k, **kwargs)
@@ -508,13 +511,13 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: kwargs to be passed to similarity search. Should include
                 `score_threshold`, An optional floating point value between `0` to `1`
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`.
+            List of tuples of `(doc, similarity_score)`.
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
@@ -557,13 +560,13 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: kwargs to be passed to similarity search. Should include
                 `score_threshold`, An optional floating point value between `0` to `1`
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
         """
         score_threshold = kwargs.pop("score_threshold", None)
 
@@ -601,7 +604,7 @@ class VectorStore(ABC):
 
         Args:
             query: Input text.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -619,7 +622,7 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -634,7 +637,7 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
+            k: Number of `Document` objects to return.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -662,11 +665,11 @@ class VectorStore(ABC):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -689,11 +692,11 @@ class VectorStore(ABC):
 
         Args:
             query: Text to look up documents similar to.
-            k: Number of Documents to return.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -727,11 +730,11 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -754,11 +757,11 @@ class VectorStore(ABC):
 
         Args:
             embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
+            k: Number of `Document` objects to return.
+            fetch_k: Number of `Document` objects to fetch to pass to MMR algorithm.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding
+                to maximum diversity and `1` to minimum diversity.
             **kwargs: Arguments to pass to the search method.
 
         Returns:
@@ -845,7 +848,7 @@ class VectorStore(ABC):
         ids: list[str] | None = None,
         **kwargs: Any,
     ) -> VST:
-        """Return VectorStore initialized from texts and embeddings.
+        """Return `VectorStore` initialized from texts and embeddings.
 
         Args:
             texts: Texts to add to the `VectorStore`.
@@ -855,7 +858,7 @@ class VectorStore(ABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore initialized from texts and embeddings.
+            `VectorStore` initialized from texts and embeddings.
         """
 
     @classmethod
@@ -868,7 +871,7 @@ class VectorStore(ABC):
         ids: list[str] | None = None,
         **kwargs: Any,
     ) -> Self:
-        """Async return VectorStore initialized from texts and embeddings.
+        """Async return `VectorStore` initialized from texts and embeddings.
 
         Args:
             texts: Texts to add to the `VectorStore`.
@@ -878,7 +881,7 @@ class VectorStore(ABC):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            VectorStore initialized from texts and embeddings.
+            `VectorStore` initialized from texts and embeddings.
         """
         if ids is not None:
             kwargs["ids"] = ids
@@ -899,19 +902,21 @@ class VectorStore(ABC):
         Args:
             **kwargs: Keyword arguments to pass to the search function.
                 Can include:
-                search_type: Defines the type of search that the Retriever should
-                    perform. Can be "similarity" (default), "mmr", or
-                    "similarity_score_threshold".
-                search_kwargs: Keyword arguments to pass to the search function. Can
+
+                * `search_type`: Defines the type of search that the Retriever should
+                    perform. Can be `'similarity'` (default), `'mmr'`, or
+                    `'similarity_score_threshold'`.
+                * `search_kwargs`: Keyword arguments to pass to the search function. Can
                     include things like:
-                        k: Amount of documents to return (Default: 4)
-                        score_threshold: Minimum relevance threshold
-                            for similarity_score_threshold
-                        fetch_k: Amount of documents to pass to MMR algorithm
-                            (Default: 20)
-                        lambda_mult: Diversity of results returned by MMR;
-                            1 for minimum diversity and 0 for maximum. (Default: 0.5)
-                        filter: Filter by document metadata
+
+                    * `k`: Amount of documents to return (Default: `4`)
+                    * `score_threshold`: Minimum relevance threshold
+                        for `similarity_score_threshold`
+                    * `fetch_k`: Amount of documents to pass to MMR algorithm
+                        (Default: `20`)
+                    * `lambda_mult`: Diversity of results returned by MMR;
+                        `1` for minimum diversity and 0 for maximum. (Default: `0.5`)
+                    * `filter`: Filter by document metadata
 
         Returns:
             Retriever class for `VectorStore`.
@@ -954,7 +959,7 @@ class VectorStoreRetriever(BaseRetriever):
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""
     search_type: str = "similarity"
-    """Type of search to perform. Defaults to "similarity"."""
+    """Type of search to perform."""
     search_kwargs: dict = Field(default_factory=dict)
     """Keyword arguments to pass to the search function."""
     allowed_search_types: ClassVar[Collection[str]] = (
@@ -979,8 +984,8 @@ class VectorStoreRetriever(BaseRetriever):
             Validated values.
 
         Raises:
-            ValueError: If search_type is not one of the allowed search types.
-            ValueError: If score_threshold is not specified with a float value(0~1)
+            ValueError: If `search_type` is not one of the allowed search types.
+            ValueError: If `score_threshold` is not specified with a float value(`0~1`)
         """
         search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:

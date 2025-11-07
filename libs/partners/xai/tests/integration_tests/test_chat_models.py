@@ -16,8 +16,9 @@ MODEL_NAME = "grok-4-fast-reasoning"
 def test_reasoning(output_version: Literal["", "v1"]) -> None:
     """Test reasoning features.
 
-    Note: `grok-4` does not return `reasoning_content`, but may optionally return
-    encrypted reasoning content if `use_encrypted_content` is set to True.
+    !!! note
+        `grok-4` does not return `reasoning_content`, but may optionally return
+        encrypted reasoning content if `use_encrypted_content` is set to `True`.
     """
     # Test reasoning effort
     if output_version:

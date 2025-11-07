@@ -121,7 +121,7 @@ class BaseChatMessageHistory(ABC):
         This method may be deprecated in a future release.
 
         Args:
-            message: The human message to add to the store.
+            message: The `HumanMessage` to add to the store.
         """
         if isinstance(message, HumanMessage):
             self.add_message(message)
@@ -129,7 +129,7 @@ class BaseChatMessageHistory(ABC):
             self.add_message(HumanMessage(content=message))
 
     def add_ai_message(self, message: AIMessage | str) -> None:
-        """Convenience method for adding an AI message string to the store.
+        """Convenience method for adding an `AIMessage` string to the store.
 
         !!! note
             This is a convenience method. Code should favor the bulk `add_messages`
@@ -138,7 +138,7 @@ class BaseChatMessageHistory(ABC):
         This method may be deprecated in a future release.
 
         Args:
-            message: The AI message to add.
+            message: The `AIMessage` to add.
         """
         if isinstance(message, AIMessage):
             self.add_message(message)
@@ -173,7 +173,7 @@ class BaseChatMessageHistory(ABC):
         in an efficient manner to avoid unnecessary round-trips to the underlying store.
 
         Args:
-            messages: A sequence of BaseMessage objects to store.
+            messages: A sequence of `BaseMessage` objects to store.
         """
         for message in messages:
             self.add_message(message)
@@ -182,7 +182,7 @@ class BaseChatMessageHistory(ABC):
         """Async add a list of messages.
 
         Args:
-            messages: A sequence of BaseMessage objects to store.
+            messages: A sequence of `BaseMessage` objects to store.
         """
         await run_in_executor(None, self.add_messages, messages)
 

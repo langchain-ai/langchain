@@ -94,7 +94,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
 
-    It replaces run ids with deterministic UUIDs for snapshotting.
+    It replaces run IDs with deterministic UUIDs for snapshotting.
     """
 
     def __init__(self) -> None:
@@ -312,6 +312,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             "Document": {
                 "description": "Class for storing a piece of text and "
                 "associated metadata.\n"
+                "\n"
+                "!!! note\n"
+                "    `Document` is for **retrieval workflows**, not chat I/O. For "
+                "sending text\n"
+                "    to an LLM in a conversation, use message types from "
+                "`langchain.messages`.\n"
                 "\n"
                 "Example:\n"
                 "    ```python\n"
@@ -2073,7 +2079,7 @@ async def test_prompt_with_llm(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2284,7 +2290,7 @@ async def test_prompt_with_llm_parser(
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2472,7 +2478,7 @@ async def test_stream_log_retriever() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (
@@ -2505,7 +2511,7 @@ async def test_stream_log_lists() -> None:
         part async for part in chain.astream_log({"question": "What is your name?"})
     ]
 
-    # remove ids from logs
+    # Remove IDs from logs
     for part in stream_log:
         for op in part.ops:
             if (

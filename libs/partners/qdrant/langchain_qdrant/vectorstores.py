@@ -742,9 +742,9 @@ class Qdrant(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding to maximum diversity
-                and 1 to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree
+                of diversity among the results with `0` corresponding to maximum
+                diversity and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -1002,9 +1002,9 @@ class Qdrant(VectorStore):
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params
             score_threshold:
@@ -1091,9 +1091,9 @@ class Qdrant(VectorStore):
             embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
-            lambda_mult: Number between `0` and `1` that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and `1` to minimum diversity.
+            lambda_mult: Number between `0` and `1` that determines the degree of
+                diversity among the results with `0` corresponding to maximum diversity
+                and `1` to minimum diversity.
             filter: Filter by metadata.
             search_params: Additional search params.
             score_threshold: Define a minimal score threshold for the result.
@@ -1985,7 +1985,7 @@ class Qdrant(VectorStore):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
 
         """
         return self.similarity_search_with_score(query, k, **kwargs)
@@ -2009,7 +2009,7 @@ class Qdrant(VectorStore):
                 to filter the resulting set of retrieved docs
 
         Returns:
-            List of Tuples of `(doc, similarity_score)`
+            List of tuples of `(doc, similarity_score)`
 
         """
         return await self.asimilarity_search_with_score(query, k, **kwargs)
