@@ -118,10 +118,7 @@ class LLMRouterChain(RouterChain):
 
     @property
     def input_keys(self) -> list[str]:
-        """Will be whatever keys the LLM chain prompt expects.
-
-        :meta private:
-        """
+        """Will be whatever keys the LLM chain prompt expects."""
         return self.llm_chain.input_keys
 
     def _validate_outputs(self, outputs: dict[str, Any]) -> None:

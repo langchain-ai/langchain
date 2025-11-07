@@ -65,8 +65,8 @@ def get_pydantic_major_version() -> int:
 PYDANTIC_MAJOR_VERSION = PYDANTIC_VERSION.major
 PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
 
-IS_PYDANTIC_V1 = PYDANTIC_VERSION.major == 1
-IS_PYDANTIC_V2 = PYDANTIC_VERSION.major == 2
+IS_PYDANTIC_V1 = False
+IS_PYDANTIC_V2 = True
 
 PydanticBaseModel = BaseModel
 TypeBaseModel = type[BaseModel]
