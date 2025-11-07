@@ -2,9 +2,12 @@ from langchain import tools
 
 EXPECTED_ALL = {
     "BaseTool",
+    "InjectedState",
+    "InjectedStore",
     "InjectedToolArg",
     "InjectedToolCallId",
     "ToolException",
+    "ToolRuntime",
     "tool",
 }
 

@@ -6,15 +6,15 @@ from unittest.mock import patch
 
 import pytest
 
-from langchain.chains.llm import LLMChain
-from langchain.evaluation.loading import load_evaluator
-from langchain.evaluation.qa.eval_chain import (
+from langchain_classic.chains.llm import LLMChain
+from langchain_classic.evaluation.loading import load_evaluator
+from langchain_classic.evaluation.qa.eval_chain import (
     ContextQAEvalChain,
     CotQAEvalChain,
     QAEvalChain,
     _parse_string_eval_output,
 )
-from langchain.evaluation.schema import StringEvaluator
+from langchain_classic.evaluation.schema import StringEvaluator
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

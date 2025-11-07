@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
+from qdrant_client.http import models as rest
 
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import (
@@ -21,7 +20,7 @@ def test_qdrant_similarity_search(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -46,7 +45,7 @@ def test_qdrant_similarity_search_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -72,7 +71,7 @@ def test_qdrant_similarity_search_with_score_by_vector(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -96,7 +95,7 @@ def test_qdrant_similarity_search_with_score_by_vector(
 @pytest.mark.parametrize("batch_size", [1, 64])
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_similarity_search_filters(
-    batch_size: int, vector_name: Optional[str]
+    batch_size: int, vector_name: str | None
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -130,7 +129,7 @@ def test_qdrant_similarity_search_filters(
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_similarity_search_with_relevance_score_no_threshold(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -156,7 +155,7 @@ def test_qdrant_similarity_search_with_relevance_score_no_threshold(
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_similarity_search_with_relevance_score_with_threshold(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -181,7 +180,7 @@ def test_qdrant_similarity_search_with_relevance_score_with_threshold(
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_similarity_search_with_relevance_score_with_threshold_and_filter(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -212,11 +211,9 @@ def test_qdrant_similarity_search_with_relevance_score_with_threshold_and_filter
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 def test_qdrant_similarity_search_filters_with_qdrant_filters(
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
-    from qdrant_client.http import models as rest
-
     texts = ["foo", "bar", "baz"]
     metadatas = [
         {"page": i, "details": {"page": i + 1, "pages": [i + 2, -1]}}
@@ -266,7 +263,7 @@ def test_qdrant_similarity_search_with_relevance_scores(
     batch_size: int,
     content_payload_key: str,
     metadata_payload_key: str,
-    vector_name: Optional[str],
+    vector_name: str | None,
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]

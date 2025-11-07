@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, model_validator
 from typing_extensions import override
@@ -45,18 +44,16 @@ class PromptTemplate(StringPromptTemplate):
         from untrusted sources.
 
     Example:
+        ```python
+        from langchain_core.prompts import PromptTemplate
 
-        .. code-block:: python
+        # Instantiation using from_template (recommended)
+        prompt = PromptTemplate.from_template("Say {foo}")
+        prompt.format(foo="bar")
 
-            from langchain_core.prompts import PromptTemplate
-
-            # Instantiation using from_template (recommended)
-            prompt = PromptTemplate.from_template("Say {foo}")
-            prompt.format(foo="bar")
-
-            # Instantiation using initializer
-            prompt = PromptTemplate(template="Say {foo}")
-
+        # Instantiation using initializer
+        prompt = PromptTemplate(template="Say {foo}")
+        ```
     """
 
     @property
@@ -69,10 +66,10 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
+        """Get the namespace of the LangChain object.
 
         Returns:
-            ``["langchain", "prompts", "prompt"]``
+            `["langchain", "prompts", "prompt"]`
         """
         return ["langchain", "prompts", "prompt"]
 
@@ -145,10 +142,10 @@ class PromptTemplate(StringPromptTemplate):
         Raises:
             ValueError: If the template formats are not f-string or if there are
                 conflicting partial variables.
-            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+            NotImplementedError: If the other object is not a `PromptTemplate` or str.
 
         Returns:
-            A new ``PromptTemplate`` that is the combination of the two.
+            A new `PromptTemplate` that is the combination of the two.
         """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
@@ -192,7 +189,7 @@ class PromptTemplate(StringPromptTemplate):
         """Format the prompt with the inputs.
 
         Args:
-            kwargs: Any arguments to be passed to the prompt template.
+            **kwargs: Any arguments to be passed to the prompt template.
 
         Returns:
             A formatted string.
@@ -223,7 +220,7 @@ class PromptTemplate(StringPromptTemplate):
             example_separator: The separator to use in between examples. Defaults
                 to two new line characters.
             prefix: String that should go before any examples. Generally includes
-                examples. Default to an empty string.
+                examples.
 
         Returns:
             The final prompt generated.
@@ -234,32 +231,21 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     def from_file(
         cls,
-        template_file: Union[str, Path],
-        input_variables: Optional[list[str]] = None,
-        encoding: Optional[str] = None,
+        template_file: str | Path,
+        encoding: str | None = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt from a file.
 
         Args:
             template_file: The path to the file containing the prompt template.
-            input_variables: [DEPRECATED] A list of variable names the final prompt
-                template will expect. Defaults to None.
             encoding: The encoding system for opening the template file.
                 If not provided, will use the OS default.
-
-        input_variables is ignored as from_file now delegates to from_template().
 
         Returns:
             The prompt loaded from the file.
         """
         template = Path(template_file).read_text(encoding=encoding)
-        if input_variables:
-            warnings.warn(
-                "`input_variables' is deprecated and ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return cls.from_template(template=template, **kwargs)
 
     @classmethod
@@ -268,7 +254,7 @@ class PromptTemplate(StringPromptTemplate):
         template: str,
         *,
         template_format: PromptTemplateFormat = "f-string",
-        partial_variables: Optional[dict[str, Any]] = None,
+        partial_variables: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """Load a prompt template from a template.
@@ -289,14 +275,13 @@ class PromptTemplate(StringPromptTemplate):
         Args:
             template: The template to load.
             template_format: The format of the template. Use `jinja2` for jinja2,
-                             `mustache` for mustache, and `f-string` for f-strings.
-                             Defaults to `f-string`.
+                `mustache` for mustache, and `f-string` for f-strings.
             partial_variables: A dictionary of variables that can be used to partially
-                               fill in the template. For example, if the template is
-                              `"{variable1} {variable2}"`, and `partial_variables` is
-                              `{"variable1": "foo"}`, then the final prompt will be
-                              `"foo {variable2}"`. Defaults to None.
-            kwargs: Any other arguments to pass to the prompt template.
+                fill in the template. For example, if the template is
+                `"{variable1} {variable2}"`, and `partial_variables` is
+                `{"variable1": "foo"}`, then the final prompt will be
+                `"foo {variable2}"`.
+            **kwargs: Any other arguments to pass to the prompt template.
 
         Returns:
             The prompt template loaded from the template.

@@ -1,28 +1,24 @@
+"""Anthropic chat models."""
+
 from __future__ import annotations
 
 import copy
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Final, Literal, cast
 
 import anthropic
-from langchain_core._api import beta, deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-    LangSmithParams,
-    agenerate_from_stream,
-    generate_from_stream,
-)
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -33,6 +29,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
@@ -51,6 +48,7 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -61,19 +59,50 @@ _message_type_lookups = {
 }
 
 
+_MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
+    # Listed old to new
+    "claude-3-haiku": 4096,  # Claude Haiku 3
+    "claude-3-5-haiku": 8192,  # Claude Haiku 3.5
+    "claude-3-7-sonnet": 64000,  # Claude Sonnet 3.7
+    "claude-sonnet-4": 64000,  # Claude Sonnet 4
+    "claude-opus-4": 32000,  # Claude Opus 4
+    "claude-opus-4-1": 32000,  # Claude Opus 4.1
+    "claude-sonnet-4-5": 64000,  # Claude Sonnet 4.5
+    "claude-haiku-4-5": 64000,  # Claude Haiku 4.5
+}
+_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
+
+
+def _default_max_tokens_for(model: str | None) -> int:
+    """Return the default max output tokens for an Anthropic model (with fallback).
+
+    See the Claude docs for [Max Tokens limits](https://docs.claude.com/en/docs/about-claude/models/overview#model-comparison-table).
+    """
+    if not model:
+        return _FALLBACK_MAX_OUTPUT_TOKENS
+
+    parts = model.split("-")
+    family = "-".join(parts[:-1]) if len(parts) > 1 else model
+
+    return _MODEL_DEFAULT_MAX_OUTPUT_TOKENS.get(family, _FALLBACK_MAX_OUTPUT_TOKENS)
+
+
 class AnthropicTool(TypedDict):
     """Anthropic tool definition."""
 
     name: str
+
     input_schema: dict[str, Any]
+
     description: NotRequired[str]
+
     cache_control: NotRequired[dict[str, str]]
 
 
 def _is_builtin_tool(tool: Any) -> bool:
     """Check if a tool is a built-in Anthropic tool.
 
-    https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    [Claude docs for built-in tools](https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview)
     """
     if not isinstance(tool, dict):
         return False
@@ -89,6 +118,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_search_",
         "web_fetch_",
         "code_execution_",
+        "memory_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
@@ -142,7 +172,7 @@ def _format_image(url: str) -> dict:
 
 def _merge_messages(
     messages: Sequence[BaseMessage],
-) -> list[Union[SystemMessage, AIMessage, HumanMessage]]:
+) -> list[SystemMessage | AIMessage | HumanMessage]:
     """Merge runs of human/tool messages into single human messages with content blocks."""  # noqa: E501
     merged: list = []
     for curr in messages:
@@ -172,12 +202,12 @@ def _merge_messages(
             all(isinstance(m, c) for m in (curr, last))
             for c in (SystemMessage, HumanMessage)
         ):
-            if isinstance(cast(BaseMessage, last).content, str):
+            if isinstance(cast("BaseMessage", last).content, str):
                 new_content: list = [
-                    {"type": "text", "text": cast(BaseMessage, last).content},
+                    {"type": "text", "text": cast("BaseMessage", last).content},
                 ]
             else:
-                new_content = copy.copy(cast(list, cast(BaseMessage, last).content))
+                new_content = copy.copy(cast("list", cast("BaseMessage", last).content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:
@@ -191,7 +221,7 @@ def _merge_messages(
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
-        if block["source_type"] == "url":
+        if "url" in block:
             if block["url"].startswith("data:"):
                 # Data URI
                 formatted_block = {
@@ -203,16 +233,24 @@ def _format_data_content_block(block: dict) -> dict:
                     "type": "image",
                     "source": {"type": "url", "url": block["url"]},
                 }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": block["mime_type"],
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "image",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "image",
                 "source": {
@@ -222,7 +260,7 @@ def _format_data_content_block(block: dict) -> dict:
             }
         else:
             msg = (
-                "Anthropic only supports 'url' and 'base64' source_type for image "
+                "Anthropic only supports 'url', 'base64', or 'id' keys for image "
                 "content blocks."
             )
             raise ValueError(
@@ -230,7 +268,7 @@ def _format_data_content_block(block: dict) -> dict:
             )
 
     elif block["type"] == "file":
-        if block["source_type"] == "url":
+        if "url" in block:
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -238,16 +276,16 @@ def _format_data_content_block(block: dict) -> dict:
                     "url": block["url"],
                 },
             }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "document",
                 "source": {
                     "type": "base64",
                     "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "text":
+        elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -256,7 +294,15 @@ def _format_data_content_block(block: dict) -> dict:
                     "data": block["text"],
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -264,6 +310,22 @@ def _format_data_content_block(block: dict) -> dict:
                     "file_id": block["id"],
                 },
             }
+        else:
+            msg = (
+                "Anthropic only supports 'url', 'base64', or 'id' keys for file "
+                "content blocks."
+            )
+            raise ValueError(msg)
+
+    elif block["type"] == "text-plain":
+        formatted_block = {
+            "type": "document",
+            "source": {
+                "type": "text",
+                "media_type": block.get("mime_type") or "text/plain",
+                "data": block["text"],
+            },
+        }
 
     else:
         msg = f"Block of type {block['type']} is not supported."
@@ -273,7 +335,10 @@ def _format_data_content_block(block: dict) -> dict:
         for key in ["cache_control", "citations", "title", "context"]:
             if key in block:
                 formatted_block[key] = block[key]
+            elif (metadata := block.get("extras")) and key in metadata:
+                formatted_block[key] = metadata[key]
             elif (metadata := block.get("metadata")) and key in metadata:
+                # Backward compat
                 formatted_block[key] = metadata[key]
 
     return formatted_block
@@ -281,9 +346,9 @@ def _format_data_content_block(block: dict) -> dict:
 
 def _format_messages(
     messages: Sequence[BaseMessage],
-) -> tuple[Union[str, list[dict], None], list[dict]]:
+) -> tuple[str | list[dict] | None, list[dict]]:
     """Format messages for Anthropic's API."""
-    system: Union[str, list[dict], None] = None
+    system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
     for _i, message in enumerate(merged_messages):
@@ -305,7 +370,7 @@ def _format_messages(
             continue
 
         role = _message_type_lookups[message.type]
-        content: Union[str, list]
+        content: str | list
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -475,17 +540,21 @@ def _format_messages(
                 else content
             )
             tool_use_ids = [
-                cast(dict, block)["id"]
+                cast("dict", block)["id"]
                 for block in content
-                if cast(dict, block)["type"] == "tool_use"
+                if cast("dict", block)["type"] == "tool_use"
             ]
             missing_tool_calls = [
                 tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
             ]
-            cast(list, content).extend(
+            cast("list", content).extend(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
+        if not content and role == "assistant" and _i < len(merged_messages) - 1:
+            # anthropic.BadRequestError: Error code: 400: all messages must have
+            # non-empty content except for the optional final assistant message
+            continue
         formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
@@ -502,64 +571,64 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
 
-    See `Anthropic's docs <https://docs.anthropic.com/en/docs/models-overview>`__ for a
-    list of the latest models.
+    See [Anthropic's docs](https://docs.claude.com/en/docs/about-claude/models/overview)
+    for a list of the latest models.
 
     Setup:
-        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+        Install `langchain-anthropic` and set environment variable `ANTHROPIC_API_KEY`.
 
-        .. code-block:: bash
-
-            pip install -U langchain-anthropic
-            export ANTHROPIC_API_KEY="your-api-key"
+        ```bash
+        pip install -U langchain-anthropic
+        export ANTHROPIC_API_KEY="your-api-key"
+        ```
 
     Key init args — completion params:
-        model: str
-            Name of Anthropic model to use. e.g. ``'claude-3-7-sonnet-20250219'``.
-        temperature: float
-            Sampling temperature. Ranges from ``0.0`` to ``1.0``.
-        max_tokens: int
+        model:
+            Name of Anthropic model to use. e.g. `'claude-sonnet-4-5-20250929'`.
+        temperature:
+            Sampling temperature. Ranges from `0.0` to `1.0`.
+        max_tokens:
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout: Optional[float]
+        timeout:
             Timeout for requests.
-        anthropic_proxy: Optional[str]
+        anthropic_proxy:
             Proxy to use for the Anthropic clients, will be used for every API call.
-            If not passed in will be read from env var ``ANTHROPIC_PROXY``.
-        max_retries: int
+            If not passed in will be read from env var `ANTHROPIC_PROXY`.
+        max_retries:
             Max number of retries if a request fails.
-        api_key: Optional[str]
+        api_key:
             Anthropic API key. If not passed in will be read from env var
-            ``ANTHROPIC_API_KEY``.
-        base_url: Optional[str]
+            `ANTHROPIC_API_KEY`.
+        base_url:
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
 
     See full list of supported init args and their descriptions in the params section.
 
     Instantiate:
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-            from langchain_anthropic import ChatAnthropic
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            temperature=0,
+            max_tokens=1024,
+            timeout=None,
+            max_retries=2,
+            # api_key="...",
+            # base_url="...",
+            # other params...
+        )
+        ```
 
-            llm = ChatAnthropic(
-                model="claude-3-7-sonnet-20250219",
-                temperature=0,
-                max_tokens=1024,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # base_url="...",
-                # other params...
-            )
+    !!! note
+        Any param which is not explicitly supported will be passed directly to the
+        `anthropic.Anthropic.messages.create(...)` API every time to the model is
+        invoked. For example:
 
-    **NOTE**: Any param which is not explicitly supported will be passed directly to the
-    ``anthropic.Anthropic.messages.create(...)`` API every time to the model is
-    invoked. For example:
-
-    .. code-block:: python
-
+        ```python
         from langchain_anthropic import ChatAnthropic
         import anthropic
 
@@ -572,673 +641,789 @@ class ChatAnthropic(BaseChatModel):
         # which is also equivalent to:
 
         ChatAnthropic(...).invoke(..., extra_headers={})
+        ```
 
     Invoke:
-        .. code-block:: python
+        ```python
+        messages = [
+            (
+                "system",
+                "You are a helpful translator. Translate the user sentence to French.",
+            ),
+            ("human", "I love programming."),
+        ]
+        model.invoke(messages)
+        ```
 
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+        ```python
+        AIMessage(
+            content="J'aime la programmation.",
+            response_metadata={
+                "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                "model": "claude-sonnet-4-5-20250929",
+                "stop_reason": "end_turn",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 25, "output_tokens": 11},
+            },
+            id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+            usage_metadata={
+                "input_tokens": 25,
+                "output_tokens": 11,
+                "total_tokens": 36,
+            },
+        )
+        ```
 
     Stream:
-        .. code-block:: python
+        ```python
+        for chunk in model.stream(messages):
+            print(chunk.text, end="")
+        ```
 
-            for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+        ```python
+        AIMessageChunk(content="J", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content="'", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content="a", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content="ime", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content=" la", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content=" programm", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content="ation", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        AIMessageChunk(content=".", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+        ```
 
-        .. code-block:: python
+        ```python
+        stream = model.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full
+        ```
 
-            AIMessageChunk(content='J', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content="'", id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='a', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ime', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' la', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' programm', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ation', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='.', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            AIMessageChunk(content="J'aime la programmation.", id='run-b34faef0-882f-4869-a19c-ed2b856e6361')
+        ```python
+        AIMessageChunk(content="J'aime la programmation.", id="run-b34faef0-882f-4869-a19c-ed2b856e6361")
+        ```
 
     Async:
-        .. code-block:: python
+        ```python
+        await model.ainvoke(messages)
 
-            await llm.ainvoke(messages)
+        # stream:
+        # async for chunk in (await model.astream(messages))
 
-            # stream:
-            # async for chunk in (await llm.astream(messages))
+        # batch:
+        # await model.abatch([messages])
+        ```
 
-            # batch:
-            # await llm.abatch([messages])
-
-        .. code-block:: python
-
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+        ```python
+        AIMessage(
+            content="J'aime la programmation.",
+            response_metadata={
+                "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                "model": "claude-sonnet-4-5-20250929",
+                "stop_reason": "end_turn",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 25, "output_tokens": 11},
+            },
+            id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+            usage_metadata={
+                "input_tokens": 25,
+                "output_tokens": 11,
+                "total_tokens": 36,
+            },
+        )
+        ```
 
     Tool calling:
-        .. code-block:: python
+        ```python
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
 
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+        class GetPopulation(BaseModel):
+            '''Get the current population in a given location'''
 
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-        .. code-block:: python
 
-            [{'name': 'GetWeather',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'toolu_01KzpPEAgzura7hpBqwHbWdo'},
-             {'name': 'GetWeather',
-                 'args': {'location': 'New York, NY'},
-                 'id': 'toolu_01JtgbVGVJbiSwtZk3Uycezx'},
-             {'name': 'GetPopulation',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'toolu_01429aygngesudV9nTbCKGuw'},
-             {'name': 'GetPopulation',
-                'args': {'location': 'New York, NY'},
-                'id': 'toolu_01JPktyd44tVMeBcPPnFSEJG'}]
+        model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+        ai_msg = model_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+        ai_msg.tool_calls
+        ```
 
-        See ``ChatAnthropic.bind_tools()`` method for more.
+        ```python
+        [
+            {
+                "name": "GetWeather",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "toolu_01KzpPEAgzura7hpBqwHbWdo",
+            },
+            {
+                "name": "GetWeather",
+                "args": {"location": "New York, NY"},
+                "id": "toolu_01JtgbVGVJbiSwtZk3Uycezx",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "Los Angeles, CA"},
+                "id": "toolu_01429aygngesudV9nTbCKGuw",
+            },
+            {
+                "name": "GetPopulation",
+                "args": {"location": "New York, NY"},
+                "id": "toolu_01JPktyd44tVMeBcPPnFSEJG",
+            },
+        ]
+        ```
+
+        See `ChatAnthropic.bind_tools()` method for more.
 
     Structured output:
-        .. code-block:: python
+        ```python
+        from typing import Optional
 
-            from typing import Optional
+        from pydantic import BaseModel, Field
 
-            from pydantic import BaseModel, Field
 
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
+        class Joke(BaseModel):
+            '''Joke to tell user.'''
 
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+            setup: str = Field(description="The setup of the joke")
+            punchline: str = Field(description="The punchline to the joke")
+            rating: int | None = Field(description="How funny the joke is, from 1 to 10")
 
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
 
-        .. code-block:: python
+        structured_model = model.with_structured_output(Joke)
+        structured_model.invoke("Tell me a joke about cats")
+        ```
 
-            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+        ```python
+        Joke(
+            setup="Why was the cat sitting on the computer?",
+            punchline="To keep an eye on the mouse!",
+            rating=None,
+        )
+        ```
 
-        See ``ChatAnthropic.with_structured_output()`` for more.
+        See `ChatAnthropic.with_structured_output()` for more.
 
     Image input:
-        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`__
+        See [multimodal guides](https://docs.langchain.com/oss/python/langchain/models#multimodal)
         for more detail.
 
-        .. code-block:: python
+        ```python
+        import base64
 
-            import base64
+        import httpx
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.messages import HumanMessage
 
-            import httpx
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+        message = HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Can you highlight the differences between these two images?",
+                },
+                {
+                    "type": "image",
+                    "base64": image_data,
+                    "mime_type": "image/jpeg",
+                },
+                {
+                    "type": "image",
+                    "url": image_url,
+                },
+            ],
+        )
+        ai_msg = model.invoke([message])
+        ai_msg.content
+        ```
+
+        ```python
+        "After examining both images carefully, I can see that they are actually identical."
+        ```
+
+        ??? note "Files API"
+
+            You can also pass in files that are managed through Anthropic's
+            [Files API](https://docs.claude.com/en/docs/build-with-claude/files):
+
+            ```python
             from langchain_anthropic import ChatAnthropic
-            from langchain_core.messages import HumanMessage
 
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
-            message = HumanMessage(
-                content=[
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["files-api-2025-04-14"],
+            )
+            input_message = {
+                "role": "user",
+                "content": [
                     {
                         "type": "text",
-                        "text": "Can you highlight the differences between these two images?",
+                        "text": "Describe this document.",
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
-                        "mime_type": "image/jpeg",
-                    },
-                    {
-                        "type": "image",
-                        "source_type": "url",
-                        "url": image_url,
+                        "id": "file_abc123...",
                     },
                 ],
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
-
-        .. code-block:: python
-
-            "After examining both images carefully, I can see that they are actually identical."
-
-        .. dropdown:: Files API
-
-            You can also pass in files that are managed through Anthropic's
-            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
-
-            .. code-block:: python
-
-                from langchain_anthropic import ChatAnthropic
-
-                llm = ChatAnthropic(
-                    model="claude-sonnet-4-20250514",
-                    betas=["files-api-2025-04-14"],
-                )
-                input_message = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Describe this document.",
-                        },
-                        {
-                            "type": "image",
-                            "source_type": "id",
-                            "id": "file_abc123...",
-                        },
-                    ],
-                }
-                llm.invoke([input_message])
+            }
+            model.invoke([input_message])
+            ```
 
     PDF input:
-        See `multimodal guides <https://python.langchain.com/docs/how_to/multimodal_inputs/>`__
+        See [multimodal guides](https://docs.langchain.com/oss/python/langchain/models#multimodal)
         for more detail.
 
-        .. code-block:: python
+        ```python
+        from base64 import b64encode
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.messages import HumanMessage
+        import requests
 
-            from base64 import b64encode
-            from langchain_anthropic import ChatAnthropic
-            from langchain_core.messages import HumanMessage
-            import requests
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        data = b64encode(requests.get(url).content).decode()
 
-            url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-            data = b64encode(requests.get(url).content).decode()
-
-            llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
-            ai_msg = llm.invoke(
-                [
-                    HumanMessage(
-                        [
-                            "Summarize this document.",
-                            {
-                                "type": "file",
-                                "source_type": "base64",
-                                "mime_type": "application/pdf",
-                                "data": data,
-                            },
-                        ]
-                    )
-                ]
-            )
-            ai_msg.content
-
-        .. code-block:: python
-
-            "This appears to be a simple document..."
-
-        .. dropdown:: Files API
-
-            You can also pass in files that are managed through Anthropic's
-            `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
-
-            .. code-block:: python
-
-                from langchain_anthropic import ChatAnthropic
-
-                llm = ChatAnthropic(
-                    model="claude-sonnet-4-20250514",
-                    betas=["files-api-2025-04-14"],
-                )
-                input_message = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Describe this document.",
-                        },
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+        ai_msg = model.invoke(
+            [
+                HumanMessage(
+                    [
+                        "Summarize this document.",
                         {
                             "type": "file",
-                            "source_type": "id",
-                            "id": "file_abc123...",
+                            "mime_type": "application/pdf",
+                            "base64": data,
                         },
-                    ],
-                }
-                llm.invoke([input_message])
+                    ]
+                )
+            ]
+        )
+        ai_msg.content
+        ```
+
+        ```python
+        "This appears to be a simple document..."
+        ```
+
+        ??? note "Files API"
+
+            You can also pass in files that are managed through Anthropic's
+            [Files API](https://docs.claude.com/en/docs/build-with-claude/files):
+
+            ```python
+            from langchain_anthropic import ChatAnthropic
+
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["files-api-2025-04-14"],
+            )
+            input_message = {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Describe this document.",
+                    },
+                    {
+                        "type": "file",
+                        "id": "file_abc123...",
+                    },
+                ],
+            }
+            model.invoke([input_message])
+            ```
 
     Extended thinking:
-        Claude 3.7 Sonnet supports an
-        `extended thinking <https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking>`__
+        Certain [Claude models](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#supported-models)
+        support an [extended thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)
         feature, which will output the step-by-step reasoning process that led to its
         final answer.
 
         To use it, specify the `thinking` parameter when initializing `ChatAnthropic`.
+
         It can also be passed in as a kwarg during invocation.
 
         You will need to specify a token budget to use this feature. See usage example:
 
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-            from langchain_anthropic import ChatAnthropic
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=5000,
+            thinking={"type": "enabled", "budget_tokens": 2000},
+        )
 
-            llm = ChatAnthropic(
-                model="claude-3-7-sonnet-latest",
-                max_tokens=5000,
-                thinking={"type": "enabled", "budget_tokens": 2000},
-            )
+        response = model.invoke("What is the cube root of 50.653?")
+        response.content
+        ```
 
-            response = llm.invoke("What is the cube root of 50.653?")
-            response.content
+        ```python
+        [
+            {
+                "signature": "...",
+                "thinking": "To find the cube root of 50.653...",
+                "type": "thinking",
+            },
+            {"text": "The cube root of 50.653 is ...", "type": "text"},
+        ]
+        ```
 
-        .. code-block:: python
-
-            [{'signature': '...', 'thinking': "To find the cube root of 50.653...", 'type': 'thinking'}, {'text': 'The cube root of 50.653 is ...', 'type': 'text'}]
+        !!! warning "Differences in thinking across model versions"
+            The Claude Messages API handles thinking differently across Claude Sonnet
+            3.7 and Claude 4 models. Refer to [their docs](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#differences-in-thinking-across-model-versions)
+            for more info.
 
     Citations:
-        Anthropic supports a
-        `citations <https://docs.anthropic.com/en/docs/build-with-claude/citations>`__
+        Anthropic supports a [citations](https://docs.claude.com/en/docs/build-with-claude/citations)
         feature that lets Claude attach context to its answers based on source
-        documents supplied by the user. When
-        `document content blocks <https://docs.anthropic.com/en/docs/build-with-claude/citations#document-types>`__
-        with ``"citations": {"enabled": True}`` are included in a query, Claude may
+        documents supplied by the user. When [document content blocks](https://docs.claude.com/en/docs/build-with-claude/citations#document-types)
+        with `"citations": {"enabled": True}` are included in a query, Claude may
         generate citations in its response.
 
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-            from langchain_anthropic import ChatAnthropic
+        model = ChatAnthropic(model="claude-3-5-haiku-20241022")
 
-            llm = ChatAnthropic(model="claude-3-5-haiku-latest")
-
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "document",
-                            "source": {
-                                "type": "text",
-                                "media_type": "text/plain",
-                                "data": "The grass is green. The sky is blue.",
-                            },
-                            "title": "My Document",
-                            "context": "This is a trustworthy document.",
-                            "citations": {"enabled": True},
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "text",
+                            "media_type": "text/plain",
+                            "data": "The grass is green. The sky is blue.",
                         },
-                        {"type": "text", "text": "What color is the grass and sky?"},
-                    ],
-                }
-            ]
-            response = llm.invoke(messages)
-            response.content
+                        "title": "My Document",
+                        "context": "This is a trustworthy document.",
+                        "citations": {"enabled": True},
+                    },
+                    {"type": "text", "text": "What color is the grass and sky?"},
+                ],
+            }
+        ]
+        response = model.invoke(messages)
+        response.content
+        ```
 
-        .. code-block:: python
-
-            [{'text': 'Based on the document, ', 'type': 'text'},
-            {'text': 'the grass is green',
-            'type': 'text',
-            'citations': [{'type': 'char_location',
-                'cited_text': 'The grass is green. ',
-                'document_index': 0,
-                'document_title': 'My Document',
-                'start_char_index': 0,
-                'end_char_index': 20}]},
-            {'text': ', and ', 'type': 'text'},
-            {'text': 'the sky is blue',
-            'type': 'text',
-            'citations': [{'type': 'char_location',
-                'cited_text': 'The sky is blue.',
-                'document_index': 0,
-                'document_title': 'My Document',
-                'start_char_index': 20,
-                'end_char_index': 36}]},
-            {'text': '.', 'type': 'text'}]
+        ```python
+        [
+            {"text": "Based on the document, ", "type": "text"},
+            {
+                "text": "the grass is green",
+                "type": "text",
+                "citations": [
+                    {
+                        "type": "char_location",
+                        "cited_text": "The grass is green. ",
+                        "document_index": 0,
+                        "document_title": "My Document",
+                        "start_char_index": 0,
+                        "end_char_index": 20,
+                    }
+                ],
+            },
+            {"text": ", and ", "type": "text"},
+            {
+                "text": "the sky is blue",
+                "type": "text",
+                "citations": [
+                    {
+                        "type": "char_location",
+                        "cited_text": "The sky is blue.",
+                        "document_index": 0,
+                        "document_title": "My Document",
+                        "start_char_index": 20,
+                        "end_char_index": 36,
+                    }
+                ],
+            },
+            {"text": ".", "type": "text"},
+        ]
+        ```
 
     Token usage:
-        .. code-block:: python
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.usage_metadata
+        ```
 
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+        ```python
+        {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
+        ```
 
         Message chunks containing token usage will be included during streaming by
         default:
 
-        .. code-block:: python
+        ```python
+        stream = model.stream(messages)
+        full = next(stream)
+        for chunk in stream:
+            full += chunk
+        full.usage_metadata
+        ```
 
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full.usage_metadata
+        ```python
+        {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
+        ```
 
-        .. code-block:: python
-
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
-
-        These can be disabled by setting ``stream_usage=False`` in the stream method,
-        or by setting ``stream_usage=False`` when initializing ChatAnthropic.
+        These can be disabled by setting `stream_usage=False` in the stream method,
+        or by setting `stream_usage=False` when initializing ChatAnthropic.
 
     Prompt caching:
         Prompt caching reduces processing time and costs for repetitive tasks or prompts
         with consistent elements
 
-        .. note::
+        !!! note
             Only certain models support prompt caching.
-            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            See the [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#supported-models)
             for a full list.
 
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-            from langchain_anthropic import ChatAnthropic
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-            llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+        messages = [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Below is some long context:",
+                    },
+                    {
+                        "type": "text",
+                        "text": f"{long_text}",
+                        "cache_control": {"type": "ephemeral"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": "What's that about?",
+            },
+        ]
 
-            messages = [
-                {
-                    "role": "system",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Below is some long context:",
-                        },
-                        {
-                            "type": "text",
-                            "text": f"{long_text}",
-                            "cache_control": {"type": "ephemeral"},
-                        },
-                    ],
-                },
-                {
-                    "role": "user",
-                    "content": "What's that about?",
-                },
-            ]
+        response = model.invoke(messages)
+        response.usage_metadata["input_token_details"]
+        ```
 
-            response = llm.invoke(messages)
-            response.usage_metadata["input_token_details"]
-
-        .. code-block:: python
-
-            {'cache_read': 0, 'cache_creation': 1458}
+        ```python
+        {"cache_read": 0, "cache_creation": 1458}
+        ```
 
         Alternatively, you may enable prompt caching at invocation time. You may want to
         conditionally cache based on runtime conditions, such as the length of the
         context. Alternatively, this is useful for app-level decisions about what to
         cache.
 
-        .. code-block:: python
+        ```python
+        response = model.invoke(
+            messages,
+            cache_control={"type": "ephemeral"},
+        )
+        ```
 
-            response = llm.invoke(
-                messages,
-                cache_control={"type": "ephemeral"},
-            )
-
-        .. dropdown:: Extended caching
+        ??? note "Extended caching"
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by setting ``ttl`` to ``'1h'``.
+            apply one hour caching by setting `ttl` to `'1h'`.
 
-            .. code-block:: python
+            ```python
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+            )
 
-                llm = ChatAnthropic(
-                    model="claude-3-7-sonnet-20250219",
-                )
-
-                messages = [{
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"{long_text}",
-                                "cache_control": {"type": "ephemeral", "ttl": "1h"},
-                            },
-                        ],
-                }]
-
-                response = llm.invoke(messages)
-
-            Details of cached token counts will be included on the ``InputTokenDetails``
-            of response's ``usage_metadata``:
-
-            .. code-block:: python
-
-                response = llm.invoke(messages)
-                response.usage_metadata
-
-            .. code-block:: python
-
+            messages = [
                 {
-                    "input_tokens": 1500,
-                    "output_tokens": 200,
-                    "total_tokens": 1700,
-                    "input_token_details": {
-                        "cache_read": 0,
-                        "cache_creation": 1000,
-                        "ephemeral_1h_input_tokens": 750,
-                        "ephemeral_5m_input_tokens": 250,
-                    }
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"{long_text}",
+                            "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                        },
+                    ],
                 }
+            ]
 
-            See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
+            response = model.invoke(messages)
+            ```
+
+            Details of cached token counts will be included on the `InputTokenDetails`
+            of response's `usage_metadata`:
+
+            ```python
+            response = model.invoke(messages)
+            response.usage_metadata
+            ```
+
+            ```python
+            {
+                "input_tokens": 1500,
+                "output_tokens": 200,
+                "total_tokens": 1700,
+                "input_token_details": {
+                    "cache_read": 0,
+                    "cache_creation": 1000,
+                    "ephemeral_1h_input_tokens": 750,
+                    "ephemeral_5m_input_tokens": 250,
+                },
+            }
+            ```
+
+            See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta)
             for detail.
 
-    Extended context windows (beta):
+    !!! note title="Extended context windows (beta)"
+
         Claude Sonnet 4 supports a 1-million token context window, available in beta for
         organizations in usage tier 4 and organizations with custom rate limits.
 
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-            from langchain_anthropic import ChatAnthropic
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            betas=["context-1m-2025-08-07"],  # Enable 1M context beta
+        )
 
-            llm = ChatAnthropic(
-                model="claude-sonnet-4-20250514",
-                betas=["context-1m-2025-08-07"],  # Enable 1M context beta
-            )
+        long_document = \"\"\"
+        This is a very long document that would benefit from the extended 1M
+        context window...
+        [imagine this continues for hundreds of thousands of tokens]
+        \"\"\"
 
-            long_document = \"\"\"
-            This is a very long document that would benefit from the extended 1M
-            context window...
-            [imagine this continues for hundreds of thousands of tokens]
-            \"\"\"
+        messages = [
+            HumanMessage(f\"\"\"
+        Please analyze this document and provide a summary:
 
-            messages = [
-                HumanMessage(f\"\"\"
-            Please analyze this document and provide a summary:
+        {long_document}
 
-            {long_document}
+        What are the key themes and main conclusions?
+        \"\"\")
+        ]
 
-            What are the key themes and main conclusions?
-            \"\"\")
-            ]
+        response = model.invoke(messages)
+        ```
 
-            response = llm.invoke(messages)
-
-        See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window>`__
+        See [Claude documentation](https://docs.claude.com/en/docs/build-with-claude/context-windows#1m-token-context-window)
         for detail.
 
 
-    Token-efficient tool use (beta):
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+    !!! note title="Token-efficient tool use (beta)"
+
+        See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic)
         for more detail.
 
-        .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.tools import tool
 
-            from langchain_anthropic import ChatAnthropic
-            from langchain_core.tools import tool
-
-            llm = ChatAnthropic(
-                model="claude-3-7-sonnet-20250219",
-                temperature=0,
-                model_kwargs={
-                    "extra_headers": {
-                        "anthropic-beta": "token-efficient-tools-2025-02-19"
-                    }
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            temperature=0,
+            model_kwargs={
+                "extra_headers": {
+                    "anthropic-beta": "token-efficient-tools-2025-02-19"
                 }
-            )
+            }
+        )
 
-            @tool
-            def get_weather(location: str) -> str:
-                \"\"\"Get the weather at a location.\"\"\"
-                return "It's sunny."
+        @tool
+        def get_weather(location: str) -> str:
+            \"\"\"Get the weather at a location.\"\"\"
+            return "It's sunny."
 
-            llm_with_tools = llm.bind_tools([get_weather])
-            response = llm_with_tools.invoke(
-                "What's the weather in San Francisco?"
-            )
-            print(response.tool_calls)
-            print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
+        model_with_tools = model.bind_tools([get_weather])
+        response = model_with_tools.invoke(
+            "What's the weather in San Francisco?"
+        )
+        print(response.tool_calls)
+        print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
+        ```
 
-        .. code-block:: none
+        ```txt
+        [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
+        Total tokens: 408
+        ```
 
-            [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
+    !!! note title="Context management"
 
-            Total tokens: 408
+        Anthropic supports a context editing feature that will automatically manage the
+        model's context window (e.g., by clearing tool results).
 
-    Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
+        See [Anthropic documentation](https://docs.claude.com/en/docs/build-with-claude/context-editing)
+        for details and configuration options.
+
+        ```python
+        from langchain_anthropic import ChatAnthropic
+
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            betas=["context-management-2025-06-27"],
+            context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+        )
+        model_with_tools = model.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
+        response = model_with_tools.invoke("Search for recent developments in AI")
+        ```
+
+    !!! note title="Built-in tools"
+
+        See LangChain [docs](https://docs.langchain.com/oss/python/integrations/chat/anthropic#built-in-tools)
         for more detail.
 
-        .. dropdown::  Web search
+        ??? note "Web search"
 
-            .. code-block:: python
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
-                from langchain_anthropic import ChatAnthropic
+            model = ChatAnthropic(model="claude-3-5-haiku-20241022")
 
-                llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+            tool = {
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
 
-                tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
-                llm_with_tools = llm.bind_tools([tool])
+            response = model_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
+            ```
 
-                response = llm_with_tools.invoke(
-                    "How do I update a web app to TypeScript 5.5?"
-                )
+        ??? note "Web fetch (beta)"
 
-        .. dropdown::  Web fetch (beta)
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
-            .. code-block:: python
+            model = ChatAnthropic(
+                model="claude-3-5-haiku-20241022",
+                betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
+            )
 
-                from langchain_anthropic import ChatAnthropic
+            tool = {
+                "type": "web_fetch_20250910",
+                "name": "web_fetch",
+                "max_uses": 3,
+            }
+            model_with_tools = model.bind_tools([tool])
 
-                llm = ChatAnthropic(
-                    model="claude-3-5-haiku-latest",
-                    betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
-                )
+            response = model_with_tools.invoke("Please analyze the content at https://example.com/article")
+            ```
 
-                tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 3}
-                llm_with_tools = llm.bind_tools([tool])
+        ??? note "Code execution"
 
-                response = llm_with_tools.invoke(
-                    "Please analyze the content at https://example.com/article"
-                )
+            ```python
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["code-execution-2025-05-22"],
+            )
 
-        .. dropdown::  Code execution
+            tool = {"type": "code_execution_20250522", "name": "code_execution"}
+            model_with_tools = model.bind_tools([tool])
 
-            .. code-block:: python
+            response = model_with_tools.invoke(
+                "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+            )
+            ```
 
-                llm = ChatAnthropic(
-                    model="claude-sonnet-4-20250514",
-                    betas=["code-execution-2025-05-22"],
-                )
+        ??? note "Remote MCP"
 
-                tool = {"type": "code_execution_20250522", "name": "code_execution"}
-                llm_with_tools = llm.bind_tools([tool])
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
-                response = llm_with_tools.invoke(
-                    "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
-                )
+            mcp_servers = [
+                {
+                    "type": "url",
+                    "url": "https://mcp.deepwiki.com/mcp",
+                    "name": "deepwiki",
+                    "tool_configuration": {  # optional configuration
+                        "enabled": True,
+                        "allowed_tools": ["ask_question"],
+                    },
+                    "authorization_token": "PLACEHOLDER",  # optional authorization
+                }
+            ]
 
-        .. dropdown::  Remote MCP
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["mcp-client-2025-04-04"],
+                mcp_servers=mcp_servers,
+            )
 
-            .. code-block:: python
+            response = model.invoke(
+                "What transport protocols does the 2025-03-26 version of the MCP "
+                "spec (modelcontextprotocol/modelcontextprotocol) support?"
+            )
+            ```
 
-                from langchain_anthropic import ChatAnthropic
+        ??? note "Text editor"
 
-                mcp_servers = [
-                    {
-                        "type": "url",
-                        "url": "https://mcp.deepwiki.com/mcp",
-                        "name": "deepwiki",
-                        "tool_configuration": {  # optional configuration
-                            "enabled": True,
-                            "allowed_tools": ["ask_question"],
-                        },
-                        "authorization_token": "PLACEHOLDER",  # optional authorization
-                    }
-                ]
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
-                llm = ChatAnthropic(
-                    model="claude-sonnet-4-20250514",
-                    betas=["mcp-client-2025-04-04"],
-                    mcp_servers=mcp_servers,
-                )
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-                response = llm.invoke(
-                    "What transport protocols does the 2025-03-26 version of the MCP "
-                    "spec (modelcontextprotocol/modelcontextprotocol) support?"
-                )
+            tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
+            model_with_tools = model.bind_tools([tool])
 
-        .. dropdown::  Text editor
+            response = model_with_tools.invoke(
+                "There's a syntax error in my primes.py file. Can you help me fix it?"
+            )
+            print(response.text)
+            response.tool_calls
+            ```
 
-            .. code-block:: python
+            ```txt
+            I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
 
-                from langchain_anthropic import ChatAnthropic
+            [{'name': 'str_replace_editor',
+            'args': {'command': 'view', 'path': '/repo/primes.py'},
+            'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
+            'type': 'tool_call'}]
+            ```
 
-                llm = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+        ??? note "Memory tool"
 
-                tool = {"type": "text_editor_20250124", "name": "str_replace_editor"}
-                llm_with_tools = llm.bind_tools([tool])
+            ```python
+            from langchain_anthropic import ChatAnthropic
 
-                response = llm_with_tools.invoke(
-                    "There's a syntax error in my primes.py file. Can you help me fix it?"
-                )
-                print(response.text())
-                response.tool_calls
+            model = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["context-management-2025-06-27"],
+            )
+            model_with_tools = model.bind_tools([{"type": "memory_20250818", "name": "memory"}])
+            response = model_with_tools.invoke("What are my interests?")
+            ```
 
-            .. code-block:: none
+    !!! note title="Response metadata"
 
-                I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
+        ```python
+        ai_msg = model.invoke(messages)
+        ai_msg.response_metadata
+        ```
 
-                [{'name': 'str_replace_editor',
-                'args': {'command': 'view', 'path': '/repo/primes.py'},
-                'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
-                'type': 'tool_call'}]
-
-    Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-            {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
-             'model': 'claude-3-7-sonnet-20250219',
-             'stop_reason': 'end_turn',
-             'stop_sequence': None,
-             'usage': {'input_tokens': 25, 'output_tokens': 11}}
-
+        ```python
+        {
+            "id": "msg_013xU6FHEGEq76aP4RgFerVT",
+            "model": "claude-sonnet-4-5-20250929",
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 25, "output_tokens": 11},
+        }
+        ```
     """  # noqa: E501
 
     model_config = ConfigDict(
@@ -1248,29 +1433,29 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
+    max_tokens: int | None = Field(default=None, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
-    temperature: Optional[float] = None
+    temperature: float | None = None
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    top_k: Optional[int] = None
+    top_k: int | None = None
     """Number of most likely tokens to consider at each step."""
 
-    top_p: Optional[float] = None
+    top_p: float | None = None
     """Total probability mass of tokens to consider at each step."""
 
-    default_request_timeout: Optional[float] = Field(None, alias="timeout")
+    default_request_timeout: float | None = Field(None, alias="timeout")
     """Timeout for requests to Anthropic Completion API."""
 
     # sdk default = 2: https://github.com/anthropics/anthropic-sdk-python?tab=readme-ov-file#retries
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    stop_sequences: Optional[list[str]] = Field(None, alias="stop")
+    stop_sequences: list[str] | None = Field(None, alias="stop")
     """Default stop sequences."""
 
-    anthropic_api_url: Optional[str] = Field(
+    anthropic_api_url: str | None = Field(
         alias="base_url",
         default_factory=from_env(
             ["ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"],
@@ -1280,8 +1465,8 @@ class ChatAnthropic(BaseChatModel):
     """Base URL for API requests. Only specify if using a proxy or service emulator.
 
     If a value isn't passed in, will attempt to read the value first from
-    ``ANTHROPIC_API_URL`` and if that is not set, ``ANTHROPIC_BASE_URL``.
-    If neither are set, the default value of ``https://api.anthropic.com`` will
+    `ANTHROPIC_API_URL` and if that is not set, `ANTHROPIC_BASE_URL`.
+    If neither are set, the default value of `https://api.anthropic.com` will
     be used.
     """
 
@@ -1289,24 +1474,24 @@ class ChatAnthropic(BaseChatModel):
         alias="api_key",
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
-    """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
+    """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
 
-    anthropic_proxy: Optional[str] = Field(
+    anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
     )
     """Proxy to use for the Anthropic clients, will be used for every API call.
 
-    If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
+    If not provided, will attempt to read from the `ANTHROPIC_PROXY` environment
     variable."""
 
-    default_headers: Optional[Mapping[str, str]] = None
+    default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
-    betas: Optional[list[str]] = None
+    betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through client.beta.messages.create.
 
-    Example: ``betas=["mcp-client-2025-04-04"]``
+    Example: `betas=["mcp-client-2025-04-04"]`
     """
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -1315,19 +1500,24 @@ class ChatAnthropic(BaseChatModel):
     """Whether to use streaming or not."""
 
     stream_usage: bool = True
-    """Whether to include usage metadata in streaming output. If ``True``, additional
+    """Whether to include usage metadata in streaming output. If `True`, additional
     message chunks will be generated during the stream including usage metadata.
     """
 
-    thinking: Optional[dict[str, Any]] = Field(default=None)
+    thinking: dict[str, Any] | None = Field(default=None)
     """Parameters for Claude reasoning,
-    e.g., ``{"type": "enabled", "budget_tokens": 10_000}``"""
+    e.g., `{"type": "enabled", "budget_tokens": 10_000}`"""
 
-    mcp_servers: Optional[list[dict[str, Any]]] = None
+    mcp_servers: list[dict[str, Any]] | None = None
     """List of MCP servers to use for the request.
 
-    Example: ``mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
-    "name": "example-mcp"}]``
+    Example: `mcp_servers=[{"type": "url", "url": "https://mcp.example.com/mcp",
+    "name": "example-mcp"}]`
+    """
+
+    context_management: dict[str, Any] | None = None
+    """Configuration for
+    [context management](https://docs.claude.com/en/docs/build-with-claude/context-editing).
     """
 
     @property
@@ -1337,6 +1527,7 @@ class ChatAnthropic(BaseChatModel):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Return a mapping of secret keys to environment variables."""
         return {
             "anthropic_api_key": "ANTHROPIC_API_KEY",
             "mcp_servers": "ANTHROPIC_MCP_SERVERS",
@@ -1344,11 +1535,16 @@ class ChatAnthropic(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Whether the class is serializable in langchain."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the LangChain object.
+
+        Returns:
+            `["langchain", "chat_models", "anthropic"]`
+        """
         return ["langchain", "chat_models", "anthropic"]
 
     @property
@@ -1369,14 +1565,14 @@ class ChatAnthropic(BaseChatModel):
 
     def _get_ls_params(
         self,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
-            ls_model_name=self.model,
+            ls_model_name=params.get("model", self.model),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -1388,7 +1584,17 @@ class ChatAnthropic(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
+    def set_default_max_tokens(cls, values: dict[str, Any]) -> Any:
+        """Set default max_tokens."""
+        if values.get("max_tokens") is None:
+            model = values.get("model") or values.get("model_name")
+            values["max_tokens"] = _default_max_tokens_for(model)
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: dict) -> Any:
+        """Build model kwargs."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
@@ -1442,10 +1648,37 @@ class ChatAnthropic(BaseChatModel):
         self,
         input_: LanguageModelInput,
         *,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         **kwargs: dict,
     ) -> dict:
+        """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
+
+        for idx, message in enumerate(messages):
+            # Translate v1 content
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in message.tool_calls
+                ]
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_anthropic(
+                            cast(list[types.ContentBlock], message.content),
+                            tcs,
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         system, formatted_messages = _format_messages(messages)
 
         # If cache_control is provided in kwargs, add it to last message
@@ -1479,6 +1712,7 @@ class ChatAnthropic(BaseChatModel):
             "top_p": self.top_p,
             "stop_sequences": stop or self.stop_sequences,
             "betas": self.betas,
+            "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
             "system": system,
             **self.model_kwargs,
@@ -1501,10 +1735,10 @@ class ChatAnthropic(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         if stream_usage is None:
@@ -1537,10 +1771,10 @@ class ChatAnthropic(BaseChatModel):
     async def _astream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         *,
-        stream_usage: Optional[bool] = None,
+        stream_usage: bool | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         if stream_usage is None:
@@ -1571,6 +1805,7 @@ class ChatAnthropic(BaseChatModel):
             _handle_anthropic_bad_request(e)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
 
@@ -1593,6 +1828,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -1600,15 +1836,18 @@ class ChatAnthropic(BaseChatModel):
             and content[0]["type"] == "text"
             and not content[0].get("citations")
         ):
-            msg = AIMessage(content=content[0]["text"])
+            msg = AIMessage(
+                content=content[0]["text"], response_metadata=response_metadata
+            )
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
             msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
+                response_metadata=response_metadata,
             )
         else:
-            msg = AIMessage(content=content)
+            msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
@@ -1618,18 +1857,10 @@ class ChatAnthropic(BaseChatModel):
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._stream(
-                messages,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
-            )
-            return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = self._create(payload)
@@ -1640,18 +1871,10 @@ class ChatAnthropic(BaseChatModel):
     async def _agenerate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
-            stream_iter = self._astream(
-                messages,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
-            )
-            return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         try:
             data = await self._acreate(payload)
@@ -1661,7 +1884,7 @@ class ChatAnthropic(BaseChatModel):
 
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
-        schema: Union[dict, type],
+        schema: dict | type,
         formatted_tool: AnthropicTool,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
@@ -1689,153 +1912,238 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
         *,
-        tool_choice: Optional[
-            Union[dict[str, str], Literal["any", "auto"], str]  # noqa: PYI051
-        ] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        tool_choice: dict[str, str] | str | None = None,
+        parallel_tool_calls: bool | None = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         r"""Bind tool-like objects to this chat model.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
-                by :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`.
+                by `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
-                - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
-            parallel_tool_calls: Set to ``False`` to disable parallel tool use.
-                Defaults to ``None`` (no specification, which allows parallel tool use).
+                - name of the tool as a string or as dict `{"type": "tool", "name": "<<tool_name>>"}`: calls corresponding tool;
+                - `'auto'`, `{"type: "auto"}`, or `None`: automatically selects a tool (including no tool);
+                - `'any'` or `{"type: "any"}`: force at least one tool to be called;
+            parallel_tool_calls: Set to `False` to disable parallel tool use.
+                Defaults to `None` (no specification, which allows parallel tool use).
 
-                .. versionadded:: 0.3.2
-            kwargs: Any additional parameters are passed directly to
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
+                !!! version-added "Added in `langchain-anthropic` 0.3.2"
+            kwargs: Any additional parameters are passed directly to `bind`.
 
         Example:
-
-            .. code-block:: python
-
-                from langchain_anthropic import ChatAnthropic
-                from pydantic import BaseModel, Field
-
-                class GetWeather(BaseModel):
-                    '''Get the current weather in a given location'''
-
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-                class GetPrice(BaseModel):
-                    '''Get the price of a specific product.'''
-
-                    product: str = Field(..., description="The product to look up.")
+            ```python
+            from langchain_anthropic import ChatAnthropic
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
-                # -> AIMessage(
-                #     content=[
-                #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
-                #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
-                #     ],
-                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
-                #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
-                # )
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
 
-        Example — force tool call with tool_choice ``'any'``:
-
-            .. code-block:: python
-
-                from langchain_anthropic import ChatAnthropic
-                from pydantic import BaseModel, Field
-
-                class GetWeather(BaseModel):
-                    '''Get the current weather in a given location'''
-
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-                class GetPrice(BaseModel):
-                    '''Get the price of a specific product.'''
-
-                    product: str = Field(..., description="The product to look up.")
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+            class GetPrice(BaseModel):
+                '''Get the price of a specific product.'''
+
+                product: str = Field(..., description="The product to look up.")
 
 
-        Example — force specific tool call with tool_choice ``'<name_of_tool>'``:
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+            model_with_tools = model.bind_tools([GetWeather, GetPrice])
+            model_with_tools.invoke(
+                "What is the weather like in San Francisco",
+            )
+            # -> AIMessage(
+            #     content=[
+            #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
+            #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
+            #     ],
+            #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-sonnet-4-5-20250929', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+            #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
+            # )
+            ```
 
-            .. code-block:: python
+        Example — force tool call with tool_choice `'any'`:
 
-                from langchain_anthropic import ChatAnthropic
-                from pydantic import BaseModel, Field
-
-                class GetWeather(BaseModel):
-                    '''Get the current weather in a given location'''
-
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-                class GetPrice(BaseModel):
-                    '''Get the price of a specific product.'''
-
-                    product: str = Field(..., description="The product to look up.")
+            ```python
+            from langchain_anthropic import ChatAnthropic
+            from pydantic import BaseModel, Field
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+            class GetPrice(BaseModel):
+                '''Get the price of a specific product.'''
+
+                product: str = Field(..., description="The product to look up.")
+
+
+            model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+            model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="any")
+            model_with_tools.invoke(
+                "what is the weather like in San Francisco",
+            )
+            ```
+
+        Example — force specific tool call with `tool_choice` `'<name_of_tool>'`:
+
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from pydantic import BaseModel, Field
+
+
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
+
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+        class GetPrice(BaseModel):
+            '''Get the price of a specific product.'''
+
+            product: str = Field(..., description="The product to look up.")
+
+
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+        model_with_tools = model.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
+        model_with_tools.invoke("What is the weather like in San Francisco")
+        ```
 
         Example — cache specific tools:
 
-            .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
+        from pydantic import BaseModel, Field
 
-                from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
-                from pydantic import BaseModel, Field
 
-                class GetWeather(BaseModel):
-                    '''Get the current weather in a given location'''
+        class GetWeather(BaseModel):
+            '''Get the current weather in a given location'''
 
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+            location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-                class GetPrice(BaseModel):
-                    '''Get the price of a specific product.'''
 
-                    product: str = Field(..., description="The product to look up.")
+        class GetPrice(BaseModel):
+            '''Get the price of a specific product.'''
 
-                # We'll convert our pydantic class to the anthropic tool format
-                # before passing to bind_tools so that we can set the 'cache_control'
-                # field on our tool.
-                cached_price_tool = convert_to_anthropic_tool(GetPrice)
-                # Currently the only supported "cache_control" value is
-                # {"type": "ephemeral"}.
-                cached_price_tool["cache_control"] = {"type": "ephemeral"}
+            product: str = Field(..., description="The product to look up.")
 
-                # We need to pass in extra headers to enable use of the beta cache
-                # control API.
-                llm = ChatAnthropic(
-                    model="claude-3-5-sonnet-latest",
-                    temperature=0,
-                )
-                llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
 
-            This outputs:
+        # We'll convert our pydantic class to the anthropic tool format
+        # before passing to bind_tools so that we can set the 'cache_control'
+        # field on our tool.
+        cached_price_tool = convert_to_anthropic_tool(GetPrice)
+        # Currently the only supported "cache_control" value is
+        # {"type": "ephemeral"}.
+        cached_price_tool["cache_control"] = {"type": "ephemeral"}
 
-            .. code-block:: python
+        # We need to pass in extra headers to enable use of the beta cache
+        # control API.
+        model = ChatAnthropic(
+            model="claude-sonnet-4-5-20250929",
+            temperature=0,
+        )
+        model_with_tools = model.bind_tools([GetWeather, cached_price_tool])
+        model_with_tools.invoke("What is the weather like in San Francisco")
+        ```
 
-                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
+        This outputs:
 
-            If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
+        ```python
+        AIMessage(
+            content=[
+                {
+                    "text": "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.",
+                    "type": "text",
+                },
+                {
+                    "id": "toolu_01TS5h8LNo7p5imcG7yRiaUM",
+                    "input": {"location": "San Francisco, CA"},
+                    "name": "GetWeather",
+                    "type": "tool_use",
+                },
+            ],
+            response_metadata={
+                "id": "msg_01Xg7Wr5inFWgBxE5jH9rpRo",
+                "model": "claude-sonnet-4-5-20250929",
+                "stop_reason": "tool_use",
+                "stop_sequence": None,
+                "usage": {
+                    "input_tokens": 171,
+                    "output_tokens": 96,
+                    "cache_creation_input_tokens": 1470,
+                    "cache_read_input_tokens": 0,
+                },
+            },
+            id="run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0",
+            tool_calls=[
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "San Francisco, CA"},
+                    "id": "toolu_01TS5h8LNo7p5imcG7yRiaUM",
+                    "type": "tool_call",
+                }
+            ],
+            usage_metadata={
+                "input_tokens": 171,
+                "output_tokens": 96,
+                "total_tokens": 267,
+            },
+        )
+        ```
 
-            .. code-block:: python
+        If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
 
-                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
-
+        ```python
+        AIMessage(
+            content=[
+                {
+                    "text": "To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.",
+                    "type": "text",
+                },
+                {
+                    "id": "toolu_01HtVtY1qhMFdPprx42qU2eA",
+                    "input": {"location": "San Francisco, CA"},
+                    "name": "GetWeather",
+                    "type": "tool_use",
+                },
+            ],
+            response_metadata={
+                "id": "msg_016RfWHrRvW6DAGCdwB6Ac64",
+                "model": "claude-sonnet-4-5-20250929",
+                "stop_reason": "tool_use",
+                "stop_sequence": None,
+                "usage": {
+                    "input_tokens": 171,
+                    "output_tokens": 82,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 1470,
+                },
+            },
+            id="run-88b1f825-dcb7-4277-ac27-53df55d22001-0",
+            tool_calls=[
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "San Francisco, CA"},
+                    "id": "toolu_01HtVtY1qhMFdPprx42qU2eA",
+                    "type": "tool_call",
+                }
+            ],
+            usage_metadata={
+                "input_tokens": 171,
+                "output_tokens": 82,
+                "total_tokens": 253,
+            },
+        )
+        ```
         """  # noqa: E501
         formatted_tools = [
             tool if _is_builtin_tool(tool) else convert_to_anthropic_tool(tool)
@@ -1874,126 +2182,135 @@ class ChatAnthropic(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[dict, type],
+        schema: dict | type,
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
 
-                - an Anthropic tool schema,
-                - an OpenAI function/tool schema,
-                - a JSON Schema,
-                - a TypedDict class,
-                - or a Pydantic class.
+                - An Anthropic tool schema,
+                - An OpenAI function/tool schema,
+                - A JSON Schema,
+                - A `TypedDict` class,
+                - Or a Pydantic class.
 
-                If ``schema`` is a Pydantic class then the model output will be a
+                If `schema` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`
-                for more on how to properly specify types and descriptions of
-                schema fields when specifying a Pydantic or TypedDict class.
+                dict and will not be validated.
+
+                See `langchain_core.utils.function_calling.convert_to_openai_tool` for
+                more on how to properly specify types and descriptions of schema fields
+                when specifying a Pydantic or `TypedDict` class.
             include_raw:
-                If ``False`` then only the parsed structured output is returned. If
-                an error occurs during model output parsing it will be raised. If ``True``
-                then both the raw model response (a BaseMessage) and the parsed model
-                response will be returned. If an error occurs during output parsing it
-                will be caught and returned as well. The final output is always a dict
-                with keys ``raw``, ``parsed``, and ``parsing_error``.
+                If `False` then only the parsed structured output is returned.
+
+                If an error occurs during model output parsing it will be raised.
+
+                If `True` then both the raw model response (a `BaseMessage`) and the
+                parsed model response will be returned.
+
+                If an error occurs during output parsing it will be caught and returned
+                as well.
+
+                The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
+                `'parsing_error'`.
             kwargs: Additional keyword arguments are ignored.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
+            A `Runnable` that takes same inputs as a
+                `langchain_core.language_models.chat.BaseChatModel`. If `include_raw` is
+                `False` and `schema` is a Pydantic class, `Runnable` outputs an instance
+                of `schema` (i.e., a Pydantic object). Otherwise, if `include_raw` is
+                `False` then `Runnable` outputs a `dict`.
 
-            If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
-            an instance of ``schema`` (i.e., a Pydantic object).
+                If `include_raw` is `True`, then `Runnable` outputs a `dict` with keys:
 
-            Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
+                - `'raw'`: `BaseMessage`
+                - `'parsed'`: `None` if there was a parsing error, otherwise the type
+                    depends on the `schema` as described above.
+                - `'parsing_error'`: `BaseException | None`
 
-            If ``include_raw`` is True, then Runnable outputs a dict with keys:
+        Example: Pydantic schema (`include_raw=False`):
 
-            - ``'raw'``: BaseMessage
-            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``'parsing_error'``: Optional[BaseException]
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from pydantic import BaseModel
 
-        Example: Pydantic schema (include_raw=False):
 
-            .. code-block:: python
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-                from langchain_anthropic import ChatAnthropic
-                from pydantic import BaseModel
+            answer: str
+            justification: str
 
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-                    answer: str
-                    justification: str
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification)
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
 
-                # -> AnswerWithJustification(
-                #     answer='They weigh the same',
-                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
-                # )
+        # -> AnswerWithJustification(
+        #     answer='They weigh the same',
+        #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+        # )
+        ```
 
-        Example:  Pydantic schema (include_raw=True):
+        Example: Pydantic schema (`include_raw=True`):
 
-            .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from pydantic import BaseModel
 
-                from langchain_anthropic import ChatAnthropic
-                from pydantic import BaseModel
 
-                class AnswerWithJustification(BaseModel):
-                    '''An answer to the user question along with justification for the answer.'''
-                    answer: str
-                    justification: str
+        class AnswerWithJustification(BaseModel):
+            '''An answer to the user question along with justification for the answer.'''
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+            answer: str
+            justification: str
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
-                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
-                #     'parsing_error': None
-                # }
 
-        Example: Dict schema (include_raw=False):
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+        structured_model = model.with_structured_output(AnswerWithJustification, include_raw=True)
 
-            .. code-block:: python
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+        # -> {
+        #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+        #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+        #     'parsing_error': None
+        # }
+        ```
 
-                from langchain_anthropic import ChatAnthropic
+        Example: `dict` schema (`include_raw=False`):
 
-                schema = {
-                    "name": "AnswerWithJustification",
-                    "description": "An answer to the user question along with justification for the answer.",
-                    "input_schema": {
-                        "type": "object",
-                        "properties": {
-                            "answer": {"type": "string"},
-                            "justification": {"type": "string"},
-                        },
-                        "required": ["answer", "justification"]
-                    }
-                }
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
-                structured_llm = llm.with_structured_output(schema)
+        ```python
+        from langchain_anthropic import ChatAnthropic
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
-                # -> {
-                #     'answer': 'They weigh the same',
-                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
-                # }
+        schema = {
+            "name": "AnswerWithJustification",
+            "description": "An answer to the user question along with justification for the answer.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "answer": {"type": "string"},
+                    "justification": {"type": "string"},
+                },
+                "required": ["answer", "justification"],
+            },
+        }
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+        structured_model = model.with_structured_output(schema)
 
-        .. versionchanged:: 0.1.22
-
-                Added support for TypedDict class as `schema`.
-
+        structured_model.invoke("What weighs more a pound of bricks or a pound of feathers")
+        # -> {
+        #     'answer': 'They weigh the same',
+        #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+        # }
+        ```
         """  # noqa: E501
         formatted_tool = convert_to_anthropic_tool(schema)
         tool_name = formatted_tool["name"]
@@ -2036,84 +2353,89 @@ class ChatAnthropic(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
 
-    @beta()
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
-        tools: Optional[
-            Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
-        ] = None,
+        tools: Sequence[dict[str, Any] | type | Callable | BaseTool] | None = None,
         **kwargs: Any,
     ) -> int:
         """Count tokens in a sequence of input messages.
 
         Args:
             messages: The message inputs to tokenize.
-            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
-                to be converted to tool schemas.
-            kwargs: Additional keyword arguments are passed to the
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind` method.
+            tools: If provided, sequence of `dict`, `BaseModel`, function, or `BaseTool`
+                objects to be converted to tool schemas.
+            kwargs: Additional keyword arguments are passed to the Anthropic
+                `messages.count_tokens` method.
 
         Basic usage:
 
-            .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.messages import HumanMessage, SystemMessage
 
-                from langchain_anthropic import ChatAnthropic
-                from langchain_core.messages import HumanMessage, SystemMessage
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+        messages = [
+            SystemMessage(content="You are a scientist"),
+            HumanMessage(content="Hello, Claude"),
+        ]
+        model.get_num_tokens_from_messages(messages)
+        ```
 
-                messages = [
-                    SystemMessage(content="You are a scientist"),
-                    HumanMessage(content="Hello, Claude"),
-                ]
-                llm.get_num_tokens_from_messages(messages)
-
-            .. code-block:: none
-
-                14
+        ```txt
+        14
+        ```
 
         Pass tool schemas:
 
-            .. code-block:: python
+        ```python
+        from langchain_anthropic import ChatAnthropic
+        from langchain_core.messages import HumanMessage
+        from langchain_core.tools import tool
 
-                from langchain_anthropic import ChatAnthropic
-                from langchain_core.messages import HumanMessage
-                from langchain_core.tools import tool
+        model = ChatAnthropic(model="claude-sonnet-4-5-20250929")
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+        @tool(parse_docstring=True)
+        def get_weather(location: str) -> str:
+            \"\"\"Get the current weather in a given location
 
-                @tool(parse_docstring=True)
-                def get_weather(location: str) -> str:
-                    \"\"\"Get the current weather in a given location
+            Args:
+                location: The city and state, e.g. San Francisco, CA
+            \"\"\"
+            return "Sunny"
 
-                    Args:
-                        location: The city and state, e.g. San Francisco, CA
-                    \"\"\"
-                    return "Sunny"
+        messages = [
+            HumanMessage(content="What's the weather like in San Francisco?"),
+        ]
+        model.get_num_tokens_from_messages(messages, tools=[get_weather])
+        ```
 
-                messages = [
-                    HumanMessage(content="What's the weather like in San Francisco?"),
-                ]
-                llm.get_num_tokens_from_messages(messages, tools=[get_weather])
+        ```txt
+        403
+        ```
 
-            .. code-block:: none
+        !!! warning "Behavior changed in `langchain-anthropic` 0.3.0"
+            Uses Anthropic's [token counting API](https://docs.claude.com/en/docs/build-with-claude/token-counting) to count tokens in messages.
 
-                403
-
-        .. versionchanged:: 0.3.0
-
-                Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
-
-        """  # noqa: E501
+        """  # noqa: D214,E501
         formatted_system, formatted_messages = _format_messages(messages)
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
             kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+        if self.context_management is not None:
+            kwargs["context_management"] = self.context_management
 
-        response = self._client.beta.messages.count_tokens(
-            betas=["token-counting-2024-11-01"],
+        if self.betas is not None:
+            beta_response = self._client.beta.messages.count_tokens(
+                betas=self.betas,
+                model=self.model,
+                messages=formatted_messages,  # type: ignore[arg-type]
+                **kwargs,
+            )
+            return beta_response.input_tokens
+        response = self._client.messages.count_tokens(
             model=self.model,
             messages=formatted_messages,  # type: ignore[arg-type]
             **kwargs,
@@ -2122,7 +2444,7 @@ class ChatAnthropic(BaseChatModel):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[dict[str, Any], type, Callable, BaseTool],
+    tool: dict[str, Any] | type | Callable | BaseTool,
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
@@ -2181,7 +2503,7 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
             type="tool_use",
             name=tool_call["name"],
             input=tool_call["args"],
-            id=cast(str, tool_call["id"]),
+            id=cast("str", tool_call["id"]),
         )
         for tool_call in tool_calls
     ]
@@ -2192,8 +2514,8 @@ def _make_message_chunk_from_anthropic_event(
     *,
     stream_usage: bool = True,
     coerce_content_to_string: bool,
-    block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
-) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
+    block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
     """Convert Anthropic streaming event to `AIMessageChunk`.
 
     Args:
@@ -2218,7 +2540,7 @@ def _make_message_chunk_from_anthropic_event(
         updating the `block_start_event` for context tracking.
 
     """
-    message_chunk: Optional[AIMessageChunk] = None
+    message_chunk: AIMessageChunk | None = None
     # Reference: Anthropic SDK streaming implementation
     # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
 
@@ -2226,7 +2548,7 @@ def _make_message_chunk_from_anthropic_event(
         # Capture model name, but don't include usage_metadata yet
         # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
-            response_metadata = {"model_name": event.message.model}
+            response_metadata: dict[str, Any] = {"model_name": event.message.model}
         else:
             response_metadata = {}
 
@@ -2291,10 +2613,7 @@ def _make_message_chunk_from_anthropic_event(
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Reasoning
-        elif (
-            event.delta.type == "thinking_delta"
-            or event.delta.type == "signature_delta"
-        ):
+        elif event.delta.type in {"thinking_delta", "signature_delta"}:
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "thinking"
@@ -2330,25 +2649,28 @@ def _make_message_chunk_from_anthropic_event(
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
+        response_metadata = {
+            "stop_reason": event.delta.stop_reason,
+            "stop_sequence": event.delta.stop_sequence,
+        }
+        if context_management := getattr(event, "context_management", None):
+            response_metadata["context_management"] = context_management.model_dump()
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
-            response_metadata={
-                "stop_reason": event.delta.stop_reason,
-                "stop_sequence": event.delta.stop_sequence,
-            },
+            response_metadata=response_metadata,
         )
+        if message_chunk.response_metadata.get("stop_reason"):
+            # Mark final Anthropic stream chunk
+            message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
-    # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
+    # https://docs.claude.com/en/docs/build-with-claude/streaming#other-events
     else:
         pass
 
+    if message_chunk:
+        message_chunk.response_metadata["model_provider"] = "anthropic"
     return message_chunk, block_start_event
-
-
-@deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
-class ChatAnthropicMessages(ChatAnthropic):
-    pass
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

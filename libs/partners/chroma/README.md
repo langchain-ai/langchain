@@ -1,21 +1,22 @@
 # langchain-chroma
 
-This package contains the LangChain integration with Chroma.
+[![PyPI - Version](https://img.shields.io/pypi/v/langchain-chroma?label=%20)](https://pypi.org/project/langchain-chroma/#history)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-chroma)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-chroma)](https://pypistats.org/packages/langchain-chroma)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
-## Installation
+Looking for the JS/TS version? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
+
+## Quick Install
 
 ```bash
-pip install -U langchain-chroma
+pip install langchain-chroma
 ```
 
-## Usage
+## 🤔 What is this?
 
-The `Chroma` class exposes the connection to the Chroma vector store.
+This package contains the LangChain integration with Chroma.
 
-```python
-from langchain_chroma import Chroma
+## 📖 Documentation
 
-embeddings = ... # use a LangChain Embeddings class
-
-vectorstore = Chroma(embeddings=embeddings)
-```
+View the [documentation](https://docs.langchain.com/oss/python/integrations/providers/chroma) for more details.

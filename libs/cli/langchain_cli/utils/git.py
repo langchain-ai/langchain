@@ -1,12 +1,14 @@
 """Git utilities."""
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from git import Repo
 
@@ -23,32 +25,32 @@ class DependencySource(TypedDict):
     """Dependency source information."""
 
     git: str
-    ref: Optional[str]
-    subdirectory: Optional[str]
-    api_path: Optional[str]
+    ref: str | None
+    subdirectory: str | None
+    api_path: str | None
     event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format
 def parse_dependency_string(
-    dep: Optional[str],
-    repo: Optional[str],
-    branch: Optional[str],
-    api_path: Optional[str],
+    dep: str | None,
+    repo: str | None,
+    branch: str | None,
+    api_path: str | None,
 ) -> DependencySource:
-    """Parse a dependency string into a DependencySource.
+    """Parse a dependency string into a `DependencySource`.
 
     Args:
-        dep: the dependency string.
-        repo: optional repository.
-        branch: optional branch.
-        api_path: optional API path.
+        dep: The dependency string
+        repo: Optional repository
+        branch: Optional branch
+        api_path: Optional API path
 
     Returns:
-        The parsed dependency source information.
+        The parsed dependency source information
 
     Raises:
-        ValueError: if the dependency string is invalid.
+        ValueError: If the dependency string is invalid
     """
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
@@ -125,7 +127,7 @@ def parse_dependency_string(
     )
 
 
-def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional[str]]:
+def _list_arg_to_length(arg: list[str] | None, num: int) -> Sequence[str | None]:
     if not arg:
         return [None] * num
     if len(arg) == 1:
@@ -137,7 +139,7 @@ def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional
 
 
 def parse_dependencies(
-    dependencies: Optional[list[str]],
+    dependencies: list[str] | None,
     repo: list[str],
     branch: list[str],
     api_path: list[str],
@@ -145,8 +147,8 @@ def parse_dependencies(
     """Parse dependencies.
 
     Args:
-        dependencies: the dependencies to parse
-        repo: the repositories to use
+        dependencies: The dependencies to parse
+        repo: The repositories to use
         branch: the branches to use
         api_path: the api paths to use
 
@@ -180,17 +182,18 @@ def parse_dependencies(
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return list(
-        map(
+        map(  # type: ignore[call-overload, unused-ignore]
             parse_dependency_string,
             inner_deps,
             inner_repos,
             inner_branches,
             inner_api_paths,
+            strict=False,
         )
     )
 
 
-def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+def _get_repo_path(gitstring: str, ref: str | None, repo_dir: Path) -> Path:
     # only based on git for now
     ref_str = ref if ref is not None else ""
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
@@ -204,7 +207,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     return repo_dir / directory_name
 
 
-def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+def update_repo(gitstring: str, ref: str | None, repo_dir: Path) -> Path:
     """Update a git repository to the specified ref.
 
     Tries to pull if the repo already exists, otherwise clones it.
@@ -241,7 +244,7 @@ def copy_repo(
 ) -> None:
     """Copiy a repo, ignoring git folders.
 
-    Raises FileNotFound error if it can't find source
+    Raises `FileNotFound` if it can't find source
     """
 
     def ignore_func(_: str, files: list[str]) -> list[str]:

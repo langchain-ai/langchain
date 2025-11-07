@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import sys
 import uuid
-from collections.abc import AsyncGenerator, Coroutine, Generator
+from collections.abc import AsyncGenerator, Callable, Coroutine, Generator
 from inspect import isasyncgenfunction
-from typing import Any, Callable, Optional
+from typing import Any, Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,7 +13,6 @@ from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
-from typing_extensions import Literal
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel
@@ -40,8 +39,8 @@ def _get_posts(client: Client) -> list:
 
 
 def _create_tracer_with_mocked_client(
-    project_name: Optional[str] = None,
-    tags: Optional[list[str]] = None,
+    project_name: str | None = None,
+    tags: list[str] | None = None,
 ) -> LangChainTracer:
     mock_session = MagicMock()
     mock_client_ = Client(
@@ -226,7 +225,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, *, enabled: Optional[bool], env: str
+    mock_get_client: MagicMock, *, enabled: bool | None, env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(

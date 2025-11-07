@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from langchain.evaluation import RegexMatchStringEvaluator
+from langchain_classic.evaluation import RegexMatchStringEvaluator
 
 
 @pytest.fixture

@@ -1,39 +1,47 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-authors = []
-license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = [
-    "ollama>=0.5.3,<1.0.0",
-    "langchain-core<1.0.0,>=0.3.74",
-]
 name = "langchain-ollama"
-version = "0.3.7"
 description = "An integration package connecting Ollama and LangChain"
+license = { text = "MIT" }
 readme = "README.md"
+authors = []
+
+version = "1.0.0"
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "ollama>=0.6.0,<1.0.0",
+    "langchain-core>=1.0.0,<2.0.0",
+]
 
 [project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-ollama%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
+Homepage = "https://docs.langchain.com/oss/python/integrations/providers/ollama"
+Documentation = "https://reference.langchain.com/python/integrations/langchain_ollama/"
+Source = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ollama"
+Changelog = "https://github.com/langchain-ai/langchain/releases?q=%22langchain-ollama%22"
+Twitter = "https://x.com/LangChainAI"
+Slack = "https://www.langchain.com/join-community"
+Reddit = "https://www.reddit.com/r/LangChain/"
 
 [dependency-groups]
 test = [
-    "pytest<9.0.0,>=8.4.1",
-    "pytest-asyncio<1.0.0,>=0.26.0",
-    "syrupy<5.0.0,>=4.9.1",
-    "pytest-socket<1.0.0,>=0.7.0",
-    "pytest-watcher<1.0.0,>=0.4.3",
+    "pytest>=8.4.1,<9.0.0",
+    "pytest-asyncio>=0.26.0,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-watcher>=0.4.3,<1.0.0",
+    "syrupy>=4.9.1,<5.0.0",
     "langchain-core",
     "langchain-tests",
 ]
 test_integration = []
-lint = ["ruff<0.13,>=0.12.10"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0.0,>=1.17.1", "langchain-core"]
+typing = [
+    "mypy>=1.17.1,<2.0.0",
+    "langchain-core"
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -42,69 +50,38 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
 
 [tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "B",      # flake8-bugbear
-    "ASYNC",  # flake8-async
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D",      # pydocstyle
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "SIM",    # flake8-simplify
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TID",    # flake8-tidy-imports
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
+select = ["ALL"]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D203",    # Messes with the formatter
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "S112",    # Rarely useful
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "FIX002",  # TODOs
+    "TD002",   # TODO authors
+    "TD003",   # TODO missing url
+    "TC002",   # Incorrect type-checking block
+    "TC003",   # Incorrect type-checking block
+    "PLR0912", # Too many branches
+    "PLR0915", # Too many statements
+    "C901",    # Function too complex
+    "FBT001",  # Boolean function param
+    "ERA001",  # Commented-out code
+
+    # TODO
+    "ANN401",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"] # ignore docstring checks for tests
@@ -121,6 +98,12 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
-    "S101", # Tests need assertions
-    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "ARG001",  # Unused function arguments in tests (e.g. kwargs)
+    "PLR2004", # Magic value in comparisons
+    "PT011",   # `pytest.raises()` is too broad
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from packaging import version
@@ -15,8 +15,8 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.graph import Edge, Graph, MermaidDrawMethod, Node
 from langchain_core.runnables.graph_mermaid import (
-    _escape_node_label,
     _render_mermaid_using_api,
+    _to_safe_id,
     draw_mermaid_png,
 )
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
@@ -484,7 +484,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -509,7 +509,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         def invoke(
             self,
             input: int,
-            config: Optional[RunnableConfig] = None,
+            config: RunnableConfig | None = None,
             **kwargs: Any,
         ) -> int:
             return input
@@ -521,12 +521,12 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
     runnable.get_graph()
 
 
-def test_graph_mermaid_escape_node_label() -> None:
+def test_graph_mermaid_to_safe_id() -> None:
     """Test that node labels are correctly preprocessed for draw_mermaid."""
-    assert _escape_node_label("foo") == "foo"
-    assert _escape_node_label("foo-bar") == "foo-bar"
-    assert _escape_node_label("foo_1") == "foo_1"
-    assert _escape_node_label("#foo*&!") == "_foo___"
+    assert _to_safe_id("foo") == "foo"
+    assert _to_safe_id("foo-bar") == "foo-bar"
+    assert _to_safe_id("foo_1") == "foo_1"
+    assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
 
 
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
@@ -583,7 +583,7 @@ def test_mermaid_base_url_default() -> None:
 
         # Verify that the URL was constructed with the default base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith("https://mermaid.ink")
 
@@ -604,7 +604,7 @@ def test_mermaid_base_url_custom() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
 
@@ -626,7 +626,7 @@ def test_draw_mermaid_png_function_base_url() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
 
@@ -650,6 +650,27 @@ def test_graph_draw_mermaid_png_base_url() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
+
+
+def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
+    graph = Graph(
+        nodes={
+            "__start__": Node(
+                id="__start__", name="__start__", data=BaseModel, metadata=None
+            ),
+            "开始": Node(id="开始", name="开始", data=BaseModel, metadata=None),
+            "结束": Node(id="结束", name="结束", data=BaseModel, metadata=None),
+            "__end__": Node(
+                id="__end__", name="__end__", data=BaseModel, metadata=None
+            ),
+        },
+        edges=[
+            Edge(source="__start__", target="开始", data=None, conditional=False),
+            Edge(source="开始", target="结束", data=None, conditional=False),
+            Edge(source="结束", target="__end__", data=None, conditional=False),
+        ],
+    )
+    assert graph.draw_mermaid() == snapshot(name="mermaid")

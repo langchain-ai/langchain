@@ -1,4 +1,4 @@
-from langchain import llms
+from langchain_classic import llms
 
 EXPECT_ALL = [
     "AI21",
