@@ -4351,7 +4351,7 @@ def _convert_responses_chunk_to_generation_chunk(
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
-    elif chunk.type == "response.completed":
+    elif chunk.type in ("response.completed", "response.incomplete"):
         msg = cast(
             AIMessage,
             (
